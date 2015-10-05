@@ -94,8 +94,8 @@ abstract class AbstractInternalCacheProxy<K, V>
                         new InternalCachePartitionLostListenerAdapter(listener);
                 final EventFilter filter = new CachePartitionLostEventFilter();
                 final ICacheService service = getService();
-                service.getNodeEngine().getEventService().registerListener(AbstractCacheService.SERVICE_NAME,
-                        name, filter, listenerAdapter);
+                service.getNodeEngine().getEventService()
+                        .registerListener(AbstractCacheService.SERVICE_NAME, name, filter, listenerAdapter);
             }
         }
     }
@@ -129,7 +129,6 @@ abstract class AbstractInternalCacheProxy<K, V>
         }
     }
 
-    //region internal base operations
     protected <T> InternalCompletableFuture<T> removeAsyncInternal(K key, V oldValue, boolean hasOldValue,
                                                                    boolean isGet, boolean withCompletionEvent) {
         ensureOpen();
@@ -257,9 +256,7 @@ abstract class AbstractInternalCacheProxy<K, V>
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
         }
     }
-    //endregion internal base operations
 
-    //region Listener operations
     protected void addListenerLocally(String regId,
                                       CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         if (cacheEntryListenerConfiguration.isSynchronous()) {
@@ -360,7 +357,6 @@ abstract class AbstractInternalCacheProxy<K, V>
 
     protected void waitCompletionLatch(Integer countDownLatchId, int offset) {
         if (countDownLatchId != IGNORE_COMPLETION) {
-            //fix completion count
             final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
             if (countDownLatch != null) {
                 for (int i = 0; i < offset; i++) {
@@ -396,7 +392,6 @@ abstract class AbstractInternalCacheProxy<K, V>
             ExceptionUtil.sneakyThrow(e);
         }
     }
-    //endregion Listener operations
 
     private <T extends EventListener> T initializeListener(ListenerConfig listenerConfig) {
         T listener = null;
@@ -404,8 +399,8 @@ abstract class AbstractInternalCacheProxy<K, V>
             listener = (T) listenerConfig.getImplementation();
         } else if (listenerConfig.getClassName() != null) {
             try {
-                return ClassLoaderUtil
-                        .newInstance(getNodeEngine().getConfigClassLoader(), listenerConfig.getClassName());
+                return ClassLoaderUtil.newInstance(getNodeEngine().getConfigClassLoader(),
+                                                   listenerConfig.getClassName());
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }

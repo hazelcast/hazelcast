@@ -113,7 +113,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         this.cacheConfig = cacheService.getCacheConfig(name);
         this.cacheContext = cacheService.getOrCreateCacheContext(name);
         if (cacheConfig == null) {
-            throw new CacheNotExistsException("Cache " + name +" is already destroyed or not created yet, on "
+            throw new CacheNotExistsException("Cache " + name + " is already destroyed or not created yet, on "
                     + nodeEngine.getLocalMember());
         }
         this.wanReplicationEnabled = cacheConfig.getWanReplicationRef() != null;
@@ -407,7 +407,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 statistics.increaseCachePuts(1);
                 statistics.addPutTimeNanos(System.nanoTime() - start);
             }
-            statistics.addGetTimeNanos(System.nanoTime() - start);
             if (isHit) {
                 statistics.increaseCacheHits(1);
             } else {
@@ -1075,7 +1074,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             }
             onReplace(key, null, value, expiryPolicy, source, false, record, isExpired, replaced);
             if (isStatisticsEnabled()) {
-                statistics.addGetTimeNanos(System.nanoTime() - start);
                 if (replaced) {
                     statistics.increaseCachePuts(1);
                     statistics.increaseCacheHits(1);

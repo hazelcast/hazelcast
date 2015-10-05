@@ -37,6 +37,7 @@ import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CompletionListener;
 import java.io.Closeable;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -57,7 +58,6 @@ abstract class AbstractClientCacheProxyBase<K, V> {
 
     protected final ClientContext clientContext;
     protected final CacheConfig<K, V> cacheConfig;
-    //this will represent the name from the user perspective
     protected final String name;
     protected final String nameWithPrefix;
 
@@ -84,7 +84,6 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         }
     }
 
-    //region close&destroy
     protected void ensureOpen() {
         if (isClosed()) {
             throw new IllegalStateException("Cache operations can not be performed. The cache closed");
@@ -103,7 +102,6 @@ abstract class AbstractClientCacheProxyBase<K, V> {
             }
         }
         loadAllTasks.clear();
-        //close the configured CacheLoader
         closeCacheLoader();
         closeListeners();
     }
@@ -117,8 +115,9 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(nameWithPrefix);
             CacheDestroyRequest request = new CacheDestroyRequest(nameWithPrefix, partitionId);
-            final ClientInvocation clientInvocation = new ClientInvocation(
-                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request, partitionId);
+            final ClientInvocation clientInvocation =
+                    new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
+                                         request, partitionId);
             final Future<SerializableList> future = clientInvocation.invoke();
             future.get();
         } catch (Exception e) {
@@ -145,9 +144,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
     }
 
     protected abstract void closeListeners();
-    //endregion close&destroy
 
-    //region DISTRIBUTED OBJECT
     public String getNameWithPrefix() {
         return nameWithPrefix;
     }
@@ -162,8 +159,8 @@ abstract class AbstractClientCacheProxyBase<K, V> {
 
     protected <T> T invoke(ClientRequest req) {
         try {
-            final ClientInvocation clientInvocation = new ClientInvocation(
-                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), req);
+            final ClientInvocation clientInvocation =
+                    new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), req);
             final Future<SerializableList> future = clientInvocation.invoke();
             Object result = future.get();
             return toObject(result);
@@ -171,9 +168,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
             throw ExceptionUtil.rethrow(e);
         }
     }
-    //endregion DISTRIBUTED OBJECT
 
-    //region CacheLoader
     protected void validateCacheLoader(CompletionListener completionListener) {
         if (cacheLoader == null && completionListener != null) {
             completionListener.onCompletion();
@@ -181,13 +176,13 @@ abstract class AbstractClientCacheProxyBase<K, V> {
     }
 
     protected void closeCacheLoader() {
-        //close the configured CacheLoader
         if (cacheLoader instanceof Closeable) {
             IOUtil.closeResource((Closeable) cacheLoader);
         }
     }
 
     protected void submitLoadAllTask(final CacheLoadAllRequest request, final CompletionListener completionListener) {
+        final long start = System.nanoTime();
         LoadAllTask loadAllTask = new LoadAllTask(request, completionListener);
         ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) clientContext.getExecutionService();
 
@@ -197,6 +192,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
             @Override
             public void onResponse(Object response) {
                 loadAllTasks.remove(future);
+                onLoadAll(request.getKeys(), response, start, System.nanoTime());
             }
 
             @Override
@@ -204,6 +200,10 @@ abstract class AbstractClientCacheProxyBase<K, V> {
                 loadAllTasks.remove(future);
             }
         });
+    }
+
+    protected void onLoadAll(Set<Data> keys, Object response, long start, long end) {
+
     }
 
     private final class LoadAllTask
@@ -233,5 +233,5 @@ abstract class AbstractClientCacheProxyBase<K, V> {
             }
         }
     }
-    //endregion CacheLoader
+
 }

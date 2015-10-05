@@ -51,6 +51,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.Client;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
@@ -113,6 +114,9 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     protected final ConcurrentMap<Member, String> nearCacheInvalidationListeners =
             new ConcurrentHashMap<Member, String>();
 
+    protected final ClientCacheStatisticsImpl statistics;
+    protected final boolean statisticsEnabled;
+
     private boolean cacheOnUpdate;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
@@ -124,12 +128,20 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                                                HazelcastClientCacheManager cacheManager) {
         super(cacheConfig, clientContext);
         this.cacheManager = cacheManager;
-        nearCacheManager = clientContext.getNearCacheManager();
-        asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
-        syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
-        syncLocks = new ConcurrentHashMap<Integer, CountDownLatch>();
+        this.nearCacheManager = clientContext.getNearCacheManager();
+        this.asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
+        this.syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
+        this.syncLocks = new ConcurrentHashMap<Integer, CountDownLatch>();
 
         initNearCache();
+
+        if (nearCache != null) {
+            this.statistics = new ClientCacheStatisticsImpl(System.currentTimeMillis(),
+                                                            nearCache.getNearCacheStats());
+        } else {
+            this.statistics = new ClientCacheStatisticsImpl(System.currentTimeMillis());
+        }
+        this.statisticsEnabled = cacheConfig.isStatisticsEnabled();
     }
 
     private void initNearCache() {
@@ -138,8 +150,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             cacheOnUpdate = nearCacheConfig.getLocalUpdatePolicy() == NearCacheConfig.LocalUpdatePolicy.CACHE;
             NearCacheContext nearCacheContext =
                     new NearCacheContext(nearCacheManager,
-                            clientContext.getSerializationService(),
-                            createNearCacheExecutor(clientContext.getExecutionService()));
+                                         clientContext.getSerializationService(),
+                                         createNearCacheExecutor(clientContext.getExecutionService()));
             nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig, nearCacheContext);
             registerInvalidationListener();
         }
@@ -171,6 +183,9 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             removeInvalidationListener();
             nearCacheManager.clearNearCache(nearCache.getName());
         }
+        if (statisticsEnabled) {
+            statistics.clear();
+        }
         super.close();
     }
 
@@ -180,10 +195,13 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             removeInvalidationListener();
             nearCacheManager.destroyNearCache(nearCache.getName());
         }
+        if (statisticsEnabled) {
+            statistics.clear();
+        }
         super.destroy();
     }
 
-    protected <T> ICompletableFuture<T> invoke(ClientRequest req, Data keyData, boolean completionOperation) {
+    protected <T> ClientInvocationFuture<T> invoke(ClientRequest req, Data keyData, boolean completionOperation) {
         Integer completionId = null;
         if (completionOperation) {
             completionId = registerCompletionLatch(1);
@@ -220,9 +238,10 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    //region internal base operations
-    protected <T> ICompletableFuture<T> removeAsyncInternal(K key, V oldValue, boolean hasOldValue,
-                                                            boolean isGet, boolean withCompletionEvent) {
+    protected <T> ICompletableFuture<T> removeAsyncInternal(K key, V oldValue, final boolean hasOldValue,
+                                                            final boolean isGet, boolean withCompletionEvent,
+                                                            boolean async) {
+        final long start = System.nanoTime();
         ensureOpen();
         if (hasOldValue) {
             validateNotNull(key, oldValue);
@@ -240,19 +259,53 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         } else {
             request = new CacheRemoveRequest(nameWithPrefix, keyData, oldValueData, inMemoryFormat);
         }
-        ICompletableFuture future;
+
+        ClientInvocationFuture future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
+
             invalidateNearCache(keyData);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new DelegatingFuture<T>(future, clientContext.getSerializationService());
+        DelegatingFuture delegatingFuture = new DelegatingFuture<T>(future, clientContext.getSerializationService());
+        if (async && statisticsEnabled) {
+            delegatingFuture.andThen(new ExecutionCallback<Object>() {
+                public void onResponse(Object responseData) {
+                    Object response = clientContext.getSerializationService().toObject(responseData);
+                    handleStatisticsOnRemove(isGet, start, response);
+                }
+
+                public void onFailure(Throwable t) {
+
+                }
+            });
+        }
+        return delegatingFuture;
+    }
+
+    protected void handleStatisticsOnRemove(boolean isGet, long start, Object response) {
+        if (isGet) {
+            statistics.addGetTimeNanos(System.nanoTime() - start);
+            if (response != null) {
+                statistics.increaseCacheHits();
+                statistics.increaseCacheRemovals();
+                statistics.addRemoveTimeNanos(System.nanoTime() - start);
+            } else {
+                statistics.increaseCacheMisses();
+            }
+        } else {
+            if (Boolean.TRUE.equals(response)) {
+                statistics.increaseCacheRemovals();
+                statistics.addRemoveTimeNanos(System.nanoTime() - start);
+            }
+        }
     }
 
     protected <T> ICompletableFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
-                                                             boolean hasOldValue, boolean isGet,
-                                                             boolean withCompletionEvent) {
+                                                             boolean hasOldValue, final boolean isGet,
+                                                             boolean withCompletionEvent, boolean async) {
+        final long start = System.nanoTime();
         ensureOpen();
         if (hasOldValue) {
             validateNotNull(key, oldValue, newValue);
@@ -269,10 +322,10 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         ClientRequest request;
         if (isGet) {
             request = new CacheGetAndReplaceRequest(nameWithPrefix, keyData, newValueData,
-                    expiryPolicy, inMemoryFormat);
+                                                    expiryPolicy, inMemoryFormat);
         } else {
             request = new CacheReplaceRequest(nameWithPrefix, keyData, oldValueData, newValueData,
-                    expiryPolicy, inMemoryFormat);
+                                              expiryPolicy, inMemoryFormat);
         }
         ICompletableFuture future;
         try {
@@ -281,11 +334,47 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new DelegatingFuture<T>(future, clientContext.getSerializationService());
+        DelegatingFuture delegatingFuture = new DelegatingFuture<T>(future, clientContext.getSerializationService());
+        if (async && statisticsEnabled) {
+            delegatingFuture.andThen(new ExecutionCallback<Object>() {
+                public void onResponse(Object responseData) {
+                    Object response = clientContext.getSerializationService().toObject(responseData);
+                    handleStatisticsOnReplace(isGet, start, response);
+                }
+
+                public void onFailure(Throwable t) {
+
+                }
+            });
+        }
+        return delegatingFuture;
+    }
+
+    protected void handleStatisticsOnReplace(boolean isGet, long start, Object response) {
+        if (isGet) {
+            statistics.addGetTimeNanos(System.nanoTime() - start);
+            if (response != null) {
+                statistics.increaseCacheHits();
+                statistics.increaseCachePuts();
+                statistics.addPutTimeNanos(System.nanoTime() - start);
+            } else {
+                statistics.increaseCacheMisses();
+            }
+        } else {
+            if (Boolean.TRUE.equals(response)) {
+                statistics.increaseCacheHits();
+                statistics.increaseCachePuts();
+                statistics.addPutTimeNanos(System.nanoTime() - start);
+            } else {
+                statistics.increaseCacheMisses();
+            }
+        }
     }
 
     protected <T> ICompletableFuture<T> putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,
-                                                         boolean isGet, boolean withCompletionEvent) {
+                                                         final boolean isGet, boolean withCompletionEvent,
+                                                         boolean async) {
+        final long start = System.nanoTime();
         ensureOpen();
         validateNotNull(key, value);
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
@@ -293,7 +382,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         final Data valueData = toData(value);
         InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
         CachePutRequest request = new CachePutRequest(nameWithPrefix, keyData, valueData,
-                expiryPolicy, isGet, inMemoryFormat);
+                                                      expiryPolicy, isGet, inMemoryFormat);
         ICompletableFuture future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
@@ -305,18 +394,47 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
+        if (async && statisticsEnabled) {
+            future.andThen(new ExecutionCallback<Object>() {
+                @Override
+                public void onResponse(Object responseData) {
+                    handleStatisticsOnPut(isGet, start, responseData);
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+
+                }
+            });
+        }
         return future;
     }
 
+    protected void handleStatisticsOnPut(boolean isGet, long start, Object response) {
+        statistics.increaseCachePuts();
+        statistics.addPutTimeNanos(System.nanoTime() - start);
+        if (isGet) {
+            Object resp = clientContext.getSerializationService().toObject(response);
+            statistics.addGetTimeNanos(System.nanoTime() - start);
+            if (resp == null) {
+                statistics.increaseCacheMisses();
+            } else {
+                statistics.increaseCacheHits();
+            }
+        }
+    }
+
     protected ICompletableFuture<Boolean> putIfAbsentAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,
-                                                                   boolean withCompletionEvent) {
+                                                                   boolean withCompletionEvent,
+                                                                   boolean async) {
+        final long start = System.nanoTime();
         ensureOpen();
         validateNotNull(key, value);
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(nameWithPrefix, keyData, valueData,
-                expiryPolicy, cacheConfig.getInMemoryFormat());
+                                                                      expiryPolicy, cacheConfig.getInMemoryFormat());
         ICompletableFuture<Boolean> future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
@@ -328,10 +446,34 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new DelegatingFuture<Boolean>(future, clientContext.getSerializationService());
+        DelegatingFuture delegatingFuture =
+                new DelegatingFuture<Boolean>(future, clientContext.getSerializationService());
+        if (async && statisticsEnabled) {
+            delegatingFuture.andThen(new ExecutionCallback<Object>() {
+                @Override
+                public void onResponse(Object responseData) {
+                    Object response = clientContext.getSerializationService().toObject(responseData);
+                    handleStatisticsOnPutIfAbsent(start, (Boolean) response);
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+
+                }
+            });
+        }
+        return delegatingFuture;
+    }
+
+    protected void handleStatisticsOnPutIfAbsent(long start, boolean saved) {
+        if (saved) {
+            statistics.increaseCachePuts();
+            statistics.addPutTimeNanos(System.nanoTime() - start);
+        }
     }
 
     protected void removeAllInternal(Set<? extends K> keys, boolean isRemoveAll) {
+        final long start = System.nanoTime();
         final Set<Data> keysData;
         if (keys != null) {
             keysData = new HashSet<Data>();
@@ -359,6 +501,18 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                 }
             }
             waitCompletionLatch(completionId, partitionCount - completionCount, null);
+            if (statisticsEnabled) {
+                if (keysData != null) {
+                    // Actually we don't know how many of them are really removed or not.
+                    // We just assume that if there is no exception, all of them are removed.
+                    // Otherwise (if there is an exception), we don't update any cache stats about remove.
+                    statistics.increaseCacheRemovals(keysData.size());
+                    statistics.addRemoveTimeNanos(System.nanoTime() - start);
+                } else {
+                    statistics.setLastUpdateTime(System.currentTimeMillis());
+                    // We don't support count stats of removing all entries.
+                }
+            }
         } catch (Throwable t) {
             deregisterCompletionLatch(completionId);
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
@@ -377,6 +531,10 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                     }
                 }
             }
+            if (statisticsEnabled) {
+                statistics.setLastUpdateTime(System.currentTimeMillis());
+                // We don't support count stats of removing all entries.
+            }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
         }
@@ -394,7 +552,6 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             nearCache.invalidate(key);
         }
     }
-    //endregion internal base operations
 
     protected void addListenerLocally(String regId,
                                       CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
@@ -499,7 +656,6 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     protected void waitCompletionLatch(Integer countDownLatchId, int offset, ICompletableFuture future)
             throws ExecutionException {
         if (countDownLatchId != IGNORE_COMPLETION) {
-            //fix completion count
             final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
             if (countDownLatch != null) {
                 for (int i = 0; i < offset; i++) {
@@ -560,13 +716,14 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
             @Override
             public void onListenerRegister() {
+
             }
         };
     }
 
     protected ICompletableFuture createCompletedFuture(Object value) {
         return new CompletedFuture(clientContext.getSerializationService(), value,
-                clientContext.getExecutionService().getAsyncExecutor());
+                                   clientContext.getExecutionService().getAsyncExecutor());
     }
 
     private class NearCacheMembershipListener implements MembershipListener {

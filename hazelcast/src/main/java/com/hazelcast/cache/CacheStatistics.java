@@ -16,6 +16,8 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.monitor.NearCacheStats;
+
 /**
  * Cache statistics
  * <p>
@@ -195,5 +197,12 @@ public interface CacheStatistics {
      * @return the mean time in microseconds to execute removes
      */
     float getAverageRemoveTime();
+
+    /**
+     * Gets the near-cache statistics.
+     *
+     * @return the near-cache statistics
+     */
+    NearCacheStats getNearCacheStatistics();
 
 }

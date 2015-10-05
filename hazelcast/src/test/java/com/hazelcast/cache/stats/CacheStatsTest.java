@@ -1,9 +1,12 @@
-package com.hazelcast.cache;
+package com.hazelcast.cache.stats;
 
+import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.cache.CacheTestSupport;
+import com.hazelcast.cache.ICache;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 
 import org.junit.Test;
@@ -15,10 +18,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class})
 public class CacheStatsTest extends CacheTestSupport {
 
-    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+    protected TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
     @Override
     protected void onSetup() {
@@ -35,13 +38,64 @@ public class CacheStatsTest extends CacheTestSupport {
     }
 
     @Test
-    public void testCreationTime() {
-        long now = System.currentTimeMillis();
-
-        ICache<String, String> cache = createCache();
+    public void testGettingStatistics() {
+        ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
 
         assertNotNull(stats);
+    }
+
+    @Test
+    public void testStatisticsDisabled() {
+        long now = System.currentTimeMillis();
+
+        CacheConfig cacheConfig = createCacheConfig();
+        cacheConfig.setStatisticsEnabled(false);
+        ICache<Integer, String> cache = createCache(cacheConfig);
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
+        assertTrue(stats.getCreationTime() >= now);
+
+        final int ENTRY_COUNT = 100;
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.put(i, "Value-" + i);
+        }
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.get(i);
+        }
+
+        for (int i = 0; i < 10; i++) {
+            cache.remove(i);
+        }
+
+        assertEquals(0, stats.getCacheHits());
+        assertEquals(0, stats.getCacheHitPercentage(), 0.0f);
+
+        assertEquals(0, stats.getCacheMisses());
+        assertEquals(0, stats.getCacheMissPercentage(), 0.0f);
+
+        assertEquals(0, stats.getCacheGets());
+        assertEquals(0, stats.getAverageGetTime(), 0.0f);
+
+        assertEquals(0, stats.getCachePuts());
+        assertEquals(0, stats.getAveragePutTime(), 0.0f);
+
+        assertEquals(0, stats.getCacheRemovals());
+        assertEquals(0, stats.getAverageRemoveTime(), 0.0f);
+
+        assertEquals(0, stats.getLastAccessTime());
+        assertEquals(0, stats.getLastUpdateTime());
+    }
+
+    @Test
+    public void testCreationTime() {
+        long now = System.currentTimeMillis();
+
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
         assertTrue(stats.getCreationTime() >= now);
     }
 
@@ -49,8 +103,6 @@ public class CacheStatsTest extends CacheTestSupport {
     public void testPutStat() {
         ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
-
-        assertNotNull(stats);
 
         final int ENTRY_COUNT = 100;
 
@@ -65,8 +117,6 @@ public class CacheStatsTest extends CacheTestSupport {
     public void testAveragePutTimeStat() {
         ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
-
-        assertNotNull(stats);
 
         final int ENTRY_COUNT = 100;
 
@@ -87,8 +137,6 @@ public class CacheStatsTest extends CacheTestSupport {
         ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
 
-        assertNotNull(stats);
-
         final int ENTRY_COUNT = 100;
 
         for (int i = 0; i < ENTRY_COUNT; i++) {
@@ -106,8 +154,6 @@ public class CacheStatsTest extends CacheTestSupport {
     public void testAverageGetTimeStat() {
         ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
-
-        assertNotNull(stats);
 
         final int ENTRY_COUNT = 100;
 
@@ -132,8 +178,6 @@ public class CacheStatsTest extends CacheTestSupport {
         ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
 
-        assertNotNull(stats);
-
         final int ENTRY_COUNT = 100;
 
         for (int i = 0; i < ENTRY_COUNT; i++) {
@@ -151,8 +195,6 @@ public class CacheStatsTest extends CacheTestSupport {
     public void testAverageRemoveTimeStat() {
         ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
-
-        assertNotNull(stats);
 
         final int ENTRY_COUNT = 100;
 
@@ -182,39 +224,9 @@ public class CacheStatsTest extends CacheTestSupport {
     }
 
     @Test
-    public void testOwnedEntryCount() {
-        ICache<Integer, String> cache = createCache();
-        CacheStatistics stats = cache.getLocalCacheStatistics();
-
-        assertNotNull(stats);
-
-        final int ENTRY_COUNT = 100;
-
-        for (int i = 0; i < ENTRY_COUNT; i++) {
-            cache.put(i, "Value-" + i);
-        }
-
-        assertEquals(ENTRY_COUNT, stats.getOwnedEntryCount());
-
-        for (int i = 0; i < 10; i++) {
-            cache.remove(i);
-        }
-
-        assertEquals(ENTRY_COUNT - 10, stats.getOwnedEntryCount());
-
-        for (int i = 10; i < ENTRY_COUNT; i++) {
-            cache.remove(i);
-        }
-
-        assertEquals(0, stats.getOwnedEntryCount());
-    }
-
-    @Test
     public void testHitStat() {
         ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
-
-        assertNotNull(stats);
 
         final int ENTRY_COUNT = 100;
         final int GET_COUNT = 3 * ENTRY_COUNT;
@@ -234,8 +246,6 @@ public class CacheStatsTest extends CacheTestSupport {
     public void testHitPercentageStat() {
         ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
-
-        assertNotNull(stats);
 
         final int ENTRY_COUNT = 100;
         final int GET_COUNT = 3 * ENTRY_COUNT;
@@ -257,8 +267,6 @@ public class CacheStatsTest extends CacheTestSupport {
         ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
 
-        assertNotNull(stats);
-
         final int ENTRY_COUNT = 100;
         final int GET_COUNT = 3 * ENTRY_COUNT;
 
@@ -273,12 +281,9 @@ public class CacheStatsTest extends CacheTestSupport {
         assertEquals(GET_COUNT - ENTRY_COUNT, stats.getCacheMisses());
     }
 
-    @Test
     public void testMissPercentageStat() {
         ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
-
-        assertNotNull(stats);
 
         final int ENTRY_COUNT = 100;
         final int GET_COUNT = 3 * ENTRY_COUNT;
@@ -292,7 +297,6 @@ public class CacheStatsTest extends CacheTestSupport {
         }
 
         float expectedMissPercentage = (float) (GET_COUNT - ENTRY_COUNT) / GET_COUNT * 100.0f;
-        System.out.println(expectedMissPercentage);
         assertEquals(expectedMissPercentage, stats.getCacheMissPercentage(), 0.0f);
     }
 
@@ -300,8 +304,6 @@ public class CacheStatsTest extends CacheTestSupport {
     public void testLastAccessTimeStat() {
         ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
-
-        assertNotNull(stats);
 
         final int ENTRY_COUNT = 100;
         long start, end;
@@ -348,8 +350,6 @@ public class CacheStatsTest extends CacheTestSupport {
         ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
 
-        assertNotNull(stats);
-
         final int ENTRY_COUNT = 100;
         long start, end;
 
@@ -379,6 +379,80 @@ public class CacheStatsTest extends CacheTestSupport {
 
         // Latest removes has no effect since keys are already removed at previous loop
         assertEquals(currentLastUpdateTime, stats.getLastUpdateTime());
+    }
+
+    @Test
+    public void testOwnedEntryCount() {
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
+        final int ENTRY_COUNT = 100;
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.put(i, "Value-" + i);
+        }
+
+        assertEquals(ENTRY_COUNT, stats.getOwnedEntryCount());
+
+        for (int i = 0; i < 10; i++) {
+            cache.remove(i);
+        }
+
+        assertEquals(ENTRY_COUNT - 10, stats.getOwnedEntryCount());
+
+        for (int i = 10; i < ENTRY_COUNT; i++) {
+            cache.remove(i);
+        }
+
+        assertEquals(0, stats.getOwnedEntryCount());
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.put(i, "Value-" + i);
+        }
+
+        assertEquals(ENTRY_COUNT, stats.getOwnedEntryCount());
+
+        cache.clear();
+
+        assertEquals(0, stats.getOwnedEntryCount());
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.put(i, "Value-" + i);
+        }
+
+        assertEquals(ENTRY_COUNT, stats.getOwnedEntryCount());
+
+        cache.destroy();
+
+        assertEquals(0, stats.getOwnedEntryCount());
+    }
+
+    @Test
+    public void testExpiries() {
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
+        // TODO Produce a case that triggers expirations and verify the expiration count
+        // At the moment, we are just verifying that this stats is supported
+        stats.getCacheEvictions();
+    }
+
+    @Test
+    public void testEvictions() {
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
+        // TODO Produce a case that triggers evictions and verify the eviction count
+        // At the moment, we are just verifying that this stats is supported
+        stats.getCacheEvictions();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testNearCacheStatsWhenNearCacheDisabled() {
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
+        stats.getNearCacheStatistics();
     }
 
 }

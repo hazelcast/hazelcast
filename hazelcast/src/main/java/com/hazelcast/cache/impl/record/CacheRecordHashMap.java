@@ -37,11 +37,6 @@ public class CacheRecordHashMap
 
     private final transient CacheContext cacheContext;
 
-    public CacheRecordHashMap(int initialCapacity) {
-        super(initialCapacity);
-        this.cacheContext = null;
-    }
-
     public CacheRecordHashMap(int initialCapacity, CacheContext cacheContext) {
         super(initialCapacity);
         this.cacheContext = cacheContext;
@@ -58,11 +53,9 @@ public class CacheRecordHashMap
     @Override
     public CacheRecord put(Data key, CacheRecord value) {
         CacheRecord oldRecord = super.put(key, value);
-        if (cacheContext != null) {
-            if (oldRecord == null) {
-                // New put
-                cacheContext.increaseEntryCount();
-            }
+        if (oldRecord == null) {
+            // New put
+            cacheContext.increaseEntryCount();
         }
         return oldRecord;
     }
@@ -70,11 +63,9 @@ public class CacheRecordHashMap
     @Override
     public CacheRecord putIfAbsent(Data key, CacheRecord value) {
         CacheRecord oldRecord = super.putIfAbsent(key, value);
-        if (cacheContext != null) {
-            if (oldRecord == null) {
-                // New put
-                cacheContext.increaseEntryCount();
-            }
+        if (oldRecord == null) {
+            // New put
+            cacheContext.increaseEntryCount();
         }
         return oldRecord;
     }
@@ -82,11 +73,9 @@ public class CacheRecordHashMap
     @Override
     public CacheRecord remove(Object key) {
         CacheRecord removedRecord = super.remove(key);
-        if (cacheContext != null) {
-            if (removedRecord != null) {
-                // Removed
-                cacheContext.decreaseEntryCount();
-            }
+        if (removedRecord != null) {
+            // Removed
+            cacheContext.decreaseEntryCount();
         }
         return removedRecord;
     }
@@ -94,24 +83,18 @@ public class CacheRecordHashMap
     @Override
     public boolean remove(Object key, Object value) {
         boolean removed = super.remove(key, value);
-        if (cacheContext != null) {
-            if (removed) {
-                // Removed
-                cacheContext.decreaseEntryCount();
-            }
+        if (removed) {
+            // Removed
+            cacheContext.decreaseEntryCount();
         }
         return removed;
     }
 
     @Override
     public void clear() {
-        if (cacheContext == null) {
-            super.clear();
-        } else {
-            final int sizeBeforeClear = size();
-            super.clear();
-            cacheContext.decreaseEntryCount(sizeBeforeClear);
-        }
+        final int sizeBeforeClear = size();
+        super.clear();
+        cacheContext.decreaseEntryCount(sizeBeforeClear);
     }
 
     public class EvictableSamplingEntry extends SamplingEntry implements EvictionCandidate {
