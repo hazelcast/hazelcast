@@ -63,14 +63,14 @@ public class IndexImpl implements Index {
 
     @Override
     public void removeEntryIndex(Record record) {
-        Comparable value = QueryEntry.extractAttribute(attribute, record.getKey(), record.getValue(), ss);
+        Comparable value = QueryEntryUtils.extractAttribute(attribute, record.getKey(), record.getValue(), ss);
 
         if (value.getClass().isEnum()) {
             value = TypeConverters.ENUM_CONVERTER.convert(value);
         }
 
         if (value != null) {
-            indexStore.removeIndex(value, (Data) record.getKey());
+            indexStore.removeIndex(value, record.getKey());
         }
     }
 
@@ -102,11 +102,11 @@ public class IndexImpl implements Index {
 
         Comparable oldValue = null;
         if (oldRecordValue != null) {
-            oldValue = QueryEntry.extractAttribute(attribute, e.getKey(), oldRecordValue, ss);
+            oldValue = QueryEntryUtils.extractAttribute(attribute, e.getKey(), oldRecordValue, ss);
             oldValue = sanitizeValue(oldValue);
         }
 
-        Comparable newValue = QueryEntry.extractAttribute(attribute, e.getKey(), e.getValue(), ss);
+        Comparable newValue = QueryEntryUtils.extractAttribute(attribute, e.getKey(), e.getValue(), ss);
         newValue = sanitizeValue(newValue);
 
         if (oldValue == null) {

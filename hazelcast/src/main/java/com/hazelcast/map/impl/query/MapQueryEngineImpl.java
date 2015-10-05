@@ -46,7 +46,6 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
@@ -273,7 +272,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
             if (value == null) {
                 continue;
             }
-            QueryEntry queryEntry = new QueryEntry(serializationService, key, key, value);
+            QueryableEntry queryEntry = mapServiceContext.newQueryEntry(key, key, value);
 
             if (predicate.apply(queryEntry) && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
                 resultList.add(queryEntry);

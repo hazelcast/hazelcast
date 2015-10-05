@@ -16,9 +16,6 @@
 
 package com.hazelcast.query.impl;
 
-import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
-import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
-
 import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
@@ -26,20 +23,25 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.ReflectionHelper;
 
+import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
+import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
+
 /**
  * Entry of the Query.
  */
-public class QueryEntry implements QueryableEntry {
+public class CachedQueryEntry implements QueryableEntry {
 
     private Data indexKey;
-    private Object key;
-    private Object value;
+    private Data keyData;
+    private Object keyObject;
+    private Data valueData;
+    private Object valueObject;
     private SerializationService serializationService;
 
-    public QueryEntry() {
+    public CachedQueryEntry() {
     }
 
-    public QueryEntry(SerializationService serializationService, Data indexKey, Object key, Object value) {
+    public CachedQueryEntry(SerializationService serializationService, Data indexKey, Object key, Object value) {
         init(serializationService, indexKey, key, value);
     }
 
@@ -68,37 +70,108 @@ public class QueryEntry implements QueryableEntry {
             throw new IllegalArgumentException("keyData cannot be null");
         }
 
-        this.indexKey = indexKey;
         this.serializationService = serializationService;
+        this.indexKey = indexKey;
 
-        this.key = key;
-        this.value = value;
+        keyData = null;
+        keyObject = null;
+
+        if (key instanceof Data) {
+            this.keyData = (Data) key;
+        } else {
+            this.keyObject = key;
+        }
+
+        valueData = null;
+        valueObject = null;
+
+        if (value instanceof Data) {
+            this.valueData = (Data) value;
+        } else {
+            this.valueObject = value;
+        }
     }
 
     @Override
     public Object getValue() {
-        return serializationService.toObject(value);
+        if (valueObject == null) {
+            valueObject = serializationService.toObject(valueData);
+        }
+        return valueObject;
     }
 
     @Override
     public Object getKey() {
-        return serializationService.toObject(key);
+        if (keyObject == null) {
+            keyObject = serializationService.toObject(keyData);
+        }
+        return keyObject;
     }
 
     @Override
     public Data getKeyData() {
-        return indexKey;
+        if (keyData == null) {
+            keyData = serializationService.toData(keyObject);
+        }
+        return keyData;
     }
 
     @Override
     public Data getValueData() {
-        return serializationService.toData(value);
+        if (valueData == null) {
+            valueData = serializationService.toData(valueObject);
+        }
+        return valueData;
     }
 
 
     @Override
     public Comparable getAttribute(String attributeName) throws QueryException {
-        return QueryEntryUtils.extractAttribute(attributeName, key, value, serializationService);
+        if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
+            return (Comparable) getKey();
+        } else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
+            return (Comparable) getValue();
+        }
+
+        boolean key = QueryEntryUtils.isKey(attributeName);
+        attributeName = QueryEntryUtils.getAttributeName(key, attributeName);
+        Object targetObject = getTargetObject(key);
+
+        return QueryEntryUtils.extractAttribute(attributeName, targetObject, serializationService);
+    }
+
+    private Object getTargetObject(boolean key) {
+        Object targetObject;
+        if (key) {
+            if (keyObject == null) {
+                if (keyData.isPortable()) {
+                    targetObject = keyData;
+                } else {
+                    targetObject = getKey();
+                }
+            } else {
+                if (keyObject instanceof Portable) {
+                    targetObject = getKeyData();
+                } else {
+                    targetObject = getKey();
+                }
+            }
+        } else {
+            if (valueObject == null) {
+                if (valueData.isPortable()) {
+                    targetObject = valueData;
+                } else {
+                    targetObject = getValue();
+                }
+            } else {
+                if (valueObject instanceof Portable) {
+                    targetObject = getValueData();
+                } else {
+                    targetObject = getValue();
+                }
+            }
+        }
+        return targetObject;
     }
 
     @Override
@@ -112,7 +185,7 @@ public class QueryEntry implements QueryableEntry {
         boolean isKey = QueryEntryUtils.isKey(attributeName);
         attributeName = QueryEntryUtils.getAttributeName(isKey, attributeName);
 
-        Object target = isKey ? key : value;
+        Object target = getTargetObject(isKey);
 
         if (target instanceof Portable || target instanceof Data) {
             Data data = serializationService.toData(target);
@@ -124,7 +197,6 @@ public class QueryEntry implements QueryableEntry {
 
         return ReflectionHelper.getAttributeType(isKey ? getKey() : getValue(), attributeName);
     }
-
 
     @Override
     public Data getIndexKey() {
@@ -144,7 +216,7 @@ public class QueryEntry implements QueryableEntry {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        QueryEntry that = (QueryEntry) o;
+        CachedQueryEntry that = (CachedQueryEntry) o;
         if (!indexKey.equals(that.indexKey)) {
             return false;
         }

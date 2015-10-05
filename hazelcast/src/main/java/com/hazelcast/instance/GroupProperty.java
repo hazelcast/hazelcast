@@ -548,6 +548,18 @@ public enum GroupProperty implements HazelcastProperty {
      */
     QUERY_OPTIMIZER_TYPE("hazelcast.query.optimizer.type", QueryOptimizerFactory.Type.RULES.toString()),
 
+
+    /**
+     * Cache de-serialized entries. Decreases number of de-serializations needed to evaluate a query when true.
+     * It allows to trade some memory for CPU cycles.
+     *
+     * Default: true
+     *
+     * TODO: What should be default here?
+     *
+     */
+    QUERY_CACHE_ENTRIES("hazelcast.query.cache.entries", true),
+
     /**
      * Forces the JCache provider, which can have values client or server, to force the provider type.
      * If not provided, the provider will be client or server, whichever is found on the classpath first respectively.

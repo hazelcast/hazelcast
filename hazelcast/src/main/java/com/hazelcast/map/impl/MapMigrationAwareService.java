@@ -22,7 +22,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
@@ -99,8 +99,8 @@ class MapMigrationAwareService implements MigrationAwareService {
                     } else {
                         Object value = record.getValue();
                         if (value != null) {
-                            indexes.saveEntryIndex(new QueryEntry(serializationService, record.getKey(),
-                                    record.getKey(), value), null);
+                            QueryableEntry queryEntry = mapServiceContext.newQueryEntry(record.getKey(), record.getKey(), value);
+                            indexes.saveEntryIndex(queryEntry, null);
                         }
                     }
                 }
