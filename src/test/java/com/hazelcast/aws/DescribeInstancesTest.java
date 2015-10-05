@@ -16,6 +16,7 @@
 
 package com.hazelcast.aws;
 
+import com.hazelcast.aws.impl.DescribeInstances;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -24,36 +25,18 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class AwsClientTest {
+public class DescribeInstancesTest {
 
     @Test(expected = IllegalArgumentException.class)
-    public void testAwsClient_whenInvalidKey() {
-        AwsConfig awsConfig = new AwsConfig();
-        new AWSClient(awsConfig);
+    public void testDescribeInstances_whenAwsConfigIsNull() {
+        new DescribeInstances(null,"endpoint");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testAwsClient_whenInvalidSecretKey() {
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setAccessKey("AccessKey");
-        new AWSClient(awsConfig);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testAwsClient_whenNoAwsConfig() {
-        new AWSClient(null);
-    }
-
-    @Test
-    public void testAwsClient_getEndPoint() {
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setIamRole("test");
-        AWSClient awsClient = new AWSClient(awsConfig);
-        assertEquals("ec2.us-east-1.amazonaws.com", awsClient.getEndpoint());
+    public void testDescribeInstances_whenAccessKeyNull() {
+        new DescribeInstances(new AwsConfig(),"endpoint");
     }
 
 }
