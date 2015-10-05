@@ -72,6 +72,11 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
         return (ICache<K, V>) cache;
     }
 
+    protected <K, V> ICache<K, V> createCache(String cacheName, CacheConfig<K, V> config) {
+        Cache<K, V> cache = cacheManager.<K, V, Configuration>createCache(cacheName, config);
+        return (ICache<K, V>) cache;
+    }
+
     protected Config createConfig() {
         return new Config();
     }

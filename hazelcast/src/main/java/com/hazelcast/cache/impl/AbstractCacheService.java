@@ -84,7 +84,7 @@ public abstract class AbstractCacheService
                 public CacheStatisticsImpl createNew(String name) {
                     return new CacheStatisticsImpl(
                             Clock.currentTimeMillis(),
-                            AbstractCacheService.this.getOrCreateCacheContext(name));
+                            CacheEntryCountResolver.createEntryCountResolver(getOrCreateCacheContext(name)));
                 }
             };
 

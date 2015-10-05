@@ -57,6 +57,10 @@ public class CacheLoadAllRequest
         this.replaceExistingValues = replaceExistingValues;
     }
 
+    public Set<Data> getKeys() {
+        return keys;
+    }
+
     @Override
     public int getFactoryId() {
         return CachePortableHook.F_ID;

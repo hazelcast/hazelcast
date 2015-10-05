@@ -17,12 +17,8 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.util.Clock;
+import com.hazelcast.monitor.NearCacheStats;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 /**
@@ -33,64 +29,56 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
  * @see com.hazelcast.cache.impl.CacheMXBeanImpl
  */
 public class CacheStatisticsImpl
-        implements DataSerializable, CacheStatistics {
+        implements CacheStatistics {
 
-    private static final float FLOAT_HUNDRED = 100.0f;
-    private static final long NANOSECONDS_IN_A_MICROSECOND = 1000L;
+    protected static final float FLOAT_HUNDRED = 100.0f;
+    protected static final long NANOSECONDS_IN_A_MICROSECOND = 1000L;
 
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> LAST_ACCESS_TIME =
+    protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> LAST_ACCESS_TIME =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "lastAccessTime");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> LAST_UPDATE_TIME =
+    protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> LAST_UPDATE_TIME =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "lastUpdateTime");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> REMOVALS =
+    protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> REMOVALS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "removals");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> EXPIRIES =
+    protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> EXPIRIES =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "expiries");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> PUTS =
+    protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> PUTS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "puts");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> HITS =
+    protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> HITS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "hits");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> MISSES =
+    protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> MISSES =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "misses");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> EVICTIONS =
+    protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> EVICTIONS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "evictions");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> PUT_TIME_TAKEN_NANOS =
+    protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> PUT_TIME_TAKEN_NANOS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "putTimeTakenNanos");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> GET_CACHE_TIME_TAKEN_NANOS =
+    protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> GET_CACHE_TIME_TAKEN_NANOS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "getCacheTimeTakenNanos");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> REMOVE_TIME_TAKEN_NANOS =
+    protected static final AtomicLongFieldUpdater<CacheStatisticsImpl> REMOVE_TIME_TAKEN_NANOS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "removeTimeTakenNanos");
 
     /**
      * This field is not mutated (read only) so no need to define it as volatile.
      */
-    private long creationTime;
+    protected long creationTime;
 
-    private volatile long lastAccessTime;
-    private volatile long lastUpdateTime;
-    private volatile long removals;
-    private volatile long expiries;
-    private volatile long puts;
-    private volatile long hits;
-    private volatile long misses;
-    private volatile long evictions;
-    private volatile long putTimeTakenNanos;
-    private volatile long getCacheTimeTakenNanos;
-    private volatile long removeTimeTakenNanos;
+    protected volatile long lastAccessTime;
+    protected volatile long lastUpdateTime;
+    protected volatile long removals;
+    protected volatile long expiries;
+    protected volatile long puts;
+    protected volatile long hits;
+    protected volatile long misses;
+    protected volatile long evictions;
+    protected volatile long putTimeTakenNanos;
+    protected volatile long getCacheTimeTakenNanos;
+    protected volatile long removeTimeTakenNanos;
 
-    /**
-     * This field is used when this stats instance is deserialized.
-     * So it is not mutated (read only) and no need to define it as volatile.
-     */
-    private long ownedEntryCount;
-    private transient CacheContext cacheContext;
+    protected final CacheEntryCountResolver cacheEntryCountResolver;
 
-    public CacheStatisticsImpl() {
-    }
-
-    public CacheStatisticsImpl(long creationTime, CacheContext cacheContext) {
+    public CacheStatisticsImpl(long creationTime, CacheEntryCountResolver cacheEntryCountResolver) {
         this.creationTime = creationTime;
-        this.cacheContext = cacheContext;
+        this.cacheEntryCountResolver = cacheEntryCountResolver;
     }
 
     @Override
@@ -110,11 +98,7 @@ public class CacheStatisticsImpl
 
     @Override
     public long getOwnedEntryCount() {
-        if (cacheContext != null) {
-            return cacheContext.getEntryCount();
-        } else  {
-            return ownedEntryCount;
-        }
+        return cacheEntryCountResolver.getEntryCount();
     }
 
     @Override
@@ -275,13 +259,29 @@ public class CacheStatisticsImpl
     }
 
     /**
+     * Increases the counter by `1`.
+     */
+    public void increaseCacheRemovals() {
+        REMOVALS.incrementAndGet(this);
+        setLastUpdateTime(System.currentTimeMillis());
+    }
+
+    /**
      * Increases the counter by the number specified.
      *
      * @param number the number by which the counter is increased.
      */
     public void increaseCacheRemovals(long number) {
         REMOVALS.addAndGet(this, number);
-        setLastUpdateTime(Clock.currentTimeMillis());
+        setLastUpdateTime(System.currentTimeMillis());
+    }
+
+    /**
+     * Increases the counter by `1`.
+     */
+    public void increaseCacheExpiries() {
+        EXPIRIES.incrementAndGet(this);
+        setLastUpdateTime(System.currentTimeMillis());
     }
 
     /**
@@ -291,7 +291,15 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheExpiries(long number) {
         EXPIRIES.addAndGet(this, number);
-        setLastUpdateTime(Clock.currentTimeMillis());
+        setLastUpdateTime(System.currentTimeMillis());
+    }
+
+    /**
+     * Increases the counter by `1`.
+     */
+    public void increaseCachePuts() {
+        PUTS.incrementAndGet(this);
+        setLastUpdateTime(System.currentTimeMillis());
     }
 
     /**
@@ -301,7 +309,15 @@ public class CacheStatisticsImpl
      */
     public void increaseCachePuts(long number) {
         PUTS.addAndGet(this, number);
-        setLastUpdateTime(Clock.currentTimeMillis());
+        setLastUpdateTime(System.currentTimeMillis());
+    }
+
+    /**
+     * Increases the counter by `1`.
+     */
+    public void increaseCacheHits() {
+        HITS.incrementAndGet(this);
+        setLastAccessTime(System.currentTimeMillis());
     }
 
     /**
@@ -311,7 +327,15 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheHits(long number) {
         HITS.addAndGet(this, number);
-        setLastAccessTime(Clock.currentTimeMillis());
+        setLastAccessTime(System.currentTimeMillis());
+    }
+
+    /**
+     * Increases the counter by `1`.
+     */
+    public void increaseCacheMisses() {
+        MISSES.incrementAndGet(this);
+        setLastAccessTime(System.currentTimeMillis());
     }
 
     /**
@@ -321,7 +345,15 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheMisses(long number) {
         MISSES.addAndGet(this, number);
-        setLastAccessTime(Clock.currentTimeMillis());
+        setLastAccessTime(System.currentTimeMillis());
+    }
+
+    /**
+     * Increases the counter by `1`.
+     */
+    public void increaseCacheEvictions() {
+        EVICTIONS.incrementAndGet(this);
+        setLastUpdateTime(System.currentTimeMillis());
     }
 
     /**
@@ -331,7 +363,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheEvictions(long number) {
         EVICTIONS.addAndGet(this, number);
-        setLastUpdateTime(Clock.currentTimeMillis());
+        setLastUpdateTime(System.currentTimeMillis());
     }
 
     /**
@@ -401,47 +433,8 @@ public class CacheStatisticsImpl
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
-        out.writeLong(creationTime);
-
-        out.writeLong(lastAccessTime);
-        out.writeLong(lastUpdateTime);
-        out.writeLong(getOwnedEntryCount());
-
-        out.writeLong(puts);
-        out.writeLong(removals);
-        out.writeLong(expiries);
-        out.writeLong(evictions);
-
-        out.writeLong(hits);
-        out.writeLong(misses);
-
-        out.writeLong(putTimeTakenNanos);
-        out.writeLong(getCacheTimeTakenNanos);
-        out.writeLong(removeTimeTakenNanos);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
-        creationTime = in.readLong();
-
-        lastAccessTime = in.readLong();
-        lastUpdateTime = in.readLong();
-        ownedEntryCount = in.readLong();
-
-        puts = in.readLong();
-        removals = in.readLong();
-        expiries = in.readLong();
-        evictions = in.readLong();
-
-        hits = in.readLong();
-        misses = in.readLong();
-
-        putTimeTakenNanos = in.readLong();
-        getCacheTimeTakenNanos = in.readLong();
-        removeTimeTakenNanos = in.readLong();
+    public NearCacheStats getNearCacheStatistics() {
+        throw new UnsupportedOperationException("Near-Cache is not supported at server");
     }
 
     @Override

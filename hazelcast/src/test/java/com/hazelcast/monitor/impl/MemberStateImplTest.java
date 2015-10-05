@@ -1,5 +1,6 @@
 package com.hazelcast.monitor.impl;
 
+import com.hazelcast.cache.impl.CacheEntryCountResolver;
 import com.hazelcast.cache.impl.CacheStatisticsImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
@@ -9,6 +10,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,7 +41,9 @@ public class MemberStateImplTest extends HazelcastTestSupport {
 
         LocalReplicatedMapStatsImpl replicatedMapStats = new LocalReplicatedMapStatsImpl();
         replicatedMapStats.incrementPuts(30);
-        CacheStatisticsImpl cacheStatistics = new CacheStatisticsImpl();
+        CacheStatisticsImpl cacheStatistics =
+                new CacheStatisticsImpl(Clock.currentTimeMillis(),
+                                        CacheEntryCountResolver.createEntryCountResolver());
         cacheStatistics.increaseCacheHits(5);
         
 

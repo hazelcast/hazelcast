@@ -1,5 +1,7 @@
 package com.hazelcast.cache.eviction;
 
+import com.hazelcast.cache.impl.CacheContext;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.EvictionCandidate;
 import com.hazelcast.internal.eviction.EvictionChecker;
@@ -75,6 +77,8 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
         Node node = TestUtil.getNode(instance);
 
         SerializationService serializationService = node.getSerializationService();
+        ICacheService cacheService = node.getNodeEngine().getService(ICacheService.SERVICE_NAME);
+        CacheContext cacheContext = cacheService.getOrCreateCacheContext("MyCache");
 
         EvictionConfiguration evictionConfig = new EvictionConfiguration() {
             @Override
@@ -89,7 +93,7 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
         };
         EvictionStrategy evictionStrategy =
                 EvictionStrategyProvider.getEvictionStrategy(evictionConfig);
-        CacheRecordHashMap cacheRecordMap = new CacheRecordHashMap(1000);
+        CacheRecordHashMap cacheRecordMap = new CacheRecordHashMap(1000, cacheContext);
         CacheObjectRecord expectedEvictedRecord = null;
         Data expectedData = null;
 
