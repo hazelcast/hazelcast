@@ -173,7 +173,7 @@ public class InternalPartitionServiceLiteMemberTest
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
 
         final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(instance);
-        assertNull(partitionService.getPartitionOwnerOrWait(0));
+        partitionService.getPartitionOwnerOrWait(0);
     }
 
     @Test(expected = NoDataMemberInClusterException.class)
@@ -186,7 +186,7 @@ public class InternalPartitionServiceLiteMemberTest
         assertClusterSizeEventually(2, other);
 
         final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(other);
-        assertNull(partitionService.getPartitionOwnerOrWait(0));
+        partitionService.getPartitionOwnerOrWait(0);
     }
 
     @Test(expected = NoDataMemberInClusterException.class)
@@ -198,9 +198,10 @@ public class InternalPartitionServiceLiteMemberTest
         warmUpPartitions(master, lite);
 
         master.getLifecycleService().terminate();
+        assertClusterSizeEventually(1, lite);
 
         final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(lite);
-        assertNull(partitionService.getPartitionOwnerOrWait(0));
+        partitionService.getPartitionOwnerOrWait(0);
     }
 
     @Test(expected = NoDataMemberInClusterException.class)
@@ -214,9 +215,10 @@ public class InternalPartitionServiceLiteMemberTest
         warmUpPartitions(master, lite);
 
         master.getLifecycleService().shutdown();
+        assertClusterSizeEventually(1, lite);
 
         final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(lite);
-        assertNull(partitionService.getPartitionOwnerOrWait(0));
+        partitionService.getPartitionOwnerOrWait(0);
     }
 
     /**
