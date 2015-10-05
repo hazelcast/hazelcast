@@ -22,7 +22,7 @@ import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.impl.eventservice.impl.EmptyFilter;
+import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
@@ -227,7 +227,7 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
 
 
         private boolean canPassFilter(LocalEntryEventData eventData, EventFilter filter) {
-            if (filter == null || filter instanceof EmptyFilter) {
+            if (filter == null || filter instanceof TrueEventFilter) {
                 return true;
             }
             Object value = getValueOrOldValue(eventData);
