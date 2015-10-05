@@ -57,6 +57,7 @@ class Parser {
         PRECEDENCE.put("<=", LESS_EQUAL_PRECEDENCE);
         PRECEDENCE.put("==", ASSIGN_PRECEDENCE);
         PRECEDENCE.put("!=", NOT_EQUAL_PRECEDENCE);
+        PRECEDENCE.put("<>", NOT_EQUAL_PRECEDENCE);
         PRECEDENCE.put("between", BETWEEN_PRECEDENCE);
         PRECEDENCE.put("in", IN_PRECEDENCE);
         PRECEDENCE.put("like", LIKE_PRECEDENCE);
