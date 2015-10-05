@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
@@ -24,10 +26,13 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.impl.client.MapGetRequest;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,6 +40,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertTrue;
@@ -50,6 +56,33 @@ public class ClientInvocationTest extends HazelcastTestSupport {
         hazelcastFactory.terminateAll();
     }
 
+    @Test
+    public void clientInvocationFutureShouldNotHangWithCallbackWhenResponseDeserializedIsSetAndResponseIsNull()
+            throws ExecutionException, InterruptedException {
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastClientProxy clientProxy = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient();
+        HazelcastClientInstanceImpl client = clientProxy.client;
+
+        Data key = client.getSerializationService().toData("key");
+        int partitionId = client.getPartitionService().getPartition(key).getPartitionId();
+
+        for (int i = 0; i < 100; i++)  {
+            ClientInvocation invocation =
+                    new ClientInvocation(client, new MapGetRequest("MyMap", key), partitionId);
+            ClientInvocationFuture future = invocation.invoke();
+            future.setResponseDeserialized(true);
+            future.andThen(new ExecutionCallback() {
+                @Override
+                public void onResponse(Object response) {
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                }
+            });
+            future.get();
+        }
+    }
 
     /**
      * When a async operation fails because of a node termination,
