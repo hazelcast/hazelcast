@@ -26,9 +26,9 @@ import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -277,11 +277,6 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
 
     protected void processBackup(Map.Entry entry) {
         backupProcessor.processBackup(entry);
-    }
-
-    protected Object getValueFor(Data dataKey, long now) {
-        final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(dataKey, now);
-        return mapEntry.getValue();
     }
 
     protected boolean keyNotOwnedByThisPartition(Data key) {

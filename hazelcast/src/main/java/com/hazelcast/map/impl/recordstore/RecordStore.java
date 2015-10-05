@@ -44,16 +44,15 @@ public interface RecordStore {
 
     Object putIfAbsent(Data dataKey, Object value, long ttl);
 
-    Record putBackup(Data key, Object value);
+    void putBackup(Data key, Object value);
 
     /**
      * @param key          the key to be processed.
      * @param value        the value to be processed.
      * @param ttl          milliseconds. Check out {@link com.hazelcast.map.impl.proxy.MapProxySupport#putInternal}
      * @param putTransient {@code true} if putting transient entry, otherwise {@code false}
-     * @return previous record if exists otherwise null.
      */
-    Record putBackup(Data key, Object value, long ttl, boolean putTransient);
+    void putBackup(Data key, Object value, long ttl, boolean putTransient);
 
     boolean tryPut(Data dataKey, Object value, long ttl);
 
@@ -104,7 +103,6 @@ public interface RecordStore {
     boolean containsKey(Data dataKey);
 
     Object replace(Data dataKey, Object update);
-
 
     /**
      * Sets the value to the given updated value
@@ -227,8 +225,6 @@ public interface RecordStore {
     MapContainer getMapContainer();
 
     Set<Map.Entry<Data, Data>> entrySetData();
-
-    Map.Entry<Data, Object> getMapEntry(Data dataKey, long now);
 
     void flush();
 

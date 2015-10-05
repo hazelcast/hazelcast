@@ -76,7 +76,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     @Override
     public void run() {
         final long now = getNow();
-        oldValue = getValueFor(dataKey, now);
+        oldValue = recordStore.get(dataKey, false);
 
         Map.Entry entry = createMapEntry(dataKey, oldValue);
 
@@ -215,11 +215,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         recordStore.put(key, value, DEFAULT_TTL);
     }
 
-
-    private Object getValueFor(Data dataKey, long now) {
-        final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(dataKey, now);
-        return mapEntry.getValue();
-    }
 
     private Data process(Map.Entry entry) {
         final Object result = entryProcessor.process(entry);

@@ -40,7 +40,6 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -180,32 +179,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public Record putBackup(Data key, Object value) {
-        return putBackup(key, value, DEFAULT_TTL, false);
+    public void putBackup(Data key, Object value) {
+        putBackup(key, value, DEFAULT_TTL, false);
     }
 
-
     @Override
-    public Record putBackup(Data key, Object value, long ttl, boolean putTransient) {
-        final long now = getNow();
-        markRecordStoreExpirable(ttl);
-
-        Record record = getRecordOrNull(key, now, true);
-        if (record == null) {
-            record = createRecord(key, value, ttl, now);
-            records.put(key, record);
-            updateSizeEstimator(calculateRecordHeapCost(record));
-        } else {
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            updateRecord(record, value, now);
-            updateSizeEstimator(calculateRecordHeapCost(record));
-        }
-        if (putTransient) {
-            mapDataStore.addTransient(key, now);
-        } else {
-            mapDataStore.addBackup(key, value, now);
-        }
-        return record;
+    public void putBackup(Data key, Object value, long ttl, boolean putTransient) {
+        putInternal(key, value, ttl, false, false, putTransient, true);
     }
 
     @Override
@@ -350,20 +330,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             return Collections.emptySet();
         }
         return tempMap.entrySet();
-    }
-
-    @Override
-    public Map.Entry<Data, Object> getMapEntry(Data key, long now) {
-        checkIfLoaded();
-
-        Record record = getRecordOrNull(key, now, false);
-        if (record == null) {
-            record = loadRecordOrNull(key, false);
-        } else {
-            accessRecord(record);
-        }
-        final Object value = record != null ? record.getValue() : null;
-        return new AbstractMap.SimpleImmutableEntry<Data, Object>(key, value);
     }
 
     private Record loadRecordOrNull(Data key, boolean backup) {
@@ -751,26 +717,34 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public Object put(Data key, Object value, long ttl) {
-        return putInternal(key, value, ttl, true);
-    }
-
-    private Object putInternal(Data key, Object value, long ttl, boolean loadFromStore) {
         checkIfLoaded();
 
+        return putInternal(key, value, ttl, true, false, false, false);
+    }
+
+    //CHECKSTYLE:OFF
+    private Object putInternal(Data key, Object value, long ttl,
+                               boolean loadFromStore, boolean putIfAbsent,
+                               boolean isTransient, boolean backup) {
         long now = getNow();
         markRecordStoreExpirable(ttl);
 
-        Record record = getRecordOrNull(key, now, false);
+        Record record = getRecordOrNull(key, now, backup);
         Object oldValue = record == null ? (loadFromStore ? mapDataStore.load(key) : null) : record.getValue();
-        value = mapServiceContext.interceptPut(name, oldValue, value);
-        value = mapDataStore.add(key, value, now);
+        value = backup ? value : mapServiceContext.interceptPut(name, oldValue, value);
+        value = isTransient ? mapDataStore.addTransient(key, value, now)
+                : (backup ? mapDataStore.addBackup(key, value, now) : mapDataStore.add(key, value, now));
         onStore(record);
 
         if (record == null) {
             record = createRecord(key, value, ttl, now);
             records.put(key, record);
         } else {
-            updateRecord(record, value, now);
+            if (putIfAbsent) {
+                accessRecord(record, now);
+            } else {
+                updateRecord(record, value, now);
+            }
             updateSizeEstimator(-calculateRecordHeapCost(record));
             updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
@@ -780,6 +754,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
         return oldValue;
     }
+    //CHECKSTYLE:ON
 
     @Override
     public boolean merge(Data key, EntryView mergingEntry, MapMergePolicy mergePolicy) {
@@ -883,24 +858,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     @Override
     public void putTransient(Data key, Object value, long ttl) {
         checkIfLoaded();
-        final long now = getNow();
-        markRecordStoreExpirable(ttl);
 
-        Record record = getRecordOrNull(key, now, false);
-        if (record == null) {
-            value = mapServiceContext.interceptPut(name, null, value);
-            record = createRecord(key, value, ttl, now);
-            records.put(key, record);
-            updateSizeEstimator(calculateRecordHeapCost(record));
-        } else {
-            value = mapServiceContext.interceptPut(name, record.getValue(), value);
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            updateRecord(record, value, now);
-            updateSizeEstimator(calculateRecordHeapCost(record));
-            updateExpiryTime(record, ttl, mapContainer.getMapConfig());
-        }
-        saveIndex(record);
-        mapDataStore.addTransient(key, now);
+        putInternal(key, value, ttl, false, false, true, false);
     }
 
     @Override
@@ -910,75 +869,34 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public Object putFromLoad(Data key, Object value, long ttl) {
-        final long now = getNow();
-
+        long now = getNow();
         if (shouldEvict(now)) {
             return null;
         }
-        markRecordStoreExpirable(ttl);
-
-        Record record = getRecordOrNull(key, now, false);
-        Object oldValue = null;
-        if (record == null) {
-            value = mapServiceContext.interceptPut(name, null, value);
-            record = createRecord(key, value, ttl, now);
-            records.put(key, record);
-            updateSizeEstimator(calculateRecordHeapCost(record));
-        } else {
-            oldValue = record.getValue();
-            value = mapServiceContext.interceptPut(name, record.getValue(), value);
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            updateRecord(record, value, now);
-            updateSizeEstimator(calculateRecordHeapCost(record));
-            updateExpiryTime(record, ttl, mapContainer.getMapConfig());
-        }
-        saveIndex(record);
-
-        return oldValue;
+        return putInternal(key, value, ttl, false, false, false, false);
     }
 
     @Override
     public boolean tryPut(Data key, Object value, long ttl) {
-        putInternal(key, value, ttl, false);
+        checkIfLoaded();
+
+        putInternal(key, value, ttl, false, false, false, false);
         return true;
     }
 
     @Override
     public boolean set(Data dataKey, Object value, long ttl) {
-        Object oldValue = putInternal(dataKey, value, ttl, false);
-        return oldValue == null;
+        checkIfLoaded();
+
+        return putInternal(dataKey, value, ttl, false, false, false, false) == null;
+
     }
 
     @Override
     public Object putIfAbsent(Data key, Object value, long ttl) {
         checkIfLoaded();
-        final long now = getNow();
-        markRecordStoreExpirable(ttl);
 
-        Record record = getRecordOrNull(key, now, false);
-        Object oldValue;
-        if (record == null) {
-            oldValue = mapDataStore.load(key);
-            if (oldValue != null) {
-                record = createRecord(key, oldValue, now);
-                records.put(key, record);
-                updateSizeEstimator(calculateRecordHeapCost(record));
-            }
-        } else {
-            accessRecord(record, now);
-            oldValue = record.getValue();
-        }
-        if (oldValue == null) {
-            value = mapServiceContext.interceptPut(name, null, value);
-            value = mapDataStore.add(key, value, now);
-            onStore(record);
-            record = createRecord(key, value, ttl, now);
-            records.put(key, record);
-            updateSizeEstimator(calculateRecordHeapCost(record));
-            updateExpiryTime(record, ttl, mapContainer.getMapConfig());
-        }
-        saveIndex(record);
-        return oldValue;
+        return putInternal(key, value, ttl, true, true, false, false);
     }
 
 

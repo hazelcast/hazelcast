@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl.mapstore.writethrough;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -43,8 +43,8 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public void addTransient(Data key, long now) {
-
+    public Object addTransient(Data key, Object value, long now) {
+        return value;
     }
 
     @Override
