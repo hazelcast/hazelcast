@@ -45,20 +45,30 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
         onTearDown();
     }
 
-
     protected abstract void onSetup();
 
     protected abstract void onTearDown();
 
-    protected ICache createCache() {
+    protected <K, V> ICache<K, V> createCache() {
         String cacheName = randomString();
-        Cache<Object, Object> cache = cacheManager.createCache(cacheName, createCacheConfig());
+        Cache<K, V> cache = cacheManager.createCache(cacheName, createCacheConfig());
         return cache.unwrap(ICache.class);
     }
 
-    protected ICache createCache(String cacheName) {
-        Cache<Object, Object> cache = cacheManager.createCache(cacheName, createCacheConfig());
+    protected <K, V> ICache<K, V> createCache(String cacheName) {
+        Cache<K, V> cache = cacheManager.createCache(cacheName, createCacheConfig());
         return cache.unwrap(ICache.class);
+    }
+
+    protected <K, V> ICache<K, V> createCache(CacheConfig<K, V> config) {
+        String cacheName = randomString();
+        Cache<K, V> cache = cacheManager.createCache(cacheName, config);
+        return (ICache<K, V>) cache;
+    }
+
+    protected <K, V> ICache<K, V> createCache(String cacheName, CacheConfig<K, V> config) {
+        Cache<K, V> cache = cacheManager.createCache(cacheName, config);
+        return (ICache<K, V>) cache;
     }
 
     public Config createConfig() {
@@ -71,7 +81,6 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
         cacheConfig.setStatisticsEnabled(true);
         return cacheConfig;
     }
-
 
     protected CachingProvider getCachingProvider() {
         return HazelcastServerCachingProvider

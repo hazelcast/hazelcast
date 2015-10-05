@@ -64,8 +64,8 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 abstract class AbstractCacheProxyBase<K, V> {
 
     static final int TIMEOUT = 10;
+
     protected final CacheConfig<K, V> cacheConfig;
-    //this will represent the name from the user perspective
     protected final String name;
     protected final String nameWithPrefix;
     protected final ICacheService cacheService;
@@ -100,7 +100,6 @@ abstract class AbstractCacheProxyBase<K, V> {
         }
     }
 
-    //region close&destroy
     protected void ensureOpen() {
         if (isClosed()) {
             throw new IllegalStateException("Cache operations can not be performed. The cache closed");
@@ -123,7 +122,7 @@ abstract class AbstractCacheProxyBase<K, V> {
             }
         }
         loadAllTasks.clear();
-        //close the configured CacheLoader
+
         closeCacheLoader();
         closeListeners();
         if (caughtException != null) {
@@ -142,7 +141,7 @@ abstract class AbstractCacheProxyBase<K, V> {
         int partitionId = getNodeEngine().getPartitionService().getPartitionId(getDistributedObjectName());
         OperationService operationService = getNodeEngine().getOperationService();
         InternalCompletableFuture f = operationService.invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionId);
-        //todo What happens in exception case? Cache doesn't get destroyed
+        // TODO What happens in exception case? Cache doesn't get destroyed
         f.getSafely();
 
         cacheService.destroyCache(getDistributedObjectName(), true, null);
@@ -168,9 +167,7 @@ abstract class AbstractCacheProxyBase<K, V> {
     }
 
     protected abstract void closeListeners();
-    //endregion close&destroy
 
-    //region DISTRIBUTED OBJECT
     protected String getDistributedObjectName() {
         return nameWithPrefix;
     }
@@ -189,9 +186,7 @@ abstract class AbstractCacheProxyBase<K, V> {
         }
         return nodeEngine;
     }
-    //endregion DISTRIBUTED OBJECT
 
-    //region CacheLoader
     protected void validateCacheLoader(CompletionListener completionListener) {
         if (cacheLoader == null && completionListener != null) {
             completionListener.onCompletion();
@@ -199,7 +194,6 @@ abstract class AbstractCacheProxyBase<K, V> {
     }
 
     protected void closeCacheLoader() {
-        //close the configured CacheLoader
         if (cacheLoader instanceof Closeable) {
             IOUtil.closeResource((Closeable) cacheLoader);
         }
@@ -208,8 +202,8 @@ abstract class AbstractCacheProxyBase<K, V> {
     protected void submitLoadAllTask(LoadAllTask loadAllTask) {
 
         final ExecutionService executionService = nodeEngine.getExecutionService();
-        final CompletableFutureTask<?> future = (CompletableFutureTask<?>) executionService
-                .submit("loadAll-" + nameWithPrefix, loadAllTask);
+        final CompletableFutureTask<?> future =
+                (CompletableFutureTask<?>) executionService.submit("loadAll-" + nameWithPrefix, loadAllTask);
         loadAllTasks.add(future);
         future.andThen(new ExecutionCallback() {
             @Override
@@ -233,8 +227,8 @@ abstract class AbstractCacheProxyBase<K, V> {
         private final Set<Data> keysData;
         private final boolean replaceExistingValues;
 
-        public LoadAllTask(CacheOperationProvider operationProvider,
-                Set<Data> keysData, boolean replaceExistingValues, CompletionListener completionListener) {
+        public LoadAllTask(CacheOperationProvider operationProvider, Set<Data> keysData,
+                           boolean replaceExistingValues, CompletionListener completionListener) {
             this.operationProvider = operationProvider;
             this.keysData = keysData;
             this.replaceExistingValues = replaceExistingValues;
@@ -284,6 +278,5 @@ abstract class AbstractCacheProxyBase<K, V> {
 
 
     }
-    //endregion CacheLoader
 
 }
