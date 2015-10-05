@@ -21,6 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -48,9 +49,21 @@ public class MergeClustersOperation extends AbstractClusterOperation {
             logger.warning("Ignoring merge instruction sent from non-master endpoint: " + caller);
             return;
         }
+
         logger.warning(node.getThisAddress() + " is merging to " + newTargetAddress
                 + ", because: instructed by master " + masterAddress);
-        node.getClusterService().merge(newTargetAddress);
+
+        nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+            @Override
+            public void run() {
+                node.getClusterService().merge(newTargetAddress);
+            }
+        });
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
     }
 
     @Override

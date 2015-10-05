@@ -16,62 +16,60 @@
 
 package com.hazelcast.cluster.impl.operations;
 
-import com.hazelcast.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.cluster.impl.ClusterStateManager;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.AllowedDuringShutdown;
+import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
 
-public final class HeartbeatOperation extends AbstractClusterOperation
-        implements JoinOperation, IdentifiedDataSerializable, AllowedDuringShutdown {
+public class RollbackClusterStateOperation extends AbstractOperation {
 
-    private long timestamp;
+    private Address initiator;
+    private String txnId;
 
-    public HeartbeatOperation() {
+    private boolean response;
+
+    public RollbackClusterStateOperation() {
     }
 
-    public HeartbeatOperation(long timestamp) {
-        this.timestamp = timestamp;
+    public RollbackClusterStateOperation(Address initiator, String txnId) {
+        this.initiator = initiator;
+        this.txnId = txnId;
     }
 
     @Override
-    public void run() {
+    public void run() throws Exception {
         ClusterServiceImpl service = getService();
-        MemberImpl member = service.getMember(getCallerAddress());
-        if (member == null) {
-            ILogger logger = getLogger();
-            if (logger.isFinestEnabled()) {
-                logger.finest("Heartbeat received from an unknown endpoint: " + getCallerAddress());
-            }
-            return;
-        }
-        service.getClusterHeartbeatManager().onHeartbeat(member, timestamp);
+        ClusterStateManager clusterStateManager = service.getClusterStateManager();
+        getLogger().info("Rolling back cluster state! Initiator: " + initiator);
+        response = clusterStateManager.rollbackClusterState(txnId);
     }
 
     @Override
-    public int getFactoryId() {
-        return ClusterDataSerializerHook.F_ID;
+    public Object getResponse() {
+        return response;
     }
 
     @Override
-    public int getId() {
-        return ClusterDataSerializerHook.HEARTBEAT;
+    public String getServiceName() {
+        return ClusterServiceImpl.SERVICE_NAME;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(timestamp);
+        initiator.writeData(out);
+        out.writeUTF(txnId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        timestamp = in.readLong();
+        initiator = new Address();
+        initiator.readData(in);
+        txnId = in.readUTF();
     }
 }

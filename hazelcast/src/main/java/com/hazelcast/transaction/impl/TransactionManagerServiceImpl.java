@@ -120,6 +120,26 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         return new TransactionContextImpl(this, nodeEngine, options, clientUuid);
     }
 
+    /**
+     * Creates a plain transaction object, without wrapping it
+     * inside a TransactionContext.
+     * <p/>
+     * A Transaction is a lower level API than TransactionContext.
+     * It's not possible to create/access transactional
+     * data structures without TransactionContext.
+     * <p/>
+     * A Transaction object
+     * only allows starting/committing/rolling back transaction,
+     * accessing state of the transaction
+     * and adding TransactionLogRecord to the transaction.
+     *
+     * @param options transaction options
+     * @return a new transaction
+     */
+    public Transaction newTransaction(TransactionOptions options) {
+        return new TransactionImpl(this, nodeEngine, options, null);
+    }
+
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
     }

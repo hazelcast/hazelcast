@@ -60,7 +60,7 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
         if (request != null) {
             ILogger logger = getLogger();
             try {
-                if (service.validateJoinMessage(request)) {
+                if (service.getClusterJoinManager().validateJoinMessage(request)) {
                     response = node.createSplitBrainJoinMessage();
                 }
                 if (logger.isFinestEnabled()) {
@@ -88,7 +88,7 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
             return true;
         } else {
             // ping master to check if it's still valid
-            service.sendMasterConfirmation();
+            service.getClusterHeartbeatManager().sendMasterConfirmation();
             logger.info("Ignoring join check from " + caller
                     + ", because this node is not master...");
             return false;

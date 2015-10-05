@@ -17,9 +17,11 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.transaction.TransactionOptions;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -61,5 +63,20 @@ public class ClientClusterProxy implements Cluster {
     @Override
     public long getClusterTime() {
         return clusterService.getClusterTime();
+    }
+
+    @Override
+    public ClusterState getClusterState() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void changeClusterState(ClusterState newState) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void changeClusterState(ClusterState newState, TransactionOptions transactionOptions) {
+        throw new UnsupportedOperationException();
     }
 }

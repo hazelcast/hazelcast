@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster.impl.operations;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.Member;
@@ -39,27 +40,25 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     private PostJoinOperation postJoinOp;
     private String clusterId;
     private long clusterStartTime;
+    private ClusterState clusterState;
 
     public FinalizeJoinOperation() {
     }
 
-    public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime) {
-        super(members, masterTime, true);
-        this.postJoinOp = postJoinOp;
-    }
-
     public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp,
-                                 long masterTime, String clusterId, long clusterStartTime) {
+                                 long masterTime, String clusterId, long clusterStartTime, ClusterState clusterState) {
         super(members, masterTime, true);
         this.postJoinOp = postJoinOp;
         this.clusterId = clusterId;
         this.clusterStartTime  = clusterStartTime;
+        this.clusterState = clusterState;
     }
 
     public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp,
-                                 long masterTime, boolean sendResponse) {
+                                 long masterTime, ClusterState clusterState, boolean sendResponse) {
         super(members, masterTime, sendResponse);
         this.postJoinOp = postJoinOp;
+        this.clusterState = clusterState;
     }
 
     @Override
@@ -68,18 +67,18 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
             return;
         }
 
+        final ClusterServiceImpl clusterService = getService();
+        clusterService.initialClusterState(clusterState);
+        clusterService.setClusterId(clusterId);
+        clusterService.getClusterClock().setClusterStartTime(clusterStartTime);
+
         processMemberUpdate();
 
         // Post join operations must be lock free; means no locks at all;
         // no partition locks, no key-based locks, no service level locks!
-
-        final ClusterServiceImpl clusterService = getService();
         final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
         final Operation[] postJoinOperations = nodeEngine.getPostJoinOperations();
         final OperationService operationService = nodeEngine.getOperationService();
-
-        clusterService.setClusterId(clusterId);
-        clusterService.getClusterClock().setClusterStartTime(clusterStartTime);
 
         if (postJoinOperations != null && postJoinOperations.length > 0) {
             final Collection<Member> members = clusterService.getMembers();
@@ -111,6 +110,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         }
         out.writeUTF(clusterId);
         out.writeLong(clusterStartTime);
+        out.writeUTF(clusterState.toString());
     }
 
     @Override
@@ -123,6 +123,8 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         }
         clusterId = in.readUTF();
         clusterStartTime = in.readLong();
+        String stateName = in.readUTF();
+        clusterState = ClusterState.valueOf(stateName);
     }
 
     @Override

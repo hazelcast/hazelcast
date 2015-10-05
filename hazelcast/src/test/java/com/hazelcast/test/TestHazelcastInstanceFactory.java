@@ -82,7 +82,7 @@ public class TestHazelcastInstanceFactory {
      * Delegates to {@link #newHazelcastInstance(Config) <code>newHazelcastInstance(null)</code>}.
      */
     public HazelcastInstance newHazelcastInstance() {
-        return newHazelcastInstance(null);
+        return newHazelcastInstance((Config) null);
     }
 
     /**
@@ -98,6 +98,29 @@ public class TestHazelcastInstanceFactory {
             return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
         }
         return HazelcastInstanceFactory.newHazelcastInstance(config);
+    }
+
+    /**
+     * Creates a new test Hazelcast instance.
+     * @param address the address to use as Member's address instead of picking the next address
+     */
+    public HazelcastInstance newHazelcastInstance(Address address) {
+        return newHazelcastInstance(address, null);
+    }
+
+    /**
+     * Creates a new test Hazelcast instance.
+     * @param address the address to use as Member's address instead of picking the next address
+     * @param config the config to use; use <code>null</code> to get the default config.
+     */
+    public HazelcastInstance newHazelcastInstance(Address address, Config config) {
+        final String instanceName = config != null? config.getInstanceName() : null;
+        if (mockNetwork) {
+            init(config);
+            NodeContext nodeContext = registry.createNodeContext(address);
+            return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+        }
+        throw new UnsupportedOperationException("Explicit address is only available for mock network setup!");
     }
 
     private Address pickAddress() {

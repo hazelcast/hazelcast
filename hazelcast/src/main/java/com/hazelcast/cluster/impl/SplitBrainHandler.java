@@ -59,7 +59,8 @@ final class SplitBrainHandler implements Runnable {
             return false;
         }
 
-        if (node.clusterService.isJoinInProgress()) {
+        final ClusterJoinManager clusterJoinManager = node.clusterService.getClusterJoinManager();
+        if (clusterJoinManager.isJoinInProgress()) {
             return false;
         }
 

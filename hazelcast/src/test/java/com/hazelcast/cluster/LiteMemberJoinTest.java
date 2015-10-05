@@ -159,7 +159,6 @@ public class LiteMemberJoinTest {
         final Node node2 = getNode(instance2);
 
         final ClusterServiceImpl clusterService = node1.getClusterService();
-        clusterService.prepareToMerge(node2.address);
         clusterService.merge(node2.address);
     }
 

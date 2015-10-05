@@ -16,11 +16,11 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.operations.JoinCheckOperation;
 import com.hazelcast.cluster.impl.operations.MemberRemoveOperation;
 import com.hazelcast.cluster.impl.operations.MergeClustersOperation;
-import com.hazelcast.cluster.impl.operations.PrepareMergeOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperty;
@@ -35,7 +35,6 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -44,35 +43,34 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
-import static com.hazelcast.util.FutureUtil.ExceptionHandler;
-import static com.hazelcast.util.FutureUtil.logAllExceptions;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 public abstract class AbstractJoiner implements Joiner {
 
-    private static final int SPLIT_BRAIN_CONN_TIMEOUT = 5000;
-    private static final int SPLIT_BRAIN_SLEEP_TIME = 10;
+    private static final long SPLIT_BRAIN_CONN_TIMEOUT = 5000;
+    private static final long SPLIT_BRAIN_SLEEP_TIME = 10;
 
-    private final ExceptionHandler whileWaitMergeExceptionHandler;
     private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
     private final AtomicInteger tryCount = new AtomicInteger(0);
     // map blacklisted endpoints. Boolean value represents if blacklist is temporary or permanent
     protected final ConcurrentMap<Address, Boolean> blacklistedAddresses = new ConcurrentHashMap<Address, Boolean>();
     protected final Config config;
     protected final Node node;
+    protected final ClusterServiceImpl clusterService;
+    protected final ClusterJoinManager clusterJoinManager;
     protected final ILogger logger;
 
+    private final long mergeNextRunDelayMs;
     private volatile Address targetAddress;
 
     public AbstractJoiner(Node node) {
         this.node = node;
         this.logger = node.loggingService.getLogger(getClass());
         this.config = node.config;
-        whileWaitMergeExceptionHandler =
-                logAllExceptions(logger, "While waiting merge response...", Level.FINEST);
+        this.clusterService = node.getClusterService();
+        this.clusterJoinManager = clusterService.getClusterJoinManager();
+        mergeNextRunDelayMs = node.groupProperties.getMillis(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS);
     }
 
     @Override
@@ -123,7 +121,7 @@ public abstract class AbstractJoiner implements Joiner {
                 ensureConnectionToAllMembers();
             }
 
-            if (node.getClusterService().getSize() == 1) {
+            if (clusterService.getSize() == 1) {
                 final StringBuilder sb = new StringBuilder("\n");
                 sb.append(node.clusterService.membersString());
                 logger.info(sb.toString());
@@ -145,7 +143,7 @@ public abstract class AbstractJoiner implements Joiner {
                 }
 
                 allConnected = true;
-                Collection<Member> members = node.getClusterService().getMembers();
+                Collection<Member> members = clusterService.getMembers();
                 for (Member member : members) {
                     if (!member.localMember() && node.connectionManager.getOrConnect(member.getAddress()) == null) {
                         allConnected = false;
@@ -174,9 +172,8 @@ public abstract class AbstractJoiner implements Joiner {
             return false;
         }
 
-        ClusterServiceImpl clusterService = node.getClusterService();
         try {
-            boolean validJoinRequest = clusterService.validateJoinMessage(joinMessage);
+            boolean validJoinRequest = clusterJoinManager.validateJoinMessage(joinMessage);
             if (!validJoinRequest) {
                 logger.finest("Cannot process split brain merge message from " + joinMessage.getAddress()
                         + ", since join-message could not be validated.");
@@ -257,7 +254,7 @@ public abstract class AbstractJoiner implements Joiner {
         }
 
         Connection conn = node.connectionManager.getOrConnect(target, true);
-        int timeout = SPLIT_BRAIN_CONN_TIMEOUT;
+        long timeout = SPLIT_BRAIN_CONN_TIMEOUT;
         while (conn == null) {
             if ((timeout -= SPLIT_BRAIN_SLEEP_TIME) < 0) {
                 return null;
@@ -293,38 +290,54 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     protected void startClusterMerge(final Address targetAddress) {
-        final OperationService operationService = node.nodeEngine.getOperationService();
-        final Collection<Member> memberList = node.getClusterService().getMembers();
-        final Collection<Future> calls = new ArrayList<Future>();
+        ClusterServiceImpl clusterService = node.clusterService;
+
+        if (!prepareClusterState(clusterService)) {
+            return;
+        }
+
+        OperationService operationService = node.nodeEngine.getOperationService();
+        Collection<Member> memberList = clusterService.getMembers();
         for (Member member : memberList) {
             if (!member.localMember()) {
-                Operation operation = new PrepareMergeOperation(targetAddress);
-                Future f = operationService.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
-                        operation, member.getAddress()).setTryCount(3).invoke();
-                calls.add(f);
+                Operation op = new MergeClustersOperation(targetAddress);
+                operationService.invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, member.getAddress());
             }
         }
 
-        waitWithDeadline(calls, 3, TimeUnit.SECONDS, whileWaitMergeExceptionHandler);
-
-        final PrepareMergeOperation prepareMergeOperation = new PrepareMergeOperation(targetAddress);
-        prepareMergeOperation.setNodeEngine(node.nodeEngine).setService(node.getClusterService())
-                .setOperationResponseHandler(createEmptyResponseHandler());
-        operationService.runOperationOnCallingThread(prepareMergeOperation);
-
-
-        for (Member member : memberList) {
-            if (!member.localMember()) {
-                operationService.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
-                        new MergeClustersOperation(targetAddress), member.getAddress())
-                        .setTryCount(1).invoke();
-            }
-        }
-
-        final MergeClustersOperation mergeClustersOperation = new MergeClustersOperation(targetAddress);
-        mergeClustersOperation.setNodeEngine(node.nodeEngine).setService(node.getClusterService())
+        Operation mergeClustersOperation = new MergeClustersOperation(targetAddress);
+        mergeClustersOperation.setNodeEngine(node.nodeEngine).setService(clusterService)
                 .setOperationResponseHandler(createEmptyResponseHandler());
         operationService.runOperationOnCallingThread(mergeClustersOperation);
+    }
+
+    private boolean prepareClusterState(ClusterServiceImpl clusterService) {
+        long until = Clock.currentTimeMillis() + mergeNextRunDelayMs;
+        while (clusterService.getClusterState() == ClusterState.ACTIVE) {
+            try {
+                clusterService.changeClusterState(ClusterState.FROZEN);
+                return true;
+            } catch (Exception e) {
+                String error = e.getClass().getName() + ": " + e.getMessage();
+                logger.warning("While freezing cluster state! " + error);
+            }
+
+            if (Clock.currentTimeMillis() >= until) {
+                logger.warning("Could not change cluster state to FROZEN in time. "
+                        + "Postponing merge process until next attempt.");
+                return false;
+            }
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                logger.warning("Interrupted while preparing cluster for merge!");
+                // restore interrupt flag
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+        return false;
     }
 
     @Override
