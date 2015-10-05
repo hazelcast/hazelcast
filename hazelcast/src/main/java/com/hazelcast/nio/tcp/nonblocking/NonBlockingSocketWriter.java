@@ -155,8 +155,13 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         ioThread.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
-                createWriterHandler(protocol);
-                latch.countDown();
+                try {
+                    createWriterHandler(protocol);
+                } catch (Throwable t) {
+                    onFailure(t);
+                } finally {
+                    latch.countDown();
+                }
             }
         });
         try {
@@ -166,7 +171,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         }
     }
 
-    private void createWriterHandler(String protocol) {
+    private void createWriterHandler(String protocol) throws IOException {
         if (writeHandler == null) {
             if (CLUSTER.equals(protocol)) {
                 configureBuffers(ioService.getSocketSendBufferSize() * KILO_BYTE);
@@ -275,7 +280,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
      * <p/>
      * This call is only made by the IO thread.
      */
-    private void unschedule() {
+    private void unschedule() throws IOException {
         if (dirtyOutputBuffer() || currentFrame != null) {
             // Because not all data was written to the socket, we need to register for OP_WRITE so we get
             // notified when the socketChannel is ready for more data.
@@ -342,7 +347,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         }
     }
 
-    private void startMigration() {
+    private void startMigration() throws IOException {
         NonBlockingIOThread newOwner = this.newOwner;
         this.newOwner = null;
         startMigration(newOwner);
@@ -362,7 +367,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
      *
      * @throws Exception
      */
-    private void writeOutputBufferToSocket() throws Exception {
+    private void writeOutputBufferToSocket() throws IOException {
         // So there is data for writing, so lets prepare the buffer for writing and then write it to the socketChannel.
         outputBuffer.flip();
         int written = socketChannel.write(outputBuffer);
@@ -416,8 +421,8 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
     public void run() {
         try {
             handle();
-        } catch (Throwable e) {
-            ioThread.handleSelectionKeyFailure(e);
+        } catch (Throwable t) {
+            onFailure(t);
         }
     }
 

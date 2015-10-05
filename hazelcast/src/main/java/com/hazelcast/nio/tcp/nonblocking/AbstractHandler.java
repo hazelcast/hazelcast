@@ -24,7 +24,6 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 
 import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.logging.Level;
@@ -57,15 +56,21 @@ public abstract class AbstractHandler implements MigratableHandler {
         return ioThread;
     }
 
-    protected SelectionKey getSelectionKey() {
+    protected SelectionKey getSelectionKey() throws IOException {
         if (selectionKey == null) {
-            try {
-                selectionKey = socketChannel.register(selector, initialOps, this);
-            } catch (ClosedChannelException e) {
-                onFailure(e);
-            }
+            selectionKey = socketChannel.register(selector, initialOps, this);
         }
         return selectionKey;
+    }
+
+    final void registerOp(int operation) throws IOException {
+        SelectionKey selectionKey = getSelectionKey();
+        selectionKey.interestOps(selectionKey.interestOps() | operation);
+    }
+
+    final void unregisterOp(int operation) throws IOException {
+        SelectionKey selectionKey = getSelectionKey();
+        selectionKey.interestOps(selectionKey.interestOps() & ~operation);
     }
 
     @Override
@@ -94,27 +99,9 @@ public abstract class AbstractHandler implements MigratableHandler {
         }
     }
 
-    final void registerOp(int operation) {
-        SelectionKey selectionKey = getSelectionKey();
-
-        try {
-            selectionKey.interestOps(selectionKey.interestOps() | operation);
-        } catch (Throwable e) {
-            onFailure(e);
-        }
-    }
-
-    final void unregisterOp(int operation) {
-        SelectionKey selectionKey = getSelectionKey();
-        try {
-            selectionKey.interestOps(selectionKey.interestOps() & ~operation);
-        } catch (Throwable e) {
-            onFailure(e);
-        }
-    }
 
     // This method run on the oldOwner NonBlockingIOThread
-    void startMigration(final NonBlockingIOThread newOwner) {
+    void startMigration(final NonBlockingIOThread newOwner) throws IOException {
         assert ioThread == Thread.currentThread() : "startMigration can only run on the owning NonBlockingIOThread";
         assert ioThread != newOwner : "newOwner can't be the same as the existing owner";
 
@@ -132,12 +119,16 @@ public abstract class AbstractHandler implements MigratableHandler {
         newOwner.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
-                completeMigration(newOwner);
+                try {
+                    completeMigration(newOwner);
+                } catch (Throwable t) {
+                    onFailure(t);
+                }
             }
         });
     }
 
-    private void completeMigration(NonBlockingIOThread newOwner) {
+    private void completeMigration(NonBlockingIOThread newOwner) throws IOException {
         assert ioThread == newOwner;
 
         NonBlockingIOThreadingModel threadingModel =

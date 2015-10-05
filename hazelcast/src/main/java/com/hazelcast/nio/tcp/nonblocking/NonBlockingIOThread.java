@@ -261,6 +261,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
         SelectionHandler handler = (SelectionHandler) sk.attachment();
         try {
             if (!sk.isValid()) {
+                // if the selectionKey isn't valid, we throw this exception to feedback the situation into the handler.onFailure
                 throw new CancelledKeyException();
             }
 
@@ -270,13 +271,6 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
             handler.handle();
         } catch (Throwable t) {
             handler.onFailure(t);
-        }
-    }
-
-    public void handleSelectionKeyFailure(Throwable e) {
-        logger.warning("Selector exception at  " + getName() + ", cause= " + e.toString(), e);
-        if (e instanceof OutOfMemoryError) {
-            oomeHandler.handle((OutOfMemoryError) e);
         }
     }
 
