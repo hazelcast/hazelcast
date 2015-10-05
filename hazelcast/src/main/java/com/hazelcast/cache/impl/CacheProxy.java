@@ -97,11 +97,11 @@ public class CacheProxy<K, V>
         ensureOpen();
         validateNotNull(key);
         final Data k = serializationService.toData(key);
-//        final Operation op = new CacheContainsKeyOperation(getDistributedObjectName(), k);
         Operation operation = operationProvider.createContainsKeyOperation(k);
         OperationService operationService = getNodeEngine().getOperationService();
         int partitionId = getPartitionId(getNodeEngine(), k);
-        InternalCompletableFuture<Boolean> f = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
+        InternalCompletableFuture<Boolean> f =
+                operationService.invokeOnPartition(getServiceName(), operation, partitionId);
         return f.getSafely();
     }
 
@@ -117,7 +117,8 @@ public class CacheProxy<K, V>
         for (K key : keys) {
             keysData.add(serializationService.toData(key));
         }
-        LoadAllTask loadAllTask = new LoadAllTask(operationProvider, keysData, replaceExistingValues, completionListener);
+        LoadAllTask loadAllTask =
+                new LoadAllTask(operationProvider, keysData, replaceExistingValues, completionListener);
         try {
             submitLoadAllTask(loadAllTask);
         } catch (Exception e) {
@@ -229,11 +230,13 @@ public class CacheProxy<K, V>
         checkNotNull(entryProcessor, "Entry Processor is null");
         final Data keyData = serializationService.toData(key);
         final Integer completionId = registerCompletionLatch(1);
-        Operation op = operationProvider.createEntryProcessorOperation(keyData, completionId, entryProcessor, arguments);
+        Operation op =
+                operationProvider.createEntryProcessorOperation(keyData, completionId, entryProcessor, arguments);
         try {
             OperationService operationService = getNodeEngine().getOperationService();
             int partitionId = getPartitionId(getNodeEngine(), keyData);
-            final InternalCompletableFuture<T> f = operationService.invokeOnPartition(getServiceName(), op, partitionId);
+            final InternalCompletableFuture<T> f =
+                    operationService.invokeOnPartition(getServiceName(), op, partitionId);
             final T safely = f.getSafely();
             waitCompletionLatch(completionId);
             return safely;
@@ -249,7 +252,7 @@ public class CacheProxy<K, V>
     @Override
     public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor,
                                                          Object... arguments) {
-        //TODO implement a Multiple invoke operation and its factory
+        // TODO Implement a multiple (batch) invoke operation and its factory
         ensureOpen();
         validateNotNull(keys);
         checkNotNull(entryProcessor, "Entry Processor is null");
@@ -300,7 +303,6 @@ public class CacheProxy<K, V>
         if (regId != null) {
             cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
             addListenerLocally(regId, cacheEntryListenerConfiguration);
-            //CREATE ON OTHERS TOO
             updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, true);
         }
     }
@@ -315,7 +317,6 @@ public class CacheProxy<K, V>
             if (service.deregisterListener(getDistributedObjectName(), regId)) {
                 removeListenerLocally(cacheEntryListenerConfiguration);
                 cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
-                //REMOVE ON OTHERS TOO
                 updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, false);
             }
         }
@@ -329,19 +330,13 @@ public class CacheProxy<K, V>
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 final Operation op = new CacheListenerRegistrationOperation(getDistributedObjectName(),
-                        cacheEntryListenerConfiguration, isRegister);
-                final InternalCompletableFuture<Object> future = operationService
-                        .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+                                                                            cacheEntryListenerConfiguration,
+                                                                            isRegister);
+                final InternalCompletableFuture<Object> future =
+                        operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
                 futures.add(future);
             }
         }
-        //make sure all configs are created
-        //TODO do we need this ???s
-//        try {
-//            FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-//        } catch (TimeoutException e) {
-//            logger.warning(e);
-//        }
     }
 
     @Override
@@ -349,4 +344,5 @@ public class CacheProxy<K, V>
         ensureOpen();
         return new ClusterWideIterator<K, V>(this);
     }
+
 }

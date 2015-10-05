@@ -61,7 +61,6 @@ abstract class AbstractCacheProxy<K, V>
         super(cacheConfig, nodeEngine, cacheService);
     }
 
-    //region ICACHE: JCACHE EXTENSION
     @Override
     public InternalCompletableFuture<V> getAsync(K key) {
         return getAsync(key, null);
@@ -218,7 +217,7 @@ abstract class AbstractCacheProxy<K, V>
     public void putAll(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy) {
         ensureOpen();
         validateNotNull(map);
-        //TODO implement putAllOperationFactory
+        // TODO implement batch putAll
         for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
             put(entry.getKey(), entry.getValue(), expiryPolicy);
         }
@@ -284,11 +283,11 @@ abstract class AbstractCacheProxy<K, V>
 
     @Override
     public CacheStatistics getLocalCacheStatistics() {
+        // TODO Throw `UnsupportedOperationException` if cache statistics are not enabled
+        // but it breaks backward compatibility.
         final ICacheService service = getService();
         return service.createCacheStatIfAbsent(cacheConfig.getNameWithPrefix());
     }
-
-    //endregion
 
     private Set<Integer> getPartitionsForKeys(Set<Data> keys) {
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();

@@ -35,6 +35,7 @@ import javax.cache.configuration.Factory;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CompletionListener;
 import java.io.Closeable;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -202,7 +203,9 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
         }
     }
 
-    protected void submitLoadAllTask(final ClientMessage request, final CompletionListener completionListener) {
+    protected void submitLoadAllTask(final ClientMessage request, final CompletionListener completionListener,
+                                     final Set<Data> keys) {
+        final long start = System.nanoTime();
         LoadAllTask loadAllTask = new LoadAllTask(request, completionListener);
         ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) clientContext.getExecutionService();
 
@@ -212,6 +215,7 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
             @Override
             public void onResponse(Object response) {
                 loadAllTasks.remove(future);
+                onLoadAll(keys, response, start, System.nanoTime());
             }
 
             @Override
@@ -219,6 +223,10 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
                 loadAllTasks.remove(future);
             }
         });
+    }
+
+    protected void onLoadAll(Set<Data> keys, Object response, long start, long end) {
+
     }
 
     private final class LoadAllTask

@@ -107,7 +107,6 @@ abstract class AbstractInternalCacheProxy<K, V>
         }
     }
 
-    //region internal base operations
     protected <T> InternalCompletableFuture<T> removeAsyncInternal(K key, V oldValue, boolean hasOldValue,
                                                                    boolean isGet, boolean withCompletionEvent) {
         ensureOpen();
@@ -235,9 +234,7 @@ abstract class AbstractInternalCacheProxy<K, V>
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
         }
     }
-    //endregion internal base operations
 
-    //region Listener operations
     protected void addListenerLocally(String regId,
                                       CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         if (cacheEntryListenerConfiguration.isSynchronous()) {
@@ -331,13 +328,14 @@ abstract class AbstractInternalCacheProxy<K, V>
     }
 
     protected void waitCompletionLatch(Integer countDownLatchId, int offset) {
-        //fix completion count
-        final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
-        if (countDownLatch != null) {
-            for (int i = 0; i < offset; i++) {
-                countDownLatch.countDown();
+        if (countDownLatchId != IGNORE_COMPLETION) {
+            final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
+            if (countDownLatch != null) {
+                for (int i = 0; i < offset; i++) {
+                    countDownLatch.countDown();
+                }
+                awaitLatch(countDownLatch);
             }
-            awaitLatch(countDownLatch);
         }
     }
 
@@ -366,5 +364,5 @@ abstract class AbstractInternalCacheProxy<K, V>
             ExceptionUtil.sneakyThrow(e);
         }
     }
-    //endregion Listener operations
+
 }
