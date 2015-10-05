@@ -24,11 +24,10 @@ import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -234,22 +233,19 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
     }
 
     protected void publishWanReplicationEvent(Data key, Object value, EntryEventType eventType) {
-        final MapContainer mapContainer = this.mapContainer;
-        if (mapContainer.getWanReplicationPublisher() == null
-                && mapContainer.getWanMergePolicy() == null) {
-            return;
-        }
-        final MapEventPublisher mapEventPublisher = getMapEventPublisher();
-        if (EntryEventType.REMOVED.equals(eventType)) {
-            mapEventPublisher.publishWanReplicationRemove(name, key, getNow());
-            wanEventList.add(new WanEventWrapper(key, null, EntryEventType.REMOVED));
-        } else {
-            final Record record = recordStore.getRecord(key);
-            if (record != null) {
-                final Data dataValueAsData = toData(value);
-                final EntryView entryView = createSimpleEntryView(key, dataValueAsData, record);
-                mapEventPublisher.publishWanReplicationUpdate(name, entryView);
-                wanEventList.add(new WanEventWrapper(key, value, EntryEventType.UPDATED));
+        if (mapContainer.isWanReplicationEnabled()) {
+            final MapEventPublisher mapEventPublisher = getMapEventPublisher();
+            if (EntryEventType.REMOVED == eventType) {
+                mapEventPublisher.publishWanReplicationRemove(name, key, getNow());
+                wanEventList.add(new WanEventWrapper(key, null, EntryEventType.REMOVED));
+            } else {
+                final Record record = recordStore.getRecord(key);
+                if (record != null) {
+                    final Data dataValueAsData = toData(value);
+                    final EntryView entryView = createSimpleEntryView(key, dataValueAsData, record);
+                    mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+                    wanEventList.add(new WanEventWrapper(key, value, EntryEventType.UPDATED));
+                }
             }
         }
     }
@@ -297,7 +293,7 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
         recordStore.evictEntries(now, backup);
     }
 
-    protected class WanEventWrapper {
+    protected static class WanEventWrapper {
 
         Data key;
         Object value;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionReplicationEvent;
@@ -65,4 +66,13 @@ public class CacheService
         return "CacheService[" + SERVICE_NAME + "]";
     }
 
+    @Override
+    public boolean isWanReplicationEnabled(String cacheName) {
+        return false;
+    }
+
+    @Override
+    public CacheWanEventPublisher getCacheWanEventPublisher() {
+        throw new UnsupportedOperationException("Wan replication is not supported");
+    }
 }

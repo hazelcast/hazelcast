@@ -69,14 +69,11 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
     @Override
     public void afterRun() throws Exception {
         evict(true);
-
         if (!wanOriginated
-                && mapContainer.getWanReplicationPublisher() != null
-                && mapContainer.getWanMergePolicy() != null) {
+                && !mapContainer.isWanReplicationEnabled()) {
             mapService.getMapServiceContext()
                     .getMapEventPublisher().publishWanReplicationRemoveBackup(name, dataKey, Clock.currentTimeMillis());
         }
-
     }
 
     @Override

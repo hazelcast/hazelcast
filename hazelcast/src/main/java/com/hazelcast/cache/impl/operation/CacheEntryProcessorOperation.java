@@ -17,7 +17,9 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.BackupAwareEntryProcessor;
+import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheEntryViews;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -91,6 +93,20 @@ public class CacheEntryProcessorOperation
         }
         if (backupEntryProcessor == null) {
             backupRecord = cache.getRecord(key);
+        }
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (cache.isWanReplicationEnabled()) {
+            CacheRecord record = cache.getRecord(key);
+            if (record != null) {
+                CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key,
+                        getNodeEngine().getSerializationService().toData(backupRecord.getValue()), backupRecord);
+                wanEventPublisher.publishWanReplicationUpdate(name, entryView);
+            } else {
+                wanEventPublisher.publishWanReplicationRemove(name, key);
+            }
         }
     }
 

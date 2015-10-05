@@ -214,6 +214,12 @@ public class MapContainer {
         return record;
     }
 
+    public boolean isWanReplicationEnabled() {
+        if (wanReplicationPublisher == null || wanMergePolicy == null) {
+            return false;
+        }
+        return true;
+    }
 
     public boolean isNearCacheEnabled() {
         return mapConfig.isNearCacheEnabled();

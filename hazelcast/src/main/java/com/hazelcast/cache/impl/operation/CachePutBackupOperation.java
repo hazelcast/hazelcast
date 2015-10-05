@@ -16,7 +16,9 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheEntryViews;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
@@ -41,6 +43,7 @@ public class CachePutBackupOperation
         implements BackupOperation, MutatingOperation {
 
     private CacheRecord cacheRecord;
+    private boolean wanOriginated;
 
     public CachePutBackupOperation() {
     }
@@ -48,6 +51,11 @@ public class CachePutBackupOperation
     public CachePutBackupOperation(String name, Data key, CacheRecord cacheRecord) {
         super(name, key);
         this.cacheRecord = cacheRecord;
+    }
+
+    public CachePutBackupOperation(String name, Data key, CacheRecord cacheRecord, boolean wanOriginated) {
+        this(name, key, cacheRecord);
+        this.wanOriginated = wanOriginated;
     }
 
     @Override
@@ -60,10 +68,20 @@ public class CachePutBackupOperation
     }
 
     @Override
+    public void afterRun() throws Exception {
+        if (!wanOriginated && cache.isWanReplicationEnabled()) {
+            CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key,
+                    getNodeEngine().getSerializationService().toData(cacheRecord.getValue()), cacheRecord);
+            wanEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
+        }
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
         out.writeObject(cacheRecord);
+        out.writeBoolean(wanOriginated);
     }
 
     @Override
@@ -71,6 +89,7 @@ public class CachePutBackupOperation
             throws IOException {
         super.readInternal(in);
         cacheRecord = in.readObject();
+        wanOriginated = in.readBoolean();
     }
 
     @Override

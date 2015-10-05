@@ -20,7 +20,6 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
@@ -33,6 +32,12 @@ import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 
 /**
  * Abstract class that provides common backup post-ops
+ *
+ * Backup operations of operations that extends {@link AbstractMultipleEntryOperation} should
+ * extend this class.
+ *
+ * Common functions for these classes can be moved to this class. For now, it only overrides
+ * {@alink AbstractMultipleEntryOperation#afterRun} method to publish backups of wan replication events.
  */
 abstract class AbstractMultipleEntryBackupOperation extends AbstractMultipleEntryOperation {
 
@@ -61,22 +66,19 @@ abstract class AbstractMultipleEntryBackupOperation extends AbstractMultipleEntr
     }
 
     protected void publishWanReplicationEventBackup(Data key, Object value, EntryEventType eventType) {
-        final MapContainer mapContainer = this.mapContainer;
-        if (mapContainer.getWanReplicationPublisher() == null
-                && mapContainer.getWanMergePolicy() == null) {
-            return;
-        }
-        final MapEventPublisher mapEventPublisher = getMapEventPublisher();
-        if (EntryEventType.REMOVED.equals(eventType)) {
-            mapEventPublisher.publishWanReplicationRemoveBackup(name, key, getNow());
-            wanEventList.add(new WanEventWrapper(key, null, EntryEventType.REMOVED));
-        } else {
-            final Record record = recordStore.getRecord(key);
-            if (record != null) {
-                final Data dataValueAsData = toData(value);
-                final EntryView entryView = createSimpleEntryView(key, dataValueAsData, record);
-                mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
-                wanEventList.add(new WanEventWrapper(key, value, EntryEventType.UPDATED));
+        if (mapContainer.isWanReplicationEnabled()) {
+            final MapEventPublisher mapEventPublisher = getMapEventPublisher();
+            if (EntryEventType.REMOVED.equals(eventType)) {
+                mapEventPublisher.publishWanReplicationRemoveBackup(name, key, getNow());
+                wanEventList.add(new WanEventWrapper(key, null, EntryEventType.REMOVED));
+            } else {
+                final Record record = recordStore.getRecord(key);
+                if (record != null) {
+                    final Data dataValueAsData = toData(value);
+                    final EntryView entryView = createSimpleEntryView(key, dataValueAsData, record);
+                    mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
+                    wanEventList.add(new WanEventWrapper(key, value, EntryEventType.UPDATED));
+                }
             }
         }
     }

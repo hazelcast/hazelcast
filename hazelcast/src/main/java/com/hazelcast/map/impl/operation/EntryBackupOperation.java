@@ -80,14 +80,13 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
 
     private void publishWanReplicationEvent(EntryEventType eventType) {
         final MapContainer mapContainer = this.mapContainer;
-        if (mapContainer.getWanReplicationPublisher() == null
-                && mapContainer.getWanMergePolicy() == null) {
+        if (!mapContainer.isWanReplicationEnabled()) {
             return;
         }
         final MapEventPublisher mapEventPublisher = mapContainer.getMapServiceContext().getMapEventPublisher();
         final Data key = dataKey;
 
-        if (EntryEventType.REMOVED.equals(eventType)) {
+        if (EntryEventType.REMOVED == eventType) {
             mapEventPublisher.publishWanReplicationRemoveBackup(name, key, getNow());
         } else {
             final Record record = recordStore.getRecord(key);

@@ -16,7 +16,9 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheEntryViews;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -52,6 +54,16 @@ public class CachePutIfAbsentOperation
         response = cache.putIfAbsent(key, value, expiryPolicy, getCallerUuid(), completionId);
         if (Boolean.TRUE.equals(response)) {
             backupRecord = cache.getRecord(key);
+        }
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (Boolean.TRUE.equals(response)) {
+            if (cache.isWanReplicationEnabled()) {
+                CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key, value, backupRecord);
+                wanEventPublisher.publishWanReplicationUpdate(name, entryView);
+            }
         }
     }
 

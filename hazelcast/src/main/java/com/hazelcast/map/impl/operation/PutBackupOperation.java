@@ -95,7 +95,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     }
 
     private void publishWANReplicationEventBackup(MapServiceContext mapServiceContext, MapEventPublisher mapEventPublisher) {
-        if (mapContainer.getWanReplicationPublisher() == null || mapContainer.getWanMergePolicy() == null) {
+        if (!mapContainer.isWanReplicationEnabled()) {
             return;
         }
 
