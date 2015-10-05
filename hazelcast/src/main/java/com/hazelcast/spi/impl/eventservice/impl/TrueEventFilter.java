@@ -23,7 +23,12 @@ import com.hazelcast.spi.EventFilter;
 
 import java.io.IOException;
 
-public final class EmptyFilter implements EventFilter, DataSerializable {
+/**
+ * An event filter which does not filter any event and always evaluates {@code true} results.
+ */
+public final class TrueEventFilter implements EventFilter, DataSerializable {
+
+    public static final TrueEventFilter INSTANCE = new TrueEventFilter();
 
     @Override
     public boolean eval(Object arg) {
@@ -40,7 +45,7 @@ public final class EmptyFilter implements EventFilter, DataSerializable {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof EmptyFilter;
+        return obj instanceof TrueEventFilter;
     }
 
     @Override

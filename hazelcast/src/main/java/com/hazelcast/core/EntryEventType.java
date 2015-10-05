@@ -21,14 +21,14 @@ package com.hazelcast.core;
  */
 public enum EntryEventType {
 
-    ADDED(1),
-    REMOVED(2),
-    UPDATED(3),
-    EVICTED(4),
-    EVICT_ALL(5),
-    CLEAR_ALL(6),
-    MERGED(7),
-    EXPIRED(8);
+    ADDED(Type.ADDED),
+    REMOVED(Type.REMOVED),
+    UPDATED(Type.UPDATED),
+    EVICTED(Type.EVICTED),
+    EVICT_ALL(Type.EVICT_ALL),
+    CLEAR_ALL(Type.CLEAR_ALL),
+    MERGED(Type.MERGED),
+    EXPIRED(Type.EXPIRED);
 
     private int type;
 
@@ -58,4 +58,22 @@ public enum EntryEventType {
         }
         return null;
     }
+
+    /**
+     * These constants represent type-id and bit-mask of events.
+     *
+     * @see com.hazelcast.map.impl.MapListenerFlagOperator
+     */
+    //CHECKSTYLE:OFF
+    private static class Type {
+        private static final int ADDED = 1;
+        private static final int REMOVED = 1 << 1;
+        private static final int UPDATED = 1 << 2;
+        private static final int EVICTED = 1 << 3;
+        private static final int EVICT_ALL = 1 << 4;
+        private static final int CLEAR_ALL = 1 << 5;
+        private static final int MERGED = 1 << 6;
+        private static final int EXPIRED = 1 << 7;
+    }
+    //CHECKSTYLE:ON
 }

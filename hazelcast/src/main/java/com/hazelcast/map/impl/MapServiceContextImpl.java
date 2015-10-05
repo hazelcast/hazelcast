@@ -26,8 +26,8 @@ import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.MapPartitionDestroyOperation;
-import com.hazelcast.map.impl.query.MapQueryEngineImpl;
 import com.hazelcast.map.impl.query.MapQueryEngine;
+import com.hazelcast.map.impl.query.MapQueryEngineImpl;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.map.merge.MergePolicyProvider;
@@ -36,15 +36,19 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.spi.Operation;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -53,10 +57,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.Collections;
-import java.util.LinkedHashSet;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
+import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.query.impl.predicates.QueryOptimizerFactory.newOptimizer;
 
@@ -75,8 +78,7 @@ class MapServiceContextImpl implements MapServiceContext {
             final MapServiceContext mapServiceContext = getService().getMapServiceContext();
             final Config config = nodeEngine.getConfig();
             final MapConfig mapConfig = config.findMapConfig(mapName);
-            final MapContainer mapContainer = new MapContainer(mapName, mapConfig, mapServiceContext);
-            return mapContainer;
+            return new MapContainer(mapName, mapConfig, mapServiceContext);
         }
     };
     /**
@@ -91,6 +93,7 @@ class MapServiceContextImpl implements MapServiceContext {
     private final LocalMapStatsProvider localMapStatsProvider;
     private final MergePolicyProvider mergePolicyProvider;
     private final MapQueryEngine mapQueryEngine;
+    private final EventService eventService;
     private MapEventPublisher mapEventPublisher;
     private EvictionOperator evictionOperator;
     private MapService mapService;
@@ -108,6 +111,7 @@ class MapServiceContextImpl implements MapServiceContext {
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
         this.mapEventPublisher = createMapEventPublisherSupport();
         this.mapQueryEngine = new MapQueryEngineImpl(this, newOptimizer(nodeEngine.getGroupProperties()));
+        this.eventService = nodeEngine.getEventService();
     }
 
     MapEventPublisherImpl createMapEventPublisherSupport() {
@@ -309,38 +313,17 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Object toObject(Object data) {
-        if (data == null) {
-            return null;
-        }
-        if (data instanceof Data) {
-            return nodeEngine.toObject(data);
-        } else {
-            return data;
-        }
+        return nodeEngine.toObject(data);
     }
 
     @Override
     public Data toData(Object object, PartitioningStrategy partitionStrategy) {
-        if (object == null) {
-            return null;
-        }
-        if (object instanceof Data) {
-            return (Data) object;
-        } else {
-            return nodeEngine.getSerializationService().toData(object, partitionStrategy);
-        }
+        return nodeEngine.getSerializationService().toData(object, partitionStrategy);
     }
 
     @Override
     public Data toData(Object object) {
-        if (object == null) {
-            return null;
-        }
-        if (object instanceof Data) {
-            return (Data) object;
-        } else {
-            return nodeEngine.getSerializationService().toData(object);
-        }
+        return nodeEngine.toData(object);
     }
 
     @Override
@@ -466,25 +449,19 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public String addLocalEventListener(Object listener, String mapName) {
-        ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        EventRegistration registration = nodeEngine.getEventService().
-                registerLocalListener(SERVICE_NAME, mapName, listenerAdaptor);
+        EventRegistration registration = addListenerInternal(listener, TrueEventFilter.INSTANCE, mapName, true);
         return registration.getId();
     }
 
     @Override
     public String addLocalEventListener(Object listener, EventFilter eventFilter, String mapName) {
-        ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        EventRegistration registration = nodeEngine.getEventService().
-                registerLocalListener(SERVICE_NAME, mapName, eventFilter, listenerAdaptor);
+        EventRegistration registration = addListenerInternal(listener, eventFilter, mapName, true);
         return registration.getId();
     }
 
     @Override
     public String addEventListener(Object listener, EventFilter eventFilter, String mapName) {
-        ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        EventRegistration registration = nodeEngine.getEventService().
-                registerListener(SERVICE_NAME, mapName, eventFilter, listenerAdaptor);
+        EventRegistration registration = addListenerInternal(listener, eventFilter, mapName, false);
         return registration.getId();
     }
 
@@ -492,18 +469,30 @@ class MapServiceContextImpl implements MapServiceContext {
     public String addPartitionLostListener(MapPartitionLostListener listener, String mapName) {
         final ListenerAdapter listenerAdapter = new InternalMapPartitionLostListenerAdapter(listener);
         final EventFilter filter = new MapPartitionLostEventFilter();
-        final EventRegistration registration = nodeEngine.getEventService().registerListener(SERVICE_NAME, mapName, filter,
-                listenerAdapter);
+        final EventRegistration registration = eventService.registerListener(SERVICE_NAME, mapName, filter, listenerAdapter);
         return registration.getId();
+    }
+
+    private EventRegistration addListenerInternal(Object listener, EventFilter filter, String mapName, boolean local) {
+        ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
+        if (!(filter instanceof EventListenerFilter)) {
+            int enabledListeners = setAndGetListenerFlags(listenerAdaptor);
+            filter = new EventListenerFilter(enabledListeners, filter);
+        }
+        if (local) {
+            return eventService.registerLocalListener(SERVICE_NAME, mapName, filter, listenerAdaptor);
+        } else {
+            return eventService.registerListener(SERVICE_NAME, mapName, filter, listenerAdaptor);
+        }
     }
 
     @Override
     public boolean removeEventListener(String mapName, String registrationId) {
-        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
+        return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
     @Override
     public boolean removePartitionLostListener(String mapName, String registrationId) {
-        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
+        return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 }
