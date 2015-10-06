@@ -5,6 +5,7 @@ import com.hazelcast.cache.CacheTestSupport;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -384,7 +385,7 @@ public class CacheStatsTest extends CacheTestSupport {
     @Test
     public void testOwnedEntryCount() {
         ICache<Integer, String> cache = createCache();
-        CacheStatistics stats = cache.getLocalCacheStatistics();
+        final CacheStatistics stats = cache.getLocalCacheStatistics();
 
         final int ENTRY_COUNT = 100;
 
@@ -424,7 +425,12 @@ public class CacheStatsTest extends CacheTestSupport {
 
         cache.destroy();
 
-        assertEquals(0, stats.getOwnedEntryCount());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, stats.getOwnedEntryCount());
+            }
+        });
     }
 
     @Test
