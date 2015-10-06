@@ -132,7 +132,12 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                 next.evaluate();
             } catch (Throwable e) {
                 System.err.println("THREAD DUMP FOR TEST FAILURE: \"" + e.getMessage() + "\" at \"" + method.getName() + "\"\n");
-                System.err.println(generateThreadDump());
+                try {
+                    System.err.println(generateThreadDump());
+                } catch (Throwable t) {
+                    System.err.println("Unable to get thread dump!");
+                    e.printStackTrace();
+                }
                 errors.add(e);
             } finally {
                 for (FrameworkMethod each : afters) {
