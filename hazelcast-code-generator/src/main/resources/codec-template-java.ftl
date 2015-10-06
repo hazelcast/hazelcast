@@ -3,7 +3,9 @@ package ${model.packageName};
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.Bits;
+import javax.annotation.Generated;
 
+@Generated("Hazelcast.code.generator")
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public final class ${model.className} {
 
