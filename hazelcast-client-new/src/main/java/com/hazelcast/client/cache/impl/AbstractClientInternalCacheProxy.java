@@ -439,7 +439,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
 
         ClientDelegatingFuture delegatingFuture =
-                new ClientDelegatingFuture<T>(future, clientContext.getSerializationService(),
+                new ClientDelegatingFuture<Data>(future, clientContext.getSerializationService(),
                                               getAndReplaceResponseDecoder);
         if (async && statisticsEnabled) {
             delegatingFuture.andThen(new ExecutionCallback<Object>() {
