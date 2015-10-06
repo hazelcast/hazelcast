@@ -500,7 +500,7 @@ public interface MapCodecTemplate {
      * @param name name of the map
      * @return a set clone of the keys contained in this map.
      */
-    @Request(id = 38, retryable = false, response = ResponseMessageConst.SET_DATA)
+    @Request(id = 38, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object keySet(String name);
 
     /**
@@ -535,7 +535,7 @@ public interface MapCodecTemplate {
      * @param name name of map
      * @return a set clone of the keys mappings in this map
      */
-    @Request(id = 41, retryable = false, response = ResponseMessageConst.SET_ENTRY)
+    @Request(id = 41, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
     Object entrySet(String name);
 
     /**
@@ -548,7 +548,7 @@ public interface MapCodecTemplate {
      * @param predicate specified query criteria.
      * @return result key set for the query.
      */
-    @Request(id = 42, retryable = false, response = ResponseMessageConst.SET_DATA)
+    @Request(id = 42, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object keySetWithPredicate(String name, Data predicate);
 
     /**
@@ -574,7 +574,7 @@ public interface MapCodecTemplate {
      * @param predicate specified query criteria.
      * @return result key-value entry collection of the query.
      */
-    @Request(id = 44, retryable = false, response = ResponseMessageConst.SET_ENTRY)
+    @Request(id = 44, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
     Object entriesWithPredicate(String name, Data predicate);
 
     /**
@@ -709,7 +709,7 @@ public interface MapCodecTemplate {
      * @param predicate specified query criteria.
      * @return result keys for the query.
      */
-    @Request(id = 56, retryable = false, response = ResponseMessageConst.SET_DATA)
+    @Request(id = 56, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object keySetWithPagingPredicate(String name, Data predicate);
 
     /**
@@ -722,7 +722,7 @@ public interface MapCodecTemplate {
      * @param predicate specified query criteria.
      * @return values for the query.
      */
-    @Request(id = 57, retryable = false, response = ResponseMessageConst.SET_ENTRY)
+    @Request(id = 57, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
     Object valuesWithPagingPredicate(String name, Data predicate);
 
     /**
@@ -730,7 +730,7 @@ public interface MapCodecTemplate {
      * @param predicate specified query criteria.
      * @return key-value pairs for the query.
      */
-    @Request(id = 58, retryable = false, response = ResponseMessageConst.SET_ENTRY)
+    @Request(id = 58, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
     Object entriesWithPagingPredicate(String name, Data predicate);
 
     @Request(id = 59, retryable = false, response = ResponseMessageConst.VOID)

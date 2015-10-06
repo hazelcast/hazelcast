@@ -44,4 +44,5 @@ public final class ResponseMessageConst {
     public static final int SET_ENTRY = 114;
     public static final int READ_RESULT_SET = 115;
     public static final int CACHE_KEY_ITERATOR_RESULT = 116;
+    public static final int LIST_ENTRY = 117;
 }

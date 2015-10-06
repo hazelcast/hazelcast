@@ -85,14 +85,15 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
 
     protected abstract Predicate getPredicate();
 
+    protected abstract IterationType getIterationType();
+
     protected abstract Object reduce(Collection<QueryResultRow> result);
 
     private void createInvocations(Collection<Member> members, List<Future> futures, Predicate predicate) {
         final InternalOperationService operationService = nodeEngine.getOperationService();
         for (Member member : members) {
             Future future = operationService.createInvocationBuilder(SERVICE_NAME,
-                    // todo: this is a performance issue; since always keys + values are downloaded.
-                    new QueryOperation(getDistributedObjectName(), predicate, IterationType.ENTRY),
+                    new QueryOperation(getDistributedObjectName(), predicate, getIterationType()),
                     member.getAddress()).invoke();
             futures.add(future);
         }
@@ -131,9 +132,8 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
                                                        Predicate predicate) {
         final InternalOperationService operationService = nodeEngine.getOperationService();
         for (Integer partitionId : missingPartitionsList) {
-            //todo: potential performance problem since keys+values are retrieved.
             QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(
-                    getDistributedObjectName(), predicate, IterationType.ENTRY);
+                    getDistributedObjectName(), predicate, getIterationType());
             queryPartitionOperation.setPartitionId(partitionId);
             try {
                 Future future = operationService.invokeOnPartition(SERVICE_NAME,

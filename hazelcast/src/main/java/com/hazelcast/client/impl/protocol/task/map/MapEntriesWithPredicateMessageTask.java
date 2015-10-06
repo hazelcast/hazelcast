@@ -19,15 +19,16 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapEntriesWithPredicateCodec;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.map.impl.query.QueryResultRow;
+import com.hazelcast.util.IterationType;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class MapEntriesWithPredicateMessageTask
         extends AbstractMapQueryMessageTask<MapEntriesWithPredicateCodec.RequestParameters> {
@@ -38,16 +39,21 @@ public class MapEntriesWithPredicateMessageTask
 
     @Override
     protected Object reduce(Collection<QueryResultRow> result) {
-        HashMap<Data, Data> map = new HashMap<Data, Data>();
-        for (QueryResultRow resultEntry : result) {
-            map.put(resultEntry.getKey(), resultEntry.getValue());
+        List<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>(result.size());
+        for (QueryResultRow resultRow : result) {
+            entries.add(resultRow);
         }
-        return map.entrySet();
+        return entries;
     }
 
     @Override
     protected Predicate getPredicate() {
         return serializationService.toObject(parameters.predicate);
+    }
+
+    @Override
+    protected IterationType getIterationType() {
+        return IterationType.ENTRY;
     }
 
     @Override
@@ -57,7 +63,7 @@ public class MapEntriesWithPredicateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapEntriesWithPredicateCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
+        return MapEntriesWithPredicateCodec.encodeResponse((List<Map.Entry<Data, Data>>) response);
     }
 
     @Override

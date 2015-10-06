@@ -18,45 +18,47 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapEntrySetCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.EntrySetOperationFactory;
+import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.util.IterationType;
 
 import java.security.Permission;
-import java.util.HashSet;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class MapEntrySetMessageTask
-        extends AbstractAllPartitionsMessageTask<MapEntrySetCodec.RequestParameters> {
+        extends AbstractMapQueryMessageTask<MapEntrySetCodec.RequestParameters> {
 
     public MapEntrySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected OperationFactory createOperationFactory() {
-        return new EntrySetOperationFactory(parameters.name);
+    protected Object reduce(Collection<QueryResultRow> result) {
+        List<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>(result.size());
+        for (QueryResultRow row : result) {
+            entries.add(row);
+        }
+        return entries;
     }
 
     @Override
-    protected Object reduce(Map<Integer, Object> map) {
-        Set<Map.Entry<Data, Data>> dataMap = new HashSet<Map.Entry<Data, Data>>();
-        MapService service = getService(MapService.SERVICE_NAME);
-        for (Object result : map.values()) {
-            MapEntries entries = ((MapEntries) service.getMapServiceContext().toObject(result));
-            for (Map.Entry<Data, Data> entry : entries) {
-                dataMap.add(entry);
-            }
-        }
-        return dataMap;
+    protected Predicate getPredicate() {
+        return TruePredicate.INSTANCE;
+    }
+
+    @Override
+    protected IterationType getIterationType() {
+        return IterationType.ENTRY;
     }
 
     @Override
@@ -66,12 +68,7 @@ public class MapEntrySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapEntrySetCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
-    }
-
-    @Override
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
+        return MapEntrySetCodec.encodeResponse((List<Map.Entry<Data, Data>>) response);
     }
 
     @Override

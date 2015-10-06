@@ -899,7 +899,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request = MapKeySetCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         MapKeySetCodec.ResponseParameters resultParameters = MapKeySetCodec.decodeResponse(response);
-        Set<Data> result = resultParameters.set;
+        Collection<Data> result = resultParameters.list;
         Set<K> keySet = new HashSet<K>(result.size());
         for (Data data : result) {
             final K key = toObject(data);
@@ -989,7 +989,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         MapKeySetWithPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPredicateCodec.decodeResponse(response);
 
         final HashSet<K> keySet = new HashSet<K>();
-        for (Data o : resultParameters.set) {
+        for (Data o : resultParameters.list) {
             final K key = toObject(o);
             keySet.add(key);
         }
@@ -1004,7 +1004,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         MapKeySetWithPagingPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPagingPredicateCodec.decodeResponse(response);
 
         ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
-        for (Data keyData : resultParameters.set) {
+        for (Data keyData : resultParameters.list) {
             K key = toObject(keyData);
             resultList.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, null));
         }

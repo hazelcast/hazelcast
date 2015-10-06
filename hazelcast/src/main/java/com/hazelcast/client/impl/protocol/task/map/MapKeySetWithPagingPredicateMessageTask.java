@@ -19,14 +19,15 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapKeySetWithPagingPredicateCodec;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.map.impl.query.QueryResultRow;
+import com.hazelcast.util.IterationType;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
 public class MapKeySetWithPagingPredicateMessageTask
         extends AbstractMapQueryMessageTask<MapKeySetWithPagingPredicateCodec.RequestParameters> {
@@ -37,7 +38,7 @@ public class MapKeySetWithPagingPredicateMessageTask
 
     @Override
     protected Object reduce(Collection<QueryResultRow> result) {
-        Set<Data> set = new HashSet<Data>(result.size());
+        List<Data> set = new ArrayList<Data>(result.size());
         for (QueryResultRow resultEntry : result) {
             set.add(resultEntry.getKey());
         }
@@ -50,13 +51,18 @@ public class MapKeySetWithPagingPredicateMessageTask
     }
 
     @Override
+    protected IterationType getIterationType() {
+        return IterationType.KEY;
+    }
+
+    @Override
     protected MapKeySetWithPagingPredicateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapKeySetWithPagingPredicateCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapKeySetWithPagingPredicateCodec.encodeResponse((Set<Data>) response);
+        return MapKeySetWithPagingPredicateCodec.encodeResponse((List<Data>) response);
     }
 
     @Override

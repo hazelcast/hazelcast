@@ -19,10 +19,11 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.map.impl.query.QueryResultRow;
+import com.hazelcast.util.IterationType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,6 +48,11 @@ public class MapValuesWithPredicateMessageTask
     @Override
     protected Predicate getPredicate() {
         return serializationService.toObject(parameters.predicate);
+    }
+
+    @Override
+    protected IterationType getIterationType() {
+        return IterationType.VALUE;
     }
 
     @Override
