@@ -41,7 +41,9 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ExceptionUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -148,7 +150,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         final HazelcastInstance hz = instances[instances.length - 1];
         TransactionManagerServiceImpl transactionManagerService = spyTransactionManagerService(hz);
 
-        TransactionOptions options = TransactionOptions.getDefault().setTimeout(5, TimeUnit.SECONDS);
+        TransactionOptions options = TransactionOptions.getDefault().setTimeout(10, TimeUnit.SECONDS);
         when(transactionManagerService.newTransaction(options)).thenAnswer(new TransactionAnswer() {
             @Override
             protected void beforePrepare() {
@@ -208,7 +210,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         final HazelcastInstance hz = instances[instances.length - 1];
         TransactionManagerServiceImpl transactionManagerService = spyTransactionManagerService(hz);
 
-        TransactionOptions options = new TransactionOptions().setDurability(0).setTimeout(5, TimeUnit.SECONDS);
+        TransactionOptions options = new TransactionOptions().setDurability(0).setTimeout(10, TimeUnit.SECONDS);
         when(transactionManagerService.newTransaction(options)).thenAnswer(new TransactionAnswer() {
             @Override
             protected void beforePrepare() {
@@ -238,7 +240,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         final HazelcastInstance hz = instances[instances.length - 1];
         TransactionManagerServiceImpl transactionManagerService = spyTransactionManagerService(hz);
 
-        TransactionOptions options = new TransactionOptions().setDurability(0).setTimeout(5, TimeUnit.SECONDS);
+        TransactionOptions options = new TransactionOptions().setDurability(0).setTimeout(10, TimeUnit.SECONDS);
         when(transactionManagerService.newTransaction(options)).thenAnswer(new TransactionAnswer() {
             @Override
             protected void afterPrepare() {
@@ -284,12 +286,11 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = instances[1];
         HazelcastInstance hz3 = instances[2];
         warmUpPartitions(instances);
-        waitAllForSafeState(instances);
 
         final Address owner = getNode(hz1).getThisAddress();
         int partitionId = getPartitionId(hz1);
 
-        hz2.getCluster().changeClusterState(ClusterState.FROZEN);
+        changeClusterStateEventually(hz2, ClusterState.FROZEN);
         terminateInstance(hz1);
 
         final InternalPartition partition = getNode(hz2).getPartitionService().getPartition(partitionId);
@@ -330,12 +331,11 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = instances[1];
         HazelcastInstance hz3 = instances[2];
         warmUpPartitions(instances);
-        waitAllForSafeState(instances);
 
         final Address owner = getNode(hz1).getThisAddress();
         int partitionId = getPartitionId(hz1);
 
-        hz2.getCluster().changeClusterState(ClusterState.FROZEN);
+        changeClusterStateEventually(hz2, ClusterState.FROZEN);
         terminateInstance(hz1);
 
         factory.newHazelcastInstance(owner);
@@ -359,17 +359,16 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = instances[1];
         HazelcastInstance hz3 = instances[2];
         warmUpPartitions(instances);
-        waitAllForSafeState(instances);
 
         final Address owner = getNode(hz1).getThisAddress();
         int partitionId = getPartitionId(hz1);
 
-        hz2.getCluster().changeClusterState(ClusterState.FROZEN);
+        changeClusterStateEventually(hz2, ClusterState.FROZEN);
         terminateInstance(hz1);
 
         assertClusterSizeEventually(2, hz2);
 
-        hz2.getCluster().changeClusterState(ClusterState.ACTIVE);
+        changeClusterStateEventually(hz2, ClusterState.ACTIVE);
 
         final InternalPartition partition = getNode(hz2).getPartitionService().getPartition(partitionId);
         assertTrueEventually(new AssertTask() {
@@ -395,7 +394,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         String key = generateKeyOwnedBy(hz1);
         int partitionId = hz1.getPartitionService().getPartition(key).getPartitionId();
 
-        hz2.getCluster().changeClusterState(ClusterState.FROZEN);
+        changeClusterStateEventually(hz2, ClusterState.FROZEN);
         terminateInstance(hz1);
 
         InternalOperationService operationService = getNode(hz3).getNodeEngine().getOperationService();
@@ -417,6 +416,25 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
         // should not fail
         future.get();
+    }
+
+    private void changeClusterStateEventually(HazelcastInstance hz, ClusterState newState) {
+        final Cluster cluster = hz.getCluster();
+        long timeout = TimeUnit.SECONDS.toMillis(ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+        Throwable t = null;
+        while (timeout > 0 && cluster.getClusterState() != newState) {
+            long start = Clock.currentTimeMillis();
+            try {
+                cluster.changeClusterState(newState);
+                return;
+            } catch (Throwable e) {
+                t = e;
+            }
+            sleepMillis(100);
+            long end = Clock.currentTimeMillis();
+            timeout -= (end - start);
+        }
+        throw ExceptionUtil.rethrow(t);
     }
 
     private static ClusterServiceImpl spyClusterService(HazelcastInstance hz) throws Exception {
@@ -524,13 +542,11 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
             this.instance = instance;
             this.iteration = iteration;
             this.latch = latch;
+
+            initialize();
         }
 
         public void run() {
-            if (!initialize()) {
-                return;
-            }
-
             Cluster cluster = instance.getCluster();
             ClusterState newState = flipState(cluster.getClusterState());
             for (int i = 0; i < iteration; i++) {
@@ -549,7 +565,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
             return state;
         }
 
-        private boolean initialize() {
+        private void initialize() {
             try {
                 ClusterServiceImpl clusterService = spyClusterService(instance);
                 MemberListAnswer memberListAnswer = new MemberListAnswer() {
@@ -561,11 +577,9 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
                     }
                 };
                 when(clusterService.getMemberImpls()).thenAnswer(memberListAnswer);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return false;
+            } catch (Throwable e) {
+                throw ExceptionUtil.rethrow(e);
             }
-            return true;
         }
     }
 
