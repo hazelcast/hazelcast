@@ -116,6 +116,12 @@ public class RestTest {
         for (int i = 0; i < 100; i++) {
             assertEquals(String.valueOf(i * 10), communicator.get(name, String.valueOf(i)));
         }
+        
+        String res="";
+        for (int i = 0; i < 100; i++) {
+            res += String.valueOf(i)+":"+String.valueOf(i * 10);
+        }        
+        assertEquals(res,communicator.get(name, "entries"));        
 
         for (int i = 0; i < 100; i++) {
             assertEquals(HttpURLConnection.HTTP_OK, communicator.delete(name, String.valueOf(i)));
