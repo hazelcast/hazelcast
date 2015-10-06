@@ -367,7 +367,7 @@ public class SqlPredicateTest {
     }
 
     private Map.Entry createEntry(final Object key, final Object value) {
-        return new QueryEntry(ss, toData(key), key, value);
+        return new QueryEntry(ss, toData(key), value);
     }
 
     private void assertSqlTrue(String s, Object value) {

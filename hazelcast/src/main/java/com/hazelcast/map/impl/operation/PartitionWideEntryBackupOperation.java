@@ -48,7 +48,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
             final Data dataKey = record.getKey();
             final Object oldValue = record.getValue();
 
-            if (!applyPredicate(dataKey, dataKey, oldValue)) {
+            if (!applyPredicate(dataKey, oldValue)) {
                 continue;
             }
             final Map.Entry entry = createMapEntry(dataKey, oldValue);
@@ -76,11 +76,11 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
         return true;
     }
 
-    private boolean applyPredicate(Data dataKey, Object key, Object value) {
+    private boolean applyPredicate(Data key, Object value) {
         if (getPredicate() == null) {
             return true;
         }
-        QueryableEntry queryEntry = getMapServiceContext().newQueryEntry(dataKey, key, value);
+        QueryableEntry queryEntry = getMapServiceContext().newQueryEntry(key, value);
         return getPredicate().apply(queryEntry);
     }
 

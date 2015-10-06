@@ -30,11 +30,11 @@ public final class QueryEntryFactory {
     }
 
 
-    public QueryableEntry newEntry(SerializationService serializationService, Data indexKey, Object key, Object value) {
+    public QueryableEntry newEntry(SerializationService serializationService, Data key, Object value) {
         if (useCache) {
-            return new CachedQueryEntry(serializationService, indexKey, key, value);
+            return new CachedQueryEntry(serializationService, key, value);
         } else {
-            return new QueryEntry(serializationService, indexKey, key, value);
+            return new QueryEntry(serializationService, key, value);
         }
     }
 }

@@ -315,8 +315,8 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public QueryableEntry newQueryEntry(Data indexKey, Object key, Object value) {
-        return queryEntryFactory.newEntry(getNodeEngine().getSerializationService(), indexKey, key, value);
+    public QueryableEntry newQueryEntry(Data key, Object value) {
+        return queryEntryFactory.newEntry(getNodeEngine().getSerializationService(), key, value);
     }
 
     @Override

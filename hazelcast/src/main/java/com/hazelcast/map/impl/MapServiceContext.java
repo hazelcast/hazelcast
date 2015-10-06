@@ -115,5 +115,5 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
      */
     void setEvictionOperator(EvictionOperator evictionOperator);
 
-    QueryableEntry newQueryEntry(Data indexKey, Object key, Object value);
+    QueryableEntry newQueryEntry(Data key, Object value);
 }

@@ -31,16 +31,15 @@ import com.hazelcast.query.impl.getters.ReflectionHelper;
  */
 public class QueryEntry implements QueryableEntry {
 
-    private Data indexKey;
-    private Object key;
+    private Data key;
     private Object value;
     private SerializationService serializationService;
 
     public QueryEntry() {
     }
 
-    public QueryEntry(SerializationService serializationService, Data indexKey, Object key, Object value) {
-        init(serializationService, indexKey, key, value);
+    public QueryEntry(SerializationService serializationService, Data key, Object value) {
+        init(serializationService, key, value);
     }
 
     /**
@@ -60,15 +59,11 @@ public class QueryEntry implements QueryableEntry {
      * </code>
      * </pre>
      */
-    public void init(SerializationService serializationService, Data indexKey, Object key, Object value) {
-        if (indexKey == null) {
-            throw new IllegalArgumentException("index keyData cannot be null");
-        }
+    public void init(SerializationService serializationService, Data key, Object value) {
         if (key == null) {
             throw new IllegalArgumentException("keyData cannot be null");
         }
 
-        this.indexKey = indexKey;
         this.serializationService = serializationService;
 
         this.key = key;
@@ -87,7 +82,7 @@ public class QueryEntry implements QueryableEntry {
 
     @Override
     public Data getKeyData() {
-        return indexKey;
+        return key;
     }
 
     @Override
@@ -127,11 +122,6 @@ public class QueryEntry implements QueryableEntry {
 
 
     @Override
-    public Data getIndexKey() {
-        return indexKey;
-    }
-
-    @Override
     public Object setValue(Object value) {
         throw new UnsupportedOperationException();
     }
@@ -145,7 +135,7 @@ public class QueryEntry implements QueryableEntry {
             return false;
         }
         QueryEntry that = (QueryEntry) o;
-        if (!indexKey.equals(that.indexKey)) {
+        if (!key.equals(that.key)) {
             return false;
         }
         return true;
@@ -153,7 +143,7 @@ public class QueryEntry implements QueryableEntry {
 
     @Override
     public int hashCode() {
-        return indexKey.hashCode();
+        return key.hashCode();
     }
 
 }

@@ -53,13 +53,13 @@ public class MultiResultSet extends AbstractSet<QueryableEntry> {
                 index = new HashSet<Object>();
                 for (ConcurrentMap<Data, QueryableEntry> result : resultSets) {
                     for (QueryableEntry queryableEntry : result.values()) {
-                        index.add(queryableEntry.getIndexKey());
+                        index.add(queryableEntry.getKeyData());
                     }
                 }
                 return checkFromIndex(entry);
             } else {
                 for (ConcurrentMap<Data, QueryableEntry> resultSet : resultSets) {
-                    if (resultSet.containsKey(entry.getIndexKey())) {
+                    if (resultSet.containsKey(entry.getKeyData())) {
                         return true;
                     }
                 }
@@ -69,7 +69,7 @@ public class MultiResultSet extends AbstractSet<QueryableEntry> {
     }
 
     private boolean checkFromIndex(QueryableEntry entry) {
-        return index.contains(entry.getIndexKey());
+        return index.contains(entry.getKeyData());
     }
 
     @Override

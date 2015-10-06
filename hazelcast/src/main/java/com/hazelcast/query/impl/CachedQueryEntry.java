@@ -31,7 +31,6 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
  */
 public class CachedQueryEntry implements QueryableEntry {
 
-    private Data indexKey;
     private Data keyData;
     private Object keyObject;
     private Data valueData;
@@ -41,54 +40,24 @@ public class CachedQueryEntry implements QueryableEntry {
     public CachedQueryEntry() {
     }
 
-    public CachedQueryEntry(SerializationService serializationService, Data indexKey, Object key, Object value) {
-        init(serializationService, indexKey, key, value);
+    public CachedQueryEntry(SerializationService serializationService, Data key, Object value) {
+        init(serializationService, key, value);
     }
 
-    /**
-     * It may be useful to use this {@code init} method in some cases that same instance of this class can be used
-     * instead of creating a new one for every iteration when scanning large data sets, for example:
-     * <pre>
-     * <code>Predicate predicate = ...
-     * QueryEntry entry = new QueryEntry()
-     * for(i == 0; i < HUGE_NUMBER; i++) {
-     *       entry.init(...)
-     *       boolean valid = predicate.apply(queryEntry);
-     *
-     *       if(valid) {
-     *          ....
-     *       }
-     *  }
-     * </code>
-     * </pre>
-     */
-    public void init(SerializationService serializationService, Data indexKey, Object key, Object value) {
-        if (indexKey == null) {
-            throw new IllegalArgumentException("index keyData cannot be null");
-        }
+    public void init(SerializationService serializationService, Data key, Object value) {
         if (key == null) {
             throw new IllegalArgumentException("keyData cannot be null");
         }
-
         this.serializationService = serializationService;
-        this.indexKey = indexKey;
-
-        keyData = null;
-        keyObject = null;
-
-        if (key instanceof Data) {
-            this.keyData = (Data) key;
-        } else {
-            this.keyObject = key;
-        }
-
-        valueData = null;
-        valueObject = null;
+        this.keyData = key;
+        this.keyObject = null;
 
         if (value instanceof Data) {
             this.valueData = (Data) value;
+            this.valueObject = null;
         } else {
             this.valueObject = value;
+            this.valueData = null;
         }
     }
 
@@ -199,11 +168,6 @@ public class CachedQueryEntry implements QueryableEntry {
     }
 
     @Override
-    public Data getIndexKey() {
-        return indexKey;
-    }
-
-    @Override
     public Object setValue(Object value) {
         throw new UnsupportedOperationException();
     }
@@ -217,7 +181,7 @@ public class CachedQueryEntry implements QueryableEntry {
             return false;
         }
         CachedQueryEntry that = (CachedQueryEntry) o;
-        if (!indexKey.equals(that.indexKey)) {
+        if (!keyData.equals(that.keyData)) {
             return false;
         }
         return true;
@@ -225,7 +189,7 @@ public class CachedQueryEntry implements QueryableEntry {
 
     @Override
     public int hashCode() {
-        return indexKey.hashCode();
+        return keyData.hashCode();
     }
 
 }

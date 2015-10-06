@@ -99,7 +99,7 @@ class MapMigrationAwareService implements MigrationAwareService {
                     } else {
                         Object value = record.getValue();
                         if (value != null) {
-                            QueryableEntry queryEntry = mapServiceContext.newQueryEntry(record.getKey(), record.getKey(), value);
+                            QueryableEntry queryEntry = mapServiceContext.newQueryEntry(record.getKey(), value);
                             indexes.saveEntryIndex(queryEntry, null);
                         }
                     }

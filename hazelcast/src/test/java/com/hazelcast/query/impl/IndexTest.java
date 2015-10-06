@@ -84,7 +84,7 @@ public class IndexTest {
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.Istanbul));
-        is.saveEntryIndex(new QueryEntry(ss, key, key, value), null);
+        is.saveEntryIndex(new QueryEntry(ss, key, value), null);
         assertNotNull(is.getIndex("favoriteCity"));
         Record record = recordFactory.newRecord(key, value);
         is.removeEntryIndex(record);
@@ -97,10 +97,10 @@ public class IndexTest {
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.Istanbul));
-        is.saveEntryIndex(new QueryEntry(ss, key, key, value), null);
+        is.saveEntryIndex(new QueryEntry(ss, key, value), null);
 
         Data newValue = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.Krakow));
-        is.saveEntryIndex(new QueryEntry(ss, key, key, newValue), value);
+        is.saveEntryIndex(new QueryEntry(ss, key, newValue), value);
 
         assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.Istanbul).size());
         assertEquals(1, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.Krakow).size());
@@ -115,7 +115,7 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(i % 2 == 0, -10.34d, "joe" + i));
-            is.saveEntryIndex(new QueryEntry(ss, key, key, value), null);
+            is.saveEntryIndex(new QueryEntry(ss, key, value), null);
         }
         assertEquals(1000, dIndex.getRecords(-10.34d).size());
         assertEquals(1, strIndex.getRecords("joe23").size());
@@ -126,7 +126,7 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(false, 11.34d, "joe"));
-            is.saveEntryIndex(new QueryEntry(ss, key, key, value), null);
+            is.saveEntryIndex(new QueryEntry(ss, key, value), null);
         }
 
         assertEquals(0, dIndex.getRecords(-10.34d).size());
@@ -140,7 +140,7 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(false, -1 * (i + 1), "joe" + i));
-            is.saveEntryIndex(new QueryEntry(ss, key, key, value), null);
+            is.saveEntryIndex(new QueryEntry(ss, key, value), null);
         }
         assertEquals(0, dIndex.getSubRecordsBetween(1d, 1001d).size());
         assertEquals(1000, dIndex.getSubRecordsBetween(-1d, -1001d).size());
@@ -149,7 +149,7 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(false, 1 * (i + 1), "joe" + i));
-            is.saveEntryIndex(new QueryEntry(ss, key, key, value), null);
+            is.saveEntryIndex(new QueryEntry(ss, key, value), null);
         }
         assertEquals(1000, dIndex.getSubRecordsBetween(1d, 1001d).size());
         assertEquals(0, dIndex.getSubRecordsBetween(-1d, -1001d).size());
@@ -175,17 +175,17 @@ public class IndexTest {
 
         Data value = ss.toData(new MainPortable(false, 1, null));
         Data key1 = ss.toData(0);
-        is.saveEntryIndex(new QueryEntry(ss, key1, key1, value), null);
+        is.saveEntryIndex(new QueryEntry(ss, key1, value), null);
 
         value = ss.toData(new MainPortable(false, 2, null));
         Data key2 = ss.toData(1);
-        is.saveEntryIndex(new QueryEntry(ss, key2, key2, value), null);
+        is.saveEntryIndex(new QueryEntry(ss, key2, value), null);
 
 
         for (int i = 2; i < 1000; i++) {
             Data key = ss.toData(i);
             value = ss.toData(new MainPortable(false, 1 * (i + 1), "joe" + i));
-            is.saveEntryIndex(new QueryEntry(ss, key, key, value), null);
+            is.saveEntryIndex(new QueryEntry(ss, key, value), null);
         }
 
         Comparable c = null;
@@ -378,10 +378,6 @@ public class IndexTest {
             return null;
         }
 
-        public Data getIndexKey() {
-            return key;
-        }
-
         public long getCreationTime() {
             return 0;
         }
@@ -448,8 +444,8 @@ public class IndexTest {
         ConcurrentMap<Data, QueryableEntry> records = index.getRecordMap(555L);
         assertNotNull(records);
         assertEquals(2, records.size());
-        assertEquals(record5, records.get(record5.getIndexKey()));
-        assertEquals(record50, records.get(record50.getIndexKey()));
+        assertEquals(record5, records.get(record5.getKeyData()));
+        assertEquals(record50, records.get(record50.getKeyData()));
         assertEquals(2, index.getRecords(555L).size());
         assertEquals(3, index.getSubRecordsBetween(55L, 555L).size());
         assertEquals(3, index.getSubRecordsBetween(66L, 555L).size());

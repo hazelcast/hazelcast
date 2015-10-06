@@ -315,7 +315,7 @@ public class PredicatesTest extends HazelcastTestSupport {
     private class DummyEntry extends QueryEntry {
 
         DummyEntry(Comparable attribute) {
-            super(ss, toData("1"), "1", attribute);
+            super(ss, toData("1"), attribute);
         }
 
         @Override
@@ -379,15 +379,10 @@ public class PredicatesTest extends HazelcastTestSupport {
             return null;
         }
 
-        @Override
-        public Data getIndexKey() {
-            return null;
-        }
-
     }
 
     private Entry createEntry(final Object key, final Object value) {
-        return new QueryEntry(ss, toData(key), key, value);
+        return new QueryEntry(ss, toData(key), value);
     }
 
     private void assertPredicateTrue(Predicate p, Comparable comparable) {

@@ -300,7 +300,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         }
 
         QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
-        QueryableEntry entry = mapServiceContext.newQueryEntry(dataKey, dataKey, testValue);
+        QueryableEntry entry = mapServiceContext.newQueryEntry(dataKey, testValue);
         return queryEventFilter.eval(entry);
     }
 

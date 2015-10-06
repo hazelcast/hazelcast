@@ -69,7 +69,7 @@ public class PortablePredicatesTest {
     }
 
     private QueryEntry toQueryEntry(Object key, Object value) {
-        return new QueryEntry(ss, ss.toData(key), key, value);
+        return new QueryEntry(ss, ss.toData(key), value);
     }
 
     class TestPortableFactory implements PortableFactory {

@@ -53,7 +53,7 @@ public class IndexesTest {
         indexes.addOrGetIndex("salary", true);
         for (int i = 0; i < 20000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
-            indexes.saveEntryIndex(new QueryEntry(ss, toData(i), i, employee), null);
+            indexes.saveEntryIndex(new QueryEntry(ss, toData(i), employee), null);
         }
         int count = 1000;
         Set<String> ages = new HashSet<String>(count);
@@ -79,7 +79,7 @@ public class IndexesTest {
         indexes.addOrGetIndex("salary", true);
         for (int i = 0; i < 2000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 100));
-            indexes.saveEntryIndex(new QueryEntry(ss, toData(i), i, employee), null);
+            indexes.saveEntryIndex(new QueryEntry(ss, toData(i), employee), null);
         }
 
         for (int i = 0; i < 10; i++) {
@@ -93,15 +93,15 @@ public class IndexesTest {
     public void testIndex2() throws Exception {
         Indexes indexes = new Indexes(ss);
         indexes.addOrGetIndex("name", false);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(1), 1, new Value("abc")), null);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(2), 2, new Value("xyz")), null);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(3), 3, new Value("aaa")), null);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(4), 4, new Value("zzz")), null);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(5), 5, new Value("klm")), null);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(6), 6, new Value("prs")), null);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(7), 7, new Value("prs")), null);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(8), 8, new Value("def")), null);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(9), 9, new Value("qwx")), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(1), new Value("abc")), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(2), new Value("xyz")), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(3), new Value("aaa")), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(4), new Value("zzz")), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(5), new Value("klm")), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(6), new Value("prs")), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(7), new Value("prs")), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(8), new Value("def")), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(9), new Value("qwx")), null);
         assertEquals(8, new HashSet(indexes.query(new SqlPredicate("name > 'aac'"))).size());
     }
 
@@ -130,7 +130,7 @@ public class IndexesTest {
     private void shouldReturnNull_whenQueryingOnKeys(Indexes indexes) {
         for (int i = 0; i < 50; i++) {
             // passing null value to QueryEntry.
-            indexes.saveEntryIndex(new QueryEntry(ss, toData(i), i, null), null);
+            indexes.saveEntryIndex(new QueryEntry(ss, toData(i), null), null);
         }
 
         Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "));
@@ -145,7 +145,7 @@ public class IndexesTest {
 
         for (int i = 0; i < 100; i++) {
             // passing null value to QueryEntry.
-            indexes.saveEntryIndex(new QueryEntry(ss, toData(i), i, null), null);
+            indexes.saveEntryIndex(new QueryEntry(ss, toData(i), null), null);
         }
 
         Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "));

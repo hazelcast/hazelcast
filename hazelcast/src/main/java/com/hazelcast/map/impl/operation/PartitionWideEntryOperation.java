@@ -65,7 +65,7 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
             final Data dataKey = record.getKey();
             final Object oldValue = record.getValue();
 
-            if (!applyPredicate(dataKey, dataKey, oldValue)) {
+            if (!applyPredicate(dataKey, oldValue)) {
                 continue;
             }
 
@@ -114,7 +114,7 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
         return backupProcessor != null ? new PartitionWideEntryBackupOperation(name, backupProcessor) : null;
     }
 
-    private boolean applyPredicate(Data dataKey, Object key, Object value) {
+    private boolean applyPredicate(Data key, Object value) {
         Predicate predicate = getPredicate();
 
         if (predicate == null || TruePredicate.INSTANCE == predicate) {
@@ -125,8 +125,7 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
             return false;
         }
 
-        final SerializationService ss = getNodeEngine().getSerializationService();
-        QueryableEntry queryEntry = getMapServiceContext().newQueryEntry(dataKey, key, value);
+        QueryableEntry queryEntry = getMapServiceContext().newQueryEntry(key, value);
         return getPredicate().apply(queryEntry);
     }
 

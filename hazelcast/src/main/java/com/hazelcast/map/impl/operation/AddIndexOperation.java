@@ -70,7 +70,7 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
             final Record record = iterator.next();
             Data key = record.getKey();
             Object value = record.getValue();
-            QueryableEntry queryEntry = serviceContext.newQueryEntry(key, key, value);
+            QueryableEntry queryEntry = serviceContext.newQueryEntry(key, value);
             index.saveEntryIndex(queryEntry, null);
         }
     }

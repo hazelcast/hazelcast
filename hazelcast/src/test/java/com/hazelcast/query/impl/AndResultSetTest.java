@@ -88,10 +88,5 @@ public class AndResultSetTest extends HazelcastTestSupport {
         public Data getValueData() {
             return null;
         }
-
-        @Override
-        public Data getIndexKey() {
-            return null;
-        }
     }
 }

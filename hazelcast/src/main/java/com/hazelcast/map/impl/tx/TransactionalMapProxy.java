@@ -330,19 +330,21 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         // TODO: Can't we just use the original set?
         Set<Object> keySet = new HashSet<Object>(queryResultSet);
         for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
-            Object key = ss.toObject(entry.getKey());
+            Data keyData = entry.getKey();
             if (!TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type)) {
                 Object value = entry.getValue().value instanceof Data
                         ? mapServiceContext.toObject(entry.getValue().value) : entry.getValue().value;
 
-                QueryableEntry queryEntry = mapServiceContext.newQueryEntry(entry.getKey(), key, value);
+                QueryableEntry queryEntry = mapServiceContext.newQueryEntry(keyData, value);
                 // apply predicate on txMap
                 if (predicate.apply(queryEntry)) {
-                    keySet.add(key);
+                    Object keyObject = ss.toObject(keyData);
+                    keySet.add(keyObject);
                 }
             } else {
                 // meanwhile remove keys which are not in txMap
-                keySet.remove(key);
+                Object keyObject = ss.toObject(keyData);
+                keySet.remove(keyObject);
             }
         }
         return keySet;
@@ -410,7 +412,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                     keyWontBeIncluded.add(keyObject);
                 }
                 Object entryValue = entry.getValue().value;
-                QueryableEntry queryEntry = mapServiceContext.newQueryEntry(entry.getKey(), keyObject, entryValue);
+                QueryableEntry queryEntry = mapServiceContext.newQueryEntry(entry.getKey(), entryValue);
                 if (predicate.apply(queryEntry)) {
                     valueSet.add(queryEntry.getValue());
                 }

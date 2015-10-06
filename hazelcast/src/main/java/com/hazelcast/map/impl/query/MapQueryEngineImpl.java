@@ -272,7 +272,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
             if (value == null) {
                 continue;
             }
-            QueryableEntry queryEntry = mapServiceContext.newQueryEntry(key, key, value);
+            QueryableEntry queryEntry = mapServiceContext.newQueryEntry(key, value);
 
             if (predicate.apply(queryEntry) && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
                 resultList.add(queryEntry);
