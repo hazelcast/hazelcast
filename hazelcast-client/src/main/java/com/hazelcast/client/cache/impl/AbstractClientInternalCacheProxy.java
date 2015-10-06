@@ -472,7 +472,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    protected void removeAllInternal(Set<? extends K> keys, boolean isRemoveAll) {
+    protected void removeAllInternal(Set<? extends K> keys) {
         final long start = System.nanoTime();
         final Set<Data> keysData;
         if (keys != null) {
@@ -485,7 +485,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
         final int partitionCount = clientContext.getPartitionService().getPartitionCount();
         int completionId = registerCompletionLatch(partitionCount);
-        CacheClearRequest request = new CacheClearRequest(nameWithPrefix, keysData, isRemoveAll, completionId);
+        CacheClearRequest request = new CacheClearRequest(nameWithPrefix, keysData, true, completionId);
         try {
             final Map<Integer, Object> results = invoke(request);
             int completionCount = 0;
