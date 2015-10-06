@@ -85,4 +85,6 @@ public interface TextCommandService {
     Node getNode();
 
     byte[] toByteArray(Object value);
+    
+    Object entries(String mapName);
 }
