@@ -231,13 +231,13 @@ public class ClientCacheProxy<K, V>
     public void removeAll(Set<? extends K> keys) {
         ensureOpen();
         validateNotNull(keys);
-        removeAllInternal(keys, true);
+        removeAllInternal(keys);
     }
 
     @Override
     public void removeAll() {
         ensureOpen();
-        removeAllInternal(null, false);
+        removeAllInternal(null);
     }
 
     @Override
