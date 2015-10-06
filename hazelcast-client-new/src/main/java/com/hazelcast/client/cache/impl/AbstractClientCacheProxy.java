@@ -346,7 +346,7 @@ abstract class AbstractClientCacheProxy<K, V>
         final long start = System.nanoTime();
         final Future<Boolean> f = putIfAbsentAsyncInternal(key, value, expiryPolicy, true, false);
         try {
-            boolean saved = toObject(f.get());
+            boolean saved = f.get();
             if (statisticsEnabled) {
                 handleStatisticsOnPutIfAbsent(start, saved);
             }
@@ -361,7 +361,7 @@ abstract class AbstractClientCacheProxy<K, V>
         final long start = System.nanoTime();
         final Future<Boolean> f = replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, true, false);
         try {
-            boolean replaced = toObject(f.get());
+            boolean replaced = f.get();
             if (statisticsEnabled) {
                 handleStatisticsOnReplace(false, start, replaced);
             }
@@ -376,7 +376,7 @@ abstract class AbstractClientCacheProxy<K, V>
         final long start = System.nanoTime();
         final Future<Boolean> f = replaceAsyncInternal(key, null, value, expiryPolicy, false, true, false);
         try {
-            boolean replaced = toObject(f.get());
+            boolean replaced = f.get();
             if (statisticsEnabled) {
                 handleStatisticsOnReplace(false, start, replaced);
             }
@@ -391,7 +391,7 @@ abstract class AbstractClientCacheProxy<K, V>
         final long start = System.nanoTime();
         final Future<V> f = replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, true, false);
         try {
-            V oldValue = toObject(f.get());
+            V oldValue = f.get();
             if (statisticsEnabled) {
                 handleStatisticsOnReplace(true, start, oldValue);
             }
