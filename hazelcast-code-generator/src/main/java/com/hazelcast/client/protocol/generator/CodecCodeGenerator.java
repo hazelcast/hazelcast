@@ -16,18 +16,16 @@
 
 package com.hazelcast.client.protocol.generator;
 
-import com.hazelcast.annotation.Codec;
-import com.hazelcast.annotation.EventResponse;
-import com.hazelcast.annotation.GenerateCodec;
-import com.hazelcast.annotation.Request;
-import com.hazelcast.annotation.Response;
-import freemarker.cache.ClassTemplateLoader;
-import freemarker.ext.beans.BeansWrapper;
-import freemarker.log.Logger;
-import freemarker.template.Configuration;
-import freemarker.template.Template;
-import freemarker.template.TemplateHashModel;
-import freemarker.template.TemplateModelException;
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
@@ -49,21 +47,26 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
-import java.io.IOException;
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
 
-@SupportedAnnotationTypes({"com.hazelcast.annotation.GenerateCodec", "com.hazelcast.annotation.Codec"})
+import com.hazelcast.annotation.Codec;
+import com.hazelcast.annotation.EventResponse;
+import com.hazelcast.annotation.GenerateCodec;
+import com.hazelcast.annotation.Request;
+import com.hazelcast.annotation.Response;
+
+import freemarker.cache.ClassTemplateLoader;
+import freemarker.ext.beans.BeansWrapper;
+import freemarker.log.Logger;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateHashModel;
+import freemarker.template.TemplateModelException;
+
+@SupportedAnnotationTypes({"com.hazelcast.annotation.GenerateCodec"})
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class CodecCodeGenerator
         extends AbstractProcessor {
+    private static final int CODEC_COUNT = 8;
 
     private Filer filer;
     private Elements elementUtils;
@@ -74,11 +77,14 @@ public class CodecCodeGenerator
     private final Map<Integer, ExecutableElement> responseMap = new HashMap<Integer, ExecutableElement>();
     private final Map<Integer, ExecutableElement> eventResponseMap = new HashMap<Integer, ExecutableElement>();
 
+    private int round = 0;
+
     @Override
     public void init(ProcessingEnvironment env) {
+        messager = env.getMessager();
+        messager.printMessage(Diagnostic.Kind.NOTE, "Initializing code generator");
 
         filer = env.getFiler();
-        messager = env.getMessager();
         elementUtils = env.getElementUtils();
         try {
             Logger.selectLoggerLibrary(Logger.LIBRARY_NONE);
@@ -108,17 +114,11 @@ public class CodecCodeGenerator
 
     @Override
     public boolean process(Set<? extends TypeElement> elements, RoundEnvironment env) {
+        messager.printMessage(Diagnostic.Kind.NOTE, "Processing code generator. round:" +(++round));
         try {
-            TypeElement genCodecElement = elementUtils.getTypeElement("com.hazelcast.annotation.GenerateCodec");
-            TypeElement codecElement = elementUtils.getTypeElement("com.hazelcast.annotation.Codec");
-            if (!elements.contains(genCodecElement) || !elements.contains(codecElement)) {
-                return false;
-            }
-
             //PREPARE META DATA
             for (Element element : env.getElementsAnnotatedWith(Codec.class)) {
                 TypeElement classElement = (TypeElement) element;
-                classElement.getAnnotationMirrors();
                 Codec annotation = classElement.getAnnotation(Codec.class);
                 if (annotation != null) {
                     try {
@@ -129,11 +129,18 @@ public class CodecCodeGenerator
                     }
                 }
             }
-
             for (Element element : env.getElementsAnnotatedWith(GenerateCodec.class)) {
                 register((TypeElement) element);
             }
             //END
+            if(CodecModel.CUSTOM_CODEC_MAP.size() != CODEC_COUNT) {
+                messager.printMessage(Diagnostic.Kind.NOTE, "Codec count do not match found codec count:" +
+                    CodecModel.CUSTOM_CODEC_MAP.size());
+                return false;
+            } else {
+                messager.printMessage(Diagnostic.Kind.NOTE, "Codec count is validated. round:" + round);
+            }
+
             for (Lang lang : codecTemplateMap.keySet()) {
                 generateContent(lang);
             }
@@ -141,6 +148,9 @@ public class CodecCodeGenerator
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());
             e.printStackTrace();
         }
+        requestMap.clear();
+        responseMap.clear();
+        eventResponseMap.clear();
         return true;
     }
 

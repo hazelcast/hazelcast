@@ -16,20 +16,21 @@
 
 package com.hazelcast.client.protocol.generator;
 
-import com.hazelcast.annotation.EventResponse;
-import com.hazelcast.annotation.GenerateCodec;
-import com.hazelcast.annotation.Nullable;
-import com.hazelcast.annotation.Request;
-
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.util.Elements;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.util.Elements;
+
+import com.hazelcast.annotation.EventResponse;
+import com.hazelcast.annotation.GenerateCodec;
+import com.hazelcast.annotation.Nullable;
+import com.hazelcast.annotation.Request;
 
 public class CodecModel implements Model{
 
