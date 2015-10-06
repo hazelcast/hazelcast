@@ -77,7 +77,7 @@ public class StoreWorker implements Runnable {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         int partitionCount = partitionService.getPartitionCount();
-        List<DelayedEntry> entries = new ArrayList<DelayedEntry>();
+        List<DelayedEntry> entries = new ArrayList<DelayedEntry>(partitionCount);
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             InternalPartition partition = partitionService.getPartition(partitionId, false);
@@ -115,7 +115,9 @@ public class StoreWorker implements Runnable {
         int flushCount = getNumberOfFlushedEntries(recordStore);
         WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
 
-        List<DelayedEntry> entries = new ArrayList<DelayedEntry>();
+        final int defaultCapacity = 16;
+        int initialCapacity = Math.max(flushCount, defaultCapacity);
+        List<DelayedEntry> entries = new ArrayList<DelayedEntry>(initialCapacity);
         filterWriteBehindQueue(now, flushCount, entries, queue);
 
         return entries;
