@@ -228,6 +228,12 @@
             <hz:map name="mapWithNotOptimizedQueries" optimize-queries="false"/>
             <hz:map name="mapWithDefaultOptimizedQueries"/>
 
+            <hz:map name="mapWithPartitionLostListener">
+                <hz:partition-lost-listeners>
+                    <hz:partition-lost-listener class-name="DummyMapPartitionLostListenerImpl" />
+                </hz:partition-lost-listeners>
+            </hz:map>
+
             <hz:cache name="testCache">
                 <hz:wan-replication-ref name="testWan" merge-policy="PUT_IF_ABSENT" republishing-enabled="false"/>
             </hz:cache>
