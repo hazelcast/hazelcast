@@ -24,7 +24,6 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -66,19 +65,19 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class BasicMapTest extends HazelcastTestSupport {
 
-    private static final int instanceCount = 3;
-    private static final Random rand = new Random();
+    static final int instanceCount = 3;
+    static final Random rand = new Random();
 
-    private HazelcastInstance[] instances;
+    HazelcastInstance[] instances;
 
     @Before
     public void init() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
-        Config config = new Config();
+        Config config = getConfig();
         instances = factory.newInstances(config);
     }
 
-    private HazelcastInstance getInstance() {
+    HazelcastInstance getInstance() {
         return instances[rand.nextInt(instanceCount)];
     }
 
@@ -187,7 +186,6 @@ public class BasicMapTest extends HazelcastTestSupport {
             assertTrue(e instanceof NullPointerException);
         }
     }
-
 
     @Test
     public void testMapEvictAndListener() throws InterruptedException {

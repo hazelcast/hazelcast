@@ -176,9 +176,10 @@ public class HazelcastConnectionImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void getConfig() {
+    public void testGetConfig() {
         Config config = connection.getConfig();
         assertSame(config, hz.getConfig());
+
     }
 
     @Test

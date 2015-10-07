@@ -152,12 +152,7 @@ public class MapPredicateTest extends HazelcastTestSupport {
         }
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
-        while (nodeCount > 1) {
-            factory.newHazelcastInstance();
-            nodeCount--;
-        }
-
-        HazelcastInstance node = factory.newHazelcastInstance();
-        return node.getMap(randomMapName());
+        HazelcastInstance instance = factory.newInstances(getConfig())[0];
+        return instance.getMap(randomString());
     }
 }

@@ -14,7 +14,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.transaction.TransactionOptions.TransactionType.LOCAL;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;

@@ -34,21 +34,19 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.mapstore.MapStoreTest.newConfig;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 /**
  * @author enesakar 1/21/13
@@ -100,6 +98,7 @@ public class MapStoreWriteThroughTest extends HazelcastTestSupport {
         MapConfig mapConfig = config.getMapConfig("default");
         mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
         mapConfig.setMaxSizeConfig(maxSizeConfig);
+        mapConfig.setMinEvictionCheckMillis(0);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);

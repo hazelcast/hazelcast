@@ -178,7 +178,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
 
     private Config createConfigWithDummyTxService() {
-        Config config = new Config();
+        Config config = getConfig();
         ServicesConfig servicesConfig = config.getServicesConfig();
         servicesConfig.addServiceConfig(new ServiceConfig().setName(DUMMY_TX_SERVICE)
                 .setEnabled(true).setServiceImpl(new DummyTransactionalService(DUMMY_TX_SERVICE)));
@@ -198,7 +198,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTxnGetForUpdateAndIncrementStressTest() throws TransactionException, InterruptedException {
-        Config config = new Config();
+        Config config = getConfig();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);

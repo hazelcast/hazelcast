@@ -77,7 +77,7 @@ public class BackupTest extends HazelcastTestSupport {
     public void testGracefulShutdown() throws Exception {
         int size = 50000;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
-        final Config config = new Config();
+        Config config = getConfig();
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -103,7 +103,7 @@ public class BackupTest extends HazelcastTestSupport {
 
     @Test
     public void testGracefulShutdown2() throws Exception {
-        Config config = new Config();
+        Config config = getConfig();
         config.getMapConfig(MAP_NAME).setBackupCount(2);
 
         TestHazelcastInstanceFactory f = createHazelcastInstanceFactory(8);
@@ -176,7 +176,7 @@ public class BackupTest extends HazelcastTestSupport {
 
     @Test
     public void testGracefulShutdown3() throws Exception {
-        Config config = new Config();
+        Config config = getConfig();
         config.getMapConfig(MAP_NAME).setBackupCount(1);
 
         TestHazelcastInstanceFactory f = createHazelcastInstanceFactory(8);
@@ -281,7 +281,8 @@ public class BackupTest extends HazelcastTestSupport {
     private void testBackupMigrationAndRecovery(int nodeCount, int backupCount, int mapSize) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(nodeCount);
         final String name = MAP_NAME;
-        final Config config = new Config();
+
+        Config config = getConfig();
         config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL, "5");
         config.getMapConfig(name).setBackupCount(backupCount).setStatisticsEnabled(true);
 
@@ -378,9 +379,8 @@ public class BackupTest extends HazelcastTestSupport {
     @Test
     public void testIssue177BackupCount() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(10);
-        final Config config = new Config();
-        final String name = MAP_NAME;
-        config.getMapConfig(name).setBackupCount(1).setStatisticsEnabled(true);
+        final Config config = getConfig();
+        config.getMapConfig(MAP_NAME).setBackupCount(1).setStatisticsEnabled(true);
 
         final Random rand = new Random();
         final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(10);
@@ -400,7 +400,7 @@ public class BackupTest extends HazelcastTestSupport {
                         if (finalI != 0) { // do not run on master node,
                             // let partition assignment be made during put ops.
                             for (int j = 0; j < 10000; j++) {
-                                instance.getMap(name).put(getName() + "-" + j, "value");
+                                instance.getMap(MAP_NAME).put(getName() + "-" + j, "value");
                             }
                         }
                     } catch (InterruptedException e) {
@@ -421,7 +421,7 @@ public class BackupTest extends HazelcastTestSupport {
             long totalBackup = 0L;
             for (int j = 0; j < instances.length(); j++) {
                 HazelcastInstance hz = instances.get(j);
-                LocalMapStats stats = hz.getMap(name).getLocalMapStats();
+                LocalMapStats stats = hz.getMap(MAP_NAME).getLocalMapStats();
                 totalOwned += stats.getOwnedEntryCount();
                 totalBackup += stats.getBackupEntryCount();
             }
@@ -444,12 +444,10 @@ public class BackupTest extends HazelcastTestSupport {
     @Test
     public void testBackupPutWhenOwnerNodeDead() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-
-        final String name = MAP_NAME;
-
-        final HazelcastInstance hz = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance();
-        final IMap<Integer, byte[]> map = hz2.getMap(name);
+        Config config = getConfig();
+        final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(config);
+        final IMap<Integer, byte[]> map = hz2.getMap(MAP_NAME);
 
         final int size = 100000;
         final byte[] data = new byte[250];
@@ -460,7 +458,7 @@ public class BackupTest extends HazelcastTestSupport {
 
         new Thread() {
             public void run() {
-                while (hz.getMap(name).size() < size / 2) {
+                while (hz.getMap(MAP_NAME).size() < size / 2) {
                     try {
                         sleep(5);
                     } catch (InterruptedException ignored) {
@@ -502,12 +500,10 @@ public class BackupTest extends HazelcastTestSupport {
     @Test
     public void testBackupRemoveWhenOwnerNodeDead() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-
-        final String name = MAP_NAME;
-
-        final HazelcastInstance hz = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance();
-        final IMap<Integer, Integer> map = hz2.getMap(name);
+        Config config = getConfig();
+        final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(config);
+        final IMap<Integer, Integer> map = hz2.getMap(MAP_NAME);
 
         final int size = 100000;
         final int threads = 100;
@@ -532,7 +528,7 @@ public class BackupTest extends HazelcastTestSupport {
 
         new Thread() {
             public void run() {
-                while (hz.getMap(name).size() > size / 2) {
+                while (hz.getMap(MAP_NAME).size() > size / 2) {
                     try {
                         sleep(5);
                     } catch (InterruptedException ignored) {
@@ -575,8 +571,9 @@ public class BackupTest extends HazelcastTestSupport {
      */
     @Test
     public void testGracefulShutdown_Issue2804() {
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(GroupProperty.PARTITION_COUNT, "1111");
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance h1 = factory.newHazelcastInstance(config);

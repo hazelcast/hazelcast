@@ -16,11 +16,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.transaction.TransactionOptions.TransactionType.LOCAL;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
-import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
-import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
@@ -120,7 +117,7 @@ public class TransactionImpl_OnePhaseTest extends HazelcastTestSupport {
         try {
             tx.commit();
             fail();
-        }catch (TransactionException expected){
+        } catch (TransactionException expected) {
         }
 
         tx.rollback();

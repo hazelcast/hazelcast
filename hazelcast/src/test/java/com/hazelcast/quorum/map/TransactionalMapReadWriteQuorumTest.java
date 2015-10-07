@@ -17,10 +17,10 @@
 package com.hazelcast.quorum.map;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.query.TruePredicate;
-import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.quorum.PartitionedCluster;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastTestRunner;
@@ -31,10 +31,6 @@ import com.hazelcast.test.annotation.RunParallel;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -42,8 +38,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.concurrent.TimeUnit;
+
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
-import static com.hazelcast.transaction.TransactionOptions.TransactionType.LOCAL;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 
