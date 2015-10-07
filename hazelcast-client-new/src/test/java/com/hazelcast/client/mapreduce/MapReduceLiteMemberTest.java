@@ -1,12 +1,9 @@
 package com.hazelcast.client.mapreduce;
 
-import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -21,10 +18,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.impl.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -102,14 +96,6 @@ public class MapReduceLiteMemberTest {
         assertClusterSizeEventually(2, lite);
         assertClusterSizeEventually(2, lite2);
 
-        final ClientClusterService clientClusterService = getHazelcastClientInstanceImpl(client).getClientClusterService();
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(0, clientClusterService.getSize(MemberSelectors.DATA_MEMBER_SELECTOR));
-            }
-        });
         ICompletableFuture<Map<String, List<Integer>>> future = com.hazelcast.mapreduce.MapReduceLiteMemberTest
                 .testMapReduceJobSubmissionWithNoDataNode(client);
 
@@ -117,7 +103,6 @@ public class MapReduceLiteMemberTest {
             future.get(30, TimeUnit.SECONDS);
             fail("Map-reduce job should not be submitted when there is no data member");
         } catch (ExecutionException e) {
-            System.out.println(e.getCause());
             assertTrue(e.getCause() instanceof IllegalStateException);
         }
     }
