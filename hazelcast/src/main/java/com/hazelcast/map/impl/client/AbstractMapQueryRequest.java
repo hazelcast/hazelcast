@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.BitSetUtils.hasAtLeastOneBitSet;
 
@@ -79,7 +80,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
 
     private BitSet invokeOnMembers(QueryResult result, Predicate predicate, int partitionCount)
             throws InterruptedException, ExecutionException {
-        Collection<Member> members = getClientEngine().getClusterService().getMembers();
+        Collection<Member> members = getClientEngine().getClusterService().getMembers(DATA_MEMBER_SELECTOR);
         List<Future> futures = createInvocations(members, predicate);
         return collectResults(result, futures, partitionCount);
     }

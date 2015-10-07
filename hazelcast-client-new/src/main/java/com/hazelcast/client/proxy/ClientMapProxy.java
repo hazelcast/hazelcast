@@ -106,6 +106,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
+import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.listener.MapListener;
@@ -130,6 +131,7 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.util.collection.InflatableSet;
 import com.hazelcast.util.executor.CompletedFuture;
 
 import java.util.AbstractMap;
@@ -899,13 +901,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request = MapKeySetCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         MapKeySetCodec.ResponseParameters resultParameters = MapKeySetCodec.decodeResponse(response);
-        Collection<Data> result = resultParameters.list;
-        Set<K> keySet = new HashSet<K>(result.size());
-        for (Data data : result) {
-            final K key = toObject(data);
-            keySet.add(key);
+
+        InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(resultParameters.list.size());
+        for (Data data : resultParameters.list) {
+            K key = toObject(data);
+            setBuilder.add(key);
         }
-        return keySet;
+        return setBuilder.build();
     }
 
     @Override
@@ -966,15 +968,14 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request = MapEntrySetCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         MapEntrySetCodec.ResponseParameters resultParameters = MapEntrySetCodec.decodeResponse(response);
-        Set<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>();
 
-
-        for (Entry<Data, Data> entry : resultParameters.entrySet) {
-            K key = toObject(entry.getKey());
-            V value = toObject(entry.getValue());
-            entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
+        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.entrySet.size());
+        SerializationService serializationService = getContext().getSerializationService();
+        for (Entry<Data, Data> row : resultParameters.entrySet) {
+            LazyMapEntry entry = new LazyMapEntry(row.getKey(), row.getValue(), serializationService);
+            setBuilder.add(entry);
         }
-        return entrySet;
+        return setBuilder.build();
     }
 
     @Override
@@ -988,12 +989,12 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage response = invoke(request);
         MapKeySetWithPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPredicateCodec.decodeResponse(response);
 
-        final HashSet<K> keySet = new HashSet<K>();
-        for (Data o : resultParameters.list) {
-            final K key = toObject(o);
-            keySet.add(key);
+        InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(resultParameters.list.size());
+        for (Data data : resultParameters.list) {
+            K key = toObject(data);
+            setBuilder.add(key);
         }
-        return keySet;
+        return setBuilder.build();
     }
 
     private Set<K> keySetWithPagingPredicate(PagingPredicate pagingPredicate) {
@@ -1023,14 +1024,14 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage response = invoke(request);
         MapEntriesWithPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPredicateCodec.decodeResponse(response);
 
-        Set entrySet = new HashSet<Entry<K, V>>(resultParameters.entrySet.size());
-
-        for (Entry<Data, Data> entry : resultParameters.entrySet) {
-            K key = toObject(entry.getKey());
-            V value = toObject(entry.getValue());
-            entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
+        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.entrySet.size());
+        SerializationService serializationService = getContext().getSerializationService();
+        for (Entry<Data, Data> row : resultParameters.entrySet) {
+            LazyMapEntry entry = new LazyMapEntry(row.getKey(), row.getValue(), serializationService);
+            setBuilder.add(entry);
         }
-        return entrySet;
+        return setBuilder.build();
+
     }
 
     public Set<Entry<K, V>> entrySetWithPagingPredicate(PagingPredicate pagingPredicate) {
