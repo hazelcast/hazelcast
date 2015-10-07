@@ -25,7 +25,6 @@ import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
@@ -115,5 +114,4 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
      */
     void setEvictionOperator(EvictionOperator evictionOperator);
 
-    QueryableEntry newQueryEntry(Data key, Object value);
 }

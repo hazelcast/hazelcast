@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
@@ -335,7 +336,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                 Object value = entry.getValue().value instanceof Data
                         ? mapServiceContext.toObject(entry.getValue().value) : entry.getValue().value;
 
-                QueryableEntry queryEntry = mapServiceContext.newQueryEntry(keyData, value);
+                QueryableEntry queryEntry = new CachedQueryEntry(ss, keyData, value);
                 // apply predicate on txMap
                 if (predicate.apply(queryEntry)) {
                     Object keyObject = ss.toObject(keyData);
@@ -412,7 +413,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                     keyWontBeIncluded.add(keyObject);
                 }
                 Object entryValue = entry.getValue().value;
-                QueryableEntry queryEntry = mapServiceContext.newQueryEntry(entry.getKey(), entryValue);
+                QueryableEntry queryEntry = new CachedQueryEntry(serializationService, entry.getKey(), entryValue);
                 if (predicate.apply(queryEntry)) {
                     valueSet.add(queryEntry.getValue());
                 }

@@ -41,6 +41,7 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationPublisher;
@@ -72,6 +73,8 @@ public class MapContainer {
 
     private final MapStoreContext mapStoreContext;
 
+    private final SerializationService serializationService;
+
     private WanReplicationPublisher wanReplicationPublisher;
 
     private MapMergePolicy wanMergePolicy;
@@ -81,6 +84,8 @@ public class MapContainer {
     private final String name;
 
     private final String quorumName;
+
+    private final QueryEntryFactory queryEntryFactory;
 
     private final IFunction<Object, Data> toDataFunction = new IFunction<Object, Data>() {
         @Override
@@ -101,7 +106,9 @@ public class MapContainer {
         this.mapServiceContext = mapServiceContext;
         this.partitioningStrategy = createPartitioningStrategy();
         this.quorumName = mapConfig.getQuorumName();
+        this.queryEntryFactory = new QueryEntryFactory(mapConfig.isOptimizeQueries());
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        this.serializationService = nodeEngine.getSerializationService();
         recordFactory = createRecordFactory(nodeEngine);
         initWanReplication(nodeEngine);
         interceptors = new CopyOnWriteArrayList<MapInterceptor>();
@@ -109,7 +116,7 @@ public class MapContainer {
         nearCacheSizeEstimator = createNearCacheSizeEstimator();
         mapStoreContext = createMapStoreContext(this);
         mapStoreContext.start();
-        indexes = new Indexes(nodeEngine.getSerializationService());
+        indexes = new Indexes(serializationService);
     }
 
     private RecordFactory createRecordFactory(NodeEngine nodeEngine) {
@@ -262,6 +269,10 @@ public class MapContainer {
 
     public IFunction<Object, Data> toData() {
         return toDataFunction;
+    }
+
+    public QueryableEntry newQueryEntry(Data key, Object value) {
+        return queryEntryFactory.newEntry(serializationService, key, value);
     }
 }
 

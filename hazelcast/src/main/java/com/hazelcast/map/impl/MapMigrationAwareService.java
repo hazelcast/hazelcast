@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.operation.MapReplicationOperation;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.query.impl.Indexes;
@@ -97,9 +98,9 @@ class MapMigrationAwareService implements MigrationAwareService {
                         // was no old value
                         indexes.removeEntryIndex(record);
                     } else {
-                        Object value = record.getValue();
+                        Object value = Records.getValueOrCachedValue(record, serializationService);
                         if (value != null) {
-                            QueryableEntry queryEntry = mapServiceContext.newQueryEntry(record.getKey(), value);
+                            QueryableEntry queryEntry = mapContainer.newQueryEntry(record.getKey(), value);
                             indexes.saveEntryIndex(queryEntry, null);
                         }
                     }

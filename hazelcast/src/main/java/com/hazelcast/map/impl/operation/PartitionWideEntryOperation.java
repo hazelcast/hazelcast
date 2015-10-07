@@ -125,7 +125,7 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
             return false;
         }
 
-        QueryableEntry queryEntry = getMapServiceContext().newQueryEntry(key, value);
+        QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
         return getPredicate().apply(queryEntry);
     }
 

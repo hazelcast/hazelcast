@@ -29,6 +29,7 @@ import com.hazelcast.map.impl.SizeEstimator;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -154,7 +155,8 @@ abstract class AbstractRecordStore implements RecordStore {
         Data dataKey = record.getKey();
         final Indexes indexes = mapContainer.getIndexes();
         if (indexes.hasIndex()) {
-            QueryableEntry queryableEntry = mapServiceContext.newQueryEntry(dataKey, record.getValue());
+            Object value = Records.getValueOrCachedValue(record, serializationService);
+            QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
             indexes.saveEntryIndex(queryableEntry, oldValue);
         }
     }

@@ -30,6 +30,7 @@ import com.hazelcast.map.impl.wan.MapReplicationRemove;
 import com.hazelcast.map.impl.wan.MapReplicationUpdate;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
@@ -300,7 +301,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         }
 
         QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
-        QueryableEntry entry = mapServiceContext.newQueryEntry(dataKey, testValue);
+        QueryableEntry entry = new CachedQueryEntry(serializationService, dataKey, testValue);
         return queryEventFilter.eval(entry);
     }
 

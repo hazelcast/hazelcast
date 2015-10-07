@@ -34,7 +34,6 @@ import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -74,7 +73,6 @@ class MapServiceContextImpl implements MapServiceContext {
     private final PartitionContainer[] partitionContainers;
     private final ConcurrentMap<String, MapContainer> mapContainers;
     private final AtomicReference<Collection<Integer>> ownedPartitions;
-    private final QueryEntryFactory queryEntryFactory;
     private final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
         public MapContainer createNew(String mapName) {
             final MapServiceContext mapServiceContext = getService().getMapServiceContext();
@@ -114,7 +112,6 @@ class MapServiceContextImpl implements MapServiceContext {
         this.mapEventPublisher = createMapEventPublisherSupport();
         this.mapQueryEngine = new MapQueryEngineImpl(this, newOptimizer(nodeEngine.getGroupProperties()));
         this.eventService = nodeEngine.getEventService();
-        this.queryEntryFactory = new QueryEntryFactory(nodeEngine.getGroupProperties());
     }
 
     MapEventPublisherImpl createMapEventPublisherSupport() {
@@ -312,11 +309,6 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public void setEvictionOperator(EvictionOperator evictionOperator) {
         this.evictionOperator = evictionOperator;
-    }
-
-    @Override
-    public QueryableEntry newQueryEntry(Data key, Object value) {
-        return queryEntryFactory.newEntry(getNodeEngine().getSerializationService(), key, value);
     }
 
     @Override

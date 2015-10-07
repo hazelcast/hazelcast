@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.query;
 
 import static com.hazelcast.instance.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
-import static com.hazelcast.map.impl.record.Record.NOT_CACHED;
 import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
 import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -40,6 +39,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
@@ -262,17 +262,18 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
         List<QueryableEntry> resultList = new LinkedList<QueryableEntry>();
 
-        PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
-        Iterator<Record> iterator = container.getRecordStore(mapName).loadAwareIterator(getNow(), false);
+        PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        Iterator<Record> iterator = partitionContainer.getRecordStore(mapName).loadAwareIterator(getNow(), false);
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(pagingPredicate);
         while (iterator.hasNext()) {
             Record record = iterator.next();
             Data key = record.getKey();
-            Object value = getValueOrCachedValue(record);
+            Object value = Records.getValueOrCachedValue(record, serializationService);
             if (value == null) {
                 continue;
             }
-            QueryableEntry queryEntry = mapServiceContext.newQueryEntry(key, value);
+            QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
 
             if (predicate.apply(queryEntry) && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
                 resultList.add(queryEntry);
@@ -288,20 +289,6 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         result.addAll(queryableEntries);
         result.setPartitionIds(singletonList(partitionId));
         return result;
-    }
-
-    private Object getValueOrCachedValue(Record record) {
-        Object value = record.getCachedValue();
-        if (value == NOT_CACHED) {
-            value = record.getValue();
-        } else if (value == null) {
-            value = record.getValue();
-            if (value instanceof Data && !((Data) value).isPortable()) {
-                value = serializationService.toObject(value);
-                record.setCachedValue(value);
-            }
-        }
-        return value;
     }
 
     @Override
