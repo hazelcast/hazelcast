@@ -1705,6 +1705,13 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 Collection<MemberGroup> memberGroups = createMemberGroups();
                 Address[][] newState = psg.reArrange(memberGroups, partitions);
 
+                if (newState == null) {
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("partition rearrangement couldn't be done. size of member groups: " + memberGroups.size());
+                    }
+                    return;
+                }
+
                 if (!isMigrationAllowed()) {
                     return;
                 }

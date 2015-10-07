@@ -64,7 +64,7 @@ public class ClientCreateRequest extends TargetClientRequest implements Portable
 
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
-        return operationService.createInvocationBuilder(getServiceName(), op, target);
+        return operationService.createInvocationBuilder(getServiceName(), op, target).setTryCount(1);
     }
 
     @Override

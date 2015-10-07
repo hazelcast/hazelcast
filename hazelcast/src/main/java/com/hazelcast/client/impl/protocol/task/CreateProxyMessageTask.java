@@ -39,7 +39,7 @@ public class CreateProxyMessageTask extends AbstractInvocationMessageTask<Client
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
         final InternalOperationService operationService = nodeEngine.getOperationService();
-        return operationService.createInvocationBuilder(getServiceName(), op, parameters.target);
+        return operationService.createInvocationBuilder(getServiceName(), op, parameters.target).setTryCount(1);
     }
 
     @Override
