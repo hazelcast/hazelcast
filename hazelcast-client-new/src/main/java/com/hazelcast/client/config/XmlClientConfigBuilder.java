@@ -131,6 +131,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     protected Document parse(InputStream inputStream) throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
+        dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         final DocumentBuilder builder = dbf.newDocumentBuilder();
         try {
             return builder.parse(inputStream);

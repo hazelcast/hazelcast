@@ -102,7 +102,7 @@ public class HttpPostCommand extends HttpCommand {
             byte b = cb.get();
             char c = (char) b;
             if (c == '\n') {
-                processLine(toStringAndClear(line).toLowerCase());
+                processLine(StringUtil.lowerCaseInternal(toStringAndClear(line)));
                 if (nextLine) {
                     readyToReadData = true;
                 }
