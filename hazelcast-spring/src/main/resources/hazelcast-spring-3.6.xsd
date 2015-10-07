@@ -224,6 +224,18 @@
                                         </xs:complexType>
                                     </xs:element>
                                     <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
+                                    <xs:element name="partition-lost-listeners" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>List of partition lost listeners</xs:documentation>
+                                        </xs:annotation>
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element name="partition-lost-listener" type="listener"
+                                                            minOccurs="0"
+                                                            maxOccurs="unbounded"/>
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="in-memory-format" use="optional" type="xs:string" default="BINARY">

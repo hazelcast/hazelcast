@@ -43,6 +43,7 @@ import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -600,6 +601,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("query-caches".equals(nodeName)) {
                     ManagedList queryCaches = getQueryCaches(childNode);
                     mapConfigBuilder.addPropertyValue("queryCacheConfigs", queryCaches);
+                } else if ("partition-lost-listeners".endsWith(nodeName)) {
+                    ManagedList listeners = parseListeners(childNode, MapPartitionLostListenerConfig.class);
+                    mapConfigBuilder.addPropertyValue("partitionLostListenerConfigs", listeners);
                 }
             }
             mapConfigManagedMap.put(name, beanDefinition);
