@@ -105,7 +105,6 @@ public class MapReduceLiteMemberTest {
             future.get(30, TimeUnit.SECONDS);
             fail("Map-reduce job should not be submitted when there is no data member");
         } catch (ExecutionException e) {
-            System.out.println(e.getCause());
             assertTrue(e.getCause() instanceof IllegalStateException);
         }
 
