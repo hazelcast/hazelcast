@@ -128,7 +128,7 @@ public class ClusterStateManager {
 
             final ClusterStateLock currentLock = getStateLock();
             if (!currentLock.allowsLock(txnId)) {
-                throw new TransactionException("Locking failed for " + initiator
+                throw new TransactionException("Locking failed for " + initiator + ", tx: " + txnId
                         + ", current state: " + toString());
             }
             stateLockRef.set(new ClusterStateLock(initiator, txnId, leaseTime));
