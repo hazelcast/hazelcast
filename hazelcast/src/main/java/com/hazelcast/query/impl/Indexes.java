@@ -35,10 +35,10 @@ public class Indexes {
     private final ConcurrentMap<String, Index> mapIndexes = new ConcurrentHashMap<String, Index>(3);
     private final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>(EMPTY_INDEX);
     private volatile boolean hasIndex;
-    private final SerializationService ss;
+    private final SerializationService serializationService;
 
-    public Indexes(SerializationService ss) {
-        this.ss = ss;
+    public Indexes(SerializationService serializationService) {
+        this.serializationService = serializationService;
     }
 
     public synchronized Index destroyIndex(String attribute) {
@@ -50,7 +50,7 @@ public class Indexes {
         if (index != null) {
             return index;
         }
-        index = new IndexImpl(attribute, ordered, ss);
+        index = new IndexImpl(attribute, ordered, serializationService);
         mapIndexes.put(attribute, index);
         Object[] indexObjects = mapIndexes.values().toArray();
         Index[] newIndexes = new Index[indexObjects.length];

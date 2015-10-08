@@ -27,6 +27,8 @@ import java.util.Set;
  */
 public interface Index {
 
+    void clear();
+
     /**
      * Add entry to this index.
      * @param e entry
@@ -34,8 +36,6 @@ public interface Index {
      * @throws QueryException
      */
     void saveEntryIndex(QueryableEntry e, Object oldValue) throws QueryException;
-
-    void clear();
 
     /**
      * Return converter associated with this Index.

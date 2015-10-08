@@ -58,7 +58,7 @@ import static org.junit.Assert.assertTrue;
 public class ClientSortLimitTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-    private final SerializationService ss = new DefaultSerializationServiceBuilder().build();
+    private final SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
     private HazelcastInstance client;
     private HazelcastInstance server;
     private IMap map;
@@ -340,7 +340,7 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
             set = map.entrySet(pagingPredicate);
             for (Map.Entry<Integer, Employee> entry : set) {
                 Employee e = entry.getValue();
-                QueryEntry qe = new QueryEntry(ss, ss.toData(e.getId()), e);
+                QueryEntry qe = new QueryEntry(serializationService, serializationService.toData(e.getId()), e);
                 assertTrue(predicate.apply(qe));
                 results.add(e);
             }

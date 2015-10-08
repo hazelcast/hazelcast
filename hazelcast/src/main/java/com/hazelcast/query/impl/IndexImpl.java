@@ -30,6 +30,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.query.impl.TypeConverters.IDENTITY_CONVERTER;
+
 /**
  * Implementation for {@link com.hazelcast.query.impl.Index}
  */
@@ -53,7 +55,7 @@ public class IndexImpl implements Index {
         this.attribute = attribute;
         this.ordered = ordered;
         this.ss = ss;
-        indexStore = (ordered) ? new SortedIndexStore() : new UnsortedIndexStore();
+        this.indexStore = ordered ? new SortedIndexStore() : new UnsortedIndexStore();
     }
 
     @Override
@@ -97,7 +99,7 @@ public class IndexImpl implements Index {
         if (converter == null) {
             // Initialize attribute type by using entry index
             AttributeType attributeType = e.getAttributeType(attribute);
-            converter = attributeType == null ? TypeConverters.IDENTITY_CONVERTER : attributeType.getConverter();
+            converter = attributeType == null ? IDENTITY_CONVERTER : attributeType.getConverter();
         }
 
         Comparable oldValue = null;

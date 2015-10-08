@@ -162,9 +162,9 @@ abstract class AbstractRecordStore implements RecordStore {
     }
 
     protected void removeIndex(Record record) {
-        final Indexes indexService = mapContainer.getIndexes();
-        if (indexService.hasIndex()) {
-            indexService.removeEntryIndex(record);
+        Indexes indexes = mapContainer.getIndexes();
+        if (indexes.hasIndex()) {
+            indexes.removeEntryIndex(record);
         }
     }
 
@@ -176,7 +176,7 @@ abstract class AbstractRecordStore implements RecordStore {
      */
 
     protected void removeIndexByPreservingKeys(Collection<Record> keysToRemove, Set<Data> keysToPreserve) {
-        final Indexes indexes = mapContainer.getIndexes();
+        Indexes indexes = mapContainer.getIndexes();
         if (indexes.hasIndex()) {
             for (Record record : keysToRemove) {
                 if (!keysToPreserve.contains(record.getKey())) {
