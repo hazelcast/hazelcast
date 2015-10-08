@@ -25,7 +25,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
-import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -52,8 +52,7 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
 
     @Override
     public void run() {
-        final long now = getNow();
-        oldValue = getValueFor(dataKey, now);
+        oldValue = recordStore.get(dataKey, true);
 
         Map.Entry entry = createMapEntry(dataKey, oldValue);
 
@@ -119,15 +118,6 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
 
     private Map.Entry createMapEntry(Data key, Object value) {
         return new LazyMapEntry(key, value, getNodeEngine().getSerializationService());
-    }
-
-    private Object getValueFor(Data dataKey, long now) {
-        Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(dataKey, now);
-        return mapEntry.getValue();
-    }
-
-    private long getNow() {
-        return Clock.currentTimeMillis();
     }
 
     @Override

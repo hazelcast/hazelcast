@@ -32,7 +32,7 @@ public interface MapDataStore<K, V> {
 
     V add(K key, V value, long now);
 
-    void addTransient(K key, long now);
+    V addTransient(K key, V value, long now);
 
     V addBackup(K key, V value, long now);
 

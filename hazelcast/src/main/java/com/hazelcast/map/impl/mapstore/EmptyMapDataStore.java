@@ -33,7 +33,8 @@ class EmptyMapDataStore implements MapDataStore {
     }
 
     @Override
-    public void addTransient(Object key, long now) {
+    public Object addTransient(Object key, Object value, long now) {
+        return value;
     }
 
     @Override
