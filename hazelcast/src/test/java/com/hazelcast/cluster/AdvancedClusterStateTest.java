@@ -422,7 +422,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         final Cluster cluster = hz.getCluster();
         long timeout = TimeUnit.SECONDS.toMillis(ASSERT_TRUE_EVENTUALLY_TIMEOUT);
         Throwable t = null;
-        while (timeout > 0 && cluster.getClusterState() != newState) {
+        while (timeout > 0) {
             long start = Clock.currentTimeMillis();
             try {
                 cluster.changeClusterState(newState);

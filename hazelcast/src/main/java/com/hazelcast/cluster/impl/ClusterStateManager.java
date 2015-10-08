@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.impl.operations.LockClusterStateOperation;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -34,6 +35,7 @@ import com.hazelcast.util.Preconditions;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -60,6 +62,7 @@ public class ClusterStateManager {
     private static final long LOCK_LEASE_EXTENSION_MILLIS = TimeUnit.SECONDS.toMillis(20);
 
     private final Node node;
+    private final ILogger logger;
     private final Lock clusterServiceLock;
     private final AtomicReference<ClusterStateLock> stateLockRef
             = new AtomicReference<ClusterStateLock>(ClusterStateLock.NOT_LOCKED);
@@ -68,6 +71,7 @@ public class ClusterStateManager {
     ClusterStateManager(Node node, Lock clusterServiceLock) {
         this.node = node;
         this.clusterServiceLock = clusterServiceLock;
+        logger = node.getLogger(getClass());
     }
 
     public ClusterState getState() {
@@ -201,11 +205,11 @@ public class ClusterStateManager {
             String txnId = tx.getTxnId();
             Collection<MemberImpl> members = getMemberImpls();
 
+            addTransactionRecords(newState, tx, members);
+
             lockClusterState(newState, nodeEngine, options.getTimeoutMillis(), txnId, members);
 
             checkMemberListChange(members);
-
-            addTransactionRecords(newState, tx, members);
 
             tx.prepare();
             tx.commit();
@@ -226,12 +230,9 @@ public class ClusterStateManager {
             futures.add(future);
         }
 
-        waitWithDeadline(futures, leaseTime, TimeUnit.MILLISECONDS, new FutureUtil.ExceptionHandler() {
-            @Override
-            public void handleException(Throwable throwable) {
-                throw ExceptionUtil.rethrow(throwable);
-            }
-        });
+        StateManagerExceptionHandler exceptionHandler = new StateManagerExceptionHandler(logger);
+        waitWithDeadline(futures, leaseTime, TimeUnit.MILLISECONDS, exceptionHandler);
+        exceptionHandler.rethrowIfFailed();
     }
 
     private void addTransactionRecords(ClusterState newState, Transaction tx, Collection<MemberImpl> members) {
@@ -283,5 +284,39 @@ public class ClusterStateManager {
         sb.append(", state=").append(state);
         sb.append('}');
         return sb.toString();
+    }
+
+    private static final class StateManagerExceptionHandler implements FutureUtil.ExceptionHandler {
+        private final ILogger logger;
+        private Throwable error;
+
+        private StateManagerExceptionHandler(ILogger logger) {
+            this.logger = logger;
+        }
+
+        @Override
+        public void handleException(final Throwable throwable) {
+            Throwable cause = throwable;
+            if (throwable instanceof ExecutionException
+                    && throwable.getCause() != null) {
+                cause = throwable.getCause();
+            }
+            if (error == null) {
+                error = cause;
+            }
+            log(cause);
+        }
+
+        private void log(Throwable cause) {
+            if (logger.isFinestEnabled()) {
+                logger.finest(cause);
+            }
+        }
+
+        void rethrowIfFailed() {
+            if (error != null) {
+                throw ExceptionUtil.rethrow(error);
+            }
+        }
     }
 }
