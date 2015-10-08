@@ -41,14 +41,14 @@ public class SortedIndexStore extends BaseIndexStore {
         takeWriteLock();
         try {
             if (newValue instanceof IndexImpl.NullObject) {
-                recordsWithNullValue.put(record.getIndexKey(), record);
+                recordsWithNullValue.put(record.getKeyData(), record);
             } else {
                 ConcurrentMap<Data, QueryableEntry> records = recordMap.get(newValue);
                 if (records == null) {
                     records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
                     recordMap.put(newValue, records);
                 }
-                records.put(record.getIndexKey(), record);
+                records.put(record.getKeyData(), record);
             }
         } finally {
             releaseWriteLock();
@@ -59,7 +59,7 @@ public class SortedIndexStore extends BaseIndexStore {
     public void updateIndex(Comparable oldValue, Comparable newValue, QueryableEntry entry) {
         takeWriteLock();
         try {
-            removeIndex(oldValue, entry.getIndexKey());
+            removeIndex(oldValue, entry.getKeyData());
             newIndex(newValue, entry);
         } finally {
             releaseWriteLock();

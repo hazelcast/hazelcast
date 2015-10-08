@@ -16,6 +16,8 @@
 
 package com.hazelcast.test;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
@@ -31,8 +33,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class TestHazelcastInstanceFactory {
 

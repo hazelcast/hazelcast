@@ -113,4 +113,5 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
      * @param evictionOperator {@link EvictionOperator} to be set.
      */
     void setEvictionOperator(EvictionOperator evictionOperator);
+
 }

@@ -16,13 +16,14 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.operation.MapReplicationOperation;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
@@ -94,12 +95,13 @@ class MapMigrationAwareService implements MigrationAwareService {
                 while (iterator.hasNext()) {
                     final Record record = iterator.next();
                     if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-                        indexes.removeEntryIndex(record.getKey());
+                        // was no old value
+                        indexes.removeEntryIndex(record);
                     } else {
-                        Object value = record.getValue();
+                        Object value = Records.getValueOrCachedValue(record, serializationService);
                         if (value != null) {
-                            indexes.saveEntryIndex(new QueryEntry(serializationService, record.getKey(),
-                                    record.getKey(), value));
+                            QueryableEntry queryEntry = mapContainer.newQueryEntry(record.getKey(), value);
+                            indexes.saveEntryIndex(queryEntry, null);
                         }
                     }
                 }

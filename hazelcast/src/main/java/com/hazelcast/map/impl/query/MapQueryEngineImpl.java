@@ -16,6 +16,18 @@
 
 package com.hazelcast.map.impl.query;
 
+import static com.hazelcast.instance.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
+import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
+import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
+import static com.hazelcast.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.util.SortingUtil.compareAnchor;
+import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
+import static com.hazelcast.util.SortingUtil.getSortedSubList;
+import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -27,13 +39,13 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
@@ -56,19 +68,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-
-import static com.hazelcast.instance.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
-import static com.hazelcast.map.impl.record.Record.NOT_CACHED;
-import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
-import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
-import static com.hazelcast.util.FutureUtil.returnWithDeadline;
-import static com.hazelcast.util.SortingUtil.compareAnchor;
-import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
-import static com.hazelcast.util.SortingUtil.getSortedSubList;
-import static java.util.Collections.singletonList;
-import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  * The {@link MapQueryEngine} implementation.
@@ -263,17 +262,18 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
         List<QueryableEntry> resultList = new LinkedList<QueryableEntry>();
 
-        PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
-        Iterator<Record> iterator = container.getRecordStore(mapName).loadAwareIterator(getNow(), false);
+        PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        Iterator<Record> iterator = partitionContainer.getRecordStore(mapName).loadAwareIterator(getNow(), false);
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(pagingPredicate);
         while (iterator.hasNext()) {
             Record record = iterator.next();
             Data key = record.getKey();
-            Object value = getValueOrCachedValue(record);
+            Object value = Records.getValueOrCachedValue(record, serializationService);
             if (value == null) {
                 continue;
             }
-            QueryEntry queryEntry = new QueryEntry(serializationService, key, key, value);
+            QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
 
             if (predicate.apply(queryEntry) && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
                 resultList.add(queryEntry);
@@ -289,20 +289,6 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         result.addAll(queryableEntries);
         result.setPartitionIds(singletonList(partitionId));
         return result;
-    }
-
-    private Object getValueOrCachedValue(Record record) {
-        Object value = record.getCachedValue();
-        if (value == NOT_CACHED) {
-            value = record.getValue();
-        } else if (value == null) {
-            value = record.getValue();
-            if (value instanceof Data && !((Data) value).isPortable()) {
-                value = serializationService.toObject(value);
-                record.setCachedValue(value);
-            }
-        }
-        return value;
     }
 
     @Override

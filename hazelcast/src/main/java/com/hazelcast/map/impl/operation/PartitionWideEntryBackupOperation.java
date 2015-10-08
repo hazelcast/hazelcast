@@ -21,9 +21,8 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
@@ -49,7 +48,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
             final Data dataKey = record.getKey();
             final Object oldValue = record.getValue();
 
-            if (!applyPredicate(dataKey, dataKey, oldValue)) {
+            if (!applyPredicate(dataKey, oldValue)) {
                 continue;
             }
             final Map.Entry entry = createMapEntry(dataKey, oldValue);
@@ -77,12 +76,11 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
         return true;
     }
 
-    private boolean applyPredicate(Data dataKey, Object key, Object value) {
+    private boolean applyPredicate(Data key, Object value) {
         if (getPredicate() == null) {
             return true;
         }
-        final SerializationService ss = getNodeEngine().getSerializationService();
-        QueryEntry queryEntry = new QueryEntry(ss, dataKey, key, value);
+        QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
         return getPredicate().apply(queryEntry);
     }
 

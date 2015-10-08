@@ -30,8 +30,6 @@ public interface QueryableEntry extends Map.Entry {
 
     Object getKey();
 
-    Data getIndexKey();
-
     Data getKeyData();
 
     Data getValueData();
