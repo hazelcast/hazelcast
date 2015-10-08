@@ -21,6 +21,7 @@ import com.hazelcast.map.impl.operation.MapReplicationOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -95,8 +96,9 @@ class MapMigrationAwareService implements MigrationAwareService {
                 while (iterator.hasNext()) {
                     final Record record = iterator.next();
                     if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-                        // was no old value
-                        indexes.removeEntryIndex(record);
+                        Data key = record.getKey();
+                        Object value = Records.getValueOrCachedValue(record, serializationService);
+                        indexes.removeEntryIndex(key, value);
                     } else {
                         Object value = Records.getValueOrCachedValue(record, serializationService);
                         if (value != null) {

@@ -18,7 +18,6 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -64,15 +63,15 @@ public class IndexImpl implements Index {
     }
 
     @Override
-    public void removeEntryIndex(Record record) {
-        Comparable value = QueryEntryUtils.extractAttribute(attribute, record.getKey(), record.getValue(), ss);
+    public void removeEntryIndex(Data key, Object value) {
+        Comparable attributeValue = QueryEntryUtils.extractAttribute(this.attribute, key, value, ss);
 
-        if (value.getClass().isEnum()) {
-            value = TypeConverters.ENUM_CONVERTER.convert(value);
+        if (attributeValue.getClass().isEnum()) {
+            attributeValue = TypeConverters.ENUM_CONVERTER.convert(attributeValue);
         }
 
-        if (value != null) {
-            indexStore.removeIndex(value, record.getKey());
+        if (attributeValue != null) {
+            indexStore.removeIndex(attributeValue, key);
         }
     }
 

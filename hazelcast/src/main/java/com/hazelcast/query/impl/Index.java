@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
-import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.QueryException;
 
 import java.util.Set;
@@ -45,7 +45,7 @@ public interface Index {
      */
     TypeConverter getConverter();
 
-    void removeEntryIndex(Record record);
+    void removeEntryIndex(Data key, Object value);
 
     Set<QueryableEntry> getRecords(Comparable[] values);
 

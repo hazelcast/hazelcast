@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
@@ -72,10 +72,10 @@ public class Indexes {
         hasIndex = false;
     }
 
-    public void removeEntryIndex(Record record) throws QueryException {
+    public void removeEntryIndex(Data key, Object value) throws QueryException {
         Index[] indexes = getIndexes();
         for (Index index : indexes) {
-            index.removeEntryIndex(record);
+            index.removeEntryIndex(key, value);
         }
     }
 
