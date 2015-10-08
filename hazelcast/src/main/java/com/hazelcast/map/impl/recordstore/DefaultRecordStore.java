@@ -33,6 +33,7 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.MapStoreManager;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Indexes;
@@ -243,7 +244,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
         if (indexes.hasIndex()) {
             for (Record record : records.values()) {
-                indexes.removeEntryIndex(record);
+                Data key = record.getKey();
+                Object value = Records.getValueOrCachedValue(record, serializationService);
+                indexes.removeEntryIndex(key, value);
             }
         }
         clearRecordsMap(Collections.<Data, Record>emptyMap());

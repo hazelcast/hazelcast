@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -87,7 +88,7 @@ public class IndexTest {
         is.saveEntryIndex(new QueryEntry(ss, key, value), null);
         assertNotNull(is.getIndex("favoriteCity"));
         Record record = recordFactory.newRecord(key, value);
-        is.removeEntryIndex(record);
+        is.removeEntryIndex(key, Records.getValueOrCachedValue(record, ss));
         assertEquals(0,is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.Istanbul).size());
     }
 
@@ -462,7 +463,8 @@ public class IndexTest {
         assertEquals(3, index.getRecords(new Comparable[]{66L, 555L, 34234L}).size());
         assertEquals(2, index.getRecords(new Comparable[]{555L, 34234L}).size());
 
-        index.removeEntryIndex(record5.toRecord());
+        Record recordToRemove = record5.toRecord();
+        index.removeEntryIndex(recordToRemove.getKey(), Records.getValueOrCachedValue(recordToRemove, ss));
 
         assertEquals(Collections.<QueryableEntry>singleton(record50), index.getRecords(555L));
 
@@ -480,7 +482,9 @@ public class IndexTest {
         assertEquals(1, index.getSubRecords(ComparisonType.GREATER, 66L).size());
         assertEquals(2, index.getSubRecords(ComparisonType.GREATER_EQUAL, 66L).size());
         assertEquals(2, index.getSubRecords(ComparisonType.GREATER_EQUAL, 61L).size());
-        index.removeEntryIndex(record50.toRecord());
+
+        recordToRemove = record50.toRecord();
+        index.removeEntryIndex(recordToRemove.getKey(), Records.getValueOrCachedValue(recordToRemove, ss));
 
         assertEquals(0, index.getRecords(555L).size());
 
@@ -490,7 +494,9 @@ public class IndexTest {
         assertEquals(1, index.getSubRecordsBetween(55L, 555L).size());
         assertEquals(1, index.getSubRecordsBetween(66L, 555L).size());
         assertEquals(0, index.getSubRecordsBetween(555L, 555L).size());
-        index.removeEntryIndex(record6.toRecord());
+
+        recordToRemove = record6.toRecord();
+        index.removeEntryIndex(recordToRemove.getKey(), Records.getValueOrCachedValue(recordToRemove, ss));
 
         assertEquals(0, index.getRecords(66L).size());
 
