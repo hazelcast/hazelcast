@@ -43,25 +43,38 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmpty
 
 public final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
 
-    private Data backupOpData;
     private Address originalCaller;
     private long[] replicaVersions;
     private boolean sync;
 
     private Operation backupOp;
+    private Data backupOpData;
     private boolean valid = true;
 
     public Backup() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public Backup(Data backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
-        this.backupOpData = backupOp;
+    public Backup(Operation backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
+        this.backupOp = backupOp;
         this.originalCaller = originalCaller;
         this.sync = sync;
         this.replicaVersions = replicaVersions;
         if (sync && originalCaller == null) {
-            throw new IllegalArgumentException("Sync backup requires original caller address, Op: " + backupOp);
+            throw new IllegalArgumentException("Sync backup requires original caller address, Backup operation: "
+                    + backupOp);
+        }
+    }
+
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public Backup(Data backupOpData, Address originalCaller, long[] replicaVersions, boolean sync) {
+        this.backupOpData = backupOpData;
+        this.originalCaller = originalCaller;
+        this.sync = sync;
+        this.replicaVersions = replicaVersions;
+        if (sync && originalCaller == null) {
+            throw new IllegalArgumentException("Sync backup requires original caller address, Backup operation data: "
+                    + backupOpData);
         }
     }
 
@@ -89,8 +102,12 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         }
 
         NodeEngine nodeEngine = getNodeEngine();
-        if (backupOpData != null) {
+
+        if (backupOp == null && backupOpData != null) {
             backupOp = nodeEngine.getSerializationService().toObject(backupOpData);
+        }
+
+        if (backupOp != null) {
             backupOp.setPartitionId(getPartitionId()).setReplicaIndex(getReplicaIndex());
             backupOp.setNodeEngine(nodeEngine);
             backupOp.setCallerUuid(getCallerUuid());
@@ -172,7 +189,13 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeData(backupOpData);
+        if (backupOpData != null) {
+            out.writeBoolean(true);
+            out.writeData(backupOpData);
+        } else {
+            out.writeBoolean(false);
+            out.writeObject(backupOp);
+        }
         if (originalCaller != null) {
             out.writeBoolean(true);
             originalCaller.writeData(out);
@@ -185,7 +208,11 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        backupOpData = in.readData();
+        if (in.readBoolean()) {
+            backupOpData = in.readData();
+        } else {
+            backupOp = in.readObject();
+        }
         if (in.readBoolean()) {
             originalCaller = new Address();
             originalCaller.readData(in);
@@ -198,7 +225,8 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("Backup");
-        sb.append("{backupOpBinary=").append(backupOpData);
+        sb.append("{backupOp=").append(backupOp);
+        sb.append(", backupOpData=").append(backupOpData);
         sb.append(", originalCaller=").append(originalCaller);
         sb.append(", version=").append(Arrays.toString(replicaVersions));
         sb.append(", sync=").append(sync);
