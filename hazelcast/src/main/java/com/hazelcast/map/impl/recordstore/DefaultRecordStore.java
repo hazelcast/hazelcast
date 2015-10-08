@@ -17,6 +17,8 @@
 package com.hazelcast.map.impl.recordstore;
 
 
+import static com.hazelcast.map.impl.ExpirationTimeSetter.updateExpiryTime;
+
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.core.EntryView;
@@ -54,7 +56,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.map.impl.ExpirationTimeSetter.updateExpiryTime;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 
 /**
@@ -237,10 +238,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             final DefaultObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
             lockService.clearLockStore(partitionId, namespace);
         }
+
         final Indexes indexes = mapContainer.getIndexes();
+
         if (indexes.hasIndex()) {
-            for (Data key : records.keySet()) {
-                indexes.removeEntryIndex(key);
+            for (Record record : records.values()) {
+                indexes.removeEntryIndex(record);
             }
         }
         clearRecordsMap(Collections.<Data, Record>emptyMap());
@@ -373,7 +376,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             record = createRecord(key, value, getNow());
             records.put(key, record);
             if (!backup) {
-                saveIndex(record);
+                saveIndex(record, null);
             }
             updateSizeEstimator(calculateRecordHeapCost(record));
         }
@@ -451,7 +454,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         mapDataStore.removeAll(keysToDelete);
 
         final int numOfClearedEntries = keysToDelete.size();
-        removeIndex(keysToDelete);
+        for (Data key: keysToDelete) {
+            Record record = records.get(key);
+            removeIndex(record);
+        }
 
         clearRecordsMap(lockedRecords);
         resetAccessSequenceNumber();
@@ -487,8 +493,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
                 mapServiceContext.interceptRemove(name, value);
             }
             updateSizeEstimator(-calculateRecordHeapCost(record));
+            removeIndex(record);
             deleteRecord(key);
-            removeIndex(key);
         }
         return value;
     }
@@ -504,7 +510,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         updateSizeEstimator(calculateRecordHeapCost(recordsToPreserve.values()));
 
         flush(recordsToPreserve, backup);
-        removeIndexByPreservingKeys(records.keySet(), recordsToPreserve.keySet());
+        removeIndexByPreservingKeys(records.values(), recordsToPreserve.keySet());
         clearRecordsMap(recordsToPreserve);
 
         return sizeBeforeEviction - recordsToPreserve.size();
@@ -576,7 +582,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         if (record == null) {
             oldValue = mapDataStore.load(key);
             if (oldValue != null) {
-                removeIndex(key);
                 mapDataStore.remove(key, now);
             }
         } else {
@@ -603,7 +608,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         }
         if (mapServiceContext.compare(name, testValue, oldValue)) {
             mapServiceContext.interceptRemove(name, oldValue);
-            removeIndex(key);
+            removeIndex(record);
             mapDataStore.remove(key, now);
             onStore(record);
             // reduce size
@@ -621,7 +626,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
         final Record record = getRecordOrNull(key, now, false);
         if (record == null) {
-            removeIndex(key);
+            removeIndex(record);
             mapDataStore.remove(key, now);
         } else {
             return removeRecord(key, record, now) != null;
@@ -776,7 +781,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         }
 
         updateSizeEstimator(calculateRecordHeapCost(record));
-        saveIndex(record);
+        saveIndex(record, oldValue);
 
         return oldValue;
     }
@@ -789,6 +794,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         Record record = getRecordOrNull(key, now, false);
         mergingEntry = EntryViews.convertToLazyEntryView(mergingEntry, serializationService, mergePolicy);
         Object newValue;
+        Object oldValue = null;
         if (record == null) {
             final Object notExistingKey = mapServiceContext.toObject(key);
             final EntryView nullEntryView = EntryViews.createNullEntryView(notExistingKey);
@@ -802,13 +808,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             records.put(key, record);
             updateSizeEstimator(calculateRecordHeapCost(record));
         } else {
-            Object oldValue = record.getValue();
+            oldValue = record.getValue();
             EntryView existingEntry = EntryViews.createLazyEntryView(record.getKey(), record.getValue(),
                     record, serializationService, mergePolicy);
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
             // existing entry will be removed
             if (newValue == null) {
-                removeIndex(key);
+                removeIndex(record);
                 mapDataStore.remove(key, now);
                 onStore(record);
                 // reduce size.
@@ -830,7 +836,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             recordFactory.setValue(record, newValue);
             updateSizeEstimator(calculateRecordHeapCost(record));
         }
-        saveIndex(record);
+        saveIndex(record, oldValue);
         return newValue != null;
     }
 
@@ -851,7 +857,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         updateSizeEstimator(-calculateRecordHeapCost(record));
         updateRecord(record, update, now);
         updateSizeEstimator(calculateRecordHeapCost(record));
-        saveIndex(record);
+        saveIndex(record, oldValue);
         return oldValue;
     }
 
@@ -876,7 +882,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         updateSizeEstimator(-calculateRecordHeapCost(record));
         updateRecord(record, update, now);
         updateSizeEstimator(calculateRecordHeapCost(record));
-        saveIndex(record);
+        saveIndex(record, current);
         return true;
     }
 
@@ -887,19 +893,21 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         markRecordStoreExpirable(ttl);
 
         Record record = getRecordOrNull(key, now, false);
+        Object oldValue = null;
         if (record == null) {
             value = mapServiceContext.interceptPut(name, null, value);
             record = createRecord(key, value, ttl, now);
             records.put(key, record);
             updateSizeEstimator(calculateRecordHeapCost(record));
         } else {
-            value = mapServiceContext.interceptPut(name, record.getValue(), value);
+            oldValue = record.getValue();
+            value = mapServiceContext.interceptPut(name, oldValue, value);
             updateSizeEstimator(-calculateRecordHeapCost(record));
             updateRecord(record, value, now);
             updateSizeEstimator(calculateRecordHeapCost(record));
             updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
-        saveIndex(record);
+        saveIndex(record, oldValue);
         mapDataStore.addTransient(key, now);
     }
 
@@ -932,7 +940,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateSizeEstimator(calculateRecordHeapCost(record));
             updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
-        saveIndex(record);
+        saveIndex(record, oldValue);
 
         return oldValue;
     }
@@ -977,7 +985,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateSizeEstimator(calculateRecordHeapCost(record));
             updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
-        saveIndex(record);
+        saveIndex(record, oldValue);
         return oldValue;
     }
 
@@ -991,7 +999,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         Object oldValue = record.getValue();
         oldValue = mapServiceContext.interceptRemove(name, oldValue);
         if (oldValue != null) {
-            removeIndex(key);
+            removeIndex(record);
             mapDataStore.remove(key, now);
             onStore(record);
         }
