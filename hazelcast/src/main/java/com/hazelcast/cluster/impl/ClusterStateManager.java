@@ -288,6 +288,7 @@ public class ClusterStateManager {
 
     private static final class StateManagerExceptionHandler implements FutureUtil.ExceptionHandler {
         private final ILogger logger;
+        // written and read by same/single thread
         private Throwable error;
 
         private StateManagerExceptionHandler(ILogger logger) {
