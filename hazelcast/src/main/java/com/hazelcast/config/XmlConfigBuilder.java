@@ -1053,6 +1053,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 mapWanReplicationRefHandle(node, mapConfig);
             } else if ("indexes".equals(nodeName)) {
                 mapIndexesHandle(node, mapConfig);
+            } else if ("attributes".equals(nodeName)) {
+                mapAttributesHandle(node, mapConfig);
             } else if ("entry-listeners".equals(nodeName)) {
                 mapEntryListenerHandle(node, mapConfig);
             } else if ("partition-lost-listeners".equals(nodeName)) {
@@ -1299,6 +1301,17 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 boolean ordered = checkTrue(getTextContent(attrs.getNamedItem("ordered")));
                 String attribute = getTextContent(indexNode);
                 queryCacheConfig.addIndexConfig(new MapIndexConfig(attribute, ordered));
+            }
+        }
+    }
+
+    private void mapAttributesHandle(Node n, MapConfig mapConfig) {
+        for (org.w3c.dom.Node extractorNode : new IterableNodeList(n.getChildNodes())) {
+            if ("attribute".equals(cleanNodeName(extractorNode))) {
+                final NamedNodeMap attrs = extractorNode.getAttributes();
+                String extractor = getTextContent(attrs.getNamedItem("extractor"));
+                String name = getTextContent(extractorNode);
+                mapConfig.addMapAttributeConfig(new MapAttributeConfig(name, extractor));
             }
         }
     }

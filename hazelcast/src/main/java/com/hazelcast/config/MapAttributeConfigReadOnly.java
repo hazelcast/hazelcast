@@ -14,31 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
+package com.hazelcast.config;
 
 /**
- * Contains constants for Query.
+ * Contains the configuration for a extractor of Map.
  */
-public enum QueryConstants {
+public class MapAttributeConfigReadOnly extends MapAttributeConfig {
 
-    /**
-     * Attribute name of the key.
-     */
-    KEY_ATTRIBUTE_NAME("__key"),
-
-    /**
-     * Attribute name of the "this".
-     */
-    THIS_ATTRIBUTE_NAME("this");
-
-    private final String value;
-
-    QueryConstants(String value) {
-        this.value = value;
+    public MapAttributeConfigReadOnly(MapAttributeConfig config) {
+        super(config);
     }
 
-    public String value() {
-        return value;
+    @Override
+    public MapAttributeConfig setName(String attribute) {
+        throw new UnsupportedOperationException("This config is read-only");
     }
-    
+
+    @Override
+    public MapAttributeConfig setExtractor(String type) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
 }

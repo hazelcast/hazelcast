@@ -16,6 +16,39 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.IndexAwarePredicate;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.query.QueryException;
+import com.hazelcast.query.SampleObjects.Employee;
+import com.hazelcast.query.SampleObjects.Value;
+import com.hazelcast.query.impl.AttributeType;
+import com.hazelcast.query.impl.Extractors;
+import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.IndexImpl;
+import com.hazelcast.query.impl.QueryContext;
+import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.getters.ReflectionHelper;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.math.BigDecimal;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import static com.hazelcast.instance.TestUtil.toData;
 import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.between;
@@ -33,48 +66,11 @@ import static com.hazelcast.query.Predicates.or;
 import static com.hazelcast.query.Predicates.regex;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.EntryObject;
-import com.hazelcast.query.IndexAwarePredicate;
-import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.query.Predicates;
-import com.hazelcast.query.QueryException;
-import com.hazelcast.query.SampleObjects.Employee;
-import com.hazelcast.query.SampleObjects.Value;
-import com.hazelcast.query.impl.AttributeType;
-import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexImpl;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.query.impl.getters.ReflectionHelper;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
-
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -303,7 +299,7 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test
     public void testNotEqualsPredicateDoesNotUseIndex() {
-        Index dummyIndex = new IndexImpl("foo", false, ss);
+        Index dummyIndex = new IndexImpl("foo", false, ss, Extractors.empty());
         QueryContext mockQueryContext = mock(QueryContext.class);
         when(mockQueryContext.getIndex(anyString())).
                 thenReturn(dummyIndex);
@@ -318,7 +314,7 @@ public class PredicatesTest extends HazelcastTestSupport {
     private class DummyEntry extends QueryEntry {
 
         DummyEntry(Comparable attribute) {
-            super(ss, toData("1"), attribute);
+            super(ss, toData("1"), attribute, Extractors.empty());
         }
 
         @Override
@@ -385,7 +381,7 @@ public class PredicatesTest extends HazelcastTestSupport {
     }
 
     private Entry createEntry(final Object key, final Object value) {
-        return new QueryEntry(ss, toData(key), value);
+        return new QueryEntry(ss, toData(key), value, Extractors.empty());
     }
 
     private void assertPredicateTrue(Predicate p, Comparable comparable) {

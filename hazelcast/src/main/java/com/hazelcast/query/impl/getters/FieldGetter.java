@@ -17,6 +17,8 @@
 package com.hazelcast.query.impl.getters;
 
 
+import com.hazelcast.query.extractor.MultiResult;
+
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Iterator;
@@ -75,8 +77,8 @@ public class FieldGetter extends Getter {
         if (parentObject == null) {
             return null;
         }
-        if (parentObject instanceof MultiResultCollector) {
-            return extractFromMultiResult((MultiResultCollector) parentObject);
+        if (parentObject instanceof MultiResult) {
+            return extractFromMultiResult((MultiResult) parentObject);
         }
 
         Object o = field.get(parentObject);
@@ -84,15 +86,15 @@ public class FieldGetter extends Getter {
             return o;
         }
         if (position == REDUCE_EVERYTHING) {
-            MultiResultCollector collector = new MultiResultCollector();
+            MultiResult collector = new MultiResult();
             reduceInto(collector, o);
             return collector;
         }
         return getItemAtPosition(o, position);
     }
 
-    private Object extractFromMultiResult(MultiResultCollector parentMultiResult) throws IllegalAccessException {
-        MultiResultCollector collector = new MultiResultCollector();
+    private Object extractFromMultiResult(MultiResult parentMultiResult) throws IllegalAccessException {
+        MultiResult collector = new MultiResult();
         for (Object parentResult : parentMultiResult.getResults()) {
             collectResult(collector, parentResult);
         }
@@ -100,7 +102,7 @@ public class FieldGetter extends Getter {
         return collector;
     }
 
-    private void collectResult(MultiResultCollector collector, Object parentResult) throws IllegalAccessException {
+    private void collectResult(MultiResult collector, Object parentResult) throws IllegalAccessException {
         Object currentObject = field.get(parentResult);
         if (currentObject == null) {
             return;
@@ -108,26 +110,26 @@ public class FieldGetter extends Getter {
         if (shouldReduce()) {
             reduceInto(collector, currentObject);
         } else {
-            collector.collect(currentObject);
+            collector.add(currentObject);
         }
     }
 
-    private void reduceInto(MultiResultCollector collector, Object currentObject) {
+    private void reduceInto(MultiResult collector, Object currentObject) {
         if (position != REDUCE_EVERYTHING) {
             Object item = getItemAtPosition(currentObject, position);
-            collector.collect(item);
+            collector.add(item);
             return;
         }
 
         if (currentObject instanceof Collection) {
             Collection collection = (Collection) currentObject;
             for (Object o : collection) {
-                collector.collect(o);
+                collector.add(o);
             }
         } else if (currentObject instanceof Object[]) {
             Object[] array = (Object[]) currentObject;
             for (int i = 0; i < array.length; i++) {
-                collector.collect(array[i]);
+                collector.add(array[i]);
             }
         } else {
             throw new IllegalArgumentException("Can't reduce result from a type " + currentObject.getClass()

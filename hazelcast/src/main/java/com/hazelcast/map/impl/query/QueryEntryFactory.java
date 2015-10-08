@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.CachedQueryEntry;
+import com.hazelcast.query.impl.Extractors;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -30,11 +31,11 @@ public final class QueryEntryFactory {
     }
 
 
-    public QueryableEntry newEntry(SerializationService serializationService, Data key, Object value) {
+    public QueryableEntry newEntry(SerializationService serializationService, Data key, Object value, Extractors extractors) {
         if (useCache) {
-            return new CachedQueryEntry(serializationService, key, value);
+            return new CachedQueryEntry(serializationService, key, value, extractors);
         } else {
-            return new QueryEntry(serializationService, key, value);
+            return new QueryEntry(serializationService, key, value, extractors);
         }
     }
 }

@@ -19,13 +19,14 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.extractor.MultiResult;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.query.impl.getters.MultiResultCollector;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,18 +58,21 @@ public class EqualPredicate extends AbstractPredicate implements NegatablePredic
     @Override
     public boolean apply(Map.Entry mapEntry) {
         Object entryValue = readAttribute(mapEntry);
-        if (entryValue instanceof MultiResultCollector) {
-            return applyForMultiResult(mapEntry, (MultiResultCollector) entryValue);
+        if (entryValue instanceof MultiResult) {
+            return applyForMultiResult(mapEntry, (MultiResult) entryValue);
+        } else if (entryValue instanceof Collection || entryValue instanceof Object[]) {
+            throw new IllegalArgumentException("Cannot use equal predicate with an attribute that's an array or a collection");
         }
         return applyForSingleValue(mapEntry, (Comparable) entryValue);
     }
 
-    private boolean applyForMultiResult(Map.Entry mapEntry, MultiResultCollector result) {
+    private boolean applyForMultiResult(Map.Entry mapEntry, MultiResult result) {
         List<Object> results = result.getResults();
         for (Object o : results) {
             Comparable entryValue = (Comparable) convertAttribute(o);
-            boolean applied = applyForSingleValue(mapEntry, entryValue);
-            if (applied) {
+            // it's enough if there's only one result in the MultiResult that satisfies the predicate
+            boolean satisfied = applyForSingleValue(mapEntry, entryValue);
+            if (satisfied) {
                 return true;
             }
         }

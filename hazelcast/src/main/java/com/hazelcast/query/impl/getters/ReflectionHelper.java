@@ -30,7 +30,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -156,7 +155,7 @@ public final class ReflectionHelper {
                 final String camelName = Character.toUpperCase(nameWithoutSuffix.charAt(0)) + nameWithoutSuffix.substring(1);
                 possibleMethodNames.add("get" + camelName);
                 possibleMethodNames.add("is" + camelName);
-                if (nameWithoutSuffix.equals(THIS_ATTRIBUTE_NAME)) {
+                if (nameWithoutSuffix.equals(THIS_ATTRIBUTE_NAME.value())) {
                     localGetter = GetterFactory.newThisGetter(parent, obj);
                 } else {
 

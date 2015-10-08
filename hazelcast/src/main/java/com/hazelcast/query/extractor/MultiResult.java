@@ -1,24 +1,27 @@
-package com.hazelcast.query.impl.getters;
+package com.hazelcast.query.extractor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-public class MultiResultCollector {
+public final class MultiResult {
+
     private List<Object> results;
 
-    public MultiResultCollector() {
+    public MultiResult() {
         this.results = new ArrayList<Object>();
     }
 
-    public void collect(Object result) {
+    public void add(Object result) {
         results.add(result);
     }
 
     public List<Object> getResults() {
-        return results;
+        return Collections.unmodifiableList(results);
     }
 
     public boolean isEmpty() {
         return results.isEmpty();
     }
+
 }

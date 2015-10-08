@@ -1,5 +1,6 @@
 package com.hazelcast.query.impl.getters;
 
+import com.hazelcast.query.extractor.MultiResult;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.lang.reflect.Field;
@@ -15,12 +16,12 @@ public class GetterFactory {
                 return NullGetter.NULL_GETTER;
             }
 
-            if (currentObject instanceof MultiResultCollector) {
-                MultiResultCollector multiResultCollector = (MultiResultCollector) currentObject;
-                if (multiResultCollector.isEmpty()) {
+            if (currentObject instanceof MultiResult) {
+                MultiResult multiResult = (MultiResult) currentObject;
+                if (multiResult.isEmpty()) {
                     return NullGetter.NULL_GETTER;
                 }
-                currentObject = multiResultCollector.getResults().iterator().next();
+                currentObject = multiResult.getResults().iterator().next();
                 if (currentObject == null) {
                     return NullGetter.NULL_GETTER;
                 }
@@ -29,7 +30,6 @@ public class GetterFactory {
             try {
                 targetCollection = (Collection) field.get(currentObject);
             } catch (IllegalAccessException e) {
-                //TODO: What to do with the Exception?
                 throw ExceptionUtil.rethrow(e);
             }
             if (targetCollection == null || targetCollection.isEmpty()) {

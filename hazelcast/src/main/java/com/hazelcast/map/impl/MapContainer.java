@@ -35,6 +35,7 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.Extractors;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
@@ -61,12 +62,14 @@ public class MapContainer {
     protected final MapServiceContext mapServiceContext;
     protected final Map<String, MapInterceptor> interceptorMap;
     protected final Indexes indexes;
+    protected final Extractors extractors;
     protected final SizeEstimator nearCacheSizeEstimator;
     protected final PartitioningStrategy partitioningStrategy;
     protected final MapStoreContext mapStoreContext;
     protected final SerializationService serializationService;
     protected final QueryEntryFactory queryEntryFactory;
     protected final List<MapInterceptor> interceptors;
+
     protected final IFunction<Object, Data> toDataFunction = new IFunction<Object, Data>() {
         @Override
         public Data apply(Object input) {
@@ -98,13 +101,13 @@ public class MapContainer {
         this.recordFactoryConstructor = createRecordFactoryConstructor(serializationService);
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.isOptimizeQueries());
         initWanReplication(nodeEngine);
-        this.interceptors = new CopyOnWriteArrayList<MapInterceptor>();
-        this.interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
+        interceptors = new CopyOnWriteArrayList<MapInterceptor>();
+        interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         this.nearCacheSizeEstimator = createNearCacheSizeEstimator(mapConfig.getNearCacheConfig());
-        this.mapStoreContext = createMapStoreContext(this);
-        this.mapStoreContext.start();
-        this.indexes = new Indexes(serializationService);
-        this.evictor = createEvictor(mapServiceContext);
+        mapStoreContext = createMapStoreContext(this);
+        mapStoreContext.start();
+        extractors = new Extractors(mapConfig.getMapAttributeConfigs());
+        indexes = new Indexes(serializationService, extractors);
     }
 
     // this method is overridden.
@@ -166,6 +169,10 @@ public class MapContainer {
 
     public Indexes getIndexes() {
         return indexes;
+    }
+
+    public Extractors getExtractors() {
+        return extractors;
     }
 
     public WanReplicationPublisher getWanReplicationPublisher() {
@@ -261,7 +268,7 @@ public class MapContainer {
     }
 
     public QueryableEntry newQueryEntry(Data key, Object value) {
-        return queryEntryFactory.newEntry(serializationService, key, value);
+        return queryEntryFactory.newEntry(serializationService, key, value, extractors);
     }
 
     public Evictor getEvictor() {

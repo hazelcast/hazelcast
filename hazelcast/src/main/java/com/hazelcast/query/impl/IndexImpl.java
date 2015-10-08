@@ -49,12 +49,14 @@ public class IndexImpl implements Index {
     private volatile TypeConverter converter;
 
     private final SerializationService ss;
+    private final Extractors extractors;
 
-    public IndexImpl(String attribute, boolean ordered, SerializationService ss) {
+    public IndexImpl(String attribute, boolean ordered, SerializationService ss, Extractors extractors) {
         this.attribute = attribute;
         this.ordered = ordered;
         this.ss = ss;
         this.indexStore = ordered ? new SortedIndexStore() : new UnsortedIndexStore();
+        this.extractors = extractors;
     }
 
     @Override
@@ -64,8 +66,8 @@ public class IndexImpl implements Index {
 
     @Override
     public void removeEntryIndex(Data key, Object value) {
-        Comparable attributeValue = QueryEntryUtils.extractAttribute(this.attribute, key, value, ss);
-        attributeValue = sanitizeValue(attributeValue);
+        Comparable attributeValue = (Comparable)QueryEntryUtils.extractAttribute(extractors, this.attribute, key, value, ss);
+        attributeValue = (Comparable)sanitizeValue(attributeValue);
 
         if (attributeValue != null) {
             indexStore.removeIndex(attributeValue, key);
@@ -99,11 +101,11 @@ public class IndexImpl implements Index {
         }
 
         Object oldValue = null;
-        if(oldRecordValue != null) {
-            oldValue = QueryEntryUtils.extractAttribute(attribute, e.getKey(), oldRecordValue, ss);
+        if (oldRecordValue != null) {
+            oldValue = QueryEntryUtils.extractAttribute(extractors, attribute, e.getKeyData(), oldRecordValue, ss);
         }
 
-        Object newValue = QueryEntryUtils.extractAttribute(attribute, e.getKey(), e.getValue(), ss);
+        Object newValue = QueryEntryUtils.extractAttribute(extractors, attribute, e.getKeyData(), e.getValue(), ss);
         createOrUpdateIndexStore(newValue, oldValue, e);
     }
 

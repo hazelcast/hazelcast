@@ -209,6 +209,23 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
+                                    <xs:element name="attributes" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                This configuration lets you define extractors for custom attributes.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element name="attribute" minOccurs="0" maxOccurs="unbounded">
+                                                    <xs:complexType>
+                                                        <xs:attribute name="name" type="xs:string" use="required"/>
+                                                        <xs:attribute name="ordered" type="xs:string" use="required"/>
+                                                    </xs:complexType>
+                                                </xs:element>
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
                                     <xs:element name="entry-listeners" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>

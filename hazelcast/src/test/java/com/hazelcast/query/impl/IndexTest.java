@@ -80,11 +80,11 @@ public class IndexTest {
 
     @Test
     public void testRemoveEnumIndex() {
-        Indexes is = new Indexes(ss);
+        Indexes is = new Indexes(ss, Extractors.empty());
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.Istanbul));
-        is.saveEntryIndex(new QueryEntry(ss, key, value), null);
+        is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null);
         assertNotNull(is.getIndex("favoriteCity"));
         Record record = recordFactory.newRecord(value);
         ((AbstractRecord) record).setKey(key);
@@ -94,14 +94,14 @@ public class IndexTest {
 
     @Test
     public void testUpdateEnumIndex() {
-        Indexes is = new Indexes(ss);
+        Indexes is = new Indexes(ss, Extractors.empty());
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.Istanbul));
-        is.saveEntryIndex(new QueryEntry(ss, key, value), null);
+        is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null);
 
         Data newValue = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.Krakow));
-        is.saveEntryIndex(new QueryEntry(ss, key, newValue), value);
+        is.saveEntryIndex(new QueryEntry(ss, key, newValue, Extractors.empty()), value);
 
         assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.Istanbul).size());
         assertEquals(1, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.Krakow).size());
@@ -109,14 +109,14 @@ public class IndexTest {
 
     @Test
     public void testIndex() throws QueryException {
-        Indexes is = new Indexes(ss);
+        Indexes is = new Indexes(ss, Extractors.empty());
         Index dIndex = is.addOrGetIndex("d", false);
         Index boolIndex = is.addOrGetIndex("bool", false);
         Index strIndex = is.addOrGetIndex("str", false);
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(i % 2 == 0, -10.34d, "joe" + i));
-            is.saveEntryIndex(new QueryEntry(ss, key, value), null);
+            is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null);
         }
         assertEquals(1000, dIndex.getRecords(-10.34d).size());
         assertEquals(1, strIndex.getRecords("joe23").size());
@@ -127,7 +127,7 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(false, 11.34d, "joe"));
-            is.saveEntryIndex(new QueryEntry(ss, key, value), null);
+            is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null);
         }
 
         assertEquals(0, dIndex.getRecords(-10.34d).size());
@@ -141,7 +141,7 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(false, -1 * (i + 1), "joe" + i));
-            is.saveEntryIndex(new QueryEntry(ss, key, value), null);
+            is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null);
         }
         assertEquals(0, dIndex.getSubRecordsBetween(1d, 1001d).size());
         assertEquals(1000, dIndex.getSubRecordsBetween(-1d, -1001d).size());
@@ -150,7 +150,7 @@ public class IndexTest {
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(false, 1 * (i + 1), "joe" + i));
-            is.saveEntryIndex(new QueryEntry(ss, key, value), null);
+            is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null);
         }
         assertEquals(1000, dIndex.getSubRecordsBetween(1d, 1001d).size());
         assertEquals(0, dIndex.getSubRecordsBetween(-1d, -1001d).size());
@@ -171,22 +171,22 @@ public class IndexTest {
 
     @Test
     public void testIndexWithNull() throws QueryException {
-        Indexes is = new Indexes(ss);
+        Indexes is = new Indexes(ss, Extractors.empty());
         Index strIndex = is.addOrGetIndex("str", true);
 
         Data value = ss.toData(new MainPortable(false, 1, null));
         Data key1 = ss.toData(0);
-        is.saveEntryIndex(new QueryEntry(ss, key1, value), null);
+        is.saveEntryIndex(new QueryEntry(ss, key1, value, Extractors.empty()), null);
 
         value = ss.toData(new MainPortable(false, 2, null));
         Data key2 = ss.toData(1);
-        is.saveEntryIndex(new QueryEntry(ss, key2, value), null);
+        is.saveEntryIndex(new QueryEntry(ss, key2, value, Extractors.empty()), null);
 
 
         for (int i = 2; i < 1000; i++) {
             Data key = ss.toData(i);
             value = ss.toData(new MainPortable(false, 1 * (i + 1), "joe" + i));
-            is.saveEntryIndex(new QueryEntry(ss, key, value), null);
+            is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null);
         }
 
         Comparable c = null;
@@ -417,7 +417,7 @@ public class IndexTest {
     }
 
     private void testIt(boolean ordered) {
-        IndexImpl index = new IndexImpl(QueryConstants.THIS_ATTRIBUTE_NAME, ordered, ss);
+        IndexImpl index = new IndexImpl(QueryConstants.THIS_ATTRIBUTE_NAME.value(), ordered, ss, Extractors.empty());
         assertEquals(0, index.getRecords(0L).size());
         assertEquals(0, index.getSubRecordsBetween(0L, 1000L).size());
         QueryRecord record5 = newRecord(5L, 55L);

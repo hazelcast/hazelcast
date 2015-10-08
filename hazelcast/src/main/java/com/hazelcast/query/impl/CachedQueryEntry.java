@@ -36,15 +36,16 @@ public class CachedQueryEntry implements QueryableEntry {
     private Data valueData;
     private Object valueObject;
     private SerializationService serializationService;
+    private Extractors extractors;
 
     public CachedQueryEntry() {
     }
 
-    public CachedQueryEntry(SerializationService serializationService, Data key, Object value) {
-        init(serializationService, key, value);
+    public CachedQueryEntry(SerializationService serializationService, Data key, Object value, Extractors extractors) {
+        init(serializationService, key, value, extractors);
     }
 
-    public void init(SerializationService serializationService, Data key, Object value) {
+    public void init(SerializationService serializationService, Data key, Object value, Extractors extractors) {
         if (key == null) {
             throw new IllegalArgumentException("keyData cannot be null");
         }
@@ -59,6 +60,7 @@ public class CachedQueryEntry implements QueryableEntry {
             this.valueObject = value;
             this.valueData = null;
         }
+        this.extractors = extractors;
     }
 
     @Override
@@ -96,9 +98,9 @@ public class CachedQueryEntry implements QueryableEntry {
 
     @Override
     public Object getAttribute(String attributeName) throws QueryException {
-        if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
+        if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return getKey();
-        } else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
+        } else if (THIS_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return getValue();
         }
 
@@ -106,7 +108,7 @@ public class CachedQueryEntry implements QueryableEntry {
         attributeName = QueryEntryUtils.getAttributeName(key, attributeName);
         Object targetObject = getTargetObject(key);
 
-        return QueryEntryUtils.extractAttribute(attributeName, targetObject, serializationService);
+        return QueryEntryUtils.extractAttribute(extractors, attributeName, targetObject, serializationService);
     }
 
     private Object getTargetObject(boolean key) {
@@ -145,9 +147,9 @@ public class CachedQueryEntry implements QueryableEntry {
 
     @Override
     public AttributeType getAttributeType(String attributeName) {
-        if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
+        if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return ReflectionHelper.getAttributeType(getKey().getClass());
-        } else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
+        } else if (THIS_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return ReflectionHelper.getAttributeType(getValue().getClass());
         }
 
@@ -164,6 +166,7 @@ public class CachedQueryEntry implements QueryableEntry {
             }
         }
 
+        // TODO Tom: Attribute extraction with extractors
         return ReflectionHelper.getAttributeType(isKey ? getKey() : getValue(), attributeName);
     }
 

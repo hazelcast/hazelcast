@@ -149,6 +149,10 @@
                     <hz:index attribute="name"/>
                     <hz:index attribute="age" ordered="true"/>
                 </hz:indexes>
+                <hz:attributes>
+                    <hz:attribute name="power" extractor="com.car.PowerExtractor" />
+                    <hz:attribute name="weight" extractor="com.car.WeightExtractor" />
+                </hz:attributes>
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
             </hz:map>
             <hz:map name="testMap2"

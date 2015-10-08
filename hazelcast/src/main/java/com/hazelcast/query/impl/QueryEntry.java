@@ -34,12 +34,13 @@ public class QueryEntry implements QueryableEntry {
     private Data key;
     private Object value;
     private SerializationService serializationService;
+    private Extractors extractors;
 
     public QueryEntry() {
     }
 
-    public QueryEntry(SerializationService serializationService, Data key, Object value) {
-        init(serializationService, key, value);
+    public QueryEntry(SerializationService serializationService, Data key, Object value, Extractors extractors) {
+        init(serializationService, key, value, extractors);
     }
 
     /**
@@ -59,7 +60,7 @@ public class QueryEntry implements QueryableEntry {
      * </code>
      * </pre>
      */
-    public void init(SerializationService serializationService, Data key, Object value) {
+    public void init(SerializationService serializationService, Data key, Object value, Extractors extractors) {
         if (key == null) {
             throw new IllegalArgumentException("keyData cannot be null");
         }
@@ -68,6 +69,7 @@ public class QueryEntry implements QueryableEntry {
 
         this.key = key;
         this.value = value;
+        this.extractors = extractors;
     }
 
     @Override
@@ -93,14 +95,14 @@ public class QueryEntry implements QueryableEntry {
 
     @Override
     public Object getAttribute(String attributeName) throws QueryException {
-        return QueryEntryUtils.extractAttribute(attributeName, key, value, serializationService);
+        return QueryEntryUtils.extractAttribute(extractors, attributeName, key, value, serializationService);
     }
 
     @Override
     public AttributeType getAttributeType(String attributeName) {
-        if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
+        if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return ReflectionHelper.getAttributeType(getKey().getClass());
-        } else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
+        } else if (THIS_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return ReflectionHelper.getAttributeType(getValue().getClass());
         }
 
@@ -117,6 +119,7 @@ public class QueryEntry implements QueryableEntry {
             }
         }
 
+        // TODO Tom: Attribute extraction with extractors
         return ReflectionHelper.getAttributeType(isKey ? getKey() : getValue(), attributeName);
     }
 

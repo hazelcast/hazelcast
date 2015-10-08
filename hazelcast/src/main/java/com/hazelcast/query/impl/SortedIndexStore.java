@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.getters.MultiResultCollector;
+import com.hazelcast.query.extractor.MultiResult;
 
 import java.util.Collection;
 import java.util.Map;
@@ -54,8 +54,8 @@ public class SortedIndexStore extends BaseIndexStore {
     }
 
     private void mapAttributeToEntry(Object attribute, QueryableEntry entry) {
-        if (attribute instanceof MultiResultCollector) {
-            Collection attributes = ((MultiResultCollector) attribute).getResults();
+        if (attribute instanceof MultiResult) {
+            Collection attributes = ((MultiResult) attribute).getResults();
             for (Object a : attributes) {
                 if (!(a instanceof Comparable)) {
                     throw new IllegalArgumentException("Attribute " + a + " is not comparable");
@@ -105,8 +105,8 @@ public class SortedIndexStore extends BaseIndexStore {
     }
 
     private void removeMappingForAttribute(Object attribute, Data indexKey) {
-        if (attribute instanceof MultiResultCollector) {
-            Collection attributes = ((MultiResultCollector) attribute).getResults();
+        if (attribute instanceof MultiResult) {
+            Collection attributes = ((MultiResult) attribute).getResults();
             for (Object a : attributes) {
                 if (!(a instanceof Comparable)) {
                     throw new IllegalArgumentException("Attribute " + a + " is not comparable");

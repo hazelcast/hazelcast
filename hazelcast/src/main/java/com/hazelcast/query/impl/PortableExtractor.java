@@ -30,7 +30,8 @@ import java.io.IOException;
 /**
  * Utility class to extract a single field from a {@link com.hazelcast.nio.serialization.Portable} binary.
  */
-final class PortableExtractor {
+// TODO move to extractor package
+public final class PortableExtractor {
 
     private static final PortableFieldExtractor[] FIELD_EXTRACTORS =
             new PortableFieldExtractor[FieldType.values().length];
@@ -63,7 +64,7 @@ final class PortableExtractor {
     private PortableExtractor() {
     }
 
-    static Comparable extractValue(SerializationService serializationService, Data data, String fieldName)
+    public static Comparable extractValue(SerializationService serializationService, Data data, String fieldName)
             throws IOException {
         PortableContext context = serializationService.getPortableContext();
         PortableFieldExtractor fieldExtractor = getFieldExtractor(context, data, fieldName);
@@ -94,7 +95,7 @@ final class PortableExtractor {
         }
     }
 
-    static AttributeType getAttributeType(PortableContext portableContext, Data data, String fieldName) {
+    public static AttributeType getAttributeType(PortableContext portableContext, Data data, String fieldName) {
         PortableFieldExtractor fieldExtractor;
         try {
             fieldExtractor = getFieldExtractor(portableContext, data, fieldName);

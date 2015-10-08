@@ -257,6 +257,13 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="attributes" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="attribute" type="map-attribute" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
             <xs:element name="partition-lost-listeners" type="partition-lost-listeners" minOccurs="0" maxOccurs="1"/>
             <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1"/>
@@ -1874,6 +1881,13 @@
         <xs:simpleContent>
             <xs:extension base="xs:string">
                 <xs:attribute name="ordered" type="xs:boolean" use="optional" default="false"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="map-attribute">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="extractor" type="xs:string" />
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
