@@ -18,9 +18,6 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
-import com.hazelcast.cluster.ClusterService;
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -28,7 +25,6 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 
 import java.security.Permission;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -44,14 +40,8 @@ public class GetPartitionsMessageTask
     protected Object call() {
         InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
         service.firstArrangement();
-        ClusterService clusterService = getService(ClusterServiceImpl.SERVICE_NAME);
-        Collection<Member> memberList = clusterService.getMembers();
 
-        Map<Address, Set<Integer>> partitionsMap = new HashMap<Address, Set<Integer>>(memberList.size());
-        for (Member member : memberList) {
-            Address address = member.getAddress();
-            partitionsMap.put(address, new HashSet<Integer>());
-        }
+        Map<Address, Set<Integer>> partitionsMap = new HashMap<Address, Set<Integer>>();
 
         for (InternalPartition partition : service.getPartitions()) {
             Address owner = partition.getOwnerOrNull();
@@ -60,6 +50,10 @@ public class GetPartitionsMessageTask
                 return ClientGetPartitionsCodec.encodeResponse(partitionsMap);
             }
             Set<Integer> indexes = partitionsMap.get(owner);
+            if (indexes == null) {
+                indexes = new HashSet<Integer>();
+                partitionsMap.put(owner, indexes);
+            }
             indexes.add(partition.getPartitionId());
         }
         return ClientGetPartitionsCodec.encodeResponse(partitionsMap);
