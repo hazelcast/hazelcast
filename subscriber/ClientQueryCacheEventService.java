@@ -231,9 +231,8 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
                 return true;
             }
             Object value = getValueOrOldValue(eventData);
-            Object key = eventData.getKey();
             Data keyData = eventData.getKeyData();
-            QueryEntry entry = new QueryEntry(serializationService, keyData, key, value);
+            QueryEntry entry = new QueryEntry(serializationService, keyData, value);
             return filter.eval(entry);
         }
 
