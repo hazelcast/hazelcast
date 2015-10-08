@@ -691,7 +691,6 @@ public class ConfigXmlGenerator {
             final Source xmlInput = new StreamSource(new StringReader(input));
             xmlOutput = new StreamResult(new StringWriter());
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            transformerFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             /* Older versions of Xalan still use this method of setting indent values.
             * Attempt to make this work but don't completely fail if it's a problem.
             */
