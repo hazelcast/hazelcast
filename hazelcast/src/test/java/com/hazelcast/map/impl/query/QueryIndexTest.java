@@ -71,6 +71,15 @@ public class QueryIndexTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 1000 * 60)
+    public void testDeletingNonExistingObject() {
+        HazelcastInstance instance = createHazelcastInstance();
+        IMap<Integer, SampleObjects.Value> map = instance.getMap(randomMapName());
+        map.addIndex("name", false);
+
+        map.delete(1);
+    }
+
+    @Test(timeout = 1000 * 60)
     public void testInnerIndex() {
         HazelcastInstance instance = createHazelcastInstance();
         IMap<String, SampleObjects.Value> map = instance.getMap("default");
