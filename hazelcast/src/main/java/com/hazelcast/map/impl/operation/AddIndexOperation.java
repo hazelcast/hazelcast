@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -65,7 +64,6 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
         Indexes indexes = mapContainer.getIndexes();
         Index index = indexes.addOrGetIndex(attributeName, ordered);
 
-        MapServiceContext serviceContext = mapContainer.getMapServiceContext();
         final long now = getNow();
         final Iterator<Record> iterator = recordStore.iterator(now, false);
         SerializationService serializationService = getNodeEngine().getSerializationService();

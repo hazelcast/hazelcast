@@ -398,7 +398,6 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         // TODO: Can't we just use the original set?
         List<Object> valueSet = new ArrayList<Object>();
         Set<Object> keyWontBeIncluded = new HashSet<Object>();
-        MapServiceContext mapServiceContext = getService().getMapServiceContext();
 
         // iterate over the txMap and see if the values are updated or removed
         for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
