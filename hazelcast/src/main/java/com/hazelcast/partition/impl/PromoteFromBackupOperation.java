@@ -94,6 +94,9 @@ final class PromoteFromBackupOperation
     }
 
     private void sendMigrationEvent(final MigrationStatus status) {
+        if (reason != MEMBER_REMOVED) {
+            return;
+        }
         final int partitionId = getPartitionId();
         final NodeEngine nodeEngine = getNodeEngine();
         final MemberImpl localMember = nodeEngine.getLocalMember();
