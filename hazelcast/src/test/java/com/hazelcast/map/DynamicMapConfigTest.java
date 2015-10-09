@@ -24,12 +24,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
-import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
@@ -59,7 +59,7 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
     public void testMapConfigUpdate_reflectedToRecordStore() throws ExecutionException, InterruptedException {
         String mapName = randomMapName();
 
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(GroupProperty.PARTITION_COUNT, "1");
 
         HazelcastInstance node = createHazelcastInstance(config);

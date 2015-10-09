@@ -33,8 +33,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testHitsGenerated() throws Exception {
-        HazelcastInstance h1 = createHazelcastInstance();
-        IMap<Integer, Integer> map = h1.getMap(randomMapName());
+        IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.get(i);
@@ -45,8 +44,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testPutAndHitsGenerated() throws Exception {
-        HazelcastInstance h1 = createHazelcastInstance();
-        IMap<Integer, Integer> map = h1.getMap(randomMapName());
+        IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.get(i);
@@ -58,8 +56,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testGetAndHitsGenerated() throws Exception {
-        HazelcastInstance h1 = createHazelcastInstance();
-        IMap<Integer, Integer> map = h1.getMap(randomMapName());
+        IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.get(i);
@@ -71,8 +68,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testHitsGenerated_updatedConcurrently() throws Exception {
-        HazelcastInstance h1 = createHazelcastInstance();
-        final IMap<Integer, Integer> map = h1.getMap(randomMapName());
+        final IMap<Integer, Integer> map = getMap();
         final int actionCount = 100;
         for (int i = 0; i < actionCount; i++) {
             map.put(i, i);
@@ -105,40 +101,37 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     public void testLastAccessTime() throws InterruptedException {
         final long startTime = Clock.currentTimeMillis();
 
-        HazelcastInstance h1 = createHazelcastInstance();
-        IMap<String, String> map1 = h1.getMap(randomMapName());
+        IMap<String, String> map = getMap();
 
         String key = "key";
-        map1.put(key, "value");
+        map.put(key, "value");
 
-        long lastUpdateTime = map1.getLocalMapStats().getLastUpdateTime();
+        long lastUpdateTime = map.getLocalMapStats().getLastUpdateTime();
         assertTrue(lastUpdateTime >= startTime);
 
         Thread.sleep(5);
-        map1.put(key, "value2");
-        long lastUpdateTime2 = map1.getLocalMapStats().getLastUpdateTime();
+        map.put(key, "value2");
+        long lastUpdateTime2 = map.getLocalMapStats().getLastUpdateTime();
         assertTrue(lastUpdateTime2 > lastUpdateTime);
     }
 
     @Test
     public void testLastAccessTime_updatedConcurrently() throws InterruptedException {
         final long startTime = Clock.currentTimeMillis();
-
-        final HazelcastInstance h1 = createHazelcastInstance();
-        final IMap<String, String> map1 = h1.getMap(randomMapName());
+        final IMap<String, String> map = getMap();
 
         final String key = "key";
-        map1.put(key, "value");
+        map.put(key, "value");
 
-        final LocalMapStats localMapStats = map1.getLocalMapStats();
+        final LocalMapStats localMapStats = map.getLocalMapStats();
         final long lastUpdateTime = localMapStats.getLastUpdateTime();
 
         new Thread(new Runnable() {
             @Override
             public void run() {
                 sleepAtLeastMillis(1);
-                map1.put(key, "value2");
-                map1.getLocalMapStats(); // causes the local stats object to update
+                map.put(key, "value2");
+                map.getLocalMapStats(); // causes the local stats object to update
             }
         }).start();
 
@@ -154,8 +147,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testEvictAll() throws Exception {
-        HazelcastInstance h1 = createHazelcastInstance();
-        IMap<String, String> map = h1.getMap(randomMapName());
+        IMap<String, String> map = getMap();
         map.put("key", "value");
         map.evictAll();
 
@@ -167,7 +159,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     @Test
     public void testHits_whenMultipleNodes() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances();
+        final HazelcastInstance[] instances = factory.newInstances(getConfig());
         MultiMap<Object, Object> multiMap0 = instances[0].getMultiMap("testHits_whenMultipleNodes");
         MultiMap<Object, Object> multiMap1 = instances[1].getMultiMap("testHits_whenMultipleNodes");
 
@@ -267,7 +259,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         final MemberGroupConfig firstGroupConfig = createGroupConfig(firstGroup);
         final MemberGroupConfig secondGroupConfig = createGroupConfig(secondGroup);
 
-        Config config = new Config();
+        Config config = getConfig();
         config.getPartitionGroupConfig().setEnabled(true)
                 .setGroupType(PartitionGroupConfig.MemberGroupType.CUSTOM);
         config.getPartitionGroupConfig().addMemberGroupConfig(firstGroupConfig);
@@ -285,5 +277,10 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             memberGroupConfig.addInterface(address);
         }
         return memberGroupConfig;
+    }
+
+    private <K, V> IMap<K, V> getMap() {
+        HazelcastInstance instance = createHazelcastInstance(getConfig());
+        return instance.getMap(randomString());
     }
 }

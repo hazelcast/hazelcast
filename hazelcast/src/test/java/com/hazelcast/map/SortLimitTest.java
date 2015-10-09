@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.PagingPredicate;
@@ -58,9 +59,10 @@ public class SortLimitTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
+        Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        local = nodeFactory.newHazelcastInstance();
-        remote = nodeFactory.newHazelcastInstance();
+        local = nodeFactory.newHazelcastInstance(config);
+        remote = nodeFactory.newHazelcastInstance(config);
         map = local.getMap(randomString());
         for (int i = 0; i < size; i++) {
             map.put(i, i);
@@ -256,6 +258,7 @@ public class SortLimitTest extends HazelcastTestSupport {
         values = map.values(predicate);
         assertEquals(0, values.size());
     }
+
 
     static class TestComparator implements Comparator<Map.Entry>, Serializable {
 

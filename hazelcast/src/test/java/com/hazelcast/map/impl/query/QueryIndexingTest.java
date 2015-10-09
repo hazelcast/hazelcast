@@ -15,23 +15,20 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import static java.util.Collections.emptyList;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})

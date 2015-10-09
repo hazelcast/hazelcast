@@ -105,6 +105,11 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    // overridden in another context.
+    protected Config getConfig() {
+        return new Config();
+    }
+
     public static void assertHappensBefore(VectorClockTimestamp clock1, VectorClockTimestamp clock2) {
         assertTrue(VectorClockTimestamp.happenedBefore(clock1, clock2));
     }
@@ -114,7 +119,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public HazelcastInstance createHazelcastInstance() {
-        return createHazelcastInstance(new Config());
+        return createHazelcastInstance(getConfig());
     }
 
     public HazelcastInstance createHazelcastInstance(Config config) {

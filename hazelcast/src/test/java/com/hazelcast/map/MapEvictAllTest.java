@@ -26,8 +26,8 @@ public class MapEvictAllTest extends HazelcastTestSupport {
     @Test
     public void testEvictAll_firesEvent() throws Exception {
         final CountDownLatch countDownLatch = new CountDownLatch(1000);
-        HazelcastInstance node = createHazelcastInstance();
-        IMap<Integer, Integer> map = node.getMap(randomMapName());
+        HazelcastInstance instance = createHazelcastInstance(getConfig());
+        IMap<Integer, Integer> map = instance.getMap(randomMapName());
         map.addLocalEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
             public void mapEvicted(MapEvent event) {
@@ -52,7 +52,7 @@ public class MapEvictAllTest extends HazelcastTestSupport {
         int numberOfLockedKeys = 123;
         int expectedNumberOfEvictedKeys = numberOfEntries - numberOfLockedKeys;
         final CountDownLatch countDownLatch = new CountDownLatch(expectedNumberOfEvictedKeys);
-        HazelcastInstance node = createHazelcastInstance();
+        HazelcastInstance node = createHazelcastInstance(getConfig());
         IMap<Integer, Integer> map = node.getMap(randomMapName());
         map.addLocalEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
@@ -85,9 +85,9 @@ public class MapEvictAllTest extends HazelcastTestSupport {
         int numberOfEntries = 10000;
         String mapName = randomMapName();
         final CountDownLatch countDownLatch = new CountDownLatch(numberOfEntries);
-        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(5);
-        HazelcastInstance node1 = instanceFactory.newHazelcastInstance();
-        HazelcastInstance node2 = instanceFactory.newHazelcastInstance();
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance node1 = instanceFactory.newHazelcastInstance(getConfig());
+        HazelcastInstance node2 = instanceFactory.newHazelcastInstance(getConfig());
         final IMap<Integer, Integer> map1 = node1.getMap(mapName);
         final IMap<Integer, Integer> map2 = node2.getMap(mapName);
         map1.addEntryListener(new EntryAdapter<Integer, Integer>() {

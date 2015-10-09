@@ -59,7 +59,7 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         final String mapName = randomMapName();
         final String key = "2";
         final String value = "value2";
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL, "5");
         config.getMapConfig(mapName).setReadBackupData(true);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);

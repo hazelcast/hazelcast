@@ -39,7 +39,6 @@ import org.junit.runner.RunWith;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -51,8 +50,7 @@ public class MapLockTest extends HazelcastTestSupport {
 
     @Test
     public void testIsLocked_afterDestroy() {
-        final HazelcastInstance instance = createHazelcastInstance();
-        final IMap<Object, Object> map = instance.getMap(randomString());
+        final IMap<Object, Object> map = getMap();
         final String key = randomString();
         map.lock(key);
         map.destroy();
@@ -61,8 +59,7 @@ public class MapLockTest extends HazelcastTestSupport {
 
     @Test
     public void testIsLocked_afterDestroy_whenMapContainsKey() {
-        final HazelcastInstance instance = createHazelcastInstance();
-        final IMap<Object, Object> map = instance.getMap(randomString());
+        final IMap<Object, Object> map = getMap();
         final String key = randomString();
         map.put(key, "value");
         map.lock(key);
@@ -72,7 +69,7 @@ public class MapLockTest extends HazelcastTestSupport {
 
     @Test
     public void testBackupDies() throws TransactionException {
-        Config config = new Config();
+        Config config = getConfig();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
@@ -115,15 +112,14 @@ public class MapLockTest extends HazelcastTestSupport {
 
     @Test(timeout = 20000)
     public void testLockEviction() throws Exception {
-        final String mapName = "testLockEviction";
+        final String name = randomString();
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final Config config = new Config();
-        config.getMapConfig(mapName).setBackupCount(1);
+        final Config config = getConfig();
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         warmUpPartitions(instance2, instance1);
 
-        final IMap map = instance1.getMap(mapName);
+        final IMap map = instance1.getMap(name);
         map.put(1, 1);
         map.lock(1, 1, TimeUnit.SECONDS);
         assertTrue(map.isLocked(1));
@@ -140,10 +136,7 @@ public class MapLockTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void testLockTTL_whenZeroTimeout() throws Exception {
-        final Config config = new Config();
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
-        final IMap mm = instance.getMap(randomString());
+        final IMap mm = getMap();
         final Object key = "Key";
         mm.lock(key, 0, TimeUnit.SECONDS);
     }
@@ -151,12 +144,12 @@ public class MapLockTest extends HazelcastTestSupport {
     @Test(timeout = 100000)
     public void testLockEviction2() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final Config config = new Config();
+        final Config config = getConfig();
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         warmUpPartitions(instance2, instance1);
 
-        final String name = "testLockEviction2";
+        final String name = randomString();
         final IMap map = instance1.getMap(name);
         Random rand = new Random();
         for (int i = 0; i < 5; i++) {
@@ -178,11 +171,10 @@ public class MapLockTest extends HazelcastTestSupport {
     @Test(timeout = 100000)
     public void testLockMigration() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        final Config config = new Config();
-        final AtomicInteger integer = new AtomicInteger(0);
+        final Config config = getConfig();
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
 
-        final String name = "testLockMigration";
+        final String name = randomString();
         final IMap map = instance1.getMap(name);
         for (int i = 0; i < 1000; i++) {
             map.lock(i);
@@ -209,10 +201,10 @@ public class MapLockTest extends HazelcastTestSupport {
     @Test(timeout = 100000)
     public void testLockEvictionWithMigration() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        final Config config = new Config();
+        final Config config = getConfig();
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
 
-        final String name = "testLockEvictionWithMigration";
+        final String name = randomString();
         final IMap map = instance1.getMap(name);
         for (int i = 0; i < 1000; i++) {
             map.lock(i, 20, TimeUnit.SECONDS);
@@ -238,13 +230,14 @@ public class MapLockTest extends HazelcastTestSupport {
     @Test(timeout = 1000 * 15, expected = IllegalMonitorStateException.class)
     public void testLockOwnership() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final Config config = new Config();
+        final Config config = getConfig();
+        String name = randomString();
 
         final HazelcastInstance node1 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance node2 = nodeFactory.newHazelcastInstance(config);
 
-        final IMap map1 = node1.getMap("map");
-        final IMap map2 = node2.getMap("map");
+        final IMap map1 = node1.getMap(name);
+        final IMap map2 = node2.getMap(name);
 
         map1.lock(1);
         map2.unlock(1);
@@ -253,56 +246,51 @@ public class MapLockTest extends HazelcastTestSupport {
     @Test(timeout = 1000 * 30)
     public void testAbsentKeyIsLocked() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config config = getConfig();
+        final String name = randomString();
+        final String key = "KEY";
+        final String val = "VAL_2";
 
-        final String MAP_A = "MAP_A";
-        final String KEY = "KEY";
-        final String VAL_2 = "VAL_2";
+        final HazelcastInstance node1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance node2 = nodeFactory.newHazelcastInstance(config);
 
-        final HazelcastInstance node1 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance node2 = nodeFactory.newHazelcastInstance();
+        final IMap map1 = node1.getMap(name);
+        final IMap map2 = node2.getMap(name);
 
-        final IMap map1 = node1.getMap(MAP_A);
-        final IMap map2 = node2.getMap(MAP_A);
-
-        map1.lock(KEY);
-        boolean putResult = map2.tryPut(KEY, VAL_2, 2, TimeUnit.SECONDS);
+        map1.lock(key);
+        boolean putResult = map2.tryPut(key, val, 2, TimeUnit.SECONDS);
 
         Assert.assertFalse("the result of try put should be false as the absent key is locked", putResult);
         assertTrueEventually(new AssertTask() {
             public void run() {
-                Assert.assertEquals("the key should be absent ", null, map1.get(KEY));
-                Assert.assertEquals("the key should be absent ", null, map2.get(KEY));
+                Assert.assertEquals("the key should be absent ", null, map1.get(key));
+                Assert.assertEquals("the key should be absent ", null, map2.get(key));
             }
         });
     }
 
     @Test
     public void testLockTTLKey() {
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance node1 = nodeFactory.newHazelcastInstance();
 
-        final IMap map = node1.getMap("map");
-        final String KEY = "key";
-        final String VAL = "val";
+        final IMap map = getMap();
+        final String key = "key";
+        final String val = "val";
 
         final int TTL_SEC = 1;
-        map.put(KEY, VAL, TTL_SEC, TimeUnit.SECONDS);
-        map.lock(KEY);
+        map.put(key, val, TTL_SEC, TimeUnit.SECONDS);
+        map.lock(key);
 
         sleepSeconds(TTL_SEC * 2);
 
-        assertEquals("TTL of KEY has expired, KEY is locked, we expect VAL", VAL, map.get(KEY));
-        map.unlock(KEY);
-        assertEquals("TTL of KEY has expired, KEY is unlocked, we expect null", null, map.get(KEY));
+        assertEquals("TTL of KEY has expired, KEY is locked, we expect VAL", val, map.get(key));
+        map.unlock(key);
+        assertEquals("TTL of KEY has expired, KEY is unlocked, we expect null", null, map.get(key));
     }
 
 
     @Test
     public void testClear_withLockedKey() {
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance node1 = nodeFactory.newHazelcastInstance();
-
-        final IMap map = node1.getMap("map");
+        final IMap map = getMap();
         final String KEY = "key";
         final String VAL = "val";
 
@@ -322,9 +310,10 @@ public class MapLockTest extends HazelcastTestSupport {
      */
     @Test
     public void testClear_withLockedKey_whenNodeShutdown() {
+        Config config = getConfig();
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance node1 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance node2 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance node1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance node2 = nodeFactory.newHazelcastInstance(config);
 
         final String mapName = randomString();
         final IMap map = node2.getMap(mapName);
@@ -356,7 +345,7 @@ public class MapLockTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void testTryLockLeaseTime_whenLockFree() throws InterruptedException {
-        IMap map = getMapForLock();
+        IMap map = getMap();
         String key = randomString();
         boolean isLocked = map.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
         assertTrue(isLocked);
@@ -364,7 +353,7 @@ public class MapLockTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void testTryLockLeaseTime_whenLockAcquiredByOther() throws InterruptedException {
-        final IMap map = getMapForLock();
+        final IMap map = getMap();
         final String key = randomString();
         Thread thread = new Thread() {
             public void run() {
@@ -380,7 +369,7 @@ public class MapLockTest extends HazelcastTestSupport {
 
     @Test
     public void testTryLockLeaseTime_lockIsReleasedEventually() throws InterruptedException {
-        final IMap map = getMapForLock();
+        final IMap map = getMap();
         final String key = randomString();
         map.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
         assertTrueEventually(new AssertTask() {
@@ -396,14 +385,14 @@ public class MapLockTest extends HazelcastTestSupport {
      */
     @Test
     public void lockStoreShouldBeRemoved_whenMapIsDestroyed() {
-        HazelcastInstance hz = createHazelcastInstance();
-        IMap map = hz.getMap(randomName());
+        HazelcastInstance instance = createHazelcastInstance(getConfig());
+        IMap map = instance.getMap(randomName());
         for (int i = 0; i < 1000; i++) {
             map.lock(i);
         }
         map.destroy();
 
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
         LockServiceImpl lockService = nodeEngine.getService(LockService.SERVICE_NAME);
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
@@ -412,7 +401,8 @@ public class MapLockTest extends HazelcastTestSupport {
         }
     }
 
-    private IMap getMapForLock(){
-        return createHazelcastInstance().getMap(randomString());
+    protected <K, V> IMap<K, V> getMap() {
+        HazelcastInstance instance = createHazelcastInstance(getConfig());
+        return instance.getMap(randomString());
     }
 }

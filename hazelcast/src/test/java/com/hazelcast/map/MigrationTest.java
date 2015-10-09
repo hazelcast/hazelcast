@@ -40,8 +40,8 @@ public class MigrationTest extends HazelcastTestSupport {
     @Test
     public void testMapMigration() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        Config cfg = new Config();
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        Config config = getConfig();
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         int size = 1000;
 
         Map map = instance1.getMap("testMapMigration");
@@ -49,33 +49,34 @@ public class MigrationTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         Thread.sleep(1000);
         for (int i = 0; i < size; i++) {
             assertEquals(map.get(i), i);
         }
 
-        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(config);
         Thread.sleep(1000);
         for (int i = 0; i < size; i++) {
             assertEquals(map.get(i), i);
         }
-
     }
 
 
     @Test
     public void testMigration_failure_when_statistics_disabled() {
         final int noOfRecords = 100;
-        final int nodeCount = 3;
-        final Config config = new Config().addMapConfig(new MapConfig("myMap").setStatisticsEnabled(false));
+        String name = randomString();
+        Config config = getConfig();
+        MapConfig mapConfig = config.getMapConfig(name);
+        mapConfig.setStatisticsEnabled(false);
 
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(nodeCount);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(config);
 
-        IMap<Integer, Integer> myMap = instance1.getMap("myMap");
+        IMap<Integer, Integer> myMap = instance1.getMap(name);
         for (int i = 0; i < noOfRecords; i++) {
             myMap.put(i, i);
         }

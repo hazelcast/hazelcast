@@ -87,7 +87,7 @@ public class EventPublishOrderWithEvictionTest extends HazelcastTestSupport {
 
     private <K, V> IMap<K, V> createMap(int maxSize) {
         String mapName = randomMapName();
-        Config config = new Config();
+        Config config = getConfig();
         MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
