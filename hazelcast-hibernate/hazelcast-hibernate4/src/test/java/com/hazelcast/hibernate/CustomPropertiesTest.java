@@ -30,9 +30,9 @@ import com.hazelcast.test.annotation.SlowTest;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.hibernate.cache.CacheException;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.cfg.Environment;
+import org.hibernate.service.spi.ServiceException;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -125,7 +125,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         sf.close();
     }
 
-    @Test(expected = CacheException.class)
+    @Test(expected = ServiceException.class)
     public void testWrongHazelcastConfigurationFilePathShouldThrow() {
         Properties props = new Properties();
         props.setProperty(Environment.CACHE_REGION_FACTORY, HazelcastCacheRegionFactory.class.getName());
