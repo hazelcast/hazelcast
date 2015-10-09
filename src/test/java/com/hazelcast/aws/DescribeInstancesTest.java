@@ -30,13 +30,20 @@ import org.junit.runner.RunWith;
 public class DescribeInstancesTest {
 
     @Test(expected = IllegalArgumentException.class)
-    public void testDescribeInstances_whenAwsConfigIsNull() {
+    public void test_whenAwsConfigIsNull() {
         new DescribeInstances(null,"endpoint");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testDescribeInstances_whenAccessKeyNull() {
+    public void test_whenAccessKeyNull() {
         new DescribeInstances(new AwsConfig(),"endpoint");
     }
-
+    
+    @Test
+    public void test_whenProperConfig() {
+        AwsConfig awsConfig = new AwsConfig();
+        awsConfig.setAccessKey("accesskey");
+        awsConfig.setSecretKey("secretkey");
+        new DescribeInstances(awsConfig,"endpoint");
+    }
 }
