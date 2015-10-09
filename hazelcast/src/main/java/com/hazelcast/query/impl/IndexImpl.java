@@ -50,10 +50,10 @@ public class IndexImpl implements Index {
 
     private final SerializationService ss;
 
-    public IndexImpl(String attribute, boolean ordered, SerializationService ss) {
+    public IndexImpl(String attribute, boolean ordered, SerializationService serializationService) {
         this.attribute = attribute;
         this.ordered = ordered;
-        this.ss = ss;
+        this.ss = serializationService;
         this.indexStore = ordered ? new SortedIndexStore() : new UnsortedIndexStore();
     }
 

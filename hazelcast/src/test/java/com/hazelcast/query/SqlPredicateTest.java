@@ -62,7 +62,7 @@ import org.junit.runner.RunWith;
 @Category(QuickTest.class)
 public class SqlPredicateTest {
 
-    final SerializationService ss = new DefaultSerializationServiceBuilder().build();
+    final SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void testEqualsWhenSqlMatches() throws Exception {
@@ -367,7 +367,7 @@ public class SqlPredicateTest {
     }
 
     private Map.Entry createEntry(final Object key, final Object value) {
-        return new QueryEntry(ss, toData(key), value);
+        return new QueryEntry(serializationService, toData(key), value);
     }
 
     private void assertSqlTrue(String s, Object value) {
