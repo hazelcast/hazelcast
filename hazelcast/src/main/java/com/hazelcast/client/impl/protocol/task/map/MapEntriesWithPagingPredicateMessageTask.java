@@ -19,15 +19,16 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapEntriesWithPagingPredicateCodec;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.map.impl.query.QueryResultRow;
+import com.hazelcast.util.IterationType;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class MapEntriesWithPagingPredicateMessageTask
         extends AbstractMapQueryMessageTask<MapEntriesWithPagingPredicateCodec.RequestParameters> {
@@ -38,11 +39,10 @@ public class MapEntriesWithPagingPredicateMessageTask
 
     @Override
     protected Object reduce(Collection<QueryResultRow> result) {
-        HashMap<Data, Data> map = new HashMap<Data, Data>();
-        for (QueryResultRow resultEntry : result) {
-            map.put(resultEntry.getKey(), resultEntry.getValue());
+        List<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>(result.size());
+        for (QueryResultRow resultRow : result) {
+            entries.add(resultRow);
         }
-        Set<Map.Entry<Data, Data>> entries = map.entrySet();
         return entries;
     }
 
@@ -52,13 +52,18 @@ public class MapEntriesWithPagingPredicateMessageTask
     }
 
     @Override
+    protected IterationType getIterationType() {
+        return IterationType.ENTRY;
+    }
+
+    @Override
     protected MapEntriesWithPagingPredicateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapEntriesWithPagingPredicateCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapEntriesWithPagingPredicateCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
+        return MapEntriesWithPagingPredicateCodec.encodeResponse((List<Map.Entry<Data, Data>>) response);
     }
 
     @Override

@@ -18,44 +18,45 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapKeySetCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.MapKeySet;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.MapKeySetOperationFactory;
+import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.util.IterationType;
 
 import java.security.Permission;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class MapKeySetMessageTask
-        extends AbstractAllPartitionsMessageTask<MapKeySetCodec.RequestParameters> {
+        extends AbstractMapQueryMessageTask<MapKeySetCodec.RequestParameters> {
 
     public MapKeySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected OperationFactory createOperationFactory() {
-        return new MapKeySetOperationFactory(parameters.name);
+    protected Object reduce(Collection<QueryResultRow> result) {
+        List<Data> keys = new ArrayList<Data>(result.size());
+        for (QueryResultRow resultEntry : result) {
+            keys.add(resultEntry.getKey());
+        }
+        return keys;
     }
 
+    @Override
+    protected Predicate getPredicate() {
+        return TruePredicate.INSTANCE;
+    }
 
     @Override
-    protected Object reduce(Map<Integer, Object> map) {
-        Set<Data> set = new HashSet<Data>();
-        MapService service = getService(MapService.SERVICE_NAME);
-        for (Object o : map.values()) {
-            Set keys = ((MapKeySet) service.getMapServiceContext().toObject(o)).getKeySet();
-            set.addAll(keys);
-        }
-        return set;
+    protected IterationType getIterationType() {
+        return IterationType.KEY;
     }
 
     @Override
@@ -65,12 +66,7 @@ public class MapKeySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapKeySetCodec.encodeResponse((Set<Data>) response);
-    }
-
-
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
+        return MapKeySetCodec.encodeResponse((List<Data>) response);
     }
 
     public Permission getRequiredPermission() {

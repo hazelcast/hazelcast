@@ -23,11 +23,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * This interfaces provides methods related to entry of the query result.
  */
-public class QueryResultRow implements IdentifiedDataSerializable {
+public class QueryResultRow implements IdentifiedDataSerializable, Map.Entry<Data, Data> {
 
     private Data key;
     private Data value;
@@ -46,6 +47,11 @@ public class QueryResultRow implements IdentifiedDataSerializable {
     }
 
     public Data getValue() {
+        return value;
+    }
+
+    @Override
+    public Data setValue(Data value) {
         return value;
     }
 

@@ -162,11 +162,11 @@ public abstract class AuthenticationBaseMessageTask<P>
 
         Connection connection = endpoint.getConnection();
         ILogger logger = clientEngine.getLogger(getClass());
-        logger.log(Level.INFO, "Received auth from " + connection + ", successfully authenticated"
-        + ", principal : " + principal + ", owner connection : " + isOwnerConnection());
 
         endpoint.authenticated(principal, credentials, isOwnerConnection());
         setConnectionType();
+        logger.log(Level.INFO, "Received auth from " + connection + ", successfully authenticated"
+                + ", principal : " + principal + ", owner connection : " + isOwnerConnection());
         endpointManager.registerEndpoint(endpoint);
         clientEngine.bind(endpoint);
 
