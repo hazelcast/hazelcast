@@ -95,6 +95,9 @@ public interface ResponseTemplate {
     @Response(ResponseMessageConst.SET_ENTRY)
     void SetEntry(Set<Map.Entry<Data, Data>> entrySet);
 
+    @Response(ResponseMessageConst.LIST_ENTRY)
+    void ListEntry(List<Map.Entry<Data, Data>> entries);
+
     /**
      *
      * @param address The address of the member server.

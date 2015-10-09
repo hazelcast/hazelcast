@@ -16,6 +16,6 @@
 
 /**
  * This package contains the implementation of the replicated map service itself and some connection interfaces only used
- * internally - No public API!
+ * internally.
  */
 package com.hazelcast.replicatedmap.impl;

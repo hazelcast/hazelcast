@@ -22,7 +22,6 @@ package com.hazelcast.replicatedmap.impl.client;
 public class ClientReplicatedMapAddNearCacheListenerRequest extends ClientReplicatedMapAddEntryListenerRequest {
 
     public ClientReplicatedMapAddNearCacheListenerRequest() {
-
     }
 
     public ClientReplicatedMapAddNearCacheListenerRequest(String mapName) {

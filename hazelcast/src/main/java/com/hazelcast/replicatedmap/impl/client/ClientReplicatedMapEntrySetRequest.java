@@ -16,31 +16,28 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.operation.EntrySetOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
+import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 /**
  * Client request class for {@link java.util.Map#entrySet()} implementation
  */
-public class ClientReplicatedMapEntrySetRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapEntrySetRequest extends AbstractReplicatedMapClientRequest {
 
     ClientReplicatedMapEntrySetRequest() {
         super(null);
     }
 
-    public ClientReplicatedMapEntrySetRequest(String mapName) {
-        super(mapName);
+    public ClientReplicatedMapEntrySetRequest(String mapName, int partitionId) {
+        super(mapName, partitionId);
     }
 
     @Override
-    public Object call()
-            throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return new ReplicatedMapEntrySet(recordStore.entrySet());
+    protected Operation prepareOperation() {
+        return new EntrySetOperation(getMapName());
     }
 
     @Override

@@ -268,7 +268,7 @@ public class IsStillRunningService {
                     invocation.nodeEngine, invocation.serviceName, isStillRunningOperation,
                     invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, callback, true);
 
-            invocation.logger.warning("Asking if operation execution has been started: " + toString());
+            invocation.logger.warning("Asking if operation execution has been started: " + isStillRunningOperation);
             inv.invoke();
         }
     }

@@ -16,15 +16,13 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
-import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.replicatedmap.impl.messages.MultiReplicationMessage;
-import com.hazelcast.replicatedmap.impl.messages.ReplicationMessage;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
-import com.hazelcast.replicatedmap.impl.record.VectorClockTimestamp;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.REPLICATED_MAP_DS_FACTORY;
@@ -35,22 +33,15 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.REPLICAT
  */
 //Deactivated all checkstyle rules because those classes will never comply
 //CHECKSTYLE:OFF
-public class ReplicatedMapDataSerializerHook
-        implements DataSerializerHook {
+public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(REPLICATED_MAP_DS_FACTORY, REPLICATED_MAP_DS_FACTORY_ID);
 
-    public static final int VECTOR = 0;
     public static final int RECORD = 1;
-    public static final int REPL_UPDATE_MESSAGE = 2;
-    public static final int REPL_CLEAR_MESSAGE = 3;
-    public static final int REPL_MULTI_UPDATE_MESSAGE = 4;
-    public static final int OP_INIT_CHUNK = 5;
-    public static final int OP_POST_JOIN = 6;
-    public static final int OP_CLEAR = 7;
-    public static final int MAP_STATS = 8;
+    public static final int OP_CLEAR = 2;
+    public static final int ENTRY_VIEW = 3;
 
-    private static final int LEN = MAP_STATS + 1;
+    private static final int LEN = ENTRY_VIEW + 1;
 
     @Override
     public int getFactoryId() {
@@ -60,56 +51,23 @@ public class ReplicatedMapDataSerializerHook
     @Override
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
-        constructors[VECTOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new VectorClockTimestamp();
-            }
-        };
         constructors[RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ReplicatedRecord();
             }
         };
-        constructors[REPL_UPDATE_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReplicationMessage();
-            }
-        };
-        constructors[REPL_CLEAR_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new VectorClockTimestamp();
-            }
-        };
-        constructors[REPL_MULTI_UPDATE_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultiReplicationMessage();
-            }
-        };
-        constructors[OP_INIT_CHUNK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReplicatedMapInitChunkOperation();
-            }
-        };
-        constructors[OP_POST_JOIN] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReplicatedMapPostJoinOperation();
-            }
-        };
         constructors[OP_CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReplicatedMapClearOperation();
+                return new ClearLocalOperation();
             }
         };
-//        constructors[MAP_STATS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            @Override
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-//                return new LocalReplicatedMapStatsImpl();
-//            }
-//        };
+        constructors[ENTRY_VIEW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ReplicatedMapEntryView();
+            }
+        };
 
         return new ArrayDataSerializableFactory(constructors);
     }

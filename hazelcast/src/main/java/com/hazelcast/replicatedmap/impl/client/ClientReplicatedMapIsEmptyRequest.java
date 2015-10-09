@@ -16,31 +16,28 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.operation.IsEmptyOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
+import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 /**
  * Client request class for {@link java.util.Map#isEmpty()} implementation
  */
-public class ClientReplicatedMapIsEmptyRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapIsEmptyRequest extends AbstractReplicatedMapClientRequest {
 
     ClientReplicatedMapIsEmptyRequest() {
         super(null);
     }
 
-    public ClientReplicatedMapIsEmptyRequest(String mapName) {
-        super(mapName);
+    public ClientReplicatedMapIsEmptyRequest(String mapName, int partitionId) {
+        super(mapName, partitionId);
     }
 
     @Override
-    public Object call()
-            throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return recordStore.isEmpty();
+    protected Operation prepareOperation() {
+        return new IsEmptyOperation(getMapName());
     }
 
     @Override

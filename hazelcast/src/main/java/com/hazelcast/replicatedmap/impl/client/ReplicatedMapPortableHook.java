@@ -16,13 +16,12 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
+import com.hazelcast.internal.serialization.PortableHook;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.internal.serialization.PortableHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
-
 import java.util.Collection;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.REPLICATED_PORTABLE_FACTORY;
@@ -48,7 +47,7 @@ public class ReplicatedMapPortableHook
     public static final int KEY_SET = 9;
     public static final int VALUES = 10;
     public static final int ENTRY_SET = 11;
-    public static final int MAP_ENTRY_SET = 12;
+    public static final int MAP_ENTRIES = 12;
     public static final int MAP_KEY_SET = 13;
     public static final int VALUES_COLLECTION = 14;
     public static final int GET_RESPONSE = 15;
@@ -143,22 +142,16 @@ public class ReplicatedMapPortableHook
                         return new ReplicatedMapValueCollection();
                     }
                 };
-                constructors[MAP_ENTRY_SET] = new ConstructorFunction<Integer, Portable>() {
+                constructors[MAP_ENTRIES] = new ConstructorFunction<Integer, Portable>() {
                     @Override
                     public Portable createNew(Integer arg) {
-                        return new ReplicatedMapEntrySet();
+                        return new ReplicatedMapEntries();
                     }
                 };
                 constructors[MAP_KEY_SET] = new ConstructorFunction<Integer, Portable>() {
                     @Override
                     public Portable createNew(Integer arg) {
-                        return new ReplicatedMapKeySet();
-                    }
-                };
-                constructors[GET_RESPONSE] = new ConstructorFunction<Integer, Portable>() {
-                    @Override
-                    public Portable createNew(Integer arg) {
-                        return new ReplicatedMapGetResponse();
+                        return new ReplicatedMapKeys();
                     }
                 };
                 constructors[ADD_LISTENER] = new ConstructorFunction<Integer, Portable>() {

@@ -16,17 +16,12 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.config.ReplicatedMapConfig;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This class is meant to encapsulate the actual storage system and support automatic waiting for finishing load operations if
@@ -35,20 +30,25 @@ import java.util.concurrent.locks.ReentrantLock;
  * @param <K> key type
  * @param <V> value type
  */
-class InternalReplicatedMapStorage<K, V> {
+public class InternalReplicatedMapStorage<K, V> {
 
-    private final ConcurrentMap<K, ReplicatedRecord<K, V>> storage = new ConcurrentHashMap<K, ReplicatedRecord<K, V>>();
+    private final ConcurrentMap<K, ReplicatedRecord<K, V>> storage =
+            new ConcurrentHashMap<K, ReplicatedRecord<K, V>>(1000, 0.75f, 1);
+    private AtomicLong version = new AtomicLong();
 
-    private final AtomicBoolean loaded = new AtomicBoolean(false);
-    private final Lock waitForLoadedLock = new ReentrantLock();
-    private final Condition waitForLoadedCondition = waitForLoadedLock.newCondition();
+    public InternalReplicatedMapStorage() {
+    }
 
-    private final ReplicatedMapConfig replicatedMapConfig;
-    private final String name;
+    public long getVersion() {
+        return version.get();
+    }
 
-    InternalReplicatedMapStorage(ReplicatedMapConfig replicatedMapConfig) {
-        this.name = replicatedMapConfig.getName();
-        this.replicatedMapConfig = replicatedMapConfig;
+    public void setVersion(long version) {
+        this.version.set(version);
+    }
+
+    public void incrementVersion() {
+        version.incrementAndGet();
     }
 
     public ReplicatedRecord<K, V> get(Object key) {
@@ -56,10 +56,17 @@ class InternalReplicatedMapStorage<K, V> {
     }
 
     public ReplicatedRecord<K, V> put(K key, ReplicatedRecord<K, V> replicatedRecord) {
+        version.incrementAndGet();
         return storage.put(key, replicatedRecord);
     }
 
+    public ReplicatedRecord<K, V> putInternal(K key, ReplicatedRecord<K, V> replicatedRecord) {
+        return storage.put(key, replicatedRecord);
+    }
+
+
     public boolean remove(K key, ReplicatedRecord<K, V> replicatedRecord) {
+        version.incrementAndGet();
         return storage.remove(key, replicatedRecord);
     }
 
@@ -80,7 +87,13 @@ class InternalReplicatedMapStorage<K, V> {
     }
 
     public void clear() {
+        version.incrementAndGet();
         storage.clear();
+    }
+
+    public void reset() {
+        storage.clear();
+        version.set(0);
     }
 
     public boolean isEmpty() {
@@ -98,71 +111,4 @@ class InternalReplicatedMapStorage<K, V> {
         return count;
     }
 
-    public void finishLoading() {
-        loaded.set(true);
-        waitForLoadedLock.lock();
-        try {
-            waitForLoadedCondition.signalAll();
-        } finally {
-            waitForLoadedLock.unlock();
-        }
-    }
-
-    public boolean isLoaded() {
-        return loaded.get();
-    }
-
-    public void checkState() {
-        if (!loaded.get()) {
-            if (!replicatedMapConfig.isAsyncFillup()) {
-                while (true) {
-                    waitForLoadedLock.lock();
-                    try {
-                        if (!loaded.get()) {
-                            waitForLoadedCondition.await();
-                        }
-                        // If it is a spurious wakeup we restart waiting
-                        if (!loaded.get()) {
-                            continue;
-                        }
-                        // Otherwise return here
-                        return;
-                    } catch (InterruptedException e) {
-                        String name = replicatedMapConfig.getName();
-                        throw new IllegalStateException("Synchronous loading of ReplicatedMap '" + name + "' failed.", e);
-                    } finally {
-                        waitForLoadedLock.unlock();
-                    }
-                }
-            }
-        }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        InternalReplicatedMapStorage that = (InternalReplicatedMapStorage) o;
-
-        if (name != null ? !name.equals(that.name) : that.name != null) {
-            return false;
-        }
-        if (!storage.equals(that.storage)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = storage.hashCode();
-        result = 31 * result + (name != null ? name.hashCode() : 0);
-        return result;
-    }
 }
