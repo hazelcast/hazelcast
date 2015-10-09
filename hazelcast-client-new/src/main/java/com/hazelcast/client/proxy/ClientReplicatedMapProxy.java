@@ -330,8 +330,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientMessage request = ReplicatedMapEntrySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
         ReplicatedMapEntrySetCodec.ResponseParameters result = ReplicatedMapEntrySetCodec.decodeResponse(response);
-        List<Entry<K, V>> entries = new ArrayList<Entry<K, V>>(result.entries.size());
-        for (Entry<Data, Data> dataEntry : result.entries) {
+        List<Entry<K, V>> entries = new ArrayList<Entry<K, V>>(result.entrySet.size());
+        for (Entry<Data, Data> dataEntry : result.entrySet) {
             K key = toObject(dataEntry.getKey());
             V value = toObject(dataEntry.getValue());
             entries.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, value));
