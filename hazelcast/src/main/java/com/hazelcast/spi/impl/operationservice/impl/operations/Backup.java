@@ -162,11 +162,11 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         if (backupOp != null) {
             try {
                 // Be sure that node engine of backup operation is set.
-                // If there is an exception before `run` (for example caller is not valid anymore), 
+                // If there is an exception before `run` (for example caller is not valid anymore),
                 // node engine of backup operation is not set. So, we are set here ourself.
                 if (backupOp.getNodeEngine() == null) {
                     backupOp.setNodeEngine(getNodeEngine());
-                }    
+                }
                 backupOp.onExecutionFailure(e);
             } catch (Throwable t) {
                 getLogger().warning("While calling operation.onFailure(). op: " + backupOp, t);
@@ -178,11 +178,11 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     public void logError(Throwable e) {
         if (backupOp != null) {
             // Be sure that node engine of backup operation is set.
-            // If there is an exception before `run` (for example caller is not valid anymore), 
+            // If there is an exception before `run` (for example caller is not valid anymore),
             // node engine of backup operation is not set. So, we are set here ourself.
             if (backupOp.getNodeEngine() == null) {
                 backupOp.setNodeEngine(getNodeEngine());
-            } 
+            }
             backupOp.logError(e);
         } else {
             ReplicaErrorLogger.log(e, getLogger());
