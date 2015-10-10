@@ -54,7 +54,7 @@ final class QueryEntryUtils {
     }
 
 
-    public static Comparable extractAttribute(String attributeName, Object key, Object value, SerializationService ss) {
+    public static Comparable extractAttribute(String attributeName, Data key, Object value, SerializationService ss) {
         if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
             return (Comparable) ss.toObject(key);
         } else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {

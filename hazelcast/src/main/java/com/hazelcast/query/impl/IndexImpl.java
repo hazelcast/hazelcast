@@ -103,11 +103,11 @@ public class IndexImpl implements Index {
 
         Comparable oldValue = null;
         if (oldRecordValue != null) {
-            oldValue = QueryEntryUtils.extractAttribute(attribute, e.getKey(), oldRecordValue, ss);
+            oldValue = QueryEntryUtils.extractAttribute(attribute, e.getKeyData(), oldRecordValue, ss);
             oldValue = sanitizeValue(oldValue);
         }
 
-        Comparable newValue = QueryEntryUtils.extractAttribute(attribute, e.getKey(), e.getValue(), ss);
+        Comparable newValue = e.getAttribute(attribute);
         newValue = sanitizeValue(newValue);
 
         if (oldValue == null) {
