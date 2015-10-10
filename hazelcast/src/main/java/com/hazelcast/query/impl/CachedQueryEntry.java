@@ -26,9 +26,6 @@ import com.hazelcast.query.impl.getters.ReflectionHelper;
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 
-/**
- * Entry of the Query.
- */
 public class CachedQueryEntry implements QueryableEntry {
 
     private Data keyData;
@@ -110,34 +107,44 @@ public class CachedQueryEntry implements QueryableEntry {
     }
 
     private Object getTargetObject(boolean key) {
-        Object targetObject;
         if (key) {
-            if (keyObject == null) {
-                if (keyData.isPortable()) {
-                    targetObject = keyData;
-                } else {
-                    targetObject = getKey();
-                }
+            return getTargetKey();
+        } else {
+            return getTargetValue();
+        }
+    }
+
+    private Object getTargetValue() {
+        Object targetObject;
+        if (valueObject == null) {
+            if (valueData.isPortable()) {
+                targetObject = valueData;
             } else {
-                if (keyObject instanceof Portable) {
-                    targetObject = getKeyData();
-                } else {
-                    targetObject = getKey();
-                }
+                targetObject = getValue();
             }
         } else {
-            if (valueObject == null) {
-                if (valueData.isPortable()) {
-                    targetObject = valueData;
-                } else {
-                    targetObject = getValue();
-                }
+            if (valueObject instanceof Portable) {
+                targetObject = getValueData();
             } else {
-                if (valueObject instanceof Portable) {
-                    targetObject = getValueData();
-                } else {
-                    targetObject = getValue();
-                }
+                targetObject = getValue();
+            }
+        }
+        return targetObject;
+    }
+
+    private Object getTargetKey() {
+        Object targetObject;
+        if (keyObject == null) {
+            if (keyData.isPortable()) {
+                targetObject = keyData;
+            } else {
+                targetObject = getKey();
+            }
+        } else {
+            if (keyObject instanceof Portable) {
+                targetObject = getKeyData();
+            } else {
+                targetObject = getKey();
             }
         }
         return targetObject;

@@ -16,13 +16,6 @@
 
 package com.hazelcast.map.impl;
 
-import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateTTLMillis;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTL;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
-import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
-import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
-
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -51,6 +44,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateTTLMillis;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTL;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
+import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
+import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
 
 /**
  * Map container.
@@ -106,7 +106,9 @@ public class MapContainer {
         this.mapServiceContext = mapServiceContext;
         this.partitioningStrategy = createPartitioningStrategy();
         this.quorumName = mapConfig.getQuorumName();
-        this.queryEntryFactory = new QueryEntryFactory(mapConfig.isOptimizeQueries());
+        this.queryEntryFactory = new QueryEntryFactory(
+                mapServiceContext.getNodeEngine().getSerializationService(),
+                mapConfig.isOptimizeQueries());
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.serializationService = nodeEngine.getSerializationService();
         recordFactory = createRecordFactory(nodeEngine);
@@ -272,7 +274,7 @@ public class MapContainer {
     }
 
     public QueryableEntry newQueryEntry(Data key, Object value) {
-        return queryEntryFactory.newEntry(serializationService, key, value);
+        return queryEntryFactory.newEntry(key, value);
     }
 }
 

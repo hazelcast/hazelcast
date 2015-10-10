@@ -43,9 +43,9 @@ final class QueryEntryUtils {
         }
     }
 
-    static Comparable extractViaPortable(String attributeName, Data data, SerializationService ss) {
+    static Comparable extractViaPortable(String attributeName, Data data, SerializationService serializationService) {
         try {
-            return PortableExtractor.extractValue(ss, data, attributeName);
+            return PortableExtractor.extractValue(serializationService, data, attributeName);
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
@@ -54,29 +54,30 @@ final class QueryEntryUtils {
     }
 
 
-    public static Comparable extractAttribute(String attributeName, Object key, Object value, SerializationService ss) {
+    public static Comparable extractAttribute(
+            String attributeName, Object key, Object value, SerializationService serializationService) {
         if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
-            return (Comparable) ss.toObject(key);
+            return (Comparable) serializationService.toObject(key);
         } else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
-            return (Comparable) ss.toObject(value);
+            return (Comparable) serializationService.toObject(value);
         }
 
         boolean isKey = isKey(attributeName);
         attributeName = getAttributeName(isKey, attributeName);
         Object target = isKey ? key : value;
 
-        return extractAttribute(attributeName, target, ss);
+        return extractAttribute(attributeName, target, serializationService);
     }
 
-    public static Comparable extractAttribute(String attributeName, Object target, SerializationService ss) {
+    public static Comparable extractAttribute(String attributeName, Object target, SerializationService serializationService) {
         if (target instanceof Portable || target instanceof Data) {
-            Data targetData = ss.toData(target);
+            Data targetData = serializationService.toData(target);
             if (targetData.isPortable()) {
-                return extractViaPortable(attributeName, targetData, ss);
+                return extractViaPortable(attributeName, targetData, serializationService);
             }
         }
 
-        Object targetObject = ss.toObject(target);
+        Object targetObject = serializationService.toObject(target);
         return QueryEntryUtils.extractViaReflection(attributeName, targetObject);
     }
 

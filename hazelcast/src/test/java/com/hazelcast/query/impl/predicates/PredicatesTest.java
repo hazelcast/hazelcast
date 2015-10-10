@@ -77,7 +77,7 @@ import org.junit.runner.RunWith;
 @Category(QuickTest.class)
 public class PredicatesTest extends HazelcastTestSupport {
 
-    final SerializationService ss = new DefaultSerializationServiceBuilder().build();
+    final SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void testAndPredicate_whenFirstIndexAwarePredicateIsNotIndexed() throws Exception {
@@ -300,7 +300,7 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test
     public void testNotEqualsPredicateDoesNotUseIndex() {
-        Index dummyIndex = new IndexImpl("foo", false, ss);
+        Index dummyIndex = new IndexImpl("foo", false, serializationService);
         QueryContext mockQueryContext = mock(QueryContext.class);
         when(mockQueryContext.getIndex(anyString())).
                 thenReturn(dummyIndex);
@@ -315,7 +315,7 @@ public class PredicatesTest extends HazelcastTestSupport {
     private class DummyEntry extends QueryEntry {
 
         DummyEntry(Comparable attribute) {
-            super(ss, toData("1"), attribute);
+            super(serializationService, toData("1"), attribute);
         }
 
         @Override
@@ -382,7 +382,7 @@ public class PredicatesTest extends HazelcastTestSupport {
     }
 
     private Entry createEntry(final Object key, final Object value) {
-        return new QueryEntry(ss, toData(key), value);
+        return new QueryEntry(serializationService, toData(key), value);
     }
 
     private void assertPredicateTrue(Predicate p, Comparable comparable) {
