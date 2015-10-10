@@ -68,25 +68,6 @@ public abstract class ClientMapUnboundReturnValuesTestSupport {
     }
 
     /**
-     * This test calls {@link IMap} methods once which are not expected to throw {@link QueryResultSizeExceededException}.
-     * <p/>
-     * This test fills the map to an amount where the exception is safely triggered. Then all {@link IMap} methods are called
-     * which should not trigger the exception.
-     * <p/>
-     * This methods fails if any of the called methods triggers the exception.
-     *
-     * @param partitionCount  number of partitions the created cluster
-     * @param limit           result size limit which will be configured for the cluster
-     * @param preCheckTrigger number of partitions which will be used for local pre-check, <tt>-1</tt> deactivates the pre-check
-     */
-    protected void runClientMapTestWithoutException(int partitionCount, int limit, int preCheckTrigger) {
-        internalSetUpClient(partitionCount, 1, limit, preCheckTrigger);
-
-        fillToUpperLimit(serverMap, clientMap);
-        internalRunWithoutException(clientMap);
-    }
-
-    /**
      * This test calls {@link IMap} methods which have to be implemented but are not supported by the client.
      * <p/>
      * This methods fails if any of the called methods does not throw a {@link UnsupportedOperationException}.
@@ -225,37 +206,27 @@ public abstract class ClientMapUnboundReturnValuesTestSupport {
         } catch (QueryResultSizeExceededException e) {
             checkException(e);
         }
-    }
 
-    /**
-     * Calls {@link IMap} methods once which are not expected to throw a {@link QueryResultSizeExceededException}.
-     * <p/>
-     * This method requires the map to be filled to an amount where the exception is safely triggered.
-     * <p/>
-     * This methods fails if any of the called methods triggers the exception.
-     */
-    private void internalRunWithoutException(IMap<Integer, Integer> queryMap) {
         try {
-            assertEquals("IMap.values()", upperLimit, queryMap.values().size());
+            queryMap.values();
+            failExpectedException("IMap.values()");
         } catch (QueryResultSizeExceededException e) {
-            failUnwantedException("IMap.values()");
+            checkException(e);
         }
 
         try {
-            assertEquals("IMap.keySet()", upperLimit, queryMap.keySet().size());
+            queryMap.keySet();
+            failExpectedException("IMap.keySet()");
         } catch (QueryResultSizeExceededException e) {
-            failUnwantedException("IMap.keySet()");
+            checkException(e);
         }
 
-        /*
-        // FIXME: the performance of IMap.entrySet() is too bad to test it with the required number of entries
-        // @see https://github.com/hazelcast/hazelcast/issues/5130
         try {
-            assertEquals("IMap.entrySet()", upperLimit, queryMap.entrySet().size());
+            queryMap.entrySet();
+            failExpectedException("IMap.entrySet()");
         } catch (QueryResultSizeExceededException e) {
-            failUnwantedException("IMap.entrySet()");
+            checkException(e);
         }
-        */
     }
 
     /**

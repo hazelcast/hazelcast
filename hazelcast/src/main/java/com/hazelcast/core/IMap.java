@@ -1108,12 +1108,11 @@ public interface IMap<K, V>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      * <p/>
-     * On the server side and old client this method is executed by a distributed query
-     * so it may throw a {@link QueryResultSizeExceededException}
+     * This method is executed by a distributed query so it may throw a {@link QueryResultSizeExceededException}
      * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a set clone of the keys contained in this map.
-     * @throws QueryResultSizeExceededException on server side if query result size limit is exceeded
+     * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> keySet();
@@ -1125,12 +1124,11 @@ public interface IMap<K, V>
      * The collection is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
      * <p/>
-     * On the server side and old client this method is executed by a distributed query
-     * so it may throw a {@link QueryResultSizeExceededException}
+     * This method is executed by a distributed query so it may throw a {@link QueryResultSizeExceededException}
      * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a collection clone of the values contained in this map
-     * @throws QueryResultSizeExceededException on server side if query result size limit is exceeded
+     * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Collection<V> values();
@@ -1142,12 +1140,11 @@ public interface IMap<K, V>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      * <p/>
-     * On the server side and old client this method is executed by a distributed query
-     * so it may throw a {@link QueryResultSizeExceededException}
+     * This method is executed by a distributed query so it may throw a {@link QueryResultSizeExceededException}
      * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a set clone of the keys mappings in this map
-     * @throws QueryResultSizeExceededException on server side if query result size limit is exceeded
+     * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<Map.Entry<K, V>> entrySet();
@@ -1229,12 +1226,11 @@ public interface IMap<K, V>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      * <p/>
-     * On the server side this method is executed by a distributed query
-     * so it may throw a {@link QueryResultSizeExceededException}
+     * This method is executed by a distributed query so it may throw a {@link QueryResultSizeExceededException}
      * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return locally owned keys.
-     * @throws QueryResultSizeExceededException on server side if query result size limit is exceeded
+     * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> localKeySet();
