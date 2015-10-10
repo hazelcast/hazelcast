@@ -177,6 +177,12 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     @Override
     public void logError(Throwable e) {
         if (backupOp != null) {
+            // Be sure that node engine of backup operation is set.
+            // If there is an exception before `run` (for example caller is not valid anymore), 
+            // node engine of backup operation is not set. So, we are set here ourself.
+            if (backupOp.getNodeEngine() == null) {
+                backupOp.setNodeEngine(getNodeEngine());
+            } 
             backupOp.logError(e);
         } else {
             ReplicaErrorLogger.log(e, getLogger());
