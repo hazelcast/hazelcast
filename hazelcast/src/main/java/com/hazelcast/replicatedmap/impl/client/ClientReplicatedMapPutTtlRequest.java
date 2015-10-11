@@ -37,7 +37,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClientReplicatedMapPutTtlRequest extends AbstractReplicatedMapClientRequest {
 
-    private String name;
     private Data key;
     private Data value;
     private long ttlMillis;
@@ -46,7 +45,7 @@ public class ClientReplicatedMapPutTtlRequest extends AbstractReplicatedMapClien
     }
 
     public ClientReplicatedMapPutTtlRequest(String name, Data key, Data value, long ttlMillis) {
-        this.name = name;
+        super(name);
         this.key = key;
         this.value = value;
         this.ttlMillis = ttlMillis;
@@ -54,7 +53,7 @@ public class ClientReplicatedMapPutTtlRequest extends AbstractReplicatedMapClien
 
     @Override
     public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
         writer.writeLong("ttlMillis", ttlMillis);
         ObjectDataOutput out = writer.getRawDataOutput();
         out.writeData(key);
@@ -63,7 +62,7 @@ public class ClientReplicatedMapPutTtlRequest extends AbstractReplicatedMapClien
 
     @Override
     public void read(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
         ttlMillis = reader.readLong("ttlMillis");
         ObjectDataInput in = reader.getRawDataInput();
         key = in.readData();
@@ -77,7 +76,7 @@ public class ClientReplicatedMapPutTtlRequest extends AbstractReplicatedMapClien
 
     @Override
     public Permission getRequiredPermission() {
-        return new ReplicatedMapPermission(name, ActionConstants.ACTION_PUT);
+        return new ReplicatedMapPermission(getMapName(), ActionConstants.ACTION_PUT);
     }
 
     @Override
@@ -95,7 +94,7 @@ public class ClientReplicatedMapPutTtlRequest extends AbstractReplicatedMapClien
 
     @Override
     protected Operation prepareOperation() {
-        return new PutOperation(name, key, value, ttlMillis);
+        return new PutOperation(getMapName(), key, value, ttlMillis);
     }
 
     @Override
