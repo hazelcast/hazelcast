@@ -286,7 +286,7 @@ class MapEventPublisherImpl implements MapEventPublisher {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final SerializationService serializationService = nodeEngine.getSerializationService();
         Data testValue;
-        if (eventType == EntryEventType.REMOVED || eventType == EntryEventType.EVICTED) {
+        if (eventType == EntryEventType.REMOVED || eventType == EntryEventType.EVICTED || eventType == EntryEventType.EXPIRED) {
             testValue = dataOldValue;
         } else {
             testValue = dataValue;
