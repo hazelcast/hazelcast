@@ -34,32 +34,31 @@ import java.security.Permission;
  */
 public class ClientReplicatedMapRemoveRequest extends AbstractReplicatedMapClientRequest {
 
-    private String name;
     private Data key;
 
     public ClientReplicatedMapRemoveRequest() {
     }
 
     public ClientReplicatedMapRemoveRequest(String name, Data key) {
-        this.name = name;
+        super(name);
         this.key = key;
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new RemoveOperation(name, key);
+        return new RemoveOperation(getMapName(), key);
     }
 
     @Override
     public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
         ObjectDataOutput out = writer.getRawDataOutput();
         out.writeData(key);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
         ObjectDataInput in = reader.getRawDataInput();
         key = in.readData();
     }
@@ -80,7 +79,7 @@ public class ClientReplicatedMapRemoveRequest extends AbstractReplicatedMapClien
 
     @Override
     public Permission getRequiredPermission() {
-        return new ReplicatedMapPermission(name, ActionConstants.ACTION_REMOVE);
+        return new ReplicatedMapPermission(getMapName(), ActionConstants.ACTION_REMOVE);
     }
 
     @Override

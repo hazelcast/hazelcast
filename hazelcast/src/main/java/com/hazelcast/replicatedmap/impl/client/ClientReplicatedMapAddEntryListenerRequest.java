@@ -171,6 +171,11 @@ public class ClientReplicatedMapAddEntryListenerRequest extends CallableClientRe
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return mapName;
+    }
+
+    @Override
     public String getMethodName() {
         return "addEntryListener";
     }
