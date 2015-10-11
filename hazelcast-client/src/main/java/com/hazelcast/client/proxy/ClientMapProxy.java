@@ -1189,6 +1189,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
                 case REMOVED:
                 case UPDATED:
                 case EVICTED:
+                case EXPIRED:
                 case MERGED:
                     iMapEvent = createEntryEvent(event, member);
                     break;
