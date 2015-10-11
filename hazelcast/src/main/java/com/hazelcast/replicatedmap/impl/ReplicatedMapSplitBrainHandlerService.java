@@ -47,30 +47,26 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
  * Contains split-brain handling logic for {@link com.hazelcast.core.ReplicatedMap}
  */
 public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService {
-    private final ReplicatedMapService replicatedMapService;
+    private final ReplicatedMapService service;
     private final MergePolicyProvider mergePolicyProvider;
-    private final PartitionContainer[] partitionContainers;
     private final NodeEngine nodeEngine;
     private final SerializationService serializationService;
 
-    public ReplicatedMapSplitBrainHandlerService(ReplicatedMapService replicatedMapService,
-                                                 MergePolicyProvider mergePolicyProvider,
-                                                 PartitionContainer[] partitionContainers) {
-        this.replicatedMapService = replicatedMapService;
+    public ReplicatedMapSplitBrainHandlerService(ReplicatedMapService service,
+                                                 MergePolicyProvider mergePolicyProvider) {
+        this.service = service;
         this.mergePolicyProvider = mergePolicyProvider;
-        this.partitionContainers = partitionContainers;
-        this.nodeEngine = replicatedMapService.getNodeEngine();
+        this.nodeEngine = service.getNodeEngine();
         this.serializationService = nodeEngine.getSerializationService();
-
     }
 
     @Override
     public Runnable prepareMergeRunnable() {
         HashMap<String, Collection<ReplicatedRecord>> recordMap = new HashMap<String, Collection<ReplicatedRecord>>();
-        Address thisAddress = replicatedMapService.getNodeEngine().getThisAddress();
+        Address thisAddress = service.getNodeEngine().getThisAddress();
         List<Integer> partitions = nodeEngine.getPartitionService().getMemberPartitions(thisAddress);
         for (Integer partition : partitions) {
-            PartitionContainer partitionContainer = partitionContainers[partition];
+            PartitionContainer partitionContainer = service.getPartitionContainer(partition);
             ConcurrentMap<String, ReplicatedRecordStore> stores = partitionContainer.getStores();
             for (ReplicatedRecordStore store : stores.values()) {
                 String name = store.getName();
@@ -125,7 +121,7 @@ public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerS
                 recordCount++;
                 String name = entry.getKey();
                 Collection<ReplicatedRecord> records = entry.getValue();
-                ReplicatedMapConfig replicatedMapConfig = replicatedMapService.getReplicatedMapConfig(name);
+                ReplicatedMapConfig replicatedMapConfig = service.getReplicatedMapConfig(name);
                 String mergePolicy = replicatedMapConfig.getMergePolicy();
                 ReplicatedMapMergePolicy policy = mergePolicyProvider.getMergePolicy(mergePolicy);
                 for (ReplicatedRecord record : records) {
