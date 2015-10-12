@@ -64,7 +64,6 @@ public class InvocationRegistry {
 
     @Probe(name = "invocations.pending", level = MANDATORY)
     private final ConcurrentMap<Long, Invocation> invocations;
-    //todo: this dependency on nodeEngineImpl sucks.
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final CallIdSequence callIdSequence;
