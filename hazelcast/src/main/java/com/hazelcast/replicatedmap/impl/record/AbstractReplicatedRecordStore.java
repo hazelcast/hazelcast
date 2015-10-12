@@ -388,22 +388,17 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         @Override
         public ReplicatedRecord<K, V> next() {
             Map.Entry<K, ReplicatedRecord<K, V>> entry = this.entry;
-            Object key = entry != null ? entry.getKey() : null;
-            Object value = entry != null && entry.getValue() != null ? entry.getValue().getValue() : null;
-            ReplicatedRecord<K, V> record = entry.getValue();
+            ReplicatedRecord<K, V> record = entry != null ? entry.getValue() : null;
             while (entry == null) {
                 entry = findNextEntry();
-                key = entry.getKey();
+                Object key = entry.getKey();
                 record = entry.getValue();
-                value = record != null ? record.getValue() : null;
+                Object value = record != null ? record.getValue() : null;
                 if (key != null && value != null) {
                     break;
                 }
             }
             this.entry = null;
-            if (key == null || value == null) {
-                throw new NoSuchElementException();
-            }
             return record;
         }
 

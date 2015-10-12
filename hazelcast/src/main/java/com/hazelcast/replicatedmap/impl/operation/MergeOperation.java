@@ -34,7 +34,6 @@ public class MergeOperation extends AbstractReplicatedMapOperation {
     private Object key;
     private ReplicatedMapEntryView entryView;
     private ReplicatedMapMergePolicy policy;
-    private transient boolean merge;
 
     public MergeOperation() {
     }
@@ -50,7 +49,7 @@ public class MergeOperation extends AbstractReplicatedMapOperation {
     public void run() throws Exception {
         ReplicatedMapService service = getService();
         ReplicatedRecordStore store = service.getReplicatedRecordStore(name, true, key);
-        merge = store.merge(key, entryView, policy);
+        store.merge(key, entryView, policy);
     }
 
 

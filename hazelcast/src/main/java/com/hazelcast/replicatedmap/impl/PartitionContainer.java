@@ -75,6 +75,10 @@ public class PartitionContainer {
         };
     }
 
+    public boolean isEmpty() {
+        return replicatedStorages.isEmpty();
+    }
+
     public ConcurrentMap<String, ReplicatedRecordStore> getStores() {
         return replicatedStorages;
     }
