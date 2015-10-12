@@ -126,6 +126,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     private final IsStillRunningService isStillRunningService;
     private final AsyncResponsePacketHandler responsePacketExecutor;
     private final SerializationService serializationService;
+    private final InvocationMonitor invocationMonitor;
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -144,6 +145,15 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
 
         this.invocationsRegistry = new InvocationRegistry(nodeEngine, logger, backpressureRegulator, concurrencyLevel);
+
+        this.invocationMonitor = new InvocationMonitor(
+                invocationsRegistry,
+                logger,
+                groupProperties,
+                node.getHazelcastThreadGroup(),
+                nodeEngine.getExecutionService(),
+                nodeEngine.getMetricsRegistry());
+
         this.operationBackupHandler = new OperationBackupHandler(this);
 
         this.responsePacketExecutor = new AsyncResponsePacketHandler(
@@ -421,7 +431,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     }
 
     public void onMemberLeft(MemberImpl member) {
-        invocationsRegistry.onMemberLeft(member);
+        invocationMonitor.onMemberLeft(member);
     }
 
     public void reset() {
@@ -434,9 +444,10 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         operationExecutor.shutdown();
         responsePacketExecutor.shutdown();
         slowOperationDetector.shutdown();
+        invocationMonitor.shutdown();
 
         try {
-            invocationsRegistry.awaitTermination(TERMINATION_TIMEOUT_MILLIS);
+            invocationMonitor.awaitTermination(TERMINATION_TIMEOUT_MILLIS);
         } catch (InterruptedException e) {
             //restore the interrupt.
             //todo: we need a better mechanism for dealing with interruption and waiting for termination
