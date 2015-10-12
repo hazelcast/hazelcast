@@ -92,6 +92,16 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
         }
     }
 
+    private void handleMapEvent(MapEvent event) {
+        if (endpoint.isAlive()) {
+            ClientMessage clientMessage = encodeEvent(null
+                    , null, null, null, event.getEventType().getType(),
+                    event.getMember().getUuid(), event.getNumberOfEntriesAffected());
+            sendClientMessage(null, clientMessage);
+        }
+    }
+
+
     protected abstract ClientMessage encodeEvent(Data key, Data newValue, Data oldValue,
                                                  Data mergingValue, int type, String uuid, int numberOfAffectedEntries);
 
@@ -122,6 +132,6 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
 
     @Override
     public void mapCleared(MapEvent event) {
-        // TODO handle this event
+        handleMapEvent(event);
     }
 }

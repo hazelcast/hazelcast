@@ -35,16 +35,23 @@ public class ReplicatedMapPortableEntryEvent implements Portable {
     private Data oldValue;
     private EntryEventType eventType;
     private String uuid;
+    private int numberOfAffectedEntries;
 
     ReplicatedMapPortableEntryEvent() {
     }
 
     ReplicatedMapPortableEntryEvent(Data key, Data value, Data oldValue, EntryEventType eventType, String uuid) {
+        this(key, value, oldValue, eventType, uuid, 0);
+    }
+
+    ReplicatedMapPortableEntryEvent(Data key, Data value, Data oldValue, EntryEventType eventType, String uuid,
+                                    int numberOfAffectedEntries) {
         this.key = key;
         this.value = value;
         this.oldValue = oldValue;
         this.eventType = eventType;
         this.uuid = uuid;
+        this.numberOfAffectedEntries = numberOfAffectedEntries;
     }
 
     public Data getKey() {
@@ -67,6 +74,10 @@ public class ReplicatedMapPortableEntryEvent implements Portable {
         return uuid;
     }
 
+    public int getNumberOfAffectedEntries() {
+        return numberOfAffectedEntries;
+    }
+
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeInt("e", eventType.getType());
         writer.writeUTF("u", uuid);
@@ -74,6 +85,7 @@ public class ReplicatedMapPortableEntryEvent implements Portable {
         out.writeData(key);
         out.writeData(value);
         out.writeData(oldValue);
+        out.writeInt(numberOfAffectedEntries);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
@@ -83,6 +95,7 @@ public class ReplicatedMapPortableEntryEvent implements Portable {
         key = in.readData();
         value = in.readData();
         oldValue = in.readData();
+        numberOfAffectedEntries = in.readInt();
     }
 
     public int getFactoryId() {

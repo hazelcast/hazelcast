@@ -785,6 +785,34 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testNearCacheInvalidation_withClear() {
+        hazelcastFactory.newHazelcastInstance();
+        ClientConfig config = getClientConfigWithNearCacheInvalidationEnabled();
+        HazelcastInstance client1 = hazelcastFactory.newHazelcastClient(config);
+        HazelcastInstance client2 = hazelcastFactory.newHazelcastClient(config);
+
+        String mapName = randomString();
+        final ReplicatedMap replicatedMap1 = client1.getReplicatedMap(mapName);
+
+
+        replicatedMap1.put(1, 1);
+        //puts key 1 to near cache
+        replicatedMap1.get(1);
+
+        final ReplicatedMap replicatedMap2 = client2.getReplicatedMap(mapName);
+        //This should invalidate near cache of replicatedMap1
+        replicatedMap2.clear();
+
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(null, replicatedMap1.get(1));
+            }
+        });
+    }
+
+    @Test
     public void testClientPortableWithoutRegisteringToNode() {
         hazelcastFactory.newHazelcastInstance(buildConfig(InMemoryFormat.BINARY, 0));
         final SerializationConfig serializationConfig = new SerializationConfig();
