@@ -1,13 +1,14 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -19,8 +20,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class OperationThreadTest extends AbstractClassicOperationExecutorTest {
 
     @Test
@@ -48,5 +49,35 @@ public class OperationThreadTest extends AbstractClassicOperationExecutorTest {
                 assertEquals(oldCount + 1, OutOfMemoryErrorDispatcher.getOutOfMemoryErrorCount());
             }
         });
+    }
+
+    @Test
+    public void priorityPendingCount_returnScheduleQueuePrioritySize() {
+        ScheduleQueue mockScheduleQueue = mock(ScheduleQueue.class);
+        when(mockScheduleQueue.prioritySize()).thenReturn(Integer.MAX_VALUE);
+
+        PartitionOperationThread operationThread = createNewOperationThread(mockScheduleQueue);
+
+        int prioritySize = operationThread.priorityPendingCount();
+        assertEquals(Integer.MAX_VALUE, prioritySize);
+    }
+
+    @Test
+    public void normalPendingCount_returnScheduleQueueNormalSize() {
+        ScheduleQueue mockScheduleQueue = mock(ScheduleQueue.class);
+        when(mockScheduleQueue.normalSize()).thenReturn(Integer.MAX_VALUE);
+
+        PartitionOperationThread operationThread = createNewOperationThread(mockScheduleQueue);
+
+        int normalSize = operationThread.normalPendingCount();
+        assertEquals(Integer.MAX_VALUE, normalSize);
+    }
+
+    private PartitionOperationThread createNewOperationThread(ScheduleQueue mockScheduleQueue) {
+        ILogger mockLogger = mock(ILogger.class);
+        OperationRunner[] runners = new OperationRunner[0];
+        PartitionOperationThread thread = new PartitionOperationThread("threadName", 0, mockScheduleQueue, mockLogger, threadGroup, nodeExtension, runners);
+
+        return thread;
     }
 }

@@ -76,7 +76,7 @@ public abstract class OperationThread extends HazelcastManagedThread {
 
     @Probe
     int priorityPendingCount() {
-        return scheduleQueue.normalSize();
+        return scheduleQueue.prioritySize();
     }
 
     @Probe
