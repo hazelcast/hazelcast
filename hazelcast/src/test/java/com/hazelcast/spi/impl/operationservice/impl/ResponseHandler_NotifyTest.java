@@ -27,7 +27,8 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
+public class
+ResponseHandler_NotifyTest extends HazelcastTestSupport {
 
     private InvocationRegistry invocationRegistry;
     private NodeEngineImpl nodeEngine;
@@ -199,6 +200,18 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
             fail();
         } catch (OperationTimeoutException expected) {
         }
+
+        assertNull(invocationRegistry.get(callId));
+    }
+
+    @Test
+    public void timeoutResponse_whenInvocationMissing_thenNothingBadHappens() {
+        Invocation invocation = newInvocation();
+        invocationRegistry.register(invocation);
+        long callId = invocation.op.getCallId();
+        invocationRegistry.deregister(invocation);
+
+        responseHandler.notifyCallTimeout(callId, null);
 
         assertNull(invocationRegistry.get(callId));
     }

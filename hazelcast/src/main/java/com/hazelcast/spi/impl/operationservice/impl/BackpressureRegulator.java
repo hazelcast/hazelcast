@@ -27,7 +27,6 @@ import java.util.Random;
 
 import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
 import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_SYNCWINDOW;
 import static java.lang.Math.max;
@@ -78,7 +77,6 @@ public class BackpressureRegulator {
     private final int syncWindow;
     private final int partitionCount;
     private final int maxConcurrentInvocations;
-    private final int backoffTimeoutMs;
 
     public BackpressureRegulator(HazelcastProperties properties, ILogger logger) {
         this.enabled = properties.getBoolean(GroupProperty.BACKPRESSURE_ENABLED);
@@ -86,7 +84,6 @@ public class BackpressureRegulator {
         this.partitionCount = properties.getInteger(GroupProperty.PARTITION_COUNT);
         this.syncWindow = getSyncWindow(properties);
         this.maxConcurrentInvocations = getMaxConcurrentInvocations(properties);
-        this.backoffTimeoutMs = getBackoffTimeoutMs(properties);
 
         this.syncDelays = new int[INTS_PER_CACHE_LINE * partitionCount];
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
@@ -108,15 +105,6 @@ public class BackpressureRegulator {
             throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_SYNCWINDOW + "' with a value smaller than 1");
         }
         return syncWindow;
-    }
-
-    private int getBackoffTimeoutMs(HazelcastProperties props) {
-        int backoffTimeoutMs = (int) props.getMillis(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS);
-        if (enabled && backoffTimeoutMs < 0) {
-            throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS
-                    + "' with a value smaller than 0");
-        }
-        return backoffTimeoutMs;
     }
 
     private int getMaxConcurrentInvocations(HazelcastProperties props) {
@@ -148,14 +136,6 @@ public class BackpressureRegulator {
             return maxConcurrentInvocations;
         } else {
             return Integer.MAX_VALUE;
-        }
-    }
-
-    public CallIdSequence newCallIdSequence() {
-        if (enabled) {
-            return new CallIdSequence.CallIdSequenceWithBackpressure(maxConcurrentInvocations, backoffTimeoutMs);
-        } else {
-            return new CallIdSequence.CallIdSequenceWithoutBackpressure();
         }
     }
 

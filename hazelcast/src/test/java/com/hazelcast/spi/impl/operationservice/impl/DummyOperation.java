@@ -15,6 +15,10 @@ public class DummyOperation extends AbstractOperation {
     public DummyOperation() {
     }
 
+    public DummyOperation(int partitionId) {
+        setPartitionId(partitionId);
+    }
+
     public DummyOperation(Object value) {
         this.value = value;
     }

@@ -629,6 +629,17 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.serialization.version",
             BuildInfoProvider.getBuildInfo().getSerializationVersion());
 
+
+    /**
+     * Returns the maximum number of concurrent invocations.
+     *
+     * The number of concurrent invocations is a hint doesn't strictly need to be followed, but the system will try to stay
+     * close to it.
+     */
+    public static final HazelcastProperty MAX_CONCURRENT_INVOCATIONS
+            = new HazelcastProperty("hazelcast.invocations.maximum", 100 * 1000);
+
+
     private GroupProperty() {
     }
 }

@@ -68,33 +68,6 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         }
     }
 
-    // ========================== newCallIdSequence =================
-
-    @Test
-    public void newCallIdSequence_whenBackPressureEnabled() {
-        Config config = new Config();
-        config.setProperty(BACKPRESSURE_ENABLED.getName(), "true");
-        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
-        BackpressureRegulator backpressureRegulator = new BackpressureRegulator(hazelcastProperties, logger);
-
-        CallIdSequence callIdSequence = backpressureRegulator.newCallIdSequence();
-
-        assertInstanceOf(CallIdSequence.CallIdSequenceWithBackpressure.class, callIdSequence);
-        assertEquals(backpressureRegulator.getMaxConcurrentInvocations(), callIdSequence.getMaxConcurrentInvocations());
-    }
-
-    @Test
-    public void newCallIdSequence_whenBackPressureDisabled() {
-        Config config = new Config();
-        config.setProperty(BACKPRESSURE_ENABLED.getName(), "false");
-        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
-        BackpressureRegulator backpressureRegulator = new BackpressureRegulator(hazelcastProperties, logger);
-
-        CallIdSequence callIdSequence = backpressureRegulator.newCallIdSequence();
-
-        assertInstanceOf(CallIdSequence.CallIdSequenceWithoutBackpressure.class, callIdSequence);
-    }
-
     // ========================== isSyncForced =================
 
     @Test
