@@ -369,6 +369,11 @@ public class PredicatesTest extends HazelcastTestSupport {
         }
 
         @Override
+        public Object getTargetObject(boolean key) {
+            return null;
+        }
+
+        @Override
         public Data getKeyData() {
             return null;
         }

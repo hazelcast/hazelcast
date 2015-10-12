@@ -16,15 +16,10 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.query.impl.getters.ReflectionHelper;
-
-import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
-import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 
 /**
  * Entry of the Query.
@@ -64,19 +59,19 @@ public class CachedQueryEntry implements QueryableEntry {
     }
 
     @Override
-    public Object getValue() {
-        if (valueObject == null) {
-            valueObject = serializationService.toObject(valueData);
-        }
-        return valueObject;
-    }
-
-    @Override
     public Object getKey() {
         if (keyObject == null) {
             keyObject = serializationService.toObject(keyData);
         }
         return keyObject;
+    }
+
+    @Override
+    public Object getValue() {
+        if (valueObject == null) {
+            valueObject = serializationService.toObject(valueData);
+        }
+        return valueObject;
     }
 
     @Override
@@ -95,23 +90,18 @@ public class CachedQueryEntry implements QueryableEntry {
         return valueData;
     }
 
-
     @Override
     public Object getAttribute(String attributeName) throws QueryException {
-        if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
-            return getKey();
-        } else if (THIS_ATTRIBUTE_NAME.value().equals(attributeName)) {
-            return getValue();
-        }
-
-        boolean key = QueryEntryUtils.isKey(attributeName);
-        attributeName = QueryEntryUtils.getAttributeName(key, attributeName);
-        Object targetObject = getTargetObject(key);
-
-        return QueryEntryUtils.extractAttribute(extractors, attributeName, targetObject, serializationService);
+        return ExtractionEngine.extractAttribute(extractors, serializationService, attributeName, this);
     }
 
-    private Object getTargetObject(boolean key) {
+    @Override
+    public AttributeType getAttributeType(String attributeName) {
+        return ExtractionEngine.extractAttributeType(extractors, serializationService, attributeName, this);
+    }
+
+    @Override
+    public Object getTargetObject(boolean key) {
         Object targetObject;
         if (key) {
             if (keyObject == null) {
@@ -143,31 +133,6 @@ public class CachedQueryEntry implements QueryableEntry {
             }
         }
         return targetObject;
-    }
-
-    @Override
-    public AttributeType getAttributeType(String attributeName) {
-        if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
-            return ReflectionHelper.getAttributeType(getKey().getClass());
-        } else if (THIS_ATTRIBUTE_NAME.value().equals(attributeName)) {
-            return ReflectionHelper.getAttributeType(getValue().getClass());
-        }
-
-        boolean isKey = QueryEntryUtils.isKey(attributeName);
-        attributeName = QueryEntryUtils.getAttributeName(isKey, attributeName);
-
-        Object target = getTargetObject(isKey);
-
-        if (target instanceof Portable || target instanceof Data) {
-            Data data = serializationService.toData(target);
-            if (data.isPortable()) {
-                PortableContext portableContext = serializationService.getPortableContext();
-                return PortableExtractor.getAttributeType(portableContext, data, attributeName);
-            }
-        }
-
-        // TODO Tom: Attribute extraction with extractors
-        return ReflectionHelper.getAttributeType(isKey ? getKey() : getValue(), attributeName);
     }
 
     @Override

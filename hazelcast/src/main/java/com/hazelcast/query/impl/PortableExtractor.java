@@ -30,8 +30,7 @@ import java.io.IOException;
 /**
  * Utility class to extract a single field from a {@link com.hazelcast.nio.serialization.Portable} binary.
  */
-// TODO move to extractor package
-public final class PortableExtractor {
+final class PortableExtractor {
 
     private static final PortableFieldExtractor[] FIELD_EXTRACTORS =
             new PortableFieldExtractor[FieldType.values().length];

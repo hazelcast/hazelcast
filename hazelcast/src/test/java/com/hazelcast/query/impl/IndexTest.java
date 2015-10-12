@@ -371,6 +371,11 @@ public class IndexTest {
             return ReflectionHelper.getAttributeType(attributeValue.getClass());
         }
 
+        @Override
+        public Object getTargetObject(boolean key) {
+            return key ? key : attributeValue;
+        }
+
         public Data getKeyData() {
             return key;
         }

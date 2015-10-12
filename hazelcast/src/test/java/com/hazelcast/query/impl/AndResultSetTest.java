@@ -75,6 +75,11 @@ public class AndResultSetTest extends HazelcastTestSupport {
         }
 
         @Override
+        public Object getTargetObject(boolean key) {
+            return null;
+        }
+
+        @Override
         public Object setValue(Object value) {
             return null;
         }

@@ -47,6 +47,7 @@ public class IndexImpl implements Index {
     private final boolean ordered;
 
     private volatile TypeConverter converter;
+    private volatile boolean converterInferredFromNonNullValue;
 
     private final SerializationService ss;
     private final Extractors extractors;
@@ -66,7 +67,7 @@ public class IndexImpl implements Index {
 
     @Override
     public void removeEntryIndex(Data key, Object value) {
-        Comparable attributeValue = (Comparable)QueryEntryUtils.extractAttribute(extractors, this.attribute, key, value, ss);
+        Comparable attributeValue = (Comparable) ExtractionEngine.extractAttribute(extractors, ss, this.attribute, key, value);
         attributeValue = (Comparable)sanitizeValue(attributeValue);
 
         if (attributeValue != null) {
@@ -96,17 +97,26 @@ public class IndexImpl implements Index {
          */
         if (converter == null) {
             // Initialize attribute type by using entry index
-            AttributeType attributeType = e.getAttributeType(attribute);
-            converter = attributeType == null ? IDENTITY_CONVERTER : attributeType.getConverter();
+            converterInferredFromNonNullValue = e.getAttribute(attribute) != null;
+            converter = getConverter(e);
+        } else if (!converterInferredFromNonNullValue) {
+            if (converterInferredFromNonNullValue = e.getAttribute(attribute) != null) {
+                converter = getConverter(e);
+            }
         }
 
         Object oldValue = null;
         if (oldRecordValue != null) {
-            oldValue = QueryEntryUtils.extractAttribute(extractors, attribute, e.getKeyData(), oldRecordValue, ss);
+            oldValue = ExtractionEngine.extractAttribute(extractors, ss, attribute, e.getKeyData(), oldRecordValue);
         }
 
-        Object newValue = QueryEntryUtils.extractAttribute(extractors, attribute, e.getKeyData(), e.getValue(), ss);
+        Object newValue = ExtractionEngine.extractAttribute(extractors, ss, attribute, e.getKeyData(), e.getValue());
         createOrUpdateIndexStore(newValue, oldValue, e);
+    }
+
+    private TypeConverter getConverter(QueryableEntry e) {
+        AttributeType attributeType = e.getAttributeType(attribute);
+        return attributeType == null ? IDENTITY_CONVERTER : attributeType.getConverter();
     }
 
     private void createOrUpdateIndexStore(Object newValue, Object oldValue, QueryableEntry e) {
