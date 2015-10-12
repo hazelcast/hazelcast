@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -241,5 +242,34 @@ public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
             session.close();
         }
 //        stats.logSummary();
+    }
+
+    @Test
+    public void testEvictionEntity() {
+        insertDummyEntities(1, 1);
+        sf.getCache().evictEntity("com.hazelcast.hibernate.entity.DummyEntity", 0L);
+        assertFalse(sf.getCache().containsEntity("com.hazelcast.hibernate.entity.DummyEntity", 0L));
+    }
+
+    @Test
+    public void testEvictionCollection() {
+        insertDummyEntities(1, 1);
+        sf.getCache().evictCollection("com.hazelcast.hibernate.entity.DummyEntity.properties", 0L);
+        assertFalse(sf.getCache().containsCollection("com.hazelcast.hibernate.entity.DummyEntity.properties", 0L));
+    }
+
+    @Test
+    public void testInsertEvictUpdate() {
+        insertDummyEntities(1);
+        Session session = sf.openSession();
+        Transaction tx = session.beginTransaction();
+        DummyEntity ent = (DummyEntity) session.get(DummyEntity.class, 0L);
+        sf.getCache().evictEntity("com.hazelcast.hibernate.entity.DummyEntity", 0L);
+        ent.setName("updatedName");
+        session.update(ent);
+        tx.commit();
+        session.close();
+        ArrayList<DummyEntity> list = getDummyEntities(sf, 1);
+        assertEquals("updatedName", list.get(0).getName());
     }
 }
