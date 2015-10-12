@@ -54,6 +54,9 @@ public class CacheBackupTest extends HazelcastTestSupport {
         }
         final Cache cache = cacheManager.createCache(cacheName, cacheConfig);
 
+        warmUpPartitions(instances);
+        waitAllForSafeState(instances);
+
         cache.put(KEY, VALUE);
 
         final Node node = getNode(hz);
