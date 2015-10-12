@@ -27,6 +27,8 @@ import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.emptyArray;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -76,5 +78,35 @@ public class ArrayUtilsTest {
         ArrayUtils.copyWithoutNulls(src, dst);
         assertThat(dst, arrayWithSize(1));
         assertThat(dst[0], sameInstance(o));
+    }
+
+    @Test
+    public void getItemAtPositionOrNull_whenEmptyArray_thenReturnNull() {
+        Object[] src = new Object[0];
+        Object result = ArrayUtils.getItemAtPositionOrNull(src, 0);
+
+        assertNull(result);
+    }
+
+    @Test
+    public void getItemAtPositionOrNull_whenPositionExist_thenReturnTheItem() {
+        Object obj = new Object();
+        Object[] src = new Object[1];
+        src[0] = obj;
+
+        Object result = ArrayUtils.getItemAtPositionOrNull(src, 0);
+
+        assertSame(obj, result);
+    }
+
+    @Test
+    public void getItemAtPositionOrNull_whenSmallerArray_thenReturNull() {
+        Object obj = new Object();
+        Object[] src = new Object[1];
+        src[0] = obj;
+
+        Object result = ArrayUtils.getItemAtPositionOrNull(src, 1);
+
+        assertNull(result);
     }
 }

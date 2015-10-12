@@ -7,56 +7,69 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
 
-public class GetterFactory {
-    public static Getter newFieldGetter(Object obj, Getter parent, Field field, String reducerSuffix) {
+public final class GetterFactory {
+    public static Getter newFieldGetter(Object object, Getter parentGetter, Field field, String modifierSuffix) throws Exception {
         Class<?> type = field.getType();
-        if (Collection.class.isAssignableFrom(type) && reducerSuffix != null) {
-            Object currentObject = getCurrentObject(obj, parent);
-            if (currentObject == null) {
+        if (extractingFromCollection(type, modifierSuffix)) {
+            Class<?> collectionType = getCollectionType(object, parentGetter, field);
+            if (collectionType == null) {
                 return NullGetter.NULL_GETTER;
             }
-
-            if (currentObject instanceof MultiResult) {
-                MultiResult multiResult = (MultiResult) currentObject;
-                if (multiResult.isEmpty()) {
-                    return NullGetter.NULL_GETTER;
-                }
-                currentObject = multiResult.getResults().iterator().next();
-                if (currentObject == null) {
-                    return NullGetter.NULL_GETTER;
-                }
-            }
-            Collection targetCollection;
-            try {
-                targetCollection = (Collection) field.get(currentObject);
-            } catch (IllegalAccessException e) {
-                throw ExceptionUtil.rethrow(e);
-            }
-            if (targetCollection == null || targetCollection.isEmpty()) {
-                return NullGetter.NULL_GETTER;
-            }
-            //TODO: We should take a reducer suffix into consideration
-            Object targetObject = targetCollection.iterator().next();
-            if (targetObject == null) {
-                return NullGetter.NULL_GETTER;
-            }
-            return new FieldGetter(parent, field, reducerSuffix, targetObject.getClass());
-
+            return new FieldGetter(parentGetter, field, modifierSuffix, collectionType);
         }
-        return new FieldGetter(parent, field, reducerSuffix);
+        return new FieldGetter(parentGetter, field, modifierSuffix);
     }
 
-    private static Object getCurrentObject(Object obj, Getter parent) {
+    private static Class<?> getCollectionType(Object object, Getter parentGetter, Field field) throws Exception {
+        Object currentObject = getCurrentObject(object, parentGetter);
+        if (currentObject instanceof MultiResult) {
+            currentObject = getFirstObjectFromMultiResult(currentObject);
+        }
+        if (currentObject == null) {
+            return null;
+        }
+
+        Collection targetCollection = (Collection) field.get(object);
+        if (targetCollection == null || targetCollection.isEmpty()) {
+            return null;
+        }
+        Object targetObject = extractFirstValueFromCollection(targetCollection);
+        if (targetObject == null) {
+            return null;
+        }
+        return targetObject.getClass();
+    }
+
+    private static Object extractFirstValueFromCollection(Collection targetCollection) {
+        Object targetObject = targetCollection.iterator().next();
+        if (targetObject == null) {
+            return null;
+        }
+        return targetObject;
+    }
+
+    private static Object getFirstObjectFromMultiResult(Object currentObject) {
+        MultiResult multiResult = (MultiResult) currentObject;
+        if (multiResult.isEmpty()) {
+            return null;
+        }
+        currentObject = multiResult.getResults().iterator().next();
+        if (currentObject == null) {
+            return null;
+        }
+        return currentObject;
+    }
+
+    private static boolean extractingFromCollection(Class<?> fieldType, String modifierSuffix) {
+        return Collection.class.isAssignableFrom(fieldType) && modifierSuffix != null;
+    }
+
+    private static Object getCurrentObject(Object obj, Getter parent) throws Exception {
         Object currentObject;
         if (parent == null) {
             currentObject = obj;
-        } else {
-            try {
-                currentObject = parent.getValue(obj);
-            } catch (Exception e) {
-                //TODO: What to do with the Exception?
-                throw ExceptionUtil.rethrow(e);
-            }
+         } else {
+            currentObject = parent.getValue(obj);
         }
         return currentObject;
     }

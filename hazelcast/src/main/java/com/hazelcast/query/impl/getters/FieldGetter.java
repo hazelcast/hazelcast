@@ -18,57 +18,66 @@ package com.hazelcast.query.impl.getters;
 
 
 import com.hazelcast.query.extractor.MultiResult;
+import com.hazelcast.util.CollectionUtil;
+import com.hazelcast.util.collection.ArrayUtils;
 
 import java.lang.reflect.Field;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
 
 public class FieldGetter extends Getter {
     private static final int DO_NOT_REDUCE = -1;
     private static final int REDUCE_EVERYTHING = -2;
 
     private final Field field;
-    private final int position;
+    private final int modifier;
     private final Class resultType;
 
-    public FieldGetter(Getter parent, Field field, String reducer, Class resultType) {
+    public FieldGetter(Getter parent, Field field, String modifierSuffix, Class resultType) {
         super(parent);
         this.field = field;
         boolean isArray = field.getType().isArray();
         boolean isCollection = Collection.class.isAssignableFrom(field.getType());
 
-        if (reducer != null) {
-            if (!isArray && !isCollection) {
-                throw new IllegalStateException("Reducer is allowed only when extracting from arrays or collections");
-            }
-            String stringValue = reducer.substring(1, reducer.length() - 1);
-            if ("*".equals(stringValue)) {
-                position = REDUCE_EVERYTHING;
-            } else {
-                position = Integer.parseInt(stringValue);
-            }
+        if (modifierSuffix == null) {
+            modifier = DO_NOT_REDUCE;
         } else {
-            position = DO_NOT_REDUCE;
+            modifier = parseModifier(modifierSuffix, isArray, isCollection);
         }
 
-        this.resultType = createResultType(field, resultType);
+        this.resultType = getResultType(field, resultType);
     }
 
-    private Class createResultType(Field field, Class resultType) {
-        if (resultType != null) {
-            //result type as been set explicitly
-            return resultType;
+    private int parseModifier(String modifierSuffix, boolean isArray, boolean isCollection) {
+        if (!isArray && !isCollection) {
+            throw new IllegalStateException("Reducer is allowed only when extracting from arrays or collections");
         }
-        if (position == DO_NOT_REDUCE) {
-            return field.getType();
+        String stringValue = modifierSuffix.substring(1, modifierSuffix.length() - 1);
+        if ("*".equals(stringValue)) {
+            return REDUCE_EVERYTHING;
+        } else {
+            return Integer.parseInt(stringValue);
         }
-        return field.getType().getComponentType();
     }
-
 
     public FieldGetter(Getter parent, Field field, String reducer) {
         this(parent, field, reducer, null);
+    }
+
+    private Class getResultType(Field field, Class resultType) {
+        if (resultType != null) {
+            //result type as been set explicitly via Constructor.
+            //This is needed for extraction Collection where type cannot be
+            //inferred due type erasure
+            return resultType;
+        }
+        if (modifier == DO_NOT_REDUCE) {
+            //We are returning the object as it is.
+            //No modifier suffix was defined
+            return field.getType();
+        }
+
+        //ok, it must be an array. let's return array type
+        return field.getType().getComponentType();
     }
 
     @Override
@@ -82,15 +91,15 @@ public class FieldGetter extends Getter {
         }
 
         Object o = field.get(parentObject);
-        if (position == DO_NOT_REDUCE) {
+        if (modifier == DO_NOT_REDUCE) {
             return o;
         }
-        if (position == REDUCE_EVERYTHING) {
+        if (modifier == REDUCE_EVERYTHING) {
             MultiResult collector = new MultiResult();
             reduceInto(collector, o);
             return collector;
         }
-        return getItemAtPosition(o, position);
+        return getItemAtPositionOrNull(o, modifier);
     }
 
     private Object extractFromMultiResult(MultiResult parentMultiResult) throws IllegalAccessException {
@@ -102,8 +111,8 @@ public class FieldGetter extends Getter {
         return collector;
     }
 
-    private void collectResult(MultiResult collector, Object parentResult) throws IllegalAccessException {
-        Object currentObject = field.get(parentResult);
+    private void collectResult(MultiResult collector, Object parentObject) throws IllegalAccessException {
+        Object currentObject = field.get(parentObject);
         if (currentObject == null) {
             return;
         }
@@ -115,57 +124,48 @@ public class FieldGetter extends Getter {
     }
 
     private void reduceInto(MultiResult collector, Object currentObject) {
-        if (position != REDUCE_EVERYTHING) {
-            Object item = getItemAtPosition(currentObject, position);
+        if (modifier != REDUCE_EVERYTHING) {
+            Object item = getItemAtPositionOrNull(currentObject, modifier);
             collector.add(item);
             return;
         }
 
         if (currentObject instanceof Collection) {
-            Collection collection = (Collection) currentObject;
-            for (Object o : collection) {
-                collector.add(o);
-            }
+            reduceCollectionInto(collector, (Collection) currentObject);
         } else if (currentObject instanceof Object[]) {
-            Object[] array = (Object[]) currentObject;
-            for (int i = 0; i < array.length; i++) {
-                collector.add(array[i]);
-            }
+            reduceArrayInto(collector, (Object[]) currentObject);
         } else {
             throw new IllegalArgumentException("Can't reduce result from a type " + currentObject.getClass()
-                    + " Collections and Arrays are supported only");
+                    + " Only Collections and Arrays are supported.");
         }
     }
 
-    private Object getItemAtPosition(Object object, int position) {
+    private void reduceArrayInto(MultiResult collector, Object[] currentObject) {
+        Object[] array = currentObject;
+        for (int i = 0; i < array.length; i++) {
+            collector.add(array[i]);
+        }
+    }
+
+    private void reduceCollectionInto(MultiResult collector, Collection currentObject) {
+        Collection collection = currentObject;
+        for (Object o : collection) {
+            collector.add(o);
+        }
+    }
+
+    private Object getItemAtPositionOrNull(Object object, int position) {
         if (object instanceof Collection) {
-            Collection collection = (Collection) object;
-            if (collection.size() > position) {
-                if (collection instanceof List) {
-                    return ((List) collection).get(position);
-                } else {
-                    Iterator iterator = collection.iterator();
-                    Object item = null;
-                    for (int i = 0; i < position + 1; i++) {
-                        item = iterator.next();
-                    }
-                    return item;
-                }
-            }
-            return null;
+            return CollectionUtil.getItemAtPositionOrNull((Collection) object, position);
         } else if (object instanceof Object[]) {
-            Object[] array = (Object[]) object;
-            if (array.length > position) {
-                return array[position];
-            }
-            return null;
+            return ArrayUtils.getItemAtPositionOrNull((Object[]) object, position);
         }
         throw new IllegalArgumentException("Cannot extract an element from class of type" + object.getClass()
                 + " Collections and Arrays are supported only");
     }
 
     private boolean shouldReduce() {
-        return position != DO_NOT_REDUCE;
+        return modifier != DO_NOT_REDUCE;
     }
 
 

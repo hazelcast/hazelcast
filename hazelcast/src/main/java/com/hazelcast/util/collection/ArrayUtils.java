@@ -75,4 +75,11 @@ public final class ArrayUtils {
         }
         return false;
     }
+
+    public static <T> T getItemAtPositionOrNull(T[] array, int position) {
+        if (array.length > position) {
+            return array[position];
+        }
+        return null;
+    }
 }
