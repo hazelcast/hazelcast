@@ -95,9 +95,23 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         }
     }
 
+    private void ensureBackupOperationInitialized() {
+        if (backupOp.getNodeEngine() == null) {
+            backupOp.setNodeEngine(getNodeEngine());
+            backupOp.setPartitionId(getPartitionId());
+            backupOp.setReplicaIndex(getReplicaIndex());
+            backupOp.setCallerUuid(getCallerUuid());
+            OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
+            OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
+            backupOp.setOperationResponseHandler(createEmptyResponseHandler());
+        }
+    }
+
     @Override
     public void run() throws Exception {
         if (!valid) {
+            onExecutionFailure(
+                    new IllegalStateException("Wrong target! " + toString() + " cannot be processed!"));
             return;
         }
 
@@ -108,12 +122,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         }
 
         if (backupOp != null) {
-            backupOp.setPartitionId(getPartitionId()).setReplicaIndex(getReplicaIndex());
-            backupOp.setNodeEngine(nodeEngine);
-            backupOp.setCallerUuid(getCallerUuid());
-            OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
-            OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
-            backupOp.setOperationResponseHandler(createEmptyResponseHandler());
+            ensureBackupOperationInitialized();
 
             backupOp.beforeRun();
             backupOp.run();
@@ -161,12 +170,10 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     public void onExecutionFailure(Throwable e) {
         if (backupOp != null) {
             try {
-                // Be sure that node engine of backup operation is set.
+                // Be sure that backup operation is initialized.
                 // If there is an exception before `run` (for example caller is not valid anymore),
-                // node engine of backup operation is not set. So, we are set here ourself.
-                if (backupOp.getNodeEngine() == null) {
-                    backupOp.setNodeEngine(getNodeEngine());
-                }
+                // backup operation is initialized. So, we are initializing it here ourselves.
+                ensureBackupOperationInitialized();
                 backupOp.onExecutionFailure(e);
             } catch (Throwable t) {
                 getLogger().warning("While calling operation.onFailure(). op: " + backupOp, t);
@@ -177,12 +184,10 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     @Override
     public void logError(Throwable e) {
         if (backupOp != null) {
-            // Be sure that node engine of backup operation is set.
+            // Be sure that backup operation is initialized.
             // If there is an exception before `run` (for example caller is not valid anymore),
-            // node engine of backup operation is not set. So, we are set here ourself.
-            if (backupOp.getNodeEngine() == null) {
-                backupOp.setNodeEngine(getNodeEngine());
-            }
+            // backup operation is initialized. So, we are initializing it here ourselves.
+            ensureBackupOperationInitialized();
             backupOp.logError(e);
         } else {
             ReplicaErrorLogger.log(e, getLogger());
