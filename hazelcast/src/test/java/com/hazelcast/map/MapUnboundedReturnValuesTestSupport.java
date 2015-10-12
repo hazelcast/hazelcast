@@ -105,33 +105,11 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
      * @param limit           result size limit which will be configured for the cluster
      * @param preCheckTrigger number of partitions which will be used for local pre-check, <tt>-1</tt> deactivates the pre-check
      */
-    protected void runMapTxnWithExceptionTest(int partitionCount, int clusterSize, int limit, int preCheckTrigger) {
+    protected void runMapTxn(int partitionCount, int clusterSize, int limit, int preCheckTrigger) {
         internalSetUp(partitionCount, clusterSize, limit, preCheckTrigger);
 
         fillToLimit(KeyType.INTEGER, upperLimit);
-        internalRunTxnWithException();
-
-        shutdown(factory, map);
-    }
-
-    /**
-     * Test which calls {@link TransactionalMap} methods which are not expected to throw {@link QueryResultSizeExceededException}.
-     * <p/>
-     * This test fills the map to an amount where the exception is safely triggered. Then all {@link TransactionalMap} methods are
-     * called which should not trigger the exception.
-     * <p/>
-     * This methods fails if any of the called methods triggers the exception.
-     *
-     * @param partitionCount  number of partitions the created cluster
-     * @param clusterSize     number of nodes in the cluster
-     * @param limit           result size limit which will be configured for the cluster
-     * @param preCheckTrigger number of partitions which will be used for local pre-check, <tt>-1</tt> deactivates the pre-check
-     */
-    protected void runMapTxnWithoutExceptionTest(int partitionCount, int clusterSize, int limit, int preCheckTrigger) {
-        internalSetUp(partitionCount, clusterSize, limit, preCheckTrigger);
-
-        fillToLimit(KeyType.INTEGER, upperLimit);
-        internalRunTxnWithoutException();
+        internalRunTxn();
 
         shutdown(factory, map);
     }
@@ -204,11 +182,6 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
 
     private void failExpectedException(String methodName) {
         fail(format("Expected QueryResultSizeExceededException while calling %s with limit %d and upperLimit %d",
-                methodName, configLimit, upperLimit));
-    }
-
-    private void failUnwantedException(String methodName) {
-        fail(format("Unwanted QueryResultSizeExceededException was thrown while calling %s with limit %d and upperLimit %d",
                 methodName, configLimit, upperLimit));
     }
 
@@ -338,7 +311,7 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
      * <p/>
      * This methods fails if any of the called methods does not trigger the exception.
      */
-    private void internalRunTxnWithException() {
+    private void internalRunTxn() {
         TransactionContext transactionContext = instance.newTransactionContext();
         transactionContext.beginTransaction();
         TransactionalMap<Object, Integer> txnMap = transactionContext.getMap(map.getName());
@@ -357,32 +330,18 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
             checkException(e);
         }
 
-        transactionContext.rollbackTransaction();
-    }
-
-    /**
-     * Calls {@link TransactionalMap} methods once which are not expected to throw a {@link QueryResultSizeExceededException}.
-     * <p/>
-     * This method requires the map to be filled to an amount where the exception is safely triggered.
-     * <p/>
-     * This methods fails if any of the called methods triggers the exception.
-     */
-    private void internalRunTxnWithoutException() {
-        TransactionContext transactionContext = instance.newTransactionContext();
-        transactionContext.beginTransaction();
-
-        TransactionalMap<Object, Integer> txnMap = transactionContext.getMap(map.getName());
-
         try {
-            assertEquals("TransactionalMap.values()", upperLimit, txnMap.values().size());
+            txnMap.values();
+            failExpectedException("TransactionalMap.values()");
         } catch (QueryResultSizeExceededException e) {
-            failUnwantedException("TransactionalMap.values()");
+            checkException(e);
         }
 
         try {
-            assertEquals("TransactionalMap.keySet()", upperLimit, txnMap.keySet().size());
+            txnMap.keySet();
+            failExpectedException("TransactionalMap.keySet()");
         } catch (QueryResultSizeExceededException e) {
-            failUnwantedException("TransactionalMap.keySet()");
+            checkException(e);
         }
 
         transactionContext.rollbackTransaction();

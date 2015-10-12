@@ -90,30 +90,11 @@ public abstract class ClientMapUnboundReturnValuesTestSupport {
      * @param limit           result size limit which will be configured for the cluster
      * @param preCheckTrigger number of partitions which will be used for local pre-check, <tt>-1</tt> deactivates the pre-check
      */
-    protected void runClientMapTestTxnWithException(int partitionCount, int limit, int preCheckTrigger) {
+    protected void runClientMapTestTxn(int partitionCount, int limit, int preCheckTrigger) {
         internalSetUpClient(partitionCount, 1, limit, preCheckTrigger);
 
         fillToUpperLimit(serverMap, clientMap);
-        internalRunTxnWithException(clientMap.getName());
-    }
-
-    /**
-     * Test which calls {@link TransactionalMap} methods which are not expected to throw {@link QueryResultSizeExceededException}.
-     * <p/>
-     * This test fills the map to an amount where the exception is safely triggered. Then all {@link TransactionalMap} methods are
-     * called which should not trigger the exception.
-     * <p/>
-     * This methods fails if any of the called methods triggers the exception.
-     *
-     * @param partitionCount  number of partitions the created cluster
-     * @param limit           result size limit which will be configured for the cluster
-     * @param preCheckTrigger number of partitions which will be used for local pre-check, <tt>-1</tt> deactivates the pre-check
-     */
-    protected void runClientMapTestTxnWithoutException(int partitionCount, int limit, int preCheckTrigger) {
-        internalSetUpClient(partitionCount, 1, limit, preCheckTrigger);
-
-        fillToUpperLimit(serverMap, clientMap);
-        internalRunTxnWithoutException(clientMap.getName());
+        internalRunTxn(clientMap.getName());
     }
 
     private void internalSetUpClient(int partitionCount, int clusterSize, int limit, int preCheckTrigger) {
@@ -261,7 +242,7 @@ public abstract class ClientMapUnboundReturnValuesTestSupport {
      * <p/>
      * This methods fails if any of the called methods does not trigger the exception.
      */
-    private void internalRunTxnWithException(String mapName) {
+    private void internalRunTxn(String mapName) {
         TransactionContext transactionContext = instance.newTransactionContext();
         try {
             transactionContext.beginTransaction();
@@ -280,35 +261,19 @@ public abstract class ClientMapUnboundReturnValuesTestSupport {
             } catch (QueryResultSizeExceededException e) {
                 checkException(e);
             }
-        } finally {
-            transactionContext.rollbackTransaction();
-        }
-    }
-
-    /**
-     * Calls {@link TransactionalMap} methods once which are not expected to throw a {@link QueryResultSizeExceededException}.
-     * <p/>
-     * This method requires the map to be filled to an amount where the exception is safely triggered.
-     * <p/>
-     * This methods fails if any of the called methods triggers the exception.
-     */
-    private void internalRunTxnWithoutException(String mapName) {
-        TransactionContext transactionContext = instance.newTransactionContext();
-        try {
-            transactionContext.beginTransaction();
-
-            TransactionalMap<Object, Integer> txnMap = transactionContext.getMap(mapName);
 
             try {
-                assertEquals("TransactionalMap.values()", upperLimit, txnMap.values().size());
+                txnMap.values();
+                failExpectedException("TransactionalMap.values()");
             } catch (QueryResultSizeExceededException e) {
-                failUnwantedException("TransactionalMap.values()");
+                checkException(e);
             }
 
             try {
-                assertEquals("TransactionalMap.keySet()", upperLimit, txnMap.keySet().size());
+                txnMap.keySet();
+                failExpectedException("TransactionalMap.keySet()");
             } catch (QueryResultSizeExceededException e) {
-                failUnwantedException("TransactionalMap.keySet()");
+                checkException(e);
             }
         } finally {
             transactionContext.rollbackTransaction();

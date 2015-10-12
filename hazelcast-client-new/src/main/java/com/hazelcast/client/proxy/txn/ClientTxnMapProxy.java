@@ -47,6 +47,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * Proxy implementation of {@link TransactionalMap} interface.
  */
@@ -163,10 +165,10 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     @Override
     @SuppressWarnings("unchecked")
     public Set<K> keySet() {
-        ClientMessage request = TransactionalMapKeySetCodec.encodeRequest(name, getTransactionId(),
-                ThreadUtil.getThreadId());
+        ClientMessage request = TransactionalMapKeySetCodec.encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId());
         ClientMessage response = invoke(request);
         Collection<Data> dataKeySet = TransactionalMapKeySetCodec.decodeResponse(response).set;
+
         HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
         for (Data data : dataKeySet) {
             keySet.add((K) toObject(data));
@@ -177,9 +179,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     @Override
     @SuppressWarnings("unchecked")
     public Set<K> keySet(Predicate predicate) {
-        if (predicate == null) {
-            throw new NullPointerException("Predicate should not be null!");
-        }
+        checkNotNull(predicate, "Predicate should not be null!");
         ClientMessage request = TransactionalMapKeySetWithPredicateCodec.encodeRequest(name, getTransactionId(),
                 ThreadUtil.getThreadId(), toData(predicate));
         ClientMessage response = invoke(request);
@@ -195,10 +195,10 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     @Override
     @SuppressWarnings("unchecked")
     public Collection<V> values() {
-        ClientMessage request = TransactionalMapValuesCodec.encodeRequest(name, getTransactionId(),
-                ThreadUtil.getThreadId());
+        ClientMessage request = TransactionalMapValuesCodec.encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId());
         ClientMessage response = invoke(request);
         Collection<Data> dataValues = TransactionalMapValuesCodec.decodeResponse(response).list;
+
         List<V> values = new ArrayList<V>(dataValues.size());
         for (Data value : dataValues) {
             values.add((V) toObject(value));
@@ -209,9 +209,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     @Override
     @SuppressWarnings("unchecked")
     public Collection<V> values(Predicate predicate) {
-        if (predicate == null) {
-            throw new NullPointerException("Predicate should not be null!");
-        }
+        checkNotNull(predicate, "Predicate should not be null!");
         ClientMessage request = TransactionalMapValuesWithPredicateCodec.encodeRequest(name, getTransactionId(),
                 ThreadUtil.getThreadId(), toData(predicate));
         ClientMessage response = invoke(request);
