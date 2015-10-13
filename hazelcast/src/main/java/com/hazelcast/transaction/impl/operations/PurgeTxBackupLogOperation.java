@@ -28,7 +28,7 @@ import java.io.IOException;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.PURGE_TX_BACKUP_LOG;
 
-public final class PurgeTxBackupLogOperation extends TxBaseOperation {
+public class PurgeTxBackupLogOperation extends TxBaseOperation {
 
     private String txnId;
 

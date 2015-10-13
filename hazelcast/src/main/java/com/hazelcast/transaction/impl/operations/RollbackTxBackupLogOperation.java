@@ -28,7 +28,7 @@ import java.io.IOException;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.ROLLBACK_TX_BACKUP_LOG;
 
-public final class RollbackTxBackupLogOperation extends TxBaseOperation {
+public class RollbackTxBackupLogOperation extends TxBaseOperation {
 
     private String txnId;
 

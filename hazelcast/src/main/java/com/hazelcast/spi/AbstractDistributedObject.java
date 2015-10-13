@@ -76,7 +76,7 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
     }
 
     private void lifecycleCheck(final NodeEngine engine) {
-        if (engine == null || !engine.isActive()) {
+        if (engine == null || !engine.isRunning()) {
             throwNotActiveException();
         }
     }

@@ -16,6 +16,11 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+
 /**
  * Possible states of a {@link Node} during its lifecycle.
  * Some actions/operations may be allowed or denied
@@ -23,34 +28,45 @@ package com.hazelcast.instance;
  *
  * @see Node#start()
  * @see Node#shutdown(boolean)
- * @see com.hazelcast.spi.impl.AllowedDuringShutdown
+ * @see AllowedDuringPassiveState
+ * @see ClusterState
  *
  * @since 3.6
  */
 public enum NodeState {
 
     /**
-     * Initial state of the Node. An {@code ACTIVE} node is allowed
-     * to execute/process all kinds of operations.
+     * Initial state of the Node. An {@code ACTIVE} node is allowed to execute/process
+     * all kinds of operations. A node is in {@code ACTIVE} state while cluster state is
+     * {@link ClusterState#ACTIVE} or {@link ClusterState#FROZEN}.
      */
     ACTIVE,
 
     /**
-     * When {@link Node#shutdown(boolean)} is called, node will go into {@code SHUTTING_DOWN}
-     * until shutdown process completes.
+     * Node can go into the {@code PASSIVE} when one of the following things happen:
+     * <ul>
+     * <li>
+     * When {@link Node#shutdown(boolean)} is called, until the shut down process is completed.
+     * When the shut down process is completed, node goes into the {@link NodeState#SHUT_DOWN} state.
+     * </li>
+     * <li>
+     * When the cluster state moves to {@link ClusterState#PASSIVE} via
+     * {@link Cluster#changeClusterState(ClusterState)}
+     * </li>
+     * </ul>
      * <p/>
-     * In {@code SHUTTING_DOWN} state, all operations will be rejected except replication/migration
-     * operations and heartbeat operations. Operations those are to be allowed during {@code SHUTTING_DOWN}
-     * state should be marked as {@link com.hazelcast.spi.impl.AllowedDuringShutdown}.
-     * <p/>
-     * Once shutdown completes, state will become {@link #SHUT_DOWN}.
+     * In {@code PASSIVE} state, all operations will be rejected except operations marked as
+     * {@link ReadonlyOperation}, join operations of some members that are explained in
+     * {@link ClusterState}, replication / migration operations and heartbeat operations.
+     * Operations those are to be allowed during {@code PASSIVE} state should be marked as
+     * {@link AllowedDuringPassiveState}.
      */
-    SHUTTING_DOWN,
+    PASSIVE,
 
     /**
-     * After {@link Node#shutdown(boolean)} call ends, node's state will be {@code SHUT_DOWN}. In {@code SHUT_DOWN}
-     * state node will be completely inactive. All operations/invocations will be rejected. Once a node is shutdown,
-     * it cannot be restarted.
+     * After {@link Node#shutdown(boolean)} call completes, node's state will be {@code SHUT_DOWN}.
+     * In {@code SHUT_DOWN} state node will be completely inactive. All operations/invocations
+     * will be rejected. Once a node is shutdown, it cannot be restarted.
      */
     SHUT_DOWN
 }

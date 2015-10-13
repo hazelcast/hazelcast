@@ -21,12 +21,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.storage.DataRef;
 import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -225,11 +225,19 @@ public interface NodeEngine {
     /**
      * Checks if the HazelcastInstance that this {@link NodeEngine} belongs to is still active.
      * <p/>
-     * A HazelcastInstance is not active when it is shut down.
+     * A HazelcastInstance is not active when it is shutting down or already shut down.
+     * * Also see {@link NodeEngine#isRunning()}
      *
      * @return true if active, false otherwise.
      */
+    @Deprecated
     boolean isActive();
+
+    /**
+     * Indicates that node is not shutting down or it has not already shut down
+     * @return true if node is not shutting down or it has not already shut down
+     */
+    boolean isRunning();
 
     /**
      * Returns the HazelcastInstance that this {@link NodeEngine} belongs to.

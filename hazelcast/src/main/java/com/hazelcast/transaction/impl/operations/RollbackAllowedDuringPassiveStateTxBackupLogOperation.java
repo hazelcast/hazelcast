@@ -14,14 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster.impl.operations;
+package com.hazelcast.transaction.impl.operations;
 
-import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
-/**
- * Marker interface for join and post-join operations.
- */
-public interface JoinOperation extends UrgentSystemOperation, AllowedDuringPassiveState {
+import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.ROLLBACK_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG;
+
+public class RollbackAllowedDuringPassiveStateTxBackupLogOperation
+        extends RollbackTxBackupLogOperation
+        implements AllowedDuringPassiveState {
+
+    public RollbackAllowedDuringPassiveStateTxBackupLogOperation() {
+    }
+
+    public RollbackAllowedDuringPassiveStateTxBackupLogOperation(String txnId) {
+        super(txnId);
+    }
+
+    @Override
+    public int getId() {
+        return ROLLBACK_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG;
+    }
 
 }

@@ -38,7 +38,7 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
-import com.hazelcast.spi.impl.AllowedDuringShutdown;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
@@ -274,14 +274,14 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private boolean engineActive() {
-        final NodeState state = nodeEngine.getNode().getState();
-        if (state == NodeState.ACTIVE) {
+        if (nodeEngine.isRunning()) {
             return true;
         }
 
-        boolean allowed = state == NodeState.SHUTTING_DOWN && (op instanceof AllowedDuringShutdown);
+        final NodeState state = nodeEngine.getNode().getState();
+        boolean allowed = state == NodeState.PASSIVE && (op instanceof AllowedDuringPassiveState);
         if (!allowed) {
-            notify(new HazelcastInstanceNotActiveException("State: " + state));
+            notify(new HazelcastInstanceNotActiveException("State: " + state + " Operation: " + op.getClass()));
             remote = false;
         }
         return allowed;
@@ -300,7 +300,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         final ClusterService clusterService = nodeEngine.getClusterService();
         if (invTarget == null) {
             remote = false;
-            if (nodeEngine.isActive()) {
+            if (nodeEngine.isRunning()) {
                 if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
                     final NoDataMemberInClusterException exception = new NoDataMemberInClusterException(
                             "Partitions can't be assigned since all nodes in the cluster are lite members");

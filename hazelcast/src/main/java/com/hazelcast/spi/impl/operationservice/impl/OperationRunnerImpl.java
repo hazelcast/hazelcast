@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
@@ -41,7 +42,7 @@ import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.WrongTargetException;
-import com.hazelcast.spi.impl.AllowedDuringShutdown;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
@@ -176,23 +177,32 @@ class OperationRunnerImpl extends OperationRunner {
     }
 
     private void checkNodeState(Operation op) {
-        final NodeState state = node.getState();
-        if (state == NodeState.ACTIVE) {
+        if (node.getState() == NodeState.ACTIVE) {
             return;
         }
 
+        final NodeState state = node.getState();
         if (state == NodeState.SHUT_DOWN) {
             throw new HazelcastInstanceNotActiveException("This node is shut down! Operation: " + op);
         }
 
-        if (op instanceof AllowedDuringShutdown) {
+        if (op instanceof AllowedDuringPassiveState) {
             return;
         }
 
-        if (op.getPartitionId() < 0) {
-            throw new HazelcastInstanceNotActiveException("This node is currently shutting down! Operation: " + op);
+        // Cluster is in passive state. There is no need to retry.
+        if (nodeEngine.getClusterService().getClusterState() == ClusterState.PASSIVE) {
+            throw new IllegalStateException("Cluster is in " + ClusterState.PASSIVE + " state!");
         }
 
+        // Operation has no partition id. So it is sent to this node in purpose.
+        // Operation will fail since node is shutting down or cluster is passive.
+        if (op.getPartitionId() < 0) {
+            throw new HazelcastInstanceNotActiveException("This node is currently passive! Operation: " + op);
+        }
+
+        // Custer is not passive but this node is shutting down.
+        // Since operation has a partition id, it must be retried on another node.
         throw new RetryableHazelcastException("This node is currently shutting down! Operation: " + op);
     }
 
@@ -329,7 +339,7 @@ class OperationRunnerImpl extends OperationRunner {
         OperationResponseHandler responseHandler = operation.getOperationResponseHandler();
         if (operation.returnsResponse() && responseHandler != null) {
             try {
-                if (node.getState() == NodeState.ACTIVE) {
+                if (nodeEngine.isRunning()) {
                     responseHandler.sendResponse(operation, e);
                 } else if (responseHandler.isLocal()) {
                     responseHandler.sendResponse(operation, new HazelcastInstanceNotActiveException());
@@ -439,7 +449,7 @@ class OperationRunnerImpl extends OperationRunner {
                 logger.log(SEVERE, ignored.getMessage(), t);
             }
         } else {
-            final Level level = operationService.nodeEngine.isActive() ? SEVERE : FINEST;
+            final Level level = nodeEngine.isRunning() ? SEVERE : FINEST;
             if (logger.isLoggable(level)) {
                 logger.log(level, t.getMessage(), t);
             }

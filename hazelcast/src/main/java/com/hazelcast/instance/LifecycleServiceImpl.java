@@ -74,7 +74,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     @Override
     public boolean isRunning() {
         //no synchronization needed since getState() is atomic.
-        return instance.node.getState() == NodeState.ACTIVE;
+        return instance.node.isRunning();
     }
 
     @Override

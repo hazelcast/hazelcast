@@ -118,15 +118,14 @@ public interface Cluster {
      * <p/>
      * If there are ongoing/pending migration/replication operations, because of re-balancing due to
      * member join or leave, then trying to change from {@code ACTIVE} to {@code FROZEN}
-     * or {@code SHUTTING_DOWN} will fail with an {@code IllegalStateException}.
+     * or {@code PASSIVE} will fail with an {@code IllegalStateException}.
      * <p/>
      * If transaction timeouts during state change, then this method will fail with a {@code TransactionException}.
      *
      * @param newState new state of the cluster
      * @throws NullPointerException     if newState is null
      * @throws IllegalArgumentException if newState is {@link ClusterState#IN_TRANSITION}
-     * @throws IllegalStateException    if current cluster state is {@link ClusterState#SHUTTING_DOWN}
-     *                                  or member-list changes during the transaction
+     * @throws IllegalStateException    if member-list changes during the transaction
      *                                  or there are ongoing/pending migration operations
      * @throws TransactionException     if there's already an ongoing transaction
      *                                  or this transaction fails
@@ -150,7 +149,7 @@ public interface Cluster {
      * <p/>
      * If there are ongoing/pending migration/replication operations, because of re-balancing due to
      * member join or leave, then trying to change from {@code ACTIVE} to {@code FROZEN}
-     * or {@code SHUTTING_DOWN} will fail with an {@code IllegalStateException}.
+     * or {@code PASSIVE} will fail with an {@code IllegalStateException}.
      * <p/>
      * If transaction timeouts during state change, then this method will fail with a {@code TransactionException}.
      *
@@ -159,8 +158,7 @@ public interface Cluster {
      * @throws NullPointerException     if newState is null
      * @throws IllegalArgumentException if newState is {@link ClusterState#IN_TRANSITION}
      *                                  or transaction type is not {@code TWO_PHASE}
-     * @throws IllegalStateException    if current cluster state is {@link ClusterState#SHUTTING_DOWN}
-     *                                  or member-list changes during the transaction
+     * @throws IllegalStateException    if member-list changes during the transaction
      *                                  or there are ongoing/pending migration operations
      * @throws TransactionException     if there's already an ongoing transaction
      *                                  or this transaction fails

@@ -16,6 +16,10 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.core.Cluster;
+import com.hazelcast.instance.NodeState;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+
 /**
  * {@code ClusterState} consists several states of the cluster
  * which each state can allow and/or deny specific actions
@@ -31,11 +35,12 @@ package com.hazelcast.cluster;
  * {@link #FROZEN}:
  * New members are not allowed to join, partition table/assignments will be frozen.
  * All other operations are allowed and will operate without any restriction.
+ * If some members leave the cluster during it is in {@code FROZEN} state, they can join back.
  * </li>
  * <li>
- * {@link #SHUTTING_DOWN}:
+ * {@link #PASSIVE}:
  * New members are not allowed to join.
- * All operations, except the ones marked with {@link com.hazelcast.spi.impl.AllowedDuringShutdown},
+ * All operations, except the ones marked with {@link AllowedDuringPassiveState},
  * will be rejected immediately.
  * </li>
  * <li>
@@ -50,8 +55,9 @@ package com.hazelcast.cluster;
  * will be changed to {@code FROZEN} automatically before merge
  * and will be set to the state of the new cluster after merge.
  *
- * @see com.hazelcast.core.Cluster#getClusterState()
- * @see com.hazelcast.core.Cluster#changeClusterState(ClusterState)
+ * @see Cluster#getClusterState()
+ * @see Cluster#changeClusterState(ClusterState)
+ * @see NodeState
  * @since 3.6
  */
 public enum ClusterState {
@@ -66,51 +72,55 @@ public enum ClusterState {
      * In {@code FROZEN} state of the cluster:
      * <ul>
      * <li>
-     * New members are not allowed to join, except the members left during {@code FROZEN} state.
-     * For example, cluster has 3 nodes; A, B and C in {@code FROZEN} state.
-     * If member B leaves the cluster (either proper shutdown or crash),
-     * it will be allowed to re-join to the cluster. But another member D, won't be
-     * able to join.
+     * New members are not allowed to join, except the members left during {@code FROZEN} or {@link ClusterState#PASSIVE} state.
+     * For example, cluster has 3 nodes; A, B and C in {@code FROZEN} state. If member B leaves
+     * the cluster (either proper shutdown or crash), it will be allowed to re-join to the cluster.
+     * But another member D, won't be able to join.
      * </li>
      * <li>
-     * Partition table/assignments will be frozen. When a member leaves the cluster,
-     * its partition assignments (as primary and backup) will remain the same,
-     * until either that member re-joins to the cluster
-     * or {@code ClusterState} changes back to {@code ACTIVE}.
+     * Partition table/assignments will be frozen. When a member leaves the cluster, its partition
+     * assignments (as primary and backup) will remain the same, until either that member re-joins
+     * to the cluster or {@code ClusterState} changes back to {@code ACTIVE}.
      * If that member re-joins in {@code FROZEN}, it will own all previous partition assignments as it is.
-     * If {@code ClusterState} changes to {@code ACTIVE} then partition re-balancing process
-     * will kick-in and all unassigned partitions will be assigned to active members.
+     * If {@code ClusterState} changes to {@code ACTIVE} then partition re-balancing process will
+     * kick-in and all unassigned partitions will be assigned to active members.
      * It's not allowed to change {@code ClusterState} to {@code FROZEN}
      * when there are pending migration/replication tasks in the system.
      * </li>
      * <li>
-     * All other operations are allowed and will operate without any restriction.
+     * Nodes continue to stay in {@link NodeState#ACTIVE} state when cluster goes into the {@code FROZEN} state.
+     * </li>
+     * <li>
+     * All other operations except migrations are allowed and will operate without any restriction.
      * </li>
      * </ul>
      */
     FROZEN,
 
     /**
-     * In {@code SHUTTING_DOWN} state of the cluster:
+     * In {@code PASSIVE} state of the cluster:
      * <ul>
      * <li>
-     * New members are not allowed to join, even the ones left during {@code SHUTTING_DOWN} state.
+     * New members are not allowed to join, except the members left during {@link ClusterState#FROZEN} or {@code PASSIVE} state.
      * </li>
-     * <li>
+     * * <li>
      * Partition table/assignments will be frozen. It's not allowed to change {@code ClusterState}
-     * to {@code SHUTTING_DOWN} when there are pending migration/replication tasks in the system.
+     * to {@code PASSIVE} when there are pending migration/replication tasks in the system. If some
+     * nodes leave the cluster while cluster is in {@code PASSIVE} state, they will be removed from the
+     * partition table if cluster state moves back to {@link #ACTIVE}.
      * </li>
      * <li>
-     * All operations, except the ones marked with {@link com.hazelcast.spi.impl.AllowedDuringShutdown},
+     * When cluster state is moved to {@code PASSIVE}, node are moved to {@link NodeState#PASSIVE}.
+     * In this regard, when cluster state moves to another state from {@code PASSIVE}, nodes become
+     * {@link NodeState#ACTIVE}.
+     * </li>
+     * <li>
+     * All operations, except the ones marked with {@link AllowedDuringPassiveState},
      * will be rejected immediately.
-     * </li>
-     * <li>
-     * It's not allowed to go back any other state, once {@code ClusterState} is changed to
-     * {@code SHUTTING_DOWN}. From now on, only possible/allowed action is shutting down the instance.
      * </li>
      * </ul>
      */
-    SHUTTING_DOWN,
+    PASSIVE,
 
     /**
      * Shows that ClusterState is in transition. When a state change transaction is started,

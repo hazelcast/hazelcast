@@ -16,14 +16,17 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
+
 /**
  * Marker interface for operations those are allowed to be executed or invoked during
- * {@link com.hazelcast.instance.Node}'s {@link com.hazelcast.instance.NodeState#SHUTTING_DOWN} state.
+ * {@link Node}'s {@link NodeState#PASSIVE} state.
  * <p/>
- * By default, only replication/migration and cluster heartbeat operations are allowed during shutdown.
+ * By default, only join, replication and cluster heartbeat operations are allowed during shutdown.
  *
- * @see com.hazelcast.instance.NodeState
+ * @see NodeState
  * @since 3.6
  */
-public interface AllowedDuringShutdown {
+public interface AllowedDuringPassiveState {
 }

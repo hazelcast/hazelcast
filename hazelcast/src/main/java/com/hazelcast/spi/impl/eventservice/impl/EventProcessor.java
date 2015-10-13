@@ -56,7 +56,7 @@ public class EventProcessor implements StripedRunnable {
     private EventPublishingService<Object, Object> getPublishingService(String serviceName) {
         EventPublishingService<Object, Object> service = eventService.nodeEngine.getService(serviceName);
         if (service == null) {
-            if (eventService.nodeEngine.isActive()) {
+            if (eventService.nodeEngine.isRunning()) {
                 eventService.logger.warning("There is no service named: " + serviceName);
             }
             return null;
@@ -67,7 +67,7 @@ public class EventProcessor implements StripedRunnable {
     private Registration getRegistration(EventEnvelope eventEnvelope, String serviceName) {
         EventServiceSegment segment = eventService.getSegment(serviceName, false);
         if (segment == null) {
-            if (eventService.nodeEngine.isActive()) {
+            if (eventService.nodeEngine.isRunning()) {
                 eventService.logger.warning("No service registration found for " + serviceName);
             }
             return null;
@@ -76,7 +76,7 @@ public class EventProcessor implements StripedRunnable {
         String id = eventEnvelope.getEventId();
         Registration registration = (Registration) segment.getRegistrationIdMap().get(id);
         if (registration == null) {
-            if (eventService.nodeEngine.isActive()) {
+            if (eventService.nodeEngine.isRunning()) {
                 if (eventService.logger.isFinestEnabled()) {
                     eventService.logger.finest("No registration found for " + serviceName + " / " + id);
                 }

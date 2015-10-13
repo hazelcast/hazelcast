@@ -23,12 +23,13 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 
-public class ChangeClusterStateOperation extends AbstractOperation {
+public class ChangeClusterStateOperation extends AbstractOperation implements AllowedDuringPassiveState {
 
     private ClusterState newState;
     private Address initiator;

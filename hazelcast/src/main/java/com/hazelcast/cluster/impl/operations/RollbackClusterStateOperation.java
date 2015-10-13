@@ -22,10 +22,11 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 
-public class RollbackClusterStateOperation extends AbstractOperation {
+public class RollbackClusterStateOperation extends AbstractOperation implements AllowedDuringPassiveState {
 
     private Address initiator;
     private String txnId;

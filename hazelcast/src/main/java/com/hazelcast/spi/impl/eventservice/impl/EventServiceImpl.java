@@ -345,7 +345,7 @@ public class EventServiceImpl implements InternalEventService {
     }
 
     private void executeLocal(String serviceName, Object event, EventRegistration registration, int orderKey) {
-        if (nodeEngine.isActive()) {
+        if (nodeEngine.isRunning()) {
             Registration reg = (Registration) registration;
             try {
                 if (reg.getListener() != null) {
@@ -385,7 +385,7 @@ public class EventServiceImpl implements InternalEventService {
             packet.setHeader(Packet.HEADER_EVENT);
 
             if (!nodeEngine.getNode().getConnectionManager().transmit(packet, subscriber)) {
-                if (nodeEngine.isActive()) {
+                if (nodeEngine.isRunning()) {
                     logFailure("IO Queue overloaded! Failed to send event packet to: %s", subscriber);
                 }
             }
@@ -414,7 +414,7 @@ public class EventServiceImpl implements InternalEventService {
 
     @Override
     public void executeEventCallback(Runnable callback) {
-        if (nodeEngine.isActive()) {
+        if (nodeEngine.isRunning()) {
             try {
                 eventExecutor.execute(callback);
             } catch (RejectedExecutionException e) {

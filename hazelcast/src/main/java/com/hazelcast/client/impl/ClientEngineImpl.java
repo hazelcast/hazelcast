@@ -40,6 +40,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -48,7 +49,6 @@ import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.Credentials;
@@ -430,7 +430,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         }
 
         private void logProcessingFailure(ClientRequest request, Throwable e) {
-            Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
+            Level level = nodeEngine.isRunning() ? Level.SEVERE : Level.FINEST;
             if (logger.isLoggable(level)) {
                 if (request == null) {
                     logger.log(level, e.getMessage(), e);
@@ -458,7 +458,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 return portableReader.readInt("cId");
 
             } catch (Throwable e) {
-                Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
+                Level level = nodeEngine.isRunning() ? Level.SEVERE : Level.FINEST;
                 if (logger.isLoggable(level)) {
                     logger.log(level, e.getMessage(), e);
                 }
@@ -521,7 +521,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
             Object service = nodeEngine.getService(serviceName);
             if (service == null) {
-                if (nodeEngine.isActive()) {
+                if (nodeEngine.isRunning()) {
                     throw new IllegalArgumentException("No service registered with name: " + serviceName);
                 }
                 throw new HazelcastInstanceNotActiveException();
@@ -531,7 +531,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
         private void handleAuthenticationFailure(ClientEndpointImpl endpoint, ClientRequest request) {
             Exception exception;
-            if (nodeEngine.isActive()) {
+            if (nodeEngine.isRunning()) {
                 String message = "Client " + endpoint + " must authenticate before any operation.";
                 logger.severe(message);
                 exception = new AuthenticationException(message);
@@ -554,7 +554,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
         @Override
         public void connectionRemoved(Connection connection) {
-            if (connection.isClient() && nodeEngine.isActive()) {
+            if (connection.isClient() && nodeEngine.isRunning()) {
                 ClientEndpointImpl endpoint = (ClientEndpointImpl) endpointManager.getEndpoint(connection);
                 if (endpoint == null) {
                     return;

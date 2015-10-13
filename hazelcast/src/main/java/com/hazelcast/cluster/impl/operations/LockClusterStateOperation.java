@@ -23,27 +23,31 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 
-public class LockClusterStateOperation extends AbstractOperation {
+public class LockClusterStateOperation extends AbstractOperation implements AllowedDuringPassiveState {
 
     private String stateName;
     private ClusterState newState;
     private Address initiator;
     private String txnId;
     private long leaseTime;
+    private int partitionStateVersion;
 
     public LockClusterStateOperation() {
     }
 
-    public LockClusterStateOperation(ClusterState newState, Address initiator, String txnId, long leaseTime) {
+    public LockClusterStateOperation(ClusterState newState, Address initiator, String txnId,
+                                     long leaseTime, int partitionStateVersion) {
         this.newState = newState;
         this.initiator = initiator;
         this.txnId = txnId;
         this.leaseTime = leaseTime;
+        this.partitionStateVersion = partitionStateVersion;
     }
 
     @Override
@@ -65,7 +69,7 @@ public class LockClusterStateOperation extends AbstractOperation {
             getLogger().info("Locking cluster state. Initiator: " + initiator
                     + ", lease-time: " + leaseTime);
         }
-        clusterStateManager.lockClusterState(newState, initiator, txnId, leaseTime);
+        clusterStateManager.lockClusterState(newState, initiator, txnId, leaseTime, partitionStateVersion);
     }
 
     @Override
@@ -89,6 +93,7 @@ public class LockClusterStateOperation extends AbstractOperation {
         initiator.writeData(out);
         out.writeUTF(txnId);
         out.writeLong(leaseTime);
+        out.writeInt(partitionStateVersion);
     }
 
     @Override
@@ -104,5 +109,6 @@ public class LockClusterStateOperation extends AbstractOperation {
         initiator.readData(in);
         txnId = in.readUTF();
         leaseTime = in.readLong();
+        partitionStateVersion = in.readInt();
     }
 }

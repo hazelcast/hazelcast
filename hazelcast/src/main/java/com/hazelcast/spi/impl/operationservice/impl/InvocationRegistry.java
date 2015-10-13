@@ -241,7 +241,7 @@ public class InvocationRegistry {
         Invocation invocation = invocations.get(response.getCallId());
 
         if (invocation == null) {
-            if (nodeEngine.isActive()) {
+            if (nodeEngine.isRunning()) {
                 logger.warning("No Invocation found for response: " + response + " sent from " + sender);
             }
             return;
@@ -255,7 +255,7 @@ public class InvocationRegistry {
         Invocation invocation = invocations.get(response.getCallId());
 
         if (invocation == null) {
-            if (nodeEngine.isActive()) {
+            if (nodeEngine.isRunning()) {
                 logger.warning("No Invocation found for response: " + response + " sent from " + sender);
             }
             return;
@@ -268,7 +268,7 @@ public class InvocationRegistry {
         Invocation invocation = invocations.get(response.getCallId());
 
         if (invocation == null) {
-            if (nodeEngine.isActive()) {
+            if (nodeEngine.isRunning()) {
                 logger.warning("No Invocation found for response: " + response + " sent from " + sender);
             }
             return;

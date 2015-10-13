@@ -226,7 +226,7 @@ public abstract class Operation implements DataSerializable {
             final String name = serviceName != null ? serviceName : getServiceName();
             service = ((NodeEngineImpl) nodeEngine).getService(name);
             if (service == null) {
-                if (nodeEngine.isActive()) {
+                if (nodeEngine.isRunning()) {
                     throw new HazelcastException("Service with name '" + name + "' not found!");
                 } else {
                     throw new RetryableHazelcastException("HazelcastInstance[" + nodeEngine.getThisAddress()
@@ -477,7 +477,7 @@ public abstract class Operation implements DataSerializable {
         } else if (e instanceof QuorumException) {
             logger.log(Level.WARNING, e.getMessage());
         } else {
-            final Level level = nodeEngine != null && nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
+            final Level level = nodeEngine != null && nodeEngine.isRunning() ? Level.SEVERE : Level.FINEST;
             if (logger.isLoggable(level)) {
                 logger.log(level, e.getMessage(), e);
             }

@@ -17,6 +17,7 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
@@ -140,6 +141,19 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         return new TransactionImpl(this, nodeEngine, options, null);
     }
 
+    /**
+     * Creates a plain transaction object which can be used while cluster state is {@link ClusterState#PASSIVE},
+     * without wrapping it inside a TransactionContext.
+     * <p/>
+     * Also see {@link TransactionManagerServiceImpl#newTransaction(TransactionOptions)} for more details
+     *
+     * @param options transaction options
+     * @return a new transaction which can be used while cluster state is {@link ClusterState#PASSIVE}
+     */
+    public Transaction newAllowedDuringPassiveStateTransaction(TransactionOptions options) {
+        return new AllowedDuringPassiveStateTransactionImpl(this, nodeEngine, options, null);
+    }
+
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
     }
@@ -198,8 +212,15 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             long timeoutMillis = TransactionOptions.getDefault().getTimeoutMillis();
             waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, finalizeExceptionHandler);
         } else {
-            TransactionImpl tx = new TransactionImpl(this, nodeEngine, txnId, log.records,
-                    log.timeoutMillis, log.startTime, log.callerUuid);
+            TransactionImpl tx;
+            if (log.allowedDuringPassiveState) {
+                tx = new AllowedDuringPassiveStateTransactionImpl(this, nodeEngine, txnId, log.records,
+                        log.timeoutMillis, log.startTime, log.callerUuid);
+            } else {
+                tx = new TransactionImpl(this, nodeEngine, txnId, log.records,
+                        log.timeoutMillis, log.startTime, log.callerUuid);
+            }
+
             if (log.state == COMMITTING) {
                 try {
                     tx.commit();
@@ -242,7 +263,16 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     public void createBackupLog(String callerUuid, String txnId) {
-        TxBackupLog log = new TxBackupLog(Collections.<TransactionLogRecord>emptyList(), callerUuid, ACTIVE, -1, -1);
+        createBackupLog(callerUuid, txnId, false);
+    }
+
+    public void createAllowedDuringPassiveStateBackupLog(String callerUuid, String txnId) {
+        createBackupLog(callerUuid, txnId, true);
+    }
+
+    private void createBackupLog(String callerUuid, String txnId, boolean allowedDuringPassiveState) {
+        TxBackupLog log = new TxBackupLog(Collections.<TransactionLogRecord>emptyList(), callerUuid,
+                ACTIVE, -1, -1, allowedDuringPassiveState);
         if (txBackupLogs.putIfAbsent(txnId, log) != null) {
             throw new TransactionException("TxLog already exists!");
         }
@@ -258,7 +288,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             // the exception message is very strange
             throw new TransactionException("TxLog already exists!");
         }
-        TxBackupLog newTxBackupLog = new TxBackupLog(records, callerUuid, COMMITTING, timeoutMillis, startTime);
+        TxBackupLog newTxBackupLog = new TxBackupLog(records, callerUuid, COMMITTING, timeoutMillis, startTime,
+                beginLog.allowedDuringPassiveState);
         if (!txBackupLogs.replace(txnId, beginLog, newTxBackupLog)) {
             throw new TransactionException("TxLog already exists!");
         }
@@ -283,14 +314,16 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         final long timeoutMillis;
         final long startTime;
         volatile State state;
+        final boolean allowedDuringPassiveState;
 
         private TxBackupLog(List<TransactionLogRecord> records, String callerUuid, State state,
-                            long timeoutMillis, long startTime) {
+                            long timeoutMillis, long startTime, boolean allowedDuringPassiveState) {
             this.records = records;
             this.callerUuid = callerUuid;
             this.state = state;
             this.timeoutMillis = timeoutMillis;
             this.startTime = startTime;
+            this.allowedDuringPassiveState = allowedDuringPassiveState;
         }
 
         @Override
@@ -301,6 +334,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
                     + ", timeoutMillis=" + timeoutMillis
                     + ", startTime=" + startTime
                     + ", state=" + state
+                    + ", allowedDuringPassiveState=" + allowedDuringPassiveState
                     + '}';
         }
     }

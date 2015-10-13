@@ -72,17 +72,17 @@ public class TransactionImpl implements Transaction {
 
     private final ExceptionHandler rollbackExceptionHandler;
     private final ExceptionHandler rollbackTxExceptionHandler;
-    private final TransactionLog transactionLog;
     private final TransactionManagerServiceImpl transactionManagerService;
     private final NodeEngine nodeEngine;
     private final String txnId;
     private final int durability;
     private final TransactionType transactionType;
-    private final String txOwnerUuid;
     private final boolean checkThreadAccess;
     private final ILogger logger;
-
     private Long threadId;
+
+    private final String txOwnerUuid;
+    private final TransactionLog transactionLog;
     private long timeoutMillis;
     private State state = NO_TXN;
     private long startTime;
@@ -149,6 +149,10 @@ public class TransactionImpl implements Transaction {
     @Override
     public long getTimeoutMillis() {
         return timeoutMillis;
+    }
+
+    protected TransactionLog getTransactionLog() {
+        return transactionLog;
     }
 
     @Override
@@ -322,8 +326,7 @@ public class TransactionImpl implements Transaction {
         List<Future> futures = new ArrayList<Future>(backupAddresses.length);
         for (Address backupAddress : backupAddresses) {
             if (clusterService.getMember(backupAddress) != null) {
-                Operation op = new ReplicateTxBackupLogOperation(
-                        transactionLog.getRecordList(), txOwnerUuid, txnId, timeoutMillis, startTime);
+                Operation op = createReplicateTxBackupLogOperation();
                 Future f = operationService.invokeOnTarget(SERVICE_NAME, op, backupAddress);
                 futures.add(f);
             }
@@ -362,8 +365,8 @@ public class TransactionImpl implements Transaction {
         List<Future> futures = new ArrayList<Future>(backupAddresses.length);
         for (Address backupAddress : backupAddresses) {
             if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
-                Future f = operationService.invokeOnTarget(SERVICE_NAME,
-                        new CreateTxBackupLogOperation(txOwnerUuid, txnId), backupAddress);
+                final CreateTxBackupLogOperation op = createCreateTxBackupLogOperation();
+                Future f = operationService.invokeOnTarget(SERVICE_NAME, op, backupAddress);
                 futures.add(f);
             }
         }
@@ -396,7 +399,7 @@ public class TransactionImpl implements Transaction {
         List<Future> futures = new ArrayList<Future>(backupAddresses.length);
         for (Address backupAddress : backupAddresses) {
             if (clusterService.getMember(backupAddress) != null) {
-                Future f = operationService.invokeOnTarget(SERVICE_NAME, new RollbackTxBackupLogOperation(txnId), backupAddress);
+                Future f = operationService.invokeOnTarget(SERVICE_NAME, createRollbackTxBackupLogOperation(), backupAddress);
                 futures.add(f);
             }
         }
@@ -414,7 +417,7 @@ public class TransactionImpl implements Transaction {
         for (Address backupAddress : backupAddresses) {
             if (clusterService.getMember(backupAddress) != null) {
                 try {
-                    operationService.invokeOnTarget(SERVICE_NAME, new PurgeTxBackupLogOperation(txnId), backupAddress);
+                    operationService.invokeOnTarget(SERVICE_NAME, createPurgeTxBackupLogOperation(), backupAddress);
                 } catch (Throwable e) {
                     logger.warning("Error during purging backups!", e);
                 }
@@ -426,6 +429,23 @@ public class TransactionImpl implements Transaction {
         //todo: what if backupLogsCreated are created?
 
         return durability == 0 || transactionLog.size() <= 1 || backupAddresses.length == 0;
+    }
+
+    protected CreateTxBackupLogOperation createCreateTxBackupLogOperation() {
+        return new CreateTxBackupLogOperation(txOwnerUuid, txnId);
+    }
+
+    protected ReplicateTxBackupLogOperation createReplicateTxBackupLogOperation() {
+        return new ReplicateTxBackupLogOperation(
+                transactionLog.getRecordList(), txOwnerUuid, txnId, timeoutMillis, startTime);
+    }
+
+    protected RollbackTxBackupLogOperation createRollbackTxBackupLogOperation() {
+        return new RollbackTxBackupLogOperation(txnId);
+    }
+
+    protected PurgeTxBackupLogOperation createPurgeTxBackupLogOperation() {
+        return new PurgeTxBackupLogOperation(txnId);
     }
 
     @Override

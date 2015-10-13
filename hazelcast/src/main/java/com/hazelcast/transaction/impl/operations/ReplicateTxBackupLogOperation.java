@@ -36,7 +36,7 @@ import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.REPLI
  *
  * This operation is only executed when durability > 0
  */
-public final class ReplicateTxBackupLogOperation extends TxBaseOperation {
+public class ReplicateTxBackupLogOperation extends TxBaseOperation {
 
     // todo: probably we don't want to use linked list.
     private final List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();

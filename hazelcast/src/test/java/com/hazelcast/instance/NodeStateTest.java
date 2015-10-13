@@ -24,7 +24,7 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.AllowedDuringShutdown;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -109,7 +109,7 @@ public class NodeStateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void shouldReject_NormalOperationInvocation_whileShuttingDown() throws Exception {
+    public void shouldReject_NormalOperationInvocation_whilePassive() throws Exception {
         InvocationTask task = new InvocationTask() {
             @Override
             public void invoke(NodeEngine nodeEngine) throws Exception {
@@ -117,7 +117,7 @@ public class NodeStateTest extends HazelcastTestSupport {
                         .invokeOnPartition(null, new DummyOperation(), 1);
                 try {
                     future.get();
-                    fail("Invocation should fail while node is shutting down!");
+                    fail("Invocation should fail while node is passive!");
                 } catch (ExecutionException e) {
                     Throwable cause = e.getCause();
                     assertTrue("Cause: " + cause, cause instanceof HazelcastInstanceNotActiveException);
@@ -125,11 +125,11 @@ public class NodeStateTest extends HazelcastTestSupport {
             }
         };
 
-        testInvocation_whileShuttingDown(task);
+        testInvocation_whilePassive(task);
     }
 
     @Test
-    public void shouldReject_NormalOperationExecution_whileShuttingDown() throws Exception {
+    public void shouldReject_NormalOperationExecution_whilePassive() throws Exception {
         InvocationTask task = new InvocationTask() {
             @Override
             public void invoke(NodeEngine nodeEngine) throws Exception {
@@ -151,30 +151,30 @@ public class NodeStateTest extends HazelcastTestSupport {
             }
         };
 
-        testInvocation_whileShuttingDown(task);
+        testInvocation_whilePassive(task);
     }
 
     @Test
-    public void shouldAllow_AllowedOperationInvocation_whileShuttingDown() throws Exception {
+    public void shouldAllow_AllowedOperationInvocation_whilePassive() throws Exception {
         InvocationTask task = new InvocationTask() {
             @Override
             public void invoke(NodeEngine nodeEngine) throws Exception {
                 Future<Object> future = nodeEngine.getOperationService()
-                        .invokeOnTarget(null, new DummyAllowedDuringShutdownOperation(), nodeEngine.getThisAddress());
+                        .invokeOnTarget(null, new DummyAllowedDuringPassiveStateOperation(), nodeEngine.getThisAddress());
                 future.get(1, TimeUnit.MINUTES);
             }
         };
 
-        testInvocation_whileShuttingDown(task);
+        testInvocation_whilePassive(task);
     }
 
     @Test
-    public void shouldAllow_AllowedOperationExecution_whileShuttingDown() throws Exception {
+    public void shouldAllow_AllowedOperationExecution_whilePassive() throws Exception {
         InvocationTask task = new InvocationTask() {
             @Override
             public void invoke(NodeEngine nodeEngine) throws Exception {
                 final CountDownLatch latch = new CountDownLatch(1);
-                Operation op = new DummyAllowedDuringShutdownOperation() {
+                Operation op = new DummyAllowedDuringPassiveStateOperation() {
                     @Override
                     public void afterRun() throws Exception {
                         latch.countDown();
@@ -191,10 +191,10 @@ public class NodeStateTest extends HazelcastTestSupport {
             }
         };
 
-        testInvocation_whileShuttingDown(task);
+        testInvocation_whilePassive(task);
     }
 
-    private void testInvocation_whileShuttingDown(InvocationTask invocationTask) throws Exception {
+    private void testInvocation_whilePassive(InvocationTask invocationTask) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         Config config = new Config();
         config.getServicesConfig().addServiceConfig(
@@ -212,7 +212,7 @@ public class NodeStateTest extends HazelcastTestSupport {
         };
         shutdownThread.start();
 
-        waitNodeStateToBeShuttingDown(node);
+        waitNodeStateToBePassive(node);
 
         try {
             invocationTask.invoke(getNodeEngineImpl(hz));
@@ -222,7 +222,7 @@ public class NodeStateTest extends HazelcastTestSupport {
             throw ExceptionUtil.rethrow(e);
         }
 
-        assertEquals(NodeState.SHUTTING_DOWN, node.getState());
+        assertEquals(NodeState.PASSIVE, node.getState());
         latch.countDown();
         shutdownThread.join(TimeUnit.MINUTES.toMillis(1));
 
@@ -233,13 +233,14 @@ public class NodeStateTest extends HazelcastTestSupport {
         void invoke(NodeEngine nodeEngine) throws Exception;
     }
 
-    private static void waitNodeStateToBeShuttingDown(final Node node) {
+    private static void waitNodeStateToBePassive(final Node node) {
         assertEqualsEventually(new Callable<NodeState>() {
             @Override
             public NodeState call() throws Exception {
-                return node.getState();
+                final NodeState state = node.getState();
+                return state;
             }
-        }, NodeState.SHUTTING_DOWN);
+        }, NodeState.PASSIVE);
     }
 
     private static class BlockingService implements ManagedService {
@@ -274,8 +275,8 @@ public class NodeStateTest extends HazelcastTestSupport {
         }
     }
 
-    private static class DummyAllowedDuringShutdownOperation
-            extends AbstractOperation implements AllowedDuringShutdown {
+    private static class DummyAllowedDuringPassiveStateOperation
+            extends AbstractOperation implements AllowedDuringPassiveState {
         @Override
         public void run() throws Exception {
         }

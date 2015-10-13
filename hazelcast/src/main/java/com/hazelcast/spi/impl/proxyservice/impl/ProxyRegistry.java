@@ -58,7 +58,7 @@ public final class ProxyRegistry {
             return service;
         }
 
-        if (proxyService.nodeEngine.isActive()) {
+        if (proxyService.nodeEngine.isRunning()) {
             throw new IllegalArgumentException("Unknown service: " + serviceName);
         } else {
             throw new HazelcastInstanceNotActiveException();
@@ -146,7 +146,7 @@ public final class ProxyRegistry {
     DistributedObject getOrCreateProxy(String name, boolean publishEvent, boolean initialize) {
         DistributedObjectFuture proxyFuture = proxies.get(name);
         if (proxyFuture == null) {
-            if (!proxyService.nodeEngine.isActive()) {
+            if (!proxyService.nodeEngine.isRunning()) {
                 throw new HazelcastInstanceNotActiveException();
             }
             proxyFuture = createProxy(name, publishEvent, initialize);
@@ -171,7 +171,7 @@ public final class ProxyRegistry {
             return null;
         }
 
-        if (!proxyService.nodeEngine.isActive()) {
+        if (!proxyService.nodeEngine.isRunning()) {
             throw new HazelcastInstanceNotActiveException();
         }
 

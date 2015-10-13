@@ -27,9 +27,9 @@ import com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes;
 import com.hazelcast.client.impl.protocol.parameters.ErrorCodec;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -123,7 +123,7 @@ public abstract class AbstractMessageTask<P>
 
     private void handleAuthenticationFailure() {
         Exception exception;
-        if (nodeEngine.isActive()) {
+        if (nodeEngine.isRunning()) {
             String message = "Client " + endpoint + " must authenticate before any operation.";
             logger.severe(message);
             exception = new AuthenticationException(message);
@@ -145,7 +145,7 @@ public abstract class AbstractMessageTask<P>
     }
 
     private void logProcessingFailure(Throwable throwable) {
-        Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
+        Level level = nodeEngine.isRunning() ? Level.SEVERE : Level.FINEST;
         if (logger.isLoggable(level)) {
             if (parameters == null) {
                 logger.log(level, throwable.getMessage(), throwable);
