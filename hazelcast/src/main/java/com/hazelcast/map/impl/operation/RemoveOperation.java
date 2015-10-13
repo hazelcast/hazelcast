@@ -52,11 +52,6 @@ public final class RemoveOperation extends BaseRemoveOperation implements Identi
     }
 
     @Override
-    public String toString() {
-        return "RemoveOperation{" + name + "}";
-    }
-
-    @Override
     public int getFactoryId() {
         return MapDataSerializerHook.F_ID;
     }

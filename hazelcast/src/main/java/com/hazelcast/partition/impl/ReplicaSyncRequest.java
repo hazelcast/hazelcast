@@ -225,9 +225,4 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
     }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + '}';
-    }
 }

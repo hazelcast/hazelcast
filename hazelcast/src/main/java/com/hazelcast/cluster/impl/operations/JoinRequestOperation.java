@@ -56,11 +56,9 @@ public class JoinRequestOperation extends AbstractClusterOperation implements Jo
     }
 
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("JoinRequestOperation");
-        sb.append("{message=").append(request);
-        sb.append('}');
-        return sb.toString();
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", message=").append(request);
     }
 }

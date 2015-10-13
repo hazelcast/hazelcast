@@ -121,10 +121,9 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
     }
 
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("PostJoinOperation{");
-        sb.append("operations=").append(Arrays.toString(operations));
-        sb.append('}');
-        return sb.toString();
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", operations=").append(Arrays.toString(operations));
     }
 }

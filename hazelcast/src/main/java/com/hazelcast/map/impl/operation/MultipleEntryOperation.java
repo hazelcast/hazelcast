@@ -87,11 +87,6 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
     }
 
     @Override
-    public String toString() {
-        return "MultipleEntryOperation{}";
-    }
-
-    @Override
     public boolean shouldBackup() {
         return entryProcessor.getBackupProcessor() != null;
     }

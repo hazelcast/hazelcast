@@ -571,15 +571,30 @@ public abstract class Operation implements DataSerializable {
 
     protected abstract void readInternal(ObjectDataInput in) throws IOException;
 
+    /**
+     * A template method allows for additional information to be passed into the {@link #toString()} method. So an Operation
+     * subclass can override this method and add additional debugging content. The default implementation does nothing so
+     * one is not forced to provide an empty implementation.
+     *
+     * It is a good practice always to call the super.toString(stringBuffer) when implementing this method to make sure
+     * that the super class can inject content if needed.
+     *
+     * @param sb the StringBuilder to add the debug info to.
+     */
+    protected void toString(StringBuilder sb) {
+    }
+
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder(getClass().getName()).append('{');
+        StringBuilder sb = new StringBuilder(getClass().getName()).append('{');
         sb.append("serviceName='").append(getServiceName()).append('\'');
         sb.append(", partitionId=").append(partitionId);
+        sb.append(", replicaIndex=").append(replicaIndex);
         sb.append(", callId=").append(callId);
         sb.append(", invocationTime=").append(invocationTime);
         sb.append(", waitTimeout=").append(waitTimeout);
         sb.append(", callTimeout=").append(callTimeout);
+        toString(sb);
         sb.append('}');
         return sb.toString();
     }

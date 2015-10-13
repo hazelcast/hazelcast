@@ -48,10 +48,4 @@ public class ClearNearCacheOperation extends AbstractNamedOperation
     public Object getResponse() {
         return Boolean.TRUE;
     }
-
-    @Override
-    public String toString() {
-        return "ClearNearCacheOperation{}";
-    }
-
 }

@@ -75,9 +75,4 @@ public class ReplaceIfSameOperation extends BasePutOperation {
         super.readInternal(in);
         expect = in.readData();
     }
-
-    @Override
-    public String toString() {
-        return "ReplaceIfSameOperation{" + name + "}";
-    }
 }

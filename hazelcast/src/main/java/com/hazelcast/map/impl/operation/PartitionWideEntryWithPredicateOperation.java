@@ -51,12 +51,9 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
     }
 
     @Override
-    public String toString() {
-        return "PartitionWideEntryWithPredicateOperation{"
-                + "name='" + name
-                + "', entryProcessor='" + entryProcessor.toString()
-                + "', predicate='" + predicate.toString()
-                + "'}";
+    protected void toString(StringBuilder sb) {
+        sb.append(", entryProcessor=").append(entryProcessor);
+        sb.append(", predicate=").append(predicate);
     }
 
     @Override

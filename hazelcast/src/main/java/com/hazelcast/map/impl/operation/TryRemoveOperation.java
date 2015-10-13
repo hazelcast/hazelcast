@@ -64,11 +64,6 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     }
 
     @Override
-    public String toString() {
-        return "TryRemoveOperation{" + name + "}";
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
     }

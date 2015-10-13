@@ -45,9 +45,4 @@ public class EvictAllBackupOperation extends AbstractMapOperation implements Bac
         }
         recordStore.evictAll(true);
     }
-
-    @Override
-    public String toString() {
-        return "EvictAllBackupOperation{}";
-    }
 }

@@ -52,11 +52,9 @@ public class MasterDiscoveryOperation extends AbstractClusterOperation implement
     }
 
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("MasterDiscoveryOperation");
-        sb.append("{message=").append(joinMessage);
-        sb.append('}');
-        return sb.toString();
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", message=").append(joinMessage);
     }
 }

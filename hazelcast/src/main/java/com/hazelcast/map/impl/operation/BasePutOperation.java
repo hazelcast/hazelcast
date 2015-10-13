@@ -113,9 +113,4 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     public void onWaitExpire() {
         sendResponse(null);
     }
-
-    @Override
-    public String toString() {
-        return "BasePutOperation{" + name + "}";
-    }
 }

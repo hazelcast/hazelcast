@@ -151,4 +151,12 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
         dataValue = in.readData();
         ttl = in.readLong();
     }
+
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", name=").append(name);
+    }
 }

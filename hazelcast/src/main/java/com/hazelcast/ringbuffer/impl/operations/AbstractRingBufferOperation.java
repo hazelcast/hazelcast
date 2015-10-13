@@ -75,4 +75,11 @@ public abstract class AbstractRingBufferOperation extends AbstractOperation
         super.readInternal(in);
         name = in.readUTF();
     }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", name=").append(name);
+    }
 }

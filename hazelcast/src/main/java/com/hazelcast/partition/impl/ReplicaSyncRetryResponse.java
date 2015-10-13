@@ -102,9 +102,4 @@ public class ReplicaSyncRetryResponse extends Operation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
     }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + '}';
-    }
 }

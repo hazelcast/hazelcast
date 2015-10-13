@@ -72,9 +72,4 @@ public class GetEntryViewOperation extends KeyBasedMapOperation implements Reado
     public Object getResponse() {
         return result;
     }
-
-    @Override
-    public String toString() {
-        return "GetEntryViewOperation{}";
-    }
 }

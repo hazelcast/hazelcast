@@ -70,10 +70,4 @@ public class WanOriginatedDeleteOperation extends BaseRemoveOperation {
     public void onWaitExpire() {
         sendResponse(false);
     }
-
-    @Override
-    public String toString() {
-        return "DeleteOperation{" + name + "}";
-    }
-
 }

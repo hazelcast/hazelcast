@@ -94,7 +94,9 @@ public abstract class BaseMigrationOperation extends AbstractOperation
     }
 
     @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{partitionId=" + getPartitionId() + ", migration=" + migrationInfo + '}';
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", migration=").append(migrationInfo);
     }
 }

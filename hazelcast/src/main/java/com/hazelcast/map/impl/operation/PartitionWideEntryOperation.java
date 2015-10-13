@@ -134,11 +134,6 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
     }
 
     @Override
-    public String toString() {
-        return "PartitionWideEntryOperation{}";
-    }
-
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         entryProcessor = in.readObject();

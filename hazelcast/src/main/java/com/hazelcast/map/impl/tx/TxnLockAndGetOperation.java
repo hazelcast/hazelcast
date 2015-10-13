@@ -79,13 +79,11 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
         ownerUuid = in.readUTF();
     }
 
-
     @Override
-    public String toString() {
-        return "TxnLockAndGetOperation{"
-                + "timeout=" + getWaitTimeout()
-                + ", thread=" + getThreadId()
-                + '}';
-    }
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
 
+        sb.append(", timeout=").append(getWaitTimeout());
+        sb.append(", thread=").append(getThreadId());
+    }
 }

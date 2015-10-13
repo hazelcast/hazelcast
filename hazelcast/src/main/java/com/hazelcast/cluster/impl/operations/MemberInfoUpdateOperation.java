@@ -95,13 +95,13 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
     }
 
     @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("MemberInfoUpdateOperation {\n");
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", members=");
         for (MemberInfo address : memberInfos) {
-            sb.append(address).append('\n');
+            sb.append(address).append(' ');
         }
-        sb.append('}');
-        return sb.toString();
     }
 }
 

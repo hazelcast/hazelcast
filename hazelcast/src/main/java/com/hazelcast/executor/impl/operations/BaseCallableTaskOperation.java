@@ -135,4 +135,12 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
         uuid = in.readUTF();
         callableData = in.readData();
     }
+
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", name=").append(name);
+    }
 }

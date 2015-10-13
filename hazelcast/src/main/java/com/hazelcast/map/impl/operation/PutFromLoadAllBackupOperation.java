@@ -86,11 +86,6 @@ public class PutFromLoadAllBackupOperation extends AbstractMapOperation implemen
     }
 
     @Override
-    public String toString() {
-        return "PutFromLoadAllBackupOperation{}";
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         final List<Data> keyValueSequence = this.keyValueSequence;

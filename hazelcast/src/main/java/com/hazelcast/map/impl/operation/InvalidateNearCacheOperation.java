@@ -74,7 +74,9 @@ public class InvalidateNearCacheOperation extends AbstractOperation implements M
     }
 
     @Override
-    public String toString() {
-        return "InvalidateNearCacheOperation{}";
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", name=").append(mapName);
     }
 }

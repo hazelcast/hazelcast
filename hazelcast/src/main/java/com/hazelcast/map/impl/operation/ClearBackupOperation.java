@@ -50,9 +50,4 @@ public class ClearBackupOperation extends AbstractNamedOperation implements Back
     public void run() {
         recordStore.clear();
     }
-
-    @Override
-    public String toString() {
-        return "ClearBackupOperation{}";
-    }
 }

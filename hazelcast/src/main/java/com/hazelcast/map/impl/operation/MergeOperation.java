@@ -111,10 +111,4 @@ public class MergeOperation extends BasePutOperation {
         mergingEntry = in.readObject();
         mergePolicy = in.readObject();
     }
-
-    @Override
-    public String toString() {
-        return "MergeOperation{" + name + "}";
-    }
-
 }

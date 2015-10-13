@@ -40,11 +40,6 @@ public final class PutOperation extends BasePutOperation implements IdentifiedDa
     }
 
     @Override
-    public String toString() {
-        return "PutOperation{" + name + "}";
-    }
-
-    @Override
     public int getFactoryId() {
         return MapDataSerializerHook.F_ID;
     }

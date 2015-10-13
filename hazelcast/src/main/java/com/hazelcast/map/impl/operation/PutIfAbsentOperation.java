@@ -52,9 +52,4 @@ public class PutIfAbsentOperation extends BasePutOperation {
     public boolean shouldBackup() {
         return successful && recordStore.getRecord(dataKey) != null;
     }
-
-    @Override
-    public String toString() {
-        return "PutIfAbsentOperation{" + name + "}";
-    }
 }

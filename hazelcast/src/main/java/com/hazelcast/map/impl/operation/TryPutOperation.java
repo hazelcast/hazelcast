@@ -56,9 +56,4 @@ public class TryPutOperation extends BasePutOperation {
     public Object getResponse() {
         return successful;
     }
-
-    @Override
-    public String toString() {
-        return "TryPutOperation{" + name + "}";
-    }
 }

@@ -239,15 +239,13 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     }
 
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("Backup");
-        sb.append("{backupOp=").append(backupOp);
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", backupOp=").append(backupOp);
         sb.append(", backupOpData=").append(backupOpData);
         sb.append(", originalCaller=").append(originalCaller);
         sb.append(", version=").append(Arrays.toString(replicaVersions));
         sb.append(", sync=").append(sync);
-        sb.append('}');
-        return sb.toString();
     }
 }
