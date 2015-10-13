@@ -16,12 +16,10 @@
 
 package com.hazelcast.map.impl.client;
 
-import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.ContainsValueOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -36,22 +34,21 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.Map;
 
-public class MapContainsValueRequest extends AllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
+public class MapContainsValueRequest extends MapAllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
 
-    private String name;
     private Data value;
 
     public MapContainsValueRequest() {
     }
 
     public MapContainsValueRequest(String name, Data value) {
-        this.name = name;
+        super(name);
         this.value = value;
     }
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new ContainsValueOperationFactory(name, value);
+        return getOperationProvider().createContainsValueOperationFactory(name, value);
     }
 
     @Override

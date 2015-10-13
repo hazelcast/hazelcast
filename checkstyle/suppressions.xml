@@ -450,12 +450,16 @@
     <suppress checks="JavadocMethod" files="com/hazelcast/map/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/map/"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/recordstore/RecordStore"/>
+    <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/recordstore/AbstractEvictableRecordStore"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/recordstore/DefaultRecordStore"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/proxy/MapProxyImpl"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>
+    <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/operation/MapOperationProvider"/>
+    <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/operation/DefaultMapOperationProvider"/>
     <suppress checks="ClassFanOutComplexityCheck" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>
     <suppress checks="ClassFanOutComplexityCheck" files="com/hazelcast/map/impl/MapServiceContextImpl"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/operation/DefaultMapOperationProvider"/>
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/map/impl/client/AbstractTxnMapRequest"/>
     <suppress checks="MethodCount|ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/MapServiceContextImpl"/>
     <suppress checks="MethodCount" files="com/hazelcast/map/impl/MapServiceContext"/>

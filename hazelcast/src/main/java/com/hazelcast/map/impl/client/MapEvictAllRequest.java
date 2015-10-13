@@ -16,14 +16,12 @@
 
 package com.hazelcast.map.impl.client;
 
-import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.EvictAllOperationFactory;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -31,6 +29,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
+
 import java.io.IOException;
 import java.security.Permission;
 import java.util.Map;
@@ -38,15 +37,14 @@ import java.util.Map;
 /**
  * Evict all entries request used by clients.
  */
-public class MapEvictAllRequest extends AllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
+public class MapEvictAllRequest extends MapAllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
 
-    private String name;
 
     public MapEvictAllRequest() {
     }
 
     public MapEvictAllRequest(String name) {
-        this.name = name;
+        super(name);
     }
 
     public String getServiceName() {
@@ -71,7 +69,7 @@ public class MapEvictAllRequest extends AllPartitionsClientRequest implements Po
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new EvictAllOperationFactory(name);
+        return getOperationProvider().createEvictAllOperationFactory(name);
     }
 
     @Override

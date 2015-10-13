@@ -19,7 +19,8 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.operation.ReplaceOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
@@ -31,7 +32,8 @@ public class MapReplaceMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        ReplaceOperation op = new ReplaceOperation(parameters.name, parameters.key, parameters.value);
+        MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
+        MapOperation op = operationProvider.createReplaceOperation(parameters.name, parameters.key, parameters.value);
         op.setThreadId(parameters.threadId);
         return op;
     }

@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class PutAllBackupOperation extends AbstractMapOperation implements PartitionAwareOperation, BackupOperation,
+public class PutAllBackupOperation extends MapOperation implements PartitionAwareOperation, BackupOperation,
         MutatingOperation {
 
     private List<Map.Entry<Data, Data>> entries;

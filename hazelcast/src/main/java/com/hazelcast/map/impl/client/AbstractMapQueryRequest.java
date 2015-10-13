@@ -22,6 +22,8 @@ import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.core.Member;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
 import com.hazelcast.map.impl.query.QueryResult;
@@ -31,6 +33,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.util.BitSetUtils;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
@@ -55,10 +58,10 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
 
     private String name;
 
-    public AbstractMapQueryRequest() {
+    AbstractMapQueryRequest() {
     }
 
-    public AbstractMapQueryRequest(String name, IterationType iterationType) {
+    AbstractMapQueryRequest(String name, IterationType iterationType) {
         this.name = name;
         this.iterationType = iterationType;
     }
@@ -97,13 +100,20 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
     }
 
     private List<Future> createInvocations(Collection<Member> members, Predicate predicate) {
+        String mapName = this.name;
         List<Future> futures = new ArrayList<Future>(members.size());
         for (Member member : members) {
-            Future future = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate, iterationType),
-                    member.getAddress()).invoke();
+            Operation operation = new QueryOperation(mapName, predicate, iterationType);
+            Future future = createInvocationBuilder(SERVICE_NAME, operation, member.getAddress()).invoke();
             futures.add(future);
         }
         return futures;
+    }
+
+    private MapOperationProvider getMapOperationProvider(String mapName) {
+        MapService mapService = getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        return mapServiceContext.getMapOperationProvider(mapName);
     }
 
     @SuppressWarnings("unchecked")

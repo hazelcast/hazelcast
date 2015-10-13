@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.map.impl.operation.AbstractMapOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
@@ -30,7 +30,7 @@ import java.io.IOException;
 
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
-public class QueryOperation extends AbstractMapOperation implements ReadonlyOperation {
+public class QueryOperation extends MapOperation implements ReadonlyOperation {
 
     private Predicate predicate;
     private QueryResult result;
@@ -47,7 +47,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
 
     @Override
     public void run() throws Exception {
-        MapQueryEngine queryEngine = mapService.getMapServiceContext().getMapQueryEngine();
+        MapQueryEngine queryEngine = mapService.getMapServiceContext().getMapQueryEngine(name);
         result = queryEngine.queryLocalPartitions(name, predicate, iterationType);
     }
 

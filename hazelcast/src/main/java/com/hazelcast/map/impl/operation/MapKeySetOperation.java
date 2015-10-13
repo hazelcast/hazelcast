@@ -27,7 +27,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import java.util.Set;
 
-public class MapKeySetOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class MapKeySetOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
     private Set<Data> keySet;
 
     public MapKeySetOperation(String name) {

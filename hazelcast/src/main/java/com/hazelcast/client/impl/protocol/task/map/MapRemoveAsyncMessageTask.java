@@ -18,11 +18,11 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveAsyncCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.RemoveOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -31,7 +31,7 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 public class MapRemoveAsyncMessageTask
-        extends AbstractPartitionMessageTask<MapRemoveAsyncCodec.RequestParameters> {
+        extends AbstractMapPartitionMessageTask<MapRemoveAsyncCodec.RequestParameters> {
 
     protected transient long startTime;
 
@@ -57,7 +57,8 @@ public class MapRemoveAsyncMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        RemoveOperation op = new RemoveOperation(parameters.name, parameters.key);
+        MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
+        MapOperation op = operationProvider.createRemoveOperation(parameters.name, parameters.key);
         op.setThreadId(parameters.threadId);
         return op;
     }

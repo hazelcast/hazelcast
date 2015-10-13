@@ -18,17 +18,19 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-public abstract class AbstractMapOperation extends AbstractNamedOperation {
+public abstract class MapOperation extends AbstractNamedOperation {
 
     protected transient MapService mapService;
     protected transient MapContainer mapContainer;
+    protected transient MapServiceContext mapServiceContext;
 
-    public AbstractMapOperation() {
+    public MapOperation() {
     }
 
-    public AbstractMapOperation(String name) {
+    public MapOperation(String name) {
         this.name = name;
     }
 
@@ -43,10 +45,16 @@ public abstract class AbstractMapOperation extends AbstractNamedOperation {
     }
 
     @Override
-    public final void beforeRun() throws Exception {
+    public void beforeRun() throws Exception {
+        super.beforeRun();
         mapService = getService();
-        mapContainer = mapService.getMapServiceContext().getMapContainer(name);
+        mapServiceContext = mapService.getMapServiceContext();
+        mapContainer = mapServiceContext.getMapContainer(name);
         innerBeforeRun();
+    }
+
+
+    public void innerBeforeRun() throws Exception {
     }
 
     @Override
@@ -54,10 +62,15 @@ public abstract class AbstractMapOperation extends AbstractNamedOperation {
         return MapService.SERVICE_NAME;
     }
 
-    public void innerBeforeRun() {
-    }
-
     @Override
     public void afterRun() throws Exception {
+    }
+
+    public void setThreadId(long threadId) {
+        throw new UnsupportedOperationException();
+    }
+
+    public long getThreadId() {
+        throw new UnsupportedOperationException();
     }
 }

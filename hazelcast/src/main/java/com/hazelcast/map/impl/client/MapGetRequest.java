@@ -16,13 +16,12 @@
 
 package com.hazelcast.map.impl.client;
 
-import com.hazelcast.client.impl.client.KeyBasedClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.GetOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -32,11 +31,11 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 
-public class MapGetRequest extends KeyBasedClientRequest implements Portable, RetryableRequest, SecureRequest {
+public class MapGetRequest extends MapKeyBasedClientRequest implements Portable, RetryableRequest, SecureRequest {
 
-    private String name;
     private Data key;
     private boolean async;
     private transient long startTime;
@@ -46,12 +45,12 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
     }
 
     public MapGetRequest(String name, Data key) {
-        this.name = name;
+        super(name);
         this.key = key;
     }
 
     public MapGetRequest(String name, Data key, long threadId) {
-        this.name = name;
+        super(name);
         this.key = key;
         this.threadId = threadId;
     }
@@ -62,7 +61,7 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
 
     @Override
     protected Operation prepareOperation() {
-        GetOperation operation = new GetOperation(name, key);
+        MapOperation operation = getOperationProvider().createGetOperation(name, key);
         operation.setThreadId(threadId);
         return operation;
     }
@@ -135,6 +134,6 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
 
     @Override
     public Object[] getParameters() {
-        return new Object[] {key};
+        return new Object[]{key};
     }
 }

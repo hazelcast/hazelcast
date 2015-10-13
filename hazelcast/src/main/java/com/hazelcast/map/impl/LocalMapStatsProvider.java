@@ -57,9 +57,9 @@ public class LocalMapStatsProvider {
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
 
-    public LocalMapStatsProvider(MapServiceContext mapServiceContext, NodeEngine nodeEngine) {
+    public LocalMapStatsProvider(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
-        this.nodeEngine = nodeEngine;
+        this.nodeEngine = mapServiceContext.getNodeEngine();
     }
 
     public LocalMapStatsImpl getLocalMapStatsImpl(String name) {

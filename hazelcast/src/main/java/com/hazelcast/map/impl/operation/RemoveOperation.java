@@ -21,9 +21,9 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public final class RemoveOperation extends BaseRemoveOperation implements IdentifiedDataSerializable {
+public class RemoveOperation extends BaseRemoveOperation implements IdentifiedDataSerializable {
 
-    private boolean successful;
+    protected boolean successful;
 
     public RemoveOperation() {
     }

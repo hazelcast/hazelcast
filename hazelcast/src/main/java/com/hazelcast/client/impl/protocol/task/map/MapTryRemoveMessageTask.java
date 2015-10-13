@@ -18,10 +18,10 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapTryRemoveCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.TryRemoveOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -31,7 +31,7 @@ import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
 public class MapTryRemoveMessageTask
-        extends AbstractPartitionMessageTask<MapTryRemoveCodec.RequestParameters> {
+        extends AbstractMapPartitionMessageTask<MapTryRemoveCodec.RequestParameters> {
 
     public MapTryRemoveMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -49,7 +49,9 @@ public class MapTryRemoveMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        TryRemoveOperation operation = new TryRemoveOperation(parameters.name, parameters.key, parameters.timeout);
+        MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
+        MapOperation operation = operationProvider.createTryRemoveOperation(parameters.name,
+                parameters.key, parameters.timeout);
         operation.setThreadId(parameters.threadId);
         return operation;
     }

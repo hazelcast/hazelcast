@@ -18,12 +18,11 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapExecuteWithPredicateCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateOperationFactory;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -37,7 +36,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class MapExecuteWithPredicateMessageTask
-        extends AbstractAllPartitionsMessageTask<MapExecuteWithPredicateCodec.RequestParameters> {
+        extends AbstractMapAllPartitionsMessageTask<MapExecuteWithPredicateCodec.RequestParameters> {
 
     public MapExecuteWithPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,9 +44,11 @@ public class MapExecuteWithPredicateMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
+        MapOperationProvider operationProvider = getOperationProvider(parameters.name);
         EntryProcessor entryProcessor = serializationService.toObject(parameters.entryProcessor);
         Predicate predicate = serializationService.toObject(parameters.predicate);
-        return new PartitionWideEntryWithPredicateOperationFactory(parameters.name, entryProcessor, predicate);
+        return operationProvider.
+                createPartitionWideEntryWithPredicateOperationFactory(parameters.name, entryProcessor, predicate);
     }
 
     @Override

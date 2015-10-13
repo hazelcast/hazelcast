@@ -18,10 +18,10 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveIfSameCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.RemoveIfSameOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -30,7 +30,7 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 public class MapRemoveIfSameMessageTask
-        extends AbstractPartitionMessageTask<MapRemoveIfSameCodec.RequestParameters> {
+        extends AbstractMapPartitionMessageTask<MapRemoveIfSameCodec.RequestParameters> {
 
     public MapRemoveIfSameMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -38,7 +38,8 @@ public class MapRemoveIfSameMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        RemoveIfSameOperation op = new RemoveIfSameOperation(parameters.name, parameters.key, parameters.value);
+        MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
+        MapOperation op = operationProvider.createRemoveIfSameOperation(parameters.name, parameters.key, parameters.value);
         op.setThreadId(parameters.threadId);
         return op;
     }

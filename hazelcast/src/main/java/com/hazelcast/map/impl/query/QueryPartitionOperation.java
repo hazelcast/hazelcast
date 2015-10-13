@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.operation.AbstractMapOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
@@ -27,7 +27,7 @@ import com.hazelcast.util.IterationType;
 
 import java.io.IOException;
 
-public class QueryPartitionOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class QueryPartitionOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private Predicate predicate;
     private QueryResult result;
@@ -45,7 +45,7 @@ public class QueryPartitionOperation extends AbstractMapOperation implements Par
     @Override
     public void run() {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine();
+        MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine(name);
         result = queryEngine.queryLocalPartition(name, predicate, getPartitionId(), iterationType);
     }
 

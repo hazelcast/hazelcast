@@ -44,7 +44,7 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
     }
 
     @Override
-    public void innerBeforeRun() {
+    public void innerBeforeRun() throws Exception {
         super.innerBeforeRun();
         final SerializationService serializationService = getNodeEngine().getSerializationService();
         final ManagedContext managedContext = serializationService.getManagedContext();

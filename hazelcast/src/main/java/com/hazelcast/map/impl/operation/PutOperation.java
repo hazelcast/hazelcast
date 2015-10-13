@@ -20,7 +20,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public final class PutOperation extends BasePutOperation implements IdentifiedDataSerializable {
+public class PutOperation extends BasePutOperation implements IdentifiedDataSerializable {
 
     public PutOperation() {
     }

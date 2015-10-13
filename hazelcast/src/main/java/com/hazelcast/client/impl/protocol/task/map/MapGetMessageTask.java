@@ -18,11 +18,11 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.GetOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -31,7 +31,7 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 public class MapGetMessageTask
-        extends AbstractPartitionMessageTask<MapGetCodec.RequestParameters> {
+        extends AbstractMapPartitionMessageTask<MapGetCodec.RequestParameters> {
 
     private transient long startTime;
 
@@ -51,7 +51,8 @@ public class MapGetMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        GetOperation operation = new GetOperation(parameters.name, parameters.key);
+        MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
+        MapOperation operation = operationProvider.createGetOperation(parameters.name, parameters.key);
         operation.setThreadId(parameters.threadId);
         return operation;
     }

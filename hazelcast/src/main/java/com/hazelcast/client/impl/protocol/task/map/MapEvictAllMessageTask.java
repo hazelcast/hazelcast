@@ -18,12 +18,11 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapEvictAllCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.operation.EvictAllOperationFactory;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
@@ -34,7 +33,7 @@ import java.security.Permission;
 import java.util.Map;
 
 public class MapEvictAllMessageTask
-        extends AbstractAllPartitionsMessageTask<MapEvictAllCodec.RequestParameters> {
+        extends AbstractMapAllPartitionsMessageTask<MapEvictAllCodec.RequestParameters> {
 
     public MapEvictAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,7 +41,8 @@ public class MapEvictAllMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new EvictAllOperationFactory(parameters.name);
+        MapOperationProvider operationProvider = getOperationProvider(parameters.name);
+        return operationProvider.createEvictAllOperationFactory(parameters.name);
     }
 
     @Override

@@ -89,6 +89,9 @@ public final class FactoryIdHelper {
     public static final String RINGBUFFER_DS_FACTORY = "hazelcast.serialization.ds.ringbuffer";
     public static final int RINGBUFFER_DS_FACTORY_ID = -29;
 
+    public static final String ENTERPRISE_MAP_DS_FACTORY = "hazelcast.serialization.ds.enterprise.map";
+    public static final int ENTERPRISE_MAP_DS_FACTORY_ID = -30;
+
     public static final String HIBERNATE_DS_FACTORY = "hazelcast.serialization.ds.hibernate";
     public static final String WEB_DS_FACTORY = "hazelcast.serialization.ds.web";
 

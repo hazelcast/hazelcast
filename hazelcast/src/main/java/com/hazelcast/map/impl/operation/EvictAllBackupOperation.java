@@ -25,7 +25,7 @@ import com.hazelcast.spi.impl.MutatingOperation;
 /**
  * Operation which evicts all keys except locked ones.
  */
-public class EvictAllBackupOperation extends AbstractMapOperation implements BackupOperation, MutatingOperation,
+public class EvictAllBackupOperation extends MapOperation implements BackupOperation, MutatingOperation,
         DataSerializable {
 
     public EvictAllBackupOperation() {

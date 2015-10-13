@@ -16,12 +16,11 @@
 
 package com.hazelcast.map.impl.client;
 
-import com.hazelcast.client.impl.client.KeyBasedClientRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.RemoveOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,12 +30,12 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 import java.security.Permission;
 
-public class MapRemoveRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
+public class MapRemoveRequest extends MapKeyBasedClientRequest implements Portable, SecureRequest {
 
-    protected String name;
     protected Data key;
     protected long threadId;
     protected boolean async;
@@ -46,7 +45,7 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
     }
 
     public MapRemoveRequest(String name, Data key, long threadId) {
-        this.name = name;
+        super(name);
         this.key = key;
         this.threadId = threadId;
     }
@@ -80,7 +79,7 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
     }
 
     protected Operation prepareOperation() {
-        RemoveOperation op = new RemoveOperation(name, key);
+        MapOperation op = getOperationProvider().createRemoveOperation(name, key);
         op.setThreadId(threadId);
         return op;
     }
@@ -128,6 +127,6 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
 
     @Override
     public Object[] getParameters() {
-        return new Object[] {key};
+        return new Object[]{key};
     }
 }

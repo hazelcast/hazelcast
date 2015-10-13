@@ -23,12 +23,12 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 
 import java.util.Map;
 import java.util.Set;
-import com.hazelcast.spi.ReadonlyOperation;
 
-public class MapEntrySetOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class MapEntrySetOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     //todo: using a Set here is probably a bad choice since there are no duplicates, but sending a set over the
     // wire is expensive since the hashmap needs to be rebuild on the otherside.

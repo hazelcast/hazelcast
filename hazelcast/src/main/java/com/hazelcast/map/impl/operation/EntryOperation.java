@@ -67,7 +67,9 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     @Override
-    public void innerBeforeRun() {
+    public void innerBeforeRun() throws Exception {
+        super.innerBeforeRun();
+
         final SerializationService serializationService = getNodeEngine().getSerializationService();
         final ManagedContext managedContext = serializationService.getManagedContext();
         managedContext.initialize(entryProcessor);

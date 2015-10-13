@@ -16,12 +16,11 @@
 
 package com.hazelcast.map.impl.client;
 
-import com.hazelcast.client.impl.client.KeyBasedClientRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.PutOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,15 +30,15 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
-public class MapPutRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
+public class MapPutRequest extends MapKeyBasedClientRequest implements Portable, SecureRequest {
 
     protected Data key;
     protected Data value;
-    protected String name;
     protected long threadId;
     protected long ttl;
     protected transient long startTime;
@@ -48,20 +47,16 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
     public MapPutRequest() {
     }
 
+    public MapPutRequest(String name, Data key, Data value, long threadId) {
+        this(name, key, value, threadId, -1L);
+    }
+
     public MapPutRequest(String name, Data key, Data value, long threadId, long ttl) {
-        this.name = name;
+        super(name);
         this.key = key;
         this.value = value;
         this.threadId = threadId;
         this.ttl = ttl;
-    }
-
-    public MapPutRequest(String name, Data key, Data value, long threadId) {
-        this.name = name;
-        this.key = key;
-        this.value = value;
-        this.threadId = threadId;
-        this.ttl = -1;
     }
 
     public int getFactoryId() {
@@ -94,9 +89,9 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
 
     @Override
     protected Operation prepareOperation() {
-        PutOperation op = new PutOperation(name, key, value, ttl);
-        op.setThreadId(threadId);
-        return op;
+        MapOperation operation = getOperationProvider().createPutOperation(name, key, value, ttl);
+        operation.setThreadId(threadId);
+        return operation;
     }
 
     public void setAsAsync() {
@@ -147,8 +142,8 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
     @Override
     public Object[] getParameters() {
         if (ttl == -1) {
-            return new Object[] {key, value};
+            return new Object[]{key, value};
         }
-        return new Object[] {key, value, ttl, TimeUnit.MILLISECONDS};
+        return new Object[]{key, value, ttl, TimeUnit.MILLISECONDS};
     }
 }

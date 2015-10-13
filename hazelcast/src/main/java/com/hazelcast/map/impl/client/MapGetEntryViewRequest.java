@@ -16,12 +16,11 @@
 
 package com.hazelcast.map.impl.client;
 
-import com.hazelcast.client.impl.client.KeyBasedClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.GetEntryViewOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,12 +30,12 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 import java.security.Permission;
 
-public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Portable, RetryableRequest, SecureRequest {
+public class MapGetEntryViewRequest extends MapKeyBasedClientRequest implements Portable, RetryableRequest, SecureRequest {
 
-    private String name;
     private Data key;
     private long threadId;
 
@@ -44,7 +43,7 @@ public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Por
     }
 
     public MapGetEntryViewRequest(String name, Data key, long threadId) {
-        this.name = name;
+        super(name);
         this.key = key;
         this.threadId = threadId;
     }
@@ -54,7 +53,7 @@ public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Por
     }
 
     protected Operation prepareOperation() {
-        GetEntryViewOperation op = new GetEntryViewOperation(name, key);
+        MapOperation op = getOperationProvider().createGetEntryViewOperation(name, key);
         op.setThreadId(threadId);
         return op;
     }
@@ -105,6 +104,6 @@ public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Por
 
     @Override
     public Object[] getParameters() {
-        return new Object[] {key};
+        return new Object[]{key};
     }
 }

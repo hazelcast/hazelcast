@@ -32,7 +32,7 @@ import java.io.IOException;
 /**
  * Operation which evicts all keys except locked ones.
  */
-public class EvictAllOperation extends AbstractMapOperation implements BackupAwareOperation,
+public class EvictAllOperation extends MapOperation implements BackupAwareOperation,
         MutatingOperation, PartitionAwareOperation {
 
     private boolean shouldRunOnBackup;

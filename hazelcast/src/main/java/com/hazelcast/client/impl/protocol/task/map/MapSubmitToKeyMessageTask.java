@@ -18,11 +18,11 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapSubmitToKeyCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.EntryOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -32,7 +32,7 @@ import java.security.Permission;
 
 
 public class MapSubmitToKeyMessageTask
-        extends AbstractPartitionMessageTask<MapSubmitToKeyCodec.RequestParameters> {
+        extends AbstractMapPartitionMessageTask<MapSubmitToKeyCodec.RequestParameters> {
 
     public MapSubmitToKeyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -40,8 +40,9 @@ public class MapSubmitToKeyMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        final EntryProcessor processor = serializationService.toObject(parameters.entryProcessor);
-        EntryOperation op = new EntryOperation(parameters.name, parameters.key, processor);
+        EntryProcessor processor = serializationService.toObject(parameters.entryProcessor);
+        MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
+        MapOperation op = operationProvider.createEntryOperation(parameters.name, parameters.key, processor);
         op.setThreadId(parameters.threadId);
         return op;
     }

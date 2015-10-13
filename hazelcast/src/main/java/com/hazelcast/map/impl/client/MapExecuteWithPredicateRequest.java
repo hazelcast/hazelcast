@@ -16,12 +16,10 @@
 
 package com.hazelcast.map.impl.client;
 
-import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -36,8 +34,7 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.Map;
 
-public class MapExecuteWithPredicateRequest extends AllPartitionsClientRequest {
-    private String name;
+public class MapExecuteWithPredicateRequest extends MapAllPartitionsClientRequest {
     private EntryProcessor processor;
     private Predicate predicate;
 
@@ -45,14 +42,15 @@ public class MapExecuteWithPredicateRequest extends AllPartitionsClientRequest {
     }
 
     public MapExecuteWithPredicateRequest(String name, EntryProcessor processor, Predicate predicate) {
-        this.name = name;
+        super(name);
         this.processor = processor;
         this.predicate = predicate;
     }
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new PartitionWideEntryWithPredicateOperationFactory(name, processor, predicate);
+        return getOperationProvider()
+                .createPartitionWideEntryWithPredicateOperationFactory(name, processor, predicate);
     }
 
     @Override
