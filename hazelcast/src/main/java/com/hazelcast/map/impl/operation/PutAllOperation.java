@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class PutAllOperation extends AbstractMapOperation implements PartitionAwareOperation,
+public class PutAllOperation extends MapOperation implements PartitionAwareOperation,
         BackupAwareOperation, MutatingOperation {
 
     private MapEntries mapEntries;

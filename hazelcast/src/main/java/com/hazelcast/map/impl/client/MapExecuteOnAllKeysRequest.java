@@ -16,13 +16,11 @@
 
 package com.hazelcast.map.impl.client;
 
-import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.PartitionWideEntryOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -37,22 +35,21 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.Map;
 
-public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest implements Portable, SecureRequest {
+public class MapExecuteOnAllKeysRequest extends MapAllPartitionsClientRequest implements Portable, SecureRequest {
 
-    private String name;
     private EntryProcessor processor;
 
     public MapExecuteOnAllKeysRequest() {
     }
 
     public MapExecuteOnAllKeysRequest(String name, EntryProcessor processor) {
-        this.name = name;
+        super(name);
         this.processor = processor;
     }
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new PartitionWideEntryOperationFactory(name, processor);
+        return getOperationProvider().createPartitionWideEntryOperationFactory(name, processor);
     }
 
     @Override

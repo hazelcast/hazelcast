@@ -17,11 +17,12 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.MergeOperation;
-import com.hazelcast.map.impl.operation.WanOriginatedDeleteOperation;
 import com.hazelcast.map.impl.wan.MapReplicationRemove;
 import com.hazelcast.map.impl.wan.MapReplicationUpdate;
+import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.util.ExceptionUtil;
@@ -52,8 +53,11 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
     }
 
     private void handleRemove(MapReplicationRemove replicationRemove) {
-         WanOriginatedDeleteOperation operation = new WanOriginatedDeleteOperation(replicationRemove.getMapName(),
+        String mapName = replicationRemove.getMapName();
+        MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
+        MapOperation operation = operationProvider.createWanOriginatedDeleteOperation(replicationRemove.getMapName(),
                 replicationRemove.getKey());
+
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
             Future f = nodeEngine.getOperationService()

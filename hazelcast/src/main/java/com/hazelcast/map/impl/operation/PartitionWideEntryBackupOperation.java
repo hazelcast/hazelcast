@@ -40,19 +40,19 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
 
     @Override
     public void run() {
-        final long now = getNow();
+        long now = getNow();
 
-        final Iterator<Record> iterator = recordStore.iterator(now, true);
+        Iterator<Record> iterator = recordStore.iterator(now, true);
         while (iterator.hasNext()) {
-            final Record record = iterator.next();
-            final Data dataKey = record.getKey();
-            final Object oldValue = record.getValue();
+            Record record = iterator.next();
+            Data dataKey = record.getKey();
+            Object oldValue = record.getValue();
 
             if (!applyPredicate(dataKey, oldValue)) {
                 continue;
             }
-            final Map.Entry entry = createMapEntry(dataKey, oldValue);
 
+            Map.Entry entry = createMapEntry(dataKey, oldValue);
             processBackup(entry);
 
             if (noOp(entry, oldValue)) {

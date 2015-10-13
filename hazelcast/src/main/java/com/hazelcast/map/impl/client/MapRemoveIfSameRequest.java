@@ -16,11 +16,10 @@
 
 package com.hazelcast.map.impl.client;
 
-import com.hazelcast.client.impl.client.KeyBasedClientRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.RemoveIfSameOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -30,12 +29,12 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 import java.security.Permission;
 
-public class MapRemoveIfSameRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
+public class MapRemoveIfSameRequest extends MapKeyBasedClientRequest implements Portable, SecureRequest {
 
-    protected String name;
     protected Data key;
     protected Data value;
     protected long threadId;
@@ -44,7 +43,7 @@ public class MapRemoveIfSameRequest extends KeyBasedClientRequest implements Por
     }
 
     public MapRemoveIfSameRequest(String name, Data key, Data value, long threadId) {
-        this.name = name;
+        super(name);
         this.key = key;
         this.value = value;
         this.threadId = threadId;
@@ -63,7 +62,7 @@ public class MapRemoveIfSameRequest extends KeyBasedClientRequest implements Por
     }
 
     protected Operation prepareOperation() {
-        RemoveIfSameOperation op = new RemoveIfSameOperation(name, key, value);
+        MapOperation op = getOperationProvider().createRemoveIfSameOperation(name, key, value);
         op.setThreadId(threadId);
         return op;
     }
@@ -104,6 +103,6 @@ public class MapRemoveIfSameRequest extends KeyBasedClientRequest implements Por
 
     @Override
     public Object[] getParameters() {
-        return new Object[] {key, value};
+        return new Object[]{key, value};
     }
 }

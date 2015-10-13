@@ -19,7 +19,8 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapPutTransientCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.operation.PutTransientOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
@@ -34,7 +35,8 @@ public class MapPutTransientMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        PutTransientOperation op = new PutTransientOperation(parameters.name, parameters.key,
+        MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
+        MapOperation op = operationProvider.createPutTransientOperation(parameters.name, parameters.key,
                 parameters.value, parameters.ttl);
         op.setThreadId(parameters.threadId);
         return op;

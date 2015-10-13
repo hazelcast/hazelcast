@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.record.Record;
  *
  * @param <T> : An instance of {@link com.hazelcast.map.impl.record.Record}.
  */
-class MapSizeEstimator<T extends Record> implements SizeEstimator<T> {
+public class MapSizeEstimator<T extends Record> implements SizeEstimator<T> {
 
     private volatile long size;
 

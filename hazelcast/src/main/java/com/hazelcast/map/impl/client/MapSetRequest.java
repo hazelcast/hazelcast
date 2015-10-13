@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.client;
 
 import com.hazelcast.map.impl.MapPortableHook;
-import com.hazelcast.map.impl.operation.SetOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
@@ -41,7 +41,7 @@ public class MapSetRequest extends MapPutRequest {
     }
 
     protected Operation prepareOperation() {
-        SetOperation op = new SetOperation(name, key, value, ttl);
+        MapOperation op = getOperationProvider().createSetOperation(name, key, value, ttl);
         op.setThreadId(threadId);
         return op;
     }

@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class GetAllOperation extends AbstractMapOperation implements ReadonlyOperation, PartitionAwareOperation {
+public class GetAllOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation {
 
     private Set<Data> keys = new HashSet<Data>();
     private MapEntries entries;

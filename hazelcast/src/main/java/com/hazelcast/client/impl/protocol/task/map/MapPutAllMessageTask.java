@@ -18,11 +18,10 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.PutAllOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
@@ -33,7 +32,7 @@ import java.security.Permission;
 import java.util.Map;
 
 public class MapPutAllMessageTask
-        extends AbstractPartitionMessageTask<MapPutAllCodec.RequestParameters> {
+        extends AbstractMapPartitionMessageTask<MapPutAllCodec.RequestParameters> {
 
     public MapPutAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -41,12 +40,13 @@ public class MapPutAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        final MapEntries mapEntries = new MapEntries();
+        MapEntries mapEntries = new MapEntries();
         for (Map.Entry<Data, Data> entry : parameters.entries.entrySet()) {
             mapEntries.add(entry.getKey(), entry.getValue());
         }
-        PutAllOperation operation = new PutAllOperation(parameters.name, mapEntries);
-        return operation;
+
+        MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
+        return operationProvider.createPutAllOperation(parameters.name, mapEntries, false);
     }
 
     @Override

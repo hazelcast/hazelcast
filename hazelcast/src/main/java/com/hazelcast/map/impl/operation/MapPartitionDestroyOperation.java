@@ -17,8 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 
-import java.io.IOException;
-
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.PartitionContainer;
@@ -28,6 +26,8 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
+import java.io.IOException;
+
 public class MapPartitionDestroyOperation extends Operation implements PartitionAwareOperation, BackupAwareOperation {
     private final PartitionContainer partitionContainer;
     private final String mapName;
@@ -36,7 +36,6 @@ public class MapPartitionDestroyOperation extends Operation implements Partition
     public MapPartitionDestroyOperation(PartitionContainer partitionContainer, String mapName) {
         this.partitionContainer = partitionContainer;
         this.mapName = mapName;
-        this.setPartitionId(partitionContainer.getPartitionId());
     }
 
     @Override

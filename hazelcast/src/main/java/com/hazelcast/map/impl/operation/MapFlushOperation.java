@@ -21,7 +21,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
-public class MapFlushOperation extends AbstractMapOperation implements PartitionAwareOperation, MutatingOperation {
+public class MapFlushOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
 
     public MapFlushOperation() {
     }

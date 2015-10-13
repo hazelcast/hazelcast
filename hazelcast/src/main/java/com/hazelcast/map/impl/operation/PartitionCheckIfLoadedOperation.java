@@ -25,7 +25,7 @@ import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
-public class PartitionCheckIfLoadedOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class PartitionCheckIfLoadedOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private boolean isFinished;
     private boolean doLoad;

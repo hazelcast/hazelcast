@@ -26,7 +26,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import java.util.Collection;
 
-public class MapValuesOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class MapValuesOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
     private Collection<Data> values;
 
     public MapValuesOperation(String name) {

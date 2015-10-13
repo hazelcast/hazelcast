@@ -18,12 +18,11 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapExecuteOnAllKeysCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.PartitionWideEntryOperationFactory;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
@@ -36,7 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class MapExecuteOnAllKeysMessageTask
-        extends AbstractAllPartitionsMessageTask<MapExecuteOnAllKeysCodec.RequestParameters> {
+        extends AbstractMapAllPartitionsMessageTask<MapExecuteOnAllKeysCodec.RequestParameters> {
 
     public MapExecuteOnAllKeysMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -44,8 +43,9 @@ public class MapExecuteOnAllKeysMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
+        MapOperationProvider operationProvider = getOperationProvider(parameters.name);
         EntryProcessor entryProcessor = serializationService.toObject(parameters.entryProcessor);
-        return new PartitionWideEntryOperationFactory(parameters.name, entryProcessor);
+        return operationProvider.createPartitionWideEntryOperationFactory(parameters.name, entryProcessor);
     }
 
     @Override

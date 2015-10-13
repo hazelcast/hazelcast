@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-import static com.hazelcast.map.impl.SizeEstimators.createMapSizeEstimator;
-
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
@@ -25,6 +23,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.MapSizeEstimator;
 import com.hazelcast.map.impl.SizeEstimator;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
@@ -73,7 +72,7 @@ abstract class AbstractRecordStore implements RecordStore {
         this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
         this.name = mapContainer.getName();
         this.recordFactory = mapContainer.getRecordFactory();
-        this.sizeEstimator = createMapSizeEstimator();
+        this.sizeEstimator = new MapSizeEstimator();
     }
 
     @Override

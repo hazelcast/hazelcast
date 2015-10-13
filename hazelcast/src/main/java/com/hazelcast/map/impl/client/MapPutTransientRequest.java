@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.client;
 
 import com.hazelcast.map.impl.MapPortableHook;
-import com.hazelcast.map.impl.operation.PutTransientOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
@@ -41,7 +41,7 @@ public class MapPutTransientRequest extends MapPutRequest {
     }
 
     protected Operation prepareOperation() {
-        PutTransientOperation op = new PutTransientOperation(name, key, value, ttl);
+        MapOperation op = getOperationProvider().createPutTransientOperation(name, key, value, ttl);
         op.setThreadId(threadId);
         return op;
     }

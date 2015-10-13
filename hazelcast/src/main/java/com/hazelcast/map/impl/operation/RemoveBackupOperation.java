@@ -30,11 +30,11 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
-public final class RemoveBackupOperation extends KeyBasedMapOperation implements BackupOperation, MutatingOperation,
+public class RemoveBackupOperation extends KeyBasedMapOperation implements BackupOperation, MutatingOperation,
         IdentifiedDataSerializable {
 
-    private boolean unlockKey;
-    private boolean wanOriginated;
+    protected boolean unlockKey;
+    protected boolean wanOriginated;
 
     public RemoveBackupOperation() {
     }

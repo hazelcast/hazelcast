@@ -256,7 +256,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
 
         TxnValueWrapper wrapper = txMap.get(keyData);
-        if (wrapper != null && !mapServiceContext.compare(name, wrapper.value, value)) {
+        if (wrapper != null && !isEquals(wrapper.value, value)) {
             return false;
         }
 

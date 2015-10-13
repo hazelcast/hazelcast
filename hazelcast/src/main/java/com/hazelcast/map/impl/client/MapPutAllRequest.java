@@ -16,12 +16,11 @@
 
 package com.hazelcast.map.impl.client;
 
-import com.hazelcast.client.impl.client.PartitionClientRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.PutAllOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,14 +30,14 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 import java.security.Permission;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MapPutAllRequest extends PartitionClientRequest implements Portable, SecureRequest {
+public class MapPutAllRequest extends MapPartitionClientRequest implements Portable, SecureRequest {
 
-    protected String name;
     private MapEntries entries;
     private int partitionId;
 
@@ -46,7 +45,7 @@ public class MapPutAllRequest extends PartitionClientRequest implements Portable
     }
 
     public MapPutAllRequest(String name, MapEntries entries, int partitionId) {
-        this.name = name;
+        super(name);
         this.entries = entries;
         this.partitionId = partitionId;
     }
@@ -61,7 +60,7 @@ public class MapPutAllRequest extends PartitionClientRequest implements Portable
 
     @Override
     protected Operation prepareOperation() {
-        PutAllOperation operation = new PutAllOperation(name, entries);
+        MapOperation operation = getOperationProvider().createPutAllOperation(name, entries, false);
         operation.setPartitionId(partitionId);
         return operation;
     }
@@ -106,7 +105,7 @@ public class MapPutAllRequest extends PartitionClientRequest implements Portable
 
     @Override
     public Object[] getParameters() {
-        final HashMap map = new HashMap();
+        Map map = new HashMap();
         for (Map.Entry<Data, Data> entry : entries) {
             map.put(entry.getKey(), entry.getValue());
         }

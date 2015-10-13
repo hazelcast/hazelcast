@@ -16,18 +16,6 @@
 
 package com.hazelcast.map.impl.query;
 
-import static com.hazelcast.instance.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
-import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
-import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
-import static com.hazelcast.util.FutureUtil.returnWithDeadline;
-import static com.hazelcast.util.SortingUtil.compareAnchor;
-import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
-import static com.hazelcast.util.SortingUtil.getSortedSubList;
-import static java.util.Collections.singletonList;
-import static java.util.concurrent.TimeUnit.MINUTES;
-
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -68,6 +56,18 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+
+import static com.hazelcast.instance.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
+import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
+import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
+import static com.hazelcast.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.util.SortingUtil.compareAnchor;
+import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
+import static com.hazelcast.util.SortingUtil.getSortedSubList;
+import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  * The {@link MapQueryEngine} implementation.
@@ -319,7 +319,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
             throw rethrow(t);
         }
 
-        return  result;
+        return result;
     }
 
     @Override
@@ -556,7 +556,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
 
         @Override
         public Collection<QueryableEntry> call() throws Exception {
-            MapQueryEngineImpl queryEngine = (MapQueryEngineImpl) mapServiceContext.getMapQueryEngine();
+            MapQueryEngineImpl queryEngine = (MapQueryEngineImpl) mapServiceContext.getMapQueryEngine(name);
             return queryEngine.queryTheLocalPartition(name, predicate, partition);
         }
     }

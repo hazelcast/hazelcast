@@ -18,10 +18,9 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapContainsValueCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.ContainsValueOperationFactory;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -31,7 +30,7 @@ import java.security.Permission;
 import java.util.Map;
 
 public class MapContainsValueMessageTask
-        extends AbstractAllPartitionsMessageTask<MapContainsValueCodec.RequestParameters> {
+        extends AbstractMapAllPartitionsMessageTask<MapContainsValueCodec.RequestParameters> {
 
     public MapContainsValueMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -39,7 +38,8 @@ public class MapContainsValueMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new ContainsValueOperationFactory(parameters.name, parameters.value);
+        MapOperationProvider operationProvider = getOperationProvider(parameters.name);
+        return operationProvider.createContainsValueOperationFactory(parameters.name, parameters.value);
     }
 
     @Override

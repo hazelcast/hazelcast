@@ -48,7 +48,7 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
     }
 
     @Override
-    public void innerBeforeRun() {
+    public void innerBeforeRun() throws Exception {
         super.innerBeforeRun();
         final SerializationService serializationService = getNodeEngine().getSerializationService();
         final ManagedContext managedContext = serializationService.getManagedContext();
@@ -57,21 +57,20 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
 
     @Override
     public void run() {
-        final long now = getNow();
+        long now = getNow();
 
-        final Iterator<Record> iterator = recordStore.iterator(now, false);
+        Iterator<Record> iterator = recordStore.iterator(now, false);
         while (iterator.hasNext()) {
-            final Record record = iterator.next();
-            final Data dataKey = record.getKey();
-            final Object oldValue = record.getValue();
+            Record record = iterator.next();
+            Data dataKey = record.getKey();
+            Object oldValue = record.getValue();
 
             if (!applyPredicate(dataKey, oldValue)) {
                 continue;
             }
 
-            final Map.Entry entry = createMapEntry(dataKey, oldValue);
-
-            final Data response = process(entry);
+            Map.Entry entry = createMapEntry(dataKey, oldValue);
+            Data response = process(entry);
 
             addToResponses(dataKey, response);
 

@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -27,7 +26,7 @@ import com.hazelcast.security.permission.MapPermission;
 
 import java.security.Permission;
 
-public abstract class AbstractMapPutMessageTask<P> extends AbstractPartitionMessageTask<P> {
+public abstract class AbstractMapPutMessageTask<P> extends AbstractMapPartitionMessageTask<P> {
 
     protected transient long startTime;
 
@@ -60,4 +59,5 @@ public abstract class AbstractMapPutMessageTask<P> extends AbstractPartitionMess
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
+
 }

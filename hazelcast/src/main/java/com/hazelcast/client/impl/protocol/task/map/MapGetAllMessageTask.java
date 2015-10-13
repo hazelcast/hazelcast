@@ -18,11 +18,10 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapGetAllCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.MapGetAllOperationFactory;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
@@ -35,7 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class MapGetAllMessageTask
-        extends AbstractAllPartitionsMessageTask<MapGetAllCodec.RequestParameters> {
+        extends AbstractMapAllPartitionsMessageTask<MapGetAllCodec.RequestParameters> {
 
 
     public MapGetAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -44,12 +43,13 @@ public class MapGetAllMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new MapGetAllOperationFactory(parameters.name, parameters.keys);
+        MapOperationProvider operationProvider = getOperationProvider(parameters.name);
+        return operationProvider.createGetAllOperationFactory(parameters.name, parameters.keys);
     }
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        HashMap<Data, Data> dataMap = new HashMap<Data, Data>();
+        Map<Data, Data> dataMap = new HashMap<Data, Data>();
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
             MapEntries mapEntries = (MapEntries) mapService.getMapServiceContext().toObject(entry.getValue());

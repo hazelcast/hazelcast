@@ -21,11 +21,14 @@ import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.MergePolicyProvider;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 
 import java.util.Collection;
 import java.util.Map;
@@ -102,9 +105,11 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     MapEventPublisher getMapEventPublisher();
 
-    MapQueryEngine getMapQueryEngine();
+    MapQueryEngine getMapQueryEngine(String name);
 
     LocalMapStatsProvider getLocalMapStatsProvider();
+
+    MapOperationProvider getMapOperationProvider(String name);
 
     /**
      * Sets an {@link EvictionOperator} to this {@link MapServiceContext}.
@@ -114,4 +119,5 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
      */
     void setEvictionOperator(EvictionOperator evictionOperator);
 
+    void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation);
 }

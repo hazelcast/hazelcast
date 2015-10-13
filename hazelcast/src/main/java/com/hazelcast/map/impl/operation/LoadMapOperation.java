@@ -26,7 +26,7 @@ import java.io.IOException;
 /**
  * Triggers map loading from a map store
  */
-public class LoadMapOperation extends AbstractMapOperation {
+public class LoadMapOperation extends MapOperation {
 
     private boolean replaceExistingValues;
 

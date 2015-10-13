@@ -40,7 +40,7 @@ import java.util.List;
 /**
  * Puts records to map which are loaded from map store by {@link com.hazelcast.core.IMap#loadAll}
  */
-public class PutFromLoadAllOperation extends AbstractMapOperation implements PartitionAwareOperation, MutatingOperation,
+public class PutFromLoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation,
         BackupAwareOperation {
 
     private List<Data> keyValueSequence;

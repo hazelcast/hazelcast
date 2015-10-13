@@ -18,11 +18,11 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapGetEntryViewCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
-import com.hazelcast.map.impl.operation.GetEntryViewOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
@@ -32,7 +32,7 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 public class MapGetEntryViewMessageTask
-        extends AbstractPartitionMessageTask<MapGetEntryViewCodec.RequestParameters> {
+        extends AbstractMapPartitionMessageTask<MapGetEntryViewCodec.RequestParameters> {
 
     public MapGetEntryViewMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -40,7 +40,8 @@ public class MapGetEntryViewMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        GetEntryViewOperation op = new GetEntryViewOperation(parameters.name, parameters.key);
+        MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
+        MapOperation op = operationProvider.createGetEntryViewOperation(parameters.name, parameters.key);
         op.setThreadId(parameters.threadId);
         return op;
     }

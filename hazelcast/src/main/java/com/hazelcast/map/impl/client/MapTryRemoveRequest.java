@@ -16,11 +16,10 @@
 
 package com.hazelcast.map.impl.client;
 
-import com.hazelcast.client.impl.client.KeyBasedClientRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.TryRemoveOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -30,13 +29,13 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
-public class MapTryRemoveRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
+public class MapTryRemoveRequest extends MapKeyBasedClientRequest implements Portable, SecureRequest {
 
-    protected String name;
     protected Data key;
     protected long threadId;
     protected long timeout;
@@ -45,7 +44,7 @@ public class MapTryRemoveRequest extends KeyBasedClientRequest implements Portab
     }
 
     public MapTryRemoveRequest(String name, Data key, long threadId, long timeout) {
-        this.name = name;
+        super(name);
         this.key = key;
         this.threadId = threadId;
         this.timeout = timeout;
@@ -66,7 +65,7 @@ public class MapTryRemoveRequest extends KeyBasedClientRequest implements Portab
 
     @Override
     protected Operation prepareOperation() {
-        TryRemoveOperation operation = new TryRemoveOperation(name, key, timeout);
+        MapOperation operation = getOperationProvider().createTryRemoveOperation(name, key, timeout);
         operation.setThreadId(threadId);
         return operation;
     }
@@ -107,6 +106,6 @@ public class MapTryRemoveRequest extends KeyBasedClientRequest implements Portab
 
     @Override
     public Object[] getParameters() {
-        return new Object[] {key, timeout, TimeUnit.MILLISECONDS};
+        return new Object[]{key, timeout, TimeUnit.MILLISECONDS};
     }
 }

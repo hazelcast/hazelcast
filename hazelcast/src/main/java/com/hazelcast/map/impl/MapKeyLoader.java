@@ -20,8 +20,9 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
-import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadStatusOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
@@ -80,15 +81,24 @@ public class MapKeyLoader {
     private boolean hasBackup;
 
     private LoadFinishedFuture loadFinished = new LoadFinishedFuture(true);
+    private MapOperationProvider operationProvider;
 
-    /** Role of this MapKeyLoader **/
+    /**
+     * Role of this MapKeyLoader
+     **/
     enum Role {
         NONE,
-        /** Sends out keys to all other partitions **/
+        /**
+         * Sends out keys to all other partitions
+         **/
         SENDER,
-        /** Receives keys from sender **/
+        /**
+         * Receives keys from sender
+         **/
         RECEIVER,
-        /** Restarts sending if SENDER fails **/
+        /**
+         * Restarts sending if SENDER fails
+         **/
         SENDER_BACKUP
     }
 
@@ -108,7 +118,7 @@ public class MapKeyLoader {
             .withTransition(State.LOADED, State.LOADING);
 
     public MapKeyLoader(String mapName, OperationService opService, InternalPartitionService ps,
-            ExecutionService execService, IFunction<Object, Data> serialize) {
+                        ExecutionService execService, IFunction<Object, Data> serialize) {
         this.mapName = mapName;
         this.opService = opService;
         this.partitionService = ps;
@@ -125,7 +135,7 @@ public class MapKeyLoader {
         role.nextOrStay(newRole);
         state.next(State.LOADING);
 
-        switch(newRole) {
+        switch (newRole) {
             case SENDER:
                 return sendKeys(mapStoreContext, false);
             case SENDER_BACKUP:
@@ -173,7 +183,7 @@ public class MapKeyLoader {
                 public void run() {
                     Operation op = new PartitionCheckIfLoadedOperation(mapName, true);
                     opService.<Boolean>invokeOnPartition(SERVICE_NAME, op, mapNamePartition)
-                        .andThen(ifLoadedCallback());
+                            .andThen(ifLoadedCallback());
                 }
             });
         }
@@ -206,7 +216,9 @@ public class MapKeyLoader {
         }
     }
 
-    /** Triggers key loading on SENDER if it hadn't started. Delays triggering if invoked multiple times. **/
+    /**
+     * Triggers key loading on SENDER if it hadn't started. Delays triggering if invoked multiple times.
+     **/
     public void triggerLoadingWithDelay() {
         if (deleayedTrigger == null) {
             Runnable runnable = new Runnable() {
@@ -286,7 +298,9 @@ public class MapKeyLoader {
         for (Entry<Integer, List<Data>> e : entries) {
             int partitionId = e.getKey();
             List<Data> keys = e.getValue();
-            LoadAllOperation op = new LoadAllOperation(mapName, keys, replaceExistingValues);
+
+            MapOperation op = operationProvider.createLoadAllOperation(mapName, keys, replaceExistingValues);
+
             InternalCompletableFuture<Object> future = opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
             futures.add(future);
         }
@@ -294,7 +308,7 @@ public class MapKeyLoader {
     }
 
     private void sendLoadCompleted(int clusterSize, int partitions,
-            boolean replaceExistingValues, Throwable exception) {
+                                   boolean replaceExistingValues, Throwable exception) {
         for (int partitionId = 0; partitionId < partitions; partitionId++) {
             Operation op = new LoadStatusOperation(mapName, exception);
             opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
@@ -318,6 +332,10 @@ public class MapKeyLoader {
 
     public void setHasBackup(boolean hasBackup) {
         this.hasBackup = hasBackup;
+    }
+
+    public void setMapOperationProvider(MapOperationProvider operationProvider) {
+        this.operationProvider = operationProvider;
     }
 
     private ExecutionCallback<Boolean> ifLoadedCallback() {
