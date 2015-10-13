@@ -81,11 +81,6 @@ public class ReplicateUpdateOperation extends AbstractOperation implements Parti
     }
 
     @Override
-    public Object getResponse() {
-        return true;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         response.writeData(out);
         out.writeUTF(name);

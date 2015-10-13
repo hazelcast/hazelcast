@@ -53,11 +53,6 @@ public class MergeOperation extends AbstractReplicatedMapOperation {
     }
 
     @Override
-    public Object getResponse() {
-        return true;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         IOUtil.writeObject(out, key);

@@ -40,11 +40,6 @@ public class ClearLocalAndRemoteOperation extends AbstractOperation {
     }
 
     @Override
-    public Object getResponse() {
-        return true;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
     }

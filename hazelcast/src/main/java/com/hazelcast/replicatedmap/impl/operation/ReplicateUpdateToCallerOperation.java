@@ -89,11 +89,6 @@ public class ReplicateUpdateToCallerOperation extends AbstractOperation implemen
     }
 
     @Override
-    public Object getResponse() {
-        return true;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeLong(callId);

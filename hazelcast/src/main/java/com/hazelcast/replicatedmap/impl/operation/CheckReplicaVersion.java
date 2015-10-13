@@ -89,11 +89,6 @@ public class CheckReplicaVersion extends AbstractOperation implements PartitionA
     }
 
     @Override
-    public Object getResponse() {
-        return true;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(versions.size());
         for (Map.Entry<String, Long> entry : versions.entrySet()) {

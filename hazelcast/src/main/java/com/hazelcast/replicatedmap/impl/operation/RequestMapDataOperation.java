@@ -82,11 +82,6 @@ public class RequestMapDataOperation extends AbstractOperation {
     }
 
 
-    @Override
-    public Object getResponse() {
-        return true;
-    }
-
     private Set<RecordMigrationInfo> getRecordSet(ReplicatedRecordStore store) {
         Set<RecordMigrationInfo> recordSet = new HashSet<RecordMigrationInfo>(store.size());
         Iterator<ReplicatedRecord> iterator = store.recordIterator();

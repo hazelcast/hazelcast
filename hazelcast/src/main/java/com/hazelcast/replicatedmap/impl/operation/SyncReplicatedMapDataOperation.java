@@ -21,17 +21,20 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.InternalReplicatedMapStorage;
 import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.spi.AbstractOperation;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Carries set of replicated map records for a partition from one node to another
  */
-public class SyncReplicatedMapDataOperation extends AbstractOperation {
+public class SyncReplicatedMapDataOperation<K, V> extends AbstractOperation {
 
     private static ILogger logger = Logger.getLogger(SyncReplicatedMapDataOperation.class.getName());
 
@@ -53,18 +56,23 @@ public class SyncReplicatedMapDataOperation extends AbstractOperation {
         logger.finest("Carrying " + recordSet.size() + " records for partition -> " + getPartitionId()
                 + " from -> " + getCallerAddress() + ", to -> " + getNodeEngine().getThisAddress());
         ReplicatedMapService service = getService();
-        ReplicatedRecordStore store = service.getReplicatedRecordStore(name, true, getPartitionId());
-        store.clear();
+        AbstractReplicatedRecordStore store = (AbstractReplicatedRecordStore) service
+                .getReplicatedRecordStore(name, true, getPartitionId());
+        InternalReplicatedMapStorage<K, V> newStorage = new InternalReplicatedMapStorage<K, V>();
         for (RecordMigrationInfo record : recordSet) {
-            store.putRecord(record);
+            K key = (K) store.marshall(record.getKey());
+            V value = (V) store.marshall(record.getValue());
+            newStorage.putInternal(key, buildReplicatedRecord(key, value, record.getTtl()));
         }
-        store.setVersion(version);
+        newStorage.setVersion(version);
+        AtomicReference<InternalReplicatedMapStorage<K, V>> storageRef = store.getStorageRef();
+        storageRef.set(newStorage);
         store.setLoaded(true);
     }
 
-    @Override
-    public Object getResponse() {
-        return true;
+    private ReplicatedRecord<K, V> buildReplicatedRecord(K key, V value, long ttlMillis) {
+        int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
+        return new ReplicatedRecord<K, V>(key, value, ttlMillis, partitionId);
     }
 
     @Override
