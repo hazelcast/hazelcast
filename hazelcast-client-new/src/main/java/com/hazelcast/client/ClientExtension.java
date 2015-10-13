@@ -42,9 +42,11 @@ public interface ClientExtension {
     /**
      * Creates a {@link SerializationService} instance to be used by this client.
      *
+     * @param version serialization version to be created. Values less than 1 will be ignored and max supported version
+     * will be used
      * @return the created {@link SerializationService} instance
      */
-    SerializationService createSerializationService();
+    SerializationService createSerializationService(byte version);
 
     /**
      * Creates a {@link SocketInterceptor} to be used by this client if available,

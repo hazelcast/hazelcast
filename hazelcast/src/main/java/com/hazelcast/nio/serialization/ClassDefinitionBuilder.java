@@ -81,6 +81,12 @@ public final class ClassDefinitionBuilder {
         return this;
     }
 
+    public ClassDefinitionBuilder addBooleanArrayField(String fieldName) {
+        check();
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BOOLEAN_ARRAY));
+        return this;
+    }
+
     public ClassDefinitionBuilder addCharField(String fieldName) {
         check();
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.CHAR));
@@ -144,6 +150,12 @@ public final class ClassDefinitionBuilder {
     public ClassDefinitionBuilder addShortArrayField(String fieldName) {
         check();
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.SHORT_ARRAY));
+        return this;
+    }
+
+    public ClassDefinitionBuilder addUTFArrayField(String fieldName) {
+        check();
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.UTF_ARRAY));
         return this;
     }
 

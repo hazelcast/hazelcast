@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.serialization;
 
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.UTFEncoderDecoder;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.Closeable;
@@ -28,12 +28,9 @@ import java.nio.ByteOrder;
 
 public class ObjectDataOutputStream extends OutputStream implements ObjectDataOutput, Closeable {
 
-    private static final int UTF_BUFFER_SIZE = 1024;
     private final SerializationService serializationService;
     private final DataOutputStream dataOut;
     private final ByteOrder byteOrder;
-
-    private byte[] utfBuffer;
 
     public ObjectDataOutputStream(OutputStream outputStream, SerializationService serializationService) {
         this.serializationService = serializationService;
@@ -131,7 +128,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeByteArray(byte[] bytes) throws IOException {
-        int len = (bytes == null) ? 0 : bytes.length;
+        int len = (bytes != null) ? bytes.length : -1;
         writeInt(len);
         if (len > 0) {
             write(bytes);
@@ -139,8 +136,20 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
     }
 
     @Override
+    public void writeBooleanArray(boolean[] booleans) throws IOException {
+        int len = booleans != null ? booleans.length : -1;
+        writeInt(len);
+        if (len > 0) {
+            for (boolean c : booleans) {
+                writeBoolean(c);
+            }
+        }
+
+    }
+
+    @Override
     public void writeCharArray(char[] chars) throws IOException {
-        int len = chars != null ? chars.length : 0;
+        int len = chars != null ? chars.length : -1;
         writeInt(len);
         if (len > 0) {
             for (char c : chars) {
@@ -151,7 +160,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeIntArray(int[] ints) throws IOException {
-        int len = ints != null ? ints.length : 0;
+        int len = ints != null ? ints.length : -1;
         writeInt(len);
         if (len > 0) {
             for (int i : ints) {
@@ -162,7 +171,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeLongArray(long[] longs) throws IOException {
-        int len = longs != null ? longs.length : 0;
+        int len = longs != null ? longs.length : -1;
         writeInt(len);
         if (len > 0) {
             for (long l : longs) {
@@ -173,7 +182,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeDoubleArray(double[] doubles) throws IOException {
-        int len = doubles != null ? doubles.length : 0;
+        int len = doubles != null ? doubles.length : -1;
         writeInt(len);
         if (len > 0) {
             for (double d : doubles) {
@@ -184,7 +193,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeFloatArray(float[] floats) throws IOException {
-        int len = floats != null ? floats.length : 0;
+        int len = floats != null ? floats.length : -1;
         writeInt(len);
         if (len > 0) {
             for (float f : floats) {
@@ -195,7 +204,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeShortArray(short[] shorts) throws IOException {
-        int len = shorts != null ? shorts.length : 0;
+        int len = shorts != null ? shorts.length : -1;
         writeInt(len);
         if (len > 0) {
             for (short s : shorts) {
@@ -205,11 +214,27 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
     }
 
     @Override
-    public void writeUTF(String str) throws IOException {
-        if (utfBuffer == null) {
-            utfBuffer = new byte[UTF_BUFFER_SIZE];
+    public void writeUTFArray(String[] strings) throws IOException {
+        int len = strings != null ? strings.length : -1;
+        writeInt(len);
+        if (len > 0) {
+            for (String s : strings) {
+                writeUTF(s);
+            }
         }
-        UTFEncoderDecoder.writeUTF(this, str, utfBuffer);
+    }
+
+    @Override
+    public void writeUTF(String str) throws IOException {
+        int len = (str == null) ? 0 : str.length();
+        writeInt(len);
+        if (len > 0) {
+            for (int i = 0; i < len; i++) {
+                byte[] buffer = new byte[3];
+                int count = Bits.writeUtf8Char(buffer, 0, str.charAt(i));
+                dataOut.write(buffer, 0, count);
+            }
+        }
     }
 
     @Override
@@ -224,7 +249,8 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeData(Data data) throws IOException {
-        serializationService.writeData(this, data);
+        byte[] payload = data != null ? data.toByteArray() : null;
+        writeByteArray(payload);
     }
 
     @Override

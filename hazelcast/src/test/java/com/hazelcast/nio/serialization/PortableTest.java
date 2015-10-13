@@ -102,7 +102,7 @@ public class PortableTest {
 
     static SerializationService createSerializationService(int version, ByteOrder order, boolean allowUnsafe) {
         return new DefaultSerializationServiceBuilder()
-                .setUseNativeByteOrder(false).setAllowUnsafe(allowUnsafe).setByteOrder(order).setVersion(version)
+                .setUseNativeByteOrder(false).setAllowUnsafe(allowUnsafe).setByteOrder(order).setPortableVersion(version)
                 .addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory())
                 .addDataSerializableFactory(IDENTIFIED_FACTORY_ID, new TestDataSerializableFactory()).build();
     }
@@ -567,6 +567,8 @@ public class PortableTest {
                     return new InvalidRawDataPortable2();
                 case TestSerializationConstants.OBJECT_CARRYING_PORTABLE:
                     return new ObjectCarryingPortable();
+                case TestSerializationConstants.ALL_FIELD_OBJECT_PORTABLE:
+                    return new SerializationV1Portable();
             }
             return null;
         }
@@ -601,7 +603,7 @@ public class PortableTest {
                         return new NamedPortable();
                     }
                 })
-                .setVersion(5)
+                .setPortableVersion(5)
                 .build();
 
         Object o1 = new ComplexDataSerializable(new NamedPortableV2("test", 123),
@@ -630,7 +632,7 @@ public class PortableTest {
                         return new NamedPortable();
                     }
                 })
-                .setVersion(5)
+                .setPortableVersion(5)
                 .build();
 
         Portable p1 = new NamedPortableV2("test", 456);
@@ -700,7 +702,7 @@ public class PortableTest {
                 .setImplementation(new CustomSerializationTest.FooXmlSerializer())
                 .setTypeClass(CustomSerializationTest.Foo.class);
         config.addSerializerConfig(sc);
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().setVersion(1)
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().setPortableVersion(1)
                 .addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory()).setConfig(config).build();
 
         CustomSerializationTest.Foo foo = new CustomSerializationTest.Foo("f");

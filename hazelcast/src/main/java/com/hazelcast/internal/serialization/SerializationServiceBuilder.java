@@ -28,7 +28,9 @@ import java.nio.ByteOrder;
 
 public interface SerializationServiceBuilder {
 
-    SerializationServiceBuilder setVersion(int version);
+    SerializationServiceBuilder setVersion(byte version);
+
+    SerializationServiceBuilder setPortableVersion(int portableVersion);
 
     SerializationServiceBuilder setClassLoader(ClassLoader classLoader);
 

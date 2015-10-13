@@ -16,8 +16,9 @@
 
 package com.hazelcast.internal.serialization;
 
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.UTFEncoderDecoder;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.Closeable;
@@ -28,12 +29,9 @@ import java.nio.ByteOrder;
 
 public class ObjectDataInputStream extends InputStream implements ObjectDataInput, Closeable {
 
-    private static final int UTF_BUFFER_SIZE = 1024;
     private final SerializationService serializationService;
     private final DataInputStream dataInput;
     private final ByteOrder byteOrder;
-
-    private byte[] utfBuffer;
 
     public ObjectDataInputStream(InputStream in, SerializationService serializationService) {
         this.serializationService = serializationService;
@@ -146,6 +144,9 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public byte[] readByteArray() throws IOException {
         int len = readInt();
+        if (len == -1) {
+            return null;
+        }
         if (len > 0) {
             byte[] b = new byte[len];
             readFully(b);
@@ -155,8 +156,27 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     }
 
     @Override
+    public boolean[] readBooleanArray() throws IOException {
+        int len = readInt();
+        if (len == -1) {
+            return null;
+        }
+        if (len > 0) {
+            boolean[] values = new boolean[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readBoolean();
+            }
+            return values;
+        }
+        return new boolean[0];
+    }
+
+    @Override
     public char[] readCharArray() throws IOException {
         int len = readInt();
+        if (len == -1) {
+            return null;
+        }
         if (len > 0) {
             char[] values = new char[len];
             for (int i = 0; i < len; i++) {
@@ -170,6 +190,9 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public int[] readIntArray() throws IOException {
         int len = readInt();
+        if (len == -1) {
+            return null;
+        }
         if (len > 0) {
             int[] values = new int[len];
             for (int i = 0; i < len; i++) {
@@ -183,6 +206,9 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public long[] readLongArray() throws IOException {
         int len = readInt();
+        if (len == -1) {
+            return null;
+        }
         if (len > 0) {
             long[] values = new long[len];
             for (int i = 0; i < len; i++) {
@@ -196,6 +222,9 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public double[] readDoubleArray() throws IOException {
         int len = readInt();
+        if (len == -1) {
+            return null;
+        }
         if (len > 0) {
             double[] values = new double[len];
             for (int i = 0; i < len; i++) {
@@ -209,6 +238,9 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public float[] readFloatArray() throws IOException {
         int len = readInt();
+        if (len == -1) {
+            return null;
+        }
         if (len > 0) {
             float[] values = new float[len];
             for (int i = 0; i < len; i++) {
@@ -222,6 +254,9 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public short[] readShortArray() throws IOException {
         int len = readInt();
+        if (len == -1) {
+            return null;
+        }
         if (len > 0) {
             short[] values = new short[len];
             for (int i = 0; i < len; i++) {
@@ -232,6 +267,22 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         return new short[0];
     }
 
+    @Override
+    public String[] readUTFArray() throws IOException {
+        int len = readInt();
+        if (len == -1) {
+            return null;
+        }
+        if (len > 0) {
+            String[] values = new String[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readUTF();
+            }
+            return values;
+        }
+        return new String[0];
+    }
+
     @Deprecated
     public String readLine() throws IOException {
         return dataInput.readLine();
@@ -239,10 +290,18 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
 
     @Override
     public String readUTF() throws IOException {
-        if (utfBuffer == null) {
-            utfBuffer = new byte[UTF_BUFFER_SIZE];
+        int charCount = readInt();
+        char[] charBuffer = new char[charCount];
+        byte b;
+        for (int i = 0; i < charCount; i++) {
+            b = dataInput.readByte();
+            if (b < 0) {
+                charBuffer[i] = Bits.readUtf8Char(dataInput, b);
+            } else {
+                charBuffer[i] = (char) b;
+            }
         }
-        return UTFEncoderDecoder.readUTF(this, utfBuffer);
+        return new String(charBuffer, 0, charCount);
     }
 
     @Override
@@ -272,7 +331,9 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
 
     @Override
     public Data readData() throws IOException {
-        return serializationService.readData(this);
+        byte[] bytes = readByteArray();
+        Data data = bytes != null ? new HeapData(bytes) : null;
+        return data;
     }
 
     @Override

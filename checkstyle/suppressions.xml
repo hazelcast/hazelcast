@@ -197,6 +197,7 @@
     <suppress checks="ParameterNumber" files="com/hazelcast/client/impl/protocol/parameters/MapReduceTemplate"/>
     <suppress checks="ParameterNumber" files="com/hazelcast/client/proxy/ClientMapReduceProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/impl/protocol/ClientMessage"/>
+    <suppress checks="MethodCount" files="com/hazelcast/client/impl/protocol/util/MessageFlyweight"/>
     <suppress checks="ClassFanOutComplexity" files="com/hazelcast/client/cache/impl/AbstractClientInternalCacheProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/cache/impl/ClientCacheProxy"/>
 
@@ -401,19 +402,23 @@
     <suppress checks="MethodCount" files="com/hazelcast/nio/IOService"/>
     <suppress checks="MagicNumber" files="com/hazelcast/nio/IOUtil"/>
     <suppress checks="MethodCount" files="com/hazelcast/nio/NodeIOService"/>
+    <suppress checks="MethodCount" files="com/hazelcast/internal/serialization/impl/DefaultPortableReader"/>
     <suppress checks="MagicNumber|MethodCount|NPathComplexity" files="com/hazelcast/nio/Packet"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/nio/tcp/nonblocking/NonBlockingSocketReader"/>
     <suppress checks="MagicNumber|EmptyBlock|MethodCount"
               files="com/hazelcast/nio/tcp/nonblocking/NonBlockingWriteHandler"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber"
-              files="com/hazelcast/internal/serialization/impl/SerializationServiceImpl"/>
+              files="com/hazelcast/internal/serialization/impl/AbstractSerializationService"/>
+    <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber"
+              files="com/hazelcast/internal/serialization/impl/SerializationServiceV1"/>
     <suppress checks="MethodCount" files="com/hazelcast/nio/tcp/TcpIpConnectionManager"/>
     <suppress checks="ExecutableStatement" files="com/hazelcast/nio/UnsafeHelper"/>
     <suppress checks="MagicNumber" files="com/hazelcast/nio/UnsafeHelper"/>
     <suppress checks="IllegalImport" files="com/hazelcast/nio/UnsafeHelper"/>
     <suppress checks="MagicNumber" files="com/hazelcast/internal/serialization/impl/UnsafeObjectDataInput"/>
     <suppress checks="MagicNumber" files="com/hazelcast/internal/serialization/impl/UnsafeObjectDataOutput"/>
-    <suppress checks="MagicNumber" files="com/hazelcast/nio/UTFEncoderDecoder"/>
+    <suppress checks="IllegalType" files="ArrayListStreamSerializer\.java$"/>
+    <suppress checks="IllegalType" files="LinkedListStreamSerializer\.java$"/>
 
     <!-- JMX -->
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/jmx/ManagementService"/>

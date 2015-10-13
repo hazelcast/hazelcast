@@ -97,7 +97,7 @@ final class PortableSerializer implements StreamSerializer<Portable> {
     private int findPortableVersion(int factoryId, int classId, Portable portable) {
         int currentVersion = context.getClassVersion(factoryId, classId);
         if (currentVersion < 0) {
-            currentVersion = PortableVersionHelper.getVersion(portable, context.getVersion());
+            currentVersion = SerializationUtil.getPortableVersion(portable, context.getVersion());
             if (currentVersion > 0) {
                 context.setClassVersion(factoryId, classId, currentVersion);
             }

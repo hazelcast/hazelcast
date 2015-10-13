@@ -93,6 +93,10 @@ final class EmptyObjectDataOutput implements ObjectDataOutput {
     }
 
     @Override
+    public void writeBooleanArray(boolean[] booleans) throws IOException {
+    }
+
+    @Override
     public void writeCharArray(char[] chars) throws IOException {
     }
 
@@ -114,6 +118,10 @@ final class EmptyObjectDataOutput implements ObjectDataOutput {
 
     @Override
     public void writeShortArray(short[] values) throws IOException {
+    }
+
+    @Override
+    public void writeUTFArray(String[] values) throws IOException {
     }
 
     @Override

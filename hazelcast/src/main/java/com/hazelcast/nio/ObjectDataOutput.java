@@ -34,6 +34,12 @@ public interface ObjectDataOutput extends DataOutput {
     void writeByteArray(byte[] bytes) throws IOException;
 
     /**
+     * @param booleans boolean array to be written
+     * @throws IOException
+     */
+    void writeBooleanArray(boolean[] booleans) throws IOException;
+
+    /**
      * @param chars char array to be written
      * @throws IOException
      */
@@ -52,22 +58,28 @@ public interface ObjectDataOutput extends DataOutput {
     void writeLongArray(long[] longs) throws IOException;
 
     /**
-     * @param values double to be written
+     * @param values double array to be written
      * @throws IOException
      */
     void writeDoubleArray(double[] values) throws IOException;
 
     /**
-     * @param values float to be written
+     * @param values float array to be written
      * @throws IOException
      */
     void writeFloatArray(float[] values) throws IOException;
 
     /**
-     * @param values short to be written
+     * @param values short array to be written
      * @throws IOException
      */
     void writeShortArray(short[] values) throws IOException;
+
+    /**
+     * @param values String array to be written
+     * @throws IOException
+     */
+    void writeUTFArray(String[] values) throws IOException;
 
     /**
      * @param object object to be written

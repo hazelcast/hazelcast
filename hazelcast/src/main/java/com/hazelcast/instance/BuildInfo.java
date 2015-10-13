@@ -23,13 +23,16 @@ public class BuildInfo {
     private final String revision;
     private final int buildNumber;
     private final boolean enterprise;
+    private final byte serializationVersion;
 
-    public BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise) {
+    public BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
+                     byte serializationVersion) {
         this.version = version;
         this.build = build;
         this.revision = revision;
         this.buildNumber = buildNumber;
         this.enterprise = enterprise;
+        this.serializationVersion = serializationVersion;
     }
 
     public String getRevision() {
@@ -52,6 +55,10 @@ public class BuildInfo {
         return enterprise;
     }
 
+    public byte getSerializationVersion() {
+        return serializationVersion;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("BuildInfo{");
@@ -60,6 +67,7 @@ public class BuildInfo {
         sb.append(", buildNumber=").append(buildNumber);
         sb.append(", revision=").append(revision);
         sb.append(", enterprise=").append(enterprise);
+        sb.append(", serializationVersion=").append(serializationVersion);
         sb.append('}');
         return sb.toString();
     }

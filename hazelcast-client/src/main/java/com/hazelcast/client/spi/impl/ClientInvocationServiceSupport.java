@@ -29,6 +29,8 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.cluster.client.ClientPingRequest;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -36,7 +38,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -340,7 +341,11 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             try {
                 final ClientResponse clientResponse = client.getSerializationService().toObject(packet);
                 final int callId = clientResponse.getCallId();
-                final Data response = clientResponse.getResponse();
+                Data response = clientResponse.getResponse();
+                //TODO can response be made to be NULL ?
+                if (response == null) {
+                    response = new HeapData();
+                }
                 handlePacket(response, clientResponse.isError(), callId);
             } catch (Exception e) {
                 logger.severe("Failed to process task: " + packet + " on responseThread :" + getName(), e);

@@ -27,8 +27,7 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 /**
  * Default Authentication with username password handling task
  */
-public class AuthenticationMessageTask
-        extends AuthenticationBaseMessageTask<ClientAuthenticationCodec.RequestParameters> {
+public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<ClientAuthenticationCodec.RequestParameters> {
 
     public AuthenticationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,6 +42,7 @@ public class AuthenticationMessageTask
             principal = new ClientPrincipal(uuid, ownerUuid);
         }
         credentials = new UsernamePasswordCredentials(parameters.username, parameters.password);
+        clientSerializationVersion = parameters.serializationVersion;
         return parameters;
     }
 
@@ -52,8 +52,8 @@ public class AuthenticationMessageTask
     }
 
     @Override
-    protected ClientMessage encodeAuth(Address thisAddress, String uuid, String ownerUuid) {
-        return ClientAuthenticationCodec.encodeResponse(thisAddress, uuid, ownerUuid);
+    protected ClientMessage encodeAuth(byte status, Address thisAddress, String uuid, String ownerUuid, byte version) {
+        return ClientAuthenticationCodec.encodeResponse(status, thisAddress, uuid, ownerUuid, version);
     }
 
     @Override
@@ -85,6 +85,5 @@ public class AuthenticationMessageTask
     protected String getClientType() {
         return parameters.clientType;
     }
-
 
 }

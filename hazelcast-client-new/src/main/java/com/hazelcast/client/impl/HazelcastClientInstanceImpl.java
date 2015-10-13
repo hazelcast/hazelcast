@@ -123,7 +123,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientConfig config;
     private final ThreadGroup threadGroup;
     private final LifecycleServiceImpl lifecycleService;
-    private final SerializationService serializationService;
     private final ClientConnectionManager connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
@@ -138,6 +137,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientExtension clientExtension;
     private final Credentials credentials;
     private final DiscoveryService discoveryService;
+    private SerializationService serializationService;
 
     public HazelcastClientInstanceImpl(ClientConfig config,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
@@ -158,7 +158,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
         clientProperties = new ClientProperties(config);
-        serializationService = clientExtension.createSerializationService();
+        serializationService = clientExtension.createSerializationService((byte)-1);
         proxyManager = new ProxyManager(this);
         executionService = initExecutionService();
         loadBalancer = initLoadBalancer(config);
@@ -573,4 +573,5 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         serializationService.destroy();
         nearCacheManager.destroyAllNearCaches();
     }
+
 }

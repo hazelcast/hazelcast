@@ -36,22 +36,22 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import static com.hazelcast.nio.IOUtil.newObjectInputStream;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.DEFAULT_TYPE_BIG_DECIMAL;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.DEFAULT_TYPE_BIG_INTEGER;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.DEFAULT_TYPE_CLASS;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.DEFAULT_TYPE_DATE;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.DEFAULT_TYPE_ENUM;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.DEFAULT_TYPE_EXTERNALIZABLE;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.DEFAULT_TYPE_OBJECT;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_BIG_DECIMAL;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_BIG_INTEGER;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_CLASS;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_DATE;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_ENUM;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE;
 
 
-public final class DefaultSerializers {
+public final class JavaDefaultSerializers {
 
     public static final class BigIntegerSerializer extends SingletonSerializer<BigInteger> {
 
         @Override
         public int getTypeId() {
-            return DEFAULT_TYPE_BIG_INTEGER;
+            return JAVA_DEFAULT_TYPE_BIG_INTEGER;
         }
 
         @Override
@@ -75,7 +75,7 @@ public final class DefaultSerializers {
 
         @Override
         public int getTypeId() {
-            return DEFAULT_TYPE_BIG_DECIMAL;
+            return JAVA_DEFAULT_TYPE_BIG_DECIMAL;
         }
 
         @Override
@@ -98,7 +98,7 @@ public final class DefaultSerializers {
 
         @Override
         public int getTypeId() {
-            return DEFAULT_TYPE_DATE;
+            return JAVA_DEFAULT_TYPE_DATE;
         }
 
         @Override
@@ -116,7 +116,7 @@ public final class DefaultSerializers {
 
         @Override
         public int getTypeId() {
-            return DEFAULT_TYPE_CLASS;
+            return JAVA_DEFAULT_TYPE_CLASS;
         }
 
         @Override
@@ -134,17 +134,17 @@ public final class DefaultSerializers {
         }
     }
 
-    public static final class Externalizer extends SingletonSerializer<Externalizable> {
+    public static final class ExternalizableSerializer extends SingletonSerializer<Externalizable> {
 
         private final boolean gzipEnabled;
 
-        public Externalizer(boolean gzipEnabled) {
+        public ExternalizableSerializer(boolean gzipEnabled) {
             this.gzipEnabled = gzipEnabled;
         }
 
         @Override
         public int getTypeId() {
-            return DEFAULT_TYPE_EXTERNALIZABLE;
+            return JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
         }
 
         @Override
@@ -188,19 +188,19 @@ public final class DefaultSerializers {
         }
     }
 
-    public static final class ObjectSerializer extends SingletonSerializer<Object> {
+    public static final class JavaSerializer extends SingletonSerializer<Object> {
 
         private final boolean shared;
         private final boolean gzipEnabled;
 
-        public ObjectSerializer(boolean shared, boolean gzipEnabled) {
+        public JavaSerializer(boolean shared, boolean gzipEnabled) {
             this.shared = shared;
             this.gzipEnabled = gzipEnabled;
         }
 
         @Override
         public int getTypeId() {
-            return DEFAULT_TYPE_OBJECT;
+            return JAVA_DEFAULT_TYPE_SERIALIZABLE;
         }
 
         @Override
@@ -255,7 +255,7 @@ public final class DefaultSerializers {
 
         @Override
         public int getTypeId() {
-            return DEFAULT_TYPE_ENUM;
+            return JAVA_DEFAULT_TYPE_ENUM;
         }
 
         @Override
@@ -287,7 +287,7 @@ public final class DefaultSerializers {
         }
     }
 
-    private DefaultSerializers() {
+    private JavaDefaultSerializers() {
     }
 
 }

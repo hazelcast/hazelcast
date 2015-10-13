@@ -20,11 +20,11 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.internal.serialization.impl.SerializationServiceImpl;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.TraceableOperation;
 import com.hazelcast.util.ExceptionUtil;
@@ -87,8 +87,7 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
 
     private ManagedContext getManagedContext() {
         HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl) getNodeEngine().getHazelcastInstance();
-        SerializationServiceImpl serializationService =
-                (SerializationServiceImpl) hazelcastInstance.getSerializationService();
+        SerializationService serializationService = hazelcastInstance.getSerializationService();
         return serializationService.getManagedContext();
     }
 

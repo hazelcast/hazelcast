@@ -80,6 +80,7 @@ public class DefaultNodeExtension implements NodeExtension {
         systemLogger.info("Hazelcast " + buildInfo.getVersion()
                 + " (" + build + ") starting at " + node.getThisAddress());
         systemLogger.info("Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.");
+        systemLogger.info("Configured Hazelcast Serialization version:" + buildInfo.getSerializationVersion());
     }
 
     @Override
@@ -110,11 +111,14 @@ public class DefaultNodeExtension implements NodeExtension {
             SerializationConfig serializationConfig = config.getSerializationConfig() != null
                     ? config.getSerializationConfig() : new SerializationConfig();
 
+            byte version = (byte) node.groupProperties.getInteger(GroupProperty.SERIALIZATION_VERSION);
+
             ss = builder.setClassLoader(configClassLoader)
                     .setConfig(serializationConfig)
                     .setManagedContext(hazelcastInstance.managedContext)
                     .setPartitioningStrategy(partitioningStrategy)
                     .setHazelcastInstance(hazelcastInstance)
+                    .setVersion(version)
                     .build();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
