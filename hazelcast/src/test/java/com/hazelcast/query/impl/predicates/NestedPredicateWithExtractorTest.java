@@ -57,7 +57,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName("map");
         mapConfig.addMapAttributeConfig(extractor("name", "com.hazelcast.query.impl.predicates.NestedPredicateWithExtractorTest$BodyNameExtractor"));
-        mapConfig.addMapAttributeConfig(extractor("limb.name", "com.hazelcast.query.impl.predicates.NestedPredicateWithExtractorTest$LimbNameExtractor"));
+        mapConfig.addMapAttributeConfig(extractor("limbname", "com.hazelcast.query.impl.predicates.NestedPredicateWithExtractorTest$LimbNameExtractor"));
         config.addMapConfig(mapConfig);
         instance = createHazelcastInstance(config);
         map = instance.getMap("map");
@@ -137,7 +137,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         map.put(2, new Body("body2", new Limb("leg")));
 
         // WHEN
-        Collection<Body> values = map.values(new SqlPredicate("limb.name == 'leg'"));
+        Collection<Body> values = map.values(new SqlPredicate("limbname == 'leg'"));
 
         // THEN
         assertEquals(1, values.size());
