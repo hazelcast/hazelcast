@@ -53,7 +53,7 @@ public final class GreaterLessPredicate extends AbstractPredicate implements Neg
 
     @Override
     public boolean apply(Map.Entry mapEntry) {
-        final Comparable entryValue = (Comparable) readAttribute(mapEntry);
+        final Comparable entryValue = (Comparable) readAttributeValue(mapEntry);
         if (entryValue == null) {
             return false;
         }
@@ -93,7 +93,7 @@ public final class GreaterLessPredicate extends AbstractPredicate implements Neg
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append(attribute);
+        sb.append(attributeName);
         sb.append(less ? "<" : ">");
         if (equal) {
             sb.append("=");
@@ -104,6 +104,6 @@ public final class GreaterLessPredicate extends AbstractPredicate implements Neg
 
     @Override
     public Predicate negate() {
-        return new GreaterLessPredicate(attribute, value, !equal, !less);
+        return new GreaterLessPredicate(attributeName, value, !equal, !less);
     }
 }

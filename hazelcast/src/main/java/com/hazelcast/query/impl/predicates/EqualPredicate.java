@@ -57,7 +57,7 @@ public class EqualPredicate extends AbstractPredicate implements NegatablePredic
 
     @Override
     public boolean apply(Map.Entry mapEntry) {
-        Object entryValue = readAttribute(mapEntry);
+        Object entryValue = readAttributeValue(mapEntry);
         if (entryValue instanceof MultiResult) {
             return applyForMultiResult(mapEntry, (MultiResult) entryValue);
         } else if (entryValue instanceof Collection || entryValue instanceof Object[]) {
@@ -69,7 +69,7 @@ public class EqualPredicate extends AbstractPredicate implements NegatablePredic
     private boolean applyForMultiResult(Map.Entry mapEntry, MultiResult result) {
         List<Object> results = result.getResults();
         for (Object o : results) {
-            Comparable entryValue = (Comparable) convertAttribute(o);
+            Comparable entryValue = (Comparable) convertEnumValue(o);
             // it's enough if there's only one result in the MultiResult that satisfies the predicate
             boolean satisfied = applyForSingleValue(mapEntry, entryValue);
             if (satisfied) {
@@ -101,11 +101,11 @@ public class EqualPredicate extends AbstractPredicate implements NegatablePredic
 
     @Override
     public String toString() {
-        return attribute + "=" + value;
+        return attributeName + "=" + value;
     }
 
     @Override
     public Predicate negate() {
-        return new NotEqualPredicate(attribute, value);
+        return new NotEqualPredicate(attributeName, value);
     }
 }

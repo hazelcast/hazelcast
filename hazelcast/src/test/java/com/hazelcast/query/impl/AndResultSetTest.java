@@ -65,7 +65,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Comparable getAttribute(String attributeName) throws QueryException {
+        public Comparable getAttributeValue(String attributeName) throws QueryException {
             return null;
         }
 

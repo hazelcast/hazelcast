@@ -27,7 +27,7 @@ public final class ContainsAllPredicate extends AbstractPredicate implements Pre
     @Override
     public boolean apply(Map.Entry mapEntry) {
         for (Comparable value : values) {
-            Object o = readAttribute(mapEntry);
+            Object o = readAttributeValue(mapEntry);
             if (o instanceof Object[]) {
                 Object[] attributes = (Object[]) o;
                 boolean valueFound = ArrayUtils.contains(attributes, value);

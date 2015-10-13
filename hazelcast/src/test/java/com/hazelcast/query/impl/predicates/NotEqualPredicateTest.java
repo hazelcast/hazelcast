@@ -34,7 +34,7 @@ public class NotEqualPredicateTest {
         NotEqualPredicate notEqualPredicate = new NotEqualPredicate("foo", 1);
         EqualPredicate negate = (EqualPredicate) notEqualPredicate.negate();
 
-        assertEquals("foo", negate.attribute);
+        assertEquals("foo", negate.attributeName);
         assertEquals(1, negate.value);
     }
 }

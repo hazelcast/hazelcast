@@ -33,7 +33,7 @@ final class ExtractionEngine {
     }
 
     // Data key
-    public static Object extractAttribute(Extractors extractors, SerializationService ss, String attributeName, Data key, Object value) {
+    public static Object extractAttributeValue(Extractors extractors, SerializationService ss, String attributeName, Data key, Object value) {
         if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return ss.toObject(key);
         } else if (THIS_ATTRIBUTE_NAME.value().equals(attributeName)) {
@@ -44,10 +44,10 @@ final class ExtractionEngine {
         attributeName = getAttributeName(isKey, attributeName);
         Object target = isKey ? key : value;
 
-        return doExtractAttribute(extractors, ss, attributeName, target);
+        return doExtractAttributeValue(extractors, ss, attributeName, target);
     }
 
-    public static Object extractAttribute(Extractors extractors, SerializationService ss, String attributeName, QueryableEntry entry) throws QueryException {
+    public static Object extractAttributeValue(Extractors extractors, SerializationService ss, String attributeName, QueryableEntry entry) throws QueryException {
         if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return entry.getKey();
         } else if (THIS_ATTRIBUTE_NAME.value().equals(attributeName)) {
@@ -58,7 +58,7 @@ final class ExtractionEngine {
         attributeName = getAttributeName(isKey, attributeName);
         Object target = entry.getTargetObject(isKey);
 
-        return doExtractAttribute(extractors, ss, attributeName, target);
+        return doExtractAttributeValue(extractors, ss, attributeName, target);
     }
 
     static boolean isKey(String attributeName) {
@@ -73,7 +73,7 @@ final class ExtractionEngine {
         }
     }
 
-    static Object doExtractAttribute(Extractors extractors, SerializationService ss, String attributeName, Object target) {
+    static Object doExtractAttributeValue(Extractors extractors, SerializationService ss, String attributeName, Object target) {
         if (target instanceof Portable || target instanceof Data) {
             Data targetData = ss.toData(target);
             if (targetData.isPortable()) {
@@ -121,7 +121,7 @@ final class ExtractionEngine {
         }
 
         if(attribute == null) {
-            attribute = extractAttribute(extractors, ss, attributeName, entry);
+            attribute = extractAttributeValue(extractors, ss, attributeName, entry);
         }
         return getExtractedAttributeType(attribute);
     }

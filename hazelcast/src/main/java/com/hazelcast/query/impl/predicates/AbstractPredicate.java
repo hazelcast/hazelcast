@@ -36,41 +36,41 @@ import java.util.Map;
  */
 public abstract class AbstractPredicate implements IndexAwarePredicate, DataSerializable {
 
-    protected String attribute;
+    protected String attributeName;
     private transient volatile AttributeType attributeType;
 
     protected AbstractPredicate() {
     }
 
-    protected AbstractPredicate(String attribute) {
-        this.attribute = attribute;
+    protected AbstractPredicate(String attributeName) {
+        this.attributeName = attributeName;
     }
 
-    protected Comparable convert(Map.Entry mapEntry, Comparable entryValue, Comparable attributeValue) {
-        if (attributeValue == null) {
+    protected Comparable convert(Map.Entry entry, Comparable entryAttributeValue, Comparable givenAttributeValue) {
+        if (givenAttributeValue == null) {
             return null;
         }
-        if (attributeValue instanceof IndexImpl.NullObject) {
+        if (givenAttributeValue instanceof IndexImpl.NullObject) {
             return IndexImpl.NULL;
         }
         AttributeType type = attributeType;
         if (type == null) {
-            QueryableEntry queryableEntry = (QueryableEntry) mapEntry;
-            type = queryableEntry.getAttributeType(attribute);
+            QueryableEntry queryableEntry = (QueryableEntry) entry;
+            type = queryableEntry.getAttributeType(attributeName);
             attributeType = type;
         }
         if (type == AttributeType.ENUM) {
             // if attribute type is enum, convert given attribute to enum string
-            return type.getConverter().convert(attributeValue);
+            return type.getConverter().convert(givenAttributeValue);
         } else {
             // if given attribute value is already in expected type then there's no need for conversion.
-            if (entryValue != null && entryValue.getClass().isAssignableFrom(attributeValue.getClass())) {
-                return attributeValue;
+            if (entryAttributeValue != null && entryAttributeValue.getClass().isAssignableFrom(givenAttributeValue.getClass())) {
+                return givenAttributeValue;
             } else if (type != null) {
-                return type.getConverter().convert(attributeValue);
+                return type.getConverter().convert(givenAttributeValue);
             } else {
-                throw new QueryException("Unknown attribute type: " + attributeValue.getClass().getName()
-                        + " for attribute: " + attribute);
+                throw new QueryException("Unknown attribute type: " + givenAttributeValue.getClass().getName()
+                        + " for attribute: " + attributeName);
             }
         }
     }
@@ -81,29 +81,29 @@ public abstract class AbstractPredicate implements IndexAwarePredicate, DataSeri
     }
 
     protected Index getIndex(QueryContext queryContext) {
-        return queryContext.getIndex(attribute);
+        return queryContext.getIndex(attributeName);
     }
 
-    protected Object readAttribute(Map.Entry entry) {
+    protected Object readAttributeValue(Map.Entry entry) {
         QueryableEntry queryableEntry = (QueryableEntry) entry;
-        Object val = queryableEntry.getAttribute(attribute);
-        return convertAttribute(val);
+        Object attributeValue = queryableEntry.getAttributeValue(attributeName);
+        return convertEnumValue(attributeValue);
     }
 
-    protected Object convertAttribute(Object val) {
-        if (val != null && val.getClass().isEnum()) {
-            val = val.toString();
+    protected Object convertEnumValue(Object attributeValue) {
+        if (attributeValue != null && attributeValue.getClass().isEnum()) {
+            attributeValue = attributeValue.toString();
         }
-        return val;
+        return attributeValue;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attribute);
+        out.writeUTF(attributeName);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        attribute = in.readUTF();
+        attributeName = in.readUTF();
     }
 }

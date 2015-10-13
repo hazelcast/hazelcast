@@ -88,7 +88,7 @@ public class BetweenVisitorTest {
         Predicate and = and(left, right);
 
         EqualPredicate p = (EqualPredicate) visitor.visit((AndPredicate) and, mockIndexes);
-        assertEquals("attribute", p.attribute);
+        assertEquals("attribute", p.attributeName);
         assertEquals(5, p.value);
     }
 

@@ -51,7 +51,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
 
         // in the portable-data, the attribute 'name' is called 'n'. So if we can retrieve on n
         // correctly it shows that we have used the Portable data, not the actual Portable object
-        Object result = queryEntry.getAttribute("n");
+        Object result = queryEntry.getAttributeValue("n");
 
         assertEquals("peter", result);
     }
@@ -65,7 +65,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
 
         // in the portable-data, the attribute 'name' is called 'n'. So if we can retrieve on n
         // correctly it shows that we have used the Portable data, not the actual Portable object
-        Object result = queryEntry.getAttribute(QueryConstants.KEY_ATTRIBUTE_NAME.value() + ".n");
+        Object result = queryEntry.getAttributeValue(QueryConstants.KEY_ATTRIBUTE_NAME.value() + ".n");
 
         assertEquals("peter", result);
     }
@@ -77,7 +77,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
         SerializableObject value = new SerializableObject();
         QueryEntry queryEntry = new QueryEntry(serializationService, key, value, Extractors.empty());
 
-        Object result = queryEntry.getAttribute(QueryConstants.KEY_ATTRIBUTE_NAME.value() + ".n");
+        Object result = queryEntry.getAttributeValue(QueryConstants.KEY_ATTRIBUTE_NAME.value() + ".n");
 
         assertEquals("peter", result);
     }
@@ -89,7 +89,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
         value.name = "somename";
         QueryEntry queryEntry = new QueryEntry(serializationService, key, value, Extractors.empty());
 
-        Object result = queryEntry.getAttribute("name");
+        Object result = queryEntry.getAttributeValue("name");
 
         assertEquals("somename", result);
         assertEquals(0, value.deserializationCount);

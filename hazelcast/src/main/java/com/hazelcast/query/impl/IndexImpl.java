@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -43,7 +44,7 @@ public class IndexImpl implements Index {
 
     // indexKey -- indexValue
     private final IndexStore indexStore;
-    private final String attribute;
+    private final String attributeName;
     private final boolean ordered;
 
     private volatile TypeConverter converter;
@@ -51,8 +52,8 @@ public class IndexImpl implements Index {
     private final SerializationService ss;
     private final Extractors extractors;
 
-    public IndexImpl(String attribute, boolean ordered, SerializationService ss, Extractors extractors) {
-        this.attribute = attribute;
+    public IndexImpl(String attributeName, boolean ordered, SerializationService ss, Extractors extractors) {
+        this.attributeName = attributeName;
         this.ordered = ordered;
         this.ss = ss;
         this.indexStore = ordered ? new SortedIndexStore() : new UnsortedIndexStore();
@@ -66,11 +67,11 @@ public class IndexImpl implements Index {
 
     @Override
     public void removeEntryIndex(Data key, Object value) {
-        Comparable attributeValue = (Comparable) ExtractionEngine.extractAttribute(extractors, ss, this.attribute, key, value);
+        Comparable attributeValue = (Comparable) ExtractionEngine.extractAttributeValue(extractors, ss, this.attributeName, key, value);
         attributeValue = (Comparable)sanitizeValue(attributeValue);
-
-        if (attributeValue != null) {
-            indexStore.removeIndex(attributeValue, key);
+        
+        if (value != null) {
+            indexStore.removeIndex(value, key);
         }
     }
 
@@ -86,7 +87,7 @@ public class IndexImpl implements Index {
     }
 
     @Override
-    public void saveEntryIndex(QueryableEntry e, Object oldRecordValue) throws QueryException {
+    public void saveEntryIndex(QueryableEntry entry, Object oldRecordValue) throws QueryException {
         /*
          * At first, check if converter is not initialized, initialize it before saving an entry index
 n         * Because, if entity index is saved before,
@@ -95,27 +96,27 @@ n         * Because, if entity index is saved before,
          * this causes to class cast exceptions.
          */
         if (converter == null || converter == NULL_CONVERTER) {
-            converter = e.getConverter(attribute);
+            converter = entry.getConverter(attributeName);
         }
 
-        Object oldValue = null;
+        Object oldAttributeValue = null;
         if (oldRecordValue != null) {
-            oldValue = ExtractionEngine.extractAttribute(extractors, ss, attribute, e.getKeyData(), oldRecordValue);
+            oldAttributeValue = ExtractionEngine.extractAttributeValue(extractors, ss, attributeName, entry.getKeyData(), oldRecordValue);
         }
 
-        Object newValue = ExtractionEngine.extractAttribute(extractors, ss, attribute, e.getKeyData(), e.getValue());
-        createOrUpdateIndexStore(newValue, oldValue, e);
+        Object newAttributeValue = ExtractionEngine.extractAttributeValue(extractors, ss, attributeName, entry.getKeyData(), entry.getValue());
+        createOrUpdateIndexStore(entry, newAttributeValue, oldAttributeValue);
     }
 
-    private void createOrUpdateIndexStore(Object newValue, Object oldValue, QueryableEntry e) {
-        newValue = sanitizeValue(newValue);
-        if (oldValue == null) {
+    private void createOrUpdateIndexStore(QueryableEntry entry, Object newAttributeValue, Object oldAttributeValue) {
+        newAttributeValue = sanitizeValue(newAttributeValue);
+        if (oldAttributeValue == null) {
             // new
-            indexStore.newIndex(newValue, e);
+            indexStore.newIndex(newAttributeValue, entry);
         } else {
             // update
-            oldValue = sanitizeValue(oldValue);
-            indexStore.updateIndex(oldValue, newValue, e);
+            oldAttributeValue = sanitizeValue(oldAttributeValue);
+            indexStore.updateIndex(oldAttributeValue, newAttributeValue, entry);
         }
     }
 
@@ -150,39 +151,39 @@ n         * Because, if entity index is saved before,
     }
 
     @Override
-    public Set<QueryableEntry> getRecords(Comparable value) {
+    public Set<QueryableEntry> getRecords(Comparable attributeValue) {
         if (converter != null) {
-            return indexStore.getRecords(convert(value));
+            return indexStore.getRecords(convert(attributeValue));
         } else {
             return new SingleResultSet(null);
         }
     }
 
     @Override
-    public Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
+    public Set<QueryableEntry> getSubRecordsBetween(Comparable fromAttributeValue, Comparable toAttributeValue) {
         MultiResultSet results = new MultiResultSet();
         if (converter != null) {
-            indexStore.getSubRecordsBetween(results, convert(from), convert(to));
+            indexStore.getSubRecordsBetween(results, convert(fromAttributeValue), convert(toAttributeValue));
         }
         return results;
     }
 
     @Override
-    public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
+    public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedAttributeValue) {
         MultiResultSet results = new MultiResultSet();
         if (converter != null) {
-            indexStore.getSubRecords(results, comparisonType, convert(searchedValue));
+            indexStore.getSubRecords(results, comparisonType, convert(searchedAttributeValue));
         }
         return results;
     }
 
-    private Comparable convert(Comparable value) {
-        return converter.convert(value);
+    private Comparable convert(Comparable attributeValue) {
+        return converter.convert(attributeValue);
     }
 
     @Override
     public String getAttributeName() {
-        return attribute;
+        return attributeName;
     }
 
     @Override

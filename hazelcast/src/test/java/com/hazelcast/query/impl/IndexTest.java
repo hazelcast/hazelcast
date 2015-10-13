@@ -363,7 +363,7 @@ public class IndexTest {
             this.attributeValue = attributeValue;
         }
 
-        public Comparable getAttribute(String attributeName) throws QueryException {
+        public Comparable getAttributeValue(String attributeName) throws QueryException {
             return attributeValue;
         }
 

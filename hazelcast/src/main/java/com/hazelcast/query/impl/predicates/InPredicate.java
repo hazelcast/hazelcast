@@ -48,7 +48,7 @@ public class InPredicate extends AbstractPredicate {
 
     @Override
     public boolean apply(Map.Entry entry) {
-        Comparable entryValue = (Comparable) readAttribute(entry);
+        Comparable entryValue = (Comparable) readAttributeValue(entry);
         if (entryValue == null) {
             return false;
         }
@@ -95,7 +95,7 @@ public class InPredicate extends AbstractPredicate {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append(attribute);
+        sb.append(attributeName);
         sb.append(" IN (");
         for (int i = 0; i < values.length; i++) {
             if (i > 0) {

@@ -35,8 +35,8 @@ public abstract class QueryableEntry implements Map.Entry {
 
     protected Extractors extractors;
 
-    public Object getAttribute(String attributeName) throws QueryException {
-        return ExtractionEngine.extractAttribute(extractors, serializationService, attributeName, this);
+    public Object getAttributeValue(String attributeName) throws QueryException {
+        return ExtractionEngine.extractAttributeValue(extractors, serializationService, attributeName, this);
     }
 
     public AttributeType getAttributeType(String attributeName) throws QueryException {
@@ -44,7 +44,7 @@ public abstract class QueryableEntry implements Map.Entry {
     }
 
     TypeConverter getConverter(String attributeName) {
-        Object attribute = getAttribute(attributeName);
+        Object attribute = getAttributeValue(attributeName);
         if (attribute == null) {
             return NULL_CONVERTER;
         } else {

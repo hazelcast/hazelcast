@@ -32,7 +32,7 @@ public final class AttributeUtils {
 
     static Comparable readAttribute(Map.Entry entry, String attribute) {
         QueryableEntry queryableEntry = (QueryableEntry) entry;
-        Comparable value = (Comparable) queryableEntry.getAttribute(attribute);
+        Comparable value = (Comparable) queryableEntry.getAttributeValue(attribute);
         if (value == null) {
             return IndexImpl.NULL;
         }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.query.Predicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -43,7 +42,7 @@ public class GreaterLessPredicateTest {
         GreaterLessPredicate negate = (GreaterLessPredicate) original.negate();
 
         assertThat(negate, not(sameInstance(original)));
-        assertThat(negate.attribute, equalTo(attribute));
+        assertThat(negate.attributeName, equalTo(attribute));
         assertThat(negate.equal, is(false));
         assertThat(negate.less, is(false));
     }
@@ -57,7 +56,7 @@ public class GreaterLessPredicateTest {
         GreaterLessPredicate negate = (GreaterLessPredicate) original.negate();
 
         assertThat(negate, not(sameInstance(original)));
-        assertThat(negate.attribute, equalTo(attribute));
+        assertThat(negate.attributeName, equalTo(attribute));
         assertThat(negate.equal, is(true));
         assertThat(negate.less, is(true));
     }
@@ -71,7 +70,7 @@ public class GreaterLessPredicateTest {
         GreaterLessPredicate negate = (GreaterLessPredicate) original.negate();
 
         assertThat(negate, not(sameInstance(original)));
-        assertThat(negate.attribute, equalTo(attribute));
+        assertThat(negate.attributeName, equalTo(attribute));
         assertThat(negate.equal, is(false));
         assertThat(negate.less, is(true));
     }
@@ -85,7 +84,7 @@ public class GreaterLessPredicateTest {
         GreaterLessPredicate negate = (GreaterLessPredicate) original.negate();
 
         assertThat(negate, not(sameInstance(original)));
-        assertThat(negate.attribute, equalTo(attribute));
+        assertThat(negate.attributeName, equalTo(attribute));
         assertThat(negate.equal, is(true));
         assertThat(negate.less, is(false));
     }

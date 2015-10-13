@@ -24,7 +24,7 @@ public final class ContainsPredicate extends AbstractPredicate implements Predic
 
     @Override
     public boolean apply(Map.Entry mapEntry) {
-        Object o = readAttribute(mapEntry);
+        Object o = readAttributeValue(mapEntry);
         if (o == null) {
             return false;
         }
@@ -33,7 +33,7 @@ public final class ContainsPredicate extends AbstractPredicate implements Predic
         } else if (o instanceof Collection) {
             return ((Collection) o).contains(value);
         }
-        throw new IllegalArgumentException("Attribute " + attribute + " is type " + o.getClass());
+        throw new IllegalArgumentException("Attribute " + attributeName + " is type " + o.getClass());
     }
 
     @Override
