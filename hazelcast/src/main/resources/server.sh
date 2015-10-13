@@ -40,14 +40,13 @@ if [ "x$MAX_HEAP_SIZE" != "x" ]; then
 	JAVA_OPTS="$JAVA_OPTS -Xmx${MAX_HEAP_SIZE}"
 fi
 
-export CLASSPATH=$HAZELCAST_HOME/lib/hazelcast-all-3.5.3.jar
+export CLASSPATH=$HAZELCAST_HOME/lib/hazelcast-all-${project.version}.jar
 
-
-    echo "########################################"
-    echo "# RUN_JAVA=$RUN_JAVA"
-    echo "# JAVA_OPTS=$JAVA_OPTS"
-    echo "# starting now...."
-    echo "########################################"
+echo "########################################"
+echo "# RUN_JAVA=$RUN_JAVA"
+echo "# JAVA_OPTS=$JAVA_OPTS"
+echo "# starting now...."
+echo "########################################"
 
 echo echo "Process id for hazelcast instance is written to location: " $PID_FILE
 $RUN_JAVA -server $JAVA_OPTS com.hazelcast.core.server.StartServer &
