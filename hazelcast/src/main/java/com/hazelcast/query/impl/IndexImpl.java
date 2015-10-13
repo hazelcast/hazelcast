@@ -60,36 +60,10 @@ public class IndexImpl implements Index {
     }
 
     @Override
-    public TypeConverter getConverter() {
-        return converter;
-    }
-
-    @Override
-    public void removeEntryIndex(Data key, Object value) {
-        Comparable attributeValue = (Comparable) ExtractionEngine.extractAttributeValue(extractors, ss, this.attributeName, key, value);
-        attributeValue = (Comparable)sanitizeValue(attributeValue);
-
-        if (value != null) {
-            indexStore.removeIndex(attributeValue, key);
-        }
-    }
-
-    @Override
-    public void clear() {
-        indexStore.clear();
-        // Clear converter
-        converter = null;
-    }
-
-    ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue) {
-        return indexStore.getRecordMap(indexValue);
-    }
-
-    @Override
     public void saveEntryIndex(QueryableEntry entry, Object oldRecordValue) throws QueryException {
         /*
          * At first, check if converter is not initialized, initialize it before saving an entry index
-n         * Because, if entity index is saved before,
+         * Because, if entity index is saved before,
          * that thread can be blocked before executing converter setting code block,
          * another thread can query over indexes without knowing the converter and
          * this causes to class cast exceptions.
@@ -100,12 +74,12 @@ n         * Because, if entity index is saved before,
 
         Object oldAttributeValue = null;
         if (oldRecordValue != null) {
-            oldAttributeValue = ExtractionEngine.extractAttributeValue(extractors, ss, attributeName,
-                    entry.getKeyData(), oldRecordValue);
+            oldAttributeValue = ExtractionEngine.extractAttributeValue(
+                    extractors, ss, attributeName, entry.getKeyData(), oldRecordValue);
         }
 
-        Object newAttributeValue = ExtractionEngine.extractAttributeValue(extractors, ss, attributeName,
-                entry.getKeyData(), entry.getValue());
+        Object newAttributeValue = ExtractionEngine.extractAttributeValue(
+                extractors, ss, attributeName, entry.getKeyData(), entry.getValue());
         createOrUpdateIndexStore(entry, newAttributeValue, oldAttributeValue);
     }
 
@@ -118,6 +92,18 @@ n         * Because, if entity index is saved before,
             // update
             oldAttributeValue = sanitizeValue(oldAttributeValue);
             indexStore.updateIndex(oldAttributeValue, newAttributeValue, entry);
+        }
+    }
+
+    @Override
+    public void removeEntryIndex(Data key, Object value) {
+        Comparable attributeValue = (Comparable) ExtractionEngine
+                .extractAttributeValue(extractors, ss, attributeName, key, value);
+        attributeValue = (Comparable)sanitizeValue(attributeValue);
+
+
+        if (value != null) {
+            indexStore.removeIndex(value, key);
         }
     }
 
@@ -161,15 +147,6 @@ n         * Because, if entity index is saved before,
     }
 
     @Override
-    public Set<QueryableEntry> getSubRecordsBetween(Comparable fromAttributeValue, Comparable toAttributeValue) {
-        MultiResultSet results = new MultiResultSet();
-        if (converter != null) {
-            indexStore.getSubRecordsBetween(results, convert(fromAttributeValue), convert(toAttributeValue));
-        }
-        return results;
-    }
-
-    @Override
     public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedAttributeValue) {
         MultiResultSet results = new MultiResultSet();
         if (converter != null) {
@@ -178,8 +155,32 @@ n         * Because, if entity index is saved before,
         return results;
     }
 
+    @Override
+    public Set<QueryableEntry> getSubRecordsBetween(Comparable fromAttributeValue, Comparable toAttributeValue) {
+        MultiResultSet results = new MultiResultSet();
+        if (converter != null) {
+            indexStore.getSubRecordsBetween(results, convert(fromAttributeValue), convert(toAttributeValue));
+        }
+        return results;
+    }
+
     private Comparable convert(Comparable attributeValue) {
         return converter.convert(attributeValue);
+    }
+
+    /**
+     * Provides comparable null object.
+     */
+    @Override
+    public TypeConverter getConverter() {
+        return converter;
+    }
+
+    @Override
+    public void clear() {
+        indexStore.clear();
+        // Clear converter
+        converter = null;
     }
 
     @Override
@@ -192,9 +193,10 @@ n         * Because, if entity index is saved before,
         return ordered;
     }
 
-    /**
-     * Provides comparable null object.
-     */
+    ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue) {
+        return indexStore.getRecordMap(indexValue);
+    }
+
     public static final class NullObject implements Comparable, DataSerializable {
         @Override
         public int compareTo(Object o) {
