@@ -10,18 +10,27 @@ import java.util.Collection;
 public final class GetterFactory {
     public static Getter newFieldGetter(Object object, Getter parentGetter, Field field, String modifierSuffix) throws Exception {
         Class<?> type = field.getType();
+
+        Class<?> collectionType = null;
         if (extractingFromCollection(type, modifierSuffix)) {
-            Class<?> collectionType = getCollectionType(object, parentGetter, field);
+            Object currentObject = getCurrentObject(object, parentGetter);
+            collectionType = getCollectionType(currentObject, field);
             if (collectionType == null) {
                 return NullGetter.NULL_GETTER;
             }
-            return new FieldGetter(parentGetter, field, modifierSuffix, collectionType);
         }
-        return new FieldGetter(parentGetter, field, modifierSuffix);
+        return new FieldGetter(parentGetter, field, modifierSuffix, collectionType);
     }
 
-    private static Class<?> getCollectionType(Object object, Getter parentGetter, Field field) throws Exception {
-        Object currentObject = getCurrentObject(object, parentGetter);
+    public static Getter newMethodGetter(Getter parent, Method method) {
+        return new MethodGetter(parent, method);
+    }
+
+    public static Getter newThisGetter(Getter parent, Object object) {
+        return new ThisGetter(parent, object);
+    }
+
+    private static Class<?> getCollectionType(Object currentObject, Field field) throws Exception {
         if (currentObject instanceof MultiResult) {
             currentObject = getFirstObjectFromMultiResult(currentObject);
         }
@@ -29,7 +38,7 @@ public final class GetterFactory {
             return null;
         }
 
-        Collection targetCollection = (Collection) field.get(object);
+        Collection targetCollection = (Collection) field.get(currentObject);
         if (targetCollection == null || targetCollection.isEmpty()) {
             return null;
         }
@@ -68,18 +77,10 @@ public final class GetterFactory {
         Object currentObject;
         if (parent == null) {
             currentObject = obj;
-         } else {
+        } else {
             currentObject = parent.getValue(obj);
         }
         return currentObject;
-    }
-
-    public static Getter newMethodGetter(Getter parent, Method method) {
-        return new MethodGetter(parent, method);
-    }
-
-    public static Getter newThisGetter(Getter parent, Object object) {
-        return new ThisGetter(parent, object);
     }
 
 }

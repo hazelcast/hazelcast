@@ -146,16 +146,16 @@ public final class ReflectionHelper {
             Getter parent = null;
             List<String> possibleMethodNames = new ArrayList<String>(INITIAL_CAPACITY);
             for (final String fullname : attribute.split("\\.")) {
-                String nameWithoutSuffix = removeReducerSuffix(fullname);
-                String suffix = (nameWithoutSuffix == fullname) ? null : getReducerSuffix(fullname);
+                String name = SuffixModifierUtils.removeModifierSuffix(fullname);
+                String modifier = (name == fullname) ? null : SuffixModifierUtils.getModifier(fullname);
 
                 Getter localGetter = null;
                 possibleMethodNames.clear();
-                possibleMethodNames.add(nameWithoutSuffix);
-                final String camelName = Character.toUpperCase(nameWithoutSuffix.charAt(0)) + nameWithoutSuffix.substring(1);
+                possibleMethodNames.add(name);
+                final String camelName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
                 possibleMethodNames.add("get" + camelName);
                 possibleMethodNames.add("is" + camelName);
-                if (nameWithoutSuffix.equals(THIS_ATTRIBUTE_NAME.value())) {
+                if (name.equals(THIS_ATTRIBUTE_NAME.value())) {
                     localGetter = GetterFactory.newThisGetter(parent, obj);
                 } else {
 
@@ -178,8 +178,8 @@ public final class ReflectionHelper {
                     }
                     if (localGetter == null) {
                         try {
-                            final Field field = clazz.getField(nameWithoutSuffix);
-                            localGetter = GetterFactory.newFieldGetter(obj, parent, field, suffix);
+                            final Field field = clazz.getField(name);
+                            localGetter = GetterFactory.newFieldGetter(obj, parent, field, modifier);
                             if (localGetter == NULL_GETTER) {
                                 return localGetter;
                             }
@@ -192,9 +192,9 @@ public final class ReflectionHelper {
                         Class c = clazz;
                         while (!c.isInterface() && !Object.class.equals(c)) {
                             try {
-                                final Field field = c.getDeclaredField(nameWithoutSuffix);
+                                final Field field = c.getDeclaredField(name);
                                 field.setAccessible(true);
-                                localGetter = GetterFactory.newFieldGetter(obj, parent, field, suffix);
+                                localGetter = GetterFactory.newFieldGetter(obj, parent, field, modifier);
                                 if (localGetter == NULL_GETTER) {
                                     return NULL_GETTER;
                                 }
@@ -208,7 +208,7 @@ public final class ReflectionHelper {
                 }
                 if (localGetter == null) {
                     throw new IllegalArgumentException("There is no suitable accessor for '"
-                            + nameWithoutSuffix + "' on class '" + clazz + "'");
+                            + name + "' on class '" + clazz + "'");
                 }
                 parent = localGetter;
             }
@@ -222,20 +222,6 @@ public final class ReflectionHelper {
             throw new QueryException(e);
         }
     }
-
-    private static String removeReducerSuffix(String name) {
-        int indexOfOpeningBracket = name.indexOf('[');
-        if (indexOfOpeningBracket == -1) {
-            return name;
-        }
-        return name.substring(0, indexOfOpeningBracket);
-    }
-
-    private static String getReducerSuffix(String name) {
-        int indexOfOpeningBracket = name.indexOf('[');
-        return name.substring(indexOfOpeningBracket, name.length());
-    }
-
 
     public static Object extractValue(Object object, String attributeName) throws Exception {
         return createGetter(object, attributeName).getValue(object);

@@ -49,7 +49,7 @@ public class FieldGetter extends Getter {
 
     private int parseModifier(String modifierSuffix, boolean isArray, boolean isCollection) {
         if (!isArray && !isCollection) {
-            throw new IllegalStateException("Reducer is allowed only when extracting from arrays or collections");
+            throw new IllegalArgumentException("Reducer is allowed only when extracting from arrays or collections");
         }
         String stringValue = modifierSuffix.substring(1, modifierSuffix.length() - 1);
         if ("*".equals(stringValue)) {
@@ -57,10 +57,6 @@ public class FieldGetter extends Getter {
         } else {
             return Integer.parseInt(stringValue);
         }
-    }
-
-    public FieldGetter(Getter parent, Field field, String reducer) {
-        this(parent, field, reducer, null);
     }
 
     private Class getResultType(Field field, Class resultType) {
@@ -74,6 +70,12 @@ public class FieldGetter extends Getter {
             //We are returning the object as it is.
             //No modifier suffix was defined
             return field.getType();
+        }
+
+        Class<?> fieldType = field.getType();
+        if (!fieldType.isArray()) {
+            throw new IllegalArgumentException("Cannot infer a return type with modifier "
+                    + modifier + " on field of type " + fieldType.getName());
         }
 
         //ok, it must be an array. let's return array type
@@ -180,11 +182,11 @@ public class FieldGetter extends Getter {
 
     @Override
     boolean isCacheable() {
-        return ReflectionHelper.THIS_CL.equals(field.getDeclaringClass().getClassLoader());
+        return ReflectionHelper.THIS_CL.equals(resultType.getClassLoader());
     }
 
     @Override
     public String toString() {
-        return "FieldGetter [parent=" + parent + ", field=" + field + "]";
+        return "FieldGetter [parent=" + parent + ", field=" + field + ", modifier = " + modifier + "]";
     }
 }

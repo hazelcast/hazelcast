@@ -4,8 +4,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -18,15 +19,13 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.test.TestCollectionUtils.setOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.is;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class MultiValuePredicateTest extends HazelcastTestSupport {
 
     @Test
@@ -64,7 +63,7 @@ public class MultiValuePredicateTest extends HazelcastTestSupport {
 
 
 
-        @Test
+    @Test
     public void testCollectionPredicate() throws Exception {
         final HazelcastInstance instance = createHazelcastInstance();
         final IMap<Integer, Body> map = instance.getMap("map");
