@@ -84,17 +84,29 @@ public class MapAttributeConfig {
      * @see QueryConstants
      */
     public MapAttributeConfig setName(String name) {
-        this.name = checkNotQueryConstant(checkHasText(name, "Map attribute name must contain text"));
+        this.name = checkName(name);
         return this;
     }
 
-    private static String checkNotQueryConstant(String name) {
+    private static String checkName(String name) {
+        checkHasText(name, "Map attribute name must contain text");
+        checkNoDotInName(name);
+        checkNotQueryConstant(name);
+        return name;
+    }
+
+    private static void checkNoDotInName(String name) {
+        if (name.contains(".")) {
+            throw new IllegalArgumentException("Map attribute name must not contain . (dot) char");
+        }
+    }
+
+    private static void checkNotQueryConstant(String name) {
         for (QueryConstants constant : QueryConstants.values()) {
             if (name.equals(constant.value())) {
                 throw new IllegalArgumentException(String.format("Map attribute name must not contain query constant '%s'", constant.value()));
             }
         }
-        return name;
     }
 
     /**

@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.query.QueryConstants;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -25,15 +26,48 @@ import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 
+import static org.junit.Assert.assertEquals;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MapAttributeConfigTest {
 
-    /**
-     * Test method for {@link MemberAttributeConfigReadOnly#setAttributes(java.util.Map)} .
-     */
-    @Test(expected = UnsupportedOperationException.class)
-    public void testReadOnlyMemberAttributeConfigSetAttributes() {
-        new MemberAttributeConfigReadOnly(new MemberAttributeConfig()).setAttributes(new HashMap<String, Object>());
+    @Test(expected = IllegalArgumentException.class)
+    public void nullName() {
+        new MapAttributeConfig(null, "com.class");
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void emptyName() {
+        new MapAttributeConfig("", "com.class");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void dotInName() {
+        new MapAttributeConfig("body.brain", "com.class");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void queryConstantAsName() {
+        new MapAttributeConfig(QueryConstants.KEY_ATTRIBUTE_NAME.value(), "com.class");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void nullExtractor() {
+        new MapAttributeConfig("iq", null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void emptyExtractor() {
+        new MapAttributeConfig("iq", "");
+    }
+
+    @Test
+    public void validDefinition() {
+        MapAttributeConfig config = new MapAttributeConfig("iq", "com.test.IqExtractor");
+
+        assertEquals("iq", config.getName());
+        assertEquals("com.test.IqExtractor", config.getExtractor());
+    }
+
 }
