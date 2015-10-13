@@ -494,11 +494,12 @@ public interface MapCodecTemplate {
 
     /**
      * Returns a set clone of the keys contained in this map. The set is NOT backed by the map, so changes to the map
-     * are NOT reflected in the set, and vice-versa. On the server side this method is executed by a distributed query
-     * so it may throw a QUERY_RESULT_SIZE_EXCEEDED if GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT is configured.
+     * are NOT reflected in the set, and vice-versa. This method is always executed by a distributed query, so it may
+     * throw a QueryResultSizeExceededException if query result size limit is configured.
      *
      * @param name name of the map
      * @return a set clone of the keys contained in this map.
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Request(id = 38, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object keySet(String name);
@@ -517,11 +518,12 @@ public interface MapCodecTemplate {
     /**
      * Returns a collection clone of the values contained in this map.
      * The collection is NOT backed by the map, so changes to the map are NOT reflected in the collection, and vice-versa.
-     * On the server side this method is executed by a distributed query so it may throw a QUERY_RESULT_SIZE_EXCEEDED
-     * if  GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT is configured.
+     * This method is always executed by a distributed query, so it may throw a QueryResultSizeExceededException
+     * if query result size limit is configured.
      *
      * @param name name of map
      * @return All values in the map
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Request(id = 40, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object values(String name);
@@ -529,11 +531,12 @@ public interface MapCodecTemplate {
     /**
      * Returns a Set clone of the mappings contained in this map.
      * The collection is NOT backed by the map, so changes to the map are NOT reflected in the collection, and vice-versa.
-     * On the server side this method is executed by a distributed query so it may throw a QueryResultSizeExceededException
-     * if  GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT is configured.
+     * This method is always executed by a distributed query, so it may throw a QueryResultSizeExceededException
+     * if query result size limit is configured.
      *
      * @param name name of map
      * @return a set clone of the keys mappings in this map
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Request(id = 41, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
     Object entrySet(String name);
@@ -541,38 +544,41 @@ public interface MapCodecTemplate {
     /**
      * Queries the map based on the specified predicate and returns the keys of matching entries. Specified predicate
      * runs on all members in parallel.The set is NOT backed by the map, so changes to the map are NOT reflected in the
-     * set, and vice-versa This method is always executed by a distributed query so it may throw a
-     * QUERY_RESULT_SIZE_EXCEEDED if GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT is configured.
+     * set, and vice-versa. This method is always executed by a distributed query, so it may throw a
+     * QueryResultSizeExceededException if query result size limit is configured.
      *
      * @param name      name of map.
      * @param predicate specified query criteria.
      * @return result key set for the query.
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Request(id = 42, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object keySetWithPredicate(String name, Data predicate);
 
     /**
      * Queries the map based on the specified predicate and returns the values of matching entries.Specified predicate
-     * runs on all members in parallel.The collection is NOT backed by the map, so changes to the map are NOT reflected
-     * in the collection, and vice-versa.This method is always executed by a distributed query so it may throw a
-     * QUERY_RESULT_SIZE_EXCEEDED if GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT is configured.
+     * runs on all members in parallel. The collection is NOT backed by the map, so changes to the map are NOT reflected
+     * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
+     * QueryResultSizeExceededException if query result size limit is configured.
      *
      * @param name      name of map
      * @param predicate specified query criteria.
      * @return result value collection of the query.
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Request(id = 43, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object valuesWithPredicate(String name, Data predicate);
 
     /**
      * Queries the map based on the specified predicate and returns the matching entries.Specified predicate
-     * runs on all members in parallel.The collection is NOT backed by the map, so changes to the map are NOT reflected
-     * in the collection, and vice-versa.This method is always executed by a distributed query so it may throw a
-     * QUERY_RESULT_SIZE_EXCEEDED if GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT is configured.
+     * runs on all members in parallel. The collection is NOT backed by the map, so changes to the map are NOT reflected
+     * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
+     * QueryResultSizeExceededException if query result size limit is configured.
      *
      * @param name      name of map
      * @param predicate specified query criteria.
      * @return result key-value entry collection of the query.
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Request(id = 44, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
     Object entriesWithPredicate(String name, Data predicate);
@@ -715,12 +721,13 @@ public interface MapCodecTemplate {
     /**
      * Queries the map based on the specified predicate and returns the values of matching entries. Specified predicate
      * runs on all members in parallel. The collection is NOT backed by the map, so changes to the map are NOT reflected
-     * in the collection, and vice-versa. This method is always executed by a distributed query so it may throw a
-     * QUERY_RESULT_SIZE_EXCEEDED if GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT is configured.
+     * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
+     * QueryResultSizeExceededException if query result size limit is configured.
      *
      * @param name      name of map
      * @param predicate specified query criteria.
      * @return values for the query.
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Request(id = 57, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
     Object valuesWithPagingPredicate(String name, Data predicate);

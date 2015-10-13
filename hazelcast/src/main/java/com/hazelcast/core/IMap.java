@@ -71,8 +71,7 @@ import java.util.concurrent.TimeUnit;
  * @param <V> value
  * @see java.util.concurrent.ConcurrentMap
  */
-public interface IMap<K, V>
-        extends ConcurrentMap<K, V>, BaseMap<K, V> {
+public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
     /**
      * {@inheritDoc}
@@ -729,11 +728,11 @@ public interface IMap<K, V>
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in the <tt>key</tt>'s class.
      *
-     * @param key      key to lock in this map.
-     * @param time     maximum time to wait for the lock.
-     * @param timeunit time unit of the <tt>time</tt> argument.
-     * @param leaseTime time to wait before releasing the lock.
-     * @param leaseTimeunit  unit of time to specify lease time.
+     * @param key           key to lock in this map.
+     * @param time          maximum time to wait for the lock.
+     * @param timeunit      time unit of the <tt>time</tt> argument.
+     * @param leaseTime     time to wait before releasing the lock.
+     * @param leaseTimeunit unit of time to specify lease time.
      * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
      * if the waiting time elapsed before the lock was acquired.
      * @throws NullPointerException if the specified key is null.
@@ -1108,7 +1107,8 @@ public interface IMap<K, V>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      * <p/>
-     * This method is executed by a distributed query so it may throw a {@link QueryResultSizeExceededException}
+     * This method is always executed by a distributed query,
+     * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a set clone of the keys contained in this map.
@@ -1124,7 +1124,8 @@ public interface IMap<K, V>
      * The collection is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
      * <p/>
-     * This method is executed by a distributed query so it may throw a {@link QueryResultSizeExceededException}
+     * This method is always executed by a distributed query,
+     * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a collection clone of the values contained in this map
@@ -1140,7 +1141,8 @@ public interface IMap<K, V>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      * <p/>
-     * This method is executed by a distributed query so it may throw a {@link QueryResultSizeExceededException}
+     * This method is always executed by a distributed query,
+     * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a set clone of the keys mappings in this map
@@ -1159,7 +1161,7 @@ public interface IMap<K, V>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      * <p/>
-     * This method is always executed by a distributed query
+     * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
@@ -1180,7 +1182,7 @@ public interface IMap<K, V>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      * <p/>
-     * This method is always executed by a distributed query
+     * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
@@ -1201,7 +1203,7 @@ public interface IMap<K, V>
      * The collection is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
      * <p/>
-     * This method is always executed by a distributed query
+     * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
@@ -1226,7 +1228,8 @@ public interface IMap<K, V>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      * <p/>
-     * This method is executed by a distributed query so it may throw a {@link QueryResultSizeExceededException}
+     * This method is always executed by a distributed query,
+     * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return locally owned keys.
@@ -1249,7 +1252,7 @@ public interface IMap<K, V>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      * <p/>
-     * This method is always executed by a distributed query
+     * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
      * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *

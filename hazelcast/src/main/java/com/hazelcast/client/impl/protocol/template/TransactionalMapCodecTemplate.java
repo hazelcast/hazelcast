@@ -73,7 +73,7 @@ public interface TransactionalMapCodecTemplate {
     Object size(String name, String txnId, long threadId);
 
     /**
-     * Returns true if this map contains no entries
+     * Returns true if this map contains no entries.
      *
      * @param name Name of the Transactional Map
      * @param txnId ID of the this transaction operation
@@ -101,7 +101,7 @@ public interface TransactionalMapCodecTemplate {
 
     /**
      * Associates the specified value with the specified key in this map. If the map previously contained a mapping for
-     * the key, the old value is replaced by the specified value. This method is preferred to  #put(Object, Object)
+     * the key, the old value is replaced by the specified value. This method is preferred to #put(Object, Object)
      * if the old value is not needed.
      * The object to be set will be accessible only in the current transaction context until the transaction is committed.
      *
@@ -200,13 +200,14 @@ public interface TransactionalMapCodecTemplate {
 
     /**
      * Returns a set clone of the keys contained in this map. The set is NOT backed by the map, so changes to the map
-     * are NOT reflected in the set, and vice-versa. On the server side this method is executed by a distributed query
-     * so it may throw a QUERY_RESULT_SIZE_EXCEEDED#PROP_QUERY_RESULT_SIZE_LIMIT if GroupProperties is configured.
+     * are NOT reflected in the set, and vice-versa. This method is always executed by a distributed query, so it may throw
+     * a QueryResultSizeExceededException if query result size limit is configured.
      *
      * @param name Name of the Transactional Map
      * @param txnId ID of the this transaction operation
      * @param threadId  The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @return A set clone of the keys contained in this map.
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Request(id = 14, retryable = false, response = ResponseMessageConst.SET_DATA)
     Object keySet(String name, String txnId, long threadId);
@@ -214,45 +215,46 @@ public interface TransactionalMapCodecTemplate {
     /**
      * Queries the map based on the specified predicate and returns the keys of matching entries. Specified predicate
      * runs on all members in parallel.The set is NOT backed by the map, so changes to the map are NOT reflected in the
-     * set, and vice-versa This method is always executed by a distributed query so it may throw a
-     * QUERY_RESULT_SIZE_EXCEEDED#PROP_QUERY_RESULT_SIZE_LIMIT if GroupProperties is configured.
+     * set, and vice-versa. This method is always executed by a distributed query, so it may throw a
+     * QueryResultSizeExceededException if query result size limit is configured.
      *
      * @param name Name of the Transactional Map
      * @param txnId ID of the this transaction operation
      * @param threadId  The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param predicate Specified query criteria.
      * @return Result key set for the query.
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Request(id = 15, retryable = false, response = ResponseMessageConst.SET_DATA)
     Object keySetWithPredicate(String name, String txnId, long threadId, Data predicate);
 
     /**
      * Returns a collection clone of the values contained in this map. The collection is NOT backed by the map,
-     * so changes to the map are NOT reflected in the collection, and vice-versa. On the server side this method is
-     * executed by a distributed query so it may throw a QUERY_RESULT_SIZE_EXCEEDED#PROP_QUERY_RESULT_SIZE_LIMIT
-     * if  GroupProperties is configured.
+     * so changes to the map are NOT reflected in the collection, and vice-versa. This method is always executed by a
+     * distributed query, so it may throw a QueryResultSizeExceededException if query result size limit is configured.
      *
      * @param name Name of the Transactional Map
      * @param txnId ID of the this transaction operation
      * @param threadId  The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @return All values in the map
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Request(id = 16, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object values(String name, String txnId, long threadId);
 
     /**
      * Queries the map based on the specified predicate and returns the values of matching entries.Specified predicate
-     * runs on all members in parallel.The collection is NOT backed by the map, so changes to the map are NOT reflected
-     * in the collection, and vice-versa.This method is always executed by a distributed query so it may throw a
-     * QUERY_RESULT_SIZE_EXCEEDED#PROP_QUERY_RESULT_SIZE_LIMIT if GroupProperties is configured.
+     * runs on all members in parallel. The collection is NOT backed by the map, so changes to the map are NOT reflected
+     * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw
+     * a QueryResultSizeExceededException if query result size limit is configured.
      *
      * @param name Name of the Transactional Map
      * @param txnId ID of the this transaction operation
      * @param threadId  The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param predicate Specified query criteria.
      * @return Result value collection of the query.
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Request(id = 17, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object valuesWithPredicate(String name, String txnId, long threadId, Data predicate);
-
 }
