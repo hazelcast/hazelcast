@@ -25,8 +25,6 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.PartitionAwareOperation;
 import java.io.IOException;
 
-import static com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore.TOMBSTONE_REMOVAL_PERIOD_MS;
-
 /**
  * Removes the key from replicated map.
  */
@@ -44,10 +42,6 @@ public class RemoveOperation extends AbstractReplicatedMapOperation implements P
         this.key = key;
     }
 
-    @Override
-    public void beforeRun() throws Exception {
-        this.ttl = TOMBSTONE_REMOVAL_PERIOD_MS;
-    }
 
     @Override
     public void run() throws Exception {

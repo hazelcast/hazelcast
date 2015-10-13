@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.replicatedmap.impl;
+package com.hazelcast.replicatedmap.impl.operation;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.replicatedmap.impl.operation.SyncReplicatedMapDataOperation;
+import com.hazelcast.replicatedmap.impl.PartitionContainer;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
@@ -32,6 +33,9 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+
+import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_TRY_COUNT;
+import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 
 /**
  * Collects and sends the replicated map data from the executing node to the caller via
@@ -71,14 +75,17 @@ public class RequestMapDataOperation extends AbstractOperation {
         op.setPartitionId(getPartitionId());
         op.setValidateTarget(false);
         OperationService operationService = getNodeEngine().getOperationService();
-        operationService.invokeOnTarget(ReplicatedMapService.SERVICE_NAME, op, getCallerAddress());
+        operationService
+                .createInvocationBuilder(SERVICE_NAME, op, getCallerAddress())
+                .setTryCount(INVOCATION_TRY_COUNT)
+                .invoke();
     }
+
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public Object getResponse() {
+        return true;
     }
-
 
     private Set<RecordMigrationInfo> getRecordSet(ReplicatedRecordStore store) {
         Set<RecordMigrationInfo> recordSet = new HashSet<RecordMigrationInfo>(store.size());

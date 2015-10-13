@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.PartitionContainer;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.RequestMapDataOperation;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.OperationService;
@@ -32,6 +31,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_TRY_COUNT;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 
 /**
@@ -82,12 +82,15 @@ public class CheckReplicaVersion extends AbstractOperation implements PartitionA
     private void requestDataFromOwner(String name) {
         OperationService operationService = getNodeEngine().getOperationService();
         RequestMapDataOperation requestMapDataOperation = new RequestMapDataOperation(name);
-        operationService.invokeOnPartition(SERVICE_NAME, requestMapDataOperation, getPartitionId());
+        operationService
+                .createInvocationBuilder(SERVICE_NAME, requestMapDataOperation, getPartitionId())
+                .setTryCount(INVOCATION_TRY_COUNT)
+                .invoke();
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public Object getResponse() {
+        return true;
     }
 
     @Override

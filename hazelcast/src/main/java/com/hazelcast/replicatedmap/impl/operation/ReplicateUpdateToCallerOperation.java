@@ -89,8 +89,8 @@ public class ReplicateUpdateToCallerOperation extends AbstractOperation implemen
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
+    public Object getResponse() {
+        return true;
     }
 
     @Override

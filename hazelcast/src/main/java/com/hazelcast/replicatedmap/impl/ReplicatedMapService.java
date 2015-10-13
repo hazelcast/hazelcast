@@ -76,6 +76,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         MigrationAwareService, SplitBrainHandlerService, StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:replicatedMapService";
+    public static final int INVOCATION_TRY_COUNT = 3;
 
     private static final int SYNC_INTERVAL_SECONDS = 10;
     private static final int MAX_CLEAR_EXECUTION_RETRY = 5;
@@ -144,7 +145,9 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
                         CheckReplicaVersion checkReplicaVersion = new CheckReplicaVersion(partitionContainer);
                         checkReplicaVersion.setPartitionId(i);
                         checkReplicaVersion.setValidateTarget(false);
-                        operationService.invokeOnTarget(SERVICE_NAME, checkReplicaVersion, address);
+                        operationService.createInvocationBuilder(SERVICE_NAME, checkReplicaVersion, address)
+                                .setTryCount(INVOCATION_TRY_COUNT)
+                                .invoke();
                     }
                 }
             }
@@ -330,6 +333,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
             }
             Operation operation = new ClearLocalOperation(name);
             InvocationBuilder ib = operationService.createInvocationBuilder(SERVICE_NAME, operation, address);
+            ib.setTryCount(1);
             futures.put(address, ib.invoke());
         }
         return futures;

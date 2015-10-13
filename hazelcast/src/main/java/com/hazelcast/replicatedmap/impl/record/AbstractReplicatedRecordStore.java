@@ -48,11 +48,6 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  */
 public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseReplicatedRecordStore<K, V> {
 
-    // entries are not removed on replicatedMap.remove() as it would reset a vector clock and we wouldn't be able to
-    // order subsequent events related to the entry. a tombstone is created instead. this constant says how long we
-    // keep the tombstone alive. if there is no event in this period then the tombstone is removed.
-    public static final int TOMBSTONE_REMOVAL_PERIOD_MS = 5 * 60 * 1000;
-
     public AbstractReplicatedRecordStore(String name, ReplicatedMapService replicatedMapService, int partitionId) {
 
         super(name, replicatedMapService, partitionId);
@@ -81,9 +76,8 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         } else {
             oldValue = (V) current.getValueInternal();
             if (oldValue != null) {
-                current.setValue(null, TOMBSTONE_REMOVAL_PERIOD_MS);
+                current.setValue(null, 0);
                 storage.incrementVersion();
-                scheduleTtlEntry(TOMBSTONE_REMOVAL_PERIOD_MS, marshalledKey, null);
             }
         }
         Object unmarshalledOldValue = unmarshall(oldValue);
@@ -106,8 +100,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         } else {
             oldValue = (V) current.getValueInternal();
             if (oldValue != null) {
-                current.setValueInternal(null, TOMBSTONE_REMOVAL_PERIOD_MS);
-                scheduleTtlEntry(TOMBSTONE_REMOVAL_PERIOD_MS, marshalledKey, null);
+                current.setValueInternal(null, 0);
             }
         }
         Object unmarshalledOldValue = unmarshall(oldValue);
@@ -327,9 +320,8 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             existingEntry.setTtl(record.getTtlMillis());
             newValue = policy.merge(getName(), mergingEntry, existingEntry);
             if (newValue == null) {
-                record.setValue(null, TOMBSTONE_REMOVAL_PERIOD_MS);
+                record.setValue(null, 0);
                 storage.incrementVersion();
-                scheduleTtlEntry(TOMBSTONE_REMOVAL_PERIOD_MS, (K) marshalledKey, null);
                 Data dataKey = serializationService.toData(marshalledKey);
                 VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
                 sendReplicationOperation(true, getName(), dataKey, null, record.getTtlMillis(), responsePair);

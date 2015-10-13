@@ -49,11 +49,6 @@ public class SyncReplicatedMapDataOperation extends AbstractOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
     public void run() throws Exception {
         logger.finest("Carrying " + recordSet.size() + " records for partition -> " + getPartitionId()
                 + " from -> " + getCallerAddress() + ", to -> " + getNodeEngine().getThisAddress());
@@ -65,6 +60,11 @@ public class SyncReplicatedMapDataOperation extends AbstractOperation {
         }
         store.setVersion(version);
         store.setLoaded(true);
+    }
+
+    @Override
+    public Object getResponse() {
+        return true;
     }
 
     @Override

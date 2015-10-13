@@ -52,6 +52,10 @@ public class MergeOperation extends AbstractReplicatedMapOperation {
         store.merge(key, entryView, policy);
     }
 
+    @Override
+    public Object getResponse() {
+        return true;
+    }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
