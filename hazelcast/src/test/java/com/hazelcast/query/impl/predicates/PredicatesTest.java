@@ -328,7 +328,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         }
     }
 
-    private class NullDummyEntry implements QueryableEntry {
+    private class NullDummyEntry extends QueryableEntry {
 
         private Integer nullField;
 
@@ -369,7 +369,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Object getTargetObject(boolean key) {
+        protected Object getTargetObject(boolean key) {
             return null;
         }
 

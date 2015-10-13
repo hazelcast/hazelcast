@@ -32,7 +32,8 @@ final class ExtractionEngine {
     private ExtractionEngine() {
     }
 
-    public static Object extractAttribute(Extractors extractors, SerializationService ss, String attributeName, Object key, Object value) {
+    // Data key
+    public static Object extractAttribute(Extractors extractors, SerializationService ss, String attributeName, Data key, Object value) {
         if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return ss.toObject(key);
         } else if (THIS_ATTRIBUTE_NAME.value().equals(attributeName)) {
@@ -112,15 +113,17 @@ final class ExtractionEngine {
         }
     }
 
-    public static AttributeType extractAttributeType(Extractors extractors, SerializationService ss, String attributeName, QueryableEntry entry) {
+    public static AttributeType extractAttributeType(Extractors extractors, SerializationService ss, String attributeName, QueryableEntry entry, Object attribute) {
         if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return ReflectionHelper.getAttributeType(entry.getKey().getClass());
         } else if (THIS_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return ReflectionHelper.getAttributeType(entry.getValue().getClass());
         }
 
-        Object extractedObject = extractAttribute(extractors, ss, attributeName, entry);
-        return getExtractedAttributeType(extractedObject);
+        if(attribute == null) {
+            attribute = extractAttribute(extractors, ss, attributeName, entry);
+        }
+        return getExtractedAttributeType(attribute);
     }
 
     static AttributeType getExtractedAttributeType(Object extractedObject) {

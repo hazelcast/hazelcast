@@ -1,7 +1,6 @@
 package com.hazelcast.query.extractor;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public final class MultiResult {
@@ -17,7 +16,7 @@ public final class MultiResult {
     }
 
     public List<Object> getResults() {
-        return Collections.unmodifiableList(results);
+        return results;
     }
 
     public boolean isEmpty() {

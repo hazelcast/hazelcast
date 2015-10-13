@@ -16,27 +16,51 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.core.TypeConverter;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.QueryException;
 
 import java.util.Map;
 
+import static com.hazelcast.query.impl.TypeConverters.IDENTITY_CONVERTER;
+import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
+
 /**
  * This interface contains methods related to Queryable Entry which means searched an indexed by sql query or predicate .
  */
-public interface QueryableEntry extends Map.Entry {
+public abstract class QueryableEntry implements Map.Entry {
 
-    Object getValue();
+    protected SerializationService serializationService;
 
-    Object getKey();
+    protected Extractors extractors;
 
-    Data getKeyData();
+    public Object getAttribute(String attributeName) throws QueryException {
+        return ExtractionEngine.extractAttribute(extractors, serializationService, attributeName, this);
+    }
 
-    Data getValueData();
+    public AttributeType getAttributeType(String attributeName) throws QueryException {
+        return ExtractionEngine.extractAttributeType(extractors, serializationService, attributeName, this, null);
+    }
 
-    Object getAttribute(String attributeName) throws QueryException;
+    TypeConverter getConverter(String attributeName) {
+        Object attribute = getAttribute(attributeName);
+        if (attribute == null) {
+            return NULL_CONVERTER;
+        } else {
+            AttributeType attributeType = ExtractionEngine.extractAttributeType(extractors, serializationService, attributeName, this, attribute);
+            return attributeType == null ? IDENTITY_CONVERTER : attributeType.getConverter();
+        }
+    }
 
-    AttributeType getAttributeType(String attributeName);
+    abstract public Object getValue();
 
-    Object getTargetObject(boolean key);
+    abstract public Object getKey();
+
+    abstract public Data getKeyData();
+
+    abstract public Data getValueData();
+
+    protected abstract Object getTargetObject(boolean key);
+
 }

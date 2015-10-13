@@ -19,19 +19,16 @@ package com.hazelcast.query.impl;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.query.QueryException;
 
 /**
  * Entry of the Query.
  */
-public class CachedQueryEntry implements QueryableEntry {
+public class CachedQueryEntry extends QueryableEntry {
 
     private Data keyData;
     private Object keyObject;
     private Data valueData;
     private Object valueObject;
-    private SerializationService serializationService;
-    private Extractors extractors;
 
     public CachedQueryEntry() {
     }
@@ -91,17 +88,7 @@ public class CachedQueryEntry implements QueryableEntry {
     }
 
     @Override
-    public Object getAttribute(String attributeName) throws QueryException {
-        return ExtractionEngine.extractAttribute(extractors, serializationService, attributeName, this);
-    }
-
-    @Override
-    public AttributeType getAttributeType(String attributeName) {
-        return ExtractionEngine.extractAttributeType(extractors, serializationService, attributeName, this);
-    }
-
-    @Override
-    public Object getTargetObject(boolean key) {
+    protected Object getTargetObject(boolean key) {
         Object targetObject;
         if (key) {
             if (keyObject == null) {

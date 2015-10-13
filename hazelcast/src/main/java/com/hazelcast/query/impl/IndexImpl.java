@@ -29,7 +29,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.query.impl.TypeConverters.IDENTITY_CONVERTER;
+import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
 
 /**
  * Implementation for {@link com.hazelcast.query.impl.Index}
@@ -47,7 +47,6 @@ public class IndexImpl implements Index {
     private final boolean ordered;
 
     private volatile TypeConverter converter;
-    private volatile boolean converterInferredFromNonNullValue;
 
     private final SerializationService ss;
     private final Extractors extractors;
@@ -90,19 +89,13 @@ public class IndexImpl implements Index {
     public void saveEntryIndex(QueryableEntry e, Object oldRecordValue) throws QueryException {
         /*
          * At first, check if converter is not initialized, initialize it before saving an entry index
-         * Because, if entity index is saved before,
+n         * Because, if entity index is saved before,
          * that thread can be blocked before executing converter setting code block,
          * another thread can query over indexes without knowing the converter and
          * this causes to class cast exceptions.
          */
-        if (converter == null) {
-            // Initialize attribute type by using entry index
-            converterInferredFromNonNullValue = e.getAttribute(attribute) != null;
-            converter = getConverter(e);
-        } else if (!converterInferredFromNonNullValue) {
-            if (converterInferredFromNonNullValue = e.getAttribute(attribute) != null) {
-                converter = getConverter(e);
-            }
+        if (converter == null || converter == NULL_CONVERTER) {
+            converter = e.getConverter(attribute);
         }
 
         Object oldValue = null;
@@ -112,11 +105,6 @@ public class IndexImpl implements Index {
 
         Object newValue = ExtractionEngine.extractAttribute(extractors, ss, attribute, e.getKeyData(), e.getValue());
         createOrUpdateIndexStore(newValue, oldValue, e);
-    }
-
-    private TypeConverter getConverter(QueryableEntry e) {
-        AttributeType attributeType = e.getAttributeType(attribute);
-        return attributeType == null ? IDENTITY_CONVERTER : attributeType.getConverter();
     }
 
     private void createOrUpdateIndexStore(Object newValue, Object oldValue, QueryableEntry e) {

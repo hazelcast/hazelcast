@@ -53,7 +53,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
         return result;
     }
 
-    private class DummyEntry implements QueryableEntry {
+    private class DummyEntry extends QueryableEntry {
         @Override
         public Object getValue() {
             return null;

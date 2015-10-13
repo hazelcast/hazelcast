@@ -354,7 +354,7 @@ public class IndexTest {
         }
     }
 
-    class QueryRecord implements QueryableEntry {
+    class QueryRecord extends QueryableEntry {
         Data key;
         Comparable attributeValue;
 
