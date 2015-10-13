@@ -69,9 +69,9 @@ public class IndexImpl implements Index {
     public void removeEntryIndex(Data key, Object value) {
         Comparable attributeValue = (Comparable) ExtractionEngine.extractAttributeValue(extractors, ss, this.attributeName, key, value);
         attributeValue = (Comparable)sanitizeValue(attributeValue);
-        
+
         if (value != null) {
-            indexStore.removeIndex(value, key);
+            indexStore.removeIndex(attributeValue, key);
         }
     }
 
