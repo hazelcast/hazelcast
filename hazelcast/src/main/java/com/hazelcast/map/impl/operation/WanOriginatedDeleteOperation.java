@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.Operation;
 
 public class WanOriginatedDeleteOperation extends BaseRemoveOperation {
 
@@ -58,6 +59,11 @@ public class WanOriginatedDeleteOperation extends BaseRemoveOperation {
     @Override
     public boolean shouldBackup() {
         return success;
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new RemoveBackupOperation(name, dataKey, false, true);
     }
 
     @Override

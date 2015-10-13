@@ -16,6 +16,10 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.EntryView;
+import com.hazelcast.map.impl.EntryViews;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
@@ -51,12 +55,20 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
     @Override
     public void run() {
         int partitionId = getPartitionId();
-        recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapEventPublisher eventPublisher = mapServiceContext.getMapEventPublisher();
+        recordStore = mapServiceContext.getRecordStore(partitionId, name);
+        boolean wanEnabled = mapContainer.isWanReplicationEnabled();
         for (int i = 0; i < entries.size(); i++) {
             final RecordInfo recordInfo = recordInfos.get(i);
             final Map.Entry<Data, Data> entry = entries.get(i);
             final Record record = recordStore.putBackup(entry.getKey(), entry.getValue());
             Records.applyRecordInfo(record, recordInfo);
+            if (wanEnabled) {
+                final Data dataValueAsData = mapServiceContext.toData(entry.getValue());
+                final EntryView entryView = EntryViews.createSimpleEntryView(entry.getKey(), dataValueAsData, record);
+                eventPublisher.publishWanReplicationUpdateBackup(name, entryView);
+            }
         }
     }
 

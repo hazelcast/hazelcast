@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -90,4 +91,8 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
     String addInvalidationListener(String name, CacheEventListener listener);
 
     void sendInvalidationEvent(String name, Data key, String sourceUuid);
+
+    boolean isWanReplicationEnabled(String cacheName);
+
+    CacheWanEventPublisher getCacheWanEventPublisher();
 }

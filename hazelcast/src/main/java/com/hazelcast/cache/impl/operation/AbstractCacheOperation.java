@@ -20,6 +20,7 @@ import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -46,6 +47,10 @@ abstract class AbstractCacheOperation
 
     protected transient CacheRecord backupRecord;
 
+    protected transient ICacheService cacheService;
+
+    protected transient CacheWanEventPublisher wanEventPublisher;
+
     protected AbstractCacheOperation() {
     }
 
@@ -62,8 +67,11 @@ abstract class AbstractCacheOperation
     @Override
     public final void beforeRun()
             throws Exception {
-        ICacheService service = getService();
-        cache = (CacheRecordStore) service.getOrCreateRecordStore(name, getPartitionId());
+        cacheService = getService();
+        cache = (CacheRecordStore) cacheService.getOrCreateRecordStore(name, getPartitionId());
+        if (cache.isWanReplicationEnabled()) {
+            wanEventPublisher = cacheService.getCacheWanEventPublisher();
+        }
     }
 
     @Override

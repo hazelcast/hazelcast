@@ -16,6 +16,8 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.operation.MutableOperation;
+import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.serialization.Data;
 
 /**
@@ -85,6 +87,12 @@ public final class CacheEventContextUtil {
         return cacheEventContext;
     }
 
+    public static CacheEventContext createCacheUpdatedEvent(Data dataKey, Data dataValue, Data dataOldValue,
+                                                            long expirationTime, long lastAccessTime, long accessHit) {
+        return createCacheUpdatedEvent(dataKey, dataValue, dataOldValue, expirationTime, lastAccessTime, accessHit,
+                null, MutableOperation.IGNORE_COMPLETION);
+    }
+
     public static CacheEventContext createCacheRemovedEvent(Data dataKey, Data dataValue,
                                                             long expirationTime, String origin,
                                                             int completionId) {
@@ -92,6 +100,11 @@ public final class CacheEventContextUtil {
                 createBaseEventContext(CacheEventType.REMOVED, dataKey, dataValue,
                                        expirationTime, origin, completionId);
         return cacheEventContext;
+    }
+
+    public static CacheEventContext createCacheRemovedEvent(Data dataKey) {
+        return createCacheRemovedEvent(dataKey, null, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE, null,
+                MutableOperation.IGNORE_COMPLETION);
     }
 
     public static CacheEventContext createBaseEventContext(CacheEventType eventType, Data dataKey,

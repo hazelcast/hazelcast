@@ -116,7 +116,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             throw new CacheNotExistsException("Cache " + name + " is already destroyed or not created yet, on "
                     + nodeEngine.getLocalMember());
         }
-        this.wanReplicationEnabled = cacheConfig.getWanReplicationRef() != null;
+        this.wanReplicationEnabled = cacheService.isWanReplicationEnabled(name);
         this.evictionConfig = cacheConfig.getEvictionConfig();
         if (evictionConfig == null) {
             throw new IllegalStateException("Eviction config cannot be null");
@@ -262,7 +262,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
-    protected Data toEventData(Object obj) {
+    public Data toEventData(Object obj) {
         return isEventsEnabled() ? toHeapData(obj) : null;
     }
 
@@ -1471,4 +1471,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
+    @Override
+    public boolean isWanReplicationEnabled() {
+        return wanReplicationEnabled;
+    }
 }

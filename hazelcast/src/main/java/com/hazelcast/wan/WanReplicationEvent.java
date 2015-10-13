@@ -30,6 +30,7 @@ public class WanReplicationEvent
 
     private String serviceName;
     private ReplicationEventObject eventObject;
+    private int backupCount;
 
     public WanReplicationEvent() {
     }
@@ -87,5 +88,13 @@ public class WanReplicationEvent
             throws IOException {
         serviceName = in.readUTF();
         eventObject = in.readObject();
+    }
+
+    public int getBackupCount() {
+        return backupCount;
+    }
+
+    public void setBackupCount(int backupCount) {
+        this.backupCount = backupCount;
     }
 }

@@ -16,7 +16,9 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheEntryViews;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -50,6 +52,15 @@ public class CacheGetAndReplaceOperation
             throws Exception {
         response = cache.getAndReplace(key, value, expiryPolicy, getCallerUuid(), completionId);
         backupRecord = cache.getRecord(key);
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (cache.isWanReplicationEnabled()) {
+            CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key,
+                    getNodeEngine().getSerializationService().toData(backupRecord.getValue()), backupRecord);
+            wanEventPublisher.publishWanReplicationUpdate(name, entryView);
+        }
     }
 
     @Override

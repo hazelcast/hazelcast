@@ -17,9 +17,13 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
+
+import java.io.IOException;
 
 /**
  * Backup operation used by remove operations.
@@ -28,11 +32,18 @@ public class CacheRemoveBackupOperation
         extends AbstractCacheOperation
         implements BackupOperation, MutatingOperation {
 
+    private boolean wanOriginated;
+
     public CacheRemoveBackupOperation() {
     }
 
     public CacheRemoveBackupOperation(String name, Data key) {
         super(name, key);
+    }
+
+    public CacheRemoveBackupOperation(String name, Data key, boolean wanOriginated) {
+        this(name, key);
+        this.wanOriginated = wanOriginated;
     }
 
     @Override
@@ -46,8 +57,26 @@ public class CacheRemoveBackupOperation
     }
 
     @Override
+    public void afterRun() throws Exception {
+        if (!wanOriginated && cache.isWanReplicationEnabled()) {
+            wanEventPublisher.publishWanReplicationRemoveBackup(name, key);
+        }
+    }
+
+    @Override
     public int getId() {
         return CacheDataSerializerHook.REMOVE_BACKUP;
     }
 
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeBoolean(wanOriginated);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        wanOriginated = in.readBoolean();
+    }
 }

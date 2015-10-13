@@ -61,7 +61,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     }
 
     private void publishWANReplicationEvent(MapServiceContext mapServiceContext, MapEventPublisher mapEventPublisher) {
-        if (mapContainer.getWanReplicationPublisher() == null || mapContainer.getWanMergePolicy() == null) {
+        if (!mapContainer.isWanReplicationEnabled()) {
             return;
         }
 

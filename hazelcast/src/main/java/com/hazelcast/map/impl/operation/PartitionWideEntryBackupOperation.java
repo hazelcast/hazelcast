@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
-public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOperation implements BackupOperation {
+public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBackupOperation implements BackupOperation {
 
     public PartitionWideEntryBackupOperation() {
     }
@@ -65,6 +65,8 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
 
             evict(true);
         }
+
+        publishWanReplicationEventBackups();
     }
 
     protected Predicate getPredicate() {

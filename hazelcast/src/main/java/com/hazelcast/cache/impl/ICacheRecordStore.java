@@ -423,4 +423,11 @@ public interface ICacheRecordStore {
      */
     int evictIfRequired();
 
+    /**
+     * Determines whether wan replication is enabled or not for this record store.
+     *
+     * @return <tt>true</tt> if wan replication is enabled for this record store, <tt>false</tt> otherwise
+     */
+    boolean isWanReplicationEnabled();
+
 }

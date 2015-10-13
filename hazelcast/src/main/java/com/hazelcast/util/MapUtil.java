@@ -18,6 +18,7 @@ package com.hazelcast.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Utility class for Maps
@@ -35,6 +36,15 @@ public final class MapUtil {
     public static <K, V> Map<K, V> createHashMap(int expectedMapSize) {
         int initialCapacity = (int) (expectedMapSize / HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
         return new HashMap<K, V>(initialCapacity);
+    }
+
+    /**
+     * Utility method that creates an {@link java.util.concurrent.ConcurrentHashMap} with its initialCapacity calculated
+     * to minimize rehash operations
+     */
+    public static <K, V> Map<K, V> createConcurrentHashMap(int expectedMapSize) {
+        int initialCapacity = (int) (expectedMapSize / HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
+        return new ConcurrentHashMap<K, V>(initialCapacity);
     }
 
 }
