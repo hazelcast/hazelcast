@@ -49,8 +49,8 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 
-    //Updates the CallableProcessor.responseFlag field. An AtomicBoolean is simpler, but creates another unwanted
-    //object. Using this approach, you don't create that object.
+    // Updates the CallableProcessor.responseFlag field. An AtomicBoolean is simpler, but creates another unwanted
+    // object. Using this approach, you don't create that object.
     private static final AtomicReferenceFieldUpdater<CallableProcessor, Boolean> RESPONSE_FLAG =
             AtomicReferenceFieldUpdater.newUpdater(CallableProcessor.class, Boolean.class, "responseFlag");
 

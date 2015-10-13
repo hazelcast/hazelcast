@@ -58,9 +58,6 @@ import java.util.concurrent.Future;
 public class MapReduceService
         implements ManagedService, RemoteService {
 
-    /**
-     * The service name to retrieve an instance of the MapReduceService
-     */
     public static final String SERVICE_NAME = "hz:impl:mapReduceService";
 
     private static final ILogger LOGGER = Logger.getLogger(MapReduceService.class);

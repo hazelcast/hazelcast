@@ -65,10 +65,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService,
         PartitionAwareService, ClientAwareService, QuorumAwareService {
 
-    /**
-     * Service name of map service used
-     * to register {@link com.hazelcast.spi.impl.ServiceManager#registerService}
-     */
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
     protected ManagedService managedService;

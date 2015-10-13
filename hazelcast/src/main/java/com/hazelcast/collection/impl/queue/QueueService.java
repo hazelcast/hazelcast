@@ -72,10 +72,9 @@ import java.util.logging.Level;
  */
 public class QueueService implements ManagedService, MigrationAwareService, TransactionalService,
         RemoteService, EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService {
-    /**
-     * Service name.
-     */
+
     public static final String SERVICE_NAME = "hz:impl:queueService";
+
     private final EntryTaskScheduler queueEvictionScheduler;
     private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, QueueContainer> containerMap

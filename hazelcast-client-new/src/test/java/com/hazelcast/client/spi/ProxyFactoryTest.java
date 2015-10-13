@@ -6,7 +6,6 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -19,12 +18,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ProxyFactoryTest {
 
-    static final String SERVICE_NAME = "CustomService";
+    private static final String SERVICE_NAME = "CustomService";
+
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @After

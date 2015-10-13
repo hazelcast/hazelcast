@@ -26,11 +26,10 @@ import com.hazelcast.spi.impl.PacketHandler;
  * to replicate values to other clusters over the wide area network, so it has to deal with long
  * delays, slow uploads and higher latencies.
  */
-public interface WanReplicationService
-        extends CoreService, PacketHandler {
+public interface WanReplicationService extends CoreService, PacketHandler {
 
     /**
-     * The service identifier
+     * Service name.
      */
     String SERVICE_NAME = "hz:core:wanReplicationService";
 

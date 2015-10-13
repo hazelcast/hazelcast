@@ -57,6 +57,7 @@ public final class MapReduceUtil {
 
     private static final String EXECUTOR_NAME_PREFIX = "mapreduce::hz::";
     private static final String SERVICE_NAME = MapReduceService.SERVICE_NAME;
+
     private static final float DEFAULT_MAP_GROWTH_FACTOR = 0.75f;
     private static final int RETRY_PARTITION_TABLE_MILLIS = 100;
     private static final long PARTITION_READY_TIMEOUT = 10000;

@@ -50,6 +50,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 public class TopicService implements ManagedService, RemoteService, EventPublishingService, StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
+
     public static final int ORDERING_LOCKS_LENGTH = 1000;
 
     private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();

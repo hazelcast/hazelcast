@@ -41,9 +41,6 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class AtomicReferenceService implements ManagedService, RemoteService, MigrationAwareService {
 
-    /**
-     * The name of the AtomicReferenceService.
-     */
     public static final String SERVICE_NAME = "hz:impl:atomicReferenceService";
 
     private NodeEngine nodeEngine;
