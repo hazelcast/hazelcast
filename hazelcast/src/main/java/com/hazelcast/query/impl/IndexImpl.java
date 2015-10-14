@@ -65,10 +65,7 @@ public class IndexImpl implements Index {
     @Override
     public void removeEntryIndex(Data key, Object value) {
         Comparable attributeValue = QueryEntryUtils.extractAttribute(this.attribute, key, value, ss);
-
-        if (attributeValue.getClass().isEnum()) {
-            attributeValue = TypeConverters.ENUM_CONVERTER.convert(attributeValue);
-        }
+        attributeValue = sanitizeValue(attributeValue);
 
         if (attributeValue != null) {
             indexStore.removeIndex(attributeValue, key);
