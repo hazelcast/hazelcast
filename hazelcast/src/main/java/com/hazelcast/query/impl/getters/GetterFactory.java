@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.query.extractor.MultiResult;
+import com.hazelcast.util.CollectionUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -32,7 +33,7 @@ public final class GetterFactory {
         Class<?> type = field.getType();
 
         Class<?> collectionType = null;
-        if (extractingFromCollection(type, modifierSuffix)) {
+        if (isExtractingFromCollection(type, modifierSuffix)) {
             Object currentObject = getCurrentObject(object, parentGetter);
             collectionType = getCollectionType(currentObject, field);
             if (collectionType == null) {
@@ -62,19 +63,11 @@ public final class GetterFactory {
         if (targetCollection == null || targetCollection.isEmpty()) {
             return null;
         }
-        Object targetObject = extractFirstValueFromCollection(targetCollection);
+        Object targetObject = CollectionUtil.getItemAtPositionOrNull(targetCollection, 0);
         if (targetObject == null) {
             return null;
         }
         return targetObject.getClass();
-    }
-
-    private static Object extractFirstValueFromCollection(Collection targetCollection) {
-        Object targetObject = targetCollection.iterator().next();
-        if (targetObject == null) {
-            return null;
-        }
-        return targetObject;
     }
 
     private static Object getFirstObjectFromMultiResult(Object currentObject) {
@@ -89,18 +82,12 @@ public final class GetterFactory {
         return currentObject;
     }
 
-    private static boolean extractingFromCollection(Class<?> fieldType, String modifierSuffix) {
-        return Collection.class.isAssignableFrom(fieldType) && modifierSuffix != null;
+    private static boolean isExtractingFromCollection(Class<?> fieldType, String modifierSuffix) {
+        return modifierSuffix != null && Collection.class.isAssignableFrom(fieldType);
     }
 
     private static Object getCurrentObject(Object obj, Getter parent) throws Exception {
-        Object currentObject;
-        if (parent == null) {
-            currentObject = obj;
-        } else {
-            currentObject = parent.getValue(obj);
-        }
-        return currentObject;
+        return parent == null ? obj : parent.getValue(obj);
     }
 
 }
