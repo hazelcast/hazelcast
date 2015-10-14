@@ -41,7 +41,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
+import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_INTERVAL;
+import static com.hazelcast.client.config.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 
 public class ClientInvocation implements Runnable {
 
@@ -77,17 +78,16 @@ public class ClientInvocation implements Runnable {
         this.partitionId = partitionId;
         this.address = address;
         this.connection = connection;
-        final ClientProperties clientProperties = client.getClientProperties();
 
-        int waitTime = clientProperties.getInvocationTimeoutSeconds().getInteger();
-        long retryTimeoutInSeconds = waitTime > 0 ? waitTime
-                : Integer.parseInt(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS_DEFAULT);
+        ClientProperties clientProperties = client.getClientProperties();
+        int waitTime = clientProperties.getSeconds(INVOCATION_TIMEOUT_SECONDS);
+        long retryTimeoutInSeconds = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
 
-        clientInvocationFuture = new ClientInvocationFuture(this, client, request, handler);
+        this.clientInvocationFuture = new ClientInvocationFuture(this, client, request, handler);
         this.retryCountLimit = retryTimeoutInSeconds / RETRY_WAIT_TIME_IN_SECONDS;
 
-        int interval = clientProperties.getHeartbeatInterval().getInteger();
-        this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
+        int interval = clientProperties.getInteger(HEARTBEAT_INTERVAL);
+        this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler, ClientRequest request) {
@@ -294,5 +294,4 @@ public class ClientInvocation implements Runnable {
                 || t instanceof HazelcastInstanceNotActiveException
                 || t instanceof AuthenticationException;
     }
-
 }

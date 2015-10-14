@@ -16,12 +16,22 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 import java.util.concurrent.TimeUnit;
 
 /**
  * Interface for Hazelcast Member and Client properties.
  */
+@PrivateApi
 public interface HazelcastProperty {
+
+    /**
+     * Gets the index of the property.
+     *
+     * @return index of the property
+     */
+    int getIndex();
 
     /**
      * Returns the property name.
@@ -51,4 +61,23 @@ public interface HazelcastProperty {
      * @return the parent {@link GroupProperty} or <tt>null</tt> if none is defined
      */
     GroupProperty getParent();
+
+    /**
+     * Sets the environmental value of the property.
+     *
+     * @param value the value to set
+     */
+    void setSystemProperty(String value);
+
+    /**
+     * Gets the environmental value of the property.
+     *
+     * @return the value of the property
+     */
+    String getSystemProperty();
+
+    /**
+     * Clears the environmental value of the property.
+     */
+    String clearSystemProperty();
 }

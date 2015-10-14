@@ -26,6 +26,11 @@ public class GroupPropertiesTest {
     private final Config config = new Config();
     private final GroupProperties defaultGroupProperties = new GroupProperties(config);
 
+    @Test(expected = NullPointerException.class)
+    public void constructor_withNullConfig() {
+        new GroupProperties(null);
+    }
+
     @Test
     public void setProperty_ensureHighestPriorityOfConfig() {
         config.setProperty(GroupProperty.ELASTIC_MEMORY_TOTAL_SIZE, "configValue");
@@ -52,28 +57,8 @@ public class GroupPropertiesTest {
     }
 
     @Test
-    public void setProperty_ensureUsageOfSystemProperty_withNullConfig() {
-        GroupProperty.ELASTIC_MEMORY_TOTAL_SIZE.setSystemProperty("systemValue");
-
-        GroupProperties groupProperties = new GroupProperties(null);
-        String loggingType = groupProperties.getString(GroupProperty.ELASTIC_MEMORY_TOTAL_SIZE);
-
-        GroupProperty.ELASTIC_MEMORY_TOTAL_SIZE.clearSystemProperty();
-
-        assertEquals("systemValue", loggingType);
-    }
-
-    @Test
     public void setProperty_ensureUsageOfDefaultValue() {
         String loggingType = defaultGroupProperties.getString(GroupProperty.ELASTIC_MEMORY_TOTAL_SIZE);
-
-        assertEquals("128M", loggingType);
-    }
-
-    @Test
-    public void setProperty_ensureUsageOfDefaultValue_withNullConfig() {
-        GroupProperties groupProperties = new GroupProperties(null);
-        String loggingType = groupProperties.getString(GroupProperty.ELASTIC_MEMORY_TOTAL_SIZE);
 
         assertEquals("128M", loggingType);
     }

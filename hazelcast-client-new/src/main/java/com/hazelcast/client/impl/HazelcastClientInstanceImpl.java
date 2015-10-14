@@ -8,6 +8,7 @@ import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientProperties;
+import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
@@ -86,9 +87,9 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.discovery.DiscoveryMode;
+import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
-import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -272,16 +273,14 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private ClientListenerServiceImpl initListenerService() {
-        int eventQueueCapacity = clientProperties.getEventQueueCapacity().getInteger();
-        int eventThreadCount = clientProperties.getEventThreadCount().getInteger();
+        int eventQueueCapacity = clientProperties.getInteger(ClientProperty.EVENT_QUEUE_CAPACITY);
+        int eventThreadCount = clientProperties.getInteger(ClientProperty.EVENT_THREAD_COUNT);
         return new ClientListenerServiceImpl(this, eventThreadCount, eventQueueCapacity);
     }
 
     private ClientExecutionServiceImpl initExecutionService() {
-        return new ClientExecutionServiceImpl(instanceName, threadGroup,
-                config.getClassLoader(), config.getExecutorPoolSize());
+        return new ClientExecutionServiceImpl(instanceName, threadGroup, config.getClassLoader(), config.getExecutorPoolSize());
     }
-
 
     public void start() {
         lifecycleService.setStarted();

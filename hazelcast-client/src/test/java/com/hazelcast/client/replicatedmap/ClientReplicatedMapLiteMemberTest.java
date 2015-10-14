@@ -2,7 +2,7 @@ package com.hazelcast.client.replicatedmap;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.config.ClientProperties;
+import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -11,15 +11,16 @@ import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberExcepti
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.getAddress;
@@ -81,8 +82,8 @@ public class ClientReplicatedMapLiteMemberTest {
     }
 
     private void testReplicatedMapCreated(final int numberOfLiteNodes,
-                                            final int numberOfDataNodes,
-                                            final ClientConfig clientConfig) {
+                                          final int numberOfDataNodes,
+                                          final ClientConfig clientConfig) {
         createNodes(numberOfLiteNodes, numberOfDataNodes);
 
         final HazelcastInstance client = factory.newHazelcastClient(clientConfig);
@@ -99,8 +100,7 @@ public class ClientReplicatedMapLiteMemberTest {
     }
 
     @Test
-    public void testReplicatedMapPutByDummyClient()
-            throws UnknownHostException {
+    public void testReplicatedMapPutByDummyClient() throws UnknownHostException {
         final List<HazelcastInstance> instances = createNodes(3, 1);
         configureDummyClientConnection(instances.get(0));
 
@@ -111,10 +111,9 @@ public class ClientReplicatedMapLiteMemberTest {
     }
 
 
-    private void configureDummyClientConnection(final HazelcastInstance instance)
-            throws UnknownHostException {
+    private void configureDummyClientConnection(final HazelcastInstance instance) throws UnknownHostException {
         final InetSocketAddress socketAddress = getAddress(instance).getInetSocketAddress();
-        dummyClientConfig.setProperty(ClientProperties.PROP_SHUFFLE_MEMBER_LIST, "false");
+        dummyClientConfig.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST, "false");
         final ClientNetworkConfig networkConfig = dummyClientConfig.getNetworkConfig();
         networkConfig.addAddress(socketAddress.getHostName() + ":" + socketAddress.getPort());
     }
@@ -123,11 +122,11 @@ public class ClientReplicatedMapLiteMemberTest {
         final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>();
 
         final Config liteConfig = new Config().setLiteMember(true);
-        for (int i = 0;  i < numberOfLiteNodes; i++) {
+        for (int i = 0; i < numberOfLiteNodes; i++) {
             instances.add(factory.newHazelcastInstance(liteConfig));
         }
 
-        for (int i = 0;  i < numberOfDataNodes; i++) {
+        for (int i = 0; i < numberOfDataNodes; i++) {
             instances.add(factory.newHazelcastInstance());
         }
 
@@ -138,5 +137,4 @@ public class ClientReplicatedMapLiteMemberTest {
 
         return instances;
     }
-
 }

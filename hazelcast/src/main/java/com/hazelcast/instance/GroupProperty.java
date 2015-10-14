@@ -23,6 +23,7 @@ import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.concurrent.TimeUnit;
 
@@ -34,6 +35,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Defines the name and default value for Hazelcast properties.
  */
+@PrivateApi
 public enum GroupProperty implements HazelcastProperty {
 
     /**
@@ -608,25 +610,21 @@ public enum GroupProperty implements HazelcastProperty {
         this.parent = parent;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
+    public int getIndex() {
+        return ordinal();
+    }
+
     @Override
     public String getName() {
         return name;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getDefaultValue() {
         return defaultValue;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public TimeUnit getTimeUnit() {
         if (timeUnit == null) {
@@ -635,35 +633,22 @@ public enum GroupProperty implements HazelcastProperty {
         return timeUnit;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public GroupProperty getParent() {
         return parent;
     }
 
-    /**
-     * Sets the environmental value of the property.
-     *
-     * @param value the value to set
-     */
+    @Override
     public void setSystemProperty(String value) {
         System.setProperty(name, value);
     }
 
-    /**
-     * Gets the environmental value of the property.
-     *
-     * @return the value of the property
-     */
+    @Override
     public String getSystemProperty() {
         return System.getProperty(name);
     }
 
-    /**
-     * Clears the environmental value of the property.
-     */
+    @Override
     public String clearSystemProperty() {
         return System.clearProperty(name);
     }

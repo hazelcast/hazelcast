@@ -8,6 +8,7 @@ import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientProperties;
+import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
@@ -69,6 +70,7 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
@@ -78,7 +80,6 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -86,9 +87,9 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.discovery.DiscoveryMode;
+import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
-import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.topic.impl.TopicService;
@@ -143,9 +144,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                                        AddressProvider externalAddressProvider) {
         this.config = config;
         final GroupConfig groupConfig = config.getGroupConfig();
-        
-        if(config.getInstanceName() != null) {
-        	instanceName = config.getInstanceName();
+
+        if (config.getInstanceName() != null) {
+            instanceName = config.getInstanceName();
         } else {
             instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
         }
@@ -272,14 +273,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private ClientListenerServiceImpl initListenerService() {
-        int eventQueueCapacity = clientProperties.getEventQueueCapacity().getInteger();
-        int eventThreadCount = clientProperties.getEventThreadCount().getInteger();
+        int eventQueueCapacity = clientProperties.getInteger(ClientProperty.EVENT_QUEUE_CAPACITY);
+        int eventThreadCount = clientProperties.getInteger(ClientProperty.EVENT_THREAD_COUNT);
         return new ClientListenerServiceImpl(this, eventThreadCount, eventQueueCapacity);
     }
 
     private ClientExecutionServiceImpl initExecutionService() {
-        return new ClientExecutionServiceImpl(instanceName, threadGroup,
-                config.getClassLoader(), config.getExecutorPoolSize());
+        return new ClientExecutionServiceImpl(instanceName, threadGroup, config.getClassLoader(), config.getExecutorPoolSize());
     }
 
     public void start() {
