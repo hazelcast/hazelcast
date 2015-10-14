@@ -18,7 +18,6 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.impl.event.MapEventPublisher;
-import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
@@ -95,8 +94,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     ExpirationManager getExpirationManager();
 
-    EvictionOperator getEvictionOperator();
-
     void setService(MapService mapService);
 
     NodeEngine getNodeEngine();
@@ -110,14 +107,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     LocalMapStatsProvider getLocalMapStatsProvider();
 
     MapOperationProvider getMapOperationProvider(String name);
-
-    /**
-     * Sets an {@link EvictionOperator} to this {@link MapServiceContext}.
-     * Used for testing purposes.
-     *
-     * @param evictionOperator {@link EvictionOperator} to be set.
-     */
-    void setEvictionOperator(EvictionOperator evictionOperator);
 
     void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation);
 }

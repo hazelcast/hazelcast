@@ -298,7 +298,8 @@
     <suppress checks="BooleanExpressionComplexityCheck" files="com/hazelcast/security/permission/QueuePermission"/>
     <suppress checks="BooleanExpressionComplexityCheck" files="com/hazelcast/security/permission/RingBufferPermission"/>
     <suppress checks="BooleanExpressionComplexityCheck" files="com/hazelcast/security/permission/CachePermission"/>
-    <suppress checks="BooleanExpressionComplexityCheck" files="com/hazelcast/security/permission/ReplicatedMapPermission"/>
+    <suppress checks="BooleanExpressionComplexityCheck"
+              files="com/hazelcast/security/permission/ReplicatedMapPermission"/>
     <suppress checks="BooleanExpressionComplexityCheck" files="com/hazelcast/security/permission/MapPermission"/>
     <suppress checks="BooleanExpressionComplexityCheck" files="com/hazelcast/security/permission/ListPermission"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/security/permission/InstancePermission"/>
@@ -380,9 +381,12 @@
     <suppress checks="ExecutableStatementCount|ClassDataAbstractionCoupling|ClassFanOutComplexity"
               files="com/hazelcast/nio/tcp/TcpIpConnectionManager"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/nio/tcp/spinning/SpinningSocketReader"/>
-    <suppress checks="MethodCount|MagicNumber" files="com/hazelcast/internal/serialization/impl/ByteArrayObjectDataInput"/>
-    <suppress checks="MethodCount|MagicNumber" files="com/hazelcast/internal/serialization/impl/ByteArrayObjectDataOutput"/>
-    <suppress checks="MethodCount|MagicNumber" files="com/hazelcast/internal/serialization/impl/ByteBufferObjectDataInput"/>
+    <suppress checks="MethodCount|MagicNumber"
+              files="com/hazelcast/internal/serialization/impl/ByteArrayObjectDataInput"/>
+    <suppress checks="MethodCount|MagicNumber"
+              files="com/hazelcast/internal/serialization/impl/ByteArrayObjectDataOutput"/>
+    <suppress checks="MethodCount|MagicNumber"
+              files="com/hazelcast/internal/serialization/impl/ByteBufferObjectDataInput"/>
     <suppress checks="MethodCount" files="com/hazelcast/internal/serialization/ObjectDataInputStream"/>
     <suppress checks="MethodCount" files="com/hazelcast/internal/serialization/impl/ByteBufferObjectDataOutput"/>
     <suppress checks="MagicNumber" files="com/hazelcast/nio/CipherHelper"/>
@@ -395,7 +399,8 @@
     <suppress checks="MethodCount" files="com/hazelcast/nio/NodeIOService"/>
     <suppress checks="MagicNumber|MethodCount|NPathComplexity" files="com/hazelcast/nio/Packet"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/nio/tcp/nonblocking/NonBlockingSocketReader"/>
-    <suppress checks="MagicNumber|EmptyBlock|MethodCount" files="com/hazelcast/nio/tcp/nonblocking/NonBlockingWriteHandler"/>
+    <suppress checks="MagicNumber|EmptyBlock|MethodCount"
+              files="com/hazelcast/nio/tcp/nonblocking/NonBlockingWriteHandler"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber"
               files="com/hazelcast/internal/serialization/impl/SerializationServiceImpl"/>
     <suppress checks="MethodCount" files="com/hazelcast/nio/tcp/TcpIpConnectionManager"/>
@@ -428,7 +433,8 @@
     <!-- Spring -->
     <suppress checks="MethodCount" files="com/hazelcast/spring/HazelcastConfigBeanDefinitionParser"/>
     <suppress checks="MethodLength" files="com/hazelcast/spring/HazelcastConfigBeanDefinitionParser"/>
-    <suppress checks="CyclomaticComplexity|NPathComplexity" files="com/hazelcast/spring/HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="CyclomaticComplexity|NPathComplexity"
+              files="com/hazelcast/spring/HazelcastConfigBeanDefinitionParser"/>
 
     <!-- Spring framework breaks the IllegalType check in its own implementation -->
     <suppress checks="IllegalType" files="com/hazelcast/spring/HazelcastClientBeanDefinitionParser"/>
@@ -456,10 +462,12 @@
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/operation/MapOperationProvider"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/operation/DefaultMapOperationProvider"/>
+    <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/MapContainer"/>
     <suppress checks="ClassFanOutComplexityCheck" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>
     <suppress checks="ClassFanOutComplexityCheck" files="com/hazelcast/map/impl/MapServiceContextImpl"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/operation/DefaultMapOperationProvider"/>
+    <suppress checks="ClassDataAbstractionCoupling"
+              files="com/hazelcast/map/impl/operation/DefaultMapOperationProvider"/>
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/map/impl/client/AbstractTxnMapRequest"/>
     <suppress checks="MethodCount|ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/MapServiceContextImpl"/>
     <suppress checks="MethodCount" files="com/hazelcast/map/impl/MapServiceContext"/>

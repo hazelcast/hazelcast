@@ -83,7 +83,7 @@ public class MergeOperation extends BasePutOperation {
             mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.MERGED, false, dataKey, dataOldValue,
                     dataValue, mergingValue);
             invalidateNearCaches();
-            evict(false);
+            evict();
         }
     }
 

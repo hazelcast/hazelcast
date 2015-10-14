@@ -53,7 +53,7 @@ public class WanOriginatedDeleteOperation extends BaseRemoveOperation {
         mapServiceContext.getMapEventPublisher()
                 .publishEvent(getCallerAddress(), name, EntryEventType.REMOVED, dataKey, dataOldValue, null);
         invalidateNearCaches();
-        evict(false);
+        evict();
     }
 
     @Override

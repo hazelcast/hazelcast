@@ -119,9 +119,9 @@ public abstract class KeyBasedMapOperation extends MapOperation implements Parti
         }
     }
 
-    protected void evict(boolean backup) {
+    protected void evict() {
         final long now = Clock.currentTimeMillis();
-        recordStore.evictEntries(now, backup);
+        recordStore.evictEntries(now);
     }
 
     @Override

@@ -63,7 +63,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
             }
             entryAddedOrUpdatedBackup(entry, dataKey);
 
-            evict(true);
+            evict();
         }
 
         publishWanReplicationEventBackups();

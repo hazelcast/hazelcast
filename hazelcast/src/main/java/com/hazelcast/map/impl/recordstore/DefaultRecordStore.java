@@ -17,8 +17,6 @@
 package com.hazelcast.map.impl.recordstore;
 
 
-import static com.hazelcast.map.impl.ExpirationTimeSetter.updateExpiryTime;
-
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.core.EntryView;
@@ -57,6 +55,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.map.impl.ExpirationTimeSetter.updateExpiryTime;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 
 /**
@@ -285,7 +284,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
                 return true;
             }
         }
-        postReadCleanUp(now, false);
+        postReadCleanUp(now);
         return false;
     }
 
@@ -457,7 +456,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         mapDataStore.removeAll(keysToDelete);
 
         final int numOfClearedEntries = keysToDelete.size();
-        for (Data key: keysToDelete) {
+        for (Data key : keysToDelete) {
             Record record = records.get(key);
             removeIndex(record);
         }
@@ -650,7 +649,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         Object value = record == null ? null : record.getValue();
         value = mapServiceContext.interceptGet(name, value);
 
-        postReadCleanUp(now, false);
+        postReadCleanUp(now);
         return value;
     }
 
@@ -752,7 +751,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             accessRecord(record, now);
         }
 
-        postReadCleanUp(now, false);
+        postReadCleanUp(now);
         return contains;
     }
 

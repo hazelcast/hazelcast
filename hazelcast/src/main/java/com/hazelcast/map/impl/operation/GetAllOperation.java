@@ -62,16 +62,16 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
     public void afterRun() throws Exception {
         super.afterRun();
         if (!entries.isEmpty()) {
-            evict(false);
+            evict();
         }
     }
 
-    protected void evict(boolean backup) {
+    protected void evict() {
         if (recordStore == null) {
             return;
         }
         final long now = Clock.currentTimeMillis();
-        recordStore.evictEntries(now, backup);
+        recordStore.evictEntries(now);
     }
 
     @Override
