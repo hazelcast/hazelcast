@@ -160,6 +160,16 @@ public class WanReplicationServiceImpl implements WanReplicationService {
         }
     }
 
+    @Override
+    public void pause(String name, String targetGroupName) {
+        throw new UnsupportedOperationException("Pausing wan replication is not supported.");
+    }
+
+    @Override
+    public void resume(String name, String targetGroupName) {
+        throw new UnsupportedOperationException("Resuming wan replication is not supported");
+    }
+
     private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWanReplicationPublisherMapping() {
         return new ConcurrentHashMap<String, WanReplicationPublisherDelegate>(2);
     }

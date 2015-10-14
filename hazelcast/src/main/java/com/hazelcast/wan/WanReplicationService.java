@@ -55,4 +55,20 @@ public interface WanReplicationService extends CoreService, PacketHandler {
      * Starts the shutdown process of the WAN replication service.
      */
     void shutdown();
+
+    /**
+     * Pauses wan replication to target group for the called node
+     *
+     * @param name name of WAN replication configuration
+     * @param targetGroupName name of wan target cluster config
+     */
+    void pause(String name, String targetGroupName);
+
+    /**
+     * Resumes wan replication to target group for the called node.
+     *
+     * @param name name of WAN replication configuration
+     * @param targetGroupName name of wan target cluster config
+     */
+    void resume(String name, String targetGroupName);
 }
