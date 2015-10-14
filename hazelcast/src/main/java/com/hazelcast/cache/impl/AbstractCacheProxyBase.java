@@ -20,10 +20,10 @@ import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -33,6 +33,10 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.executor.CompletableFutureTask;
 
+import javax.cache.CacheException;
+import javax.cache.configuration.Factory;
+import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CompletionListener;
 import java.io.Closeable;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,11 +48,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.cache.CacheException;
-import javax.cache.configuration.Factory;
-import javax.cache.integration.CacheLoader;
-import javax.cache.integration.CompletionListener;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 
@@ -181,7 +180,7 @@ abstract class AbstractCacheProxyBase<K, V> {
     }
 
     protected NodeEngine getNodeEngine() {
-        if (nodeEngine == null || !nodeEngine.isActive()) {
+        if (nodeEngine == null || !nodeEngine.isRunning()) {
             throw new HazelcastInstanceNotActiveException();
         }
         return nodeEngine;

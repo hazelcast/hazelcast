@@ -129,7 +129,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
             lifecycleService.fireLifecycleEvent(STARTING);
 
             node.start();
-            if (node.getState() != NodeState.ACTIVE) {
+            if (!node.isRunning()) {
                 throw new IllegalStateException("Node failed to start!");
             }
 

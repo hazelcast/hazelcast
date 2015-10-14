@@ -379,7 +379,7 @@ abstract class AbstractInternalCacheProxy<K, V>
             while (currentTimeoutMs > 0
                     && !countDownLatch.await(COMPLETION_LATCH_WAIT_TIME_STEP, TimeUnit.MILLISECONDS)) {
                 currentTimeoutMs -= COMPLETION_LATCH_WAIT_TIME_STEP;
-                if (!getNodeEngine().isActive()) {
+                if (!getNodeEngine().isRunning()) {
                     throw new HazelcastInstanceNotActiveException();
                 } else if (isClosed()) {
                     throw new IllegalStateException("Cache (" + nameWithPrefix + ") is closed !");

@@ -14,14 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster.impl.operations;
+package com.hazelcast.transaction.impl.operations;
 
-import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
-/**
- * Marker interface for join and post-join operations.
- */
-public interface JoinOperation extends UrgentSystemOperation, AllowedDuringPassiveState {
+import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.PURGE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG;
 
+public final class PurgeAllowedDuringPassiveStateTxBackupLogOperation
+        extends PurgeTxBackupLogOperation
+        implements AllowedDuringPassiveState {
+
+    public PurgeAllowedDuringPassiveStateTxBackupLogOperation() {
+    }
+
+    public PurgeAllowedDuringPassiveStateTxBackupLogOperation(String txnId) {
+        super(txnId);
+    }
+
+    @Override
+    public int getId() {
+        return PURGE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG;
+    }
 }

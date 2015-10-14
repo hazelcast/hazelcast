@@ -73,7 +73,7 @@ public final class TestNodeRegistry {
     public NodeContext createNodeContext(Address address) {
         NodeEngineImpl nodeEngine;
         if ((nodeEngine = nodes.get(address)) != null) {
-            if (nodeEngine.isActive()) {
+            if (nodeEngine.isRunning()) {
                 throw new IllegalArgumentException("This address already in registry! " + address);
             }
             nodes.remove(address);
@@ -83,13 +83,13 @@ public final class TestNodeRegistry {
 
     public HazelcastInstance getInstance(Address address) {
         NodeEngineImpl nodeEngine = nodes.get(address);
-        return nodeEngine != null && nodeEngine.isActive() ? nodeEngine.getHazelcastInstance() : null;
+        return nodeEngine != null && nodeEngine.isRunning() ? nodeEngine.getHazelcastInstance() : null;
     }
 
     Collection<HazelcastInstance> getAllHazelcastInstances() {
         Collection<HazelcastInstance> all = new LinkedList<HazelcastInstance>();
         for (NodeEngineImpl nodeEngine : nodes.values()) {
-            if (nodeEngine.isActive()) {
+            if (nodeEngine.isRunning()) {
                 all.add(nodeEngine.getHazelcastInstance());
             }
         }
@@ -185,7 +185,7 @@ public final class TestNodeRegistry {
             synchronized (joinerLock) {
                 for (Address address : joinAddresses) {
                     NodeEngineImpl ne = nodes.get(address);
-                    if (ne != null && ne.isActive() && ne.getNode().joined()) {
+                    if (ne != null && ne.isRunning() && ne.getNode().joined()) {
                         nodeEngine = ne;
                         break;
                     }
@@ -207,7 +207,8 @@ public final class TestNodeRegistry {
                     node.setAsMaster();
                 } else {
                     final ClusterJoinManager clusterJoinManager = node.clusterService.getClusterJoinManager();
-                    for (int i = 0; !node.joined() && node.getState() == NodeState.ACTIVE && i < 2000; i++) {
+
+                    for (int i = 0; !node.joined() && node.isRunning() && i < 2000; i++) {
                         try {
                             clusterJoinManager.sendJoinRequest(node.getMasterAddress(), true);
                             Thread.sleep(50);
@@ -311,7 +312,7 @@ public final class TestNodeRegistry {
                 }
 
                 final NodeEngineImpl nodeEngine = nodes.get(address);
-                if (nodeEngine != null && nodeEngine.isActive()) {
+                if (nodeEngine != null && nodeEngine.isRunning()) {
                     nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
                         public void run() {
                             ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();

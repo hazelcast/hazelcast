@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -78,7 +77,7 @@ public abstract class ClientTestSupport extends HazelcastTestSupport {
     }
 
     public static SimpleClient newClient(Node node) throws IOException {
-        if (node.getState() == NodeState.ACTIVE) {
+        if (node.nodeEngine.isRunning()) {
             if (TestEnvironment.isMockNetwork()) {
                 ClientEngineImpl engine = node.clientEngine;
                 return new MockSimpleClient(engine, node.getSerializationService());

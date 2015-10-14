@@ -109,7 +109,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
     private Level getLogLevel(Throwable e) {
         return (e instanceof MemberLeftException || e instanceof InterruptedException)
-                || !getNodeEngine().isActive() ? Level.INFO : Level.WARNING;
+                || !getNodeEngine().isRunning() ? Level.INFO : Level.WARNING;
     }
 
     private void verifyNotThisNode(NodeEngine nodeEngine, Address source) {

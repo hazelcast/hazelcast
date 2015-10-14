@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
-import com.hazelcast.spi.impl.AllowedDuringShutdown;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -42,7 +42,7 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createError
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class ReplicaSyncResponse extends Operation
-        implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation, AllowedDuringShutdown {
+        implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation, AllowedDuringPassiveState {
 
     private List<Operation> tasks;
     private long[] replicaVersions;
@@ -165,7 +165,7 @@ public class ReplicaSyncResponse extends Operation
     private void logException(Operation op, Throwable e) {
         ILogger logger = getLogger();
         NodeEngine nodeEngine = getNodeEngine();
-        Level level = nodeEngine.isActive() ? Level.WARNING : Level.FINEST;
+        Level level = nodeEngine.isRunning() ? Level.WARNING : Level.FINEST;
         if (logger.isLoggable(level)) {
             logger.log(level, "While executing " + op, e);
         }

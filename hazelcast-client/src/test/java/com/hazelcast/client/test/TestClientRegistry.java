@@ -37,8 +37,8 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.OutboundFrame;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.TestNodeRegistry;
@@ -271,7 +271,7 @@ public class TestClientRegistry {
         @Override
         public boolean write(OutboundFrame frame) {
             final Packet packet = (Packet) frame;
-            if (nodeEngine.isActive()) {
+            if (nodeEngine.isRunning()) {
                 Packet newPacket = readFromPacket(packet);
                 responseConnection.handlePacket(newPacket);
                 return true;

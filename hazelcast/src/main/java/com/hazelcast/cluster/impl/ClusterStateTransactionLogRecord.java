@@ -42,12 +42,13 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
     private Address target;
     private String txnId;
     private long leaseTime;
+    private int partitionStateVersion;
 
     public ClusterStateTransactionLogRecord() {
     }
 
     public ClusterStateTransactionLogRecord(ClusterState newState, Address initiator, Address target,
-            String txnId, long leaseTime) {
+            String txnId, long leaseTime, int partitionStateVersion) {
         Preconditions.checkNotNull(newState);
         Preconditions.checkNotNull(initiator);
         Preconditions.checkNotNull(target);
@@ -59,6 +60,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
         this.target = target;
         this.txnId = txnId;
         this.leaseTime = leaseTime;
+        this.partitionStateVersion = partitionStateVersion;
     }
 
     @Override
@@ -68,7 +70,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
 
     @Override
     public Operation newPrepareOperation() {
-        return new LockClusterStateOperation(newState, initiator, txnId, leaseTime);
+        return new LockClusterStateOperation(newState, initiator, txnId, leaseTime, partitionStateVersion);
     }
 
     @Override
@@ -93,6 +95,7 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
         target.writeData(out);
         out.writeUTF(txnId);
         out.writeLong(leaseTime);
+        out.writeInt(partitionStateVersion);
     }
 
     @Override
@@ -105,5 +108,6 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
         target.readData(in);
         txnId = in.readUTF();
         leaseTime = in.readLong();
+        partitionStateVersion = in.readInt();
     }
 }

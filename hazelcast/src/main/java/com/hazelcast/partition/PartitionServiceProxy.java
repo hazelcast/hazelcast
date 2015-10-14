@@ -22,7 +22,6 @@ import com.hazelcast.core.Partition;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
@@ -177,7 +176,7 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
 
     private boolean nodeActive() {
         final Node node = getNode();
-        return node.getState() == NodeState.ACTIVE ;
+        return node.isRunning();
     }
 
     private Node getNode() {

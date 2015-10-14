@@ -18,12 +18,12 @@ package com.hazelcast.partition.impl;
 
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.spi.impl.AllowedDuringShutdown;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
-public final class HasOngoingMigration extends AbstractOperation implements AllowedDuringShutdown {
+public final class HasOngoingMigration extends AbstractOperation implements AllowedDuringPassiveState {
 
     private Object response;
 

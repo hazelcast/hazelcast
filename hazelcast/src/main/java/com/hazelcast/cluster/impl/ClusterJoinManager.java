@@ -32,7 +32,6 @@ import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -151,7 +150,7 @@ public class ClusterJoinManager {
     }
 
     private boolean ensureNodeIsReady() {
-        if (node.joined() && node.getState() == NodeState.ACTIVE) {
+        if (node.joined() && node.isRunning()) {
             return true;
         }
         if (logger.isFinestEnabled()) {
@@ -235,8 +234,15 @@ public class ClusterJoinManager {
     }
 
     private boolean checkClusterStateBeforeJoin(Address target) {
-        if (clusterStateManager.getState() != ClusterState.ACTIVE) {
-            if (!clusterService.isMemberRemovedInFrozenState(target)) {
+        if (clusterStateManager.getState() == ClusterState.IN_TRANSITION) {
+            String message = "Cluster state either is in transition process. Join is not allowed for now -> "
+                    + clusterStateManager.stateToString();
+            logger.warning(message);
+            OperationService operationService = nodeEngine.getOperationService();
+            operationService.send(new BeforeJoinCheckFailureOperation(message), target);
+            return true;
+        } else if (clusterStateManager.getState() != ClusterState.ACTIVE) {
+            if (!clusterService.isMemberRemovedWhileClusterIsNotActive(target)) {
                 String message = "Cluster state either is locked or doesn't allow new members to join -> "
                         + clusterStateManager.stateToString();
                 logger.warning(message);

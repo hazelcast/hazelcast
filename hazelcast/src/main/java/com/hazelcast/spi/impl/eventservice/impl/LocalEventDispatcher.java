@@ -54,7 +54,7 @@ public final class LocalEventDispatcher implements StripedRunnable, TimeoutRunna
     public void run() {
         final EventPublishingService<Object, Object> service = eventService.nodeEngine.getService(serviceName);
         if (service == null) {
-            if (eventService.nodeEngine.isActive()) {
+            if (eventService.nodeEngine.isRunning()) {
                 throw new IllegalArgumentException("Service[" + serviceName + "] could not be found!");
             }
             return;

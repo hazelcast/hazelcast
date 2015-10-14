@@ -28,7 +28,7 @@ import java.io.IOException;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.CREATE_TX_BACKUP_LOG;
 
-public final class CreateTxBackupLogOperation extends TxBaseOperation {
+public class CreateTxBackupLogOperation extends TxBaseOperation {
 
     private String callerUuid;
     private String txnId;
@@ -63,6 +63,15 @@ public final class CreateTxBackupLogOperation extends TxBaseOperation {
     @Override
     public int getId() {
         return CREATE_TX_BACKUP_LOG;
+    }
+
+    @Override
+    public String getCallerUuid() {
+        return callerUuid;
+    }
+
+    public String getTxnId() {
+        return txnId;
     }
 
     @Override

@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.util.Clock;
@@ -68,7 +67,7 @@ class ClusterMergeTask implements Runnable {
 
         executeMergeTasks(tasks);
 
-        if (node.getState() == NodeState.ACTIVE && node.joined()) {
+        if (node.isRunning() && node.joined()) {
             lifecycleService.fireLifecycleEvent(MERGED);
         }
     }
@@ -148,7 +147,7 @@ class ClusterMergeTask implements Runnable {
                 if (deadline <= 0) {
                     throw t;
                 }
-                if (node.getState() != NodeState.ACTIVE) {
+                if (!node.isRunning()) {
                     future.cancel(true);
                     throw new HazelcastInstanceNotActiveException();
                 }

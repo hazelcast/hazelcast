@@ -20,10 +20,14 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.transaction.impl.operations.CreateAllowedDuringPassiveStateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.CreateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.BroadcastTxRollbackOperation;
+import com.hazelcast.transaction.impl.operations.PurgeAllowedDuringPassiveStateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.PurgeTxBackupLogOperation;
+import com.hazelcast.transaction.impl.operations.ReplicateAllowedDuringPassiveStateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.ReplicateTxBackupLogOperation;
+import com.hazelcast.transaction.impl.operations.RollbackAllowedDuringPassiveStateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.RollbackTxBackupLogOperation;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY;
@@ -38,6 +42,10 @@ public final class TransactionDataSerializerHook implements DataSerializerHook {
     public static final int PURGE_TX_BACKUP_LOG = 2;
     public static final int REPLICATE_TX_BACKUP_LOG = 3;
     public static final int ROLLBACK_TX_BACKUP_LOG = 4;
+    public static final int CREATE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG = 5;
+    public static final int PURGE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG = 6;
+    public static final int REPLICATE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG = 7;
+    public static final int ROLLBACK_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG = 8;
 
     @Override
     public int getFactoryId() {
@@ -60,6 +68,14 @@ public final class TransactionDataSerializerHook implements DataSerializerHook {
                         return new ReplicateTxBackupLogOperation();
                     case ROLLBACK_TX_BACKUP_LOG:
                         return new RollbackTxBackupLogOperation();
+                    case CREATE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG:
+                        return new CreateAllowedDuringPassiveStateTxBackupLogOperation();
+                    case PURGE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG:
+                        return new PurgeAllowedDuringPassiveStateTxBackupLogOperation();
+                    case REPLICATE_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG:
+                        return new ReplicateAllowedDuringPassiveStateTxBackupLogOperation();
+                    case ROLLBACK_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG:
+                        return new RollbackAllowedDuringPassiveStateTxBackupLogOperation();
                     default:
                         return null;
                 }

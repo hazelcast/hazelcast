@@ -17,6 +17,7 @@
 package com.hazelcast.partition.impl;
 
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 /**
  * Checks whether a node is safe or not.
@@ -25,7 +26,7 @@ import com.hazelcast.spi.AbstractOperation;
  * @see com.hazelcast.core.PartitionService#isClusterSafe
  * @see com.hazelcast.core.PartitionService#isMemberSafe
  */
-public class SafeStateCheckOperation extends AbstractOperation {
+public class SafeStateCheckOperation extends AbstractOperation implements AllowedDuringPassiveState {
 
     private transient boolean safe;
 

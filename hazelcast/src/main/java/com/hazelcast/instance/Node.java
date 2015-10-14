@@ -83,6 +83,7 @@ public class Node {
     private final AtomicBoolean joined = new AtomicBoolean(false);
 
     private volatile NodeState state;
+
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
@@ -347,7 +348,7 @@ public class Node {
             return;
         }
 
-        if (!terminate && clusterService.getClusterState() != ClusterState.SHUTTING_DOWN) {
+        if (!terminate && clusterService.getClusterState() != ClusterState.PASSIVE) {
             final int maxWaitSeconds = groupProperties.getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                 logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
@@ -401,10 +402,18 @@ public class Node {
 
     private boolean setShuttingDown() {
         if (shuttingDown.compareAndSet(false, true)) {
-            state = NodeState.SHUTTING_DOWN;
+            state = NodeState.PASSIVE;
             return true;
         }
         return false;
+    }
+
+    /**
+     * Indicates that node is not shutting down or it has not already shut down
+     * @return true if node is not shutting down or it has not already shut down
+     */
+    public boolean isRunning() {
+        return !shuttingDown.get();
     }
 
     private void waitIfAlreadyShuttingDown() {
@@ -422,12 +431,20 @@ public class Node {
         }
     }
 
-    public void changeStateToShuttingDown() {
-        if (clusterService.getClusterState() != ClusterState.SHUTTING_DOWN) {
-            throw new IllegalStateException("This method can be called only when cluster-state"
-                    + " is SHUTTING_DOWN!");
+    public void changeNodeStateToActive() {
+        final ClusterState clusterState = clusterService.getClusterState();
+        if (clusterState == ClusterState.PASSIVE) {
+            throw new IllegalStateException("This method can be called only when cluster-state is not " + clusterState);
         }
-        state = NodeState.SHUTTING_DOWN;
+        state = NodeState.ACTIVE;
+    }
+
+    public void changeNodeStateToPassive() {
+        final ClusterState clusterState = clusterService.getClusterState();
+        if (clusterState != ClusterState.PASSIVE) {
+            throw new IllegalStateException("This method can be called only when cluster-state is " + clusterState);
+        }
+        state = NodeState.PASSIVE;
     }
 
     /**
@@ -485,7 +502,7 @@ public class Node {
         @Override
         public void run() {
             try {
-                if (state == NodeState.ACTIVE) {
+                if (isRunning()) {
                     logger.info("Running shutdown hook... Current state: " + state);
                     hazelcastInstance.getLifecycleService().terminate();
                 }

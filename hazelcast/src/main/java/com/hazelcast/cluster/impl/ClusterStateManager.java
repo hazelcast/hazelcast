@@ -22,6 +22,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionException;
@@ -92,9 +93,6 @@ public class ClusterStateManager {
     }
 
     void initialClusterState(ClusterState initialState) {
-        if (initialState == ClusterState.SHUTTING_DOWN) {
-            throw new IllegalArgumentException("Initial state cannot be SHUTTING_DOWN!");
-        }
         clusterServiceLock.lock();
         try {
             final ClusterState currentState = getState();
@@ -119,15 +117,24 @@ public class ClusterStateManager {
         }
     }
 
-    public void lockClusterState(ClusterState newState, Address initiator, String txnId, long leaseTime) {
+    public void lockClusterState(ClusterState newState, Address initiator, String txnId,
+                                 long leaseTime, int partitionStateVersion) {
         Preconditions.checkNotNull(newState);
         clusterServiceLock.lock();
         try {
-            if (newState != ClusterState.ACTIVE
-                    && node.getPartitionService().hasOnGoingMigrationLocal()) {
-                throw new IllegalStateException("Still have pending migration/replication tasks, "
-                        + "cannot lock cluster state! New state: " + newState
-                        + ", current state: " + getState());
+            if (newState != ClusterState.ACTIVE) {
+                final InternalPartitionService partitionService = node.getPartitionService();
+                final int thisPartitionStateVersion = partitionService.getPartitionStateVersion();
+
+                if (partitionService.hasOnGoingMigrationLocal()) {
+                    throw new IllegalStateException("Still have pending migration/replication tasks, "
+                            + "cannot lock cluster state! New state: " + newState
+                            + ", current state: " + getState());
+                } else  if (partitionStateVersion != thisPartitionStateVersion) {
+                    throw new IllegalStateException("Can not lock cluster state! Partition tables have different versions! "
+                            + "Expected version: " + partitionStateVersion + " Current version: " + thisPartitionStateVersion);
+                }
+
             }
 
             final ClusterStateLock currentLock = getStateLock();
@@ -174,11 +181,13 @@ public class ClusterStateManager {
             this.state = newState;
             stateLockRef.set(ClusterStateLock.NOT_LOCKED);
 
-            if (newState == ClusterState.SHUTTING_DOWN) {
-                node.changeStateToShuttingDown();
+            if (newState == ClusterState.PASSIVE) {
+                node.changeNodeStateToPassive();
+            } else {
+                node.changeNodeStateToActive();
             }
             if (newState == ClusterState.ACTIVE) {
-                node.getClusterService().removeMembersDeadWhileFrozen();
+                node.getClusterService().removeMembersDeadWhileClusterIsNotActive();
             }
         } finally {
             clusterServiceLock.unlock();
@@ -198,16 +207,18 @@ public class ClusterStateManager {
         NodeEngineImpl nodeEngine = node.getNodeEngine();
         TransactionManagerServiceImpl txManagerService
                 = (TransactionManagerServiceImpl) nodeEngine.getTransactionManagerService();
-        Transaction tx = txManagerService.newTransaction(options);
+        Transaction tx = txManagerService.newAllowedDuringPassiveStateTransaction(options);
         tx.begin();
 
         try {
             String txnId = tx.getTxnId();
             Collection<MemberImpl> members = getMemberImpls();
 
-            addTransactionRecords(newState, tx, members);
+            final int partitionStateVersion = nodeEngine.getPartitionService().getPartitionStateVersion();
 
-            lockClusterState(newState, nodeEngine, options.getTimeoutMillis(), txnId, members);
+            addTransactionRecords(newState, tx, members, partitionStateVersion);
+
+            lockClusterState(newState, nodeEngine, options.getTimeoutMillis(), txnId, members, partitionStateVersion);
 
             checkMemberListChange(members);
 
@@ -221,11 +232,13 @@ public class ClusterStateManager {
     }
 
     private void lockClusterState(ClusterState newState, NodeEngineImpl nodeEngine, long leaseTime, String txnId,
-            Collection<MemberImpl> members) {
+            Collection<MemberImpl> members, int partitionStateVersion) {
 
         Collection<Future> futures = new ArrayList<Future>(members.size());
+
+        final Address thisAddress = node.getThisAddress();
         for (MemberImpl member : members) {
-            Operation op = new LockClusterStateOperation(newState, node.getThisAddress(), txnId, leaseTime);
+            Operation op = new LockClusterStateOperation(newState, thisAddress, txnId, leaseTime, partitionStateVersion);
             Future future = nodeEngine.getOperationService().invokeOnTarget(SERVICE_NAME, op, member.getAddress());
             futures.add(future);
         }
@@ -235,11 +248,12 @@ public class ClusterStateManager {
         exceptionHandler.rethrowIfFailed();
     }
 
-    private void addTransactionRecords(ClusterState newState, Transaction tx, Collection<MemberImpl> members) {
+    private void addTransactionRecords(ClusterState newState, Transaction tx,
+                                       Collection<MemberImpl> members, int partitionStateVersion) {
         long leaseTime = Math.min(tx.getTimeoutMillis(), LOCK_LEASE_EXTENSION_MILLIS);
         for (MemberImpl member : members) {
             tx.add(new ClusterStateTransactionLogRecord(newState, node.getThisAddress(),
-                    member.getAddress(), tx.getTxnId(), leaseTime));
+                    member.getAddress(), tx.getTxnId(), leaseTime, partitionStateVersion));
         }
     }
 
@@ -257,11 +271,6 @@ public class ClusterStateManager {
         }
         if (options.getTransactionType() != TransactionType.TWO_PHASE) {
             throw new IllegalArgumentException("Changing cluster state requires 2PC transaction!");
-        }
-
-
-        if (getState() == ClusterState.SHUTTING_DOWN) {
-            throw new IllegalStateException("Cluster-state cannot be changed anymore! Cluster is shutting down!");
         }
     }
 

@@ -148,7 +148,7 @@ final class TransactionContextImpl implements TransactionContext {
         final Object service = nodeEngine.getService(serviceName);
 
         if (service == null) {
-            if (!nodeEngine.isActive()) {
+            if (!nodeEngine.isRunning()) {
                 throw new HazelcastInstanceNotActiveException();
             }
             throw new IllegalArgumentException("Unknown Service[" + serviceName + "]!");

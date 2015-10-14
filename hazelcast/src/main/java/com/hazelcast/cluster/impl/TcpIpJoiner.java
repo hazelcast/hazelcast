@@ -23,7 +23,6 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.AddressUtil;
@@ -100,7 +99,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             }
             long joinStartTime = Clock.currentTimeMillis();
             Connection connection;
-            while (node.getState() == NodeState.ACTIVE && !node.joined()
+            while (node.isRunning() && !node.joined()
                     && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
 
                 connection = node.connectionManager.getOrConnect(targetAddress);
@@ -136,7 +135,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             long maxJoinMillis = getMaxJoinMillis();
             long startTime = Clock.currentTimeMillis();
 
-            while (node.getState() == NodeState.ACTIVE && !node.joined()
+            while (node.isRunning() && !node.joined()
                     && (Clock.currentTimeMillis() - startTime < maxJoinMillis)) {
 
                 tryToJoinPossibleAddresses(possibleAddresses);
@@ -313,7 +312,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         long maxMasterJoinTime = getMaxJoinTimeToMasterNode();
         long start = Clock.currentTimeMillis();
 
-        while (node.getState() == NodeState.ACTIVE && !node.joined()
+        while (node.isRunning() && !node.joined()
                 && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
 
             Address master = node.getMasterAddress();

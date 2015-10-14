@@ -39,7 +39,7 @@ import java.util.concurrent.locks.Lock;
 import static com.hazelcast.cluster.ClusterState.ACTIVE;
 import static com.hazelcast.cluster.ClusterState.FROZEN;
 import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
-import static com.hazelcast.cluster.ClusterState.SHUTTING_DOWN;
+import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -86,9 +86,10 @@ public class ClusterStateManagerTest {
         assertEquals(FROZEN, clusterStateManager.getState());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void test_initialClusterState_SHUTTING_DOWN() {
-        clusterStateManager.initialClusterState(SHUTTING_DOWN);
+    @Test
+    public void test_initialClusterState_PASSIVE() {
+        clusterStateManager.initialClusterState(PASSIVE);
+        assertEquals(PASSIVE, clusterStateManager.getState());
     }
 
     @Test
@@ -105,31 +106,31 @@ public class ClusterStateManagerTest {
     @Test(expected = NullPointerException.class)
     public void test_lockClusterState_nullState() throws Exception {
         Address initiator = newAddress();
-        clusterStateManager.lockClusterState(null, initiator, TXN, 1000);
+        clusterStateManager.lockClusterState(null, initiator, TXN, 1000, 0);
     }
 
     @Test(expected = NullPointerException.class)
     public void test_lockClusterState_nullInitiator() throws Exception {
-        clusterStateManager.lockClusterState(FROZEN, null, TXN, 1000);
+        clusterStateManager.lockClusterState(FROZEN, null, TXN, 1000, 0);
     }
 
     @Test(expected = NullPointerException.class)
     public void test_lockClusterState_nullTransactionId() throws Exception {
         Address initiator = newAddress();
-        clusterStateManager.lockClusterState(FROZEN, initiator, null, 1000);
+        clusterStateManager.lockClusterState(FROZEN, initiator, null, 1000, 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_lockClusterState_nonPositiveLeaseTime() throws Exception {
         Address initiator = newAddress();
-        clusterStateManager.lockClusterState(FROZEN, initiator, TXN, -1000);
+        clusterStateManager.lockClusterState(FROZEN, initiator, TXN, -1000, 0);
     }
 
     @Test
     public void test_lockClusterState_success() throws Exception {
         Address initiator = newAddress();
         final ClusterState newState = FROZEN;
-        clusterStateManager.lockClusterState(newState, initiator, TXN, 1000);
+        clusterStateManager.lockClusterState(newState, initiator, TXN, 1000, 0);
 
         assertLockedBy(initiator);
     }
@@ -138,9 +139,9 @@ public class ClusterStateManagerTest {
     public void test_lockClusterState_fail() throws Exception {
         Address initiator = newAddress();
         final ClusterState newState = FROZEN;
-        clusterStateManager.lockClusterState(newState, initiator, TXN, 1000);
+        clusterStateManager.lockClusterState(newState, initiator, TXN, 1000, 0);
 
-        clusterStateManager.lockClusterState(newState, initiator, ANOTHER_TXN, 1000);
+        clusterStateManager.lockClusterState(newState, initiator, ANOTHER_TXN, 1000, 0);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -149,7 +150,7 @@ public class ClusterStateManagerTest {
 
         Address initiator = newAddress();
         final ClusterState newState = FROZEN;
-        clusterStateManager.lockClusterState(newState, initiator, TXN, 1000);
+        clusterStateManager.lockClusterState(newState, initiator, TXN, 1000, 0);
     }
 
     @Test
@@ -159,7 +160,7 @@ public class ClusterStateManagerTest {
 
         Address initiator = newAddress();
         final ClusterState newState = ACTIVE;
-        clusterStateManager.lockClusterState(newState, initiator, TXN, 1000);
+        clusterStateManager.lockClusterState(newState, initiator, TXN, 1000, 0);
 
         assertLockedBy(initiator);
     }
@@ -176,20 +177,25 @@ public class ClusterStateManagerTest {
 
     @Test
     public void test_unlockClusterState_fail_whenLockedByElse() throws Exception {
-        clusterStateManager.lockClusterState(FROZEN, newAddress(), TXN, 1000);
+        clusterStateManager.lockClusterState(FROZEN, newAddress(), TXN, 1000, 0);
         assertFalse(clusterStateManager.rollbackClusterState(ANOTHER_TXN));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void test_lockClusterState_fail_withDifferentPartitionStateVersions() throws Exception {
+        clusterStateManager.lockClusterState(FROZEN, newAddress(), TXN, 1000, 1);
     }
 
     @Test
     public void test_unlockClusterState_success() throws Exception {
-        clusterStateManager.lockClusterState(FROZEN, newAddress(), TXN, 1000);
+        clusterStateManager.lockClusterState(FROZEN, newAddress(), TXN, 1000, 0);
         assertTrue(clusterStateManager.rollbackClusterState(TXN));
     }
 
     @Test
     public void test_lockClusterState_getLockExpiryTime() throws Exception {
         final Address initiator = newAddress();
-        clusterStateManager.lockClusterState(FROZEN, initiator, TXN, TimeUnit.DAYS.toMillis(1));
+        clusterStateManager.lockClusterState(FROZEN, initiator, TXN, TimeUnit.DAYS.toMillis(1), 0);
 
         final ClusterStateLock stateLock = clusterStateManager.getStateLock();
         assertTrue(Clock.currentTimeMillis() + TimeUnit.HOURS.toMillis(12) < stateLock.getLockExpiryTime());
@@ -198,8 +204,8 @@ public class ClusterStateManagerTest {
     @Test
     public void test_lockClusterState_extendLease() throws Exception {
         final Address initiator = newAddress();
-        clusterStateManager.lockClusterState(FROZEN, initiator, TXN, 10000);
-        clusterStateManager.lockClusterState(FROZEN, initiator, TXN, TimeUnit.DAYS.toMillis(1));
+        clusterStateManager.lockClusterState(FROZEN, initiator, TXN, 10000, 0);
+        clusterStateManager.lockClusterState(FROZEN, initiator, TXN, TimeUnit.DAYS.toMillis(1), 0);
 
         final ClusterStateLock stateLock = clusterStateManager.getStateLock();
         assertTrue(Clock.currentTimeMillis() + TimeUnit.HOURS.toMillis(12) < stateLock.getLockExpiryTime());
@@ -215,7 +221,7 @@ public class ClusterStateManagerTest {
 
     @Test
     public void test_lockClusterState_expiry() throws Exception {
-        clusterStateManager.lockClusterState(FROZEN, newAddress(), TXN, 1);
+        clusterStateManager.lockClusterState(FROZEN, newAddress(), TXN, 1, 0);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -249,7 +255,7 @@ public class ClusterStateManagerTest {
     @Test(expected = TransactionException.class)
     public void test_changeLocalClusterState_fail_whenLockedByElse() throws Exception {
         final Address initiator = newAddress();
-        clusterStateManager.lockClusterState(FROZEN, initiator, TXN, 10000);
+        clusterStateManager.lockClusterState(FROZEN, initiator, TXN, 10000, 0);
         clusterStateManager.commitClusterState(FROZEN, initiator, ANOTHER_TXN);
     }
 
@@ -257,7 +263,7 @@ public class ClusterStateManagerTest {
     public void test_changeLocalClusterState_success() throws Exception {
         final ClusterState newState = FROZEN;
         final Address initiator = newAddress();
-        clusterStateManager.lockClusterState(newState, initiator, TXN, 10000);
+        clusterStateManager.lockClusterState(newState, initiator, TXN, 10000, 0);
         clusterStateManager.commitClusterState(newState, initiator, TXN);
 
         assertEquals(newState, clusterStateManager.getState());
@@ -266,14 +272,14 @@ public class ClusterStateManagerTest {
     }
 
     @Test
-    public void changeLocalClusterState_shouldChangeNodeStateToShuttingDown_whenStateBecomes_SHUTTING_DOWN() throws Exception {
-        final ClusterState newState = SHUTTING_DOWN;
+    public void changeLocalClusterState_shouldChangeNodeStateToShuttingDown_whenStateBecomes_PASSIVE() throws Exception {
+        final ClusterState newState = PASSIVE;
         final Address initiator = newAddress();
-        clusterStateManager.lockClusterState(newState, initiator, TXN, 10000);
+        clusterStateManager.lockClusterState(newState, initiator, TXN, 10000, 0);
         clusterStateManager.commitClusterState(newState, initiator, TXN);
 
         assertEquals(newState, clusterStateManager.getState());
-        verify(node, times(1)).changeStateToShuttingDown();
+        verify(node, times(1)).changeNodeStateToPassive();
     }
 
     @Test
@@ -281,11 +287,11 @@ public class ClusterStateManagerTest {
         final ClusterState newState = ACTIVE;
         final Address initiator = newAddress();
         clusterStateManager.initialClusterState(FROZEN);
-        clusterStateManager.lockClusterState(newState, initiator, TXN, 10000);
+        clusterStateManager.lockClusterState(newState, initiator, TXN, 10000, 0);
         clusterStateManager.commitClusterState(newState, initiator, TXN);
 
         assertEquals(newState, clusterStateManager.getState());
-        verify(clusterService, times(1)).removeMembersDeadWhileFrozen();
+        verify(clusterService, times(1)).removeMembersDeadWhileClusterIsNotActive();
     }
 
     private Address newAddress() throws UnknownHostException {

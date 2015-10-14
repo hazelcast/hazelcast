@@ -148,7 +148,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private final AtomicInteger stateVersion = new AtomicInteger();
     @Probe(name = "migrationQueueSize")
     private final BlockingQueue<Runnable> migrationQueue = new LinkedBlockingQueue<Runnable>();
-    private final AtomicBoolean migrationActive = new AtomicBoolean(true);
+    private final AtomicBoolean migrationAllowed = new AtomicBoolean(true);
     @Probe(name = "lastRepartitionTime")
     private final AtomicLong lastRepartitionTime = new AtomicLong();
     private final CoalescingDelayedTrigger delayedResumeMigrationTrigger;
@@ -255,7 +255,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Probe(name = "migrationActive")
     private int migrationActiveProbe() {
-        return migrationActive.get() ? 1 : 0;
+        return migrationAllowed.get() ? 1 : 0;
     }
 
     @Probe
@@ -278,7 +278,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             partitionTableSendInterval = 1;
         }
         ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.scheduleAtFixedRate(new SendClusterStateTask(),
+        executionService.scheduleAtFixedRate(new SendPartitionRuntimeStateTask(),
                 partitionTableSendInterval, partitionTableSendInterval, TimeUnit.SECONDS);
 
         executionService.scheduleWithFixedDelay(new SyncReplicaVersionTask(),
@@ -436,7 +436,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     migrationQueue.add(new RepartitioningTask());
 
                     // send initial partition table to newly joined node.
-                    Collection<MemberImpl> members = node.clusterService.getMemberImpls();
+                    Collection<MemberImpl> members = getCurrentMembersAndMembersRemovedWhileNotClusterNotActive();
                     PartitionStateOperation op = new PartitionStateOperation(createPartitionState(members));
                     nodeEngine.getOperationService().send(op, member.getAddress());
                 }
@@ -448,6 +448,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public void memberRemoved(final MemberImpl member) {
+        logger.info("Removing " + member);
         updateMemberGroupsSize();
         final Address deadAddress = member.getAddress();
         final Address thisAddress = node.getThisAddress();
@@ -472,7 +473,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             // Otherwise new master may take action fast and send new partition state
             // before other members realize the dead one.
             pauseMigration();
-            cancelReplicaSyncRequestsTo(deadAddress);
+            cancelReplicaSyncRequestsInternal(deadAddress);
             removeDeadAddress(deadAddress, thisAddress);
 
             if (node.isMaster() && initialized) {
@@ -485,7 +486,16 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
-    private void cancelReplicaSyncRequestsTo(Address deadAddress) {
+    public void cancelReplicaSyncRequestsTo(Address deadAddress) {
+        lock.lock();
+        try {
+            cancelReplicaSyncRequestsInternal(deadAddress);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void cancelReplicaSyncRequestsInternal(Address deadAddress) {
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             ReplicaSyncInfo syncInfo = replicaSyncRequests.get(partitionId);
             if (syncInfo != null && deadAddress.equals(syncInfo.target)) {
@@ -565,20 +575,21 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return;
         }
 
-        if (!isMigrationActive()) {
+        if (!isMigrationAllowed()) {
             // migration is disabled because of a member leave, wait till enabled!
             return;
         }
 
         lock.lock();
         try {
-            Collection<MemberImpl> members = node.clusterService.getMemberImpls();
+            Collection<MemberImpl> members = getCurrentMembersAndMembersRemovedWhileNotClusterNotActive();
             PartitionRuntimeState partitionState = createPartitionState(members);
             PartitionStateOperation op = new PartitionStateOperation(partitionState);
 
             OperationService operationService = nodeEngine.getOperationService();
+            final ClusterServiceImpl clusterService = node.clusterService;
             for (MemberImpl member : members) {
-                if (!member.localMember()) {
+                if (!(member.localMember() || clusterService.isMemberRemovedWhileClusterIsNotActive(member.getAddress()))) {
                     try {
                         operationService.send(op, member.getAddress());
                     } catch (Exception e) {
@@ -620,9 +631,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private List<Future> firePartitionStateOperation(Collection<MemberImpl> members,
                                                      PartitionRuntimeState partitionState,
                                                      OperationService operationService) {
+        final ClusterServiceImpl clusterService = node.clusterService;
         List<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
-            if (!member.localMember()) {
+            if (!(member.localMember() || clusterService.isMemberRemovedWhileClusterIsNotActive(member.getAddress()))) {
                 try {
                     Address address = member.getAddress();
                     PartitionStateOperation operation = new PartitionStateOperation(partitionState, true);
@@ -911,7 +923,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         // mdogan:
         // merged two conditions into single `if-return` block to
         // conform checkstyle return-count rule.
-        if (!isMigrationActive() || partition.isMigrating()) {
+        if (!isReplicaSyncAllowed() || partition.isMigrating()) {
+
             schedulePartitionReplicaSync(syncInfo, target, REPLICA_SYNC_RETRY_DELAY,
                     "MIGRATION IS DISABLED OR PARTITION IS MIGRATING");
             return;
@@ -945,6 +958,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private boolean fireSyncReplicaRequest(ReplicaSyncInfo syncInfo, Address target) {
+        if (node.clusterService.isMemberRemovedWhileClusterIsNotActive(target)) {
+            return false;
+        }
+
         if (tryToAcquireReplicaSyncPermit()) {
             int partitionId = syncInfo.partitionId;
             int replicaIndex = syncInfo.replicaIndex;
@@ -1048,7 +1065,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
 
             if (node.isMaster()) {
-                syncPartitionRuntimeState();
+                final List<MemberImpl> members = getCurrentMembersAndMembersRemovedWhileNotClusterNotActive();
+                syncPartitionRuntimeState(members);
             } else {
                 timeoutInMillis = waitForOngoingMigrations(timeoutInMillis, sleep);
                 if (timeoutInMillis <= 0) {
@@ -1072,6 +1090,13 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
         }
         return false;
+    }
+
+    private List<MemberImpl> getCurrentMembersAndMembersRemovedWhileNotClusterNotActive() {
+        final List<MemberImpl> members = new ArrayList<MemberImpl>();
+        members.addAll(node.clusterService.getMemberImpls());
+        members.addAll(node.clusterService.getMembersRemovedWhileClusterIsNotActive());
+        return members;
     }
 
     private long waitForOngoingMigrations(long timeoutInMillis, long sleep) {
@@ -1146,7 +1171,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private boolean isReplicaInSyncState() {
-        if (!initialized || getMemberGroupsSize() < 2) {
+        if (!initialized || !hasMultipleMemberGroups()) {
             return true;
         }
         final int replicaIndex = 1;
@@ -1216,7 +1241,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return true;
         }
 
-        if (getMemberGroupsSize() < 2) {
+        if (!hasMultipleMemberGroups()) {
             return true;
         }
 
@@ -1318,11 +1343,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return false;
         }
 
-        if (getMemberGroupsSize() < 2) {
-            return false;
-        }
+        return hasMultipleMemberGroups();
+    }
 
-        return true;
+    private boolean hasMultipleMemberGroups() {
+        return getMemberGroupsSize() >= 2;
     }
 
     private boolean checkForActiveMigrations(Level level) {
@@ -1491,20 +1516,25 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public void pauseMigration() {
-        migrationActive.set(false);
+        migrationAllowed.set(false);
     }
 
     @Override
     public void resumeMigration() {
-        migrationActive.set(true);
+        migrationAllowed.set(true);
     }
 
-    public boolean isMigrationActive() {
-        if (!migrationActive.get()) {
-             return false;
+    public boolean isReplicaSyncAllowed() {
+        return migrationAllowed.get();
+    }
+
+    public boolean isMigrationAllowed() {
+        if (migrationAllowed.get()) {
+            ClusterState clusterState = node.getClusterService().getClusterState();
+            return clusterState == ClusterState.ACTIVE;
         }
-        ClusterState clusterState = node.getClusterService().getClusterState();
-        return clusterState == ClusterState.ACTIVE;
+
+        return false;
     }
 
     @Override
@@ -1649,11 +1679,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return entries;
     }
 
-    private class SendClusterStateTask implements Runnable {
+    private class SendPartitionRuntimeStateTask
+            implements Runnable {
         @Override
         public void run() {
             if (node.isMaster() && node.getState() == NodeState.ACTIVE) {
-                if (!migrationQueue.isEmpty() && isMigrationActive()) {
+                if (!migrationQueue.isEmpty() && isMigrationAllowed()) {
                     logger.info("Remaining migration tasks in queue => " + migrationQueue.size());
                 }
                 publishPartitionRuntimeState();
@@ -1664,7 +1695,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private class SyncReplicaVersionTask implements Runnable {
         @Override
         public void run() {
-            if (node.getState() == NodeState.ACTIVE && migrationActive.get()) {
+            if (node.nodeEngine.isRunning() && isReplicaSyncAllowed()) {
                 for (InternalPartitionImpl partition : partitions) {
                     if (partition.isLocal()) {
                         for (int index = 1; index < InternalPartition.MAX_REPLICA_COUNT; index++) {
@@ -1783,7 +1814,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
 
         private boolean isMigrationAllowed() {
-            if (isMigrationActive()) {
+            if (InternalPartitionServiceImpl.this.isMigrationAllowed()) {
                 return true;
             }
             migrationQueue.add(this);
@@ -1870,7 +1901,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 Object response = future.get();
                 return (Boolean) nodeEngine.toObject(response);
             } catch (Throwable e) {
-                final Level level = nodeEngine.isActive() && migrationInfo.isValid() ? Level.WARNING : Level.FINEST;
+                final Level level = nodeEngine.isRunning() && migrationInfo.isValid() ? Level.WARNING : Level.FINEST;
                 logger.log(level, "Failed migration from " + fromMember + " for " + migrationRequestOp.getMigrationInfo(), e);
             }
             return Boolean.FALSE;
@@ -1940,7 +1971,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         private void doRun() throws InterruptedException {
             for (; ; ) {
-                if (!isMigrationActive()) {
+                if (!isMigrationAllowed()) {
                     break;
                 }
                 Runnable r = migrationQueue.poll(1, TimeUnit.SECONDS);
@@ -1961,7 +1992,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 }
                 evictCompletedMigrations();
                 Thread.sleep(sleepTime);
-            } else if (!isMigrationActive()) {
+            } else if (!isMigrationAllowed()) {
                 Thread.sleep(sleepTime);
             }
         }
@@ -2026,7 +2057,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
 
             Node node = partitionService.node;
-            if (replicaIndex == 0 && newAddress == null && node.getState() == NodeState.ACTIVE && node.joined()) {
+            if (replicaIndex == 0 && newAddress == null && node.isRunning() && node.joined()) {
                 logOwnerOfPartitionIsRemoved(event);
             }
             if (node.isMaster()) {

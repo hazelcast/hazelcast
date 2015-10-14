@@ -18,7 +18,6 @@ package com.hazelcast.cluster.impl;
 
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -55,7 +54,7 @@ final class SplitBrainHandler implements Runnable {
             return false;
         }
 
-        if (node.getState() != NodeState.ACTIVE) {
+        if (!node.isRunning()) {
             return false;
         }
 
