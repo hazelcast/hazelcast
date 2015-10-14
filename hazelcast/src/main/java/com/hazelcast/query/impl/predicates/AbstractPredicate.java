@@ -59,15 +59,21 @@ public abstract class AbstractPredicate implements IndexAwarePredicate, DataSeri
             type = queryableEntry.getAttributeType(attributeName);
             attributeType = type;
         }
-        if (type == AttributeType.ENUM) {
+
+        Class<?> entryAttributeClass = entryAttributeValue != null ? entryAttributeValue.getClass() : null;
+        return convert(type, entryAttributeClass, givenAttributeValue);
+    }
+
+    private Comparable convert(AttributeType entryAttributeType, Class<?> entryAttributeClass, Comparable givenAttributeValue) {
+        if (entryAttributeType == AttributeType.ENUM) {
             // if attribute type is enum, convert given attribute to enum string
-            return type.getConverter().convert(givenAttributeValue);
+            return entryAttributeType.getConverter().convert(givenAttributeValue);
         } else {
             // if given attribute value is already in expected type then there's no need for conversion.
-            if (entryAttributeValue != null && entryAttributeValue.getClass().isAssignableFrom(givenAttributeValue.getClass())) {
+            if (entryAttributeClass != null && entryAttributeClass.isAssignableFrom(givenAttributeValue.getClass())) {
                 return givenAttributeValue;
-            } else if (type != null) {
-                return type.getConverter().convert(givenAttributeValue);
+            } else if (entryAttributeType != null) {
+                return entryAttributeType.getConverter().convert(givenAttributeValue);
             } else {
                 throw new QueryException("Unknown attribute type: " + givenAttributeValue.getClass().getName()
                         + " for attribute: " + attributeName);
