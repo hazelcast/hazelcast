@@ -43,31 +43,13 @@ public final class CloudyUtility {
     private CloudyUtility() {
     }
 
-    public static String getQueryString(Map<String, String> attributes) {
-        StringBuilder query = new StringBuilder();
-        for (final Map.Entry<String, String> entry : attributes.entrySet()) {
-            final String value = entry.getValue();
-            query.append(AwsURLEncoder.urlEncode(entry.getKey())).append("=").append(AwsURLEncoder.urlEncode(value)).append("&");
-        }
-        String result = query.toString();
-        if (result != null && !result.equals("")) {
-            result = "?" + result.substring(0, result.length() - 1);
-        }
-        return result;
-    }
-
     public static Map<String, String> unmarshalTheResponse(InputStream stream, AwsConfig awsConfig) throws IOException {
-        return parseAddresses(stream, awsConfig);
-    }
-
-
-    private static Map<String, String> parseAddresses(InputStream in, AwsConfig awsConfig) {
         final DocumentBuilder builder;
         try {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             builder = dbf.newDocumentBuilder();
-            Document doc = builder.parse(in);
+            Document doc = builder.parse(stream);
             Element element = doc.getDocumentElement();
             NodeHolder elementNodeHolder = new NodeHolder(element);
             final Map<String, String> addresses = new LinkedHashMap<String, String>();
@@ -83,9 +65,7 @@ public final class CloudyUtility {
         } catch (Exception e) {
             LOGGER.warning(e);
         }
-        return new LinkedHashMap<String, String>();
-    }
-
+        return new LinkedHashMap<String, String>();    }
 
     static class NodeHolder {
         Node node;
