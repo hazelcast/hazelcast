@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.impl.MapEntries;
@@ -32,13 +31,17 @@ import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
 import javax.cache.expiry.ExpiryPolicy;
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
@@ -216,9 +219,63 @@ abstract class AbstractCacheProxy<K, V>
     public void putAll(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy) {
         ensureOpen();
         validateNotNull(map);
-        // TODO implement batch putAll
+
+        int partitionCount = partitionService.getPartitionCount();
+
+        try {
+            List<Future> futures = new ArrayList<Future>(partitionCount);
+
+            // First we fill entry set per partition
+            List<Map.Entry<Data, Data>>[] entriesPerPartition = groupDataToPartitions(map, partitionCount);
+
+            // Then we invoke the operations and sync on completion of these operations
+            putToAllPartitionsAndWaitForCompletion(entriesPerPartition, futures, expiryPolicy);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    private List<Map.Entry<Data, Data>>[] groupDataToPartitions(Map<? extends K, ? extends V> map,
+                                                                int partitionCount) {
+        List<Map.Entry<Data, Data>>[] entriesPerPartition = new List[partitionCount];
+
         for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
-            put(entry.getKey(), entry.getValue(), expiryPolicy);
+            K key = entry.getKey();
+            V value = entry.getValue();
+            validateNotNull(key, value);
+
+            Data keyData = serializationService.toData(key);
+            Data valueData = serializationService.toData(value);
+
+            int partitionId = partitionService.getPartitionId(keyData);
+            List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
+            if (entries == null) {
+                entries = new ArrayList<Map.Entry<Data, Data>>();
+                entriesPerPartition[partitionId] = entries;
+            }
+
+            entries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, valueData));
+        }
+
+        return entriesPerPartition;
+    }
+
+    private void putToAllPartitionsAndWaitForCompletion(List<Map.Entry<Data, Data>>[] entriesPerPartition,
+                                                        List<Future> futures, ExpiryPolicy expiryPolicy)
+            throws ExecutionException, InterruptedException {
+
+        for (int partitionId = 0; partitionId < entriesPerPartition.length; partitionId++) {
+            List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
+            if (entries != null) {
+                // TODO If there is a single entry, we could make use of a put operation since that is a bit cheaper
+                Operation operation = operationProvider.createPutAllOperation(entries, expiryPolicy, partitionId);
+                Future f = invoke(operation, partitionId, true);
+                futures.add(f);
+            }
+        }
+
+        for (Future future : futures) {
+            future.get();
         }
     }
 
@@ -278,14 +335,6 @@ abstract class AbstractCacheProxy<K, V>
         } catch (Throwable t) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
         }
-    }
-
-    @Override
-    public CacheStatistics getLocalCacheStatistics() {
-        // TODO Throw `UnsupportedOperationException` if cache statistics are not enabled
-        // but it breaks backward compatibility.
-        final ICacheService service = getService();
-        return service.createCacheStatIfAbsent(cacheConfig.getNameWithPrefix());
     }
 
     private Set<Integer> getPartitionsForKeys(Set<Data> keys) {

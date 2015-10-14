@@ -70,6 +70,7 @@ abstract class AbstractCacheProxyBase<K, V> {
     protected final ICacheService cacheService;
     protected final SerializationService serializationService;
     protected final CacheOperationProvider operationProvider;
+    protected final InternalPartitionService partitionService;
 
     private final NodeEngine nodeEngine;
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
@@ -83,6 +84,7 @@ abstract class AbstractCacheProxyBase<K, V> {
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;
         this.nodeEngine = nodeEngine;
+        this.partitionService = nodeEngine.getPartitionService();
         this.cacheService = cacheService;
         this.serializationService = nodeEngine.getSerializationService();
         this.operationProvider =

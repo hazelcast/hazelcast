@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
@@ -100,7 +101,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         }
     }
 
-    protected <T> InternalCompletableFuture<T> invoke(Operation op, Data keyData, boolean completionOperation) {
+    protected <T> InternalCompletableFuture<T> invoke(Operation op, int partitionId, boolean completionOperation) {
         Integer completionId = null;
         if (completionOperation) {
             completionId = registerCompletionLatch(1);
@@ -109,10 +110,9 @@ abstract class AbstractInternalCacheProxy<K, V>
             }
         }
         try {
-            final int partitionId = getPartitionId(getNodeEngine(), keyData);
             final InternalCompletableFuture<T> f =
                     getNodeEngine().getOperationService()
-                        .invokeOnPartition(getServiceName(), op, partitionId);
+                            .invokeOnPartition(getServiceName(), op, partitionId);
             if (completionOperation) {
                 waitCompletionLatch(completionId);
             }
@@ -127,6 +127,11 @@ abstract class AbstractInternalCacheProxy<K, V>
                 deregisterCompletionLatch(completionId);
             }
         }
+    }
+
+    protected <T> InternalCompletableFuture<T> invoke(Operation op, Data keyData, boolean completionOperation) {
+        final int partitionId = getPartitionId(getNodeEngine(), keyData);
+        return invoke(op, partitionId, completionOperation);
     }
 
     protected <T> InternalCompletableFuture<T> removeAsyncInternal(K key, V oldValue, boolean hasOldValue,
@@ -406,6 +411,14 @@ abstract class AbstractInternalCacheProxy<K, V>
             }
         }
         return listener;
+    }
+
+    @Override
+    public CacheStatistics getLocalCacheStatistics() {
+        // TODO Throw `UnsupportedOperationException` if cache statistics are not enabled
+        // but it breaks backward compatibility.
+        final ICacheService service = getService();
+        return service.createCacheStatIfAbsent(cacheConfig.getNameWithPrefix());
     }
 
 }
