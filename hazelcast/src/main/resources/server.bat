@@ -31,7 +31,7 @@ ECHO # JAVA_OPTS=%JAVA_OPTS%
 ECHO # starting now...."
 ECHO ########################################
 
-"%RUN_JAVA%" %JAVA_OPTS% -cp "%CLASSPATH%" "com.hazelcast.core.server.StartServer"
+start "hazelcast" "%RUN_JAVA%" %JAVA_OPTS% -cp "%CLASSPATH%" "com.hazelcast.core.server.StartServer"
 goto endofscript
 
 :error

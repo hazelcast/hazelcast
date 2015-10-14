@@ -3,7 +3,7 @@
 PRG="$0"
 PRGDIR=`dirname "$PRG"`
 HAZELCAST_HOME=`cd "$PRGDIR/.." >/dev/null; pwd`
-PID_FILE=/tmp/hazelcast_instance.pid
+PID_FILE=$HAZELCAST_HOME/bin/hazelcast_instance.pid
 
 if [ $JAVA_HOME ]
 then
@@ -48,6 +48,6 @@ echo "# JAVA_OPTS=$JAVA_OPTS"
 echo "# starting now...."
 echo "########################################"
 
-echo echo "Process id for hazelcast instance is written to location: " $PID_FILE
+echo "Process id for hazelcast instance is written to location: " $PID_FILE
 $RUN_JAVA -server $JAVA_OPTS com.hazelcast.core.server.StartServer &
 echo $! > ${PID_FILE}
