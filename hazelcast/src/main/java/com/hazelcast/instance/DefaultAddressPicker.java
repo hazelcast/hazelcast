@@ -267,9 +267,9 @@ class DefaultAddressPicker implements AddressPicker {
         for (InetAddress inetAddress : inetAddresses) {
             addresses.add(inetAddress.getHostAddress());
         }
-        logger.warning("You configured your member address as host name. " +
-                "Please be aware of that your dns can be spoofed. " +
-                "Make sure that your dns configurations are correct.");
+        logger.warning("You configured your member address as host name. "
+                + "Please be aware of that your dns can be spoofed. "
+                + "Make sure that your dns configurations are correct.");
         logger.info("Resolving domain name '" + domainName + "' to address(es): " + addresses);
         return addresses;
     }
