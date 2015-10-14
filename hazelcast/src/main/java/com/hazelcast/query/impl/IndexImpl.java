@@ -96,11 +96,7 @@ public class IndexImpl implements Index {
     @Override
     public Set<QueryableEntry> getRecords(Comparable[] values) {
         if (values.length == 1) {
-            if (converter != null) {
-                return indexStore.getRecords(convert(values[0]));
-            } else {
-                return new SingleResultSet(null);
-            }
+            return getRecords(values[0]);
         } else {
             MultiResultSet results = new MultiResultSet();
             if (converter != null) {
@@ -163,7 +159,6 @@ public class IndexImpl implements Index {
     @Override
     public void clear() {
         indexStore.clear();
-        // Clear converter
         converter = null;
     }
 
