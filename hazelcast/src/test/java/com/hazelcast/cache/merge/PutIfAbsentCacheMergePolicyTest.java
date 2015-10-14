@@ -2,7 +2,6 @@ package com.hazelcast.cache.merge;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheMergePolicy;
-import com.hazelcast.cache.impl.merge.policy.PutIfAbsentCacheMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;

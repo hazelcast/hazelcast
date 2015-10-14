@@ -485,15 +485,15 @@
                         key? The conflict is resolved by the policy set here.
                         <p>
                             <br/>There are built-in merge policies, such as:
-                            <br/>`com.hazelcast.cache.impl.merge.policy.PassThroughCacheMergePolicy` or `PASS_THROUGH`:
+                            <br/>`com.hazelcast.cache.merge.PassThroughCacheMergePolicy` or `PASS_THROUGH`:
                             The entry will be added directly even though there is an existing entry for the key.
-                            <br/>`com.hazelcast.cache.impl.merge.policy.PutIfAbsentCacheMergePolicy` or `PUT_IF_ABSENT`:
+                            <br/>`com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy` or `PUT_IF_ABSENT`:
                             The entry will be added if there is no existing entry for the key.
-                            <br/>`com.hazelcast.cache.impl.merge.policy.HigherHitsCacheMergePolicy` or `HIGHER_HITS`:
+                            <br/>`com.hazelcast.cache.merge.HigherHitsCacheMergePolicy` or `HIGHER_HITS`:
                             The entry with the higher number of hits wins.
-                            <br/>`com.hazelcast.cache.impl.merge.policy.LatestAccessCacheMergePolicy` or `LATEST_ACCESS`:
+                            <br/>`com.hazelcast.cache.merge.LatestAccessCacheMergePolicy` or `LATEST_ACCESS`:
                             The entry which has been accessed more recently wins.
-                            <br/>Default policy is 'com.hazelcast.cache.impl.merge.policy.PassThroughCacheMergePolicy'
+                            <br/>Default policy is 'com.hazelcast.cache.merge.PassThroughCacheMergePolicy'
                         </p>
                     </xs:documentation>
                 </xs:annotation>

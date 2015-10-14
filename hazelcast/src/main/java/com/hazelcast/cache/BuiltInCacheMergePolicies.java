@@ -16,10 +16,10 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.merge.policy.HigherHitsCacheMergePolicy;
-import com.hazelcast.cache.impl.merge.policy.LatestAccessCacheMergePolicy;
-import com.hazelcast.cache.impl.merge.policy.PassThroughCacheMergePolicy;
-import com.hazelcast.cache.impl.merge.policy.PutIfAbsentCacheMergePolicy;
+import com.hazelcast.cache.merge.HigherHitsCacheMergePolicy;
+import com.hazelcast.cache.merge.LatestAccessCacheMergePolicy;
+import com.hazelcast.cache.merge.PassThroughCacheMergePolicy;
+import com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy;
 
 /**
  * <p>

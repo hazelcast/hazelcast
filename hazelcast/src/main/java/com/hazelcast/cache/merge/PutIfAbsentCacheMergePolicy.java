@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.merge.policy;
+package com.hazelcast.cache.merge;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.StorageTypeAwareCacheMergePolicy;

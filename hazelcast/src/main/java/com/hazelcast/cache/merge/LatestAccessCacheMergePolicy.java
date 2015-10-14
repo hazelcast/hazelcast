@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.merge.policy;
+package com.hazelcast.cache.merge;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.StorageTypeAwareCacheMergePolicy;
@@ -24,15 +24,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 /**
- * `HigherHitsCacheMergePolicy` merges cache entry from source to destination cache
- * if source entry has more hits than the destination one.
+ * `LatestAccessCacheMergePolicy` merges cache entry from source to destination cache
+ * if source entry has been accessed more recently than the destination entry.
  */
-public class HigherHitsCacheMergePolicy
+public class LatestAccessCacheMergePolicy
         implements StorageTypeAwareCacheMergePolicy {
 
     @Override
     public Object merge(String cacheName, CacheEntryView mergingEntry, CacheEntryView existingEntry) {
-        if (existingEntry == null || mergingEntry.getAccessHit() >= existingEntry.getAccessHit()) {
+        if (existingEntry == null ||  mergingEntry.getLastAccessTime() >= existingEntry.getLastAccessTime()) {
             return mergingEntry.getValue();
         }
         return existingEntry.getValue();

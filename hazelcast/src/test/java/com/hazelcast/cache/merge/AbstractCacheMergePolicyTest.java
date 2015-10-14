@@ -2,8 +2,6 @@ package com.hazelcast.cache.merge;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheMergePolicy;
-import com.hazelcast.cache.impl.merge.policy.HigherHitsCacheMergePolicy;
-import com.hazelcast.cache.impl.merge.policy.LatestAccessCacheMergePolicy;
 import org.junit.Before;
 import org.junit.Test;
 
