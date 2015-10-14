@@ -46,6 +46,15 @@ public abstract class AbstractPredicate implements IndexAwarePredicate, DataSeri
         this.attributeName = attributeName;
     }
 
+    /**
+     * Converts givenAttributeValue to the type of entryAttributeValue
+     * Good practice: do not invoke this method if entryAttributeValue == null
+     *
+     * @param entry               map entry on the basis of which the conversion will be executed
+     * @param entryAttributeValue attribute value extracted from the entry
+     * @param givenAttributeValue given attribute value to be converted
+     * @return converted givenAttributeValue
+     */
     protected Comparable convert(Map.Entry entry, Comparable entryAttributeValue, Comparable givenAttributeValue) {
         if (givenAttributeValue == null) {
             return null;
@@ -55,8 +64,12 @@ public abstract class AbstractPredicate implements IndexAwarePredicate, DataSeri
         }
         AttributeType type = attributeType;
         if (type == null) {
-            QueryableEntry queryableEntry = (QueryableEntry) entry;
-            type = queryableEntry.getAttributeType(attributeName);
+            if (entryAttributeValue == null) {
+                // we can't convert since we cannot infer the entry's type from a null attribute value.
+                // Returning unconverted value is an optimization since the given value will be compared with null.
+                return givenAttributeValue;
+            }
+            type = ((QueryableEntry) entry).getAttributeType(attributeName);
             attributeType = type;
         }
 
