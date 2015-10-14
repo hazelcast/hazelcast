@@ -33,7 +33,8 @@ final class ExtractionEngine {
     }
 
     // Data key
-    public static Object extractAttributeValue(Extractors extractors, SerializationService ss, String attributeName, Data key, Object value) {
+    public static Object extractAttributeValue(Extractors extractors, SerializationService ss, String attributeName,
+                                               Data key, Object value) {
         if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return ss.toObject(key);
         } else if (THIS_ATTRIBUTE_NAME.value().equals(attributeName)) {
@@ -47,7 +48,8 @@ final class ExtractionEngine {
         return doExtractAttributeValue(extractors, ss, attributeName, target);
     }
 
-    public static Object extractAttributeValue(Extractors extractors, SerializationService ss, String attributeName, QueryableEntry entry) throws QueryException {
+    public static Object extractAttributeValue(Extractors extractors, SerializationService ss, String attributeName,
+                                               QueryableEntry entry) throws QueryException {
         if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return entry.getKey();
         } else if (THIS_ATTRIBUTE_NAME.value().equals(attributeName)) {
@@ -73,7 +75,8 @@ final class ExtractionEngine {
         }
     }
 
-    static Object doExtractAttributeValue(Extractors extractors, SerializationService ss, String attributeName, Object target) {
+    static Object doExtractAttributeValue(Extractors extractors, SerializationService ss,
+                                          String attributeName, Object target) {
         if (target instanceof Portable || target instanceof Data) {
             Data targetData = ss.toData(target);
             if (targetData.isPortable()) {
@@ -113,14 +116,16 @@ final class ExtractionEngine {
         }
     }
 
-    public static AttributeType extractAttributeType(Extractors extractors, SerializationService ss, String attributeName, QueryableEntry entry, Object attribute) {
+    public static AttributeType extractAttributeType(Extractors extractors, SerializationService ss,
+                                                     String attributeName, QueryableEntry entry, Object attribute) {
+        //TODO: This signature looks a bit suspicious. The attribute may or may not be null.
         if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return ReflectionHelper.getAttributeType(entry.getKey().getClass());
         } else if (THIS_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return ReflectionHelper.getAttributeType(entry.getValue().getClass());
         }
 
-        if(attribute == null) {
+        if (attribute == null) {
             attribute = extractAttributeValue(extractors, ss, attributeName, entry);
         }
         return getExtractedAttributeType(attribute);

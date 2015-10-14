@@ -14,30 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
-
 /**
- * Contains constants for Query.
+ * <p>Contains classes related to custom attribute extractors<br/>
+ * TODO: Improve this
  */
-public enum QueryConstants {
 
-    /**
-     * Attribute name of the key.
-     */
-    KEY_ATTRIBUTE_NAME("__key"),
-
-    /**
-     * Attribute name of the "this".
-     */
-    THIS_ATTRIBUTE_NAME("this");
-
-    private final String value;
-
-    QueryConstants(String value) {
-        this.value = value;
-    }
-
-    public String value() {
-        return value;
-    }
-}
+package com.hazelcast.query.extractor;

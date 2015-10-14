@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.query.QueryConstants;
 
 import static com.hazelcast.util.Preconditions.checkHasText;
+import static java.lang.String.format;
 
 /**
  * Contains the configuration of a custom attribute that will be extracted from a Map's entry using a given ValueExtractor.
@@ -104,7 +105,8 @@ public class MapAttributeConfig {
     private static void checkNotQueryConstant(String name) {
         for (QueryConstants constant : QueryConstants.values()) {
             if (name.equals(constant.value())) {
-                throw new IllegalArgumentException(String.format("Map attribute name must not contain query constant '%s'", constant.value()));
+                throw new IllegalArgumentException(format("Map attribute name must not contain query constant '%s'",
+                        constant.value()));
             }
         }
     }

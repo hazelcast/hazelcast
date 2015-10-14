@@ -18,7 +18,6 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -101,10 +100,12 @@ n         * Because, if entity index is saved before,
 
         Object oldAttributeValue = null;
         if (oldRecordValue != null) {
-            oldAttributeValue = ExtractionEngine.extractAttributeValue(extractors, ss, attributeName, entry.getKeyData(), oldRecordValue);
+            oldAttributeValue = ExtractionEngine.extractAttributeValue(extractors, ss, attributeName,
+                    entry.getKeyData(), oldRecordValue);
         }
 
-        Object newAttributeValue = ExtractionEngine.extractAttributeValue(extractors, ss, attributeName, entry.getKeyData(), entry.getValue());
+        Object newAttributeValue = ExtractionEngine.extractAttributeValue(extractors, ss, attributeName,
+                entry.getKeyData(), entry.getValue());
         createOrUpdateIndexStore(entry, newAttributeValue, oldAttributeValue);
     }
 

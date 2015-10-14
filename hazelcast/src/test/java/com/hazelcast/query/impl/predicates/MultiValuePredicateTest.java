@@ -28,6 +28,7 @@ import static org.hamcrest.Matchers.empty;
 @Category({QuickTest.class, ParallelTest.class})
 public class MultiValuePredicateTest extends HazelcastTestSupport {
 
+//TODO: Convert this mess into a proper integration tests
     @Test
     public void testCollectionPredicate_andSQL() throws Exception {
         final HazelcastInstance instance = createHazelcastInstance();
@@ -97,14 +98,6 @@ public class MultiValuePredicateTest extends HazelcastTestSupport {
         Predicate predicate = new EqualPredicate("limbs[*].nails[*].colour", "red");
         Collection<Body> values = map.values(predicate);
         assertThat(values, containsInAnyOrder(body1, body2));
-        for (Body body : values) {
-            System.out.println(body);
-        }
-        System.out.println("-----");
-
-        predicate = new ContainsPredicate("pockets.values", "beer");
-        values = map.values(predicate);
-        assertThat(values, contains(body3));
         for (Body body : values) {
             System.out.println(body);
         }
@@ -199,14 +192,6 @@ public class MultiValuePredicateTest extends HazelcastTestSupport {
         Predicate predicate = new EqualPredicate("limbs[*].nails[*].colour", "red");
         Collection<ArrayBody> values = map.values(predicate);
         assertThat(values, containsInAnyOrder(body1, body2));
-        for (ArrayBody body : values) {
-            System.out.println(body);
-        }
-        System.out.println("-----");
-
-        predicate = new ContainsPredicate("pockets.values", "beer");
-        values = map.values(predicate);
-        assertThat(values, contains(body3));
         for (ArrayBody body : values) {
             System.out.println(body);
         }

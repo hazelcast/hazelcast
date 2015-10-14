@@ -48,18 +48,19 @@ public abstract class QueryableEntry implements Map.Entry {
         if (attribute == null) {
             return NULL_CONVERTER;
         } else {
-            AttributeType attributeType = ExtractionEngine.extractAttributeType(extractors, serializationService, attributeName, this, attribute);
+            AttributeType attributeType = ExtractionEngine.extractAttributeType(extractors, serializationService,
+                    attributeName, this, attribute);
             return attributeType == null ? IDENTITY_CONVERTER : attributeType.getConverter();
         }
     }
 
-    abstract public Object getValue();
+    public abstract Object getValue();
 
-    abstract public Object getKey();
+    public abstract Object getKey();
 
-    abstract public Data getKeyData();
+    public abstract Data getKeyData();
 
-    abstract public Data getValueData();
+    public abstract Data getValueData();
 
     protected abstract Object getTargetObject(boolean key);
 
