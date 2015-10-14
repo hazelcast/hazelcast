@@ -37,9 +37,6 @@ import java.util.concurrent.ConcurrentMap;
 
 public class CountDownLatchService implements ManagedService, RemoteService, MigrationAwareService {
 
-    /**
-     * The service name of this CountDownLatchService.
-     */
     public static final String SERVICE_NAME = "hz:impl:countDownLatchService";
 
     private final ConcurrentMap<String, CountDownLatchContainer> containers

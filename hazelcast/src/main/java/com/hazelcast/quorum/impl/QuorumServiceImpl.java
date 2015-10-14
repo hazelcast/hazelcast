@@ -44,24 +44,18 @@ import java.util.Map;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-
 /**
  * Service containing logic for cluster quorum.
  */
 public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, QuorumListener>, MembershipAwareService,
         QuorumService {
 
-    /**
-     * Service name of map service used
-     * to register {@link com.hazelcast.spi.impl.ServiceManager#registerService}
-     */
     public static final String SERVICE_NAME = "hz:impl:quorumService";
 
     private final NodeEngineImpl nodeEngine;
     private final EventService eventService;
     private boolean inactive;
     private final Map<String, QuorumImpl> quorums = new HashMap<String, QuorumImpl>();
-
 
     public QuorumServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -108,7 +102,6 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
     public void addQuorumListener(String name, QuorumListener listener) {
         eventService.registerLocalListener(SERVICE_NAME, name, listener);
     }
-
 
     public void ensureQuorumPresent(Operation op) {
         if (inactive) {

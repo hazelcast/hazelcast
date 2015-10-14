@@ -34,9 +34,6 @@ import java.util.Collection;
 public interface ICacheService extends ManagedService, RemoteService, MigrationAwareService,
             EventPublishingService<Object, CacheEventListener> {
 
-    /**
-     * Service name
-     */
     String SERVICE_NAME = "hz:impl:cacheService";
 
     ICacheRecordStore getOrCreateRecordStore(String name, int partitionId);

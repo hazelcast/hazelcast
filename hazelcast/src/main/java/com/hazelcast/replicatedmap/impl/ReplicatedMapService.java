@@ -75,9 +75,6 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 public class ReplicatedMapService implements ManagedService, RemoteService, EventPublishingService<Object, Object>,
         MigrationAwareService, SplitBrainHandlerService, StatisticsAwareService {
 
-    /**
-     * Public constant for the internal service name of the ReplicatedMapService
-     */
     public static final String SERVICE_NAME = "hz:impl:replicatedMapService";
 
     private static final int SYNC_INTERVAL_SECONDS = 10;

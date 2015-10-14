@@ -52,9 +52,6 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
      */
     public static final String TOPIC_RB_PREFIX = "_hz_rb_";
 
-    /**
-     * The name of the {@link RingbufferService}.
-     */
     public static final String SERVICE_NAME = "hz:impl:ringbufferService";
 
     private NodeEngine nodeEngine;

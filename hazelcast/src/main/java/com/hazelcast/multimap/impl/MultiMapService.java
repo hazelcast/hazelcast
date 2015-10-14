@@ -66,6 +66,7 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         EventPublishingService<EventData, EntryListener>, TransactionalService, StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:multiMapService";
+
     private static final int STATS_MAP_INITIAL_CAPACITY = 1000;
     private static final int REPLICA_ADDRESS_TRY_COUNT = 3;
     private static final int REPLICA_ADDRESS_SLEEP_WAIT_MILLIS = 1000;

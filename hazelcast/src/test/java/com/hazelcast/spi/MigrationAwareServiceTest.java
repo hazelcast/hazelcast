@@ -68,7 +68,7 @@ public class MigrationAwareServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testPartitionDataSize_whenNodesStartedSequentially_withSingleBackup() throws InterruptedException {
-       testPartitionDataSize_whenNodesStartedSequentially(1);
+        testPartitionDataSize_whenNodesStartedSequentially(1);
     }
 
     @Test
@@ -244,17 +244,14 @@ public class MigrationAwareServiceTest extends HazelcastTestSupport {
 
     private static class SampleMigrationAwareService implements ManagedService, MigrationAwareService {
 
-        static final String SERVICE_NAME = "SampleMigrationAwareService";
+        private static final String SERVICE_NAME = "SampleMigrationAwareService";
 
-        private final ConcurrentMap<Integer, Object> data
-                = new ConcurrentHashMap<Integer, Object>();
+        private final ConcurrentMap<Integer, Object> data = new ConcurrentHashMap<Integer, Object>();
 
         private volatile int backupCount;
-        private volatile NodeEngine nodeEngine;
 
         @Override
         public void init(NodeEngine nodeEngine, Properties properties) {
-            this.nodeEngine = nodeEngine;
             backupCount = Integer.parseInt(properties.getProperty(BACKUP_COUNT_PROP, "1"));
         }
 
@@ -390,6 +387,7 @@ public class MigrationAwareServiceTest extends HazelcastTestSupport {
 
         final AssertTask assertTask = new AssertTask() {
             final InternalPartitionService partitionService = getNode(hz).getPartitionService();
+
             @Override
             public void run() throws Exception {
                 assertEquals(0, partitionService.getMigrationQueueSize());
