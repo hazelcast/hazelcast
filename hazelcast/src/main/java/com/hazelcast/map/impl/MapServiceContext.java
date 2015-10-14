@@ -56,8 +56,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     Data toData(Object object);
 
-    boolean compare(String mapName, Object value1, Object value2);
-
     MapContainer getMapContainer(String mapName);
 
     Map<String, MapContainer> getMapContainers();

@@ -16,21 +16,16 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.nio.serialization.Data;
-
 /**
- * TODO need a better name than RecordFactory!
+ * Factory for creating records. Created for every partition.
  *
  * @param <T> the type of object which is going to be created.
  */
 public interface RecordFactory<T> {
 
-    Record<T> newRecord(Data key, Object value);
+    Record<T> newRecord(Object value);
 
     void setValue(Record<T> record, Object value);
 
     boolean isEquals(Object value1, Object value2);
-
-    InMemoryFormat getStorageFormat();
 }

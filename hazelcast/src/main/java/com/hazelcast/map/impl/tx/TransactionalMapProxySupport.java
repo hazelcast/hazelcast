@@ -21,13 +21,13 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.NearCache;
 import com.hazelcast.map.impl.operation.ContainsKeyOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.MapEntrySetOperation;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.SizeOperationFactory;
+import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
@@ -47,6 +47,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.map.impl.nearcache.NearCache.NULL_OBJECT;
 
 /**
  * Base class contains proxy helper methods for {@link com.hazelcast.map.impl.tx.TransactionalMapProxy}
@@ -57,6 +58,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     protected final Transaction tx;
     protected final PartitioningStrategy partitionStrategy;
     protected final Map<Data, VersionedValue> valueMap = new HashMap<Data, VersionedValue>();
+    protected final RecordFactory recordFactory;
     protected final MapOperationProvider operationProvider;
     protected final MapServiceContext mapServiceContext;
 
@@ -65,13 +67,14 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         this.name = name;
         this.tx = transaction;
         this.mapServiceContext = mapService.getMapServiceContext();
-        this.operationProvider = mapServiceContext.getMapOperationProvider(name);
         MapContainer mapContainer = mapServiceContext.getMapContainer(name);
+        this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
+        this.operationProvider = mapServiceContext.getMapOperationProvider(name);
         this.partitionStrategy = mapContainer.getPartitioningStrategy();
     }
 
     protected boolean isEquals(Object value1, Object value2) {
-        return mapServiceContext.compare(name, value1, value2);
+        return recordFactory.isEquals(value1, value2);
     }
 
     protected void checkTransactionState() {
@@ -99,7 +102,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         if (nearCacheEnabled) {
             Object cached = mapService.getMapServiceContext().getNearCacheProvider().getFromNearCache(name, key);
             if (cached != null) {
-                if (cached.equals(NearCache.NULL_OBJECT)) {
+                if (cached.equals(NULL_OBJECT)) {
                     cached = null;
                 }
                 return cached;

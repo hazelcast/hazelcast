@@ -116,11 +116,11 @@ class MapServiceContextImpl implements MapServiceContext {
         this.ownedPartitions = new AtomicReference<Collection<Integer>>();
         this.expirationManager = new ExpirationManager(this, nodeEngine);
         this.evictor = createEvictor();
-        this.nearCacheProvider = createNearCacheProvider(nodeEngine);
+        this.nearCacheProvider = createNearCacheProvider();
         this.localMapStatsProvider = createLocalMapStatsProvider();
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
         this.mapEventPublisher = createMapEventPublisherSupport();
-        this.mapQueryEngine = createMapQueryEngine(nodeEngine);
+        this.mapQueryEngine = createMapQueryEngine();
         this.eventService = nodeEngine.getEventService();
         this.operationProvider = new DefaultMapOperationProvider();
     }
@@ -137,12 +137,12 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     // this method is overridden in another context.
-    MapQueryEngineImpl createMapQueryEngine(NodeEngine nodeEngine) {
+    MapQueryEngineImpl createMapQueryEngine() {
         return new MapQueryEngineImpl(this, newOptimizer(nodeEngine.getGroupProperties()));
     }
 
     // this method is overridden in another context.
-    NearCacheProvider createNearCacheProvider(NodeEngine nodeEngine) {
+    NearCacheProvider createNearCacheProvider() {
         return new NearCacheProvider(this, nodeEngine);
     }
 
@@ -152,7 +152,7 @@ class MapServiceContextImpl implements MapServiceContext {
         return new PartitionContainer[partitionCount];
     }
 
-    // this method is overridden in another context.
+    // this method is overridden.
     MapEventPublisherImpl createMapEventPublisherSupport() {
         return new MapEventPublisherImpl(this);
     }
@@ -351,21 +351,6 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public Data toData(Object object) {
         return nodeEngine.toData(object);
-    }
-
-    @Override
-    public boolean compare(String mapName, Object value1, Object value2) {
-        if (value1 == null && value2 == null) {
-            return true;
-        }
-        if (value1 == null) {
-            return false;
-        }
-        if (value2 == null) {
-            return false;
-        }
-        final MapContainer mapContainer = getMapContainer(mapName);
-        return mapContainer.getRecordFactory().isEquals(value1, value2);
     }
 
     @Override

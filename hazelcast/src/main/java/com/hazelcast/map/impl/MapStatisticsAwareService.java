@@ -33,7 +33,7 @@ class MapStatisticsAwareService implements StatisticsAwareService {
 
     private final MapServiceContext mapServiceContext;
 
-    public MapStatisticsAwareService(MapServiceContext mapServiceContext) {
+    MapStatisticsAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
     }
 

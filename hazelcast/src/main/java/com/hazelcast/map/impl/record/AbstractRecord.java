@@ -18,39 +18,97 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
 
+import static com.hazelcast.map.impl.record.RecordStatistics.EMPTY_STATS;
 
+/**
+ * @param <V> the type of the value of Record.
+ */
 @SuppressWarnings("VolatileLongOrDoubleField")
-abstract class AbstractRecord<V> extends AbstractBaseRecord<V> {
+public abstract class AbstractRecord<V> implements Record<V> {
 
     protected Data key;
+    protected long version;
+    /**
+     * evictionCriteriaNumber may be used for LRU or LFU eviction depending on configuration.
+     */
+    protected long evictionCriteriaNumber;
+    protected long ttl;
+    protected long lastAccessTime;
+    protected long lastUpdateTime;
+    protected long creationTime;
 
-    public AbstractRecord(Data key) {
-        this.key = key;
-    }
-
-    public AbstractRecord() {
-    }
-
-    @Override
-    public final Data getKey() {
-        return key;
-    }
-
-    @Override
-    public RecordStatistics getStatistics() {
-        return null;
+    AbstractRecord() {
+        version = 0L;
     }
 
     @Override
-    public void setStatistics(RecordStatistics stats) {
+    public final long getVersion() {
+        return version;
     }
 
     @Override
-    public void onAccess() {
+    public final void setVersion(long version) {
+        this.version = version;
     }
 
     @Override
-    public void onStore() {
+    public long getEvictionCriteriaNumber() {
+        return evictionCriteriaNumber;
+    }
+
+    @Override
+    public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
+        this.evictionCriteriaNumber = evictionCriteriaNumber;
+    }
+
+    @Override
+    public long getTtl() {
+        return ttl;
+    }
+
+    @Override
+    public void setTtl(long ttl) {
+        this.ttl = ttl;
+    }
+
+    @Override
+    public long getLastAccessTime() {
+        return lastAccessTime;
+    }
+
+    @Override
+    public void setLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
+    }
+
+    @Override
+    public long getLastUpdateTime() {
+        return lastUpdateTime;
+    }
+
+    @Override
+    public void setLastUpdateTime(long lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime;
+    }
+
+    @Override
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    @Override
+    public void setCreationTime(long creationTime) {
+        this.creationTime = creationTime;
+    }
+
+    @Override
+    public long getCost() {
+        final int objectReferenceInBytes = 4;
+        final int numberOfLongs = 6;
+        long size = numberOfLongs * (Long.SIZE / Byte.SIZE);
+        // add key size.
+        size += objectReferenceInBytes;
+        return size;
     }
 
     @Override
@@ -64,39 +122,36 @@ abstract class AbstractRecord<V> extends AbstractBaseRecord<V> {
     }
 
     @Override
+    public void onAccess() {
+
+    }
+
+    @Override
+    public void onStore() {
+
+    }
+
+    @Override
+    public RecordStatistics getStatistics() {
+        return EMPTY_STATS;
+    }
+
+    @Override
+    public void setStatistics(RecordStatistics stats) {
+
+    }
+
+    @Override
     public void setCachedValue(Object cachedValue) {
 
     }
 
     @Override
-    public long getCost() {
-        long size = super.getCost();
-        final int objectReferenceInBytes = 4;
-        // add key size.
-        size += objectReferenceInBytes + key.getHeapCost();
-        return size;
+    public Data getKey() {
+        return key;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        AbstractRecord that = (AbstractRecord) o;
-        return key.equals(that.key);
+    public void setKey(Data key) {
+        this.key = key;
     }
-
-    @Override
-    public int hashCode() {
-        return key.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return "Record{" + "key=" + key + '}';
-    }
-
 }

@@ -16,16 +16,17 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -34,8 +35,11 @@ import java.util.Set;
 /**
  * Defines a record-store.
  */
-public interface RecordStore {
+public interface RecordStore<R extends Record> {
 
+    /**
+     * Default TTL value of a record.
+     */
     long DEFAULT_TTL = -1L;
 
     String getName();
@@ -44,7 +48,7 @@ public interface RecordStore {
 
     Object putIfAbsent(Data dataKey, Object value, long ttl);
 
-    Record putBackup(Data key, Object value);
+    R putBackup(Data key, Object value);
 
     /**
      * @param key          the key to be processed.
@@ -53,7 +57,7 @@ public interface RecordStore {
      * @param putTransient {@code true} if putting transient entry, otherwise {@code false}
      * @return previous record if exists otherwise null.
      */
-    Record putBackup(Data key, Object value, long ttl, boolean putTransient);
+    R putBackup(Data key, Object value, long ttl, boolean putTransient);
 
     boolean tryPut(Data dataKey, Object value, long ttl);
 
@@ -146,7 +150,7 @@ public interface RecordStore {
 
     boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy);
 
-    Record getRecord(Data key);
+    R getRecord(Data key);
 
     /**
      * Puts a data key and a record value to record-store.
@@ -156,25 +160,24 @@ public interface RecordStore {
      * @param record the value for record store.
      * @see com.hazelcast.map.impl.operation.MapReplicationOperation
      */
-    void putRecord(Data key, Record record);
+    void putRecord(Data key, R record);
 
     /**
-     * Iterates over record store values.
+     * Iterates over record store entries.
      *
      * @return read only iterator for map values.
      */
     Iterator<Record> iterator();
 
     /**
-     * Iterates over record store values by respecting expiration.
+     * Iterates over record store entries by respecting expiration.
      *
      * @return read only iterator for map values.
      */
     Iterator<Record> iterator(long now, boolean backup);
 
-
     /**
-     * Iterates over record store values but first waits map store to load.
+     * Iterates over record store entries but first waits map store to load.
      * If an operation needs to wait a data source load like query operations
      * {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
      * this method can be used to return a read-only iterator.
@@ -184,13 +187,6 @@ public interface RecordStore {
      * @return read only iterator for map values.
      */
     Iterator<Record> loadAwareIterator(long now, boolean backup);
-
-    /**
-     * Returns records map.
-     *
-     * @see RecordStoreLoader
-     */
-    Map<Data, Record> getRecordMap();
 
     Set<Data> keySet();
 
@@ -214,6 +210,8 @@ public interface RecordStore {
 
     Object evict(Data key, boolean backup);
 
+    Object evict(Data key, R removedRecord, boolean backup);
+
     /**
      * Evicts all keys except locked ones.
      *
@@ -221,8 +219,6 @@ public interface RecordStore {
      * @return number of evicted entries.
      */
     int evictAll(boolean backup);
-
-    Collection<Data> valuesData();
 
     MapContainer getMapContainer();
 
@@ -273,7 +269,7 @@ public interface RecordStore {
      * @param backup <code>true</code> if a backup partition, otherwise <code>false</code>.
      * @return <code>true</code> if the record is expired, <code>false</code> otherwise.
      */
-    boolean isExpired(Record record, long now, boolean backup);
+    boolean isExpired(R record, long now, boolean backup);
 
     void doPostEvictionOperations(Data key, Object value, boolean isExpired);
 
@@ -298,7 +294,7 @@ public interface RecordStore {
      * @return live record or null
      * @see #get
      */
-    Record getRecordOrNull(Data key);
+    R getRecordOrNull(Data key);
 
     void evictEntries(long now);
 
@@ -313,6 +309,19 @@ public interface RecordStore {
      * Performs initial loading from a MapLoader if it has not been done before
      **/
     void maybeDoInitialLoad();
+
+    Storage createStorage(RecordFactory<R> recordFactory, InMemoryFormat memoryFormat);
+
+    Record createRecord(Object value, long ttlMillis, long now);
+
+    /**
+     * This can be used to release unused resources.
+     */
+    void dispose();
+
+    void destroy();
+
+    Storage getStorage();
 
     boolean isEvictionEnabled();
 }

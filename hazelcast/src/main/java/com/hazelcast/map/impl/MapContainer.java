@@ -28,12 +28,9 @@ import com.hazelcast.map.impl.eviction.EvictionCheckerImpl;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
-import com.hazelcast.map.impl.nearcache.NearCacheSizeEstimator;
 import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
-import com.hazelcast.map.impl.record.NativeRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -41,6 +38,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
@@ -50,10 +48,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateTTLMillis;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTL;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
+import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
 
 /**
@@ -61,45 +56,30 @@ import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapSt
  */
 public class MapContainer {
 
-    protected Evictor evictor;
-
-    private final RecordFactory recordFactory;
-
-    private final MapServiceContext mapServiceContext;
-
-    private final List<MapInterceptor> interceptors;
-
-    private final Map<String, MapInterceptor> interceptorMap;
-
-    private final Indexes indexes;
-
-    private final SizeEstimator nearCacheSizeEstimator;
-
-    private final PartitioningStrategy partitioningStrategy;
-
-    private final MapStoreContext mapStoreContext;
-
-    private final SerializationService serializationService;
-
-    private WanReplicationPublisher wanReplicationPublisher;
-
-    private MapMergePolicy wanMergePolicy;
-
-    private volatile MapConfig mapConfig;
-
-    private final String name;
-
-    private final String quorumName;
-
-    private final QueryEntryFactory queryEntryFactory;
-
-    private final IFunction<Object, Data> toDataFunction = new IFunction<Object, Data>() {
+    protected final String name;
+    protected final String quorumName;
+    protected final MapServiceContext mapServiceContext;
+    protected final Map<String, MapInterceptor> interceptorMap;
+    protected final Indexes indexes;
+    protected final SizeEstimator nearCacheSizeEstimator;
+    protected final PartitioningStrategy partitioningStrategy;
+    protected final MapStoreContext mapStoreContext;
+    protected final SerializationService serializationService;
+    protected final QueryEntryFactory queryEntryFactory;
+    protected final List<MapInterceptor> interceptors;
+    protected final IFunction<Object, Data> toDataFunction = new IFunction<Object, Data>() {
         @Override
         public Data apply(Object input) {
             SerializationService ss = mapStoreContext.getSerializationService();
             return ss.toData(input, partitioningStrategy);
         }
     };
+    protected WanReplicationPublisher wanReplicationPublisher;
+    protected ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
+    protected MapMergePolicy wanMergePolicy;
+    protected Evictor evictor;
+
+    protected volatile MapConfig mapConfig;
 
 
     /**
@@ -111,19 +91,19 @@ public class MapContainer {
         this.name = name;
         this.mapConfig = mapConfig;
         this.mapServiceContext = mapServiceContext;
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.partitioningStrategy = createPartitioningStrategy();
         this.quorumName = mapConfig.getQuorumName();
-        this.queryEntryFactory = new QueryEntryFactory(mapConfig.isOptimizeQueries());
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.serializationService = nodeEngine.getSerializationService();
-        recordFactory = createRecordFactory(nodeEngine);
+        this.recordFactoryConstructor = createRecordFactoryConstructor(serializationService);
+        this.queryEntryFactory = new QueryEntryFactory(mapConfig.isOptimizeQueries());
         initWanReplication(nodeEngine);
-        interceptors = new CopyOnWriteArrayList<MapInterceptor>();
-        interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
-        nearCacheSizeEstimator = new NearCacheSizeEstimator();
-        mapStoreContext = createMapStoreContext(this);
-        mapStoreContext.start();
-        indexes = new Indexes(serializationService);
+        this.interceptors = new CopyOnWriteArrayList<MapInterceptor>();
+        this.interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
+        this.nearCacheSizeEstimator = createNearCacheSizeEstimator(mapConfig.getNearCacheConfig());
+        this.mapStoreContext = createMapStoreContext(this);
+        this.mapStoreContext.start();
+        this.indexes = new Indexes(serializationService);
         this.evictor = createEvictor(mapServiceContext);
     }
 
@@ -133,24 +113,28 @@ public class MapContainer {
         return new EvictorImpl(evictionChecker, mapServiceContext);
     }
 
-    private RecordFactory createRecordFactory(NodeEngine nodeEngine) {
-        RecordFactory recordFactory;
-        switch (mapConfig.getInMemoryFormat()) {
-            case BINARY:
-                recordFactory = new DataRecordFactory(mapConfig, nodeEngine.getSerializationService(), partitioningStrategy);
-                break;
-            case OBJECT:
-                recordFactory = new ObjectRecordFactory(mapConfig, nodeEngine.getSerializationService());
-                break;
-            case NATIVE:
-                recordFactory = new NativeRecordFactory(mapConfig, nodeEngine.getOffHeapStorage(),
-                        nodeEngine.getSerializationService(), partitioningStrategy);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
-        }
-        return recordFactory;
+    // overridden in different context.
+    ConstructorFunction<Void, RecordFactory> createRecordFactoryConstructor(final SerializationService serializationService) {
+        return new ConstructorFunction<Void, RecordFactory>() {
+            @Override
+            public RecordFactory createNew(Void notUsedArg) {
+                RecordFactory recordFactory;
+                switch (mapConfig.getInMemoryFormat()) {
+                    case BINARY:
+                        recordFactory = new DataRecordFactory(mapConfig, serializationService, partitioningStrategy);
+                        break;
+                    case OBJECT:
+                        recordFactory = new ObjectRecordFactory(mapConfig, serializationService);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
+                }
+
+                return recordFactory;
+            }
+        };
     }
+
 
     public void initWanReplication(NodeEngine nodeEngine) {
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
@@ -213,21 +197,6 @@ public class MapContainer {
         interceptors.remove(interceptor);
     }
 
-    public Record createRecord(Data key, Object value, long ttlMillis, long now) {
-        Record record = getRecordFactory().newRecord(key, value);
-        record.setLastAccessTime(now);
-        record.setLastUpdateTime(now);
-        record.setCreationTime(now);
-
-        final long ttlMillisFromConfig = calculateTTLMillis(mapConfig);
-        final long ttl = pickTTL(ttlMillis, ttlMillisFromConfig);
-        record.setTtl(ttl);
-
-        final long maxIdleMillis = calculateMaxIdleMillis(mapConfig);
-        setExpirationTime(record, maxIdleMillis);
-        return record;
-    }
-
     public boolean isWanReplicationEnabled() {
         if (wanReplicationPublisher == null || wanMergePolicy == null) {
             return false;
@@ -259,10 +228,6 @@ public class MapContainer {
         return nearCacheSizeEstimator;
     }
 
-    public RecordFactory getRecordFactory() {
-        return recordFactory;
-    }
-
     public MapServiceContext getMapServiceContext() {
         return mapServiceContext;
     }
@@ -289,6 +254,10 @@ public class MapContainer {
 
     public IFunction<Object, Data> toData() {
         return toDataFunction;
+    }
+
+    public ConstructorFunction<Void, RecordFactory> getRecordFactoryConstructor() {
+        return recordFactoryConstructor;
     }
 
     public QueryableEntry newQueryEntry(Data key, Object value) {

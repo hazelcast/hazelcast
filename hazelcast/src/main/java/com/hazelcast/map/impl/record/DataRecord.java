@@ -22,8 +22,7 @@ class DataRecord extends AbstractRecord<Data> {
 
     protected Data value;
 
-    DataRecord(Data keyData, Data value) {
-        super(keyData);
+    DataRecord(Data value) {
         this.value = value;
     }
 
