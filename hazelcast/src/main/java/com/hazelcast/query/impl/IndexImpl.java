@@ -31,17 +31,10 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
 
-/**
- * Implementation for {@link com.hazelcast.query.impl.Index}
- */
 public class IndexImpl implements Index {
 
-    /**
-     * Creates instance from NullObject is a inner class.
-     */
     public static final NullObject NULL = new NullObject();
 
-    // indexKey -- indexValue
     private final IndexStore indexStore;
     private final String attributeName;
     private final boolean ordered;
@@ -101,19 +94,18 @@ public class IndexImpl implements Index {
                 .extractAttributeValue(extractors, ss, attributeName, key, value);
         attributeValue = (Comparable)sanitizeValue(attributeValue);
 
-
         if (value != null) {
             indexStore.removeIndex(value, key);
         }
     }
 
-    static Object sanitizeValue(Object newValue) {
-        if (newValue == null) {
-            newValue = NULL;
-        } else if (newValue.getClass().isEnum()) {
-            newValue = TypeConverters.ENUM_CONVERTER.convert((Comparable) newValue);
+    static Object sanitizeValue(Object value) {
+        if (value == null) {
+            value = NULL;
+        } else if (value.getClass().isEnum()) {
+            value = TypeConverters.ENUM_CONVERTER.convert((Comparable) value);
         }
-        return newValue;
+        return value;
     }
 
     @Override
@@ -164,6 +156,13 @@ public class IndexImpl implements Index {
         return results;
     }
 
+    /**
+     * Note: the fact that the given attributeValue is of type Comparable doesn't mean that this value is of the same
+     * type as the one that's stored in the index, thus the conversion is needed.
+     *
+     * @param attributeValue to be converted from given type to the type of the attribute that's stored in the index
+     * @return converted value that may be compared with the value that's stored in the index
+     */
     private Comparable convert(Comparable attributeValue) {
         return converter.convert(attributeValue);
     }
