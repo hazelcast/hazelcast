@@ -39,6 +39,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -62,6 +63,7 @@ import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.GROUP;
 import static com.hazelcast.config.XmlElements.IMPORT;
+import static com.hazelcast.config.XmlElements.INSTANCE_NAME;
 import static com.hazelcast.config.XmlElements.JOB_TRACKER;
 import static com.hazelcast.config.XmlElements.LICENSE_KEY;
 import static com.hazelcast.config.XmlElements.LIST;
@@ -268,7 +270,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     }
 
     private boolean handleXmlNode(Node node, String nodeName) throws Exception {
-        if (NETWORK.isEqual(nodeName)) {
+        if (INSTANCE_NAME.isEqual(nodeName)) {
+            handleInstanceName(node);
+        } else if (NETWORK.isEqual(nodeName)) {
             handleNetwork(node);
         } else if (IMPORT.isEqual(nodeName)) {
             throw new InvalidConfigurationException("<import> element can appear only in the top level of the XML");
@@ -330,6 +334,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             return true;
         }
         return false;
+    }
+
+    private void handleInstanceName(Node node) {
+        final Text text = (Text) node.getFirstChild();
+        config.setInstanceName(text.getWholeText());
     }
 
     private void handleLiteMember(Node node) {
