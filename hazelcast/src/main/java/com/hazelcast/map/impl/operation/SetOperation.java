@@ -45,9 +45,4 @@ public class SetOperation extends BasePutOperation {
     public Object getResponse() {
         return newRecord;
     }
-
-    @Override
-    public String toString() {
-        return "SetOperation{" + name + "}";
-    }
 }

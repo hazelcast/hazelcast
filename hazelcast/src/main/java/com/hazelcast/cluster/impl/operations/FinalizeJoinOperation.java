@@ -134,11 +134,10 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     }
 
     @Override
-    public String toString() {
-        return "FinalizeJoinOperation{"
-                + "postJoinOp=" + postJoinOp
-                + "} "
-                + super.toString();
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", postJoinOp=").append(postJoinOp);
     }
 }
 

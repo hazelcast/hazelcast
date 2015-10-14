@@ -80,11 +80,6 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
     }
 
     @Override
-    public String toString() {
-        return "GetAllOperation{}";
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         if (keys == null) {

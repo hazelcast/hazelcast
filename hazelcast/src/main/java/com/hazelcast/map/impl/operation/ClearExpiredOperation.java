@@ -93,7 +93,9 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
     }
 
     @Override
-    public String toString() {
-        return "ClearExpiredOperation{}";
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", expirationPercentage=").append(expirationPercentage);
     }
 }

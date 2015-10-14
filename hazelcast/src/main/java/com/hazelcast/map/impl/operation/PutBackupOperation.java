@@ -151,9 +151,4 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
         putTransient = in.readBoolean();
         wanOriginated = in.readBoolean();
     }
-
-    @Override
-    public String toString() {
-        return "PutBackupOperation{" + name + "}";
-    }
 }

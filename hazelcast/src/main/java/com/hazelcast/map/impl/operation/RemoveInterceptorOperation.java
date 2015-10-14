@@ -73,7 +73,10 @@ public class RemoveInterceptorOperation extends AbstractOperation implements Mut
     }
 
     @Override
-    public String toString() {
-        return "RemoveInterceptorOperation{}";
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", mapName=").append(mapName);
+        sb.append(", id=").append(id);
     }
 }

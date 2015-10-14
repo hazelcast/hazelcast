@@ -82,6 +82,7 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
         return mapContainer.getBackupCount();
     }
 
+    @Override
     public boolean shouldBackup() {
         return evicted;
     }
@@ -108,10 +109,5 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         asyncBackup = in.readBoolean();
-    }
-
-    @Override
-    public String toString() {
-        return "EvictOperation{" + name + "}";
     }
 }

@@ -236,9 +236,10 @@ public final class MigrationOperation extends BaseMigrationOperation {
     }
 
     @Override
-    public String toString() {
-        final int numberOfTasks = tasks != null ? tasks.size() : 0;
-        return getClass().getSimpleName() + "{partitionId=" + getPartitionId() + ", migration=" + migrationInfo
-                + ", replicaVersions=" + Arrays.toString(replicaVersions) + ", numberOfTasks=" + numberOfTasks + '}';
+    protected void toString(StringBuilder sb) {
+        int numberOfTasks = tasks == null ? 0 : tasks.size();
+        sb.append(", migration=").append(migrationInfo);
+        sb.append(", replicaVersions=").append(Arrays.toString(replicaVersions));
+        sb.append(", numberOfTasks=").append(numberOfTasks);
     }
 }

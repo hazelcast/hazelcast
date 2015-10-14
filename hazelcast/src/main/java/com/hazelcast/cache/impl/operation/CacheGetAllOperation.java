@@ -71,8 +71,11 @@ public class CacheGetAllOperation
     }
 
     @Override
-    public String toString() {
-        return "CacheGetAllOperation{" + "keys:" + keys.toString() + "expiryPolicy:" + expiryPolicy + '}';
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", keys=").append(keys.toString());
+        sb.append(", expiryPolicy=").append(expiryPolicy);
     }
 
     @Override

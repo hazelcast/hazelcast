@@ -80,7 +80,9 @@ public class NearCacheKeySetInvalidationOperation extends AbstractOperation impl
     }
 
     @Override
-    public String toString() {
-        return "NearCacheKeySetInvalidationOperation{}";
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", name=").append(mapName);
     }
 }

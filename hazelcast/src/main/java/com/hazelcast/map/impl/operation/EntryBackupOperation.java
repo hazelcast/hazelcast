@@ -110,11 +110,6 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         return true;
     }
 
-    @Override
-    public String toString() {
-        return "EntryBackupOperation{}";
-    }
-
     private void processBackup(Map.Entry entry) {
         entryProcessor.processBackup(entry);
     }

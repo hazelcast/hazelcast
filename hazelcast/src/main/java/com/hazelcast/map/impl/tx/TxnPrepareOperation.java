@@ -18,13 +18,14 @@ package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.transaction.TransactionException;
+
 import java.io.IOException;
 
 /**
@@ -93,9 +94,9 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
     }
 
     @Override
-    public String toString() {
-        return "TxnPrepareOperation{"
-                + "ownerUuid='" + ownerUuid + '\''
-                + '}';
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", ownerUuid=").append(ownerUuid);
     }
 }

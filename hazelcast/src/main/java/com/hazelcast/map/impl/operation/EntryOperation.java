@@ -117,11 +117,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     @Override
-    public String toString() {
-        return "EntryOperation{}";
-    }
-
-    @Override
     public Operation getBackupOperation() {
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
         return backupProcessor != null ? new EntryBackupOperation(name, dataKey, backupProcessor) : null;

@@ -114,10 +114,10 @@ public class EvictAllOperation extends MapOperation implements BackupAwareOperat
     }
 
     @Override
-    public String toString() {
-        return "EvictAllOperation{"
-                + "shouldRunOnBackup=" + shouldRunOnBackup
-                + ", numberOfEvictedEntries=" + numberOfEvictedEntries
-                + '}';
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", shouldRunOnBackup=").append(shouldRunOnBackup);
+        sb.append(", numberOfEvictedEntries=").append(numberOfEvictedEntries);
     }
 }

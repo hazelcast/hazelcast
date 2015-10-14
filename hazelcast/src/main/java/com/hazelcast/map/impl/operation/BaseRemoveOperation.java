@@ -79,9 +79,4 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     public void onWaitExpire() {
         sendResponse(null);
     }
-
-    @Override
-    public String toString() {
-        return "BaseRemoveOperation{" + name + "}";
-    }
 }

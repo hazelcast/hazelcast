@@ -156,11 +156,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     }
 
     @Override
-    public String toString() {
-        return "PutAllOperation{}";
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(mapEntries);

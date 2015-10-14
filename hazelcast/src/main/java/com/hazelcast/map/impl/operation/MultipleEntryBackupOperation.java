@@ -92,9 +92,4 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOpe
     public Object getResponse() {
         return true;
     }
-
-    @Override
-    public String toString() {
-        return "MultipleEntryBackupOperation{}";
-    }
 }

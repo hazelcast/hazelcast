@@ -98,9 +98,4 @@ public class ClearOperation extends MapOperation implements BackupAwareOperation
         clearBackupOperation.setServiceName(SERVICE_NAME);
         return clearBackupOperation;
     }
-
-    @Override
-    public String toString() {
-        return "ClearOperation{}";
-    }
 }

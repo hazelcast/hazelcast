@@ -82,4 +82,10 @@ public abstract class AtomicLongBaseOperation extends Operation
         name = in.readUTF();
     }
 
+    @Override
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", name=").append(name);
+    }
 }

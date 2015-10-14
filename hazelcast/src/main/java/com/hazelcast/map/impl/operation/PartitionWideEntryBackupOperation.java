@@ -87,11 +87,6 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
     }
 
     @Override
-    public String toString() {
-        return "PartitionWideEntryBackupOperation{}";
-    }
-
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         backupProcessor = in.readObject();

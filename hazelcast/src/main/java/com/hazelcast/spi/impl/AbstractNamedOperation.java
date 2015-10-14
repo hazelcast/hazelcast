@@ -33,6 +33,7 @@ public abstract class AbstractNamedOperation extends AbstractOperation implement
     public AbstractNamedOperation() {
     }
 
+    @Override
     public final String getName() {
         return name;
     }
@@ -45,5 +46,12 @@ public abstract class AbstractNamedOperation extends AbstractOperation implement
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         name = in.readUTF();
+    }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", name=").append(name);
     }
 }

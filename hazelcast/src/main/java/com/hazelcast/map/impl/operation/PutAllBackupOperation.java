@@ -78,11 +78,6 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
     }
 
     @Override
-    public String toString() {
-        return "PutAllBackupOperation{}";
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         final int size = entries.size();

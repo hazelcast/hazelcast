@@ -53,10 +53,4 @@ public class ReplaceOperation extends BasePutOperation {
     public Object getResponse() {
         return dataOldValue;
     }
-
-    @Override
-    public String toString() {
-        return "ReplaceOperation{" + name + "}";
-    }
-
 }

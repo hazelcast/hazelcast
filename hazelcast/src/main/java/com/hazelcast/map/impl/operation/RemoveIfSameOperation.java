@@ -63,11 +63,6 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     }
 
     @Override
-    public String toString() {
-        return "RemoveIfSameOperation{" + name + "}";
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeData(testValue);

@@ -45,9 +45,4 @@ public class EvictAllBackupOperation extends MapOperation implements BackupOpera
         }
         recordStore.evictAll(true);
     }
-
-    @Override
-    public String toString() {
-        return "EvictAllBackupOperation{}";
-    }
 }

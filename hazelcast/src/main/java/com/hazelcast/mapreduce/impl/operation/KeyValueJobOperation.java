@@ -178,4 +178,12 @@ public class KeyValueJobOperation<K, V>
     public int getId() {
         return MapReduceDataSerializerHook.TRACKED_JOB_OPERATION;
     }
+
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", name=").append(name);
+    }
 }
