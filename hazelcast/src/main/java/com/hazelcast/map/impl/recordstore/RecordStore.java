@@ -275,6 +275,8 @@ public interface RecordStore {
      */
     boolean isExpired(Record record, long now, boolean backup);
 
+    void doPostEvictionOperations(Data key, Object value, boolean isExpired);
+
     /**
      * Loads all given keys from defined map store.
      *
@@ -298,7 +300,7 @@ public interface RecordStore {
      */
     Record getRecordOrNull(Data key);
 
-    void evictEntries(long now, boolean backup);
+    void evictEntries(long now);
 
     /**
      * Loads all keys and values
@@ -311,4 +313,6 @@ public interface RecordStore {
      * Performs initial loading from a MapLoader if it has not been done before
      **/
     void maybeDoInitialLoad();
+
+    boolean isEvictionEnabled();
 }

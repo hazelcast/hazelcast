@@ -23,6 +23,10 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.impl.eviction.EvictionChecker;
+import com.hazelcast.map.impl.eviction.EvictionCheckerImpl;
+import com.hazelcast.map.impl.eviction.Evictor;
+import com.hazelcast.map.impl.eviction.EvictorImpl;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.nearcache.NearCacheSizeEstimator;
 import com.hazelcast.map.impl.query.QueryEntryFactory;
@@ -56,6 +60,8 @@ import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapSt
  * Map container.
  */
 public class MapContainer {
+
+    protected Evictor evictor;
 
     private final RecordFactory recordFactory;
 
@@ -95,6 +101,7 @@ public class MapContainer {
         }
     };
 
+
     /**
      * Operations which are done in this constructor should obey the rules defined
      * in the method comment {@link com.hazelcast.spi.PostJoinAwareService#getPostJoinOperation()}
@@ -117,6 +124,13 @@ public class MapContainer {
         mapStoreContext = createMapStoreContext(this);
         mapStoreContext.start();
         indexes = new Indexes(serializationService);
+        this.evictor = createEvictor(mapServiceContext);
+    }
+
+    // this method is overridden.
+    Evictor createEvictor(MapServiceContext mapServiceContext) {
+        EvictionChecker evictionChecker = new EvictionCheckerImpl(mapServiceContext);
+        return new EvictorImpl(evictionChecker, mapServiceContext);
     }
 
     private RecordFactory createRecordFactory(NodeEngine nodeEngine) {
@@ -279,6 +293,15 @@ public class MapContainer {
 
     public QueryableEntry newQueryEntry(Data key, Object value) {
         return queryEntryFactory.newEntry(serializationService, key, value);
+    }
+
+    public Evictor getEvictor() {
+        return evictor;
+    }
+
+    // only used for testing purposes.
+    public void setEvictor(Evictor evictor) {
+        this.evictor = evictor;
     }
 }
 

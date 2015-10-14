@@ -103,7 +103,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         invalidateNearCaches();
         publishEntryEvent();
         publishWanReplicationEvent();
-        evict(false);
+        evict();
     }
 
     @Override

@@ -22,7 +22,10 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.event.MapEventPublisherImpl;
-import com.hazelcast.map.impl.eviction.EvictionOperator;
+import com.hazelcast.map.impl.eviction.EvictionChecker;
+import com.hazelcast.map.impl.eviction.EvictionCheckerImpl;
+import com.hazelcast.map.impl.eviction.Evictor;
+import com.hazelcast.map.impl.eviction.EvictorImpl;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.BasePutOperation;
@@ -101,7 +104,7 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final MergePolicyProvider mergePolicyProvider;
     protected final MapQueryEngine mapQueryEngine;
     protected MapEventPublisher mapEventPublisher;
-    protected EvictionOperator evictionOperator;
+    protected Evictor evictor;
     protected MapService mapService;
     protected EventService eventService;
     protected MapOperationProvider operationProvider;
@@ -112,14 +115,20 @@ class MapServiceContextImpl implements MapServiceContext {
         this.mapContainers = new ConcurrentHashMap<String, MapContainer>();
         this.ownedPartitions = new AtomicReference<Collection<Integer>>();
         this.expirationManager = new ExpirationManager(this, nodeEngine);
-        this.evictionOperator = EvictionOperator.create(this);
-        this.nearCacheProvider = new NearCacheProvider(this, nodeEngine);
+        this.evictor = createEvictor();
+        this.nearCacheProvider = createNearCacheProvider(nodeEngine);
         this.localMapStatsProvider = createLocalMapStatsProvider();
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
         this.mapEventPublisher = createMapEventPublisherSupport();
         this.mapQueryEngine = createMapQueryEngine(nodeEngine);
         this.eventService = nodeEngine.getEventService();
         this.operationProvider = new DefaultMapOperationProvider();
+    }
+
+    // this method is overridden in another context.
+    Evictor createEvictor() {
+        EvictionChecker evictionChecker = new EvictionCheckerImpl(this);
+        return new EvictorImpl(evictionChecker, this);
     }
 
     // this method is overridden in another context.
@@ -133,6 +142,11 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     // this method is overridden in another context.
+    NearCacheProvider createNearCacheProvider(NodeEngine nodeEngine) {
+        return new NearCacheProvider(this, nodeEngine);
+    }
+
+    // this method is overridden.
     PartitionContainer[] createPartitionContainers() {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         return new PartitionContainer[partitionCount];
@@ -184,6 +198,11 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public void setService(MapService mapService) {
+        this.mapService = mapService;
+    }
+
+    @Override
     public void clearPartitions() {
         final PartitionContainer[] containers = partitionContainers;
         for (PartitionContainer container : containers) {
@@ -207,8 +226,10 @@ class MapServiceContextImpl implements MapServiceContext {
     public void flushMaps() {
         for (PartitionContainer partitionContainer : partitionContainers) {
             for (String mapName : mapContainers.keySet()) {
-                RecordStore recordStore = partitionContainer.getRecordStore(mapName);
-                recordStore.flush();
+                RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
+                if (recordStore != null) {
+                    recordStore.flush();
+                }
             }
         }
     }
@@ -293,16 +314,6 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public EvictionOperator getEvictionOperator() {
-        return evictionOperator;
-    }
-
-    @Override
-    public void setService(MapService mapService) {
-        this.mapService = mapService;
-    }
-
-    @Override
     public NodeEngine getNodeEngine() {
         return nodeEngine;
     }
@@ -325,11 +336,6 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public LocalMapStatsProvider getLocalMapStatsProvider() {
         return localMapStatsProvider;
-    }
-
-    @Override
-    public void setEvictionOperator(EvictionOperator evictionOperator) {
-        this.evictionOperator = evictionOperator;
     }
 
     @Override

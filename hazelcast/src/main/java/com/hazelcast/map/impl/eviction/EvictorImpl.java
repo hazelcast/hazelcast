@@ -16,73 +16,49 @@
 
 package com.hazelcast.map.impl.eviction;
 
-import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.MemoryInfoAccessor;
 
 import java.util.Arrays;
 import java.util.Iterator;
 
-import static com.hazelcast.core.EntryEventType.EVICTED;
-import static com.hazelcast.core.EntryEventType.EXPIRED;
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 
 /**
  * Eviction helper methods.
  */
-public final class EvictionOperator {
+public class EvictorImpl implements Evictor {
 
-    private static final int ONE_HUNDRED_PERCENT = 100;
-    private MapServiceContext mapServiceContext;
-    private MaxSizeChecker maxSizeChecker;
+    protected static final int ONE_HUNDRED_PERCENT = 100;
 
-    private EvictionOperator() {
-    }
+    protected final MapServiceContext mapServiceContext;
+    protected final EvictionChecker evictionChecker;
 
-    public static EvictionOperator create(MapServiceContext mapServiceContext) {
-        final EvictionOperator evictionOperator = new EvictionOperator();
-        final MaxSizeChecker maxSizeChecker = new MaxSizeChecker(mapServiceContext);
-        evictionOperator.setMaxSizeChecker(maxSizeChecker);
-        evictionOperator.setMapServiceContext(mapServiceContext);
-
-        return evictionOperator;
-    }
-
-    public static EvictionOperator create(MemoryInfoAccessor memoryInfoAccessor, MapServiceContext mapServiceContext) {
-        final EvictionOperator evictionOperator = new EvictionOperator();
-        final MaxSizeChecker maxSizeChecker = new MaxSizeChecker(memoryInfoAccessor, mapServiceContext);
-        evictionOperator.setMaxSizeChecker(maxSizeChecker);
-        evictionOperator.setMapServiceContext(mapServiceContext);
-
-        return evictionOperator;
-    }
-
-    public void setMapServiceContext(MapServiceContext mapServiceContext) {
+    public EvictorImpl(EvictionChecker evictionChecker, MapServiceContext mapServiceContext) {
+        this.evictionChecker = evictionChecker;
         this.mapServiceContext = mapServiceContext;
     }
 
-    public void setMaxSizeChecker(MaxSizeChecker maxSizeChecker) {
-        this.maxSizeChecker = maxSizeChecker;
+    @Override
+    public EvictionChecker getEvictionChecker() {
+        return evictionChecker;
     }
 
-    public MaxSizeChecker getMaxSizeChecker() {
-        return maxSizeChecker;
-    }
-
-    public void removeEvictableRecords(RecordStore recordStore, int evictableSize, MapConfig mapConfig, boolean backup) {
+    @Override
+    public void removeSize(int removalSize, RecordStore recordStore) {
         long now = Clock.currentTimeMillis();
+        MapConfig mapConfig = recordStore.getMapContainer().getMapConfig();
+
+        boolean backup = isBackup(recordStore);
+
         final EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
         // criteria is a long value, like last access times or hits,
         // used for calculating LFU or LRU.
@@ -92,56 +68,59 @@ public final class EvictionOperator {
         }
         Arrays.sort(criterias);
         // check in case record store size may be smaller than evictable size.
-        final int evictableBaseIndex = getEvictionStartIndex(criterias, evictableSize);
+        final int evictableBaseIndex = getEvictionStartIndex(criterias, removalSize);
         final long criteriaValue = criterias[evictableBaseIndex];
         int evictedRecordCounter = 0;
         final Iterator<Record> iterator = recordStore.iterator();
         while (iterator.hasNext()) {
-            final Record record = iterator.next();
-            final long value = getEvictionCriteriaValue(record, evictionPolicy);
+            Record record = iterator.next();
+            Data key = record.getKey();
+            long value = getEvictionCriteriaValue(record, evictionPolicy);
             if (value <= criteriaValue) {
-                if (tryEvict(record, recordStore, backup, now)) {
+                if (tryEvict(key, record, recordStore, backup, now)) {
                     evictedRecordCounter++;
                 }
             }
-            if (evictedRecordCounter >= evictableSize) {
+            if (evictedRecordCounter >= removalSize) {
                 break;
             }
         }
     }
 
-    protected boolean tryEvict(Record record, RecordStore recordStore, boolean backup, long now) {
+    protected boolean isBackup(RecordStore recordStore) {
+        int partitionId = recordStore.getPartitionId();
+        InternalPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+        InternalPartition partition = partitionService.getPartition(partitionId, false);
+        return !partition.isLocal();
+    }
+
+    protected boolean tryEvict(Data key, Record record, RecordStore recordStore, boolean backup, long now) {
         String mapName = recordStore.getName();
-        Data key = record.getKey();
         Object value = record.getValue();
 
-        if (!evictIfNotLocked(key, recordStore, backup)) {
+        if (recordStore.isLocked(key)) {
             return false;
         }
 
+        recordStore.evict(key, backup);
+
         if (!backup) {
             mapServiceContext.interceptAfterRemove(mapName, value);
-
             boolean expired = recordStore.isExpired(record, now, false);
-            if (expired) {
-                // Fire EXPIRED event also because there is a possibility that
-                // evicted entry may be also an expired one.
-                fireEvent(key, value, mapName, EXPIRED, mapServiceContext);
-            }
-            fireEvent(key, value, mapName, EVICTED, mapServiceContext);
+            recordStore.doPostEvictionOperations(key, value, expired);
         }
 
         return true;
     }
 
-    private long[] createAndPopulateEvictionCriteriaArray(RecordStore recordStore,
-                                                          EvictionPolicy evictionPolicy) {
+    protected long[] createAndPopulateEvictionCriteriaArray(RecordStore recordStore,
+                                                            EvictionPolicy evictionPolicy) {
         final int size = recordStore.size();
         long[] criterias = null;
         int index = 0;
         final Iterator<Record> iterator = recordStore.iterator();
         while (iterator.hasNext()) {
-            final Record record = iterator.next();
+            Record record = iterator.next();
             if (criterias == null) {
                 criterias = new long[size];
             }
@@ -166,43 +145,20 @@ public final class EvictionOperator {
         return criterias;
     }
 
-    private int getEvictionStartIndex(long[] criterias, int evictableSize) {
+    protected int getEvictionStartIndex(long[] criterias, int evictableSize) {
         final int length = criterias.length;
         final int sizeToEvict = Math.min(evictableSize, length);
         final int index = sizeToEvict - 1;
         return index < 0 ? 0 : index;
     }
 
-    public void fireEvent(Data key, Object value, String mapName, EntryEventType eventType,
-                          MapServiceContext mapServiceContext) {
-        if (!hasListener(mapName)) {
-            return;
-        }
-        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final Address thisAddress = nodeEngine.getThisAddress();
-        final Data dataValue = mapServiceContext.toData(value);
-        mapEventPublisher.publishEvent(thisAddress, mapName, eventType, true,
-                key, dataValue, null);
-    }
+    @Override
+    public int findRemovalSize(RecordStore recordStore) {
+        MapConfig mapConfig = recordStore.getMapContainer().getMapConfig();
+        int maxSize = mapConfig.getMaxSizeConfig().getSize();
+        int currentPartitionSize = recordStore.size();
 
-    private boolean hasListener(String mapName) {
-        final EventService eventService = mapServiceContext.getNodeEngine().getEventService();
-        return eventService.hasEventRegistration(SERVICE_NAME, mapName);
-    }
-
-    private boolean evictIfNotLocked(Data key, RecordStore recordStore, boolean backup) {
-        if (recordStore.isLocked(key)) {
-            return false;
-        }
-        recordStore.evict(key, backup);
-        return true;
-    }
-
-
-    public int evictableSize(int currentPartitionSize, MapConfig mapConfig) {
-        final int maxSize = mapConfig.getMaxSizeConfig().getSize();
-        int evictableSize;
+        int removalSize;
         final MaxSizeConfig.MaxSizePolicy maxSizePolicy = mapConfig.getMaxSizeConfig().getMaxSizePolicy();
         final int evictionPercentage = mapConfig.getEvictionPercentage();
         switch (maxSizePolicy) {
@@ -211,33 +167,33 @@ public final class EvictionOperator {
                         * ((ONE_HUNDRED_PERCENT - evictionPercentage) / (1D * ONE_HUNDRED_PERCENT))).intValue();
                 int diffFromTargetSize = currentPartitionSize - targetSizePerPartition;
                 int prunedSize = currentPartitionSize * evictionPercentage / ONE_HUNDRED_PERCENT + 1;
-                evictableSize = Math.max(diffFromTargetSize, prunedSize);
+                removalSize = Math.max(diffFromTargetSize, prunedSize);
                 break;
             case PER_NODE:
                 int memberCount = mapServiceContext.getNodeEngine().getClusterService()
-                                                   .getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
+                        .getSize(DATA_MEMBER_SELECTOR);
                 int maxPartitionSize = (maxSize
                         * memberCount / mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount());
                 targetSizePerPartition = Double.valueOf(maxPartitionSize
                         * ((ONE_HUNDRED_PERCENT - evictionPercentage) / (1D * ONE_HUNDRED_PERCENT))).intValue();
                 diffFromTargetSize = currentPartitionSize - targetSizePerPartition;
                 prunedSize = currentPartitionSize * evictionPercentage / ONE_HUNDRED_PERCENT + 1;
-                evictableSize = Math.max(diffFromTargetSize, prunedSize);
+                removalSize = Math.max(diffFromTargetSize, prunedSize);
                 break;
             case USED_HEAP_PERCENTAGE:
             case USED_HEAP_SIZE:
             case FREE_HEAP_PERCENTAGE:
             case FREE_HEAP_SIZE:
                 // if we have an evictable size, be sure to evict at least one entry in worst case.
-                evictableSize = Math.max(currentPartitionSize * evictionPercentage / ONE_HUNDRED_PERCENT, 1);
+                removalSize = Math.max(currentPartitionSize * evictionPercentage / ONE_HUNDRED_PERCENT, 1);
                 break;
             default:
                 throw new IllegalArgumentException("Max size policy is not defined [" + maxSizePolicy + "]");
         }
-        return evictableSize;
+        return removalSize;
     }
 
-    private long getEvictionCriteriaValue(Record record, EvictionPolicy evictionPolicy) {
+    protected long getEvictionCriteriaValue(Record record, EvictionPolicy evictionPolicy) {
         long value;
         switch (evictionPolicy) {
             case LRU:
@@ -249,6 +205,5 @@ public final class EvictionOperator {
         }
         return value;
     }
-
 
 }

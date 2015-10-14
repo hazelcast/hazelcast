@@ -84,7 +84,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     @Override
     public void afterRun() throws Exception {
         if (recordInfo != null) {
-            evict(true);
+            evict();
         }
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();

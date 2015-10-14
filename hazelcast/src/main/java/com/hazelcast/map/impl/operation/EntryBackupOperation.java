@@ -102,7 +102,7 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
 
     @Override
     public void afterRun() throws Exception {
-        evict(true);
+        evict();
     }
 
     @Override
