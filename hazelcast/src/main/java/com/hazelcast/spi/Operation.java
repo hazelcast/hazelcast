@@ -32,6 +32,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.logging.Level;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
@@ -591,7 +592,8 @@ public abstract class Operation implements DataSerializable {
         sb.append(", partitionId=").append(partitionId);
         sb.append(", replicaIndex=").append(replicaIndex);
         sb.append(", callId=").append(callId);
-        sb.append(", invocationTime=").append(invocationTime);
+        Date date = new Date(invocationTime);
+        sb.append(", invocationTime=").append(invocationTime).append(" (").append(date).append(")");
         sb.append(", waitTimeout=").append(waitTimeout);
         sb.append(", callTimeout=").append(callTimeout);
         toString(sb);
