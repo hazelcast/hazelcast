@@ -39,6 +39,7 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
+            <hz:instance-name>named-spring-hz-instance</hz:instance-name>
             <hz:group
                     name="${cluster.group.name}"
                     password="${cluster.group.password}"/>
@@ -92,5 +93,12 @@
         <constructor-arg ref="hazelcastJCacheCacheManager" />
     </bean>
 
-    <bean id="dummy" class="com.hazelcast.spring.cache.TestJCacheCacheManager.DummyBean" />
+    <hz:cache-manager id="cacheManager2" name="cacheManager2" uri="testURI">
+        <hz:properties>
+            <hz:property name="hazelcast.instance.name">named-spring-hz-instance</hz:property>
+            <hz:property name="testProperty">testValue</hz:property>
+        </hz:properties>
+    </hz:cache-manager>
+
+    <bean id="dummy" class="com.hazelcast.spring.cache.JCacheCacheManagerTest.DummyBean" />
 </beans>

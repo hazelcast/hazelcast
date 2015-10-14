@@ -24,6 +24,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import java.util.Properties;
+
 /**
  * Bean definition parser for JCache {@link javax.cache.CacheManager}
  * <p/>
@@ -61,20 +63,43 @@ public class CacheManagerBeanDefinitionParser
         public void handle(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
             final NamedNodeMap attrs = element.getAttributes();
+
+            String uri = null;
+            String instanceRef = null;
             if (attrs != null) {
                 Node instanceRefNode = attrs.getNamedItem("instance-ref");
-                if (instanceRefNode == null) {
-                    throw new IllegalStateException("'instance-ref' attribute is required for creating cache manager");
+                if (instanceRefNode != null) {
+                    instanceRef = getTextContent(instanceRefNode);
                 }
-                final String instanceRef = getTextContent(instanceRefNode);
-
                 Node uriNode = attrs.getNamedItem("uri");
-                final String uri = getTextContent(uriNode);
-
-                builder.addConstructorArgValue(uri);
-                builder.addConstructorArgReference(instanceRef);
-                builder.setFactoryMethod("getCacheManager");
+                if (uriNode != null) {
+                    uri = getTextContent(uriNode);
+                }
             }
+
+            Properties properties = new Properties();
+            for (Node n : new IterableNodeList(element, Node.ELEMENT_NODE)) {
+                final String nodeName = cleanNodeName(n.getNodeName());
+                if ("properties".equals(nodeName)) {
+                    for (Node propNode : new IterableNodeList(n.getChildNodes(), Node.ELEMENT_NODE)) {
+                        final String name = cleanNodeName(propNode.getNodeName());
+                        final String propertyName;
+                        if (!"property".equals(name)) {
+                            continue;
+                        }
+                        propertyName = getTextContent(propNode.getAttributes().getNamedItem("name")).trim();
+                        final String value = getTextContent(propNode);
+                        properties.setProperty(propertyName, value);
+                    }
+                }
+            }
+
+            if (instanceRef != null) {
+                builder.addConstructorArgReference(instanceRef);
+            }
+            builder.addConstructorArgValue(uri);
+            builder.addConstructorArgValue(properties);
+            builder.setFactoryMethod("getCacheManager");
         }
     }
 }

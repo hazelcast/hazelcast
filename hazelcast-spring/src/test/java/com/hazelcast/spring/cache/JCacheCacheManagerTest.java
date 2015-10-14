@@ -41,7 +41,7 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"jCacheCacheManager-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
-public class TestJCacheCacheManager {
+public class JCacheCacheManagerTest {
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -72,7 +72,14 @@ public class TestJCacheCacheManager {
 
     @Test
     public void testURI() {
+        assertEquals("hazelcast", springCacheManager.getCacheManager().getURI().toString());
         assertEquals("testURI", cacheManager2.getURI().toString());
+    }
+
+    @Test
+    public void testProperties() {
+        assertEquals("testValue", cacheManager2.getProperties().getProperty("testProperty"));
+        assertEquals("named-spring-hz-instance", cacheManager2.getProperties().getProperty("hazelcast.instance.name"));
     }
 
     @Test

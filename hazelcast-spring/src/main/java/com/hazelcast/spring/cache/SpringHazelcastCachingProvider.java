@@ -20,6 +20,7 @@ import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -40,9 +41,11 @@ public final class SpringHazelcastCachingProvider {
      *
      * @param uriString Scope of {@link CacheManager}
      * @param instance Hazelcast instance that created {@link CacheManager} is connected.
+     * @param props Extra properties to be passed to cache manager. If {@code props} contain hazelcast.instance.name
+     *              it overrides {@code instance} parameter
      * @return
      */
-    public static CacheManager getCacheManager(String uriString, HazelcastInstance instance) {
+    public static CacheManager getCacheManager(HazelcastInstance instance, String uriString, Properties props) {
         URI uri = null;
         if (uriString != null) {
             try {
@@ -51,12 +54,22 @@ public final class SpringHazelcastCachingProvider {
                 ExceptionUtil.rethrow(e);
             }
         }
-        Properties properties = new Properties();
-        properties.setProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME, instance.getName());
-        if (instance instanceof HazelcastClientProxy) {
-            return HazelcastClientCachingProvider.createCachingProvider(instance).getCacheManager(uri, null, properties);
-        } else {
-            return HazelcastServerCachingProvider.createCachingProvider(instance).getCacheManager(uri, null, properties);
+        if (props.getProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME) == null) {
+            props.setProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME, instance.getName());
         }
+        if (instance instanceof HazelcastClientProxy) {
+            return HazelcastClientCachingProvider.createCachingProvider(instance).getCacheManager(uri, null, props);
+        } else {
+            return HazelcastServerCachingProvider.createCachingProvider(instance).getCacheManager(uri, null, props);
+        }
+    }
+
+    public static CacheManager getCacheManager(String uriString, Properties properties) {
+        String instanceName = properties.getProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME);
+        if (instanceName == null) {
+            throw new IllegalStateException("Either instance-ref' attribute or "
+                    + HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME + " property is required for creating cache manager");
+        }
+        return getCacheManager(Hazelcast.getHazelcastInstanceByName(instanceName), uriString, properties);
     }
 }
