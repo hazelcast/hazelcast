@@ -20,7 +20,6 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.query.QueryResultSet;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultCollection;
