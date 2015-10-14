@@ -80,17 +80,17 @@ public class IndexImpl implements Index {
         indexStore.removeIndex(attributeValue, key);
     }
 
-    private Comparable extractAttributeValue(Data key, Object value) {
+    private Object extractAttributeValue(Data key, Object value) {
         return sanitizeValue(ExtractionEngine.extractAttributeValue(extractors, ss, attributeName, key, value));
     }
 
-    static Comparable sanitizeValue(Object value) {
+    static Object sanitizeValue(Object value) {
         if (value == null) {
             value = NULL;
         } else if (value.getClass().isEnum()) {
             value = TypeConverters.ENUM_CONVERTER.convert((Comparable) value);
         }
-        return (Comparable) value;
+        return value;
     }
 
     @Override
