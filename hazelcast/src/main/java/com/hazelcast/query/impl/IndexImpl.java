@@ -65,47 +65,32 @@ public class IndexImpl implements Index {
             converter = entry.getConverter(attributeName);
         }
 
-        Object oldAttributeValue = null;
-        if (oldRecordValue != null) {
-            oldAttributeValue = ExtractionEngine.extractAttributeValue(
-                    extractors, ss, attributeName, entry.getKeyData(), oldRecordValue);
-        }
-
-        Object newAttributeValue = ExtractionEngine.extractAttributeValue(
-                extractors, ss, attributeName, entry.getKeyData(), entry.getValue());
-        createOrUpdateIndexStore(entry, newAttributeValue, oldAttributeValue);
-    }
-
-    private void createOrUpdateIndexStore(QueryableEntry entry, Object newAttributeValue, Object oldAttributeValue) {
-        newAttributeValue = sanitizeValue(newAttributeValue);
-        if (oldAttributeValue == null) {
-            // new
+        Object newAttributeValue = extractAttributeValue(entry.getKeyData(), entry.getValue());
+        if (oldRecordValue == null) {
             indexStore.newIndex(newAttributeValue, entry);
         } else {
-            // update
-            oldAttributeValue = sanitizeValue(oldAttributeValue);
+            Object oldAttributeValue = extractAttributeValue(entry.getKeyData(), oldRecordValue);
             indexStore.updateIndex(oldAttributeValue, newAttributeValue, entry);
         }
     }
 
     @Override
     public void removeEntryIndex(Data key, Object value) {
-        Comparable attributeValue = (Comparable) ExtractionEngine
-                .extractAttributeValue(extractors, ss, attributeName, key, value);
-        attributeValue = (Comparable)sanitizeValue(attributeValue);
-
-        if (value != null) {
-            indexStore.removeIndex(value, key);
-        }
+        Object attributeValue = extractAttributeValue(key, value);
+        indexStore.removeIndex(attributeValue, key);
     }
 
-    static Object sanitizeValue(Object value) {
+    private Comparable extractAttributeValue(Data key, Object value) {
+        return sanitizeValue(ExtractionEngine.extractAttributeValue(extractors, ss, attributeName, key, value));
+    }
+
+    static Comparable sanitizeValue(Object value) {
         if (value == null) {
             value = NULL;
         } else if (value.getClass().isEnum()) {
             value = TypeConverters.ENUM_CONVERTER.convert((Comparable) value);
         }
-        return value;
+        return (Comparable) value;
     }
 
     @Override
