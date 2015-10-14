@@ -32,8 +32,6 @@ import java.util.Map;
 
 public class MapFlushRequest extends MapAllPartitionsClientRequest implements Portable, SecureRequest {
 
-    protected String name;
-
     public MapFlushRequest() {
     }
 
