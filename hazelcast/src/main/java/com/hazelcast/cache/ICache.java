@@ -595,7 +595,6 @@ public interface ICache<K, V>
      */
     ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy);
 
-
     /**
      * Asynchronously replaces the assigned value of the given key by the specified value and returns
      * the previously assigned value.

@@ -25,6 +25,7 @@ import com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.cache.impl.operation.CacheGetOperation;
 import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
+import com.hazelcast.cache.impl.operation.CachePutAllOperation;
 import com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation;
 import com.hazelcast.cache.impl.operation.CachePutOperation;
 import com.hazelcast.cache.impl.operation.CacheRemoveAllOperationFactory;
@@ -38,6 +39,8 @@ import com.hazelcast.spi.OperationFactory;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -54,6 +57,11 @@ public class DefaultOperationProvider implements CacheOperationProvider {
     @Override
     public Operation createPutOperation(Data key, Data value, ExpiryPolicy policy, boolean get, int completionId) {
         return new CachePutOperation(nameWithPrefix, key, value, policy, get, completionId);
+    }
+
+    @Override
+    public Operation createPutAllOperation(List<Map.Entry<Data, Data>> entries, ExpiryPolicy policy, int completionId) {
+        return new CachePutAllOperation(nameWithPrefix, entries, policy, completionId);
     }
 
     @Override
