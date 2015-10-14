@@ -109,11 +109,10 @@ class ClusterStateLock {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ClusterStateLock{");
-        sb.append("lockOwner=").append(lockOwner);
-        sb.append(", transactionId='").append(transactionId).append('\'');
-        sb.append(", lockExpiryTime=").append(lockExpiryTime);
-        sb.append('}');
-        return sb.toString();
+        return "ClusterStateLock{"
+                + "lockOwner=" + lockOwner
+                + ", transactionId='" + transactionId + '\''
+                + ", lockExpiryTime=" + lockExpiryTime
+                + '}';
     }
 }

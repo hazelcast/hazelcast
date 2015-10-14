@@ -141,7 +141,7 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
                 result = getMapValueCollection(map.values(getPredicate()));
                 break;
             default:
-                throw new IllegalArgumentException("Not a known TxnMapRequestType [" + requestType + "]");
+                throw new IllegalArgumentException("Not a known TxnMapRequestType [" + requestType + ']');
         }
         return result;
     }

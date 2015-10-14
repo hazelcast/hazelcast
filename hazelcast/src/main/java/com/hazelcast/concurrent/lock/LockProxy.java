@@ -151,9 +151,6 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ILock{");
-        sb.append("name='").append(name).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "ILock{name='" + name + '\'' + '}';
     }
 }

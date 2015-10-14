@@ -121,9 +121,6 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("HazelcastClientCachingProvider{");
-        sb.append("hazelcastInstance=").append(hazelcastInstance);
-        sb.append('}');
-        return sb.toString();
+        return "HazelcastClientCachingProvider{hazelcastInstance=" + hazelcastInstance + '}';
     }
 }

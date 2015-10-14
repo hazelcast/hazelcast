@@ -45,7 +45,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
             return new EntryCountNearCacheMaxSizeChecker(evictionConfig.getSize(), records);
         }
         throw new IllegalArgumentException("Invalid max-size policy "
-                + "(" + maxSizePolicy + ") for " + getClass().getName() + " ! Only "
+                + '(' + maxSizePolicy + ") for " + getClass().getName() + "! Only "
                 + EvictionConfig.MaxSizePolicy.ENTRY_COUNT + " is supported.");
     }
 

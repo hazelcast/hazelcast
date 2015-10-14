@@ -462,7 +462,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
         long startMs = System.currentTimeMillis();
 
-        IExecutorService executor = hazelcast.getExecutorService(executorNamespace + " " + threadCount);
+        IExecutorService executor = hazelcast.getExecutorService(executorNamespace + ' ' + threadCount);
         List<Future> futures = new LinkedList<Future>();
         List<Member> members = new LinkedList<Member>(hazelcast.getCluster().getMembers());
 
@@ -546,21 +546,17 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     @SuppressFBWarnings("DM_GC")
     private void handleJvm() {
         System.gc();
-        println("Memory max: " + Runtime.getRuntime().maxMemory() / ONE_KB / ONE_KB
-                + "M");
-        println("Memory free: "
-                + Runtime.getRuntime().freeMemory()
-                / ONE_KB
-                / ONE_KB
-                + "M "
-                + (int) (Runtime.getRuntime().freeMemory() * HUNDRED_CONSTANT / Runtime.getRuntime()
-                .maxMemory()) + "%");
-        long total = Runtime.getRuntime().totalMemory();
-        long free = Runtime.getRuntime().freeMemory();
+        Runtime runtime = Runtime.getRuntime();
+        println("Memory max: " + runtime.maxMemory() / ONE_KB / ONE_KB + 'M');
+        long freeMemory = runtime.freeMemory() / ONE_KB / ONE_KB;
+        int freeMemoryPercentage = (int) (runtime.freeMemory() * HUNDRED_CONSTANT / runtime.maxMemory());
+        println("Memory free: " + freeMemory + "M " + freeMemoryPercentage + '%');
+        long total = runtime.totalMemory();
+        long free = runtime.freeMemory();
         println("Used Memory:" + ((total - free) / ONE_KB / ONE_KB) + "MB");
-        println("# procs: " + Runtime.getRuntime().availableProcessors());
+        println("# procs: " + runtime.availableProcessors());
         println("OS info: " + ManagementFactory.getOperatingSystemMXBean().getArch()
-                + " " + ManagementFactory.getOperatingSystemMXBean().getName() + " "
+                + ' ' + ManagementFactory.getOperatingSystemMXBean().getName() + ' '
                 + ManagementFactory.getOperatingSystemMXBean().getVersion());
         println("JVM: " + ManagementFactory.getRuntimeMXBean().getVmVendor() + " "
                 + ManagementFactory.getRuntimeMXBean().getVmName() + " "

@@ -80,7 +80,7 @@ public class CacheRecordStore
 
         if (maxSizePolicy != EvictionConfig.MaxSizePolicy.ENTRY_COUNT) {
             throw new IllegalArgumentException("Invalid max-size policy "
-                    + "(" + maxSizePolicy + ") for " + getClass().getName() + " ! Only "
+                    + '(' + maxSizePolicy + ") for " + getClass().getName() + "! Only "
                     + EvictionConfig.MaxSizePolicy.ENTRY_COUNT + " is supported.");
         } else {
             return super.createCacheMaxSizeChecker(size, maxSizePolicy);

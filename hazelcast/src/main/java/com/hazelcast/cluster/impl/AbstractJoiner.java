@@ -122,9 +122,7 @@ public abstract class AbstractJoiner implements Joiner {
             }
 
             if (clusterService.getSize() == 1) {
-                final StringBuilder sb = new StringBuilder("\n");
-                sb.append(node.clusterService.membersString());
-                logger.info(sb.toString());
+                logger.info('\n' + node.clusterService.membersString());
             }
         }
     }
@@ -217,7 +215,7 @@ public abstract class AbstractJoiner implements Joiner {
                 // I should join the other cluster
                 logger.info(node.getThisAddress() + " is merging to " + joinMessage.getAddress()
                         + ", because : joinMessage.getMemberCount() > currentMemberCount ["
-                        + (joinMessage.getMemberCount() + " > " + currentMemberCount) + "]");
+                        + (joinMessage.getMemberCount() + " > " + currentMemberCount) + ']');
                 if (logger.isFinestEnabled()) {
                     logger.finest(joinMessage.toString());
                 }
@@ -240,7 +238,7 @@ public abstract class AbstractJoiner implements Joiner {
             } else {
                 logger.info(joinMessage.getAddress() + " should merge to this node "
                         + ", because : currentMemberCount > joinMessage.getMemberCount() ["
-                        + (currentMemberCount + " > " + joinMessage.getMemberCount()) + "]");
+                        + (currentMemberCount + " > " + joinMessage.getMemberCount()) + ']');
             }
         } catch (Throwable e) {
             logger.severe(e);

@@ -71,11 +71,6 @@ public class Timestamp implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("Timestamp");
-        sb.append("{key=").append(key);
-        sb.append(", timestamp=").append(timestamp);
-        sb.append('}');
-        return sb.toString();
+        return "Timestamp" + "{key=" + key + ", timestamp=" + timestamp + '}';
     }
 }

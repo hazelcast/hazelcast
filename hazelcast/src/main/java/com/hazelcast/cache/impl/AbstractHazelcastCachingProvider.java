@@ -94,7 +94,7 @@ public abstract class AbstractHazelcastCachingProvider
                     cacheManager = createHazelcastCacheManager(uri, classLoader, managerProperties);
                     cacheManagersByURI.put(managerURI, cacheManager);
                 } catch (Exception e) {
-                    throw new CacheException("Error opening URI [" + managerURI.toString() + "]", e);
+                    throw new CacheException("Error opening URI [" + managerURI.toString() + ']', e);
                 }
             }
             return cacheManager;

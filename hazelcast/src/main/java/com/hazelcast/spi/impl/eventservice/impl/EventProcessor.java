@@ -113,9 +113,6 @@ public class EventProcessor implements StripedRunnable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("EventProcessor{");
-        sb.append("envelope=").append(envelope);
-        sb.append('}');
-        return sb.toString();
+        return "EventProcessor{envelope=" + envelope + '}';
     }
 }

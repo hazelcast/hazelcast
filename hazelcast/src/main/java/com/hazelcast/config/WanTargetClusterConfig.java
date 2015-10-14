@@ -96,14 +96,12 @@ public class WanTargetClusterConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("WanTargetClusterConfig");
-        sb.append("{groupName='").append(groupName).append('\'');
-        sb.append(", replicationImpl='").append(replicationImpl).append('\'');
-        sb.append(", replicationImplObject=").append(replicationImplObject);
-        sb.append(", endpoints=").append(endpoints);
-        sb.append(", acknowledgeType=").append(acknowledgeType);
-        sb.append('}');
-        return sb.toString();
+        return "WanTargetClusterConfig{"
+                + "groupName='" + groupName + '\''
+                + ", replicationImpl='" + replicationImpl + '\''
+                + ", replicationImplObject=" + replicationImplObject
+                + ", endpoints=" + endpoints
+                + ", acknowledgeType=" + acknowledgeType
+                + '}';
     }
 }

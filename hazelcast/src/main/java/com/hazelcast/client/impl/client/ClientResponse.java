@@ -77,10 +77,6 @@ public class ClientResponse implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ClientResponse{");
-        sb.append("callId=").append(callId);
-        sb.append(", isError=").append(isError);
-        sb.append('}');
-        return sb.toString();
+        return "ClientResponse{callId=" + callId + ", isError=" + isError + '}';
     }
 }

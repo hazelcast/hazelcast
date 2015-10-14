@@ -66,12 +66,10 @@ public class PermissionPolicyConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("PermissionPolicyConfig");
-        sb.append("{className='").append(className).append('\'');
-        sb.append(", implementation=").append(implementation);
-        sb.append(", properties=").append(properties);
-        sb.append('}');
-        return sb.toString();
+        return "PermissionPolicyConfig{"
+                + "className='" + className + '\''
+                + ", implementation=" + implementation
+                + ", properties=" + properties
+                + '}';
     }
 }

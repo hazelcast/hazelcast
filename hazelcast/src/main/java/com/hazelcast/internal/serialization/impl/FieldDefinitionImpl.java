@@ -105,13 +105,12 @@ public class FieldDefinitionImpl implements FieldDefinition {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("FieldDefinitionImpl{");
-        sb.append("index=").append(index);
-        sb.append(", fieldName='").append(fieldName).append('\'');
-        sb.append(", type=").append(type);
-        sb.append(", classId=").append(classId);
-        sb.append(", factoryId=").append(factoryId);
-        sb.append('}');
-        return sb.toString();
+        return "FieldDefinitionImpl{"
+                + "index=" + index
+                + ", fieldName='" + fieldName + '\''
+                + ", type=" + type
+                + ", classId=" + classId
+                + ", factoryId=" + factoryId
+                + '}';
     }
 }

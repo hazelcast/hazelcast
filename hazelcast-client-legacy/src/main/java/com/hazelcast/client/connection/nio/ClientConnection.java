@@ -213,7 +213,7 @@ public class ClientConnection implements Connection, Closeable {
         }
         String message = "Connection [" + getRemoteSocketAddress() + "] lost. Reason: ";
         if (t != null) {
-            message += t.getClass().getName() + "[" + t.getMessage() + "]";
+            message += t.getClass().getName() + '[' + t.getMessage() + ']';
         } else {
             message += "Socket explicitly closed";
         }
@@ -277,14 +277,13 @@ public class ClientConnection implements Connection, Closeable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ClientConnection{");
-        sb.append("live=").append(live);
-        sb.append(", writeHandler=").append(writeHandler);
-        sb.append(", readHandler=").append(readHandler);
-        sb.append(", connectionId=").append(connectionId);
-        sb.append(", socketChannel=").append(socketChannelWrapper);
-        sb.append(", remoteEndpoint=").append(remoteEndpoint);
-        sb.append('}');
-        return sb.toString();
+        return "ClientConnection{"
+                + "live=" + live
+                + ", writeHandler=" + writeHandler
+                + ", readHandler=" + readHandler
+                + ", connectionId=" + connectionId
+                + ", socketChannel=" + socketChannelWrapper
+                + ", remoteEndpoint=" + remoteEndpoint
+                + '}';
     }
 }

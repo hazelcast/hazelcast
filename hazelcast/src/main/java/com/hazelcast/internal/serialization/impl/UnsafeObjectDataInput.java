@@ -265,13 +265,11 @@ class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("UnsafeObjectDataInput");
-        sb.append("{size=").append(size);
-        sb.append(", pos=").append(pos);
-        sb.append(", mark=").append(mark);
-        sb.append(", byteOrder=").append(getByteOrder());
-        sb.append('}');
-        return sb.toString();
+        return "UnsafeObjectDataInput{"
+                + "size=" + size
+                + ", pos=" + pos
+                + ", mark=" + mark
+                + ", byteOrder=" + getByteOrder()
+                + '}';
     }
 }

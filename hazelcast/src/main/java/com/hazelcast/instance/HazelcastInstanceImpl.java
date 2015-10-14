@@ -400,11 +400,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("HazelcastInstance");
-        sb.append("{name='").append(name).append('\'');
-        sb.append(", node=").append(node.getThisAddress());
-        sb.append('}');
-        return sb.toString();
+        return "HazelcastInstance{name='" + name + "', node=" + node.getThisAddress() + '}';
     }
 }

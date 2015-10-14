@@ -407,12 +407,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("InvocationFuture{");
-        sb.append("invocation=").append(invocation.toString());
-        sb.append(", response=").append(response);
-        sb.append(", done=").append(isDone());
-        sb.append('}');
-        return sb.toString();
+        return "InvocationFuture{invocation=" + invocation.toString() + ", response=" + response + ", done=" + isDone() + '}';
     }
 
     private static final class ExecutionCallbackNode<E> {

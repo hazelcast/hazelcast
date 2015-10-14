@@ -160,14 +160,13 @@ public class HeapData implements Data {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("DefaultData{");
-        sb.append("type=").append(getType());
-        sb.append(", hashCode=").append(hashCode());
-        sb.append(", partitionHash=").append(getPartitionHash());
-        sb.append(", totalSize=").append(totalSize());
-        sb.append(", dataSize=").append(dataSize());
-        sb.append(", heapCost=").append(getHeapCost());
-        sb.append('}');
-        return sb.toString();
+        return "HeapData{"
+                + "type=" + getType()
+                + ", hashCode=" + hashCode()
+                + ", partitionHash=" + getPartitionHash()
+                + ", totalSize=" + totalSize()
+                + ", dataSize=" + dataSize()
+                + ", heapCost=" + getHeapCost()
+                + '}';
     }
 }

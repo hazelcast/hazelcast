@@ -300,15 +300,13 @@ public class MultiMapConfig {
 //    }
 
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("MultiMapConfig");
-        sb.append("{name='").append(name).append('\'');
-        sb.append(", valueCollectionType='").append(valueCollectionType).append('\'');
-        sb.append(", listenerConfigs=").append(listenerConfigs);
-        sb.append(", binary=").append(binary);
-        sb.append(", backupCount=").append(backupCount);
-        sb.append(", asyncBackupCount=").append(asyncBackupCount);
-        sb.append('}');
-        return sb.toString();
+        return "MultiMapConfig{"
+                + "name='" + name + '\''
+                + ", valueCollectionType='" + valueCollectionType + '\''
+                + ", listenerConfigs=" + listenerConfigs
+                + ", binary=" + binary
+                + ", backupCount=" + backupCount
+                + ", asyncBackupCount=" + asyncBackupCount
+                + '}';
     }
 }

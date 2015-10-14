@@ -95,10 +95,6 @@ public final class ClientPrincipal implements Portable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ClientPrincipal{");
-        sb.append("uuid='").append(uuid).append('\'');
-        sb.append(", ownerUuid='").append(ownerUuid).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "ClientPrincipal{uuid='" + uuid + '\'' + ", ownerUuid='" + ownerUuid + '\'' + '}';
     }
 }
