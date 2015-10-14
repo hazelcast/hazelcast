@@ -47,7 +47,7 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 public class InvocationMonitor {
 
     private static final long ON_MEMBER_LEFT_DELAY_MS = 1111;
-    private static final int DELAY_MILLIS = 1000;
+    private static final int SCAN_DELAY_MILLIS = 1000;
 
     private final long backupTimeoutMillis;
     private final long slowInvocationThresholdMs;
@@ -65,13 +65,14 @@ public class InvocationMonitor {
                              MetricsRegistry metricsRegistry) {
         this.invocationRegistry = invocationRegistry;
         this.logger = logger;
-        this.monitorThread = new MonitorThread(hzThreadGroup);
         this.executionService = executionService;
-        monitorThread.start();
         this.backupTimeoutMillis = props.getMillis(GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS);
         this.slowInvocationThresholdMs = initSlowInvocationThresholdMs(props);
+        this.monitorThread = new MonitorThread(hzThreadGroup);
 
         metricsRegistry.scanAndRegister(this, "operation");
+
+        monitorThread.start();
     }
 
     private long initSlowInvocationThresholdMs(GroupProperties props) {
@@ -135,7 +136,7 @@ public class InvocationMonitor {
 
         private void sleep() {
             try {
-                Thread.sleep(DELAY_MILLIS);
+                Thread.sleep(SCAN_DELAY_MILLIS);
             } catch (InterruptedException ignore) {
                 // can safely be ignored. If this thread wants to shut down, it will read the shutdown variable.
                 EmptyStatement.ignore(ignore);
