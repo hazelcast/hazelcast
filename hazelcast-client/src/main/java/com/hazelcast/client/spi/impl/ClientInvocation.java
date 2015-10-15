@@ -52,7 +52,6 @@ public class ClientInvocation implements Runnable {
     private final LifecycleService lifecycleService;
     private final ClientInvocationService invocationService;
     private final ClientExecutionService executionService;
-    private final ClientListenerServiceImpl listenerService;
     private final ClientRequest request;
     private final EventHandler handler;
     private final long retryCountLimit;
@@ -71,7 +70,6 @@ public class ClientInvocation implements Runnable {
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = client.getInvocationService();
         this.executionService = client.getClientExecutionService();
-        this.listenerService = (ClientListenerServiceImpl) client.getListenerService();
         this.handler = handler;
         this.request = request;
         this.partitionId = partitionId;
@@ -171,11 +169,7 @@ public class ClientInvocation implements Runnable {
         try {
             invoke();
         } catch (Throwable e) {
-            if (handler != null) {
-                listenerService.registerFailedListener(this);
-            } else {
-                clientInvocationFuture.setResponse(e);
-            }
+            clientInvocationFuture.setResponse(e);
         }
     }
 

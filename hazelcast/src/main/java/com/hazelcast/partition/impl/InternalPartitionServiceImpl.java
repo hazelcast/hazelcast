@@ -40,6 +40,7 @@ import com.hazelcast.partition.InternalPartitionLostEvent;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationInfo;
+import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.PartitionEvent;
 import com.hazelcast.partition.PartitionEventListener;
 import com.hazelcast.partition.PartitionInfo;
@@ -47,7 +48,6 @@ import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.PartitionRuntimeState;
 import com.hazelcast.partition.PartitionServiceProxy;
-import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.partition.membergroup.MemberGroupFactoryFactory;
@@ -985,7 +985,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         if (logger.isFinestEnabled()) {
             logger.finest("Scheduling [" + delayMillis + "ms] sync replica request to -> " + target + "; for partitionId="
-                            + partitionId + ", replicaIndex=" + replicaIndex + ". Reason: [" + reason + "]");
+                    + partitionId + ", replicaIndex=" + replicaIndex + ". Reason: [" + reason + "]");
         }
         replicaSyncScheduler.schedule(delayMillis, partitionId, syncInfo);
     }
@@ -1596,6 +1596,20 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration = eventService.registerListener(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, adapter);
+        return registration.getId();
+    }
+
+    @Override
+    public String addLocalPartitionLostListener(PartitionLostListener listener) {
+        if (listener == null) {
+            throw new NullPointerException("listener can't be null");
+        }
+
+        final PartitionLostListenerAdapter adapter = new PartitionLostListenerAdapter(listener);
+
+        EventService eventService = nodeEngine.getEventService();
+        EventRegistration registration =
+                eventService.registerLocalListener(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, adapter);
         return registration.getId();
     }
 

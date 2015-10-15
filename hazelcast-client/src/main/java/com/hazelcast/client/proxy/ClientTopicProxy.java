@@ -79,7 +79,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
             }
         };
-        return listen(request, getKey(), handler);
+        return listen(request, handler);
     }
 
     @Override

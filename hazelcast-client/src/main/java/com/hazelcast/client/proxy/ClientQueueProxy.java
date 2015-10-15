@@ -87,7 +87,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
 
             }
         };
-        return listen(request, getPartitionKey(), eventHandler);
+        return listen(request, eventHandler);
     }
 
     public boolean removeItemListener(String registrationId) {

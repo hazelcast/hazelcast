@@ -16,12 +16,11 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.Data;
@@ -41,28 +40,12 @@ public abstract class ClientProxy implements DistributedObject {
         this.name = name;
     }
 
-    protected final String listen(ClientMessage registrationRequest, Object partitionKey,
-                                  EventHandler handler, ClientMessageDecoder responseDecoder) {
-        return context.getListenerService().startListening(registrationRequest, partitionKey, handler, responseDecoder);
+    protected final String listen(ListenerMessageCodec codec, EventHandler handler) {
+        return context.getListenerService().startListening(codec, handler);
     }
 
-    protected final String listen(ClientMessage registrationRequest, EventHandler handler,
-                                  ClientMessageDecoder responseDecoder) {
-        return context.getListenerService().startListening(registrationRequest, null, handler, responseDecoder);
-    }
-
-    protected final String listenOnPartition(ClientMessage registrationRequest, int partitionId,
-                                             EventHandler handler, ClientMessageDecoder responseDecoder) {
-        return context.getListenerService().startListeningOnPartition(registrationRequest, partitionId, handler, responseDecoder);
-    }
-
-    protected final boolean stopListening(String registrationId, ListenerRemoveCodec listenerRemoveCodec) {
-        return context.getListenerService().stopListening(registrationId, listenerRemoveCodec);
-    }
-
-    protected final boolean stopListeningOnPartition(String registrationId, ListenerRemoveCodec listenerRemoveCodec,
-                                                     int partitionId) {
-        return context.getListenerService().stopListeningOnPartition(registrationId, listenerRemoveCodec, partitionId);
+    protected final boolean stopListening(String registrationId) {
+        return context.getListenerService().stopListening(registrationId);
     }
 
     protected final ClientContext getContext() {

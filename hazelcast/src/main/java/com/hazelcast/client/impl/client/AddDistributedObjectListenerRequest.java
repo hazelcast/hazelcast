@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.client;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.spi.ProxyService;
@@ -25,10 +26,10 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import java.security.Permission;
 import java.util.concurrent.Callable;
 
-public class DistributedObjectListenerRequest extends CallableClientRequest implements RetryableRequest
-        , DistributedObjectListener {
+public class AddDistributedObjectListenerRequest extends BaseClientAddListenerRequest
+        implements DistributedObjectListener {
 
-    public DistributedObjectListenerRequest() {
+    public AddDistributedObjectListenerRequest() {
     }
 
     @Override
@@ -70,11 +71,27 @@ public class DistributedObjectListenerRequest extends CallableClientRequest impl
     }
 
     private void send(DistributedObjectEvent event) {
-        if (endpoint.isAlive()) {
-            PortableDistributedObjectEvent portableEvent = new PortableDistributedObjectEvent(
-                    event.getEventType(), event.getDistributedObject().getName(), event.getServiceName());
-            endpoint.sendEvent(null, portableEvent, getCallId());
+        if (!shouldSendEvent()) {
+            return;
         }
+
+        PortableDistributedObjectEvent portableEvent = new PortableDistributedObjectEvent(
+                event.getEventType(), event.getDistributedObject().getName(), event.getServiceName());
+        endpoint.sendEvent(null, portableEvent, getCallId());
+    }
+
+    private boolean shouldSendEvent() {
+        if (!endpoint.isAlive()) {
+            return false;
+        }
+
+        ClusterService clusterService = clientEngine.getClusterService();
+        boolean currentMemberIsMaster = clusterService.getMasterAddress().equals(clientEngine.getThisAddress());
+        if (localOnly && currentMemberIsMaster) {
+            //if client registered localOnly, only master is allowed to send request
+            return false;
+        }
+        return true;
     }
 
     @Override

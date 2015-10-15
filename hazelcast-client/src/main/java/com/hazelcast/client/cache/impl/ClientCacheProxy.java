@@ -329,9 +329,9 @@ public class ClientCacheProxy<K, V>
         final CacheEventListenerAdaptor<K, V> adaptor =
                 new CacheEventListenerAdaptor<K, V>(this, cacheEntryListenerConfiguration,
                                                  clientContext.getSerializationService());
-        final EventHandler<Object> handler = createHandler(adaptor);
-        final CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(nameWithPrefix);
-        final String regId = clientContext.getListenerService().startListening(registrationRequest, null, handler);
+        EventHandler<Object> handler = createHandler(adaptor);
+        CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(nameWithPrefix);
+        final String regId = clientContext.getListenerService().startListening(registrationRequest, handler);
         if (regId != null) {
             cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
             addListenerLocally(regId, cacheEntryListenerConfiguration);
@@ -386,10 +386,9 @@ public class ClientCacheProxy<K, V>
         if (listener == null) {
             throw new NullPointerException("CachePartitionLostListener can't be null");
         }
-        final EventHandler<PortableCachePartitionLostEvent> handler = new ClientCachePartitionLostEventHandler(listener);
-        final CacheAddPartitionLostListenerRequest registrationRequest =
-                new CacheAddPartitionLostListenerRequest(name);
-        return clientContext.getListenerService().startListening(registrationRequest, null, handler);
+        EventHandler<PortableCachePartitionLostEvent> handler = new ClientCachePartitionLostEventHandler(listener);
+        CacheAddPartitionLostListenerRequest registrationRequest = new CacheAddPartitionLostListenerRequest(name);
+        return clientContext.getListenerService().startListening(registrationRequest, handler);
     }
 
     @Override

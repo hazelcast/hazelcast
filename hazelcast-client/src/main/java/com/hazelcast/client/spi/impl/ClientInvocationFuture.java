@@ -22,10 +22,10 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
@@ -49,8 +49,6 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
 
     private final ClientExecutionServiceImpl executionService;
 
-    private final ClientListenerServiceImpl clientListenerService;
-
     private final SerializationService serializationService;
 
     private final EventHandler handler;
@@ -68,7 +66,6 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
     public ClientInvocationFuture(ClientInvocation invocation, HazelcastClientInstanceImpl client,
                                   ClientRequest request, EventHandler handler) {
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
-        this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         this.serializationService = client.getSerializationService();
         this.request = request;
         this.handler = handler;
@@ -134,7 +131,7 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
 
     void setResponse(Object response) {
         synchronized (this) {
-            if (this.response != null && handler == null) {
+            if (this.response != null) {
                 LOGGER.warning("The Future.set() method can only be called once. Request: " + request
                         + ", current response: " + this.response + ", new response: " + response);
                 return;
@@ -144,12 +141,6 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
                 handler.onListenerRegister();
             }
 
-            if (this.response != null && !(response instanceof Throwable)) {
-                String uuid = serializationService.toObject(this.response);
-                String alias = serializationService.toObject(response);
-                clientListenerService.reRegisterListener(uuid, alias, request.getCallId());
-                return;
-            }
             this.response = response;
 
             this.notifyAll();
@@ -180,7 +171,7 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
                 resp = afterDeserializeFunction.apply(resp);
             }
 
-            if (resp == null)  {
+            if (resp == null) {
                 this.response = NULL_RESPONSE;
                 return null;
             }
@@ -237,10 +228,6 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
 
     public ClientRequest getRequest() {
         return request;
-    }
-
-    public EventHandler getHandler() {
-        return handler;
     }
 
     private void runAsynchronous(final ExecutionCallback callback, Executor executor, final boolean deserialized) {

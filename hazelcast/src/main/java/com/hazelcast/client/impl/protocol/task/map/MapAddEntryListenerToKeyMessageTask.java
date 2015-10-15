@@ -62,6 +62,11 @@ public class MapAddEntryListenerToKeyMessageTask
     }
 
     @Override
+    protected boolean isLocalOnly() {
+        return parameters.localOnly;
+    }
+
+    @Override
     public Object[] getParameters() {
         return new Object[]{null, parameters.key, parameters.includeValue};
     }

@@ -17,10 +17,9 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
-import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientMembershipListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.client.ClientInitialMembershipEvent;
@@ -43,7 +42,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-class ClientMembershipListener extends ClientMembershipListenerCodec.AbstractEventHandler
+class ClientMembershipListener extends ClientAddMembershipListenerCodec.AbstractEventHandler
         implements EventHandler<ClientMessage> {
 
     public static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 5;
@@ -132,7 +131,7 @@ class ClientMembershipListener extends ClientMembershipListenerCodec.AbstractEve
     void listenMembershipEvents(Address ownerConnectionAddress) {
         initialListFetchedLatch = new CountDownLatch(1);
         try {
-            ClientMessage clientMessage = ClientMembershipListenerCodec.encodeRequest();
+            ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeRequest(false);
 
             Connection connection = connectionManager.getConnection(ownerConnectionAddress);
             if (connection == null) {
@@ -140,13 +139,8 @@ class ClientMembershipListener extends ClientMembershipListenerCodec.AbstractEve
                         "Can not load initial members list because owner connection is null. " + "Address "
                                 + ownerConnectionAddress);
             }
-            ClientInvocation invocation = new ClientListenerInvocation(client, this, clientMessage, connection,
-                    new ClientMessageDecoder() {
-                        @Override
-                        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                            return (T) ClientMembershipListenerCodec.decodeResponse(clientMessage).response;
-                        }
-                    });
+            ClientInvocation invocation = new ClientListenerInvocation(client, this, clientMessage, connection
+            );
             invocation.invoke().get();
             waitInitialMemberListFetched();
 

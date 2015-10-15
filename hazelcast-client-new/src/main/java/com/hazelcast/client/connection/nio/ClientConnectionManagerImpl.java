@@ -30,8 +30,8 @@ import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
+import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
@@ -293,11 +293,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public void handleClientMessage(ClientMessage message, Connection connection) {
-        final ClientConnection conn = (ClientConnection) connection;
+        ClientConnection conn = (ClientConnection) connection;
         ClientInvocationService invocationService = client.getInvocationService();
         conn.incrementPacketCount();
         if (message.isFlagSet(ClientMessage.LISTENER_EVENT_FLAG)) {
-            final ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
+            ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
             listenerService.handleClientMessage(message);
         } else {
             invocationService.handleClientMessage(message, connection);

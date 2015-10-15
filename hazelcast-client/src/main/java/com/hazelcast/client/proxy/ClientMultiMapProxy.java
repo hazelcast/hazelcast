@@ -229,7 +229,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         final Data keyData = toData(key);
         AddEntryListenerRequest request = new AddEntryListenerRequest(name, keyData, includeValue);
         EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
-        return listen(request, keyData, handler);
+        return listen(request, handler);
     }
 
     public void lock(K key) {

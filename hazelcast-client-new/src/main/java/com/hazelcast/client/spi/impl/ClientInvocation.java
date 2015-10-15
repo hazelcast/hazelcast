@@ -154,12 +154,8 @@ public class ClientInvocation implements Runnable {
         try {
             invoke();
         } catch (Throwable e) {
-            onException(e);
+            clientInvocationFuture.shouldSetResponse(e);
         }
-    }
-
-    protected void onException(Throwable e) {
-        clientInvocationFuture.setResponse(e);
     }
 
     public void notify(ClientMessage clientMessage) {

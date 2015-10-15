@@ -51,12 +51,19 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         String name = getDistributedObjectName();
         EventFilter eventFilter = getEventFilter();
-        String registrationId = mapServiceContext.addEventListener(listener, eventFilter, name);
+        String registrationId;
+        if(isLocalOnly()){
+            registrationId = mapServiceContext.addLocalEventListener(listener, eventFilter, name);
+        } else {
+            registrationId = mapServiceContext.addEventListener(listener, eventFilter, name);
+        }
         endpoint.addListenerDestroyAction(MapService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
 
     protected abstract EventFilter getEventFilter();
+
+    protected abstract boolean isLocalOnly();
 
     @Override
     public String getServiceName() {

@@ -54,6 +54,7 @@ public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerReque
 
     @Override
     public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeUTF("name", name);
         writer.writeBoolean("i", includeValue);
         writer.writeInt("lf", listenerFlags);
@@ -74,11 +75,11 @@ public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerReque
                 out.writeData(key);
             }
         }
-        super.write(writer);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         name = reader.readUTF("name");
         includeValue = reader.readBoolean("i");
         listenerFlags = reader.readInt("lf");
@@ -94,7 +95,6 @@ public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerReque
             final ObjectDataInput in = reader.getRawDataInput();
             key = in.readData();
         }
-        super.read(reader);
     }
 
     @Override

@@ -16,10 +16,8 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ListAddListenerCodec;
-import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueAddAllCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueAddListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueClearCodec;
@@ -42,7 +40,7 @@ import com.hazelcast.client.impl.protocol.codec.QueueSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueTakeCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.collection.impl.queue.QueueIterator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IQueue;
@@ -71,16 +69,28 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
     @Override
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
-        ClientMessage request = QueueAddListenerCodec.encodeRequest(name, includeValue);
-
         EventHandler<ClientMessage> eventHandler = new ItemEventHandler(includeValue, listener);
-        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+        return listen(new ListenerMessageCodec() {
             @Override
-            public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                return (T) MapAddEntryListenerWithPredicateCodec.decodeResponse(clientMessage).response;
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return QueueAddListenerCodec.encodeRequest(name, includeValue, localOnly);
             }
-        };
-        return listen(request, getPartitionKey(), eventHandler, responseDecoder);
+
+            @Override
+            public String decodeAddResponse(ClientMessage clientMessage) {
+                return QueueAddListenerCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+                return QueueRemoveListenerCodec.encodeRequest(name, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+                return QueueRemoveListenerCodec.decodeResponse(clientMessage).response;
+            }
+        }, eventHandler);
     }
 
     private class ItemEventHandler extends ListAddListenerCodec.AbstractEventHandler
@@ -121,17 +131,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     public boolean removeItemListener(String registrationId) {
-        return stopListening(registrationId, new ListenerRemoveCodec() {
-            @Override
-            public ClientMessage encodeRequest(String realRegistrationId) {
-                return QueueRemoveListenerCodec.encodeRequest(name, realRegistrationId);
-            }
-
-            @Override
-            public boolean decodeResponse(ClientMessage clientMessage) {
-                return QueueRemoveListenerCodec.decodeResponse(clientMessage).response;
-            }
-        });
+        return stopListening(registrationId);
     }
 
     public LocalQueueStats getLocalQueueStats() {

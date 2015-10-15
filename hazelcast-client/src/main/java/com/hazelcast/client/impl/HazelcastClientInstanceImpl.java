@@ -26,10 +26,12 @@ import com.hazelcast.client.spi.impl.AwsAddressProvider;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
+import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.spi.impl.ClientNonSmartInvocationServiceImpl;
+import com.hazelcast.client.spi.impl.listener.ClientNonSmartListenerService;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
+import com.hazelcast.client.spi.impl.listener.ClientSmartListenerService;
 import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.spi.impl.DefaultAddressProvider;
 import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressProvider;
@@ -69,6 +71,7 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
@@ -78,7 +81,6 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -86,9 +88,9 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.discovery.DiscoveryMode;
+import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
-import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.topic.impl.TopicService;
@@ -143,7 +145,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                                        AddressProvider externalAddressProvider) {
         this.config = config;
         final GroupConfig groupConfig = config.getGroupConfig();
-        
+
         if(config.getInstanceName() != null) {
         	instanceName = config.getInstanceName();
         } else {
@@ -274,7 +276,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private ClientListenerServiceImpl initListenerService() {
         int eventQueueCapacity = clientProperties.getEventQueueCapacity().getInteger();
         int eventThreadCount = clientProperties.getEventThreadCount().getInteger();
-        return new ClientListenerServiceImpl(this, eventThreadCount, eventQueueCapacity);
+        final ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        if (networkConfig.isSmartRouting()) {
+            return new ClientSmartListenerService(this, eventThreadCount, eventQueueCapacity);
+
+        } else {
+            return new ClientNonSmartListenerService(this, eventThreadCount, eventQueueCapacity);
+        }
     }
 
     private ClientExecutionServiceImpl initExecutionService() {

@@ -75,7 +75,8 @@ public class QueueAddListenerMessageTask
                 }
             }
         };
-        String registrationId = service.addItemListener(parameters.name, listener, parameters.includeValue);
+        String registrationId =
+                service.addItemListener(parameters.name, listener, parameters.includeValue, parameters.localOnly);
         endpoint.addListenerDestroyAction(QueueService.SERVICE_NAME, parameters.name, registrationId);
         return registrationId;
 

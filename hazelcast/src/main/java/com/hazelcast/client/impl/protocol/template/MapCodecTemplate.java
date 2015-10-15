@@ -347,10 +347,12 @@ public interface MapCodecTemplate {
      * @param includeValue  <tt>true</tt> if <tt>EntryEvent</tt> should
      *                      contain the value.
      * @param listenerFlags flags of enabled listeners.
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string which is used as a key to remove the listener.
      */
     @Request(id = 25, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    Object addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate, boolean includeValue, int listenerFlags);
+    Object addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate,
+                                              boolean includeValue, int listenerFlags, boolean localOnly);
 
     /**
      * Adds an continuous entry listener for this map. Listener will get notified for map add/remove/update/evict events
@@ -361,10 +363,12 @@ public interface MapCodecTemplate {
      * @param includeValue  <tt>true</tt> if <tt>EntryEvent</tt> should
      *                      contain the value.
      * @param listenerFlags flags of enabled listeners.
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string which is used as a key to remove the listener.
      */
     @Request(id = 26, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    Object addEntryListenerWithPredicate(String name, Data predicate, boolean includeValue, int listenerFlags);
+    Object addEntryListenerWithPredicate(String name, Data predicate, boolean includeValue,
+                                         int listenerFlags, boolean localOnly);
 
     /**
      * Adds a MapListener for this map. To receive an event, you should implement a corresponding MapListener
@@ -374,10 +378,11 @@ public interface MapCodecTemplate {
      * @param key           Key for the map entry.
      * @param includeValue  <tt>true</tt> if <tt>EntryEvent</tt> should contain the value.
      * @param listenerFlags flags of enabled listeners.
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string which is used as a key to remove the listener.
      */
     @Request(id = 27, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    Object addEntryListenerToKey(String name, Data key, boolean includeValue, int listenerFlags);
+    Object addEntryListenerToKey(String name, Data key, boolean includeValue, int listenerFlags, boolean localOnly);
 
     /**
      * Adds a MapListener for this map. To receive an event, you should implement a corresponding MapListener
@@ -386,21 +391,22 @@ public interface MapCodecTemplate {
      * @param name          name of map
      * @param includeValue  <tt>true</tt> if <tt>EntryEvent</tt> should contain the value.
      * @param listenerFlags flags of enabled listeners.
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string which is used as a key to remove the listener.
      */
     @Request(id = 28, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    Object addEntryListener(String name, boolean includeValue, int listenerFlags);
+    Object addEntryListener(String name, boolean includeValue, int listenerFlags, boolean localOnly);
 
     /**
      * Adds an entry listener for this map. Listener will get notified for all map add/remove/update/evict events.
      *
      * @param name          name of map
      * @param includeValue  <tt>true</tt> if <tt>EntryEvent</tt> should contain the value.
-     * @param listenerFlags flags of enabled listeners.
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string which is used as a key to remove the listener.
      */
     @Request(id = 29, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    Object addNearCacheEntryListener(String name, boolean includeValue, int listenerFlags);
+    Object addNearCacheEntryListener(String name, boolean includeValue, int listenerFlags, boolean localOnly);
 
     /**
      * Removes the specified entry listener. Returns silently if there is no such listener added before.
@@ -421,11 +427,12 @@ public interface MapCodecTemplate {
      * to design limitations.
      *
      * @param name name of map
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return returns the registration id for the MapPartitionLostListener.
      */
     @Request(id = 31, retryable = true, response = ResponseMessageConst.STRING,
             event = EventMessageConst.EVENT_MAPPARTITIONLOST)
-    Object addPartitionLostListener(String name);
+    Object addPartitionLostListener(String name, boolean localOnly);
 
     /**
      * Removes the specified map partition lost listener. Returns silently if there is no such listener added before.

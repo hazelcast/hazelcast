@@ -116,7 +116,7 @@ public interface ReplicatedMapCodecTemplate {
      * operation is in progress.
      *
      * @param name Name of the ReplicatedMap
-     * @param map Mappings to be stored in this map
+     * @param entries entries to be stored in this map
      */
     @Request(id = 8, retryable = false, response = ResponseMessageConst.VOID)
     void putAll(String name, List<Map.Entry<Data,Data>> entries);
@@ -139,11 +139,12 @@ public interface ReplicatedMapCodecTemplate {
      * @param name Name of the Replicated Map
      * @param key Key with which the specified value is to be associated.
      * @param predicate The predicate for filtering entries
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string  which is used as a key to remove the listener.
      */
     @Request(id = 10, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
-    Object addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate);
+    Object addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate, boolean localOnly);
 
     /**
      * Adds an continuous entry listener for this map. The listener will be notified for map add/remove/update/evict
@@ -151,11 +152,12 @@ public interface ReplicatedMapCodecTemplate {
      *
      * @param name Name of the Replicated Map
      * @param predicate The predicate for filtering entries
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string  which is used as a key to remove the listener.
      */
     @Request(id = 11, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
-    Object addEntryListenerWithPredicate(String name, Data predicate);
+    Object addEntryListenerWithPredicate(String name, Data predicate, boolean localOnly);
 
     /**
      * Adds the specified entry listener for the specified key. The listener will be notified for all
@@ -163,21 +165,23 @@ public interface ReplicatedMapCodecTemplate {
      *
      * @param name Name of the Replicated Map
      * @param key Key with which the specified value is to be associated.
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string  which is used as a key to remove the listener.
      */
     @Request(id = 12, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
-    Object addEntryListenerToKey(String name, Data key);
+    Object addEntryListenerToKey(String name, Data key, boolean localOnly);
 
     /**
      * Adds an entry listener for this map. The listener will be notified for all map add/remove/update/evict events.
      *
      * @param name Name of the ReplicatedMap
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string  which is used as a key to remove the listener.
      */
     @Request(id = 13, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
-    Object addEntryListener(String name);
+    Object addEntryListener(String name, boolean localOnly);
 
     /**
      * Removes the specified entry listener. Returns silently if there was no such listener added before.
@@ -223,10 +227,11 @@ public interface ReplicatedMapCodecTemplate {
      *
      * @param name Name of the ReplicatedMap
      * @param includeValue True if EntryEvent should contain the value,false otherwise
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string  which is used as a key to remove the listener.
      */
     @Request(id = 18, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    Object addNearCacheEntryListener(String name, boolean includeValue);
+    Object addNearCacheEntryListener(String name, boolean includeValue, boolean localOnly);
 
 }
 

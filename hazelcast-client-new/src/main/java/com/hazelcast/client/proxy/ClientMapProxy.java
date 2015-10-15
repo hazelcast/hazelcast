@@ -86,7 +86,7 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
@@ -624,189 +624,199 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     }
 
     @Override
-    public String addEntryListener(MapListener listener, boolean includeValue) {
+    public String addEntryListener(MapListener listener, final boolean includeValue) {
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
-
-        ClientMessage request = MapAddEntryListenerCodec.encodeRequest(name, includeValue, listenerFlags);
-        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor, includeValue);
-        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
-            @Override
-            public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                return (T) MapAddEntryListenerCodec.decodeResponse(clientMessage).response;
-            }
-        };
-        return listen(request, handler, responseDecoder);
+        return addEntryListenerInternal(listenerAdaptor, includeValue);
     }
 
     @Override
-    public String addEntryListener(EntryListener listener, boolean includeValue) {
+    public String addEntryListener(EntryListener listener, final boolean includeValue) {
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
-
-        ClientMessage request = MapAddEntryListenerCodec.encodeRequest(name, includeValue, listenerFlags);
-        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor, includeValue);
-        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
-            @Override
-            public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                return (T) MapAddEntryListenerCodec.decodeResponse(clientMessage).response;
-            }
-        };
-        return listen(request, handler, responseDecoder);
+        return addEntryListenerInternal(listenerAdaptor, includeValue);
     }
 
-    @Override
-    public boolean removeEntryListener(String registrationId) {
-        return stopListening(registrationId, new ListenerRemoveCodec() {
+    private String addEntryListenerInternal(ListenerAdapter listenerAdaptor, final boolean includeValue) {
+        final int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
+        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor, includeValue);
+        return listen(new ListenerMessageCodec() {
             @Override
-            public ClientMessage encodeRequest(String realRegistrationId) {
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return MapAddEntryListenerCodec.encodeRequest(name, includeValue, listenerFlags, localOnly);
+            }
+
+            @Override
+            public String decodeAddResponse(ClientMessage clientMessage) {
+                return MapAddEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
                 return MapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
             @Override
-            public boolean decodeResponse(ClientMessage clientMessage) {
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
                 return MapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
             }
-        });
+        }, handler);
+    }
+
+    @Override
+    public boolean removeEntryListener(String registrationId) {
+        return stopListening(registrationId);
     }
 
     @Override
     public String addPartitionLostListener(MapPartitionLostListener listener) {
-        ClientMessage request = MapAddPartitionLostListenerCodec.encodeRequest(name);
         final EventHandler<ClientMessage> handler = new ClientMapPartitionLostEventHandler(listener);
-        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+        return listen(new ListenerMessageCodec() {
             @Override
-            public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                return (T) MapAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return MapAddPartitionLostListenerCodec.encodeRequest(name, localOnly);
             }
-        };
-        return listen(request, handler, responseDecoder);
-    }
 
-    @Override
-    public boolean removePartitionLostListener(String registrationId) {
-        return stopListening(registrationId, new ListenerRemoveCodec() {
             @Override
-            public ClientMessage encodeRequest(String realRegistrationId) {
+            public String decodeAddResponse(ClientMessage clientMessage) {
+                return MapAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
                 return MapRemovePartitionLostListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
             @Override
-            public boolean decodeResponse(ClientMessage clientMessage) {
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
                 return MapRemovePartitionLostListenerCodec.decodeResponse(clientMessage).response;
             }
-        });
+        }, handler);
     }
 
     @Override
-    public String addEntryListener(MapListener listener, K key, boolean includeValue) {
-        ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
+    public boolean removePartitionLostListener(String registrationId) {
+        return stopListening(registrationId);
+    }
 
-        Data keyData = toData(key);
-        ClientMessage request = MapAddEntryListenerToKeyCodec.encodeRequest(name, keyData, includeValue, listenerFlags);
-        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor, includeValue);
-        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
-            @Override
-            public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                return (T) MapAddEntryListenerToKeyCodec.decodeResponse(clientMessage).response;
-            }
-        };
-        return listen(request, keyData, handler, responseDecoder);
+    @Override
+    public String addEntryListener(MapListener listener, K key, final boolean includeValue) {
+        ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
+        return addEntryListenerInternal(listenerAdaptor, key, includeValue);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, K key, boolean includeValue) {
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
+        return addEntryListenerInternal(listenerAdaptor, key, includeValue);
+    }
 
+    private String addEntryListenerInternal(ListenerAdapter listenerAdaptor, K key, final boolean includeValue) {
+        final int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
         final Data keyData = toData(key);
-        ClientMessage request = MapAddEntryListenerToKeyCodec.encodeRequest(name, keyData, includeValue, listenerFlags);
         EventHandler<ClientMessage> handler = createHandler(listenerAdaptor, includeValue);
-        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+        return listen(new ListenerMessageCodec() {
             @Override
-            public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                return (T) MapAddEntryListenerToKeyCodec.decodeResponse(clientMessage).response;
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return MapAddEntryListenerToKeyCodec.encodeRequest(name, keyData, includeValue, listenerFlags, localOnly);
             }
-        };
-        return listen(request, keyData, handler, responseDecoder);
+
+            @Override
+            public String decodeAddResponse(ClientMessage clientMessage) {
+                return MapAddEntryListenerToKeyCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+                return MapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+                return MapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+        }, handler);
     }
 
     @Override
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
-
-        final Data keyData = toData(key);
-        final Data predicateData = toData(predicate);
-        ClientMessage request =
-                MapAddEntryListenerToKeyWithPredicateCodec.encodeRequest(name, keyData, predicateData, includeValue, listenerFlags);
-        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor, includeValue);
-        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
-            @Override
-            public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                return (T) MapAddEntryListenerToKeyWithPredicateCodec.decodeResponse(clientMessage).response;
-            }
-        };
-        return listen(request, keyData, handler, responseDecoder);
+        return addEntryListenerInternal(listenerAdaptor, predicate, key, includeValue);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
+        return addEntryListenerInternal(listenerAdaptor, predicate, key, includeValue);
+    }
 
+    private String addEntryListenerInternal(ListenerAdapter listenerAdaptor, Predicate<K, V> predicate, K key
+            , final boolean includeValue) {
+        final int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
         final Data keyData = toData(key);
         final Data predicateData = toData(predicate);
-        ClientMessage request =
-                MapAddEntryListenerToKeyWithPredicateCodec.encodeRequest(name, keyData, predicateData, includeValue, listenerFlags);
-
         EventHandler<ClientMessage> handler = createHandler(listenerAdaptor, includeValue);
-        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+        return listen(new ListenerMessageCodec() {
             @Override
-            public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                return (T) MapAddEntryListenerToKeyWithPredicateCodec.decodeResponse(clientMessage).response;
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return MapAddEntryListenerToKeyWithPredicateCodec.encodeRequest(name, keyData, predicateData,
+                        includeValue, listenerFlags, localOnly);
             }
-        };
-        return listen(request, keyData, handler, responseDecoder);
+
+            @Override
+            public String decodeAddResponse(ClientMessage clientMessage) {
+                return MapAddEntryListenerToKeyWithPredicateCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+                return MapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+                return MapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+        }, handler);
     }
 
     @Override
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
-
-        final Data predicateData = toData(predicate);
-        ClientMessage request =
-                MapAddEntryListenerWithPredicateCodec.encodeRequest(name, predicateData, includeValue, listenerFlags);
-
-        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor, includeValue);
-        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
-            @Override
-            public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                return (T) MapAddEntryListenerWithPredicateCodec.decodeResponse(clientMessage).response;
-            }
-        };
-        return listen(request, null, handler, responseDecoder);
+        return addEntryListenerInternal(listenerAdaptor, predicate, includeValue);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue) {
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
+        return addEntryListenerInternal(listenerAdaptor, predicate, includeValue);
+    }
 
+    private String addEntryListenerInternal(ListenerAdapter listenerAdaptor, Predicate<K, V> predicate,
+                                            final boolean includeValue) {
+        final int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
         final Data predicateData = toData(predicate);
-        ClientMessage request =
-                MapAddEntryListenerWithPredicateCodec.encodeRequest(name, predicateData, includeValue, listenerFlags);
-
         EventHandler<ClientMessage> handler = createHandler(listenerAdaptor, includeValue);
-        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+        return listen(new ListenerMessageCodec() {
             @Override
-            public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                return (T) MapAddEntryListenerWithPredicateCodec.decodeResponse(clientMessage).response;
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return MapAddEntryListenerWithPredicateCodec.encodeRequest(name, predicateData,
+                        includeValue, listenerFlags, localOnly);
             }
-        };
-        return listen(request, null, handler, responseDecoder);
+
+            @Override
+            public String decodeAddResponse(ClientMessage clientMessage) {
+                return MapAddEntryListenerWithPredicateCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+                return MapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+                return MapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+        }, handler);
     }
 
     @Override
@@ -1384,15 +1394,30 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     private void addNearCacheInvalidateListener() {
         try {
-            ClientMessage request = MapAddNearCacheEntryListenerCodec.encodeRequest(name, false, ALL_LISTENER_FLAGS);
             EventHandler handler = new ClientMapAddNearCacheEventHandler();
-            String registrationId = getContext().getListenerService().startListening(request, null, handler,
-                    new ClientMessageDecoder() {
-                        @Override
-                        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                            return (T) MapAddNearCacheEntryListenerCodec.decodeResponse(clientMessage).response;
-                        }
-                    });
+            String registrationId = listen(new ListenerMessageCodec() {
+                @Override
+                public ClientMessage encodeAddRequest(boolean localOnly) {
+                    return MapAddNearCacheEntryListenerCodec.encodeRequest(name, false,
+                            ALL_LISTENER_FLAGS, localOnly);
+                }
+
+                @Override
+                public String decodeAddResponse(ClientMessage clientMessage) {
+                    return MapAddNearCacheEntryListenerCodec.decodeResponse(clientMessage).response;
+                }
+
+                @Override
+                public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+                    return MapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
+                }
+
+                @Override
+                public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+                    return MapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+                }
+            }, handler);
+
             nearCache.setId(registrationId);
         } catch (Exception e) {
             Logger.getLogger(ClientHeapNearCache.class).severe(
@@ -1403,20 +1428,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     private void removeNearCacheInvalidationListener() {
         if (nearCache != null && nearCache.getId() != null) {
             String registrationId = nearCache.getId();
-
             ClientListenerService listenerService = getContext().getListenerService();
-
-            listenerService.stopListening(registrationId, new ListenerRemoveCodec() {
-                @Override
-                public ClientMessage encodeRequest(String realRegistrationId) {
-                    return MapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
-                }
-
-                @Override
-                public boolean decodeResponse(ClientMessage clientMessage) {
-                    return MapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
-                }
-            });
+            listenerService.stopListening(registrationId);
         }
     }
 

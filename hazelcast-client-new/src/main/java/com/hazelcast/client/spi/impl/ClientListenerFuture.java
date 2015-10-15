@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.EventHandler;
@@ -27,35 +26,25 @@ import com.hazelcast.client.spi.EventHandler;
 public class ClientListenerFuture extends ClientInvocationFuture {
 
     private final EventHandler handler;
-    private final ClientListenerServiceImpl clientListenerService;
-    private final ClientMessageDecoder clientMessageDecoder;
 
     public ClientListenerFuture(ClientInvocation invocation, HazelcastClientInstanceImpl client,
-                                ClientMessage clientMessage, EventHandler handler,
-                                ClientMessageDecoder clientMessageDecoder) {
+                                ClientMessage clientMessage, EventHandler handler) {
         super(invocation, client, clientMessage);
         this.handler = handler;
-        this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
-        this.clientMessageDecoder = clientMessageDecoder;
     }
 
     @Override
     boolean shouldSetResponse(Object response) {
+        if (!super.shouldSetResponse(response)) {
+            return false;
+        }
+
         if (response instanceof Throwable) {
             return true;
         }
 
         handler.onListenerRegister();
 
-        if (this.response != null) {
-            ClientMessage uuidMessage = (ClientMessage) this.response;
-            ClientMessage copyFlyweight = ClientMessage.createForDecode(uuidMessage.buffer(), 0);
-
-            String uuid = clientMessageDecoder.decodeClientMessage((ClientMessage) copyFlyweight);
-            String alias = clientMessageDecoder.decodeClientMessage((ClientMessage) response);
-            clientListenerService.reRegisterListener(uuid, alias, clientMessage.getCorrelationId());
-            return false;
-        }
         return true;
     }
 

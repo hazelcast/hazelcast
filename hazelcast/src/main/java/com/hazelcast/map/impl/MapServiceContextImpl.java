@@ -481,6 +481,14 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public String addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName) {
+        ListenerAdapter listenerAdapter = new InternalMapPartitionLostListenerAdapter(listener);
+        EventFilter filter = new MapPartitionLostEventFilter();
+        EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, mapName, filter, listenerAdapter);
+        return registration.getId();
+    }
+
+    @Override
     public String addEventListener(Object listener, EventFilter eventFilter, String mapName) {
         EventRegistration registration = addListenerInternal(listener, eventFilter, mapName, false);
         return registration.getId();

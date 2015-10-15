@@ -31,6 +31,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
@@ -74,7 +75,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     private Credentials credentials;
     private ClientConnectionManager connectionManager;
-    private ClientListenerServiceImpl clientListenerService;
     private ClientMembershipListener clientMembershipListener;
     private volatile Address ownerConnectionAddress;
     private volatile ClientPrincipal principal;
@@ -96,7 +96,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     protected void init() {
         this.connectionManager = client.getConnectionManager();
-        this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         this.clientMembershipListener = new ClientMembershipListener(client);
         connectionManager.addConnectionListener(this);
         connectionManager.addConnectionHeartbeatListener(this);
@@ -163,7 +162,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     protected void connectToCluster() throws Exception {
         connectToOne();
         clientMembershipListener.listenMembershipEvents(ownerConnectionAddress);
-        clientListenerService.triggerFailedListeners();
     }
 
     private Collection<InetSocketAddress> getSocketAddresses() {

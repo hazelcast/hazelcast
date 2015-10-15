@@ -17,6 +17,7 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
 import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.impl.client.ClientDestroyRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
@@ -43,25 +44,12 @@ public abstract class ClientProxy implements DistributedObject {
         this.objectName = objectName;
     }
 
-    protected final String listen(ClientRequest registrationRequest, Object partitionKey, EventHandler handler) {
-        return context.getListenerService().startListening(registrationRequest, partitionKey, handler);
-    }
-
-    protected final String listen(ClientRequest registrationRequest, EventHandler handler) {
-        return context.getListenerService().startListening(registrationRequest, null, handler);
-    }
-
-    protected final String listenOnPartitionId(ClientRequest registrationRequest, int partitionId, EventHandler handler) {
-        return context.getListenerService().startListeningOnPartition(registrationRequest, partitionId, handler);
+    protected final String listen(BaseClientAddListenerRequest registrationRequest, EventHandler handler) {
+        return context.getListenerService().startListening(registrationRequest, handler);
     }
 
     protected final boolean stopListening(BaseClientRemoveListenerRequest request, String registrationId) {
         return context.getListenerService().stopListening(request, registrationId);
-    }
-
-    protected final boolean stopListeningOnPartition(BaseClientRemoveListenerRequest request, String registrationId,
-                                                     int partitionId) {
-        return context.getListenerService().stopListeningOnPartition(request, registrationId, partitionId);
     }
 
     protected final ClientContext getContext() {

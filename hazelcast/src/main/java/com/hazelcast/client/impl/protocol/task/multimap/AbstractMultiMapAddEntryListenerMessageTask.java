@@ -48,12 +48,14 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
         final String name = getDistributedObjectName();
         Data key = getKey();
         boolean includeValue = shouldIncludeValue();
-        String registrationId = service.addListener(name, listener, key, includeValue, false);
+        String registrationId = service.addListener(name, listener, key, includeValue, isLocalOnly());
         endpoint.addListenerDestroyAction(MultiMapService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
 
     protected abstract boolean shouldIncludeValue();
+
+    protected abstract boolean isLocalOnly();
 
     @Override
     public String getServiceName() {

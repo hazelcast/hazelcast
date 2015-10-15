@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ListAddAllCodec;
 import com.hazelcast.client.impl.protocol.codec.ListAddAllWithIndexCodec;
@@ -43,7 +42,7 @@ import com.hazelcast.client.impl.protocol.codec.ListSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.ListSubCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
@@ -227,30 +226,32 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
 
     @Override
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
-        ClientMessage request = ListAddListenerCodec.encodeRequest(name, includeValue);
-
         EventHandler<ClientMessage> eventHandler = new ItemEventHandler(includeValue, listener);
-        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+        return listen(new ListenerMessageCodec() {
             @Override
-            public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                return (T) ListAddListenerCodec.decodeResponse(clientMessage).response;
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return ListAddListenerCodec.encodeRequest(name, includeValue, localOnly);
             }
-        };
-        return listen(request, getPartitionKey(), eventHandler, responseDecoder);
-    }
 
-    public boolean removeItemListener(String registrationId) {
-        return stopListening(registrationId, new ListenerRemoveCodec() {
             @Override
-            public ClientMessage encodeRequest(String realRegistrationId) {
+            public String decodeAddResponse(ClientMessage clientMessage) {
+                return ListAddListenerCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
                 return ListRemoveListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
             @Override
-            public boolean decodeResponse(ClientMessage clientMessage) {
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
                 return ListRemoveListenerCodec.decodeResponse(clientMessage).response;
             }
-        });
+        }, eventHandler);
+    }
+
+    public boolean removeItemListener(String registrationId) {
+        return stopListening(registrationId);
     }
 
     private Collection<E> getAll() {

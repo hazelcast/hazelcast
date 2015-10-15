@@ -615,7 +615,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         MapAddEntryListenerRequest request
                 = new MapAddEntryListenerRequest(name, keyData, includeValue, predicate, listenerFlags);
         EventHandler<PortableEntryEvent> handler = createHandler(listenerAdaptor, includeValue);
-        return listen(request, keyData, handler);
+        return listen(request, handler);
     }
 
     @Override
@@ -1122,7 +1122,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     private void addNearCacheInvalidateListener() {
         try {
-            ClientRequest request = new MapAddNearCacheEntryListenerRequest(name, false);
+            MapAddNearCacheEntryListenerRequest request = new MapAddNearCacheEntryListenerRequest(name, false);
             EventHandler handler = new EventHandler<PortableEntryEvent>() {
                 @Override
                 public void handle(PortableEntryEvent event) {
@@ -1155,7 +1155,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
                 }
             };
 
-            String registrationId = getContext().getListenerService().startListening(request, null, handler);
+            String registrationId = listen(request, handler);
             nearCache.setId(registrationId);
         } catch (Exception e) {
             Logger.getLogger(ClientHeapNearCache.class).severe(
@@ -1167,7 +1167,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         if (nearCache != null && nearCache.getId() != null) {
             String registrationId = nearCache.getId();
             BaseClientRemoveListenerRequest request = new MapRemoveEntryListenerRequest(name, registrationId);
-            getContext().getListenerService().stopListening(request, registrationId);
+            stopListening(request, registrationId);
         }
     }
 

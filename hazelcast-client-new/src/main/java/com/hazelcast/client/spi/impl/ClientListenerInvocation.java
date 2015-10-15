@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 
@@ -29,51 +29,37 @@ import com.hazelcast.nio.Connection;
 public class ClientListenerInvocation extends ClientInvocation {
 
     private final EventHandler handler;
-    private final ClientListenerServiceImpl listenerService;
 
     public ClientListenerInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
-                                    ClientMessage clientMessage,
-                                    ClientMessageDecoder eventResponseDecoder) {
+                                    ClientMessage clientMessage) {
         super(client, clientMessage, UNASSIGNED_PARTITION, null, null);
         this.handler = handler;
-        this.listenerService = (ClientListenerServiceImpl) client.getListenerService();
-        clientInvocationFuture = new ClientListenerFuture(this, client, clientMessage, handler, eventResponseDecoder);
+        clientInvocationFuture = new ClientListenerFuture(this, client, clientMessage, handler);
     }
 
     public ClientListenerInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
-                                    ClientMessage clientMessage, int partitionId,
-                                    ClientMessageDecoder eventResponseDecoder) {
+                                    ClientMessage clientMessage, int partitionId) {
         super(client, clientMessage, partitionId, null, null);
         this.handler = handler;
-        this.listenerService = (ClientListenerServiceImpl) client.getListenerService();
-        clientInvocationFuture = new ClientListenerFuture(this, client, clientMessage, handler, eventResponseDecoder);
+        clientInvocationFuture = new ClientListenerFuture(this, client, clientMessage, handler);
     }
 
     public ClientListenerInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
-                                    ClientMessage clientMessage, Address address,
-                                    ClientMessageDecoder eventResponseDecoder) {
+                                    ClientMessage clientMessage, Address address) {
         super(client, clientMessage, UNASSIGNED_PARTITION, address, null);
         this.handler = handler;
-        this.listenerService = (ClientListenerServiceImpl) client.getListenerService();
-        clientInvocationFuture = new ClientListenerFuture(this, client, clientMessage, handler, eventResponseDecoder);
+        clientInvocationFuture = new ClientListenerFuture(this, client, clientMessage, handler);
     }
 
     public ClientListenerInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
-                                    ClientMessage clientMessage, Connection connection,
-                                    ClientMessageDecoder eventResponseDecoder) {
+                                    ClientMessage clientMessage, Connection connection) {
         super(client, clientMessage, UNASSIGNED_PARTITION, null, connection);
         this.handler = handler;
-        this.listenerService = (ClientListenerServiceImpl) client.getListenerService();
-        clientInvocationFuture = new ClientListenerFuture(this, client, clientMessage, handler, eventResponseDecoder);
+        clientInvocationFuture = new ClientListenerFuture(this, client, clientMessage, handler);
     }
 
     public EventHandler getHandler() {
         return handler;
-    }
-
-    @Override
-    protected void onException(Throwable e) {
-        listenerService.registerFailedListener(this);
     }
 
     @Override

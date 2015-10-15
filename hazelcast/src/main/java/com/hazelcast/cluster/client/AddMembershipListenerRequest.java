@@ -17,9 +17,9 @@
 package com.hazelcast.cluster.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.client.CallableClientRequest;
+import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
 import com.hazelcast.client.impl.client.ClientPortableHook;
-import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.MemberAttributeEvent;
@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public final class AddMembershipListenerRequest extends CallableClientRequest implements RetryableRequest {
+public final class AddMembershipListenerRequest extends BaseClientAddListenerRequest {
 
     public AddMembershipListenerRequest() {
     }
@@ -84,10 +84,9 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
 
         @Override
         public void memberAdded(MembershipEvent membershipEvent) {
-            if (!endpoint.isAlive()) {
+            if (!shouldSendEvent()) {
                 return;
             }
-
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
             ClientMembershipEvent event = new ClientMembershipEvent(member, MembershipEvent.MEMBER_ADDED);
             endpoint.sendEvent(null, event, getCallId());
@@ -95,7 +94,7 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
 
         @Override
         public void memberRemoved(MembershipEvent membershipEvent) {
-            if (!endpoint.isAlive()) {
+            if (!shouldSendEvent()) {
                 return;
             }
 
@@ -106,7 +105,7 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
 
         @Override
         public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-            if (!endpoint.isAlive()) {
+            if (!shouldSendEvent()) {
                 return;
             }
 
@@ -118,6 +117,20 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
             MemberAttributeChange memberAttributeChange = new MemberAttributeChange(uuid, op, key, value);
             ClientMembershipEvent event = new ClientMembershipEvent(member, memberAttributeChange);
             endpoint.sendEvent(null, event, getCallId());
+        }
+
+        private boolean shouldSendEvent() {
+            if (!endpoint.isAlive()) {
+                return false;
+            }
+
+            ClusterService clusterService = clientEngine.getClusterService();
+            boolean currentMemberIsMaster = clusterService.getMasterAddress().equals(clientEngine.getThisAddress());
+            if (localOnly && currentMemberIsMaster) {
+                //if client registered localOnly, only master is allowed to send request
+                return false;
+            }
+            return true;
         }
     }
 }

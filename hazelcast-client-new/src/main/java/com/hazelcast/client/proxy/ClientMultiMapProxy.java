@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerToKeyCodec;
@@ -41,7 +40,7 @@ import com.hazelcast.client.impl.protocol.codec.MultiMapValueCountCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapValuesCodec;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
@@ -73,7 +72,6 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -187,7 +185,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         MultiMapEntrySetCodec.ResponseParameters resultParameters = MultiMapEntrySetCodec.decodeResponse(response);
 
         Set<Map.Entry<K, V>> entrySet = new HashSet<Map.Entry<K, V>>(resultParameters.entrySet.size());
-        for (Map.Entry<Data, Data> entry:resultParameters.entrySet) {
+        for (Map.Entry<Data, Data> entry : resultParameters.entrySet) {
             K key = toObject(entry.getKey());
             V value = toObject(entry.getValue());
             entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
@@ -253,46 +251,60 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         throw new UnsupportedOperationException("Locality for client is ambiguous");
     }
 
-    public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
+    public String addEntryListener(EntryListener<K, V> listener, final boolean includeValue) {
         isNotNull(listener, "listener");
-        ClientMessage request = MultiMapAddEntryListenerCodec.encodeRequest(name, includeValue);
-
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+        return listen(new ListenerMessageCodec() {
             @Override
-            public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                return (T) MultiMapAddEntryListenerCodec.decodeResponse(clientMessage).response;
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return MultiMapAddEntryListenerCodec.encodeRequest(name, includeValue, localOnly);
             }
-        };
-        return listen(request, handler, responseDecoder);
-    }
 
-    public boolean removeEntryListener(String registrationId) {
-        return stopListening(registrationId, new ListenerRemoveCodec() {
             @Override
-            public ClientMessage encodeRequest(String realRegistrationId) {
+            public String decodeAddResponse(ClientMessage clientMessage) {
+                return MultiMapAddEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
                 return MultiMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
             @Override
-            public boolean decodeResponse(ClientMessage clientMessage) {
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
                 return MultiMapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
             }
-        });
+        }, handler);
     }
 
-    public String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
-        final Data keyData = toData(key);
-        ClientMessage request = MultiMapAddEntryListenerToKeyCodec.encodeRequest(name, keyData, includeValue);
+    public boolean removeEntryListener(String registrationId) {
+        return stopListening(registrationId);
+    }
 
+    public String addEntryListener(EntryListener<K, V> listener, K key, final boolean includeValue) {
+        final Data keyData = toData(key);
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+        return listen(new ListenerMessageCodec() {
             @Override
-            public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                return (T) MultiMapAddEntryListenerToKeyCodec.decodeResponse(clientMessage).response;
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return MultiMapAddEntryListenerToKeyCodec.encodeRequest(name, keyData, includeValue, localOnly);
             }
-        };
-        return listen(request, keyData, handler, responseDecoder);
+
+            @Override
+            public String decodeAddResponse(ClientMessage clientMessage) {
+                return MultiMapAddEntryListenerToKeyCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+                return MultiMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+                return MultiMapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+        }, handler);
     }
 
     public void lock(K key) {

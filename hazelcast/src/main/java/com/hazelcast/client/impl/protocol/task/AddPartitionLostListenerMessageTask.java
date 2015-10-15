@@ -51,7 +51,12 @@ public class AddPartitionLostListenerMessageTask
             }
         };
 
-        final String registrationId = partitionService.addPartitionLostListener(listener);
+        String registrationId;
+        if(parameters.localOnly){
+            registrationId = partitionService.addLocalPartitionLostListener(listener);
+        }else {
+            registrationId = partitionService.addPartitionLostListener(listener);
+        }
         endpoint.addListenerDestroyAction(getServiceName(), PARTITION_LOST_EVENT_TOPIC, registrationId);
         return registrationId;
 

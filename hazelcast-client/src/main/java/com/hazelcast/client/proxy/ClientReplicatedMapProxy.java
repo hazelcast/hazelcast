@@ -17,7 +17,6 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
-import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientProxy;
@@ -55,6 +54,7 @@ import com.hazelcast.replicatedmap.impl.client.ReplicatedMapValueCollection;
 import com.hazelcast.replicatedmap.impl.record.ResultSet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.IterationType;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -195,7 +195,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     public boolean removeEntryListener(String id) {
         final ClientReplicatedMapRemoveEntryListenerRequest request =
                 new ClientReplicatedMapRemoveEntryListenerRequest(getName(), id);
-        return stopListeningOnPartition(request, id, getOrInitTargetPartitionId());
+        return stopListening(request, id);
     }
 
     @Override
@@ -226,7 +226,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key) {
         Data dataKey = toData(key);
-        ClientRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), predicate, dataKey);
+        ClientReplicatedMapAddEntryListenerRequest request =
+                new ClientReplicatedMapAddEntryListenerRequest(getName(), predicate, dataKey);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
         return listen(request, handler);
     }
@@ -305,10 +306,10 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     private void addNearCacheInvalidateListener() {
         try {
-            ClientRequest request = new ClientReplicatedMapAddNearCacheListenerRequest(getName());
+            ClientReplicatedMapAddNearCacheListenerRequest request =
+                    new ClientReplicatedMapAddNearCacheListenerRequest(getName());
             EventHandler handler = new ReplicatedMapNearCacheEventHandler();
-
-            String registrationId = getContext().getListenerService().startListening(request, getName(), handler);
+            String registrationId = listen(request, handler);
             nearCache.setId(registrationId);
         } catch (Exception e) {
             Logger.getLogger(ClientHeapNearCache.class).severe(
@@ -321,7 +322,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             String registrationId = nearCache.getId();
             BaseClientRemoveListenerRequest request =
                     new ClientReplicatedMapRemoveEntryListenerRequest(getName(), registrationId);
-            getContext().getListenerService().stopListeningOnPartition(request, registrationId, getOrInitTargetPartitionId());
+            stopListening(request, registrationId);
         }
     }
 

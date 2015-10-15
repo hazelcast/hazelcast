@@ -18,8 +18,8 @@ package com.hazelcast.collection.impl.collection.client;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.impl.client.CallableClientRequest;
-import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
+import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.collection.CollectionEventFilter;
 import com.hazelcast.collection.impl.collection.CollectionPortableHook;
 import com.hazelcast.collection.impl.list.ListService;
@@ -29,7 +29,6 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.security.permission.SetPermission;
@@ -43,12 +42,10 @@ import java.security.Permission;
 /**
  * this class is used to attach a listener to node for collections
  */
-public class CollectionAddListenerRequest extends CallableClientRequest implements RetryableRequest {
+public class CollectionAddListenerRequest extends BaseClientAddListenerRequest {
 
     private String name;
-
     private boolean includeValue;
-
     private String serviceName;
 
     public CollectionAddListenerRequest() {
@@ -61,14 +58,21 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
 
     @Override
     public Object call() throws Exception {
-        final ClientEndpoint endpoint = getEndpoint();
-        final ClientEngine clientEngine = getClientEngine();
+        ClientEndpoint endpoint = getEndpoint();
+        ClientEngine clientEngine = getClientEngine();
         Data partitionKey = serializationService.toData(name);
         ItemListener listener = createItemListener(endpoint, partitionKey);
-        final EventService eventService = clientEngine.getEventService();
-        final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
-        final EventRegistration registration = eventService.registerListener(getServiceName(), name, filter, listener);
-        final String registrationId = registration.getId();
+        EventService eventService = clientEngine.getEventService();
+        CollectionEventFilter filter = new CollectionEventFilter(includeValue);
+
+        EventRegistration registration;
+        if (localOnly) {
+            registration = eventService.registerLocalListener(getServiceName(), name, filter, listener);
+        } else {
+            registration = eventService.registerListener(getServiceName(), name, filter, listener);
+        }
+
+        String registrationId = registration.getId();
         endpoint.addListenerDestroyAction(getServiceName(), name, registrationId);
         return registrationId;
     }
@@ -124,6 +128,7 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
 
     @Override
     public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeUTF("n", name);
         writer.writeBoolean("i", includeValue);
         writer.writeUTF("s", serviceName);
@@ -131,6 +136,7 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
 
     @Override
     public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         name = reader.readUTF("n");
         includeValue = reader.readBoolean("i");
         serviceName = reader.readUTF("s");
