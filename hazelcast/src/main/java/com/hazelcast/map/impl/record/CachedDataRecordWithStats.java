@@ -26,10 +26,11 @@ class CachedDataRecordWithStats extends DataRecordWithStats {
     private transient volatile Object cachedValue;
 
     public CachedDataRecordWithStats() {
+        super();
     }
 
-    public CachedDataRecordWithStats(Data keyData, Data value) {
-        super(keyData, value);
+    public CachedDataRecordWithStats(Data value) {
+        super(value);
     }
 
     @Override

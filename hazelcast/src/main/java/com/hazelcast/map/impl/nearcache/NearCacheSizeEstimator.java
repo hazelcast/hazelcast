@@ -35,7 +35,7 @@ public class NearCacheSizeEstimator
     }
 
     @Override
-    public long getCost(NearCacheRecord record) {
+    public long calculateSize(NearCacheRecord record) {
         // immediate check nothing to do if record is null
         if (record == null) {
             return 0;

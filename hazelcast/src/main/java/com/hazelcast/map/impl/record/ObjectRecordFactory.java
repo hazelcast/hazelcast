@@ -16,10 +16,9 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 
 public class ObjectRecordFactory implements RecordFactory<Object> {
 
@@ -32,14 +31,9 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
     }
 
     @Override
-    public InMemoryFormat getStorageFormat() {
-        return InMemoryFormat.OBJECT;
-    }
-
-    @Override
-    public Record<Object> newRecord(Data key, Object value) {
+    public Record<Object> newRecord(Object value) {
         Object objectValue = serializationService.toObject(value);
-        return statisticsEnabled ? new ObjectRecordWithStats(key, objectValue) : new ObjectRecord(key, objectValue);
+        return statisticsEnabled ? new ObjectRecordWithStats(objectValue) : new ObjectRecord(objectValue);
     }
 
     @Override

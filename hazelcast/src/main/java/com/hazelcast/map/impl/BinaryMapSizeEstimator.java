@@ -16,16 +16,19 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.nio.serialization.Data;
 
 /**
- * Size estimator for map.
- *
- * @param <T> : An instance of {@link com.hazelcast.map.impl.record.Record}.
+ * Size estimator for maps which have {@link InMemoryFormat#BINARY} memory-format.
  */
-public class MapSizeEstimator<T extends Record> implements SizeEstimator<T> {
+class BinaryMapSizeEstimator implements SizeEstimator {
 
     private volatile long size;
+
+    BinaryMapSizeEstimator() {
+    }
 
     @Override
     public long getSize() {
@@ -39,21 +42,29 @@ public class MapSizeEstimator<T extends Record> implements SizeEstimator<T> {
 
     @Override
     public void reset() {
-        size = 0;
+        size = 0L;
     }
 
     @Override
-    public long getCost(T record) {
-        if (record == null) {
-            return 0L;
+    public long calculateSize(Object object) {
+
+        if (object instanceof Data) {
+            long keyCost = ((Data) object).getHeapCost();
+            // CHM ref cost of key.
+            keyCost += REFERENCE_COST_IN_BYTES;
+            return keyCost;
         }
-        final long cost = record.getCost();
-        if (cost == 0L) {
-            return cost;
+
+        if (object instanceof Record) {
+            long recordCost = ((Record) object).getCost();
+            // CHM ref cost of value.
+            recordCost += REFERENCE_COST_IN_BYTES;
+            // CHM ref costs of other.
+            recordCost += REFERENCE_COST_IN_BYTES;
+            recordCost += REFERENCE_COST_IN_BYTES;
+            return recordCost;
         }
-        final int numberOfIntegers = 4;
-        // entry size in CHM
-        long refSize = numberOfIntegers * ((Integer.SIZE / Byte.SIZE));
-        return refSize + cost;
+
+        return 0L;
     }
 }

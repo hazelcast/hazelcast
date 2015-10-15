@@ -42,6 +42,7 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
+
 /**
  * Contains eviction specific functionality.
  */
@@ -172,7 +173,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     private void initExpirationIterator() {
         if (expirationIterator == null || !expirationIterator.hasNext()) {
-            expirationIterator = records.values().iterator();
+            expirationIterator = storage.values().iterator();
         }
     }
 
@@ -180,14 +181,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         lruAccessSequenceNumber = 0L;
     }
 
-    /**
-     * TODO make checkEvictionPossible fast by carrying threshold logic to partition.
-     * This cleanup adds some latency to write operations.
-     * But it sweeps records much better under high write loads.
-     * <p/>
-     *
-     * @param now now in time.
-     */
     @Override
     public void evictEntries(long now) {
         if (isEvictionEnabled()) {
@@ -286,6 +279,8 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     abstract Object evictInternal(Data key, boolean backup);
+
+    abstract Object evictInternal(Data key, Record removedRecord, boolean backup);
 
     /**
      * Check if record is reachable according to ttl or idle times.
@@ -423,6 +418,13 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         setExpirationTime(record, maxIdleMillis);
 
         markRecordStoreExpirable(record.getTtl());
+    }
+
+    /**
+     * Returns value of removed record.
+     */
+    protected Object deleteRecord(Data key) {
+        return storage.remove(key);
     }
 
     /**

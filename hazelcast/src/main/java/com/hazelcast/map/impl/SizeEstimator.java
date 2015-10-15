@@ -23,11 +23,17 @@ package com.hazelcast.map.impl;
  */
 public interface SizeEstimator<T> {
 
+    /**
+     * Assume compressed object reference is used.
+     */
+    int REFERENCE_COST_IN_BYTES = 4;
+
     long getSize();
 
     void add(long size);
 
-    long getCost(T record);
+    long calculateSize(T object);
 
     void reset();
+
 }

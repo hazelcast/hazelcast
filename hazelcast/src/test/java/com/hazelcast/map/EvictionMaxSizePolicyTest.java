@@ -38,6 +38,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
@@ -217,7 +218,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
                     }
 
                     @Override
-                    public long getCost(Object record) {
+                    public long calculateSize(Object record) {
                         if (record == null) {
                             return 0L;
                         }
@@ -254,6 +255,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
                 return MemoryUnit.MEGABYTES.toBytes(maxMemoryMB);
             }
         };
+
         evictionChecker.setMemoryInfoAccessor(memoryInfoAccessor);
         Evictor evictor = new EvictorImpl(evictionChecker, mapServiceContext);
         mapServiceContext.getMapContainer(map.getName()).setEvictor(evictor);

@@ -16,13 +16,11 @@
 
 package com.hazelcast.query.impl;
 
-import static com.hazelcast.instance.TestUtil.toData;
-import static java.util.Arrays.asList;
-
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.map.impl.record.AbstractRecord;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
@@ -42,19 +40,20 @@ import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.instance.TestUtil.toData;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -87,9 +86,10 @@ public class IndexTest {
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.Istanbul));
         is.saveEntryIndex(new QueryEntry(ss, key, value), null);
         assertNotNull(is.getIndex("favoriteCity"));
-        Record record = recordFactory.newRecord(key, value);
+        Record record = recordFactory.newRecord(value);
+        ((AbstractRecord) record).setKey(key);
         is.removeEntryIndex(key, Records.getValueOrCachedValue(record, ss));
-        assertEquals(0,is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.Istanbul).size());
+        assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.Istanbul).size());
     }
 
     @Test
@@ -163,8 +163,8 @@ public class IndexTest {
         assertEquals(1, is.query(new AndPredicate(new EqualPredicate("d", "1"), new EqualPredicate("bool", false))).size());
     }
 
-    private void clearIndexes(Index ... indexes) {
-        for(Index index: indexes) {
+    private void clearIndexes(Index... indexes) {
+        for (Index index : indexes) {
             index.clear();
         }
     }
@@ -410,7 +410,9 @@ public class IndexTest {
         }
 
         public Record toRecord() {
-            return recordFactory.newRecord(key, attributeValue);
+            Record<Data> record = recordFactory.newRecord(attributeValue);
+            ((AbstractRecord) record).setKey(key);
+            return record;
         }
     }
 

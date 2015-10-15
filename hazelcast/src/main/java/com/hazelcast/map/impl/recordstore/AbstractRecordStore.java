@@ -19,11 +19,11 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.MapSizeEstimator;
 import com.hazelcast.map.impl.SizeEstimator;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
@@ -37,33 +37,27 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateTTLMillis;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTL;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
+
 
 /**
  * Contains record store common parts.
  */
-abstract class AbstractRecordStore implements RecordStore {
+abstract class AbstractRecordStore implements RecordStore<Record> {
 
-    // Concurrency level is 1 since at most one thread can write at a time.
-    protected final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000, 0.75f, 1);
-
+    protected final Storage<Data, Record> storage;
     protected final RecordFactory recordFactory;
-
     protected final String name;
-
     protected final MapContainer mapContainer;
-
     protected final MapServiceContext mapServiceContext;
-
     protected final SerializationService serializationService;
-
     protected final int partitionId;
-
-    private SizeEstimator sizeEstimator;
+    protected final InMemoryFormat inMemoryFormat;
 
     protected AbstractRecordStore(MapContainer mapContainer, int partitionId) {
         this.mapContainer = mapContainer;
@@ -71,8 +65,32 @@ abstract class AbstractRecordStore implements RecordStore {
         this.mapServiceContext = mapContainer.getMapServiceContext();
         this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
         this.name = mapContainer.getName();
-        this.recordFactory = mapContainer.getRecordFactory();
-        this.sizeEstimator = new MapSizeEstimator();
+        this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
+        this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
+        this.storage = createStorage(recordFactory, inMemoryFormat);
+    }
+
+    @Override
+    public Record createRecord(Object value, long ttlMillis, long now) {
+        MapConfig mapConfig = mapContainer.getMapConfig();
+
+        Record record = recordFactory.newRecord(value);
+        record.setLastAccessTime(now);
+        record.setLastUpdateTime(now);
+        record.setCreationTime(now);
+
+        final long ttlMillisFromConfig = calculateTTLMillis(mapConfig);
+        final long ttl = pickTTL(ttlMillis, ttlMillisFromConfig);
+        record.setTtl(ttl);
+
+        final long maxIdleMillis = calculateMaxIdleMillis(mapConfig);
+        setExpirationTime(record, maxIdleMillis);
+        return record;
+    }
+
+    @Override
+    public Storage createStorage(RecordFactory recordFactory, InMemoryFormat memoryFormat) {
+        return new StorageImpl(recordFactory, memoryFormat);
     }
 
     @Override
@@ -87,19 +105,11 @@ abstract class AbstractRecordStore implements RecordStore {
 
     @Override
     public long getHeapCost() {
-        return sizeEstimator.getSize();
+        return storage.getSizeEstimator().getSize();
     }
 
     protected long getNow() {
         return Clock.currentTimeMillis();
-    }
-
-    protected Record createRecord(Data key, Object value, long ttl, long now) {
-        return mapContainer.createRecord(key, value, ttl, now);
-    }
-
-    protected Record createRecord(Data key, Object value, long now) {
-        return mapContainer.createRecord(key, value, DEFAULT_TTL, now);
     }
 
     protected void accessRecord(Record record, long now) {
@@ -112,37 +122,11 @@ abstract class AbstractRecordStore implements RecordStore {
         accessRecord(record, now);
     }
 
-    protected void updateSizeEstimator(long recordSize) {
-        sizeEstimator.add(recordSize);
-    }
-
-    protected long calculateRecordHeapCost(Record record) {
-        return sizeEstimator.getCost(record);
-    }
-
-    /**
-     * Returns total heap cost of collection.
-     *
-     * @param collection size to be calculated.
-     * @return total size of collection.
-     */
-    protected long calculateRecordHeapCost(Collection<Record> collection) {
-        long totalSize = 0L;
-        for (Record record : collection) {
-            totalSize += calculateRecordHeapCost(record);
-        }
-        return totalSize;
-    }
-
-    protected void resetSizeEstimator() {
-        sizeEstimator.reset();
-    }
-
-    protected void updateRecord(Record record, Object value, long now) {
+    protected void updateRecord(Data key, Record record, Object value, long now) {
         accessRecord(record, now);
         record.setLastUpdateTime(now);
         record.onUpdate();
-        recordFactory.setValue(record, value);
+        storage.updateRecordValue(key, record, value);
     }
 
     @Override
@@ -155,37 +139,40 @@ abstract class AbstractRecordStore implements RecordStore {
         final Indexes indexes = mapContainer.getIndexes();
         if (indexes.hasIndex()) {
             Object value = Records.getValueOrCachedValue(record, serializationService);
+            // When using format InMemoryFormat.NATIVE, just copy key & value to heap.
+            if (NATIVE.equals(inMemoryFormat)) {
+                dataKey = toData(dataKey);
+                value = toData(record.getValue());
+                oldValue = toData(oldValue);
+            }
             QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
             indexes.saveEntryIndex(queryableEntry, oldValue);
         }
     }
+
 
     protected void removeIndex(Record record) {
         Indexes indexes = mapContainer.getIndexes();
         if (indexes.hasIndex()) {
             Data key = record.getKey();
             Object value = Records.getValueOrCachedValue(record, serializationService);
+            if (NATIVE.equals(inMemoryFormat)) {
+                key = toData(key);
+                value = toData(value);
+            }
             indexes.removeEntryIndex(key, value);
         }
     }
 
-    /**
-     * Removes indexes by excluding keysToPreserve.
-     *
-     * @param keysToRemove   remove these keys from index.
-     * @param keysToPreserve do not remove these keys.
-     */
-
-    protected void removeIndexByPreservingKeys(Collection<Record> keysToRemove, Set<Data> keysToPreserve) {
+    protected void removeIndex(Collection<Data> keys) {
         Indexes indexes = mapContainer.getIndexes();
-        if (indexes.hasIndex()) {
-            for (Record record : keysToRemove) {
-                Data key = record.getKey();
-                if (!keysToPreserve.contains(key)) {
-                    Object value = Records.getValueOrCachedValue(record, serializationService);
-                    indexes.removeEntryIndex(key, value);
-                }
-            }
+        if (!indexes.hasIndex()) {
+            return;
+        }
+
+        for (Data key : keys) {
+            Record record = storage.get(key);
+            removeIndex(record);
         }
     }
 
@@ -203,38 +190,20 @@ abstract class AbstractRecordStore implements RecordStore {
                 ? RecordStoreLoader.EMPTY_LOADER : new BasicRecordStoreLoader(this);
     }
 
-    protected void clearRecordsMap(Map<Data, Record> excludeRecords) {
-        InMemoryFormat inMemoryFormat = recordFactory.getStorageFormat();
-        switch (inMemoryFormat) {
-            case BINARY:
-            case OBJECT:
-                records.clear();
-                if (excludeRecords != null && !excludeRecords.isEmpty()) {
-                    records.putAll(excludeRecords);
-                }
-                return;
-
-            case NATIVE:
-                Iterator<Record> iter = records.values().iterator();
-                while (iter.hasNext()) {
-                    Record record = iter.next();
-                    if (excludeRecords == null || !excludeRecords.containsKey(record.getKey())) {
-                        record.invalidate();
-                        iter.remove();
-                    }
-                }
-                return;
-
-            default:
-                throw new IllegalArgumentException("Unknown storage format: " + inMemoryFormat);
-        }
-    }
-
     protected Data toData(Object value) {
         return mapServiceContext.toData(value);
     }
 
     public void setSizeEstimator(SizeEstimator sizeEstimator) {
-        this.sizeEstimator = sizeEstimator;
+        this.storage.setSizeEstimator(sizeEstimator);
+    }
+
+    @Override
+    public void dispose() {
+        storage.dispose();
+    }
+
+    public Storage<Data, Record> getStorage() {
+        return storage;
     }
 }

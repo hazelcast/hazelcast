@@ -20,10 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.SizeEstimator;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
@@ -33,12 +33,16 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.hazelcast.config.EvictionPolicy.NONE;
+import static com.hazelcast.config.InMemoryFormat.OBJECT;
 
 /**
  * NearCache.
@@ -92,22 +96,22 @@ public class NearCache {
     // this operation returns the given value in near-cache memory format (data or object)
     public Object put(Data key, Data data) {
         fireTtlCleanup();
-        if (evictionPolicy == EvictionPolicy.NONE && cache.size() >= maxSize) {
+        if (evictionPolicy == NONE && cache.size() >= maxSize) {
             // no more space in near-cache -> return given value in near-cache format
             if (data == null) {
                 return null;
             } else {
-                return inMemoryFormat.equals(InMemoryFormat.OBJECT) ? serializationService.toObject(data) : data;
+                return inMemoryFormat.equals(OBJECT) ? serializationService.toObject(data) : data;
             }
         }
-        if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
+        if (evictionPolicy != NONE && cache.size() >= maxSize) {
             fireEvictCache();
         }
         final Object value;
         if (data == null) {
             value = NULL_OBJECT;
         } else {
-            value = inMemoryFormat.equals(InMemoryFormat.OBJECT) ? serializationService.toObject(data) : data;
+            value = inMemoryFormat.equals(OBJECT) ? serializationService.toObject(data) : data;
         }
         final NearCacheRecord record = new NearCacheRecord(key, value);
         cache.put(key, record);
@@ -142,7 +146,7 @@ public class NearCache {
                 executionService.execute(NEAR_CACHE_EXECUTOR_NAME, new Runnable() {
                     public void run() {
                         try {
-                            TreeSet<NearCacheRecord> records = new TreeSet<NearCacheRecord>(selectedComparator);
+                            Set<NearCacheRecord> records = new TreeSet<NearCacheRecord>(selectedComparator);
                             records.addAll(cache.values());
                             int evictSize = (int) (cache.size() * EVICTION_FACTOR);
                             int i = 0;
@@ -266,7 +270,7 @@ public class NearCache {
     }
 
     private long calculateCost(NearCacheRecord record) {
-        return getNearCacheSizeEstimator().getCost(record);
+        return getNearCacheSizeEstimator().calculateSize(record);
     }
 
     public SizeEstimator getNearCacheSizeEstimator() {
