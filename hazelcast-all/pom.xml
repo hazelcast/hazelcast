@@ -160,6 +160,11 @@
             <artifactId>hazelcast-wm</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-jclouds</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
 </project>
