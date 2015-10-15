@@ -21,6 +21,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
@@ -64,6 +65,7 @@ abstract class AbstractCacheProxyBase<K, V> {
 
     static final int TIMEOUT = 10;
 
+    protected final ILogger logger;
     protected final CacheConfig<K, V> cacheConfig;
     protected final String name;
     protected final String nameWithPrefix;
@@ -84,6 +86,7 @@ abstract class AbstractCacheProxyBase<K, V> {
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;
         this.nodeEngine = nodeEngine;
+        this.logger = nodeEngine.getLogger(getClass());
         this.partitionService = nodeEngine.getPartitionService();
         this.cacheService = cacheService;
         this.serializationService = nodeEngine.getSerializationService();
