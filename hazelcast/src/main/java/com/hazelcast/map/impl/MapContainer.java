@@ -69,7 +69,6 @@ public class MapContainer {
     protected final SerializationService serializationService;
     protected final QueryEntryFactory queryEntryFactory;
     protected final List<MapInterceptor> interceptors;
-
     protected final IFunction<Object, Data> toDataFunction = new IFunction<Object, Data>() {
         @Override
         public Data apply(Object input) {
@@ -101,13 +100,14 @@ public class MapContainer {
         this.recordFactoryConstructor = createRecordFactoryConstructor(serializationService);
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.isOptimizeQueries());
         initWanReplication(nodeEngine);
-        interceptors = new CopyOnWriteArrayList<MapInterceptor>();
-        interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
+        this.interceptors = new CopyOnWriteArrayList<MapInterceptor>();
+        this.interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         this.nearCacheSizeEstimator = createNearCacheSizeEstimator(mapConfig.getNearCacheConfig());
-        mapStoreContext = createMapStoreContext(this);
-        mapStoreContext.start();
-        extractors = new Extractors(mapConfig.getMapAttributeConfigs());
-        indexes = new Indexes(serializationService, extractors);
+        this.mapStoreContext = createMapStoreContext(this);
+        this.mapStoreContext.start();
+        this.extractors = new Extractors(mapConfig.getMapAttributeConfigs());
+        this.indexes = new Indexes(serializationService, extractors);
+        this.evictor = createEvictor(mapServiceContext);
     }
 
     // this method is overridden.
