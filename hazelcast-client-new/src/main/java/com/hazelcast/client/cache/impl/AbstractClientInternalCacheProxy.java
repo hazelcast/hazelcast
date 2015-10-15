@@ -652,7 +652,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
     protected void invalidateNearCache(Data key) {
         if (nearCache != null) {
-            nearCache.invalidate(key);
+            nearCache.remove(key);
         }
     }
 
@@ -875,7 +875,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                 return;
             }
             if (key != null) {
-                nearCache.invalidate(key);
+                nearCache.remove(key);
             } else {
                 nearCache.clear();
             }
@@ -890,12 +890,12 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                     Data key = keysIt.next();
                     String sourceUuid = sourceUuidsIt.next();
                     if (!client.getUuid().equals(sourceUuid)) {
-                        nearCache.invalidate(key);
+                        nearCache.remove(key);
                     }
                 }
             } else {
                 for (Data key : keys) {
-                    nearCache.invalidate(key);
+                    nearCache.remove(key);
                 }
             }
         }

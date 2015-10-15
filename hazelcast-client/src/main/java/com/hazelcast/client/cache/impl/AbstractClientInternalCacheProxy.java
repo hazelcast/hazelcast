@@ -549,7 +549,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
     protected void invalidateNearCache(Data key) {
         if (nearCache != null) {
-            nearCache.invalidate(key);
+            nearCache.remove(key);
         }
     }
 
@@ -765,7 +765,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                         (CacheSingleInvalidationMessage) message;
                 Data key = singleInvalidationMessage.getKey();
                 if (key != null) {
-                    nearCache.invalidate(key);
+                    nearCache.remove(key);
                 } else {
                     nearCache.clear();
                 }
@@ -777,7 +777,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                 if (invalidationMessages != null) {
                     for (CacheSingleInvalidationMessage invalidationMessage : invalidationMessages) {
                         if (!client.getUuid().equals(invalidationMessage.getSourceUuid())) {
-                            nearCache.invalidate(invalidationMessage.getKey());
+                            nearCache.remove(invalidationMessage.getKey());
                         }
                     }
                 }

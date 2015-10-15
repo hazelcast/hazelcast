@@ -121,7 +121,7 @@ public final class ProxyManager {
 
     public void init(ClientConfig config) {
         // register defaults
-        register(MapService.SERVICE_NAME, getServiceProxy(MapService.class));
+        register(MapService.SERVICE_NAME, createServiceProxyFactory(MapService.class));
         register(CacheService.SERVICE_NAME, ClientCacheDistributedObject.class);
         register(QueueService.SERVICE_NAME, ClientQueueProxy.class);
         register(MultiMapService.SERVICE_NAME, ClientMultiMapProxy.class);
@@ -165,9 +165,9 @@ public final class ProxyManager {
         }
     }
 
-    private <T> Class<? extends ClientProxy> getServiceProxy(Class<T> service) {
+    private <T> ClientProxyFactory createServiceProxyFactory(Class<T> service) {
         ClientExtension clientExtension = client.getClientExtension();
-        return clientExtension.getServiceProxy(service);
+        return clientExtension.createServiceProxyFactory(service);
     }
 
     public HazelcastInstance getHazelcastInstance() {

@@ -99,7 +99,6 @@ public abstract class ClientProxy implements DistributedObject {
 
     @Override
     public final void destroy() {
-
         onDestroy();
         ClientDestroyRequest request = new ClientDestroyRequest(objectName, getServiceName());
         context.removeProxy(this);

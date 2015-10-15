@@ -38,7 +38,6 @@ import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 
@@ -183,13 +182,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * @param backup          <code>true</code> if backup, false otherwise.
      */
     protected void flush(Collection<Data> keysToBeFlushed, boolean backup) {
-        long now = Clock.currentTimeMillis();
-
         Iterator<Data> iterator = keysToBeFlushed.iterator();
         while (iterator.hasNext()) {
             Data keyData = iterator.next();
             Record record = storage.get(keyData);
-            mapDataStore.flush(keyData, record.getValue(), now, backup);
+            mapDataStore.flush(keyData, record.getValue(), backup);
         }
     }
 
@@ -501,7 +498,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Object value = null;
         if (record != null) {
             value = record.getValue();
-            mapDataStore.flush(key, value, Clock.currentTimeMillis(), backup);
+            mapDataStore.flush(key, value, backup);
             removeIndex(record);
             value = deleteRecord(key);
             if (!backup) {

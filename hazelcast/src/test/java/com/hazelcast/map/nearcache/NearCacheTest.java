@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.nearcache;
 
+import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -26,7 +27,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.NearCache;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.monitor.NearCacheStats;
@@ -667,7 +667,7 @@ public class NearCacheTest extends HazelcastTestSupport {
                 final MapService mapService = (MapService) mapProxy.getService();
                 final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
                 final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-                final NearCache nearCache = nearCacheProvider.getNearCache(mapName);
+                final NearCache nearCache = nearCacheProvider.getOrCreateNearCache(mapName);
 
                 assertEquals(expectedSize, nearCache.size());
             }
@@ -692,6 +692,6 @@ public class NearCacheTest extends HazelcastTestSupport {
         NodeEngineImpl nodeEngine = TestUtil.getNode(instance).nodeEngine;
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
 
-        return service.getMapServiceContext().getNearCacheProvider().getNearCache(mapName);
+        return service.getMapServiceContext().getNearCacheProvider().getOrCreateNearCache(mapName);
     }
 }

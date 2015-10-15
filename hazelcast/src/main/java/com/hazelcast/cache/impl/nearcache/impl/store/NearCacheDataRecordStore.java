@@ -23,6 +23,8 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 
+import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
+
 public class NearCacheDataRecordStore<K, V>
         extends BaseHeapNearCacheRecordStore<K, V, NearCacheDataRecord> {
 
@@ -79,6 +81,10 @@ public class NearCacheDataRecordStore<K, V>
 
     @Override
     protected V recordToValue(NearCacheDataRecord record) {
+        if (record.getValue() == null) {
+            nearCacheStats.incrementMisses();
+            return (V) NULL_OBJECT;
+        }
         Data data = record.getValue();
         return dataToValue(data);
     }
@@ -114,5 +120,7 @@ public class NearCacheDataRecordStore<K, V>
         }
         return selectedCandidate;
     }
+
+
 
 }

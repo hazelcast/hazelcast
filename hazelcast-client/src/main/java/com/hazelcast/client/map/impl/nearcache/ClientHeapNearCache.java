@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.nearcache;
+package com.hazelcast.client.map.impl.nearcache;
 
+import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.nearcache.NearCacheRecord;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -37,32 +39,38 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Implementation of the {@link com.hazelcast.client.nearcache.ClientNearCache}.
- * <p/>
- * todo: improve javadoc.
+ * Implementation of the {@link NearCache} fo client-side.
  *
  * @param <K>
  */
 public class ClientHeapNearCache<K>
-        implements ClientNearCache<K, Object> {
+        implements NearCache<K, Object> {
 
-    final int maxSize;
-    final long maxIdleMillis;
-    final long timeToLiveMillis;
-    final boolean invalidateOnChange;
-    final EvictionPolicy evictionPolicy;
-    final InMemoryFormat inMemoryFormat;
-    final String mapName;
-    final ClientContext context;
-    final AtomicBoolean canCleanUp;
-    final AtomicBoolean canEvict;
-    final ConcurrentMap<K, NearCacheRecord> cache;
-    final NearCacheStatsImpl stats;
+    /**
+     * Eviction factor
+     */
+    private static final double EVICTION_FACTOR = 0.2;
+
+    /**
+     * TTL Clean up interval
+     */
+    private static final int TTL_CLEANUP_INTERVAL_MILLS = 5000;
+
+    private final int maxSize;
+    private final long maxIdleMillis;
+    private final long timeToLiveMillis;
+    private final boolean invalidateOnChange;
+    private final EvictionPolicy evictionPolicy;
+    private final InMemoryFormat inMemoryFormat;
+    private final String mapName;
+    private final ClientContext context;
+    private final AtomicBoolean canCleanUp;
+    private final AtomicBoolean canEvict;
+    private final ConcurrentMap<K, NearCacheRecord> cache;
+    private final NearCacheStatsImpl stats;
     private final Comparator<NearCacheRecord> selectedComparator;
 
     private volatile long lastCleanup;
-    private volatile String id;
-
 
     public ClientHeapNearCache(String mapName, ClientContext context, NearCacheConfig nearCacheConfig) {
         this.mapName = mapName;
@@ -84,14 +92,7 @@ public class ClientHeapNearCache<K>
         stats = new NearCacheStatsImpl();
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getId() {
-        return id;
-    }
-
+    @Override
     public void put(K key, Object object) {
         fireTtlCleanup();
         if (evictionPolicy == EvictionPolicy.NONE && cache.size() >= maxSize) {
@@ -123,7 +124,7 @@ public class ClientHeapNearCache<K>
                 executionService.executeInternal(new Runnable() {
                     public void run() {
                         try {
-                            TreeSet<NearCacheRecord> records = new TreeSet<NearCacheRecord>(selectedComparator);
+                            Set<NearCacheRecord> records = new TreeSet<NearCacheRecord>(selectedComparator);
                             records.addAll(cache.values());
                             int evictSize = (int) (cache.size() * EVICTION_FACTOR);
                             int i = 0;
@@ -183,6 +184,12 @@ public class ClientHeapNearCache<K>
         }
     }
 
+    @Override
+    public String getName() {
+        return mapName;
+    }
+
+    @Override
     public Object get(K key) {
         fireTtlCleanup();
         NearCacheRecord record = cache.get(key);
@@ -206,14 +213,12 @@ public class ClientHeapNearCache<K>
         }
     }
 
-    public void remove(K key) {
-        cache.remove(key);
+    @Override
+    public boolean remove(K key) {
+        return null != cache.remove(key);
     }
 
-    public void invalidate(K key) {
-        cache.remove(key);
-    }
-
+    @Override
     public NearCacheStatsImpl getNearCacheStats() {
         long ownedEntryCount = 0;
         long ownedEntryMemory = 0;
@@ -226,10 +231,22 @@ public class ClientHeapNearCache<K>
         return stats;
     }
 
+    @Override
+    public Object selectToSave(Object... candidates) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int size() {
+        return cache.size();
+    }
+
+    @Override
     public void clear() {
         cache.clear();
     }
 
+    @Override
     public void destroy() {
         cache.clear();
     }
@@ -239,6 +256,7 @@ public class ClientHeapNearCache<K>
         return invalidateOnChange;
     }
 
+    @Override
     public InMemoryFormat getInMemoryFormat() {
         return inMemoryFormat;
     }

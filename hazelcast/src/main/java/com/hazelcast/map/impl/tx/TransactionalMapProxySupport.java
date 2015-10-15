@@ -46,8 +46,8 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.map.impl.nearcache.NearCache.NULL_OBJECT;
 
 /**
  * Base class contains proxy helper methods for {@link com.hazelcast.map.impl.tx.TransactionalMapProxy}
