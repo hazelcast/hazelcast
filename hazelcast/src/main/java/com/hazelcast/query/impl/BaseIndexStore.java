@@ -16,6 +16,10 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.extractor.MultiResult;
+
+import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -29,11 +33,70 @@ public abstract class BaseIndexStore implements IndexStore {
     protected ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     protected ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
 
-    protected void takeWriteLock() {
+    abstract void newIndexInternal(Comparable newValue, QueryableEntry record);
+    abstract void removeIndexInternal(Comparable oldValue, Data indexKey);
+
+
+    @Override
+    public final void newIndex(Object newValue, QueryableEntry record) {
+        takeWriteLock();
+        try {
+            unwrapAndAddToIndex(newValue, record);
+        } finally {
+            releaseWriteLock();
+        }
+    }
+
+    private void unwrapAndAddToIndex(Object newValue, QueryableEntry record) {
+        if (newValue instanceof MultiResult) {
+            List<Object> results = ((MultiResult) newValue).getResults();
+            for (Object o : results) {
+                newIndexInternal((Comparable) o, record);
+            }
+        } else {
+            newIndexInternal((Comparable) newValue, record);
+        }
+    }
+
+    @Override
+    public final void removeIndex(Object oldValue, Data indexKey) {
+        takeWriteLock();
+        try {
+            unwrapAndRemoveFromIndex(oldValue, indexKey);
+        } finally {
+            releaseWriteLock();
+        }
+    }
+
+    private void unwrapAndRemoveFromIndex(Object oldValue, Data indexKey) {
+        if (oldValue instanceof MultiResult) {
+            List<Object> results = ((MultiResult) oldValue).getResults();
+            for (Object o : results) {
+                removeIndexInternal((Comparable) o, indexKey);
+            }
+        } else {
+            removeIndexInternal((Comparable) oldValue, indexKey);
+        }
+    }
+
+    @Override
+    public final void updateIndex(Object oldValue, Object newValue, QueryableEntry entry) {
+        takeWriteLock();
+        try {
+            Data indexKey = entry.getKeyData();
+            unwrapAndRemoveFromIndex(oldValue, indexKey);
+            unwrapAndAddToIndex(newValue, entry);
+        } finally {
+            releaseWriteLock();
+        }
+    }
+
+
+    void takeWriteLock() {
         writeLock.lock();
     }
 
-    protected void releaseWriteLock() {
+    void releaseWriteLock() {
         writeLock.unlock();
     }
 

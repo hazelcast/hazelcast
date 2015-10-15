@@ -34,52 +34,39 @@ public class UnsortedIndexStore extends BaseIndexStore {
             = new ConcurrentHashMap<Comparable, ConcurrentMap<Data, QueryableEntry>>(1000);
 
     @Override
-    public void newIndex(Object newValue, QueryableEntry record) {
-        takeWriteLock();
-        try {
-            if (newValue instanceof IndexImpl.NullObject) {
-                recordsWithNullValue.put(record.getKeyData(), record);
-            } else {
-                ConcurrentMap<Data, QueryableEntry> records = recordMap.get(newValue);
-                if (records == null) {
-                    records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
-                    recordMap.put((Comparable) newValue, records);
-                }
-                records.put(record.getKeyData(), record);
-            }
-        } finally {
-            releaseWriteLock();
+    void newIndexInternal(Comparable newValue, QueryableEntry record) {
+        if (newValue instanceof IndexImpl.NullObject) {
+            recordsWithNullValue.put(record.getKeyData(), record);
+        } else {
+            mapAttributeToEntry(newValue, record);
         }
     }
 
-    @Override
-    public void updateIndex(Object oldValue, Object newValue, QueryableEntry entry) {
-        takeWriteLock();
-        try {
-            removeIndex(oldValue, entry.getKeyData());
-            newIndex(newValue, entry);
-        } finally {
-            releaseWriteLock();
+    private void mapAttributeToEntry(Comparable attribute, QueryableEntry entry) {
+        ConcurrentMap<Data, QueryableEntry> records = recordMap.get(attribute);
+        if (records == null) {
+            records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
+            recordMap.put(attribute, records);
         }
+        records.put(entry.getKeyData(), entry);
     }
 
     @Override
-    public void removeIndex(Object oldValue, Data indexKey) {
-        takeWriteLock();
-        try {
-            if (oldValue instanceof IndexImpl.NullObject) {
-                recordsWithNullValue.remove(indexKey);
-            } else {
-                ConcurrentMap<Data, QueryableEntry> records = recordMap.get(oldValue);
-                if (records != null) {
-                    records.remove(indexKey);
-                    if (records.size() == 0) {
-                        recordMap.remove(oldValue);
-                    }
-                }
+    void removeIndexInternal(Comparable oldValue, Data indexKey) {
+        if (oldValue instanceof IndexImpl.NullObject) {
+            recordsWithNullValue.remove(indexKey);
+        } else {
+            removeMappingForAttribute(oldValue, indexKey);
+        }
+    }
+
+    private void removeMappingForAttribute(Object attribute, Data indexKey) {
+        ConcurrentMap<Data, QueryableEntry> records = recordMap.get(attribute);
+        if (records != null) {
+            records.remove(indexKey);
+            if (records.size() == 0) {
+                recordMap.remove(attribute);
             }
-        } finally {
-            releaseWriteLock();
         }
     }
 
