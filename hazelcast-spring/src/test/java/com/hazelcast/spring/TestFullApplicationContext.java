@@ -52,6 +52,7 @@ import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
@@ -216,6 +217,7 @@ public class TestFullApplicationContext {
         assertEquals("testWan", wanRef.getName());
         assertEquals("PUT_IF_ABSENT", wanRef.getMergePolicy());
         assertEquals(1,wanRef.getFilters().size());
+        assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
         assertFalse(wanRef.isRepublishingEnabled());
     }
 
@@ -534,6 +536,8 @@ public class TestFullApplicationContext {
         assertEquals("10.2.1.1:5701", targetCfg.getEndpoints().get(0));
         assertEquals("10.2.1.2:5701", targetCfg.getEndpoints().get(1));
         assertEquals(wanReplication, wcfg.getTargetClusterConfigs().get(1).getReplicationImplObject());
+        assertEquals(WanAcknowledgeType.ACK_ON_TRANSMIT, wcfg.getTargetClusterConfigs().get(0).getAcknowledgeType());
+        assertEquals(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE, wcfg.getTargetClusterConfigs().get(1).getAcknowledgeType());
     }
 
     @Test

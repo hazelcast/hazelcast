@@ -452,6 +452,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                                 wanTarget.addEndpoint(addressStr);
                             }
                         }
+                    } else if ("acknowledge-type".equals(targetChildName)) {
+                        String acknowledgeType = getTextContent(targetChild);
+                        wanTarget.setAcknowledgeType(WanAcknowledgeType.valueOf(upperCaseInternal(acknowledgeType)));
                     }
                 }
                 wanReplicationConfig.addTargetClusterConfig(wanTarget);
@@ -1224,7 +1227,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
 
     private void handleWanFilters(Node wanChild, WanReplicationRef wanReplicationRef) {
         for (org.w3c.dom.Node filter : new IterableNodeList(wanChild.getChildNodes())) {
-            if ("filter".equals(cleanNodeName(filter))) {
+            if ("filter-impl".equals(cleanNodeName(filter))) {
                 wanReplicationRef.addFilter(getTextContent(filter));
             }
         }
@@ -1271,6 +1274,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 wanReplicationRef.setMergePolicy(wanChildValue);
             } else if ("republishing-enabled".equals(wanChildName)) {
                 wanReplicationRef.setRepublishingEnabled(checkTrue(wanChildValue));
+            } else if ("filters".equals(wanChildName)) {
+                handleWanFilters(wanChild, wanReplicationRef);
             }
         }
         mapConfig.setWanReplicationRef(wanReplicationRef);

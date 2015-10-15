@@ -109,7 +109,6 @@ class MapServiceContextImpl implements MapServiceContext {
     protected EventService eventService;
     protected MapOperationProvider operationProvider;
 
-
     MapServiceContextImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.partitionContainers = createPartitionContainers();

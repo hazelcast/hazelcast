@@ -761,6 +761,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                                 }
                             }
                             targetClusterConfigBuilder.addPropertyValue("endpoints", addresses);
+                        } else if ("acknowledge-type".equals(childNodeName)) {
+                            targetClusterConfigBuilder
+                                    .addPropertyValue(xmlToJavaName(childNodeName), getTextContent(childNode));
                         }
                     }
                     targetClusters.add(childBeanDefinition);
@@ -1195,9 +1198,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private void handleFilters(Node node, List filters) {
             for (Node child : new IterableNodeList(node.getChildNodes())) {
                 final String nodeName = cleanNodeName(child.getNodeName());
-                if ("filter".equals(nodeName)) {
-                    Node n = child.getAttributes().getNamedItem("implementation");
-                    filters.add(getTextContent(n));
+                if ("filter-impl".equals(nodeName)) {
+                    filters.add(getTextContent(child));
                 }
             }
         }

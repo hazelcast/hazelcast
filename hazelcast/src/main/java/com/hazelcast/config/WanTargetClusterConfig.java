@@ -22,12 +22,16 @@ import java.util.List;
  * Configuration for Wan target cluster
  */
 public class WanTargetClusterConfig {
+
+    private static final WanAcknowledgeType DEFAULT_ACK_TYPE = WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE;
+
     String groupName = "dev";
     String groupPassword = "dev-pass";
     String replicationImpl;
     Object replicationImplObject;
     // ip:port
     List<String> endpoints;
+    WanAcknowledgeType acknowledgeType = DEFAULT_ACK_TYPE;
 
     public String getGroupName() {
         return groupName;
@@ -82,6 +86,14 @@ public class WanTargetClusterConfig {
         return this;
     }
 
+    public WanAcknowledgeType getAcknowledgeType() {
+        return acknowledgeType;
+    }
+
+    public void setAcknowledgeType(WanAcknowledgeType acknowledgeType) {
+        this.acknowledgeType = acknowledgeType;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
@@ -90,6 +102,7 @@ public class WanTargetClusterConfig {
         sb.append(", replicationImpl='").append(replicationImpl).append('\'');
         sb.append(", replicationImplObject=").append(replicationImplObject);
         sb.append(", endpoints=").append(endpoints);
+        sb.append(", acknowledgeType=").append(acknowledgeType);
         sb.append('}');
         return sb.toString();
     }
