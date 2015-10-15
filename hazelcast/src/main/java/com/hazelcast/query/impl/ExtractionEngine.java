@@ -131,7 +131,7 @@ final class ExtractionEngine {
         return getExtractedAttributeType(attribute);
     }
 
-    static AttributeType getExtractedAttributeType(Object extractedObject) {
+    private static AttributeType getExtractedAttributeType(Object extractedObject) {
         if (extractedObject instanceof MultiResult) {
             return getExtractedAttributeTypeFromMultiResult((MultiResult) extractedObject);
         } else {
@@ -139,7 +139,7 @@ final class ExtractionEngine {
         }
     }
 
-    static AttributeType getExtractedAttributeTypeFromSingleResult(Object extractedObject) {
+    private static AttributeType getExtractedAttributeTypeFromSingleResult(Object extractedObject) {
         if (extractedObject == null) {
             return null;
         } else {
@@ -147,12 +147,15 @@ final class ExtractionEngine {
         }
     }
 
-    static AttributeType getExtractedAttributeTypeFromMultiResult(MultiResult extractedMultiResult) {
+    private static AttributeType getExtractedAttributeTypeFromMultiResult(MultiResult extractedMultiResult) {
         if (extractedMultiResult.isEmpty()) {
             return null;
-        } else {
-            return ReflectionHelper.getAttributeType(extractedMultiResult.getResults().get(0).getClass());
         }
+        Object firstResult = extractedMultiResult.getResults().get(0);
+        if (firstResult == null) {
+            return null;
+        }
+        return ReflectionHelper.getAttributeType(firstResult.getClass());
     }
 
 
