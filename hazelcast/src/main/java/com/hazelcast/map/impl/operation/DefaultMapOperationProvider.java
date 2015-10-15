@@ -122,7 +122,7 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public OperationFactory createGetAllOperationFactory(String name, Set<Data> keys) {
+    public OperationFactory createGetAllOperationFactory(String name, List<Data> keys) {
         return new MapGetAllOperationFactory(name, keys);
     }
 
@@ -142,7 +142,8 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public OperationFactory createLoadAllOperationFactory(String name, List<Data> keys, boolean replaceExistingValues) {
+    public OperationFactory createLoadAllOperationFactory(String name, List<Data> keys,
+                                                          boolean replaceExistingValues) {
         return new MapLoadAllOperationFactory(name, keys, replaceExistingValues);
     }
 
@@ -162,7 +163,8 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createTxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String ownerUuid) {
+    public MapOperation createTxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String
+            ownerUuid) {
         return new TxnLockAndGetOperation(name, dataKey, timeout, ttl, ownerUuid);
     }
 
@@ -179,7 +181,8 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public OperationFactory createMultipleEntryOperationFactory(String name, Set<Data> keys, EntryProcessor entryProcessor) {
+    public OperationFactory createMultipleEntryOperationFactory(String name, Set<Data> keys, EntryProcessor
+            entryProcessor) {
         return new MultipleEntryOperationFactory(name, keys, entryProcessor);
     }
 

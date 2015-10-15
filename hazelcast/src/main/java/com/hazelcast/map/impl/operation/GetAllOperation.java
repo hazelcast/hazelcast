@@ -27,19 +27,21 @@ import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class GetAllOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation {
 
-    private Set<Data> keys = new HashSet<Data>();
+    private List<Data> keys = new ArrayList<Data>();
     private MapEntries entries;
     private transient RecordStore recordStore;
 
     public GetAllOperation() {
     }
 
-    public GetAllOperation(String name, Set<Data> keys) {
+    public GetAllOperation(String name, List<Data> keys) {
         super(name);
         this.keys = keys;
     }

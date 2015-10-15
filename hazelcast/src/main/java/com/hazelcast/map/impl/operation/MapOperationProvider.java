@@ -89,8 +89,6 @@ public interface MapOperationProvider {
 
     OperationFactory createContainsValueOperationFactory(String name, Data testValue);
 
-    OperationFactory createGetAllOperationFactory(String name, Set<Data> keys);
-
     OperationFactory createEvictAllOperationFactory(String name);
 
     OperationFactory createClearOperationFactory(String name);
@@ -99,5 +97,6 @@ public interface MapOperationProvider {
 
     OperationFactory createLoadAllOperationFactory(String name, List<Data> keys, boolean replaceExistingValues);
 
+    OperationFactory createGetAllOperationFactory(String name, List<Data> keys);
 }
 

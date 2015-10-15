@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -513,7 +514,7 @@ public interface MapCodecTemplate {
      * @return values for the provided keys.
      */
     @Request(id = 39, retryable = false, response = ResponseMessageConst.SET_ENTRY)
-    Object getAll(String name, Set<Data> keys);
+    Object getAll(String name, List<Data> keys);
 
     /**
      * Returns a collection clone of the values contained in this map.

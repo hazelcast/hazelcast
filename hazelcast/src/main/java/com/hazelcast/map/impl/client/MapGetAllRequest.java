@@ -33,18 +33,18 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 import java.security.Permission;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class MapGetAllRequest extends MapAllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
 
-    private Set<Data> keys = new HashSet<Data>();
+    private List<Data> keys = new ArrayList<Data>();
 
     public MapGetAllRequest() {
     }
 
-    public MapGetAllRequest(String name, Set<Data> keys) {
+    public MapGetAllRequest(String name, List<Data> keys) {
         this.name = name;
         this.keys = keys;
     }
