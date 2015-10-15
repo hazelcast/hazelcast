@@ -24,21 +24,28 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class IndexIntegrationTest extends HazelcastTestSupport {
 
     @Test
@@ -72,6 +79,58 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         // THEN
         assertEquals(0, values.size());
         assertNull(map.get(1));
+    }
+
+
+    @Test(timeout = 1000 * 60)
+    public void putAndQuery_whenMultipleMappingFound_thenDoNotReturnDuplicatedEntry() {
+        HazelcastInstance instance = createHazelcastInstance();
+        IMap<Integer, Body> map = instance.getMap(randomMapName());
+        map.addIndex("limbArray[*].fingerCount", true);
+
+        Limb leftHand = new Limb("hand", new Nail("red"));
+        Limb rightHand = new Limb("hand");
+        Body body = new Body("body", leftHand, rightHand);
+
+        map.put(1, body);
+
+        Predicate predicate = Predicates.greaterEqual("limbArray[*].fingerCount", 0);
+        Collection<Body> values = map.values(predicate);
+
+        assertThat(values, hasSize(1));
+    }
+
+    static class Body implements Serializable {
+        String name;
+        Limb[] limbArray = new Limb[0];
+        Collection<Limb> limbCollection = new ArrayList<Limb>();
+
+        Body(String name, Limb... limbs) {
+            this.name = name;
+            this.limbCollection = Arrays.asList(limbs);
+            this.limbArray = limbs;
+        }
+    }
+
+    static class Limb implements Serializable {
+        String name;
+        Nail[] nailArray = new Nail[0];
+        int fingerCount;
+        Collection<Nail> nailCollection = new ArrayList<Nail>();
+
+        Limb(String name, Nail... nails) {
+            this.name = name;
+            this.nailCollection = Arrays.asList(nails);
+            this.fingerCount = nails.length;
+            this.nailArray = nails;
+        }
+    }
+
+    static class Nail implements Serializable {
+        String colour;
+        private Nail(String colour) {
+            this.colour = colour;
+        }
     }
 
     public static class Trade implements Serializable {

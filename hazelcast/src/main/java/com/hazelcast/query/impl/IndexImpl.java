@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.QueryException;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -89,43 +90,39 @@ public class IndexImpl implements Index {
         if (values.length == 1) {
             return getRecords(values[0]);
         } else {
-            MultiResultSet results = new MultiResultSet();
             if (converter != null) {
                 Set<Comparable> convertedValues = new HashSet<Comparable>(values.length);
                 for (Comparable value : values) {
                     convertedValues.add(convert(value));
                 }
-                indexStore.getRecords(results, convertedValues);
+                return indexStore.getRecords(convertedValues);
             }
-            return results;
+            return Collections.EMPTY_SET;
         }
     }
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable attributeValue) {
-        if (converter != null) {
-            return indexStore.getRecords(convert(attributeValue));
-        } else {
+        if (converter == null) {
             return new SingleResultSet(null);
         }
+        return indexStore.getRecords(convert(attributeValue));
     }
 
     @Override
     public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedAttributeValue) {
-        MultiResultSet results = new MultiResultSet();
-        if (converter != null) {
-            indexStore.getSubRecords(results, comparisonType, convert(searchedAttributeValue));
+        if (converter == null) {
+            return Collections.EMPTY_SET;
         }
-        return results;
+        return indexStore.getSubRecords(comparisonType, convert(searchedAttributeValue));
     }
 
     @Override
     public Set<QueryableEntry> getSubRecordsBetween(Comparable fromAttributeValue, Comparable toAttributeValue) {
-        MultiResultSet results = new MultiResultSet();
-        if (converter != null) {
-            indexStore.getSubRecordsBetween(results, convert(fromAttributeValue), convert(toAttributeValue));
+        if (converter == null) {
+            return Collections.EMPTY_SET;
         }
-        return results;
+        return indexStore.getSubRecordsBetween(convert(fromAttributeValue), convert(toAttributeValue));
     }
 
     /**

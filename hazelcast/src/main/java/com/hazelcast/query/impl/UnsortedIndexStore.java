@@ -82,9 +82,10 @@ public class UnsortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to) {
+    public Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
         takeReadLock();
         try {
+            MultiResultSet results = createMultiResultSet();
             Comparable paramFrom = from;
             Comparable paramTo = to;
             int trend = paramFrom.compareTo(paramTo);
@@ -93,7 +94,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
                 if (records != null) {
                     results.addResultSet(records);
                 }
-                return;
+                return results;
             }
             if (trend < 0) {
                 Comparable oldFrom = paramFrom;
@@ -109,15 +110,17 @@ public class UnsortedIndexStore extends BaseIndexStore {
                     }
                 }
             }
+            return results;
         } finally {
             releaseReadLock();
         }
     }
 
     @Override
-    public void getSubRecords(MultiResultSet results, ComparisonType comparisonType, Comparable searchedValue) {
+    public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
         takeReadLock();
         try {
+            MultiResultSet results = createMultiResultSet();
             Set<Comparable> values = recordMap.keySet();
             for (Comparable value : values) {
                 boolean valid;
@@ -148,6 +151,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
                     }
                 }
             }
+            return results;
         } finally {
             releaseReadLock();
         }
@@ -182,9 +186,10 @@ public class UnsortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public void getRecords(MultiResultSet results, Set<Comparable> values) {
+    public Set<QueryableEntry> getRecords(Set<Comparable> values) {
         takeReadLock();
         try {
+            MultiResultSet results = createMultiResultSet();
             for (Comparable value : values) {
                 ConcurrentMap<Data, QueryableEntry> records;
                 if (value instanceof IndexImpl.NullObject) {
@@ -196,6 +201,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
                     results.addResultSet(records);
                 }
             }
+            return results;
         } finally {
             releaseReadLock();
         }

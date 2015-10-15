@@ -86,23 +86,26 @@ public class SortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to) {
+    public Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
         takeReadLock();
         try {
+            MultiResultSet results = createMultiResultSet();
             SortedMap<Comparable, ConcurrentMap<Data, QueryableEntry>> subMap =
                     recordMap.subMap(from, true, to, true);
             for (ConcurrentMap<Data, QueryableEntry> value : subMap.values()) {
                 results.addResultSet(value);
             }
+            return results;
         } finally {
             releaseReadLock();
         }
     }
 
     @Override
-    public void getSubRecords(MultiResultSet results, ComparisonType comparisonType, Comparable searchedValue) {
+    public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
         takeReadLock();
         try {
+            MultiResultSet results = createMultiResultSet();
             SortedMap<Comparable, ConcurrentMap<Data, QueryableEntry>> subMap;
             switch (comparisonType) {
                 case LESSER:
@@ -126,13 +129,14 @@ public class SortedIndexStore extends BaseIndexStore {
                             results.addResultSet(entry.getValue());
                         }
                     }
-                    return;
+                    return results;
                 default:
                     throw new IllegalArgumentException("Unrecognized comparisonType: " + comparisonType);
             }
             for (ConcurrentMap<Data, QueryableEntry> value : subMap.values()) {
                 results.addResultSet(value);
             }
+            return results;
         } finally {
             releaseReadLock();
         }
@@ -167,9 +171,10 @@ public class SortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public void getRecords(MultiResultSet results, Set<Comparable> values) {
+    public Set<QueryableEntry> getRecords(Set<Comparable> values) {
         takeReadLock();
         try {
+            MultiResultSet results = createMultiResultSet();
             for (Comparable value : values) {
                 ConcurrentMap<Data, QueryableEntry> records;
                 if (value instanceof IndexImpl.NullObject) {
@@ -181,6 +186,7 @@ public class SortedIndexStore extends BaseIndexStore {
                     results.addResultSet(records);
                 }
             }
+            return results;
         } finally {
             releaseReadLock();
         }

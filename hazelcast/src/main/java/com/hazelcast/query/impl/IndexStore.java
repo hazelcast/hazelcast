@@ -31,9 +31,9 @@ public interface IndexStore {
     void removeIndex(Object oldValue, Data indexKey);
     void clear();
 
-    void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to);
-    void getSubRecords(MultiResultSet results, ComparisonType comparisonType, Comparable searchedValue);
+    Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to);
+    Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue);
     Set<QueryableEntry> getRecords(Comparable value);
-    void getRecords(MultiResultSet results, Set<Comparable> values);
+    Set<QueryableEntry> getRecords(Set<Comparable> values);
     ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue);
 }

@@ -33,9 +33,12 @@ public abstract class BaseIndexStore implements IndexStore {
     protected ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     protected ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
 
-    abstract void newIndexInternal(Comparable newValue, QueryableEntry record);
-    abstract void removeIndexInternal(Comparable oldValue, Data indexKey);
+    private boolean multiResultHasToDetectDuplicates;
 
+
+    abstract void newIndexInternal(Comparable newValue, QueryableEntry record);
+
+    abstract void removeIndexInternal(Comparable oldValue, Data indexKey);
 
     @Override
     public final void newIndex(Object newValue, QueryableEntry record) {
@@ -49,6 +52,7 @@ public abstract class BaseIndexStore implements IndexStore {
 
     private void unwrapAndAddToIndex(Object newValue, QueryableEntry record) {
         if (newValue instanceof MultiResult) {
+            multiResultHasToDetectDuplicates = true;
             List<Object> results = ((MultiResult) newValue).getResults();
             for (Object o : results) {
                 Comparable sanitizedValue = sanitizeValue((Comparable) o);
@@ -119,5 +123,9 @@ public abstract class BaseIndexStore implements IndexStore {
             value = TypeConverters.ENUM_CONVERTER.convert(value);
         }
         return value;
+    }
+
+    protected MultiResultSet createMultiResultSet() {
+        return multiResultHasToDetectDuplicates ? new DuplicateDetectingMultiResult() : new FastMultiResultSet();
     }
 }
