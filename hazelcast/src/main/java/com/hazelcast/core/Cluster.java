@@ -166,4 +166,53 @@ public interface Cluster {
      * @since 3.6
      */
     void changeClusterState(ClusterState newState, TransactionOptions transactionOptions);
+
+    /**
+     * Changes state of the cluster to the {@link ClusterState#PASSIVE} transactionally,
+     * then triggers the shutdown process on each node. Transaction will be {@code TWO_PHASE}
+     * and will have 1 durability by default. If you want to override transaction options,
+     * use {@link #shutdown(TransactionOptions)}.
+     * <p/>
+     * If the cluster is already in {@link ClusterState#PASSIVE}, shutdown process begins immediately.
+     * All the node join / leave rules described in {@link ClusterState#PASSIVE} state also applies here.
+     * <p/>
+     * Any node can start the shutdown process. A shutdown command is sent to other nodes periodically until
+     * either all other nodes leave the cluster or a configurable timeout occurs. If some of the nodes do not
+     * shutdown before the timeout duration, shutdown can be also invoked on them.
+     * @see {@link com.hazelcast.instance.GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}
+     *
+     * @throws IllegalStateException    if member-list changes during the transaction
+     * @throws TransactionException     if there's already an ongoing transaction
+     *                                  or this transaction fails
+     *                                  or this transaction timeouts
+     *
+     * @see {@link #changeClusterState(ClusterState)}
+     * @see {@link ClusterState#PASSIVE}
+     * @since 3.6
+     */
+    void shutdown();
+
+    /**
+     * Changes state of the cluster to the {@link ClusterState#PASSIVE} transactionally, then
+     * triggers the shutdown process on each node. Transaction must be a {@code TWO_PHASE} transaction.
+     * <p/>
+     * If the cluster is already in {@link ClusterState#PASSIVE}, shutdown process begins immediately.
+     * All the node join / leave rules described in {@link ClusterState#PASSIVE} state also applies here.
+     * <p/>
+     * Any node can start the shutdown process. A shutdown command is sent to other nodes periodically until
+     * either all other nodes leave the cluster or a configurable timeout occurs. If some of the nodes do not
+     * shutdown before the timeout duration, shutdown can be also invoked on them.
+     * @see {@link com.hazelcast.instance.GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}
+     *
+     * @param transactionOptions transaction options
+     * @throws IllegalStateException    if member-list changes during the transaction
+     * @throws TransactionException     if there's already an ongoing transaction
+     *                                  or this transaction fails
+     *                                  or this transaction timeouts
+     *
+     * @see {@link #changeClusterState(ClusterState)}
+     * @see {@link ClusterState#PASSIVE}
+     * @since 3.6
+     */
+    void shutdown(TransactionOptions transactionOptions);
 }

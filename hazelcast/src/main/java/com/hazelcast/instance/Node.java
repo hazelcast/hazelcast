@@ -348,7 +348,7 @@ public class Node {
             return;
         }
 
-        if (!terminate && clusterService.getClusterState() != ClusterState.PASSIVE) {
+        if (!terminate) {
             final int maxWaitSeconds = groupProperties.getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                 logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");

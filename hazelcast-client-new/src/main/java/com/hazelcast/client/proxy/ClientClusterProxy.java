@@ -79,4 +79,14 @@ public class ClientClusterProxy implements Cluster {
     public void changeClusterState(ClusterState newState, TransactionOptions transactionOptions) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void shutdown() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void shutdown(TransactionOptions transactionOptions) {
+        throw new UnsupportedOperationException();
+    }
 }

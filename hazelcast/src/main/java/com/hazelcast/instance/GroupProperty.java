@@ -258,6 +258,8 @@ public enum GroupProperty implements HazelcastProperty {
     CLIENT_HEARTBEAT_TIMEOUT_SECONDS("hazelcast.client.max.no.heartbeat.seconds", 300, SECONDS),
     MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS("hazelcast.migration.min.delay.on.member.removed.seconds", 5, SECONDS),
 
+    CLUSTER_SHUTDOWN_TIMEOUT_SECONDS("hazelcast.cluster.shutdown.timeout.seconds", 900, SECONDS),
+
     ICMP_ENABLED("hazelcast.icmp.enabled", false),
     ICMP_TIMEOUT("hazelcast.icmp.timeout", 1000, MILLISECONDS),
     ICMP_TTL("hazelcast.icmp.ttl", 0),
