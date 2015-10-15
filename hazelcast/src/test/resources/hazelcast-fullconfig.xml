@@ -273,6 +273,10 @@
 
         <wan-replication-ref name="my-wan-cluster">
             <merge-policy>hz.PASS_THROUGH</merge-policy>
+            <filters>
+                <filter>MYFILTER_1</filter>
+                <filter>MYFILTER_2</filter>
+            </filters>
         </wan-replication-ref>
 
         <indexes>

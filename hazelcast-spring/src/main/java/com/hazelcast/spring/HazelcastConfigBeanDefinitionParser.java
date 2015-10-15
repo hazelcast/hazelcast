@@ -580,11 +580,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("near-cache".equals(nodeName)) {
                     handleNearCacheConfig(childNode, mapConfigBuilder);
                 } else if ("wan-replication-ref".equals(nodeName)) {
-                    final BeanDefinitionBuilder wanReplicationRefBuilder = createBeanBuilder(WanReplicationRef.class);
-                    final AbstractBeanDefinition wanReplicationRefBeanDefinition = wanReplicationRefBuilder
-                            .getBeanDefinition();
-                    fillValues(childNode, wanReplicationRefBuilder);
-                    mapConfigBuilder.addPropertyValue("wanReplicationRef", wanReplicationRefBeanDefinition);
+                    handleWanReplicationRef(mapConfigBuilder, childNode);
                 } else if ("indexes".equals(nodeName)) {
                     ManagedList indexes = new ManagedList();
                     for (Node indexNode : new IterableNodeList(childNode.getChildNodes(), Node.ELEMENT_NODE)) {
@@ -713,11 +709,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                     cacheConfigBuilder.addPropertyValue("cacheEntryListeners", listeners);
                 } else if ("wan-replication-ref".equals(cleanNodeName(childNode))) {
-                    final BeanDefinitionBuilder wanReplicationRefBuilder = createBeanBuilder(WanReplicationRef.class);
-                    final AbstractBeanDefinition wanReplicationRefBeanDefinition = wanReplicationRefBuilder
-                            .getBeanDefinition();
-                    fillValues(childNode, wanReplicationRefBuilder);
-                    cacheConfigBuilder.addPropertyValue("wanReplicationRef", wanReplicationRefBeanDefinition);
+                    handleWanReplicationRef(cacheConfigBuilder, childNode);
                 } else if ("partition-lost-listeners".equals(cleanNodeName(childNode))) {
                     ManagedList listeners = parseListeners(childNode, CachePartitionLostListenerConfig.class);
                     cacheConfigBuilder.addPropertyValue("partitionLostListenerConfigs", listeners);
@@ -1184,5 +1176,30 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
         }
 
+        private void handleWanReplicationRef(BeanDefinitionBuilder beanDefinitionBuilder, Node childNode) {
+            final BeanDefinitionBuilder wanReplicationRefBuilder = createBeanBuilder(WanReplicationRef.class);
+            final AbstractBeanDefinition wanReplicationRefBeanDefinition = wanReplicationRefBuilder
+                    .getBeanDefinition();
+            fillValues(childNode, wanReplicationRefBuilder);
+            for (Node node : new IterableNodeList(childNode.getChildNodes())) {
+                final String nodeName = cleanNodeName(node.getNodeName());
+                if (nodeName.equals("filters")) {
+                    final List filters = new ManagedList();
+                    handleFilters(node, filters);
+                    wanReplicationRefBuilder.addPropertyValue("filters",filters);
+                }
+            }
+            beanDefinitionBuilder.addPropertyValue("wanReplicationRef", wanReplicationRefBeanDefinition);
+        }
+
+        private void handleFilters(Node node, List filters) {
+            for (Node child : new IterableNodeList(node.getChildNodes())) {
+                final String nodeName = cleanNodeName(child.getNodeName());
+                if ("filter".equals(nodeName)) {
+                    Node n = child.getAttributes().getNamedItem("implementation");
+                    filters.add(getTextContent(n));
+                }
+            }
+        }
     }
 }

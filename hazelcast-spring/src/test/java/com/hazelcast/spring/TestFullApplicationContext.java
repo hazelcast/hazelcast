@@ -215,6 +215,7 @@ public class TestFullApplicationContext {
         WanReplicationRef wanRef = cacheConfig.getWanReplicationRef();
         assertEquals("testWan", wanRef.getName());
         assertEquals("PUT_IF_ABSENT", wanRef.getMergePolicy());
+        assertEquals(1,wanRef.getFilters().size());
         assertFalse(wanRef.isRepublishingEnabled());
     }
 

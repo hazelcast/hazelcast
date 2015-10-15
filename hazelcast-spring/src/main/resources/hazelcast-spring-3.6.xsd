@@ -2248,6 +2248,9 @@
     </xs:complexType>
 
     <xs:complexType name="wan-replication-ref">
+        <xs:all>
+            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0" maxOccurs="1"></xs:element>
+        </xs:all>
         <xs:attribute name="name" use="required" type="xs:string"/>
         <xs:attribute name="merge-policy" use="required" type="xs:string"/>
         <xs:attribute name="republishing-enabled" use="optional" type="parameterized-boolean" default="true"/>
@@ -2331,5 +2334,13 @@
             <xs:extension base="listener">
             </xs:extension>
         </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="wan-replication-ref-filters">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="filter" type="wan-replication-ref-filter"></xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="wan-replication-ref-filter">
+        <xs:attribute name="implementation" use="required"/>
     </xs:complexType>
 </xs:schema>
