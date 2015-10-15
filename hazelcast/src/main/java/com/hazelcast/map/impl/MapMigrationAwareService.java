@@ -40,10 +40,10 @@ import java.util.Iterator;
  */
 class MapMigrationAwareService implements MigrationAwareService {
 
-    private final MapServiceContext mapServiceContext;
-    private final SerializationService serializationService;
+    protected final MapServiceContext mapServiceContext;
+    protected final SerializationService serializationService;
 
-    public MapMigrationAwareService(MapServiceContext mapServiceContext) {
+    MapMigrationAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
     }
@@ -59,7 +59,7 @@ class MapMigrationAwareService implements MigrationAwareService {
                 = new MapReplicationOperation(mapServiceContext.getService(), container,
                 event.getPartitionId(), event.getReplicaIndex());
         operation.setService(mapServiceContext.getService());
-        return operation.isEmpty() ? null : operation;
+        return operation;
     }
 
     @Override
@@ -84,7 +84,7 @@ class MapMigrationAwareService implements MigrationAwareService {
         mapServiceContext.clearPartitionData(partitionId);
     }
 
-    private void migrateIndex(PartitionMigrationEvent event) {
+    protected void migrateIndex(PartitionMigrationEvent event) {
         final long now = getNow();
 
         final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
@@ -94,9 +94,9 @@ class MapMigrationAwareService implements MigrationAwareService {
             if (indexes.hasIndex()) {
                 final Iterator<Record> iterator = recordStore.iterator(now, false);
                 while (iterator.hasNext()) {
-                    final Record record = iterator.next();
+                    Record record = iterator.next();
+                    Data key = record.getKey();
                     if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-                        Data key = record.getKey();
                         Object value = Records.getValueOrCachedValue(record, serializationService);
                         indexes.removeEntryIndex(key, value);
                     } else {
@@ -111,7 +111,7 @@ class MapMigrationAwareService implements MigrationAwareService {
         }
     }
 
-    private long getNow() {
+    protected long getNow() {
         return Clock.currentTimeMillis();
     }
 
