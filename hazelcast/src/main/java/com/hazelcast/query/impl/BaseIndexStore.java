@@ -55,8 +55,8 @@ public abstract class BaseIndexStore implements IndexStore {
                 newIndexInternal(sanitizedValue, record);
             }
         } else {
-            Comparable sanitizeValue = sanitizeValue((Comparable) newValue);
-            newIndexInternal(sanitizeValue, record);
+            Comparable sanitizedValue = sanitizeValue((Comparable) newValue);
+            newIndexInternal(sanitizedValue, record);
         }
     }
 
@@ -74,10 +74,12 @@ public abstract class BaseIndexStore implements IndexStore {
         if (oldValue instanceof MultiResult) {
             List<Object> results = ((MultiResult) oldValue).getResults();
             for (Object o : results) {
-                removeIndexInternal((Comparable) o, indexKey);
+                Comparable sanitizedValue = sanitizeValue((Comparable) o);
+                removeIndexInternal(sanitizedValue, indexKey);
             }
         } else {
-            removeIndexInternal((Comparable) oldValue, indexKey);
+            Comparable sanitizedValue = sanitizeValue((Comparable) oldValue);
+            removeIndexInternal(sanitizedValue, indexKey);
         }
     }
 
