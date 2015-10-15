@@ -30,7 +30,7 @@
     </parent>
 
     <properties>
-        <org.springframework.version>3.1.0.RELEASE</org.springframework.version>
+        <org.springframework.version>4.0.2.RELEASE</org.springframework.version>
         <jsr250.api.version>1.0</jsr250.api.version>
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.basedir}</main.basedir>
@@ -190,6 +190,12 @@
                     <version>4.3.8.Final</version>
                     <scope>test</scope>
                 </dependency>
+                <dependency>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-context-support</artifactId>
+                    <version>${org.springframework.version}</version>
+                    <scope>test</scope>
+                </dependency>
             </dependencies>
         </profile>
         <profile>
@@ -249,6 +255,18 @@
                     <groupId>org.hibernate</groupId>
                     <artifactId>hibernate-core</artifactId>
                     <version>3.6.10.Final</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>javax.cache</groupId>
+                    <artifactId>cache-api</artifactId>
+                    <version>1.0.0</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-context-support</artifactId>
+                    <version>${org.springframework.version}</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>

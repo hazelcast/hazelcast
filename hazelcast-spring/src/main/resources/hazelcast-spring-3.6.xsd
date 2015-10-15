@@ -1088,6 +1088,43 @@
             </xs:appinfo>
         </xs:annotation>
     </xs:element>
+
+    <xs:element name="cache-manager">
+        <xs:annotation>
+            <xs:documentation>
+                Retrieve a JCache cache manager from specified Hazelcast instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="javax.cache.CacheManager"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="hazelcast-bean">
+                    <xs:sequence>
+                        <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+                    </xs:sequence>
+                    <xs:attribute name="instance-ref" type="xs:string" use="optional">
+                        <xs:annotation>
+                            <xs:documentation>
+                                <![CDATA[The name of the HazelcastInstance that this bean depends on.]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="name" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                <![CDATA[The name of this bean in Hazelcast context (HazelcastInstance.getMap(name)).]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="uri" type="xs:string" use="optional"/>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
     <xs:element name="multiMap" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>

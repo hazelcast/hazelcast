@@ -443,6 +443,7 @@
     <suppress checks="IllegalType" files="com/hazelcast/spring/HazelcastInstanceDefinitionParser"/>
     <suppress checks="IllegalType" files="com/hazelcast/spring/HazelcastConfigBeanDefinitionParser"/>
     <suppress checks="IllegalType" files="com/hazelcast/spring/HazelcastTypeBeanDefinitionParser"/>
+    <suppress checks="IllegalType" files="com/hazelcast/spring/CacheManagerBeanDefinitionParser"/>
     <suppress checks="IllegalType" files="com/hazelcast/spring/hibernate/RegionFactoryBeanDefinitionParser"/>
 
     <!-- Management -->
