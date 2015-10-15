@@ -1633,6 +1633,7 @@
                                 </xs:sequence>
                             </xs:complexType>
                         </xs:element>
+                        <xs:element name="acknowledge-type" type="wan-ack-type" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
                     <xs:attribute name="group-name" use="required">
                         <xs:simpleType>
@@ -2285,6 +2286,9 @@
     </xs:complexType>
 
     <xs:complexType name="wan-replication-ref">
+        <xs:all>
+            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0" maxOccurs="1"></xs:element>
+        </xs:all>
         <xs:attribute name="name" use="required" type="xs:string"/>
         <xs:attribute name="merge-policy" use="required" type="xs:string"/>
         <xs:attribute name="republishing-enabled" use="optional" type="parameterized-boolean" default="true"/>
@@ -2369,4 +2373,20 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
+    <xs:complexType name="wan-replication-ref-filters">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="filter-impl" type="xs:string"></xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="wan-ack-type-format-enum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ACK_ON_TRANSMIT"/>
+            <xs:enumeration value="ACK_ON_OPERATION_COMPLETE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="wan-ack-type">
+        <xs:union memberTypes="wan-ack-type-format-enum non-space-string"/>
+    </xs:simpleType>
 </xs:schema>

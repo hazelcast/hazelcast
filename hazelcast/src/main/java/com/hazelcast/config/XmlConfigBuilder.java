@@ -56,6 +56,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
@@ -451,6 +452,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                                 wanTarget.addEndpoint(addressStr);
                             }
                         }
+                    } else if ("acknowledge-type".equals(targetChildName)) {
+                        String acknowledgeType = getTextContent(targetChild);
+                        wanTarget.setAcknowledgeType(WanAcknowledgeType.valueOf(upperCaseInternal(acknowledgeType)));
                     }
                 }
                 wanReplicationConfig.addTargetClusterConfig(wanTarget);
@@ -1212,11 +1216,21 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             final String wanChildValue = getTextContent(wanChild);
             if ("merge-policy".equals(wanChildName)) {
                 wanReplicationRef.setMergePolicy(wanChildValue);
+            } else if ("filters".equals(wanChildName)) {
+                handleWanFilters(wanChild, wanReplicationRef);
             } else if ("republishing-enabled".equals(wanChildName)) {
                 wanReplicationRef.setRepublishingEnabled(checkTrue(wanChildValue));
             }
         }
         cacheConfig.setWanReplicationRef(wanReplicationRef);
+    }
+
+    private void handleWanFilters(Node wanChild, WanReplicationRef wanReplicationRef) {
+        for (org.w3c.dom.Node filter : new IterableNodeList(wanChild.getChildNodes())) {
+            if ("filter-impl".equals(cleanNodeName(filter))) {
+                wanReplicationRef.addFilter(getTextContent(filter));
+            }
+        }
     }
 
     private void cachePartitionLostListenerHandle(Node n, CacheSimpleConfig cacheConfig) {
@@ -1260,6 +1274,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 wanReplicationRef.setMergePolicy(wanChildValue);
             } else if ("republishing-enabled".equals(wanChildName)) {
                 wanReplicationRef.setRepublishingEnabled(checkTrue(wanChildValue));
+            } else if ("filters".equals(wanChildName)) {
+                handleWanFilters(wanChild, wanReplicationRef);
             }
         }
         mapConfig.setWanReplicationRef(wanReplicationRef);

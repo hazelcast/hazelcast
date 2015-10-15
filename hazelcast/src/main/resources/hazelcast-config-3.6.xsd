@@ -1793,6 +1793,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="end-points" type="end-points" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="acknowledge-type" type="wan-ack-type" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="group-name" type="xs:string" use="required">
             <xs:annotation>
@@ -2589,6 +2590,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0" maxOccurs="1"></xs:element>
             <xs:element name="republishing-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
                 <xs:annotation>
                     <xs:documentation>
@@ -2673,4 +2675,16 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+    <xs:complexType name="wan-replication-ref-filters">
+        <xs:sequence>
+            <xs:element name="filter-impl" type="xs:string" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="wan-ack-type">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="ACK_ON_TRANSMIT"/>
+            <xs:enumeration value="ACK_ON_OPERATION_COMPLETE"/>
+        </xs:restriction>
+    </xs:simpleType>
 </xs:schema>

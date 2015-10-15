@@ -644,6 +644,9 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                         "  <map name=\"" + mapName + "\">\n" +
                         "    <wan-replication-ref name=\"test\">\n" +
                         "      <merge-policy>TestMergePolicy</merge-policy>\n" +
+                        "      <filters>\n" +
+                        "        <filter-impl>com.example.SampleFilter</filter-impl>\n" +
+                        "      </filters>\n" +
                         "    </wan-replication-ref>\n" +
                         "  </map>\n" +
                         "</hazelcast>";
@@ -653,6 +656,8 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(refName, wanRef.getName());
         assertEquals(mergePolicy, wanRef.getMergePolicy());
         assertTrue(wanRef.isRepublishingEnabled());
+        assertEquals(1, wanRef.getFilters().size());
+        assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
     }
 
     @Test(expected = InvalidConfigurationException.class)
@@ -830,6 +835,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                         "          <address>20.30.40.50:5701</address>\n" +
                         "          <address>20.30.40.50:5702</address>\n" +
                         "       </end-points>\n" +
+                        "       <acknowledge-type>ACK_ON_TRANSMIT</acknowledge-type>\n" +
                         "    </target-cluster>\n" +
                         "</wan-replication>\n" +
                         "</hazelcast>";
@@ -846,6 +852,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(2, targetEndpoints.size());
         assertTrue(targetEndpoints.contains("20.30.40.50:5701"));
         assertTrue(targetEndpoints.contains("20.30.40.50:5702"));
+        assertEquals(WanAcknowledgeType.ACK_ON_TRANSMIT, targetClusterConfig.getAcknowledgeType());
     }
 
     @Test
