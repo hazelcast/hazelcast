@@ -1186,7 +1186,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 if (nodeName.equals("filters")) {
                     final List filters = new ManagedList();
                     handleFilters(node, filters);
-                    wanReplicationRefBuilder.addPropertyValue("filters",filters);
+                    wanReplicationRefBuilder.addPropertyValue("filters", filters);
                 }
             }
             beanDefinitionBuilder.addPropertyValue("wanReplicationRef", wanReplicationRefBeanDefinition);

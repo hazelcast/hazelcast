@@ -37,7 +37,6 @@ import com.hazelcast.map.impl.operation.MapPartitionDestroyOperation;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.MapQueryEngineImpl;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.impl.wan.MapFilterProvider;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
@@ -103,13 +102,13 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final NearCacheProvider nearCacheProvider;
     protected final LocalMapStatsProvider localMapStatsProvider;
     protected final MergePolicyProvider mergePolicyProvider;
-    private final MapFilterProvider mapFilterProvider;
     protected final MapQueryEngine mapQueryEngine;
     protected MapEventPublisher mapEventPublisher;
     protected Evictor evictor;
     protected MapService mapService;
     protected EventService eventService;
     protected MapOperationProvider operationProvider;
+
 
     MapServiceContextImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -121,7 +120,6 @@ class MapServiceContextImpl implements MapServiceContext {
         this.nearCacheProvider = createNearCacheProvider(nodeEngine);
         this.localMapStatsProvider = createLocalMapStatsProvider();
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
-        this.mapFilterProvider = new MapFilterProvider(nodeEngine);
         this.mapEventPublisher = createMapEventPublisherSupport();
         this.mapQueryEngine = createMapQueryEngine(nodeEngine);
         this.eventService = nodeEngine.getEventService();
@@ -324,11 +322,6 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public MergePolicyProvider getMergePolicyProvider() {
         return mergePolicyProvider;
-    }
-
-    @Override
-    public MapFilterProvider getMapFilterProvider() {
-        return mapFilterProvider;
     }
 
     @Override

@@ -23,7 +23,6 @@ import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.impl.wan.MapFilterProvider;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
@@ -100,8 +99,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     NodeEngine getNodeEngine();
 
     MergePolicyProvider getMergePolicyProvider();
-
-    MapFilterProvider getMapFilterProvider();
 
     MapEventPublisher getMapEventPublisher();
 
