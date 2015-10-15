@@ -182,7 +182,7 @@ public class FieldGetter extends Getter {
 
     @Override
     boolean isCacheable() {
-        return ReflectionHelper.THIS_CL.equals(resultType.getClassLoader());
+        return ReflectionHelper.THIS_CL.equals(field.getDeclaringClass().getClassLoader());
     }
 
     @Override
