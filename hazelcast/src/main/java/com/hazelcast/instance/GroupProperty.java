@@ -185,8 +185,8 @@ public enum GroupProperty implements HazelcastProperty {
 
     CONNECT_ALL_WAIT_SECONDS("hazelcast.connect.all.wait.seconds", 120, SECONDS),
 
-    MEMCACHE_ENABLED("hazelcast.memcache.enabled", true),
-    REST_ENABLED("hazelcast.rest.enabled", true),
+    MEMCACHE_ENABLED("hazelcast.memcache.enabled", false),
+    REST_ENABLED("hazelcast.rest.enabled", false),
 
     MAP_LOAD_CHUNK_SIZE("hazelcast.map.load.chunk.size", 1000),
 

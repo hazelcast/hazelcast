@@ -25,6 +25,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -39,7 +40,9 @@ import java.net.HttpURLConnection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * User: sancar
@@ -53,18 +56,21 @@ public class RestTest {
     final static Config config = new XmlConfigBuilder().build();
 
     @Before
-    @After
-    public void killAllHazelcastInstances() throws IOException {
-        Hazelcast.shutdownAll();
+    public void setup() throws IOException {
+        config.setProperty(GroupProperty.REST_ENABLED.getName(),"true");
     }
 
+    @After
+    public void tearDown() throws IOException {
+        Hazelcast.shutdownAll();
+    }
+    
     @Test
     public void testTtl_issue1783() throws IOException, InterruptedException {
-        final Config conf = new Config();
         String name = "map";
 
         final CountDownLatch latch = new CountDownLatch(1);
-        final MapConfig mapConfig = conf.getMapConfig(name);
+        final MapConfig mapConfig = config.getMapConfig(name);
         mapConfig.setTimeToLiveSeconds(3);
         mapConfig.addEntryListenerConfig(new EntryListenerConfig()
                 .setImplementation(new EntryAdapter() {
@@ -74,7 +80,7 @@ public class RestTest {
                     }
                 }));
 
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(conf);
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         final HTTPCommunicator communicator = new HTTPCommunicator(instance);
 
         communicator.put(name, "key", "value");
