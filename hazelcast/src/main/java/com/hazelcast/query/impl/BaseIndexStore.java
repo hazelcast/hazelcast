@@ -51,10 +51,12 @@ public abstract class BaseIndexStore implements IndexStore {
         if (newValue instanceof MultiResult) {
             List<Object> results = ((MultiResult) newValue).getResults();
             for (Object o : results) {
-                newIndexInternal((Comparable) o, record);
+                Comparable sanitizedValue = sanitizeValue((Comparable) o);
+                newIndexInternal(sanitizedValue, record);
             }
         } else {
-            newIndexInternal((Comparable) newValue, record);
+            Comparable sanitizeValue = sanitizeValue((Comparable) newValue);
+            newIndexInternal(sanitizeValue, record);
         }
     }
 
@@ -106,5 +108,14 @@ public abstract class BaseIndexStore implements IndexStore {
 
     protected void releaseReadLock() {
         readLock.unlock();
+    }
+
+    private Comparable sanitizeValue(Comparable value) {
+        if (value == null) {
+            value = IndexImpl.NULL;
+        } else if (value.getClass().isEnum()) {
+            value = TypeConverters.ENUM_CONVERTER.convert(value);
+        }
+        return value;
     }
 }

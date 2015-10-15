@@ -81,16 +81,7 @@ public class IndexImpl implements Index {
     }
 
     private Object extractAttributeValue(Data key, Object value) {
-        return sanitizeValue(ExtractionEngine.extractAttributeValue(extractors, ss, attributeName, key, value));
-    }
-
-    static Object sanitizeValue(Object value) {
-        if (value == null) {
-            value = NULL;
-        } else if (value.getClass().isEnum()) {
-            value = TypeConverters.ENUM_CONVERTER.convert((Comparable) value);
-        }
-        return value;
+        return ExtractionEngine.extractAttributeValue(extractors, ss, attributeName, key, value);
     }
 
     @Override
