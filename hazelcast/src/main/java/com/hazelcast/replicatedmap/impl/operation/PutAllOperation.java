@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
@@ -60,11 +61,19 @@ public class PutAllOperation extends AbstractOperation {
             if (partitionId != partitionService.getPartitionId(key)) {
                 continue;
             }
-            Object putResponse = store.put(key, value);
-            VersionResponsePair response = new VersionResponsePair(putResponse, store.getVersion());
+            Object putResult = store.put(key, value);
+            Data oldValue = getNodeEngine().toData(putResult);
+            publishEvent(key, value, oldValue);
+            VersionResponsePair response = new VersionResponsePair(putResult, store.getVersion());
             publishReplicationMessage(key, value, response);
         }
     }
+
+    private void publishEvent(Data key, Data value, Data oldValue) {
+        ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
+        eventPublishingService.fireEntryListenerEvent(key, oldValue, value, name, getCallerAddress());
+    }
+
 
     private void publishReplicationMessage(Data key, Data value, VersionResponsePair response) {
         OperationService operationService = getNodeEngine().getOperationService();
@@ -74,7 +83,8 @@ public class PutAllOperation extends AbstractOperation {
             if (address.equals(getCallerAddress()) || address.equals(getNodeEngine().getThisAddress())) {
                 continue;
             }
-            ReplicateUpdateOperation updateOperation = new ReplicateUpdateOperation(name, key, value, 0, response, false);
+            ReplicateUpdateOperation updateOperation = new ReplicateUpdateOperation(name, key, value, 0, response,
+                    false, getCallerAddress());
             updateOperation.setPartitionId(getPartitionId());
             updateOperation.setValidateTarget(false);
             operationService.invokeOnTarget(getServiceName(), updateOperation, address);

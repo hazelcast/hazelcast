@@ -21,7 +21,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -207,7 +206,7 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapBaseTes
     }
 
     private void execute(final Runnable runnable, final EntryEventType type, final int operations,
-                         final double minExpectation, ReplicatedMap... maps)  throws TimeoutException {
+                         final double minExpectation, ReplicatedMap... maps) throws TimeoutException {
         final WatchedOperationExecutor executor = new WatchedOperationExecutor();
         executor.execute(runnable, 60, type, operations, minExpectation, maps);
     }

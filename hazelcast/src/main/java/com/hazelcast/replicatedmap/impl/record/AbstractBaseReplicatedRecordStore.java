@@ -17,32 +17,21 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEvictionProcessor;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
 import com.hazelcast.util.scheduler.ScheduledEntry;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static com.hazelcast.core.EntryEventType.ADDED;
-import static com.hazelcast.core.EntryEventType.REMOVED;
-import static com.hazelcast.core.EntryEventType.UPDATED;
 
 /**
  * Internal base class to encapsulate the internals from the interface methods of ReplicatedRecordStore
@@ -50,7 +39,7 @@ import static com.hazelcast.core.EntryEventType.UPDATED;
  * @param <K> key type
  * @param <V> value type
  */
-abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedRecordStore, InitializingObject {
+abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedRecordStore {
 
     protected final AtomicReference<InternalReplicatedMapStorage<K, V>> storageRef;
     protected final ReplicatedMapService replicatedMapService;
@@ -100,10 +89,6 @@ abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedReco
     }
 
     @Override
-    public void initialize() {
-    }
-
-    @Override
     public void destroy() {
         storageRef.get().clear();
         replicatedMapService.destroyDistributedObject(getName());
@@ -130,33 +115,6 @@ abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedReco
     boolean scheduleTtlEntry(long delayMillis, K key, V object) {
         return ttlEvictionScheduler.schedule(delayMillis, key, object);
     }
-
-    void fireEntryListenerEvent(Object key, Object oldValue, Object value) {
-        EntryEventType eventType = value == null ? REMOVED : oldValue == null ? ADDED : UPDATED;
-        fireEntryListenerEvent(key, oldValue, value, eventType);
-    }
-
-    void fireEntryListenerEvent(Object key, Object oldValue, Object value, EntryEventType eventType) {
-        Collection<EventRegistration> registrations = eventService.getRegistrations(
-                ReplicatedMapService.SERVICE_NAME, name);
-        if (registrations.size() <= 0) {
-            return;
-        }
-        Data dataKey = serializationService.toData(key);
-        Data dataValue = serializationService.toData(value);
-        Data dataOldValue = serializationService.toData(oldValue);
-        EntryEventData eventData = new EntryEventData(name, name, nodeEngine.getThisAddress(),
-                dataKey, dataValue, dataOldValue, eventType.getType());
-        for (EventRegistration registration : registrations) {
-            EventFilter filter = registration.getFilter();
-            boolean publish = filter == null || filter.eval(dataKey);
-            if (publish) {
-                eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registration,
-                        eventData, dataKey.hashCode());
-            }
-        }
-    }
-
 
     @Override
     public boolean isLoaded() {

@@ -17,10 +17,10 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.operation.ReplicateUpdateOperation;
 import com.hazelcast.replicatedmap.impl.operation.VersionResponsePair;
@@ -37,6 +37,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -78,7 +79,6 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             getStorage().remove(marshalledKey, current);
         }
         Object unmarshalledOldValue = unmarshall(oldValue);
-        fireEntryListenerEvent(key, unmarshalledOldValue, null);
         if (replicatedMapConfig.isStatisticsEnabled()) {
             getStats().incrementRemoves(Clock.currentTimeMillis() - time);
         }
@@ -98,8 +98,10 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             oldValue = (V) current.getValueInternal();
             getStorage().remove(marshalledKey, current);
         }
-        Object unmarshalledOldValue = unmarshall(oldValue);
-        fireEntryListenerEvent(key, unmarshalledOldValue, null, EntryEventType.EVICTED);
+        Data dataKey = nodeEngine.toData(key);
+        Data dataOldValue = nodeEngine.toData(oldValue);
+        ReplicatedMapEventPublishingService eventPublishingService = replicatedMapService.getEventPublishingService();
+        eventPublishingService.fireEntryListenerEvent(dataKey, dataOldValue, null, EVICTED, name, nodeEngine.getThisAddress());
         if (replicatedMapConfig.isStatisticsEnabled()) {
             getStats().incrementRemoves(Clock.currentTimeMillis() - time);
         }
@@ -164,7 +166,6 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             cancelTtlEntry(marshalledKey);
         }
         Object unmarshalledOldValue = unmarshall(oldValue);
-        fireEntryListenerEvent(key, unmarshalledOldValue, value);
         if (replicatedMapConfig.isStatisticsEnabled()) {
             getStats().incrementPuts(Clock.currentTimeMillis() - time);
         }
@@ -344,7 +345,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
                         VersionResponsePair response) {
         OperationService operationService = nodeEngine.getOperationService();
         ReplicateUpdateOperation updateOperation = new ReplicateUpdateOperation(name, key, value, ttl,
-                response, isRemove);
+                response, isRemove, nodeEngine.getThisAddress());
         updateOperation.setPartitionId(partitionId);
         updateOperation.setValidateTarget(false);
         operationService.invokeOnTarget(SERVICE_NAME, updateOperation, address);

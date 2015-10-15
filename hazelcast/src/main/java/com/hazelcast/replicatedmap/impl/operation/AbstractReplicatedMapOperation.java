@@ -63,7 +63,7 @@ public abstract class AbstractReplicatedMapOperation extends AbstractOperation {
     private void invoke(boolean isRemove, OperationService operationService, Address address, String name, Data key,
                         Data value, long ttl, VersionResponsePair response) {
         ReplicateUpdateOperation updateOperation = new ReplicateUpdateOperation(name, key, value, ttl, response,
-                isRemove);
+                isRemove, getCallerAddress());
         updateOperation.setPartitionId(getPartitionId());
         updateOperation.setValidateTarget(false);
         operationService

@@ -18,9 +18,11 @@ package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.AbstractOperation;
@@ -83,6 +85,23 @@ public class ReplicateUpdateToCallerOperation extends AbstractOperation implemen
 
     @Override
     public void afterRun() throws Exception {
+        notifyCaller();
+        publishEvent();
+    }
+
+    private void publishEvent() {
+        ReplicatedMapService service = getService();
+        ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
+        Address thisAddress = getNodeEngine().getThisAddress();
+        Data dataOldValue = getNodeEngine().toData(response.getResponse());
+        if (isRemove) {
+            eventPublishingService.fireEntryListenerEvent(dataKey, dataOldValue, null, name, thisAddress);
+        } else {
+            eventPublishingService.fireEntryListenerEvent(dataKey, dataOldValue, dataValue, name, thisAddress);
+        }
+    }
+
+    private void notifyCaller() {
         OperationServiceImpl operationService = (OperationServiceImpl) getNodeEngine().getOperationService();
         InvocationRegistry registry = operationService.getInvocationsRegistry();
         registry.notifyBackupComplete(callId);

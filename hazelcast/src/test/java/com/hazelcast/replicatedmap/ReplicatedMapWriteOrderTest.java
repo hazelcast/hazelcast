@@ -20,12 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -120,17 +118,6 @@ public class ReplicatedMapWriteOrderTest extends HazelcastTestSupport {
                 public void run() throws Exception {
                     System.out.println("---------------------");
                     System.out.println("key = " + key);
-                    for (HazelcastInstance instance : instances) {
-                        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
-                        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-                        LongGauge version= nodeEngine.getMetricsRegistry().newLongGauge("test." + partitionId + ".version.version");
-                        LongGauge increments = nodeEngine.getMetricsRegistry().newLongGauge("test."+partitionId+ ".incrementVersion.incrementVersion");
-                        LongGauge setVersion = nodeEngine.getMetricsRegistry().newLongGauge("test."+partitionId+ ".setVersion.setVersion");
-                        System.out.println("version= " + version.read());
-                        System.out.println("increments= " + increments.read());
-                        System.out.println("setVersion= " + setVersion.read());
-                    }
-
                     printValues();
                     assertValuesAreEqual();
                 }
@@ -138,7 +125,7 @@ public class ReplicatedMapWriteOrderTest extends HazelcastTestSupport {
                 private void printValues() throws Exception {
                     for (int j = 0; j < maps.size(); j++) {
                         ReplicatedMap map = maps.get(j);
-                        System.out.println("value[" + j + "] = " + map.get(key)+" , store version : " + getStore(map, key).getVersion());
+                        System.out.println("value[" + j + "] = " + map.get(key) + " , store version : " + getStore(map, key).getVersion());
                     }
                 }
 
@@ -211,12 +198,11 @@ public class ReplicatedMapWriteOrderTest extends HazelcastTestSupport {
     }
 
     @SuppressWarnings("unchecked")
-    protected <K, V>  ReplicatedRecordStore getStore(ReplicatedMap<K, V> map, K key) throws Exception {
+    protected <K, V> ReplicatedRecordStore getStore(ReplicatedMap<K, V> map, K key) throws Exception {
         ReplicatedMapProxy<K, V> proxy = (ReplicatedMapProxy<K, V>) map;
         ReplicatedMapService service = (ReplicatedMapService) REPLICATED_MAP_SERVICE.get(proxy);
         return service.getReplicatedRecordStore(map.getName(), false, key);
     }
-
 
 
 }

@@ -62,7 +62,12 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractOperation {
         for (RecordMigrationInfo record : recordSet) {
             K key = (K) store.marshall(record.getKey());
             V value = (V) store.marshall(record.getValue());
-            newStorage.putInternal(key, buildReplicatedRecord(key, value, record.getTtl()));
+            ReplicatedRecord<K, V> replicatedRecord = buildReplicatedRecord(key, value, record.getTtl());
+            ReplicatedRecord oldRecord = store.getReplicatedRecord(key);
+            if (oldRecord != null) {
+                replicatedRecord.setHits(oldRecord.getHits());
+            }
+            newStorage.putInternal(key, replicatedRecord);
         }
         newStorage.setVersion(version);
         AtomicReference<InternalReplicatedMapStorage<K, V>> storageRef = store.getStorageRef();
