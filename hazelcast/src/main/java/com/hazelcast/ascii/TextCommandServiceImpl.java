@@ -374,6 +374,8 @@ public class TextCommandServiceImpl implements TextCommandService {
                         SocketTextWriter socketTextWriter = textCommand.getSocketTextWriter();
                         socketTextWriter.enqueue(textCommand);
                     }
+                } catch (NullPointerException e) {
+                    continue;                    
                 } catch (InterruptedException e) {
                     return;
                 } catch (OutOfMemoryError e) {
