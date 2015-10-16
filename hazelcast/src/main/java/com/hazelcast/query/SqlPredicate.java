@@ -18,6 +18,7 @@ package com.hazelcast.query;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -46,7 +47,7 @@ import static com.hazelcast.query.Predicates.regex;
 /**
  * This class contains methods related to conversion of sql query to predicate.
  */
-public class SqlPredicate implements IndexAwarePredicate, VisitablePredicate {
+public class SqlPredicate implements IndexAwarePredicate, VisitablePredicate, DataSerializable {
 
     private static final long serialVersionUID = 1;
 
@@ -79,10 +80,12 @@ public class SqlPredicate implements IndexAwarePredicate, VisitablePredicate {
         return ((IndexAwarePredicate) predicate).filter(queryContext);
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(sql);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         sql = in.readUTF();
         predicate = createPredicate(sql);
