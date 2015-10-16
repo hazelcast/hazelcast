@@ -57,6 +57,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class ComputeServiceBuilder {
 
+    private static final String GOOGLE_COMPUTE_ENGINE = "google-compute-engine";
+    private static final String AWS_EC2 = "aws-ec2";
     private static final String JCLOUD_CONNECTION_TIMEOUT = "10000";
     private static final ILogger LOGGER = Logger.getLogger(ComputeServiceBuilder.class);
 
@@ -144,14 +146,11 @@ public class ComputeServiceBuilder {
         final String identity = getOrNull(JCloudsProperties.IDENTITY);
         String credential = getOrNull(JCloudsProperties.CREDENTIAL);
         final String credentialPath = getOrNull(JCloudsProperties.CREDENTIAL_PATH);
-
         checkNotNull(cloudProvider, "Cloud provider is not set");
-        checkNotNull(identity, "Cloud provider identity is not set");
 
         if (credential != null && credentialPath != null) {
             throw new UnsupportedOperationException("Both credential and credentialPath are set. Use only one method.");
         }
-
         if (credentialPath != null) {
             credential = getCredentialFromFile(credential, credentialPath);
         }
@@ -160,16 +159,16 @@ public class ComputeServiceBuilder {
             LOGGER.finest("Using CLOUD_PROVIDER: " + cloudProvider);
         }
 
-        ContextBuilder contextBuilder = newContextBuilder(cloudProvider);
+        final String roleName = getOrNull(JCloudsProperties.ROLE_NAME);
+        ContextBuilder contextBuilder = newContextBuilder(cloudProvider, identity, credential, roleName);
 
         Properties jcloudsProperties = buildRegionZonesConfig();
         buildTagConfig();
         buildNodeFilter();
 
         computeService = contextBuilder.overrides(jcloudsProperties)
-                            .credentials(identity, credential)
-                            .buildView(ComputeServiceContext.class)
-                            .getComputeService();
+                .buildView(ComputeServiceContext.class)
+                .getComputeService();
 
         return computeService;
     }
@@ -226,7 +225,7 @@ public class ComputeServiceBuilder {
         try {
             String fileContents = Files.toString(new File(credentialPath), Charsets.UTF_8);
 
-            if (provider.equals("google-compute-engine")) {
+            if (provider.equals(GOOGLE_COMPUTE_ENGINE)) {
                 Supplier<Credentials> credentialSupplier = new GoogleCredentialsFromJson(fileContents);
                 return credentialSupplier.get().credential;
             }
@@ -237,9 +236,27 @@ public class ComputeServiceBuilder {
         }
     }
 
-    private ContextBuilder newContextBuilder(String cloudProvider) {
+    private ContextBuilder newContextBuilder(final String cloudProvider, final String identity,
+                                             final String credential, final String roleName) {
         try {
-            return ContextBuilder.newBuilder(cloudProvider);
+            if (roleName != null && (identity != null || credential != null)) {
+                throw new InvalidConfigurationException("IAM role is configured, identity "
+                        + "or credential propery is not allowed.");
+            }
+            if (cloudProvider.equals(AWS_EC2) && roleName != null) {
+                Supplier<Credentials> credentialsSupplier = new Supplier<Credentials>() {
+                    @Override
+                    public Credentials get() {
+                        return new IAMRoleCredentialSupplierBuilder().
+                                withRoleName(roleName).build();
+                    }
+                };
+                return ContextBuilder.newBuilder(cloudProvider).credentialsSupplier(credentialsSupplier);
+            } else {
+                checkNotNull(identity, "Cloud provider identity is not set");
+                checkNotNull(credential, "Cloud provider credential is not set");
+                return ContextBuilder.newBuilder(cloudProvider).credentials(identity, credential);
+            }
         } catch (NoSuchElementException e) {
             throw new InvalidConfigurationException("Unrecognized cloud-provider [" + cloudProvider + "]");
         }
