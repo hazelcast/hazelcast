@@ -27,6 +27,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -58,6 +59,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -303,6 +305,127 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
                 assertEquals(owner, partition.getOwnerOrNull());
             }
         }, 3);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void partitionAssignment_shouldFail_whenTriggered_inFrozenState() {
+        Config config = new Config();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance[] instances = factory.newInstances(config);
+        HazelcastInstance hz1 = instances[0];
+        HazelcastInstance hz2 = instances[1];
+        HazelcastInstance hz3 = instances[2];
+
+        hz2.getCluster().changeClusterState(ClusterState.FROZEN);
+
+        InternalPartitionService partitionService = getPartitionService(hz1);
+        partitionService.getPartitionOwnerOrWait(1);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void partitionAssignment_shouldFail_whenTriggered_inPassiveState() {
+        Config config = new Config();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance[] instances = factory.newInstances(config);
+        HazelcastInstance hz1 = instances[0];
+        HazelcastInstance hz2 = instances[1];
+        HazelcastInstance hz3 = instances[2];
+
+        hz2.getCluster().changeClusterState(ClusterState.PASSIVE);
+
+        InternalPartitionService partitionService = getPartitionService(hz1);
+        partitionService.getPartitionOwnerOrWait(1);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void partitionInvocation_shouldFail_whenPartitionsNotAssigned_inFrozenState() throws InterruptedException {
+        Config config = new Config();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance[] instances = factory.newInstances(config);
+        HazelcastInstance hz1 = instances[0];
+        HazelcastInstance hz2 = instances[1];
+        HazelcastInstance hz3 = instances[2];
+
+        hz2.getCluster().changeClusterState(ClusterState.FROZEN);
+
+        InternalOperationService operationService = getNode(hz3).getNodeEngine().getOperationService();
+        Operation op = new AddAndGetOperation(randomName(), 1);
+        Future<Long> future = operationService
+                .invokeOnPartition(AtomicLongService.SERVICE_NAME, op, 1);
+
+        try {
+            future.get();
+            fail("Partition invocation must fail, because partitions cannot be assigned!");
+        } catch (ExecutionException e) {
+            // IllegalStateException should be cause of ExecutionException.
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void partitionInvocation_shouldFail_whenPartitionsNotAssigned_inPassiveState() throws InterruptedException {
+        Config config = new Config();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance[] instances = factory.newInstances(config);
+        HazelcastInstance hz1 = instances[0];
+        HazelcastInstance hz2 = instances[1];
+        HazelcastInstance hz3 = instances[2];
+
+        hz2.getCluster().changeClusterState(ClusterState.PASSIVE);
+
+        InternalOperationService operationService = getNode(hz3).getNodeEngine().getOperationService();
+        Operation op = new AddAndGetOperation(randomName(), 1);
+        Future<Long> future = operationService
+                .invokeOnPartition(AtomicLongService.SERVICE_NAME, op, 1);
+
+        try {
+            future.get();
+            fail("Partition invocation must fail, because partitions cannot be assigned!");
+        } catch (ExecutionException e) {
+            // IllegalStateException should be cause of ExecutionException.
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    @Test
+    public void test_eitherClusterStateChange_orPartitionInitialization_shouldBeSuccessful()
+            throws InterruptedException {
+
+        Config config = new Config();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance[] instances = factory.newInstances(config);
+        HazelcastInstance hz1 = instances[0];
+        HazelcastInstance hz2 = instances[1];
+        HazelcastInstance hz3 = instances[2];
+
+        final InternalPartitionService partitionService = getNode(hz1).getPartitionService();
+        final int initialPartitionStateVersion = partitionService.getPartitionStateVersion();
+
+        final ClusterServiceImpl cluster = getNode(hz2).getClusterService();
+        final ClusterState newState = ClusterState.PASSIVE;
+        Thread thread = new Thread() {
+            public void run() {
+                try {
+                    cluster.changeClusterState(newState, initialPartitionStateVersion);
+                } catch (Exception ignored) {
+                }
+            }
+        };
+        thread.start();
+
+        partitionService.firstArrangement();
+
+        thread.join(TimeUnit.MINUTES.toMillis(1));
+
+        final ClusterState currentState = cluster.getClusterState();
+        if (currentState == newState) {
+            // if cluster state changed then partition state version should be equal to initial version
+            assertEquals(initialPartitionStateVersion, partitionService.getPartitionStateVersion());
+        } else {
+            // if cluster state change failed then partition state version should be some positive number
+            assertEquals(ClusterState.ACTIVE, currentState);
+            assertTrue(partitionService.getPartitionStateVersion() > 0);
+        }
     }
 
     @Test

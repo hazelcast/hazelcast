@@ -816,23 +816,30 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public void changeClusterState(ClusterState newState) {
-        clusterStateManager.changeClusterState(newState);
+        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
+        clusterStateManager.changeClusterState(newState, partitionStateVersion);
     }
 
     @Override
     public void changeClusterState(ClusterState newState, TransactionOptions options) {
-        clusterStateManager.changeClusterState(newState, options);
+        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
+        clusterStateManager.changeClusterState(newState, options, partitionStateVersion);
+    }
+
+    // for testing
+    public void changeClusterState(ClusterState newState, int partitionStateVersion) {
+        clusterStateManager.changeClusterState(newState, partitionStateVersion);
     }
 
     @Override
     public void shutdown() {
-        clusterStateManager.changeClusterState(ClusterState.PASSIVE);
+        changeClusterState(ClusterState.PASSIVE);
         shutdownNodes();
     }
 
     @Override
     public void shutdown(TransactionOptions options) {
-        clusterStateManager.changeClusterState(ClusterState.PASSIVE, options);
+        changeClusterState(ClusterState.PASSIVE, options);
         shutdownNodes();
     }
 
