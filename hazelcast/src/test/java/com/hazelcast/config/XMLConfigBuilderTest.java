@@ -967,12 +967,51 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testAttributeConfig_noName() throws Exception {
+    public void testAttributeConfig_noName_noExtractor() throws Exception {
         String xml =
                 "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
                         "   <map name=\"people\">\n" +
                         "       <attributes>\n" +
-                        "           <attribute extractor=>weight</attribute>\n" +
+                        "           <attribute></attribute>\n" +
+                        "       </attributes>" +
+                        "   </map>" +
+                        "</hazelcast>";
+        buildConfig(xml);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAttributeConfig_noName_noExtractor_singleTag() throws Exception {
+        String xml =
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                        "   <map name=\"people\">\n" +
+                        "       <attributes>\n" +
+                        "           <attribute/>\n" +
+                        "       </attributes>" +
+                        "   </map>" +
+                        "</hazelcast>";
+        buildConfig(xml);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAttributeConfig_noExtractor() throws Exception {
+        String xml =
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                        "   <map name=\"people\">\n" +
+                        "       <attributes>\n" +
+                        "           <attribute>weight</attribute>\n" +
+                        "       </attributes>" +
+                        "   </map>" +
+                        "</hazelcast>";
+        buildConfig(xml);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAttributeConfig_emptyExtractor() throws Exception {
+        String xml =
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                        "   <map name=\"people\">\n" +
+                        "       <attributes>\n" +
+                        "           <attribute extractor=\"\">weight</attribute>\n" +
                         "       </attributes>" +
                         "   </map>" +
                         "</hazelcast>";
