@@ -32,6 +32,7 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
+import com.hazelcast.internal.management.request.ChangeWanStateRequest;
 import com.hazelcast.internal.management.request.ClusterPropsRequest;
 import com.hazelcast.internal.management.request.ConsoleCommandRequest;
 import com.hazelcast.internal.management.request.ConsoleRequest;
@@ -428,6 +429,7 @@ public class ManagementCenterService {
             register(new ExecuteScriptRequest());
             register(new ConsoleCommandRequest());
             register(new MapConfigRequest());
+            register(new ChangeWanStateRequest());
             register(new MemberConfigRequest());
             register(new ClusterPropsRequest());
             register(new GetLogsRequest());

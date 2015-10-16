@@ -18,6 +18,7 @@ package com.hazelcast.wan;
 
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.CoreService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.PacketHandler;
 
 /**
@@ -26,7 +27,8 @@ import com.hazelcast.spi.impl.PacketHandler;
  * to replicate values to other clusters over the wide area network, so it has to deal with long
  * delays, slow uploads and higher latencies.
  */
-public interface WanReplicationService extends CoreService, PacketHandler {
+public interface WanReplicationService
+        extends CoreService, PacketHandler, StatisticsAwareService {
 
     /**
      * Service name.
@@ -55,4 +57,20 @@ public interface WanReplicationService extends CoreService, PacketHandler {
      * Starts the shutdown process of the WAN replication service.
      */
     void shutdown();
+
+    /**
+     * Pauses wan replication to target group for the called node
+     *
+     * @param name name of WAN replication configuration
+     * @param targetGroupName name of wan target cluster config
+     */
+    void pause(String name, String targetGroupName);
+
+    /**
+     * Resumes wan replication to target group for the called node.
+     *
+     * @param name name of WAN replication configuration
+     * @param targetGroupName name of wan target cluster config
+     */
+    void resume(String name, String targetGroupName);
 }
