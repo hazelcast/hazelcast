@@ -105,6 +105,10 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         return hits;
     }
 
+    public void setHits(long hits) {
+        this.hits = hits;
+    }
+
     public long getLastAccessTime() {
         return lastAccessTime;
     }
@@ -139,6 +143,7 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         out.writeLong(ttlMillis);
         out.writeLong(updateTime);
         out.writeLong(creationTime);
+        out.writeLong(hits);
         out.writeInt(partitionId);
     }
 
@@ -149,6 +154,7 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         ttlMillis = in.readLong();
         updateTime = in.readLong();
         creationTime = in.readLong();
+        HITS.set(this, in.readLong());
         partitionId = in.readInt();
     }
 
@@ -193,6 +199,10 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         sb.append("key=").append(key);
         sb.append(", value=").append(value);
         sb.append(", ttlMillis=").append(ttlMillis);
+        sb.append(", hits=").append(HITS.get(this));
+        sb.append(", creationTime=").append(creationTime);
+        sb.append(", lastAccessTime=").append(lastAccessTime);
+        sb.append(", updateTime=").append(updateTime);
         sb.append('}');
         return sb.toString();
     }

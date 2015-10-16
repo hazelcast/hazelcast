@@ -29,6 +29,7 @@ import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.operation.PutAllOperation;
 import com.hazelcast.replicatedmap.impl.operation.PutOperation;
 import com.hazelcast.replicatedmap.impl.operation.RemoveOperation;
+import com.hazelcast.replicatedmap.impl.operation.RequestMapDataOperation;
 import com.hazelcast.replicatedmap.impl.operation.VersionResponsePair;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedEntryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedQueryEventFilter;
@@ -133,7 +134,10 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject
     private void requestDataForPartition(int partitionId) {
         RequestMapDataOperation requestMapDataOperation = new RequestMapDataOperation(name);
         OperationService operationService = nodeEngine.getOperationService();
-        operationService.invokeOnPartition(SERVICE_NAME, requestMapDataOperation, partitionId);
+        operationService
+                .createInvocationBuilder(SERVICE_NAME, requestMapDataOperation, partitionId)
+                .setTryCount(ReplicatedMapService.INVOCATION_TRY_COUNT)
+                .invoke();
     }
 
 

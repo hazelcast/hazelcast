@@ -20,6 +20,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -33,6 +34,7 @@ public class PutOperation extends AbstractReplicatedMapOperation implements Part
 
     private transient ReplicatedMapService service;
     private transient ReplicatedRecordStore store;
+    private transient Data oldValue;
 
     public PutOperation() {
     }
@@ -56,8 +58,9 @@ public class PutOperation extends AbstractReplicatedMapOperation implements Part
         store = service.getReplicatedRecordStore(name, true, getPartitionId());
         Address thisAddress = getNodeEngine().getThisAddress();
         boolean isLocal = getCallerAddress().equals(thisAddress);
-        Object putResponse = store.put(key, value, ttl, TimeUnit.MILLISECONDS, isLocal);
-        response = new VersionResponsePair(putResponse, store.getVersion());
+        Object putResult = store.put(key, value, ttl, TimeUnit.MILLISECONDS, isLocal);
+        this.oldValue = getNodeEngine().toData(putResult);
+        response = new VersionResponsePair(putResult, store.getVersion());
         if (!isLocal) {
             sendUpdateCallerOperation(false);
         }
@@ -66,6 +69,8 @@ public class PutOperation extends AbstractReplicatedMapOperation implements Part
     @Override
     public void afterRun() throws Exception {
         sendReplicationOperation(false);
+        ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
+        eventPublishingService.fireEntryListenerEvent(key, oldValue, value, name, getCallerAddress());
     }
 
     @Override

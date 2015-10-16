@@ -56,15 +56,8 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
 
     /**
      * <p>The clear operation wipes data out of the replicated maps.
-     * It is the only synchronous remote operation in this implementation, so
-     * be aware that this might be a slow operation.</p>
      * <p>If some node fails on executing the operation, it is retried for at most
-     * 3 times (on the failing nodes only). If it does not work after the third time, this
-     * method throws a {@link com.hazelcast.core.OperationTimeoutException} back
-     * to the caller.</p>
-     *
-     * @throws com.hazelcast.core.OperationTimeoutException thrown if clear could not
-     *                                           be executed on remote nodes.
+     * 5 times (on the failing nodes only).
      */
     void clear();
 

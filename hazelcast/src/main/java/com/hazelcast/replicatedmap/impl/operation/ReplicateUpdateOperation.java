@@ -18,9 +18,11 @@ package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.AbstractOperation;
@@ -40,6 +42,7 @@ public class ReplicateUpdateOperation extends AbstractOperation implements Parti
     Data dataKey;
     Data dataValue;
     long ttl;
+    Address origin;
 
     public ReplicateUpdateOperation() {
     }
@@ -49,13 +52,15 @@ public class ReplicateUpdateOperation extends AbstractOperation implements Parti
                                     Data dataValue,
                                     long ttl,
                                     VersionResponsePair response,
-                                    boolean isRemove) {
+                                    boolean isRemove,
+                                    Address origin) {
         this.name = name;
         this.dataKey = dataKey;
         this.dataValue = dataValue;
         this.ttl = ttl;
         this.response = response;
         this.isRemove = isRemove;
+        this.origin = origin;
     }
 
     @Override
@@ -81,6 +86,23 @@ public class ReplicateUpdateOperation extends AbstractOperation implements Parti
     }
 
     @Override
+    public void afterRun() throws Exception {
+        publishEvent();
+    }
+
+    private void publishEvent() {
+        ReplicatedMapService service = getService();
+        ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
+        Data dataOldValue = getNodeEngine().toData(response.getResponse());
+        if (isRemove) {
+            eventPublishingService.fireEntryListenerEvent(dataKey, dataOldValue, null, name, origin);
+        } else {
+            eventPublishingService.fireEntryListenerEvent(dataKey, dataOldValue, dataValue, name, origin);
+        }
+    }
+
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         response.writeData(out);
         out.writeUTF(name);
@@ -88,6 +110,7 @@ public class ReplicateUpdateOperation extends AbstractOperation implements Parti
         out.writeData(dataValue);
         out.writeLong(ttl);
         out.writeBoolean(isRemove);
+        out.writeObject(origin);
     }
 
     @Override
@@ -99,5 +122,6 @@ public class ReplicateUpdateOperation extends AbstractOperation implements Parti
         dataValue = in.readData();
         ttl = in.readLong();
         isRemove = in.readBoolean();
+        origin = in.readObject();
     }
 }

@@ -17,31 +17,21 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEvictionProcessor;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
 import com.hazelcast.util.scheduler.ScheduledEntry;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.hazelcast.core.EntryEventType.ADDED;
-import static com.hazelcast.core.EntryEventType.REMOVED;
-import static com.hazelcast.core.EntryEventType.UPDATED;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Internal base class to encapsulate the internals from the interface methods of ReplicatedRecordStore
@@ -49,10 +39,9 @@ import static com.hazelcast.core.EntryEventType.UPDATED;
  * @param <K> key type
  * @param <V> value type
  */
-abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedRecordStore, InitializingObject {
+abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedRecordStore {
 
-    protected final InternalReplicatedMapStorage<K, V> storage;
-
+    protected final AtomicReference<InternalReplicatedMapStorage<K, V>> storageRef;
     protected final ReplicatedMapService replicatedMapService;
     protected final ReplicatedMapConfig replicatedMapConfig;
     protected final NodeEngineImpl nodeEngine;
@@ -74,7 +63,8 @@ abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedReco
         this.eventService = nodeEngine.getEventService();
         this.replicatedMapService = replicatedMapService;
         this.replicatedMapConfig = replicatedMapService.getReplicatedMapConfig(name);
-        this.storage = new InternalReplicatedMapStorage<K, V>();
+        this.storageRef = new AtomicReference<InternalReplicatedMapStorage<K, V>>();
+        this.storageRef.set(new InternalReplicatedMapStorage<K, V>());
         this.ttlEvictionScheduler = EntryTaskSchedulerFactory
                 .newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(),
                         new ReplicatedMapEvictionProcessor(nodeEngine, replicatedMapService, name)
@@ -82,7 +72,11 @@ abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedReco
     }
 
     public InternalReplicatedMapStorage<K, V> getStorage() {
-        return storage;
+        return storageRef.get();
+    }
+
+    public AtomicReference<InternalReplicatedMapStorage<K, V>> getStorageRef() {
+        return storageRef;
     }
 
     @Override
@@ -95,26 +89,22 @@ abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedReco
     }
 
     @Override
-    public void initialize() {
-    }
-
-    @Override
     public void destroy() {
-        storage.clear();
+        storageRef.get().clear();
         replicatedMapService.destroyDistributedObject(getName());
     }
 
 
     public long getVersion() {
-        return storage.getVersion();
+        return storageRef.get().getVersion();
     }
 
     public void setVersion(long version) {
-        storage.setVersion(version);
+        storageRef.get().setVersion(version);
     }
 
     public Set<ReplicatedRecord> getRecords() {
-        return new HashSet<ReplicatedRecord>(storage.values());
+        return new HashSet<ReplicatedRecord>(storageRef.get().values());
     }
 
 
@@ -125,33 +115,6 @@ abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedReco
     boolean scheduleTtlEntry(long delayMillis, K key, V object) {
         return ttlEvictionScheduler.schedule(delayMillis, key, object);
     }
-
-    void fireEntryListenerEvent(Object key, Object oldValue, Object value) {
-        EntryEventType eventType = value == null ? REMOVED : oldValue == null ? ADDED : UPDATED;
-        fireEntryListenerEvent(key, oldValue, value, eventType);
-    }
-
-    void fireEntryListenerEvent(Object key, Object oldValue, Object value, EntryEventType eventType) {
-        Collection<EventRegistration> registrations = eventService.getRegistrations(
-                ReplicatedMapService.SERVICE_NAME, name);
-        if (registrations.size() <= 0) {
-            return;
-        }
-        Data dataKey = serializationService.toData(key);
-        Data dataValue = serializationService.toData(value);
-        Data dataOldValue = serializationService.toData(oldValue);
-        EntryEventData eventData = new EntryEventData(name, name, nodeEngine.getThisAddress(),
-                dataKey, dataValue, dataOldValue, eventType.getType());
-        for (EventRegistration registration : registrations) {
-            EventFilter filter = registration.getFilter();
-            boolean publish = filter == null || filter.eval(dataKey);
-            if (publish) {
-                eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registration,
-                        eventData, dataKey.hashCode());
-            }
-        }
-    }
-
 
     @Override
     public boolean isLoaded() {
@@ -177,7 +140,7 @@ abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedReco
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
-        if (!storage.equals(that.storage)) {
+        if (!storageRef.get().equals(that.storageRef.get())) {
             return false;
         }
 
@@ -186,7 +149,7 @@ abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedReco
 
     @Override
     public int hashCode() {
-        int result = storage.hashCode();
+        int result = storageRef.get().hashCode();
         result = 31 * result + (name != null ? name.hashCode() : 0);
         return result;
     }

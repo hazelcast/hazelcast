@@ -25,7 +25,6 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
-import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
@@ -76,6 +75,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         MigrationAwareService, SplitBrainHandlerService, StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:replicatedMapService";
+    public static final int INVOCATION_TRY_COUNT = 3;
 
     private static final int SYNC_INTERVAL_SECONDS = 10;
     private static final int MAX_CLEAR_EXECUTION_RETRY = 5;
@@ -144,7 +144,9 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
                         CheckReplicaVersion checkReplicaVersion = new CheckReplicaVersion(partitionContainer);
                         checkReplicaVersion.setPartitionId(i);
                         checkReplicaVersion.setValidateTarget(false);
-                        operationService.invokeOnTarget(SERVICE_NAME, checkReplicaVersion, address);
+                        operationService.createInvocationBuilder(SERVICE_NAME, checkReplicaVersion, address)
+                                .setTryCount(INVOCATION_TRY_COUNT)
+                                .invoke();
                     }
                 }
             }
@@ -290,27 +292,12 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         InternalCompletableFuture<Object> result = operationService
                 .invokeOnTarget(SERVICE_NAME, operation, nodeEngine.getThisAddress());
         Integer deletedEntrySize = (Integer) result.getSafely();
-        Collection<Address> failedMembers = getMemberAddresses(DATA_MEMBER_SELECTOR);
-        for (int i = 0; i < MAX_CLEAR_EXECUTION_RETRY; i++) {
-            Map<Address, InternalCompletableFuture> futures = executeClearOnMembers(failedMembers, name);
-            // Clear to collect new failing members
-            failedMembers.clear();
-            for (Map.Entry<Address, InternalCompletableFuture> future : futures.entrySet()) {
-                try {
-                    future.getValue().get();
-                } catch (Exception e) {
-                    nodeEngine.getLogger(ReplicatedMapService.class).finest(e);
-                    failedMembers.add(future.getKey());
-                }
-            }
-
-            if (failedMembers.size() == 0) {
-                eventPublishingService.fireMapClearedEvent(deletedEntrySize, name);
-                return;
-            }
+        Collection<Address> memberAddresses = getMemberAddresses(DATA_MEMBER_SELECTOR);
+        Map<Address, InternalCompletableFuture> futures = executeClearOnMembers(memberAddresses, name);
+        for (Map.Entry<Address, InternalCompletableFuture> future : futures.entrySet()) {
+            future.getValue().getSafely();
         }
-        // If we get here we does not seem to have finished the operation
-        throw new OperationTimeoutException("Clear operation couldn't be finished, failed nodes: " + failedMembers);
+        eventPublishingService.fireMapClearedEvent(deletedEntrySize, name);
     }
 
     private Collection<Address> getMemberAddresses(MemberSelector memberSelector) {
@@ -330,6 +317,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
             }
             Operation operation = new ClearLocalOperation(name);
             InvocationBuilder ib = operationService.createInvocationBuilder(SERVICE_NAME, operation, address);
+            ib.setTryCount(MAX_CLEAR_EXECUTION_RETRY);
             futures.put(address, ib.invoke());
         }
         return futures;

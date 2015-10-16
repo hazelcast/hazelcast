@@ -52,7 +52,6 @@ public class MergeOperation extends AbstractReplicatedMapOperation {
         store.merge(key, entryView, policy);
     }
 
-
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
