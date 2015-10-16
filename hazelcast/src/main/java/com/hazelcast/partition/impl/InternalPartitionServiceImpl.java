@@ -302,6 +302,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     public Address getPartitionOwnerOrWait(int partitionId) {
         Address owner;
         while ((owner = getPartitionOwner(partitionId)) == null) {
+            ClusterState clusterState = node.getClusterService().getClusterState();
+            if (clusterState != ClusterState.ACTIVE) {
+                throw new IllegalStateException("Partitions can't be assigned since cluster-state: " + clusterState);
+            }
             if (isClusterFormedByOnlyLiteMembers()) {
                 throw new NoDataMemberInClusterException(
                         "Partitions can't be assigned since all nodes in the cluster are lite members");
@@ -356,7 +360,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             if (initialized) {
                 return;
             }
-            if (initializePartitionAssignments()) {
+            if (!initializePartitionAssignments()) {
                 return;
             }
             publishPartitionRuntimeState();
@@ -371,11 +375,17 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private boolean initializePartitionAssignments() {
+        ClusterState clusterState = node.getClusterService().getClusterState();
+        if (clusterState != ClusterState.ACTIVE) {
+            logger.warning("Partitions can't be assigned since cluster-state= " + clusterState);
+            return false;
+        }
+
         PartitionStateGenerator psg = partitionStateGenerator;
         Collection<MemberGroup> memberGroups = createMemberGroups();
         if (memberGroups.isEmpty()) {
             logger.warning("No member group is available to assign partition ownership...");
-            return true;
+            return false;
         }
 
         logger.info("Initializing cluster partition table first arrangement...");
@@ -385,13 +395,24 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     + "Expected: " + partitionCount + ", Actual: " + newState.length);
         }
 
+        // increment state version to make fail cluster state transaction
+        // if it's started and not locked the state yet.
+        stateVersion.incrementAndGet();
+        clusterState = node.getClusterService().getClusterState();
+        if (clusterState != ClusterState.ACTIVE) {
+            // cluster state is either changed or locked, decrement version back and fail.
+            stateVersion.decrementAndGet();
+            logger.warning("Partitions can't be assigned since cluster-state= " + clusterState);
+            return false;
+        }
+
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             InternalPartitionImpl partition = partitions[partitionId];
             Address[] replicas = newState[partitionId];
             partition.setReplicaAddresses(replicas);
         }
         initialized = true;
-        return false;
+        return true;
     }
 
     private void updateMemberGroupsSize() {
@@ -428,6 +449,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         if (!member.localMember()) {
             updateMemberGroupsSize();
         }
+        stateVersion.incrementAndGet();
         if (node.isMaster()) {
             lock.lock();
             try {
@@ -452,9 +474,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         updateMemberGroupsSize();
         final Address deadAddress = member.getAddress();
         final Address thisAddress = node.getThisAddress();
-        if (deadAddress == null || deadAddress.equals(thisAddress)) {
+        if (thisAddress.equals(deadAddress)) {
             return;
         }
+
+        stateVersion.incrementAndGet();
         lock.lock();
         try {
             migrationQueue.clear();
@@ -463,7 +487,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     rollbackActiveMigrationsFromPreviousMaster(node.getLocalMember().getUuid());
                 }
                 for (MigrationInfo migrationInfo : activeMigrations.values()) {
-                    if (deadAddress.equals(migrationInfo.getSource()) || deadAddress.equals(migrationInfo.getDestination())) {
+                    if (deadAddress.equals(migrationInfo.getSource())
+                            || deadAddress.equals(migrationInfo.getDestination())) {
                         migrationInfo.invalidate();
                     }
                 }

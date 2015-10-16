@@ -122,29 +122,43 @@ public class ClusterStateManager {
         Preconditions.checkNotNull(newState);
         clusterServiceLock.lock();
         try {
-            if (newState != ClusterState.ACTIVE) {
-                final InternalPartitionService partitionService = node.getPartitionService();
-                final int thisPartitionStateVersion = partitionService.getPartitionStateVersion();
-
-                if (partitionService.hasOnGoingMigrationLocal()) {
-                    throw new IllegalStateException("Still have pending migration/replication tasks, "
-                            + "cannot lock cluster state! New state: " + newState
-                            + ", current state: " + getState());
-                } else  if (partitionStateVersion != thisPartitionStateVersion) {
-                    throw new IllegalStateException("Can not lock cluster state! Partition tables have different versions! "
-                            + "Expected version: " + partitionStateVersion + " Current version: " + thisPartitionStateVersion);
-                }
-
-            }
+            checkMigrationsAndPartitionStateVersion(newState, partitionStateVersion);
 
             final ClusterStateLock currentLock = getStateLock();
             if (!currentLock.allowsLock(txnId)) {
                 throw new TransactionException("Locking failed for " + initiator + ", tx: " + txnId
                         + ", current state: " + toString());
             }
+
             stateLockRef.set(new ClusterStateLock(initiator, txnId, leaseTime));
+
+            try {
+                // check migration status and partition-state version again
+                // if partition state is changed then release the lock and fail.
+                checkMigrationsAndPartitionStateVersion(newState, partitionStateVersion);
+            } catch (IllegalStateException e) {
+                stateLockRef.set(ClusterStateLock.NOT_LOCKED);
+                throw e;
+            }
         } finally {
             clusterServiceLock.unlock();
+        }
+    }
+
+    private void checkMigrationsAndPartitionStateVersion(ClusterState newState, int partitionStateVersion) {
+        if (newState != ClusterState.ACTIVE) {
+            final InternalPartitionService partitionService = node.getPartitionService();
+            final int thisPartitionStateVersion = partitionService.getPartitionStateVersion();
+
+            if (partitionService.hasOnGoingMigrationLocal()) {
+                throw new IllegalStateException("Still have pending migration/replication tasks, "
+                        + "cannot lock cluster state! New state: " + newState
+                        + ", current state: " + getState());
+            } else  if (partitionStateVersion != thisPartitionStateVersion) {
+                throw new IllegalStateException("Can not lock cluster state! Partition tables have different versions! "
+                        + "Expected version: " + partitionStateVersion + " Current version: " + thisPartitionStateVersion);
+            }
+
         }
     }
 
@@ -194,11 +208,11 @@ public class ClusterStateManager {
         }
     }
 
-    void changeClusterState(ClusterState newState) {
-        changeClusterState(newState, DEFAULT_TX_OPTIONS);
+    void changeClusterState(ClusterState newState, int partitionStateVersion) {
+        changeClusterState(newState, DEFAULT_TX_OPTIONS, partitionStateVersion);
     }
 
-    void changeClusterState(ClusterState newState, TransactionOptions options) {
+    void changeClusterState(ClusterState newState, TransactionOptions options, int partitionStateVersion) {
         checkParameters(newState, options);
         if (getState() == newState) {
             return;
@@ -213,8 +227,6 @@ public class ClusterStateManager {
         try {
             String txnId = tx.getTxnId();
             Collection<MemberImpl> members = getMemberImpls();
-
-            final int partitionStateVersion = nodeEngine.getPartitionService().getPartitionStateVersion();
 
             addTransactionRecords(newState, tx, members, partitionStateVersion);
 
