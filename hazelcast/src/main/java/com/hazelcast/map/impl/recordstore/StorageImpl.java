@@ -123,14 +123,15 @@ class StorageImpl<R extends Record> implements Storage<Data, R> {
     @Override
     public Object remove(Data key) {
         R record = records.remove(key);
+        if (record == null) {
+            return null;
+        }
 
         updateSizeEstimator(-calculateHeapCost(record));
         updateSizeEstimator(-calculateHeapCost(key));
 
         Object oldValue = record.getValue();
-        if (record != null) {
-            record.invalidate();
-        }
+        record.invalidate();
         return oldValue;
     }
 

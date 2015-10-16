@@ -22,10 +22,6 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.event.MapEventPublisherImpl;
-import com.hazelcast.map.impl.eviction.EvictionChecker;
-import com.hazelcast.map.impl.eviction.EvictionCheckerImpl;
-import com.hazelcast.map.impl.eviction.Evictor;
-import com.hazelcast.map.impl.eviction.EvictorImpl;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.BasePutOperation;
@@ -104,7 +100,6 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final MergePolicyProvider mergePolicyProvider;
     protected final MapQueryEngine mapQueryEngine;
     protected MapEventPublisher mapEventPublisher;
-    protected Evictor evictor;
     protected MapService mapService;
     protected EventService eventService;
     protected MapOperationProvider operationProvider;
@@ -115,7 +110,6 @@ class MapServiceContextImpl implements MapServiceContext {
         this.mapContainers = new ConcurrentHashMap<String, MapContainer>();
         this.ownedPartitions = new AtomicReference<Collection<Integer>>();
         this.expirationManager = new ExpirationManager(this, nodeEngine);
-        this.evictor = createEvictor();
         this.nearCacheProvider = createNearCacheProvider();
         this.localMapStatsProvider = createLocalMapStatsProvider();
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
@@ -123,12 +117,6 @@ class MapServiceContextImpl implements MapServiceContext {
         this.mapQueryEngine = createMapQueryEngine();
         this.eventService = nodeEngine.getEventService();
         this.operationProvider = new DefaultMapOperationProvider();
-    }
-
-    // this method is overridden in another context.
-    Evictor createEvictor() {
-        EvictionChecker evictionChecker = new EvictionCheckerImpl(this);
-        return new EvictorImpl(evictionChecker, this);
     }
 
     // this method is overridden in another context.
