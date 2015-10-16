@@ -29,7 +29,8 @@ public final class GetterFactory {
 
     }
 
-    public static Getter newFieldGetter(Object object, Getter parentGetter, Field field, String modifierSuffix) throws Exception {
+    public static Getter newFieldGetter(Object object, Getter parentGetter, Field field, String modifierSuffix)
+            throws Exception {
         Class<?> fieldType = field.getType();
 
         Class<?> returnType = null;
@@ -43,7 +44,8 @@ public final class GetterFactory {
         return new FieldGetter(parentGetter, field, modifierSuffix, returnType);
     }
 
-    public static Getter newMethodGetter(Object object, Getter parentGetter, Method method, String modifierSuffix) throws Exception {
+    public static Getter newMethodGetter(Object object, Getter parentGetter, Method method, String modifierSuffix)
+            throws Exception {
         Class<?> methodReturnType = method.getReturnType();
         Class<?> returnType = null;
         if (isExtractingFromCollection(methodReturnType, modifierSuffix)) {

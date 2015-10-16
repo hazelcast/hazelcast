@@ -98,7 +98,8 @@ public abstract class AbstractMultiValueGetter extends Getter {
         return inputType.getComponentType();
     }
 
-    private void collectResult(MultiResult collector, Object parentObject) throws IllegalAccessException, InvocationTargetException {
+    private void collectResult(MultiResult collector, Object parentObject) throws IllegalAccessException,
+            InvocationTargetException {
         Object currentObject = extractFrom(parentObject);
         if (currentObject == null) {
             return;
@@ -110,7 +111,8 @@ public abstract class AbstractMultiValueGetter extends Getter {
         }
     }
 
-    private Object extractFromMultiResult(MultiResult parentMultiResult) throws IllegalAccessException, InvocationTargetException {
+    private Object extractFromMultiResult(MultiResult parentMultiResult) throws IllegalAccessException,
+            InvocationTargetException {
         MultiResult collector = new MultiResult();
         for (Object parentResult : parentMultiResult.getResults()) {
             collectResult(collector, parentResult);
