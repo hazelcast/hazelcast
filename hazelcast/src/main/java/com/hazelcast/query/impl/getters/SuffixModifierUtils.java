@@ -21,6 +21,9 @@ package com.hazelcast.query.impl.getters;
  *
  */
 public final class SuffixModifierUtils {
+    public static final int DO_NOT_REDUCE = -1;
+    public static final int REDUCE_EVERYTHING = -2;
+
     private SuffixModifierUtils() {
 
     }

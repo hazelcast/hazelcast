@@ -30,21 +30,30 @@ public final class GetterFactory {
     }
 
     public static Getter newFieldGetter(Object object, Getter parentGetter, Field field, String modifierSuffix) throws Exception {
-        Class<?> type = field.getType();
+        Class<?> fieldType = field.getType();
 
-        Class<?> collectionType = null;
-        if (isExtractingFromCollection(type, modifierSuffix)) {
+        Class<?> returnType = null;
+        if (isExtractingFromCollection(fieldType, modifierSuffix)) {
             Object currentObject = getCurrentObject(object, parentGetter);
-            collectionType = getCollectionType(currentObject, field);
-            if (collectionType == null) {
+            returnType = getCollectionType(currentObject, field);
+            if (returnType == null) {
                 return NullGetter.NULL_GETTER;
             }
         }
-        return new FieldGetter(parentGetter, field, modifierSuffix, collectionType);
+        return new FieldGetter(parentGetter, field, modifierSuffix, returnType);
     }
 
-    public static Getter newMethodGetter(Getter parent, Method method) {
-        return new MethodGetter(parent, method);
+    public static Getter newMethodGetter(Object object, Getter parentGetter, Method method, String modifierSuffix) throws Exception {
+        Class<?> methodReturnType = method.getReturnType();
+        Class<?> returnType = null;
+        if (isExtractingFromCollection(methodReturnType, modifierSuffix)) {
+            Object currentObject = getCurrentObject(object, parentGetter);
+            returnType = getCollectionType(currentObject, method);
+            if (returnType == null) {
+                return NullGetter.NULL_GETTER;
+            }
+        }
+        return new MethodGetter(parentGetter, method, modifierSuffix, returnType);
     }
 
     public static Getter newThisGetter(Getter parent, Object object) {
@@ -60,6 +69,25 @@ public final class GetterFactory {
         }
 
         Collection targetCollection = (Collection) field.get(currentObject);
+        if (targetCollection == null || targetCollection.isEmpty()) {
+            return null;
+        }
+        Object targetObject = CollectionUtil.getItemAtPositionOrNull(targetCollection, 0);
+        if (targetObject == null) {
+            return null;
+        }
+        return targetObject.getClass();
+    }
+
+    private static Class<?> getCollectionType(Object currentObject, Method method) throws Exception {
+        if (currentObject instanceof MultiResult) {
+            currentObject = getFirstObjectFromMultiResult(currentObject);
+        }
+        if (currentObject == null) {
+            return null;
+        }
+
+        Collection targetCollection = (Collection) method.invoke(currentObject);
         if (targetCollection == null || targetCollection.isEmpty()) {
             return null;
         }

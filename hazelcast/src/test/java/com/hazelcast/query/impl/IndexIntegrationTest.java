@@ -21,12 +21,14 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,6 +36,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -154,6 +157,71 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         public void setAmount(Long amount) {
             this.amount = amount;
+        }
+    }
+
+    @Test
+    public void foo_methodGetters() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+        IMap<Integer, SillySequence> map = hazelcastInstance.getMap(randomName());
+
+        SillySequence sillySequence = new SillySequence(0, 100);
+        map.put(0, sillySequence);
+
+        Predicate predicate = Predicates.equal("payload[*]", 3);
+        Collection<SillySequence> result = map.values(predicate);
+        assertThat(result, hasSize(1));
+    }
+
+    @Test
+    public void foo_fieldGetters() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+        IMap<Integer, SillySequence> map = hazelcastInstance.getMap(randomName());
+
+        SillySequence sillySequence = new SillySequence(0, 100);
+        map.put(0, sillySequence);
+
+        Predicate predicate = Predicates.equal("payloadField[*]", 3);
+        Collection<SillySequence> result = map.values(predicate);
+        assertThat(result, hasSize(1));
+    }
+
+    static class SillySequence implements DataSerializable {
+        int count;
+        Collection<Integer> payloadField;
+
+        SillySequence() {
+
+        }
+
+        SillySequence(int from, int count) {
+            this.count = count;
+            this.payloadField = new ArrayList<Integer>(count);
+
+            int to = from + count;
+            for (int i = from; i < to; i++) {
+                payloadField.add(i);
+            }
+        }
+
+        public Collection<Integer> getPayload() {
+            return payloadField;
+        }
+
+        public int getCount() {
+            return count;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(count);
+            out.writeObject(payloadField);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            count = in.readInt();
+            payloadField = in.readObject();
         }
     }
 
