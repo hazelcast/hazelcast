@@ -19,22 +19,20 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.extractor.MultiResult;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Equal Predicate
  */
-public class EqualPredicate extends AbstractPredicate implements NegatablePredicate {
+public class EqualPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate {
+
     protected Comparable value;
 
     public EqualPredicate() {
@@ -55,36 +53,12 @@ public class EqualPredicate extends AbstractPredicate implements NegatablePredic
         return index.getRecords(value);
     }
 
-    @Override
-    public boolean apply(Map.Entry mapEntry) {
-        Object entryValue = readAttributeValue(mapEntry);
-        if (entryValue instanceof MultiResult) {
-            return applyForMultiResult(mapEntry, (MultiResult) entryValue);
-        } else if (entryValue instanceof Collection || entryValue instanceof Object[]) {
-            throw new IllegalArgumentException("Cannot use equal predicate with an attribute that's an array or a collection");
-        }
-        return applyForSingleValue(mapEntry, (Comparable) entryValue);
-    }
-
-    private boolean applyForMultiResult(Map.Entry mapEntry, MultiResult result) {
-        List<Object> results = result.getResults();
-        for (Object o : results) {
-            Comparable entryValue = (Comparable) convertEnumValue(o);
-            // it's enough if there's only one result in the MultiResult that satisfies the predicate
-            boolean satisfied = applyForSingleValue(mapEntry, entryValue);
-            if (satisfied) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean applyForSingleValue(Map.Entry mapEntry, Comparable entryValue) {
-        if (entryValue == null) {
+    protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
+        if (attributeValue == null) {
             return value == null || value == IndexImpl.NULL;
         }
-        value = convert(mapEntry, entryValue, value);
-        return entryValue.equals(value);
+        value = convert(mapEntry, attributeValue, value);
+        return attributeValue.equals(value);
     }
 
     @Override

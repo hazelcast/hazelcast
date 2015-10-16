@@ -30,7 +30,8 @@ import java.util.Set;
 /**
  * In Predicate
  */
-public class InPredicate extends AbstractPredicate {
+public class InPredicate extends AbstractIndexAwarePredicate {
+
     Comparable[] values;
     private volatile Set<Comparable> convertedInValues;
 
@@ -47,20 +48,19 @@ public class InPredicate extends AbstractPredicate {
     }
 
     @Override
-    public boolean apply(Map.Entry entry) {
-        Comparable entryValue = (Comparable) readAttributeValue(entry);
-        if (entryValue == null) {
+    protected boolean applyForSingleAttributeValue(Map.Entry entry, Comparable attributeValue) {
+        if (attributeValue == null) {
             return false;
         }
         Set<Comparable> set = convertedInValues;
         if (set == null) {
             set = new HashSet<Comparable>(values.length);
             for (Comparable value : values) {
-                set.add(convert(entry, entryValue, value));
+                set.add(convert(entry, attributeValue, value));
             }
             convertedInValues = set;
         }
-        return set.contains(entryValue);
+        return set.contains(attributeValue);
     }
 
     @Override

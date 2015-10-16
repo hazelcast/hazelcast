@@ -16,26 +16,26 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.query.impl.IndexImpl;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.IndexAwarePredicate;
+import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.QueryContext;
 
-import java.util.Map;
+public abstract class AbstractIndexAwarePredicate extends AbstractPredicate implements IndexAwarePredicate {
 
-/**
- * Utils for accessing attribute entries.
- *
- */
-public final class AttributeUtils {
-
-    private AttributeUtils() {
+    protected AbstractIndexAwarePredicate() {
     }
 
-    static Comparable readAttribute(Map.Entry entry, String attribute) {
-        QueryableEntry queryableEntry = (QueryableEntry) entry;
-        Comparable value = (Comparable) queryableEntry.getAttributeValue(attribute);
-        if (value == null) {
-            return IndexImpl.NULL;
-        }
-        return value;
+    protected AbstractIndexAwarePredicate(String attributeName) {
+        this.attributeName = attributeName;
     }
+
+    @Override
+    public boolean isIndexed(QueryContext queryContext) {
+        return getIndex(queryContext) != null;
+    }
+
+    protected Index getIndex(QueryContext queryContext) {
+        return queryContext.getIndex(attributeName);
+    }
+
 }

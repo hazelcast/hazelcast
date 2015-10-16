@@ -19,22 +19,23 @@ package com.hazelcast.query.impl.predicates;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.IndexAwarePredicate;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.extractor.MultiResult;
 import com.hazelcast.query.impl.AttributeType;
-import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexImpl;
-import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
- * Provides some functionality for some predicates
- * such as Between, In.
+ * Provides base features for predicates, such as extraction and convertion of the attribute's value.
+ * It also handles apply() on MultiResult.
  */
-public abstract class AbstractPredicate implements IndexAwarePredicate, DataSerializable {
+public abstract class AbstractPredicate implements Predicate, DataSerializable {
 
     protected String attributeName;
     private transient volatile AttributeType attributeType;
@@ -45,6 +46,33 @@ public abstract class AbstractPredicate implements IndexAwarePredicate, DataSeri
     protected AbstractPredicate(String attributeName) {
         this.attributeName = attributeName;
     }
+
+    @Override
+    public boolean apply(Map.Entry mapEntry) {
+        Object attributeValue = readAttributeValue(mapEntry);
+        if (attributeValue instanceof MultiResult) {
+            return applyForMultiResult(mapEntry, (MultiResult) attributeValue);
+        } else if (attributeValue instanceof Collection || attributeValue instanceof Object[]) {
+            throw new IllegalArgumentException(String.format(
+                    "Cannot use %s predicate with an array or a collection attribute", getClass().getSimpleName()));
+        }
+        return applyForSingleAttributeValue(mapEntry, (Comparable) attributeValue);
+    }
+
+    private boolean applyForMultiResult(Map.Entry mapEntry, MultiResult result) {
+        List<Object> results = result.getResults();
+        for (Object o : results) {
+            Comparable entryValue = (Comparable) convertEnumValue(o);
+            // it's enough if there's only one result in the MultiResult that satisfies the predicate
+            boolean satisfied = applyForSingleAttributeValue(mapEntry, entryValue);
+            if (satisfied) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected abstract boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue);
 
     /**
      * Converts givenAttributeValue to the type of entryAttributeValue
@@ -92,15 +120,6 @@ public abstract class AbstractPredicate implements IndexAwarePredicate, DataSeri
                         + " for attribute: " + attributeName);
             }
         }
-    }
-
-    @Override
-    public boolean isIndexed(QueryContext queryContext) {
-        return getIndex(queryContext) != null;
-    }
-
-    protected Index getIndex(QueryContext queryContext) {
-        return queryContext.getIndex(attributeName);
     }
 
     protected Object readAttributeValue(Map.Entry entry) {

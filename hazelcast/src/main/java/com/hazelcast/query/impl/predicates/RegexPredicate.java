@@ -18,38 +18,32 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexImpl;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hazelcast.query.impl.predicates.AttributeUtils.readAttribute;
-
 /**
  * Regex Predicate
  */
-public class RegexPredicate implements Predicate, DataSerializable {
-    private String attribute;
+public class RegexPredicate extends AbstractPredicate {
+
     private String regex;
     private volatile Pattern pattern;
 
     public RegexPredicate() {
     }
 
-    public RegexPredicate(String attribute, String regex) {
-        this.attribute = attribute;
+    public RegexPredicate(String attributeName, String regex) {
+        this.attributeName = attributeName;
         this.regex = regex;
     }
 
     @Override
-    public boolean apply(Map.Entry entry) {
-        Comparable attribute = readAttribute(entry, this.attribute);
-        String firstVal = attribute == IndexImpl.NULL ? null : (String) attribute;
-        if (firstVal == null) {
+    protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
+        String stringAttributeValue = (String) attributeValue;
+        if (stringAttributeValue == null) {
             return (regex == null);
         } else if (regex == null) {
             return false;
@@ -57,25 +51,25 @@ public class RegexPredicate implements Predicate, DataSerializable {
             if (pattern == null) {
                 pattern = Pattern.compile(regex);
             }
-            Matcher m = pattern.matcher(firstVal);
+            Matcher m = pattern.matcher(stringAttributeValue);
             return m.matches();
         }
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attribute);
+        out.writeUTF(attributeName);
         out.writeUTF(regex);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        attribute = in.readUTF();
+        attributeName = in.readUTF();
         regex = in.readUTF();
     }
 
     @Override
     public String toString() {
-        return attribute + " REGEX '" + regex + "'";
+        return attributeName + " REGEX '" + regex + "'";
     }
 }

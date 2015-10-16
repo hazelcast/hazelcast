@@ -31,7 +31,8 @@ import java.util.Set;
 /**
  * Greater Less Predicate
  */
-public final class GreaterLessPredicate extends AbstractPredicate implements NegatablePredicate {
+public final class GreaterLessPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate {
+
     protected Comparable value;
     boolean equal;
     boolean less;
@@ -52,13 +53,12 @@ public final class GreaterLessPredicate extends AbstractPredicate implements Neg
     }
 
     @Override
-    public boolean apply(Map.Entry mapEntry) {
-        final Comparable entryValue = (Comparable) readAttributeValue(mapEntry);
-        if (entryValue == null) {
+    protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
+        if (attributeValue == null) {
             return false;
         }
-        final Comparable attributeValue = convert(mapEntry, entryValue, value);
-        final int result = entryValue.compareTo(attributeValue);
+        Comparable givenValue = convert(mapEntry, attributeValue, value);
+        int result = attributeValue.compareTo(givenValue);
         return equal && result == 0 || (less ? (result < 0) : (result > 0));
     }
 
