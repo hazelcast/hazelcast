@@ -166,7 +166,7 @@ public class Node {
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
-            nodeExtension = NodeExtensionFactory.create(this);
+            this.nodeExtension = nodeContext.createNodeExtension(this);
             nodeExtension.beforeStart();
 
             serializationService = nodeExtension.createSerializationService();
@@ -326,6 +326,7 @@ public class Node {
         }
         state = NodeState.ACTIVE;
 
+        nodeExtension.beforeJoin();
         join();
         int clusterSize = clusterService.getSize();
         if (config.getNetworkConfig().isPortAutoIncrement()
@@ -382,6 +383,8 @@ public class Node {
             discoveryService.destroy();
         } catch (Throwable ignored) {
         }
+
+        nodeExtension.beforeShutdown();
         versionCheck.shutdown();
         if (managementCenterService != null) {
             managementCenterService.shutdown();
@@ -401,11 +404,11 @@ public class Node {
         if (securityContext != null) {
             securityContext.destroy();
         }
-        nodeExtension.destroy();
         logger.finest("Destroying serialization service...");
         serializationService.destroy();
 
         hazelcastThreadGroup.destroy();
+        nodeExtension.shutdown();
         logger.info("Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
         state = NodeState.SHUT_DOWN;
     }
@@ -555,8 +558,6 @@ public class Node {
         try {
             masterAddress = null;
             joined.set(false);
-            clusterService.reset();
-
             joiner.join();
         } catch (Throwable e) {
             logger.severe("Error while joining the cluster!", e);

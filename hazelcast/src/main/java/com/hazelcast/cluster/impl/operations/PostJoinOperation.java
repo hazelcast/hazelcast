@@ -24,7 +24,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.io.IOException;
@@ -88,10 +87,28 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
     @Override
     public void run() throws Exception {
         if (operations != null && operations.length > 0) {
-            final OperationService operationService = getNodeEngine().getOperationService();
             for (final Operation op : operations) {
-                operationService.runOperationOnCallingThread(op);
+                op.beforeRun();
+                op.run();
+                op.afterRun();
             }
+        }
+    }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        if (operations != null) {
+            for (Operation op : operations) {
+                onOperationFailure(op, e);
+            }
+        }
+    }
+
+    private void onOperationFailure(Operation op, Throwable e) {
+        try {
+            op.onExecutionFailure(e);
+        } catch (Throwable t) {
+            getLogger().warning("While calling operation.onFailure(). op: " + op, t);
         }
     }
 

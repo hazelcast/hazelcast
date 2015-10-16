@@ -311,6 +311,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             clusterHeartbeatManager.reset();
             clusterStateManager.reset();
             clusterJoinManager.reset();
+            membersRemovedInNotActiveStateRef.set(Collections.<Address, MemberImpl>emptyMap());
         } finally {
             lock.unlock();
         }
@@ -817,18 +818,40 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     @Override
     public void changeClusterState(ClusterState newState) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
-        clusterStateManager.changeClusterState(newState, partitionStateVersion);
+        clusterStateManager.changeClusterState(newState, getMembers(), partitionStateVersion);
     }
 
     @Override
     public void changeClusterState(ClusterState newState, TransactionOptions options) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
-        clusterStateManager.changeClusterState(newState, options, partitionStateVersion);
+        clusterStateManager.changeClusterState(newState, getMembers(), options, partitionStateVersion);
     }
 
     // for testing
-    public void changeClusterState(ClusterState newState, int partitionStateVersion) {
-        clusterStateManager.changeClusterState(newState, partitionStateVersion);
+    void changeClusterState(ClusterState newState, Collection<Member> members) {
+        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
+        clusterStateManager.changeClusterState(newState, members, partitionStateVersion);
+    }
+
+    // for testing
+    void changeClusterState(ClusterState newState, int partitionStateVersion) {
+        clusterStateManager.changeClusterState(newState, getMembers(), partitionStateVersion);
+    }
+
+    void addMembersRemovedInNotActiveState(Collection<Address> addresses) {
+        lock.lock();
+        try {
+            Map<Address, MemberImpl> membersRemovedInNotActiveState
+                    = new LinkedHashMap<Address, MemberImpl>(membersRemovedInNotActiveStateRef.get());
+
+            for (Address address : addresses) {
+                membersRemovedInNotActiveState.put(address, new MemberImpl(address, false));
+            }
+
+            membersRemovedInNotActiveStateRef.set(Collections.unmodifiableMap(membersRemovedInNotActiveState));
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override

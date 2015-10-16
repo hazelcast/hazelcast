@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster;
+package com.hazelcast.cluster.impl;
 
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.cluster.impl.ClusterStateManager;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomiclong.operations.AddAndGetOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
@@ -78,15 +78,6 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalStateException.class)
     public void changeClusterState_shouldFail_whenMemberAdded_duringTx() throws Exception {
-        changeClusterState_shouldFail_whenMemberList_changes(new AddingMemberListAnswer());
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void changeClusterState_shouldFail_whenMemberRemoved_duringTx() throws Exception {
-        changeClusterState_shouldFail_whenMemberList_changes(new RemovingMemberListAnswer());
-    }
-
-    private void changeClusterState_shouldFail_whenMemberList_changes(MemberListAnswer memberListAnswer) throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance[] instances = new HazelcastInstance[3];
         for (int i = 0; i < 3; i++) {
@@ -94,12 +85,29 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         }
 
         HazelcastInstance hz = instances[instances.length - 1];
-        ClusterServiceImpl clusterService = spyClusterService(hz);
-        memberListAnswer.cluster = clusterService;
+        ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(hz);
+        Collection<Member> initialMembers = new ArrayList<Member>(clusterService.getMembers());
+        initialMembers.remove(clusterService.getLocalMember());
 
-        when(clusterService.getMemberImpls()).thenAnswer(memberListAnswer);
+        clusterService.changeClusterState(ClusterState.PASSIVE, initialMembers);
+    }
 
-        hz.getCluster().changeClusterState(ClusterState.PASSIVE);
+    @Test(expected = IllegalStateException.class)
+    public void changeClusterState_shouldFail_whenMemberRemoved_duringTx() throws Exception {
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance[] instances = new HazelcastInstance[3];
+        for (int i = 0; i < 3; i++) {
+            instances[i] = factory.newHazelcastInstance();
+        }
+
+        HazelcastInstance hz = instances[instances.length - 1];
+        ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(hz);
+        Collection<Member> initialMembers = new ArrayList<Member>(clusterService.getMembers());
+
+        MemberImpl fakeMember = new MemberImpl((MemberImpl) clusterService.getLocalMember());
+        initialMembers.add(fakeMember);
+
+        clusterService.changeClusterState(ClusterState.PASSIVE, initialMembers);
     }
 
     @Test(expected = TransactionException.class)

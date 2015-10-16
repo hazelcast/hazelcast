@@ -18,7 +18,7 @@ package com.hazelcast.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.impl.operations.LockClusterStateOperation;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -97,11 +97,25 @@ public class ClusterStateManager {
         try {
             final ClusterState currentState = getState();
             if (currentState != ClusterState.ACTIVE) {
-                throw new IllegalStateException("Initial state is already set! "
-                        + "Current state: " + currentState
-                        + ", Given state: " + initialState);
+                logger.warning("Initial state is already set! " + "Current state: " + currentState + ", Given state: "
+                        + initialState);
+                return;
             }
             this.state = initialState;
+            changeNodeState(initialState);
+            node.getNodeExtension().onClusterStateChange(initialState);
+        } finally {
+            clusterServiceLock.unlock();
+        }
+    }
+
+    void setClusterState(ClusterState newState) {
+        clusterServiceLock.lock();
+        try {
+            this.state = newState;
+            stateLockRef.set(ClusterStateLock.NOT_LOCKED);
+            changeNodeState(newState);
+            node.getNodeExtension().onClusterStateChange(newState);
         } finally {
             clusterServiceLock.unlock();
         }
@@ -194,12 +208,9 @@ public class ClusterStateManager {
 
             this.state = newState;
             stateLockRef.set(ClusterStateLock.NOT_LOCKED);
+            changeNodeState(newState);
+            node.getNodeExtension().onClusterStateChange(newState);
 
-            if (newState == ClusterState.PASSIVE) {
-                node.changeNodeStateToPassive();
-            } else {
-                node.changeNodeStateToActive();
-            }
             if (newState == ClusterState.ACTIVE) {
                 node.getClusterService().removeMembersDeadWhileClusterIsNotActive();
             }
@@ -208,11 +219,20 @@ public class ClusterStateManager {
         }
     }
 
-    void changeClusterState(ClusterState newState, int partitionStateVersion) {
-        changeClusterState(newState, DEFAULT_TX_OPTIONS, partitionStateVersion);
+    private void changeNodeState(ClusterState newState) {
+        if (newState == ClusterState.PASSIVE) {
+            node.changeNodeStateToPassive();
+        } else {
+            node.changeNodeStateToActive();
+        }
     }
 
-    void changeClusterState(ClusterState newState, TransactionOptions options, int partitionStateVersion) {
+    void changeClusterState(ClusterState newState, Collection<Member> members, int partitionStateVersion) {
+        changeClusterState(newState, members, DEFAULT_TX_OPTIONS, partitionStateVersion);
+    }
+
+    void changeClusterState(ClusterState newState, Collection<Member> members,
+            TransactionOptions options, int partitionStateVersion) {
         checkParameters(newState, options);
         if (getState() == newState) {
             return;
@@ -226,7 +246,6 @@ public class ClusterStateManager {
 
         try {
             String txnId = tx.getTxnId();
-            Collection<MemberImpl> members = getMemberImpls();
 
             addTransactionRecords(newState, tx, members, partitionStateVersion);
 
@@ -244,12 +263,12 @@ public class ClusterStateManager {
     }
 
     private void lockClusterState(ClusterState newState, NodeEngineImpl nodeEngine, long leaseTime, String txnId,
-            Collection<MemberImpl> members, int partitionStateVersion) {
+            Collection<Member> members, int partitionStateVersion) {
 
         Collection<Future> futures = new ArrayList<Future>(members.size());
 
         final Address thisAddress = node.getThisAddress();
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             Operation op = new LockClusterStateOperation(newState, thisAddress, txnId, leaseTime, partitionStateVersion);
             Future future = nodeEngine.getOperationService().invokeOnTarget(SERVICE_NAME, op, member.getAddress());
             futures.add(future);
@@ -261,17 +280,24 @@ public class ClusterStateManager {
     }
 
     private void addTransactionRecords(ClusterState newState, Transaction tx,
-                                       Collection<MemberImpl> members, int partitionStateVersion) {
+                                       Collection<Member> members, int partitionStateVersion) {
         long leaseTime = Math.min(tx.getTimeoutMillis(), LOCK_LEASE_EXTENSION_MILLIS);
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             tx.add(new ClusterStateTransactionLogRecord(newState, node.getThisAddress(),
                     member.getAddress(), tx.getTxnId(), leaseTime, partitionStateVersion));
         }
     }
 
-    private void checkMemberListChange(Collection<MemberImpl> members) {
-        if (!members.equals(getMemberImpls())) {
+    private void checkMemberListChange(Collection<Member> members) {
+        Collection<Member> currentMembers = node.getClusterService().getMembers();
+        if (members.size() != currentMembers.size()) {
             throw new IllegalStateException("Cluster members changed during state change!");
+        }
+
+        for (Member member : currentMembers) {
+            if (!members.contains(member)) {
+                throw new IllegalStateException("Cluster members changed during state change!");
+            }
         }
     }
 
@@ -284,10 +310,6 @@ public class ClusterStateManager {
         if (options.getTransactionType() != TransactionType.TWO_PHASE) {
             throw new IllegalArgumentException("Changing cluster state requires 2PC transaction!");
         }
-    }
-
-    private Collection<MemberImpl> getMemberImpls() {
-        return node.getClusterService().getMemberImpls();
     }
 
     String stateToString() {
