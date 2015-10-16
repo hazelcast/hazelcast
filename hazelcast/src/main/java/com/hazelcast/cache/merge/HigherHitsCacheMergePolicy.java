@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.merge.policy;
+package com.hazelcast.cache.merge;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.StorageTypeAwareCacheMergePolicy;
@@ -24,22 +24,26 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 /**
- * `PassThroughCacheMergePolicy` policy merges cache entry from source to destination directly.
+ * `HigherHitsCacheMergePolicy` merges cache entry from source to destination cache
+ * if source entry has more hits than the destination one.
  */
-public class PassThroughCacheMergePolicy
+public class HigherHitsCacheMergePolicy
         implements StorageTypeAwareCacheMergePolicy {
 
     @Override
     public Object merge(String cacheName, CacheEntryView mergingEntry, CacheEntryView existingEntry) {
-        return mergingEntry != null ? mergingEntry.getValue() : existingEntry.getValue();
+        if (existingEntry == null || mergingEntry.getAccessHit() >= existingEntry.getAccessHit()) {
+            return mergingEntry.getValue();
+        }
+        return existingEntry.getValue();
     }
 
     @Override
-    public void writeData(ObjectDataOutput objectDataOutput) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
     }
 
     @Override
-    public void readData(ObjectDataInput objectDataInput) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
     }
 
 }
