@@ -24,7 +24,9 @@ import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.client.CacheCreateConfigRequest;
 import com.hazelcast.cache.impl.client.CacheGetConfigRequest;
 import com.hazelcast.cache.impl.client.CacheManagementConfigRequest;
+import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -199,6 +201,26 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     protected void postClose() {
         if (properties.getProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION) != null) {
             hazelcastInstance.shutdown();
+        }
+    }
+
+    /**
+     * Gets the related {@link NearCacheManager} with the underlying client instance.
+     *
+     * @return the related {@link NearCacheManager} with the underlying client instance
+     */
+    public NearCacheManager getNearCacheManager() {
+        if (hazelcastInstance instanceof HazelcastClientInstanceImpl) {
+            return ((HazelcastClientInstanceImpl) hazelcastInstance).getNearCacheManager();
+        } else if (hazelcastInstance instanceof HazelcastClientProxy) {
+            HazelcastClientInstanceImpl clientInstance = ((HazelcastClientProxy) hazelcastInstance).client;
+            if (clientInstance != null) {
+                return clientInstance.getNearCacheManager();
+            } else {
+                return null;
+            }
+        } else {
+            return null;
         }
     }
 
