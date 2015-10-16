@@ -133,7 +133,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void destroy() {
-        dispose();
         clearPartition();
         storage.destroy();
     }
