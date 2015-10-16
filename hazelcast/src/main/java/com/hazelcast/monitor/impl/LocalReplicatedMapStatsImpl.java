@@ -19,6 +19,7 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.util.Clock;
+
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
@@ -59,6 +60,8 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
             newUpdater(LocalReplicatedMapStatsImpl.class, "maxPutLatency");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> MAX_REMOVE_LATENCY =
             newUpdater(LocalReplicatedMapStatsImpl.class, "maxRemoveLatency");
+    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> OWNED_ENTRY_MEMORY_COST =
+            newUpdater(LocalReplicatedMapStatsImpl.class, "ownedEntryMemoryCost");
     //CHECKSTYLE:ON
 
     // These fields are only accessed through the updaters
@@ -79,6 +82,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
 
     private volatile long creationTime;
     private volatile long ownedEntryCount;
+    private volatile long ownedEntryMemoryCost;
 
     public LocalReplicatedMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -113,11 +117,11 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
 
     @Override
     public long getOwnedEntryMemoryCost() {
-        return 0;
+        return ownedEntryMemoryCost;
     }
 
-    // TODO: unused
     public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
+        OWNED_ENTRY_MEMORY_COST.set(this, ownedEntryMemoryCost);
     }
 
     @Override
@@ -298,6 +302,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
         root.add("lastUpdateTime", lastUpdateTime);
         root.add("hits", hits);
         root.add("ownedEntryCount", ownedEntryCount);
+        root.add("ownedEntryMemoryCost", ownedEntryMemoryCost);
         root.add("creationTime", creationTime);
         root.add("totalGetLatencies", totalGetLatencies);
         root.add("totalPutLatencies", totalPutLatencies);
@@ -319,6 +324,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
         lastUpdateTime = getLong(json, "lastUpdateTime", -1L);
         hits = getLong(json, "hits", -1L);
         ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
+        ownedEntryMemoryCost = getLong(json, "ownedEntryMemoryCost", -1L);
         creationTime = getLong(json, "creationTime", -1L);
         totalGetLatencies = getLong(json, "totalGetLatencies", -1L);
         totalPutLatencies = getLong(json, "totalPutLatencies", -1L);
@@ -343,6 +349,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
                 + ", totalPutLatencies=" + totalPutLatencies
                 + ", totalRemoveLatencies=" + totalRemoveLatencies
                 + ", ownedEntryCount=" + ownedEntryCount
+                + ", ownedEntryMemoryCost=" + ownedEntryMemoryCost
                 + ", creationTime=" + creationTime
                 + '}';
     }

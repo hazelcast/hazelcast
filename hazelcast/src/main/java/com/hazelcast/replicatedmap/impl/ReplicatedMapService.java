@@ -18,6 +18,7 @@ package com.hazelcast.replicatedmap.impl;
 
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
@@ -25,6 +26,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
@@ -54,6 +56,7 @@ import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -186,6 +189,8 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         LocalReplicatedMapStatsImpl stats = getLocalMapStatsImpl(name);
         long hits = 0;
         long count = 0;
+        long memoryUsage = 0;
+        boolean isBinary = (getReplicatedMapConfig(name).getInMemoryFormat() == InMemoryFormat.BINARY);
         for (PartitionContainer container : partitionContainers) {
             ReplicatedRecordStore store = container.getRecordStore(name);
             if (store == null) {
@@ -197,11 +202,15 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
                 stats.setLastAccessTime(Math.max(stats.getLastAccessTime(), record.getLastAccessTime()));
                 stats.setLastUpdateTime(Math.max(stats.getLastUpdateTime(), record.getUpdateTime()));
                 hits += record.getHits();
+                if (isBinary) {
+                    memoryUsage += ((HeapData) record.getValueInternal()).getHeapCost();
+                }
                 count++;
             }
         }
         stats.setOwnedEntryCount(count);
         stats.setHits(hits);
+        stats.setOwnedEntryMemoryCost(memoryUsage);
         return stats;
     }
 
