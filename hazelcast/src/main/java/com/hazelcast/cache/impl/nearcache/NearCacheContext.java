@@ -27,7 +27,6 @@ public class NearCacheContext {
     private NearCacheManager nearCacheManager;
     private SerializationService serializationService;
     private NearCacheExecutor nearCacheExecutor;
-    private Object nullPlaceHolder;
 
     public NearCacheContext() {
 
