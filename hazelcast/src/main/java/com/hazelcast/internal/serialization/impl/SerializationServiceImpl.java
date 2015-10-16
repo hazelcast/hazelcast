@@ -81,6 +81,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -204,6 +205,14 @@ public class SerializationServiceImpl implements SerializationService {
 
     private void registerClassDefinition(ClassDefinition cd, Map<Integer, ClassDefinition> classDefMap,
                                          boolean checkClassDefErrors) {
+        // Check for recursive structures
+        ClassDefinition existingCd = portableContext.lookupClassDefinition(cd.getFactoryId(), cd.getClassId(), cd.getVersion());
+        if(existingCd != null) {
+            return;
+        }
+
+        portableContext.registerClassDefinition(cd);
+
         final Set<String> fieldNames = cd.getFieldNames();
         for (String fieldName : fieldNames) {
             FieldDefinition fd = cd.getField(fieldName);
@@ -219,7 +228,6 @@ public class SerializationServiceImpl implements SerializationService {
                 }
             }
         }
-        portableContext.registerClassDefinition(cd);
     }
 
     @Override
