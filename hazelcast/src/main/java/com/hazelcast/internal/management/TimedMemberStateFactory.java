@@ -41,6 +41,7 @@ import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.impl.LocalCacheStatsImpl;
 import com.hazelcast.monitor.impl.LocalMemoryStatsImpl;
@@ -54,6 +55,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.wan.WanReplicationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -182,6 +184,12 @@ public class TimedMemberStateFactory {
             }
         }
 
+        WanReplicationService wanReplicationService = instance.node.nodeEngine.getWanReplicationService();
+        Map<String, LocalWanStats> wanStats = wanReplicationService.getStats();
+        if (wanStats != null) {
+            count = handleWan(memberState, count, wanStats, longInstanceNames);
+        }
+
         if (cacheServiceEnabled) {
             ICacheService cacheService = getCacheService();
             for (CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
@@ -288,6 +296,18 @@ public class TimedMemberStateFactory {
                 longInstanceNames.add("c:" + name);
                 ++count;
             }
+        }
+        return count;
+    }
+
+    private int handleWan(MemberStateImpl memberState, int count, Map<String, LocalWanStats> wans,
+                          Set<String> longInstanceNames) {
+        for (Map.Entry<String, LocalWanStats> entry : wans.entrySet()) {
+            String schemeName = entry.getKey();
+            LocalWanStats stats = entry.getValue();
+            memberState.putLocalWanStats(schemeName, stats);
+            longInstanceNames.add("w:" + schemeName);
+            count++;
         }
         return count;
     }
