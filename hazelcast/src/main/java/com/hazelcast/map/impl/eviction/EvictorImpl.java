@@ -105,7 +105,6 @@ public class EvictorImpl implements Evictor {
         recordStore.evict(key, backup);
 
         if (!backup) {
-            mapServiceContext.interceptAfterRemove(mapName, value);
             boolean expired = recordStore.isExpired(record, now, false);
             recordStore.doPostEvictionOperations(key, value, expired);
         }
