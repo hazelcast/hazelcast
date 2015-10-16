@@ -82,7 +82,7 @@ public class IndexImpl implements Index {
     }
 
     private Object extractAttributeValue(Data key, Object value) {
-        return ExtractionEngine.extractAttributeValue(extractors, ss, attributeName, key, value);
+        return QueryableEntry.extractAttributeValue(extractors, ss, attributeName, key, value);
     }
 
     @Override
