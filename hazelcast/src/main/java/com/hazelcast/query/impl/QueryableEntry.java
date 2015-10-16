@@ -111,7 +111,7 @@ public abstract class QueryableEntry implements Map.Entry {
     /**
      * Static version of the extractAttributeValueIfAttributeQueryConstant() method that needs key and value upfront.
      */
-    static private Object extractAttributeValueIfAttributeQueryConstant(SerializationService serializationService,
+    private static Object extractAttributeValueIfAttributeQueryConstant(SerializationService serializationService,
                                                                         String attributeName, Data key, Object value) {
         if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return serializationService.toObject(key);
