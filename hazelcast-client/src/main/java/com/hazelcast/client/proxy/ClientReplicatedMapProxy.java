@@ -16,10 +16,11 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.nearcache.ClientHeapNearCache;
-import com.hazelcast.client.nearcache.ClientNearCache;
+import com.hazelcast.client.map.impl.nearcache.ClientHeapNearCache;
+import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.config.NearCacheConfig;
@@ -55,6 +56,7 @@ import com.hazelcast.replicatedmap.impl.client.ReplicatedMapValueCollection;
 import com.hazelcast.replicatedmap.impl.record.ResultSet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.IterationType;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,6 +70,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
+import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
+
 /**
  * The replicated map client side proxy implementation proxying all requests to a member node
  *
@@ -80,13 +84,14 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     private static final AtomicIntegerFieldUpdater<ClientReplicatedMapProxy> TARGET_PARTITION_ID_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(ClientReplicatedMapProxy.class, "targetPartitionId");
+
+    private volatile NearCache nearCache;
+    private volatile String invalidationListenerId;
+    private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
+
     // all requests are forwarded to the same node via a random partition id
     // do not use this field directly. use getOrInitTargetPartitionId() instead.
     private volatile int targetPartitionId = Operation.GENERIC_PARTITION_ID;
-
-
-    private volatile ClientHeapNearCache<Object> nearCache;
-    private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
 
     public ClientReplicatedMapProxy(String serviceName, String objectName) {
         super(serviceName, objectName);
@@ -143,7 +148,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         if (nearCache != null) {
             Object cached = nearCache.get(key);
             if (cached != null) {
-                if (cached.equals(ClientNearCache.NULL_OBJECT)) {
+                if (cached.equals(NULL_OBJECT)) {
                     return null;
                 }
                 return (V) cached;
@@ -307,9 +312,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         try {
             ClientRequest request = new ClientReplicatedMapAddNearCacheListenerRequest(getName());
             EventHandler handler = new ReplicatedMapNearCacheEventHandler();
-
-            String registrationId = getContext().getListenerService().startListening(request, getName(), handler);
-            nearCache.setId(registrationId);
+            invalidationListenerId = getContext().getListenerService().startListening(request, getName(), handler);
         } catch (Exception e) {
             Logger.getLogger(ClientHeapNearCache.class).severe(
                     "-----------------\n Near Cache is not initialized!!! \n-----------------", e);
@@ -317,11 +320,11 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     }
 
     private void removeNearCacheInvalidationListener() {
-        if (nearCache != null && nearCache.getId() != null) {
-            String registrationId = nearCache.getId();
-            BaseClientRemoveListenerRequest request =
-                    new ClientReplicatedMapRemoveEntryListenerRequest(getName(), registrationId);
-            getContext().getListenerService().stopListeningOnPartition(request, registrationId, getOrInitTargetPartitionId());
+        if (nearCache != null && invalidationListenerId != null) {
+            BaseClientRemoveListenerRequest request
+                    = new ClientReplicatedMapRemoveEntryListenerRequest(getName(), invalidationListenerId);
+            ClientListenerService listenerService = getContext().getListenerService();
+            listenerService.stopListeningOnPartition(request, invalidationListenerId, getOrInitTargetPartitionId());
         }
     }
 
@@ -333,7 +336,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     private class ReplicatedMapEventHandler implements EventHandler<ReplicatedMapPortableEntryEvent> {
         private final EntryListener<K, V> listener;
 
-        public ReplicatedMapEventHandler(EntryListener<K, V> listener) {
+        ReplicatedMapEventHandler(EntryListener<K, V> listener) {
             this.listener = listener;
         }
 

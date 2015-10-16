@@ -14,7 +14,19 @@
  * limitations under the License.
  */
 
+package com.hazelcast.client.map.impl.nearcache;
+
 /**
- * Contains classes/interfaces related to com.hazelcast.client.nearcache
+ * Legal near cache types
  */
-package com.hazelcast.client.nearcache;
+public enum ClientNearCacheType {
+    /**
+     * java.util.concurrent.ConcurrentMap implementation
+     */
+    Map,
+
+    /**
+     * com.hazelcast.core.ReplicatedMap implementation
+     */
+    ReplicatedMap
+}

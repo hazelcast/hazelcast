@@ -1,12 +1,12 @@
 package com.hazelcast.client.map;
 
+import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.nearcache.NearCache;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -228,7 +228,7 @@ public class MapNearCacheInvalidationFromClientTest {
     }
 
     private NearCache getNearCache(final HazelcastInstance instance, final String mapName) {
-        return getMapService(instance).getMapServiceContext().getNearCacheProvider().getNearCache(mapName);
+        return getMapService(instance).getMapServiceContext().getNearCacheProvider().getOrCreateNearCache(mapName);
     }
 
     private Data toData(HazelcastInstance instance, Object obj) {

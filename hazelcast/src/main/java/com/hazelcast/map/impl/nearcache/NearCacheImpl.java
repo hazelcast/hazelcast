@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.nearcache;
 
+import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
@@ -29,8 +30,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
@@ -42,20 +41,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.EvictionPolicy.NONE;
-import static com.hazelcast.config.InMemoryFormat.OBJECT;
 
 /**
  * NearCache.
  */
-public class NearCache {
-    /**
-     * Used when caching nonexistent values.
-     */
-    public static final Object NULL_OBJECT = new Object();
+public class NearCacheImpl implements NearCache<Data, Object> {
     public static final String NEAR_CACHE_EXECUTOR_NAME = "hz:near-cache";
     private static final double EVICTION_FACTOR = 0.2;
     private static final int CLEANUP_INTERVAL = 5000;
     private final int maxSize;
+    private final String mapName;
     private volatile long lastCleanup;
     private final long maxIdleMillis;
     private final long timeToLiveMillis;
@@ -68,6 +63,7 @@ public class NearCache {
     private final NearCacheStatsImpl nearCacheStats;
     private final SerializationService serializationService;
     private final Comparator<NearCacheRecord> selectedComparator;
+    private final boolean invalidateOnChange;
 
     private SizeEstimator nearCacheSizeEstimator;
 
@@ -75,56 +71,55 @@ public class NearCache {
      * @param mapName    name of map which owns near cache.
      * @param nodeEngine node engine.
      */
-    public NearCache(String mapName, NodeEngine nodeEngine) {
+    public NearCacheImpl(String mapName, NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         Config config = nodeEngine.getConfig();
         NearCacheConfig nearCacheConfig = config.findMapConfig(mapName).getNearCacheConfig();
-        maxSize = nearCacheConfig.getMaxSize() <= 0 ? Integer.MAX_VALUE : nearCacheConfig.getMaxSize();
-        maxIdleMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getMaxIdleSeconds());
-        inMemoryFormat = nearCacheConfig.getInMemoryFormat();
-        timeToLiveMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getTimeToLiveSeconds());
-        evictionPolicy = EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
-        selectedComparator = NearCacheRecord.getComparator(evictionPolicy);
-        cache = new ConcurrentHashMap<Data, NearCacheRecord>();
-        canCleanUp = new AtomicBoolean(true);
-        canEvict = new AtomicBoolean(true);
-        nearCacheStats = new NearCacheStatsImpl();
-        lastCleanup = Clock.currentTimeMillis();
-        serializationService = nodeEngine.getSerializationService();
+        this.maxSize = nearCacheConfig.getMaxSize() <= 0 ? Integer.MAX_VALUE : nearCacheConfig.getMaxSize();
+        this.maxIdleMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getMaxIdleSeconds());
+        this.inMemoryFormat = nearCacheConfig.getInMemoryFormat();
+        this.timeToLiveMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getTimeToLiveSeconds());
+        this.evictionPolicy = EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
+        this.selectedComparator = NearCacheRecord.getComparator(evictionPolicy);
+        this.cache = new ConcurrentHashMap<Data, NearCacheRecord>();
+        this.canCleanUp = new AtomicBoolean(true);
+        this.canEvict = new AtomicBoolean(true);
+        this.nearCacheStats = new NearCacheStatsImpl();
+        this.lastCleanup = Clock.currentTimeMillis();
+        this.serializationService = nodeEngine.getSerializationService();
+        this.invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
+        this.mapName = mapName;
     }
 
-    // this operation returns the given value in near-cache memory format (data or object)
-    public Object put(Data key, Data data) {
+    // TODO this operation returns the given value in near-cache memory format (data or object)?
+    @Override
+    public void put(Data key, Object value) {
         fireTtlCleanup();
         if (evictionPolicy == NONE && cache.size() >= maxSize) {
-            // no more space in near-cache -> return given value in near-cache format
-            if (data == null) {
-                return null;
-            } else {
-                return inMemoryFormat.equals(OBJECT) ? serializationService.toObject(data) : data;
-            }
+            return;
         }
         if (evictionPolicy != NONE && cache.size() >= maxSize) {
             fireEvictCache();
         }
-        final Object value;
-        if (data == null) {
+        if (value == null) {
             value = NULL_OBJECT;
         } else {
-            value = inMemoryFormat.equals(OBJECT) ? serializationService.toObject(data) : data;
+            value = inMemoryFormat.equals(InMemoryFormat.OBJECT)
+                    ? serializationService.toObject(value) : serializationService.toData(value);
         }
         final NearCacheRecord record = new NearCacheRecord(key, value);
         cache.put(key, record);
         updateSizeEstimator(calculateCost(record));
-        if (NULL_OBJECT.equals(value)) {
-            return null;
-        } else {
-            return value;
-        }
     }
 
+    @Override
     public NearCacheStatsImpl getNearCacheStats() {
         return createNearCacheStats();
+    }
+
+    @Override
+    public Object selectToSave(Object... candidates) {
+        throw new UnsupportedOperationException();
     }
 
     private NearCacheStatsImpl createNearCacheStats() {
@@ -212,6 +207,12 @@ public class NearCache {
         }
     }
 
+    @Override
+    public String getName() {
+        return mapName;
+    }
+
+    @Override
     public Object get(Data key) {
         fireTtlCleanup();
         NearCacheRecord record = cache.get(key);
@@ -231,34 +232,42 @@ public class NearCache {
         }
     }
 
-    public void invalidate(Data key) {
+    @Override
+    public boolean remove(Data key) {
         final NearCacheRecord record = cache.remove(key);
         // if a mapping exists for the key.
         if (record != null) {
             updateSizeEstimator(-calculateCost(record));
+            return true;
+        } else {
+            return false;
         }
     }
 
-    public void invalidate(Collection<Data> keys) {
-        if (keys == null || keys.isEmpty()) {
-            return;
-        }
-        for (Data key : keys) {
-            invalidate(key);
-        }
+    @Override
+    public boolean isInvalidateOnChange() {
+        return invalidateOnChange;
     }
 
+    @Override
     public int size() {
         return cache.size();
     }
 
+    @Override
     public void clear() {
         cache.clear();
         resetSizeEstimator();
     }
 
-    public Map<Data, NearCacheRecord> getReadonlyMap() {
-        return Collections.unmodifiableMap(cache);
+    @Override
+    public void destroy() {
+        clear();
+    }
+
+    @Override
+    public InMemoryFormat getInMemoryFormat() {
+        return inMemoryFormat;
     }
 
     private void resetSizeEstimator() {

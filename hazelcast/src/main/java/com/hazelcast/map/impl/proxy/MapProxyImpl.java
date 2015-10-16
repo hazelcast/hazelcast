@@ -51,11 +51,16 @@ import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -297,14 +302,28 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public Map<K, V> getAll(Set<K> keys) {
-        Set<Data> ks = new HashSet(keys.size());
+        if (CollectionUtil.isEmpty(keys)) {
+            return Collections.emptyMap();
+        }
+
+        List<Data> requestedKeys = new ArrayList<Data>(keys.size());
         for (K key : keys) {
             checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
             Data k = toData(key, partitionStrategy);
-            ks.add(k);
+            requestedKeys.add(k);
         }
-        return (Map<K, V>) getAllObjectInternal(ks);
+
+        List resultingKeyValuePairs = new ArrayList(keys.size());
+        getAllObjectInternal(requestedKeys, resultingKeyValuePairs);
+
+        Map<Object, Object> result = MapUtil.createHashMap(keys.size());
+        for (int i = 0; i < resultingKeyValuePairs.size(); ) {
+            Object key = toObject(resultingKeyValuePairs.get(i++));
+            Object value = toObject(resultingKeyValuePairs.get(i++));
+            result.put(key, value);
+        }
+        return (Map<K, V>) result;
     }
 
     @Override
@@ -670,6 +689,31 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         Data keyData = toData(key, partitionStrategy);
         ICompletableFuture f = executeOnKeyInternal(keyData, entryProcessor, null);
         return new DelegatingFuture(f, service.getMapServiceContext().getNodeEngine().getSerializationService());
+    }
+
+    @Override
+    public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor) {
+        return this.executeOnEntries(entryProcessor, TruePredicate.INSTANCE);
+    }
+
+    @Override
+    public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
+        List<Data> result = new ArrayList<Data>();
+
+        executeOnEntriesInternal(entryProcessor, predicate, result);
+        if (result == null || result.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<K, Object> resultingMap = MapUtil.createHashMap(result.size() / 2);
+        for (int i = 0; i < result.size(); ) {
+            Data key = result.get(i++);
+            Data value = result.get(i++);
+
+            resultingMap.put((K) toObject(key), toObject(value));
+
+        }
+        return resultingMap;
     }
 
 

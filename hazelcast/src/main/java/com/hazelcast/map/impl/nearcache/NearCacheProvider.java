@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.nearcache;
 
+import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.map.impl.MapContainer;
@@ -40,28 +41,28 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class NearCacheProvider {
 
-    private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
+    protected final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
 
-    private final ConstructorFunction<String, NearCache> nearCacheConstructor = new ConstructorFunction<String, NearCache>() {
+    protected final ConstructorFunction<String, NearCache> nearCacheConstructor = new ConstructorFunction<String, NearCache>() {
         @Override
         public NearCache createNew(String mapName) {
             MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
             SizeEstimator nearCacheSizeEstimator = mapContainer.getNearCacheSizeEstimator();
-            NearCache nearCache = new NearCache(mapName, nodeEngine);
+            NearCacheImpl nearCache = new NearCacheImpl(mapName, nodeEngine);
             nearCache.setNearCacheSizeEstimator(nearCacheSizeEstimator);
             return nearCache;
         }
     };
 
-    private final MapServiceContext mapServiceContext;
-    private final NodeEngine nodeEngine;
+    protected final MapServiceContext mapServiceContext;
+    protected final NodeEngine nodeEngine;
 
     public NearCacheProvider(MapServiceContext mapServiceContext, NodeEngine nodeEngine) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = nodeEngine;
     }
 
-    public NearCache getNearCache(String mapName) {
+    public NearCache getOrCreateNearCache(String mapName) {
         return ConcurrencyUtil.getOrPutIfAbsent(nearCacheMap, mapName, nearCacheConstructor);
     }
 
@@ -83,23 +84,25 @@ public class NearCacheProvider {
         if (!isNearCacheEnabled(mapName)) {
             return;
         }
-        NearCache nearCache = getNearCache(mapName);
-        nearCache.invalidate(key);
+        NearCache nearCache = getOrCreateNearCache(mapName);
+        nearCache.remove(key);
     }
 
     public void invalidateNearCache(String mapName, Collection<Data> keys) {
         if (!isNearCacheEnabled(mapName)) {
             return;
         }
-        NearCache nearCache = getNearCache(mapName);
-        nearCache.invalidate(keys);
+        NearCache nearCache = getOrCreateNearCache(mapName);
+        for (Data key : keys) {
+            nearCache.remove(key);
+        }
     }
 
     public void clearNearCache(String mapName) {
         if (!isNearCacheEnabled(mapName)) {
             return;
         }
-        final NearCache nearCache = getNearCache(mapName);
+        final NearCache nearCache = getOrCreateNearCache(mapName);
         if (nearCache != null) {
             nearCache.clear();
         }
@@ -166,7 +169,7 @@ public class NearCacheProvider {
         if (!isNearCacheEnabled(mapName)) {
             return null;
         }
-        NearCache nearCache = getNearCache(mapName);
+        NearCache nearCache = getOrCreateNearCache(mapName);
         return nearCache.get(key);
     }
 }

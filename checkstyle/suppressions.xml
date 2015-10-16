@@ -160,6 +160,7 @@
     <suppress checks="" files="com/hazelcast/client/proxy/ClientMultiMapProxy"/>
     <suppress checks="" files="com/hazelcast/client/proxy/ClientMapProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/proxy/ClientReplicatedMapProxy"/>
+    <suppress checks="ClassFanOutComplexity" files="com/hazelcast/client/proxy/ClientReplicatedMapProxy"/>
     <suppress checks="" files="com/hazelcast/client/impl/HazelcastClientInstance"/>
     <suppress checks="" files="com/hazelcast/client/impl/HazelcastClientProxy"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/client/proxy/ClientExecutorServiceProxy"/>
@@ -466,6 +467,8 @@
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/operation/MapOperationProvider"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/operation/DefaultMapOperationProvider"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/MapContainer"/>
+    <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/proxy/NearCachedMapProxyImpl"/>
+    <suppress checks="MethodCountCheck" files="com/hazelcast/client/proxy/NearCachedClientMapProxy"/>
     <suppress checks="ClassFanOutComplexityCheck" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>
     <suppress checks="ClassFanOutComplexityCheck" files="com/hazelcast/map/impl/MapServiceContextImpl"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>
