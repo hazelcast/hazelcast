@@ -19,30 +19,27 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.map.impl.SizeEstimator;
 
 import java.util.Collection;
-import java.util.Set;
 
 /**
  * Represents actual storage layer behind a {@link RecordStore}.
  * Includes basic storage operations.
  *
  * @param <K> the key type to be put in this storage.
- * @param <V> the value type to be put in this storage.
+ * @param <R> the value type to be put in this storage.
  */
-public interface Storage<K, V> {
+public interface Storage<K, R> {
 
-    void put(K key, V record);
+    void put(K key, R record);
 
-    void updateRecordValue(K key, V record, Object value);
+    void updateRecordValue(K key, R record, Object value);
 
-    V get(K key);
+    R get(K key);
 
-    Object remove(K key);
+    Object removeRecord(R record);
 
     boolean containsKey(K key);
 
-    Collection<V> values();
-
-    Set<K> keySet();
+    Collection<R> values();
 
     int size();
 

@@ -24,7 +24,6 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -91,11 +90,6 @@ class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public Set<Data> keySet() {
-        return records.keySet();
-    }
-
-    @Override
     public int size() {
         return records.size();
     }
@@ -121,11 +115,13 @@ class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public Object remove(Data key) {
-        R record = records.remove(key);
+    public Object removeRecord(R record) {
         if (record == null) {
             return null;
         }
+
+        Data key = record.getKey();
+        records.remove(key);
 
         updateSizeEstimator(-calculateHeapCost(record));
         updateSizeEstimator(-calculateHeapCost(key));

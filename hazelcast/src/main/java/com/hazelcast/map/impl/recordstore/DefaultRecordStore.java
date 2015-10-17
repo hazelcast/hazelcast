@@ -38,6 +38,7 @@ import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 
@@ -177,15 +178,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     /**
      * Flushes evicted records to map store.
      *
-     * @param keysToBeFlushed keys to be flushed to map-store.
-     * @param backup          <code>true</code> if backup, false otherwise.
+     * @param recordsToBeFlushed records to be flushed to map-store.
+     * @param backup             <code>true</code> if backup, false otherwise.
      */
-    protected void flush(Collection<Data> keysToBeFlushed, boolean backup) {
-        Iterator<Data> iterator = keysToBeFlushed.iterator();
+    protected void flush(Collection<Record> recordsToBeFlushed, boolean backup) {
+        Iterator<Record> iterator = recordsToBeFlushed.iterator();
         while (iterator.hasNext()) {
-            Data keyData = iterator.next();
-            Record record = storage.get(keyData);
-            mapDataStore.flush(keyData, record.getValue(), backup);
+            Record record = iterator.next();
+            mapDataStore.flush(record.getKey(), record.getValue(), backup);
         }
     }
 
@@ -418,51 +418,58 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public int clear() {
         checkIfLoaded();
 
-        // we don't remove locked keys.
-        Collection<Data> clearableKeys = getNotLockedKeys();
-        mapDataStore.removeAll(clearableKeys);
+        // we don't remove locked keys. These are clearable records.
+        Collection<Record> clearableRecords = getNotLockedRecords();
+        // This conversion is required by mapDataStore#removeAll call.
+        List<Data> keys = getKeysFromRecords(clearableRecords);
+        mapDataStore.removeAll(keys);
         mapDataStore.clear();
-        removeIndex(clearableKeys);
+        removeIndex(clearableRecords);
         resetAccessSequenceNumber();
-        return removeKeys(clearableKeys);
+        return removeRecords(clearableRecords);
     }
 
-    private int removeKeys(Collection<Data> keysToRemove) {
-        if (keysToRemove.isEmpty()) {
+    protected List<Data> getKeysFromRecords(Collection<Record> clearableRecords) {
+        List<Data> keys = new ArrayList<Data>(clearableRecords.size());
+        for (Record clearableRecord : clearableRecords) {
+            keys.add(clearableRecord.getKey());
+        }
+        return keys;
+    }
+
+    private int removeRecords(Collection<Record> recordsToRemove) {
+        if (CollectionUtil.isEmpty(recordsToRemove)) {
             return 0;
         }
-
-        int removalSize = keysToRemove.size();
-        Iterator<Data> iterator = keysToRemove.iterator();
+        int removalSize = recordsToRemove.size();
+        Iterator<Record> iterator = recordsToRemove.iterator();
         while (iterator.hasNext()) {
-            Data keyData = iterator.next();
-            storage.remove(keyData);
+            Record record = iterator.next();
+            deleteRecord(record);
             iterator.remove();
         }
         return removalSize;
     }
 
-    private Collection<Data> getNotLockedKeys() {
-        Set<Data> lockedKeySet = lockStore == null ? EMPTY_SET : lockStore.getLockedKeys();
-        Set<Data> keySet = storage.keySet();
-        if (keySet.isEmpty()) {
+    private Collection<Record> getNotLockedRecords() {
+        Set<Data> lockedKeySet = lockStore == null ? null : lockStore.getLockedKeys();
+        if (CollectionUtil.isEmpty(lockedKeySet)) {
+            return storage.values();
+        }
+
+        int notLockedKeyCount = storage.size() - lockedKeySet.size();
+        if (notLockedKeyCount <= 0) {
             return emptyList();
         }
 
-        int notLockedKeyCount = keySet.size() - lockedKeySet.size();
-        if (notLockedKeyCount == 0) {
-            return emptyList();
-        }
-
-        List<Data> notLockedKeys = new ArrayList<Data>(notLockedKeyCount);
-        for (Data keyData : keySet) {
-            if (lockedKeySet.isEmpty()) {
-                notLockedKeys.add(keyData);
-            } else if (!lockedKeySet.contains(keyData)) {
-                notLockedKeys.add(keyData);
+        List<Record> notLockedRecords = new ArrayList<Record>(notLockedKeyCount);
+        Collection<Record> records = storage.values();
+        for (Record record : records) {
+            if (!lockedKeySet.contains(record.getKey())) {
+                notLockedRecords.add(record);
             }
         }
-        return notLockedKeys;
+        return notLockedRecords;
     }
 
     /**
@@ -499,7 +506,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             value = record.getValue();
             mapDataStore.flush(key, value, backup);
             removeIndex(record);
-            value = deleteRecord(key);
+            deleteRecord(record);
             if (!backup) {
                 mapServiceContext.interceptRemove(name, value);
             }
@@ -511,11 +518,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public int evictAll(boolean backup) {
         checkIfLoaded();
 
-        Collection<Data> notLockedKeys = getNotLockedKeys();
-        flush(notLockedKeys, backup);
-        removeIndex(notLockedKeys);
+        Collection<Record> evictableRecords = getNotLockedRecords();
+        flush(evictableRecords, backup);
+        removeIndex(evictableRecords);
         resetAccessSequenceNumber();
-        return removeKeys(notLockedKeys);
+        return removeRecords(evictableRecords);
     }
 
     @Override
@@ -526,7 +533,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             return;
         }
-        deleteRecord(key);
+        deleteRecord(record);
         mapDataStore.removeBackup(key, now);
     }
 
@@ -569,7 +576,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             removeIndex(record);
             mapDataStore.remove(key, now);
             onStore(record);
-            deleteRecord(key);
+            deleteRecord(record);
             removed = true;
         }
         return removed;
@@ -766,7 +773,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 removeIndex(record);
                 mapDataStore.remove(key, now);
                 onStore(record);
-                deleteRecord(key);
+                deleteRecord(record);
                 return true;
             }
             if (newValue == mergingEntry.getValue()) {
@@ -935,7 +942,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             mapDataStore.remove(key, now);
             onStore(record);
         }
-        deleteRecord(key);
+        deleteRecord(record);
         return oldValue;
     }
 
