@@ -32,6 +32,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 
+import static com.hazelcast.nio.serialization.SerializationServiceUtil.createObjectDataInputStream;
+import static com.hazelcast.nio.serialization.SerializationServiceUtil.createObjectDataOutputStream;
+
 /**
  * @author ali 5/14/13
  */
@@ -49,8 +52,8 @@ public class SocketSimpleClient implements SimpleClient {
         outputStream.write(ClientTypes.JAVA.getBytes());
         outputStream.flush();
         serializationService = node.getSerializationService();
-        in = serializationService.createObjectDataInputStream(new BufferedInputStream(socket.getInputStream()));
-        out = serializationService.createObjectDataOutputStream(new BufferedOutputStream(outputStream));
+        in = createObjectDataInputStream(new BufferedInputStream(socket.getInputStream()), serializationService);
+        out = createObjectDataOutputStream(new BufferedOutputStream(outputStream), serializationService);
     }
 
     public void auth() throws IOException {

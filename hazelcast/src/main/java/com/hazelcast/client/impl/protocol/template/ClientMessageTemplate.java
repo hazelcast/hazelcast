@@ -35,11 +35,13 @@ public interface ClientMessageTemplate {
      * @param ownerUuid Unique string identifying the server member uniquely.
      * @param isOwnerConnection You must set this field to true while connecting to the owner member, otherwise set to false.
      * @param clientType The type of the client. E.g. JAVA, CPP, CSHARP, etc.
+     * @param serializationVersion client side supported version to inform server side
      * @return Returns the address, uuid and owner uuid.
      */
     @Request(id = 2, retryable = true, response = ResponseMessageConst.AUTHENTICATION)
-    Object authentication(String username, String password, @Nullable String uuid,
-                        @Nullable String ownerUuid, boolean isOwnerConnection, String clientType);
+    Object authentication(String username, String password, @Nullable String uuid, @Nullable String ownerUuid,
+                          boolean isOwnerConnection, String clientType, byte serializationVersion);
+
     /**
      *
      * @param credentials Secret byte array for authentication.
@@ -48,12 +50,13 @@ public interface ClientMessageTemplate {
      * @param ownerUuid Unique string identifying the server member uniquely.
      * @param isOwnerConnection You must set this field to true while connecting to the owner member, otherwise set to false.
      * @param clientType The type of the client. E.g. JAVA, CPP, CSHARP, etc.
+     * @param serializationVersion client side supported version to inform server side
      * @return Returns the address, uuid and owner uuid.
      */
 
     @Request(id = 3, retryable = true, response = ResponseMessageConst.AUTHENTICATION)
-    Object authenticationCustom(Data credentials, @Nullable String uuid,
-                              @Nullable String ownerUuid, boolean isOwnerConnection, String clientType);
+    Object authenticationCustom(Data credentials, @Nullable String uuid, @Nullable String ownerUuid, boolean isOwnerConnection,
+                                String clientType, byte serializationVersion);
     /**
      *
      * @return Returns the registration id for the listener.

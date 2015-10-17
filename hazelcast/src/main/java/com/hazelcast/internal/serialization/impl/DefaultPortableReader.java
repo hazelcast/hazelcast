@@ -158,6 +158,18 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Override
+    public boolean[] readBooleanArray(String fieldName) throws IOException {
+        final int currentPos = in.position();
+        try {
+            int pos = readPosition(fieldName, FieldType.BOOLEAN_ARRAY);
+            in.position(pos);
+            return in.readBooleanArray();
+        } finally {
+            in.position(currentPos);
+        }
+    }
+
+    @Override
     public char[] readCharArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
@@ -230,6 +242,18 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Override
+    public String[] readUTFArray(String fieldName) throws IOException {
+        final int currentPos = in.position();
+        try {
+            int pos = readPosition(fieldName, FieldType.UTF_ARRAY);
+            in.position(pos);
+            return in.readUTFArray();
+        } finally {
+            in.position(currentPos);
+        }
+    }
+
+    @Override
     public Portable readPortable(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
@@ -277,6 +301,9 @@ public class DefaultPortableReader implements PortableReader {
             int len = in.readInt();
             int factoryId = in.readInt();
             int classId = in.readInt();
+            if (len == Bits.NULL_ARRAY_LENGTH) {
+                return null;
+            }
 
             checkFactoryAndClass(fd, factoryId, classId);
 

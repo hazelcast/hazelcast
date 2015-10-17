@@ -59,6 +59,7 @@ import java.util.Random;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -243,10 +244,14 @@ public class SerializationTest
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
 
         String obj = String.valueOf(System.nanoTime());
-        Data data = ss.toData(obj, partitionStrategy);
+        Data dataWithPartitionHash = ss.toData(obj, partitionStrategy);
+        Data dataWithOutPartitionHash = ss.toData(obj);
 
-        assertTrue(data.hasPartitionHash());
-        assertNotEquals(data.hashCode(), data.getPartitionHash());
+        assertTrue(dataWithPartitionHash.hasPartitionHash());
+        assertNotEquals(dataWithPartitionHash.hashCode(), dataWithPartitionHash.getPartitionHash());
+
+        assertFalse(dataWithOutPartitionHash.hasPartitionHash());
+        assertEquals(dataWithOutPartitionHash.hashCode(), dataWithOutPartitionHash.getPartitionHash());
     }
 
     /**

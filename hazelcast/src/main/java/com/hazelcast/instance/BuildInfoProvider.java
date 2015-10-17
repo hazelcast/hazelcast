@@ -63,7 +63,9 @@ public final class BuildInfoProvider {
         }
         int buildNumber = Integer.parseInt(build);
 
-        return new BuildInfo(version, build, revision, buildNumber, enterprise);
+        String sv = runtimeProperties.getProperty("hazelcast.serialization.version");
+        byte serialVersion = Byte.parseByte(sv);
+        return new BuildInfo(version, build, revision, buildNumber, enterprise, serialVersion);
     }
 
 }

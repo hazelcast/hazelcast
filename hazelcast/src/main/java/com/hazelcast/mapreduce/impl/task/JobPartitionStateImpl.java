@@ -18,15 +18,20 @@ package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
 
 /**
  * This class holds information about the current processing state and the owner of a partition
  */
 public class JobPartitionStateImpl
-        implements JobPartitionState {
+        implements JobPartitionState, DataSerializable {
 
-    private final Address address;
-    private final State state;
+    private Address address;
+    private State state;
 
     public JobPartitionStateImpl(Address address, State state) {
         this.address = address;
@@ -48,4 +53,17 @@ public class JobPartitionStateImpl
         return "JobPartitionStateImpl{" + "state=" + state + ", address=" + address + '}';
     }
 
+    @Override
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
+        out.writeObject(address);
+        out.writeInt(state.ordinal());
+    }
+
+    @Override
+    public void readData(ObjectDataInput in)
+            throws IOException {
+        address = in.readObject();
+        state = JobPartitionState.State.byOrdinal(in.readInt());
+    }
 }

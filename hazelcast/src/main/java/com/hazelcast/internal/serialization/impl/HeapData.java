@@ -23,16 +23,19 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+
 /**
  * A {@link Data} implementation where the content lives on the heap.
  */
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class HeapData implements Data {
-  // type and partition_hash are always written with BIG_ENDIAN byte-order
+    // type and partition_hash are always written with BIG_ENDIAN byte-order
     public static final int TYPE_OFFSET = 0;
-    // will use a byte to store partition_hash bit
-    public static final int PARTITION_HASH_BIT_OFFSET = 4;
-    public static final int DATA_OFFSET = 5;
+    public static final int DATA_OFFSET = 4;
+
+    //first 4 byte is type id + last 4 byte is partition hash code
+    public static final int HEAP_DATA_OVERHEAD = DATA_OFFSET + INT_SIZE_IN_BYTES;
 
     // array (12: array header, 4: length)
     private static final int ARRAY_HEADER_SIZE_IN_BYTES = 16;
@@ -43,16 +46,17 @@ public class HeapData implements Data {
     }
 
     public HeapData(byte[] payload) {
-        if (payload != null && payload.length > 0 && payload.length < DATA_OFFSET) {
-            throw new IllegalArgumentException("Data should be either empty or should contain more than "
-                    + HeapData.DATA_OFFSET + " bytes! -> " + Arrays.toString(payload));
+        if (payload != null && payload.length > 0 && payload.length < (HEAP_DATA_OVERHEAD)) {
+            throw new IllegalArgumentException(
+                    "Data should be either empty or should contain more than " + HeapData.HEAP_DATA_OVERHEAD + " bytes! -> "
+                            + Arrays.toString(payload));
         }
         this.payload = payload;
     }
 
     @Override
     public int dataSize() {
-        return Math.max(totalSize() - DATA_OFFSET, 0);
+        return Math.max(totalSize() - HEAP_DATA_OVERHEAD, 0);
     }
 
     @Override
@@ -63,14 +67,15 @@ public class HeapData implements Data {
     @Override
     public int getPartitionHash() {
         if (hasPartitionHash()) {
-            return Bits.readIntB(payload, payload.length - Bits.INT_SIZE_IN_BYTES);
+            return Bits.readIntB(payload, payload.length - INT_SIZE_IN_BYTES);
         }
         return hashCode();
     }
 
     @Override
     public boolean hasPartitionHash() {
-        return totalSize() != 0 && payload[PARTITION_HASH_BIT_OFFSET] != 0;
+        return payload != null && payload.length > HEAP_DATA_OVERHEAD
+                && Bits.readInt(payload, payload.length - INT_SIZE_IN_BYTES, true) != 0;
     }
 
     @Override
@@ -89,7 +94,7 @@ public class HeapData implements Data {
     @Override
     public int getHeapCost() {
         // reference (assuming compressed oops)
-        int objectRef = Bits.INT_SIZE_IN_BYTES;
+        int objectRef = INT_SIZE_IN_BYTES;
         return objectRef + (payload != null ? ARRAY_HEADER_SIZE_IN_BYTES + payload.length : 0);
     }
 

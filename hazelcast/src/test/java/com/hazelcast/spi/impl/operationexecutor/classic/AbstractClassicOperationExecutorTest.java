@@ -60,7 +60,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
 
     @Before
     public void setup() throws Exception {
-        loggingService = new LoggingServiceImpl("foo", "jdk", new BuildInfo("1", "1", "1", 1, false));
+        loggingService = new LoggingServiceImpl("foo", "jdk", new BuildInfo("1", "1", "1", 1, false, (byte)1));
 
         serializationService = new DefaultSerializationServiceBuilder().build();
         config = new Config();

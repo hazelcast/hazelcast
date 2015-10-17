@@ -26,6 +26,7 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.LifecycleServiceImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
@@ -126,6 +127,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         @Override
         public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
             final SerializationService ss = client.getSerializationService();
+            byte serializationVersion = ss.getVersion();
             String uuid = null;
             String ownerUuid = null;
             if (principal != null) {
@@ -135,12 +137,12 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             ClientMessage clientMessage;
             if (credentials instanceof UsernamePasswordCredentials) {
                 UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
-                clientMessage = ClientAuthenticationCodec.encodeRequest(cr.getUsername(),
-                        cr.getPassword(), uuid, ownerUuid, true, ClientTypes.JAVA);
+                clientMessage = ClientAuthenticationCodec.encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid,
+                        true, ClientTypes.JAVA, serializationVersion);
             } else {
                 Data data = ss.toData(credentials);
-                clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid,
-                        true, ClientTypes.JAVA);
+                clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid, true, ClientTypes.JAVA,
+                        serializationVersion);
 
             }
             connection.init();
@@ -155,9 +157,17 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             }
             ClientAuthenticationCodec.ResponseParameters result = ClientAuthenticationCodec.decodeResponse(response);
 
-            connection.setRemoteEndpoint(result.address);
-
-            principal = new ClientPrincipal(result.uuid, result.ownerUuid);
+            AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(result.status);
+            switch (authenticationStatus) {
+                case AUTHENTICATED:
+                    connection.setRemoteEndpoint(result.address);
+                    principal = new ClientPrincipal(result.uuid, result.ownerUuid);
+                    return;
+                case CREDENTIALS_FAILED:
+                    throw new AuthenticationException("Invalid credentials!");
+                default:
+                    throw new AuthenticationException("Authentication status code not supported. status:" + authenticationStatus);
+            }
         }
     }
 

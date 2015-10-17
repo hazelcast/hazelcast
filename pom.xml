@@ -49,6 +49,7 @@
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
         <hazelcast.distribution>Hazelcast</hazelcast.distribution>
+        <hazelcast.serialization.version>1</hazelcast.serialization.version>
 
         <!--Not using 3.1 at the moment since it recompiles all classes everytime-->
         <!--https://jira.codehaus.org/browse/MCOMPILER-205-->

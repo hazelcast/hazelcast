@@ -14,45 +14,33 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.client.impl.protocol;
 
-public enum FieldType {
+/**
+ * Status codes of authentication results
+ */
+public enum AuthenticationStatus {
 
-    PORTABLE(0),
-    BYTE(1),
-    BOOLEAN(2),
-    CHAR(3),
-    SHORT(4),
-    INT(5),
-    LONG(6),
-    FLOAT(7),
-    DOUBLE(8),
-    UTF(9),
-    PORTABLE_ARRAY(10),
-    BYTE_ARRAY(11),
-    BOOLEAN_ARRAY(12),
-    CHAR_ARRAY(13),
-    SHORT_ARRAY(14),
-    INT_ARRAY(15),
-    LONG_ARRAY(16),
-    FLOAT_ARRAY(17),
-    DOUBLE_ARRAY(18),
-    UTF_ARRAY(19);
+    AUTHENTICATED(0),
+    CREDENTIALS_FAILED(1),
+    SERIALIZATION_VERSION_MISMATCH(2);
 
-    private static final FieldType[] ALL = FieldType.values();
+    private final byte id;
 
-    private final byte type;
-
-    FieldType(int type) {
-        this.type = (byte) type;
+    AuthenticationStatus(int status) {
+        this.id = (byte) status;
     }
 
     public byte getId() {
-        return type;
+        return id;
     }
 
-    public static FieldType get(byte type) {
-        return ALL[type];
+    public static AuthenticationStatus getById(int id) {
+        for (AuthenticationStatus as : values()) {
+            if (as.getId() == id) {
+                return as;
+            }
+        }
+        throw new IllegalArgumentException("Unsupported id value");
     }
-
 }

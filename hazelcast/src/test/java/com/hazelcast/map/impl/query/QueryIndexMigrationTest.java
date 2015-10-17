@@ -196,7 +196,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     /**
      * see Zendesk ticket #82
      */
-    @Test(timeout = MINUTE)
+    @Test(timeout = 2*MINUTE)
     public void testQueryWithIndexDuringJoin() throws InterruptedException {
         final String name = "test";
         final String findMe = "find-me";

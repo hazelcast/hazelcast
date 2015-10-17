@@ -39,13 +39,15 @@ public final class UnsafeHelper {
     public static final boolean UNSAFE_AVAILABLE;
 
     public static final long BYTE_ARRAY_BASE_OFFSET;
+    public static final long BOOLEAN_ARRAY_BASE_OFFSET;
     public static final long SHORT_ARRAY_BASE_OFFSET;
     public static final long CHAR_ARRAY_BASE_OFFSET;
     public static final long INT_ARRAY_BASE_OFFSET;
     public static final long FLOAT_ARRAY_BASE_OFFSET;
     public static final long LONG_ARRAY_BASE_OFFSET;
-    public static final long DOUBLE_ARRAY_BASE_OFFSET;
 
+    public static final long DOUBLE_ARRAY_BASE_OFFSET;
+    public static final int BOOLEAN_ARRAY_INDEX_SCALE;
     public static final int BYTE_ARRAY_INDEX_SCALE;
     public static final int SHORT_ARRAY_INDEX_SCALE;
     public static final int CHAR_ARRAY_INDEX_SCALE;
@@ -81,6 +83,7 @@ public final class UnsafeHelper {
         UNSAFE = unsafe;
 
         BYTE_ARRAY_BASE_OFFSET = arrayBaseOffset(byte[].class, unsafe);
+        BOOLEAN_ARRAY_BASE_OFFSET = arrayBaseOffset(boolean[].class, unsafe);
         SHORT_ARRAY_BASE_OFFSET = arrayBaseOffset(short[].class, unsafe);
         CHAR_ARRAY_BASE_OFFSET = arrayBaseOffset(char[].class, unsafe);
         INT_ARRAY_BASE_OFFSET = arrayBaseOffset(int[].class, unsafe);
@@ -89,6 +92,7 @@ public final class UnsafeHelper {
         DOUBLE_ARRAY_BASE_OFFSET = arrayBaseOffset(double[].class, unsafe);
 
         BYTE_ARRAY_INDEX_SCALE = arrayIndexScale(byte[].class, unsafe);
+        BOOLEAN_ARRAY_INDEX_SCALE = arrayIndexScale(boolean[].class, unsafe);
         SHORT_ARRAY_INDEX_SCALE = arrayIndexScale(short[].class, unsafe);
         CHAR_ARRAY_INDEX_SCALE = arrayIndexScale(char[].class, unsafe);
         INT_ARRAY_INDEX_SCALE = arrayIndexScale(int[].class, unsafe);
@@ -102,6 +106,7 @@ public final class UnsafeHelper {
             if (unsafe != null) {
                 byte[] buffer = new byte[8];
                 unsafe.putChar(buffer, BYTE_ARRAY_BASE_OFFSET, '0');
+                unsafe.putBoolean(buffer, BYTE_ARRAY_BASE_OFFSET, false);
                 unsafe.putShort(buffer, BYTE_ARRAY_BASE_OFFSET, (short) 1);
                 unsafe.putInt(buffer, BYTE_ARRAY_BASE_OFFSET, 2);
                 unsafe.putFloat(buffer, BYTE_ARRAY_BASE_OFFSET, 3f);

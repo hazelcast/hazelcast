@@ -564,7 +564,13 @@ public enum GroupProperty implements HazelcastProperty {
      * eventually be removed when the experimental marker is removed.</p>
      * <p>Discovery SPI is <b>disabled</b> by default</p>
      */
-    DISCOVERY_SPI_ENABLED("hazelcast.discovery.enabled", false);
+    DISCOVERY_SPI_ENABLED("hazelcast.discovery.enabled", false),
+
+    /**
+     * Hazelcast serialization version. This is single byte value between 1 and Max supported serialization version.
+     * @see BuildInfo#getSerializationVersion()
+     */
+    SERIALIZATION_VERSION("hazelcast.serialization.version", BuildInfoProvider.getBuildInfo().getSerializationVersion());
 
     private final String name;
     private final String defaultValue;
@@ -580,6 +586,10 @@ public enum GroupProperty implements HazelcastProperty {
     }
 
     GroupProperty(String name, Integer defaultValue) {
+        this(name, String.valueOf(defaultValue));
+    }
+
+    GroupProperty(String name, Byte defaultValue) {
         this(name, String.valueOf(defaultValue));
     }
 

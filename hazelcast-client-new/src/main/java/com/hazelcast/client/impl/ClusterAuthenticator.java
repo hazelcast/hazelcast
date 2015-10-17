@@ -21,13 +21,14 @@ import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.ExceptionUtil;
@@ -60,12 +61,12 @@ public class ClusterAuthenticator implements Authenticator {
         ClientMessage clientMessage;
         if (credentials instanceof UsernamePasswordCredentials) {
             UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
-            clientMessage = ClientAuthenticationCodec.encodeRequest(cr.getUsername(),
-                    cr.getPassword(), uuid, ownerUuid, false, ClientTypes.JAVA);
+            clientMessage = ClientAuthenticationCodec.encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, false,
+                    ClientTypes.JAVA, client.getSerializationService().getVersion());
         } else {
             Data data = ss.toData(credentials);
-            clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid,
-                    false, ClientTypes.JAVA);
+            clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid, false, ClientTypes.JAVA,
+                    client.getSerializationService().getVersion());
 
         }
         connection.init();
@@ -80,6 +81,16 @@ public class ClusterAuthenticator implements Authenticator {
         }
         ClientAuthenticationCodec.ResponseParameters result = ClientAuthenticationCodec.decodeResponse(response);
 
-        connection.setRemoteEndpoint(result.address);
+        AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(result.status);
+        switch (authenticationStatus) {
+            case AUTHENTICATED:
+                connection.setRemoteEndpoint(result.address);
+                return;
+            case CREDENTIALS_FAILED:
+                throw new AuthenticationException("Invalid credentials!");
+            default:
+                //we do not need serialization version here as we already connected to master and agreed on the version
+                throw new AuthenticationException("Authentication status code not supported. status:" + authenticationStatus);
+        }
     }
 }
