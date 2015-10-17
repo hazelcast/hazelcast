@@ -53,7 +53,6 @@ public class ClientInvocation implements Runnable {
     private final LifecycleService lifecycleService;
     private final ClientInvocationService invocationService;
     private final ClientExecutionService executionService;
-    private final ClientListenerServiceImpl listenerService;
     private final ClientRequest request;
     private final EventHandler handler;
     private final long retryCountLimit;
@@ -72,7 +71,6 @@ public class ClientInvocation implements Runnable {
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = client.getInvocationService();
         this.executionService = client.getClientExecutionService();
-        this.listenerService = (ClientListenerServiceImpl) client.getListenerService();
         this.handler = handler;
         this.request = request;
         this.partitionId = partitionId;
@@ -83,7 +81,7 @@ public class ClientInvocation implements Runnable {
         int waitTime = clientProperties.getSeconds(INVOCATION_TIMEOUT_SECONDS);
         long retryTimeoutInSeconds = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
 
-        this.clientInvocationFuture = new ClientInvocationFuture(this, client, request, handler);
+        this.clientInvocationFuture = new ClientInvocationFuture(this, client, request);
         this.retryCountLimit = retryTimeoutInSeconds / RETRY_WAIT_TIME_IN_SECONDS;
 
         int interval = clientProperties.getInteger(HEARTBEAT_INTERVAL);
@@ -136,7 +134,7 @@ public class ClientInvocation implements Runnable {
         return request;
     }
 
-    public EventHandler getHandler() {
+    public EventHandler getEventHandler() {
         return handler;
     }
 
@@ -171,11 +169,7 @@ public class ClientInvocation implements Runnable {
         try {
             invoke();
         } catch (Throwable e) {
-            if (handler != null) {
-                listenerService.registerFailedListener(this);
-            } else {
-                clientInvocationFuture.setResponse(e);
-            }
+            clientInvocationFuture.setResponse(e);
         }
     }
 
@@ -217,11 +211,8 @@ public class ClientInvocation implements Runnable {
         if (isBindToSingleConnection()) {
             return false;
         }
-        if (handler == null && reSendCount.incrementAndGet() > retryCountLimit) {
+        if (reSendCount.incrementAndGet() > retryCountLimit) {
             return false;
-        }
-        if (handler != null) {
-            handler.beforeListenerRegister();
         }
 
         try {

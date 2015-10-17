@@ -28,7 +28,7 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
+import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.cluster.client.ClientPingRequest;
 import com.hazelcast.config.SocketInterceptorConfig;

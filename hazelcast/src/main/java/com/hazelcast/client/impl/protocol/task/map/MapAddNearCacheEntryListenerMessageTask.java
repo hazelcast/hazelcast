@@ -40,6 +40,10 @@ public class MapAddNearCacheEntryListenerMessageTask
         return new EventListenerFilter(parameters.listenerFlags, syntheticEventFilter);
     }
 
+    @Override
+    protected boolean isLocalOnly() {
+        return parameters.localOnly;
+    }
 
     @Override
     protected ClientMessage encodeEvent(Data keyData, Data newValueData, Data oldValueData,
@@ -47,7 +51,6 @@ public class MapAddNearCacheEntryListenerMessageTask
         return MapAddNearCacheEntryListenerCodec.encodeEntryEvent(keyData, newValueData,
                 oldValueData, meringValueData, type, uuid, numberOfAffectedEntries);
     }
-
 
     @Override
     public String getDistributedObjectName() {

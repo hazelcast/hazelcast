@@ -18,9 +18,13 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
-public interface ListenerRemoveCodec {
+public interface ListenerMessageCodec {
 
-    ClientMessage encodeRequest(String realRegistrationId);
+    ClientMessage encodeAddRequest(boolean localOnly);
 
-    boolean decodeResponse(ClientMessage clientMessage);
+    String decodeAddResponse(ClientMessage clientMessage);
+
+    ClientMessage encodeRemoveRequest(String realRegistrationId);
+
+    boolean decodeRemoveResponse(ClientMessage clientMessage);
 }

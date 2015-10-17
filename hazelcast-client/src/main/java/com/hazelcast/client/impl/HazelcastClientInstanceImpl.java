@@ -27,10 +27,12 @@ import com.hazelcast.client.spi.impl.AwsAddressProvider;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
+import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.spi.impl.ClientNonSmartInvocationServiceImpl;
+import com.hazelcast.client.spi.impl.listener.ClientNonSmartListenerService;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
+import com.hazelcast.client.spi.impl.listener.ClientSmartListenerService;
 import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.spi.impl.DefaultAddressProvider;
 import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressProvider;
@@ -275,7 +277,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private ClientListenerServiceImpl initListenerService() {
         int eventQueueCapacity = clientProperties.getInteger(ClientProperty.EVENT_QUEUE_CAPACITY);
         int eventThreadCount = clientProperties.getInteger(ClientProperty.EVENT_THREAD_COUNT);
-        return new ClientListenerServiceImpl(this, eventThreadCount, eventQueueCapacity);
+        final ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        if (networkConfig.isSmartRouting()) {
+            return new ClientSmartListenerService(this, eventThreadCount, eventQueueCapacity);
+
+        } else {
+            return new ClientNonSmartListenerService(this, eventThreadCount, eventQueueCapacity);
+        }
     }
 
     private ClientExecutionServiceImpl initExecutionService() {
@@ -284,6 +292,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public void start() {
         lifecycleService.setStarted();
+        invocationService.start();
         connectionManager.start();
         try {
             clusterService.start();

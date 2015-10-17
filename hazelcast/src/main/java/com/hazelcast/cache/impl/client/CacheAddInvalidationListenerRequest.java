@@ -20,17 +20,14 @@ import com.hazelcast.cache.impl.CacheContext;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.client.CallableClientRequest;
-import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 import java.security.Permission;
 
-public class CacheAddInvalidationListenerRequest
-        extends CallableClientRequest
-        implements RetryableRequest {
+public class CacheAddInvalidationListenerRequest extends BaseClientAddListenerRequest {
 
     private String name;
 
@@ -48,7 +45,7 @@ public class CacheAddInvalidationListenerRequest
         ICacheService cacheService = getService();
         CacheContext cacheContext = cacheService.getOrCreateCacheContext(name);
         CacheInvalidationListener listener = new CacheInvalidationListener(endpoint, getCallId(), cacheContext);
-        String registrationId = cacheService.addInvalidationListener(name, listener);
+        String registrationId = cacheService.addInvalidationListener(name, listener, localOnly);
         endpoint.addListenerDestroyAction(ICacheService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }

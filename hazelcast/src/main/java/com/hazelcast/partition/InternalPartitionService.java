@@ -137,6 +137,8 @@ public interface InternalPartitionService extends CoreService {
 
     String addPartitionLostListener(PartitionLostListener partitionLostListener);
 
+    String addLocalPartitionLostListener(PartitionLostListener partitionLostListener);
+
     boolean removePartitionLostListener(String registrationId);
 
     Member getMember(Address address);

@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
+import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
@@ -69,6 +70,7 @@ public class ClientInvocation implements Runnable {
     private final Connection connection;
     private volatile ClientConnection sendConnection;
     private boolean bypassHeartbeatCheck;
+    private EventHandler handler;
 
 
     protected ClientInvocation(HazelcastClientInstanceImpl client,
@@ -153,12 +155,8 @@ public class ClientInvocation implements Runnable {
         try {
             invoke();
         } catch (Throwable e) {
-            onException(e);
+            clientInvocationFuture.setResponse(e);
         }
-    }
-
-    protected void onException(Throwable e) {
-        clientInvocationFuture.setResponse(e);
     }
 
     public void notify(ClientMessage clientMessage) {
@@ -199,7 +197,7 @@ public class ClientInvocation implements Runnable {
         if (!shouldRetry()) {
             return false;
         }
-        beforeRetry();
+
         try {
             rescheduleInvocation();
         } catch (RejectedExecutionException e) {
@@ -234,9 +232,6 @@ public class ClientInvocation implements Runnable {
         }, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
     }
 
-    protected void beforeRetry() {
-    }
-
     protected boolean shouldRetry() {
         return reSendCount.incrementAndGet() < retryCountLimit;
     }
@@ -254,6 +249,14 @@ public class ClientInvocation implements Runnable {
             }
         }
         return true;
+    }
+
+    public EventHandler getEventHandler() {
+        return handler;
+    }
+
+    public void setEventHandler(EventHandler handler) {
+        this.handler = handler;
     }
 
     public int getHeartBeatInterval() {

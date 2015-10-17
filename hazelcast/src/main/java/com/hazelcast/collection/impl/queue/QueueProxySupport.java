@@ -208,7 +208,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
     }
 
     public String addItemListener(ItemListener listener, boolean includeValue) {
-        return getService().addItemListener(name, listener, includeValue);
+        return getService().addItemListener(name, listener, includeValue, false);
     }
 
     public boolean removeItemListener(String registrationId) {

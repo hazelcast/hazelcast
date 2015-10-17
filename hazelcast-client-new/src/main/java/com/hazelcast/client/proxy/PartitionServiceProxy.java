@@ -16,14 +16,13 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.core.Partition;
@@ -85,30 +84,37 @@ public final class PartitionServiceProxy implements PartitionService {
 
     @Override
     public String addPartitionLostListener(PartitionLostListener partitionLostListener) {
-        ClientMessage request = ClientAddPartitionLostListenerCodec.encodeRequest();
-        final EventHandler<ClientMessage> handler = new ClientPartitionLostEventHandler(partitionLostListener);
-        return listenerService.startListening(request, null, handler, new ClientMessageDecoder() {
-            @Override
-            public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                return (T) ClientAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
-            }
-        });
+        EventHandler<ClientMessage> handler = new ClientPartitionLostEventHandler(partitionLostListener);
+        return listenerService.registerListener(createPartitionLostListenerCodec(), handler);
     }
 
-    @Override
-    public boolean removePartitionLostListener(String registrationId) {
-        boolean result = listenerService.stopListening(registrationId, new ListenerRemoveCodec() {
+    private ListenerMessageCodec createPartitionLostListenerCodec() {
+        return new ListenerMessageCodec() {
             @Override
-            public ClientMessage encodeRequest(String realRegistrationId) {
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return ClientAddPartitionLostListenerCodec.encodeRequest(localOnly);
+            }
+
+            @Override
+            public String decodeAddResponse(ClientMessage clientMessage) {
+                return ClientAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
                 return ClientRemovePartitionLostListenerCodec.encodeRequest(realRegistrationId);
             }
 
             @Override
-            public boolean decodeResponse(ClientMessage clientMessage) {
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
                 return ClientRemovePartitionLostListenerCodec.decodeResponse(clientMessage).response;
             }
-        });
-        return result;
+        };
+    }
+
+    @Override
+    public boolean removePartitionLostListener(String registrationId) {
+        return listenerService.deregisterListener(registrationId);
     }
 
     @Override

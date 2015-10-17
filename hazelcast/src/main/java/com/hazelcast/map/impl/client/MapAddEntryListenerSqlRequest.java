@@ -63,6 +63,7 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
 
     @Override
     public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         final boolean hasKey = key != null;
         writer.writeUTF("name", name);
         writer.writeBoolean("i", includeValue);
@@ -89,6 +90,7 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
 
     @Override
     public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         name = reader.readUTF("name");
         includeValue = reader.readBoolean("i");
         boolean hasKey = reader.readBoolean("key");

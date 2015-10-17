@@ -24,8 +24,7 @@ import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEndpointImpl;
-import com.hazelcast.client.impl.client.CallableClientRequest;
-import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -47,11 +46,10 @@ import java.util.concurrent.Callable;
  * Client request which registers an event listener on behalf of the client and delegates the received events
  * back to client.
  *
- * @see com.hazelcast.cache.impl.CacheService#registerListener(String, com.hazelcast.cache.impl.CacheEventListener)
+ * @see com.hazelcast.cache.impl.CacheService#registerListener(String,
+ * com.hazelcast.cache.impl.CacheEventListener, boolean localOnly)
  */
-public class CacheAddEntryListenerRequest
-        extends CallableClientRequest
-        implements RetryableRequest {
+public class CacheAddEntryListenerRequest extends BaseClientAddListenerRequest {
 
     private String name;
 
@@ -67,7 +65,7 @@ public class CacheAddEntryListenerRequest
         final ClientEndpointImpl endpoint = (ClientEndpointImpl) getEndpoint();
         final ICacheService service = getService();
         CacheEntryListener cacheEntryListener = new CacheEntryListener(getCallId(), endpoint);
-        final String registrationId = service.registerListener(name, cacheEntryListener, cacheEntryListener);
+        final String registrationId = service.registerListener(name, cacheEntryListener, cacheEntryListener, localOnly);
         endpoint.addDestroyAction(registrationId, new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
@@ -81,9 +79,9 @@ public class CacheAddEntryListenerRequest
             justification = "Class is Serializable, but doesn't define serialVersionUID")
     private static final class CacheEntryListener
             implements CacheEventListener,
-                       NotifiableEventListener<ICacheService>,
-                       ListenerWrapperEventFilter,
-                       Serializable {
+            NotifiableEventListener<ICacheService>,
+            ListenerWrapperEventFilter,
+            Serializable {
 
         private final int callId;
         private final transient ClientEndpoint endpoint;
@@ -158,15 +156,13 @@ public class CacheAddEntryListenerRequest
     }
 
     @Override
-    public void write(PortableWriter writer)
-            throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         writer.writeUTF("n", name);
     }
 
     @Override
-    public void read(PortableReader reader)
-            throws IOException {
+    public void read(PortableReader reader) throws IOException {
         super.read(reader);
         name = reader.readUTF("n");
     }

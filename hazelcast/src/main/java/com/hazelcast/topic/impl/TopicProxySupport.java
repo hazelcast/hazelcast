@@ -95,7 +95,7 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
     }
 
     public String addMessageListenerInternal(MessageListener listener) {
-        return topicService.addMessageListener(name, listener);
+        return topicService.addMessageListener(name, listener, false);
     }
 
     public boolean removeMessageListenerInternal(final String registrationId) {

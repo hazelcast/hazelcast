@@ -79,13 +79,13 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
             }
         };
-        return listen(request, getKey(), handler);
+        return registerListener(request, handler);
     }
 
     @Override
     public boolean removeMessageListener(String registrationId) {
         final RemoveMessageListenerRequest request = new RemoveMessageListenerRequest(name, registrationId);
-        return stopListening(request, registrationId);
+        return deregisterListener(request, registrationId);
     }
 
     @Override

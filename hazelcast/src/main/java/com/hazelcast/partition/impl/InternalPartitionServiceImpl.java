@@ -1647,6 +1647,20 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     @Override
+    public String addLocalPartitionLostListener(PartitionLostListener listener) {
+        if (listener == null) {
+            throw new NullPointerException("listener can't be null");
+        }
+
+        final PartitionLostListenerAdapter adapter = new PartitionLostListenerAdapter(listener);
+
+        EventService eventService = nodeEngine.getEventService();
+        EventRegistration registration =
+                eventService.registerLocalListener(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, adapter);
+        return registration.getId();
+    }
+
+    @Override
     public boolean removePartitionLostListener(String registrationId) {
         if (registrationId == null) {
             throw new NullPointerException("registrationId can't be null");

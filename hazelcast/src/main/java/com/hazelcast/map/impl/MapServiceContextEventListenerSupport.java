@@ -28,6 +28,8 @@ public interface MapServiceContextEventListenerSupport {
 
     String addLocalEventListener(Object mapListener, EventFilter eventFilter, String mapName);
 
+    String addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName);
+
     String addEventListener(Object mapListener, EventFilter eventFilter, String mapName);
 
     String addPartitionLostListener(MapPartitionLostListener listener, String mapName);

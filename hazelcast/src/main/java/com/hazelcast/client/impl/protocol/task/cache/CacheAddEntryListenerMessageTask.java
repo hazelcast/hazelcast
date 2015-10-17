@@ -45,7 +45,7 @@ import java.util.concurrent.Callable;
  * Client request which registers an event listener on behalf of the client and delegates the received events
  * back to client.
  *
- * @see CacheService#registerListener(String, CacheEventListener)
+ * @see CacheService#registerListener(String, CacheEventListener, boolean localOnly)
  */
 public class CacheAddEntryListenerMessageTask
         extends AbstractCallableMessageTask<CacheAddEntryListenerCodec.RequestParameters> {
@@ -56,11 +56,12 @@ public class CacheAddEntryListenerMessageTask
 
     @Override
     protected Object call() {
-        final ClientEndpoint endpoint = getEndpoint();
+        ClientEndpoint endpoint = getEndpoint();
         final CacheService service = getService(CacheService.SERVICE_NAME);
         CacheEntryListener cacheEntryListener = new CacheEntryListener(endpoint, this);
 
-        final String registrationId = service.registerListener(parameters.name, cacheEntryListener, cacheEntryListener);
+        final String registrationId =
+                service.registerListener(parameters.name, cacheEntryListener, cacheEntryListener, parameters.localOnly);
         endpoint.addDestroyAction(registrationId, new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {

@@ -17,8 +17,7 @@
 package com.hazelcast.multimap.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.client.CallableClientRequest;
-import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
@@ -38,7 +37,7 @@ import com.hazelcast.spi.impl.PortableEntryEvent;
 import java.io.IOException;
 import java.security.Permission;
 
-public class AddEntryListenerRequest extends CallableClientRequest implements RetryableRequest {
+public class AddEntryListenerRequest extends BaseClientAddListenerRequest {
 
     String name;
     Data key;
@@ -77,6 +76,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
                     endpoint.sendEvent(key, portableEntryEvent, getCallId());
                 }
             }
+
             @Override
             public void onMapEvent(MapEvent event) {
                 if (endpoint.isAlive()) {
@@ -85,7 +85,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
                 }
             }
         };
-        String registrationId = service.addListener(name, listener, key, includeValue, false);
+        String registrationId = service.addListener(name, listener, key, includeValue, localOnly);
         endpoint.addListenerDestroyAction(MultiMapService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
@@ -113,6 +113,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
 
     @Override
     public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeBoolean("i", includeValue);
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
@@ -121,6 +122,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
 
     @Override
     public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         includeValue = reader.readBoolean("i");
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();

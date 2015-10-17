@@ -26,7 +26,7 @@ import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientCreateRequest;
-import com.hazelcast.client.impl.client.DistributedObjectListenerRequest;
+import com.hazelcast.client.impl.client.AddDistributedObjectListenerRequest;
 import com.hazelcast.client.impl.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
@@ -337,7 +337,7 @@ public final class ProxyManager {
     }
 
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
-        final DistributedObjectListenerRequest request = new DistributedObjectListenerRequest();
+        final AddDistributedObjectListenerRequest request = new AddDistributedObjectListenerRequest();
         final EventHandler<PortableDistributedObjectEvent> eventHandler = new EventHandler<PortableDistributedObjectEvent>() {
             public void handle(PortableDistributedObjectEvent e) {
                 final ObjectNamespace ns = new DefaultObjectNamespace(e.getServiceName(), e.getName());
@@ -364,12 +364,12 @@ public final class ProxyManager {
 
             }
         };
-        return client.getListenerService().startListening(request, null, eventHandler);
+        return client.getListenerService().registerListener(request, eventHandler);
     }
 
     public boolean removeDistributedObjectListener(String id) {
         final RemoveDistributedObjectListenerRequest request = new RemoveDistributedObjectListenerRequest(id);
-        return client.getListenerService().stopListening(request, id);
+        return client.getListenerService().deregisterListener(request, id);
     }
 
     private static class ClientProxyFuture {

@@ -156,7 +156,7 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
     }
 
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
-        final CollectionAddListenerRequest request = new CollectionAddListenerRequest(getName(), includeValue);
+        CollectionAddListenerRequest request = new CollectionAddListenerRequest(getName(), includeValue);
         request.setServiceName(getServiceName());
         EventHandler<PortableItemEvent> eventHandler = new EventHandler<PortableItemEvent>() {
             public void handle(PortableItemEvent portableItemEvent) {
@@ -179,13 +179,13 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
 
             }
         };
-        return listen(request, getPartitionKey(), eventHandler);
+        return registerListener(request, eventHandler);
     }
 
     public boolean removeItemListener(String registrationId) {
         final CollectionRemoveListenerRequest request = new CollectionRemoveListenerRequest(getName(),
                 registrationId, getServiceName());
-        return stopListening(request, registrationId);
+        return deregisterListener(request, registrationId);
     }
 
     protected <T> T invoke(ClientRequest req) {

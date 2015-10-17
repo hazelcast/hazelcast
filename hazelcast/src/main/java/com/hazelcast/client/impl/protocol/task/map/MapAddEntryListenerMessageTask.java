@@ -39,6 +39,11 @@ public class MapAddEntryListenerMessageTask
     }
 
     @Override
+    protected boolean isLocalOnly() {
+        return parameters.localOnly;
+    }
+
+    @Override
     protected ClientMessage encodeEvent(Data keyData, Data newValueData, Data oldValueData,
                                         Data meringValueData, int type, String uuid, int numberOfAffectedEntries) {
         return MapAddEntryListenerCodec.encodeEntryEvent(keyData, newValueData,

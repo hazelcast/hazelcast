@@ -23,7 +23,6 @@ import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.impl.nearcache.NearCache;
-import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
@@ -38,7 +37,7 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
@@ -69,10 +68,10 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
  * ICache implementation for client
- * <p>
+ * <p/>
  * This proxy is the implementation of ICache and javax.cache.Cache which is returned by
  * HazelcastClientCacheManager. Represent a cache on client.
- * <p>
+ * <p/>
  * This implementation is a thin proxy implementation using hazelcast client infrastructure
  *
  * @param <K> key type
@@ -135,7 +134,7 @@ public class ClientCacheProxy<K, V>
 
     @Override
     protected void onLoadAll(Set<Data> keys, Object response, long start, long end) {
-        if (statisticsEnabled)  {
+        if (statisticsEnabled) {
             // We don't know how many of keys are actually loaded so we assume that all of them are loaded
             // and calculates statistics based on this assumption.
             statistics.increaseCachePuts(keys.size());
@@ -333,23 +332,40 @@ public class ClientCacheProxy<K, V>
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
-        final CacheEventListenerAdaptor<K, V> adaptor =
+        CacheEventListenerAdaptor<K, V> adaptor =
                 new CacheEventListenerAdaptor<K, V>(this, cacheEntryListenerConfiguration,
-                                                 clientContext.getSerializationService());
-        final EventHandler handler = createHandler(adaptor);
-        final ClientMessage registrationRequest = CacheAddEntryListenerCodec.encodeRequest(nameWithPrefix);
-        final String regId = clientContext.getListenerService().startListening(registrationRequest, null, handler,
-                new ClientMessageDecoder() {
-                    @Override
-                    public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                        return (T) CacheAddEntryListenerCodec.decodeResponse(clientMessage).response;
-                    }
-                });
+                        clientContext.getSerializationService());
+        EventHandler handler = createHandler(adaptor);
+        String regId = clientContext.getListenerService().registerListener(createCacheEntryListenerCodec(), handler);
         if (regId != null) {
             cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
             addListenerLocally(regId, cacheEntryListenerConfiguration);
             updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, true);
         }
+    }
+
+    private ListenerMessageCodec createCacheEntryListenerCodec() {
+        return new ListenerMessageCodec() {
+            @Override
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return CacheAddEntryListenerCodec.encodeRequest(nameWithPrefix, localOnly);
+            }
+
+            @Override
+            public String decodeAddResponse(ClientMessage clientMessage) {
+                return CacheAddEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+                return CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+                return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+        };
     }
 
     @Override
@@ -363,17 +379,7 @@ public class ClientCacheProxy<K, V>
         }
 
         ClientListenerService listenerService = clientContext.getListenerService();
-        boolean isDeregistered = listenerService.stopListening(regId, new ListenerRemoveCodec() {
-            @Override
-            public ClientMessage encodeRequest(String realRegistrationId) {
-                return CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, realRegistrationId);
-            }
-
-            @Override
-            public boolean decodeResponse(ClientMessage clientMessage) {
-                return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
-            }
-        });
+        boolean isDeregistered = listenerService.deregisterListener(regId);
 
         if (isDeregistered) {
             removeListenerLocally(cacheEntryListenerConfiguration);
@@ -410,30 +416,37 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public String addPartitionLostListener(CachePartitionLostListener listener) {
-        ClientMessage request = CacheAddPartitionLostListenerCodec.encodeRequest(name);
-        final EventHandler<ClientMessage> handler = new ClientCachePartitionLostEventHandler(listener);
-        return clientContext.getListenerService().startListening(request, null, handler,
-                new ClientMessageDecoder() {
-                    @Override
-                    public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                        return (T) CacheAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
-                    }
-                });
+        EventHandler<ClientMessage> handler = new ClientCachePartitionLostEventHandler(listener);
+        return clientContext.getListenerService().registerListener(createPartitionLostListenerCodec(), handler);
     }
 
-    @Override
-    public boolean removePartitionLostListener(String id) {
-        return clientContext.getListenerService().stopListening(id, new ListenerRemoveCodec() {
+    private ListenerMessageCodec createPartitionLostListenerCodec() {
+        return new ListenerMessageCodec() {
             @Override
-            public ClientMessage encodeRequest(String realRegistrationId) {
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return CacheAddPartitionLostListenerCodec.encodeRequest(name, localOnly);
+            }
+
+            @Override
+            public String decodeAddResponse(ClientMessage clientMessage) {
+                return CacheAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
                 return CacheRemovePartitionLostListenerCodec.encodeRequest(name, realRegistrationId);
             }
 
             @Override
-            public boolean decodeResponse(ClientMessage clientMessage) {
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
                 return CacheRemovePartitionLostListenerCodec.decodeResponse(clientMessage).response;
             }
-        });
+        };
+    }
+
+    @Override
+    public boolean removePartitionLostListener(String id) {
+        return clientContext.getListenerService().deregisterListener(id);
     }
 
     private final class ClientCachePartitionLostEventHandler
@@ -460,7 +473,7 @@ public class ClientCacheProxy<K, V>
         public void handle(int partitionId, String uuid) {
             final Member member = clientContext.getClusterService().getMember(uuid);
             listener.partitionLost(new CachePartitionLostEvent(name, member, CacheEventType.PARTITION_LOST.getType(),
-                                                               partitionId));
+                    partitionId));
         }
 
     }
