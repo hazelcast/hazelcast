@@ -23,6 +23,7 @@ import com.hazelcast.client.cache.impl.ClientCacheDistributedObject;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.config.ProxyFactoryConfig;
+import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -71,6 +72,7 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.DefaultObjectNamespace;
@@ -270,21 +272,35 @@ public final class ProxyManager {
 
     private void initialize(ClientProxy clientProxy) throws Exception {
         final Address initializationTarget = findNextAddressToSendCreateRequest();
-        Address invocationTarget = initializationTarget;
-        if (initializationTarget != null && client.getConnectionManager().getConnection(initializationTarget) == null) {
-            invocationTarget = client.getClientClusterService().getOwnerConnectionAddress();
-        }
+        final Connection connection = getTargetOrOwnerConnection(initializationTarget);
+        final ClientMessage clientMessage = ClientCreateProxyCodec.encodeRequest(clientProxy.getName(),
+                clientProxy.getServiceName(), initializationTarget);
+        final ClientContext context = new ClientContext(client, this);
+        new ClientInvocation(client, clientMessage, connection).invoke().get();
+        clientProxy.setContext(context);
+        clientProxy.onInitialize();
+    }
 
-        if (invocationTarget == null) {
+    private Connection getTargetOrOwnerConnection(final Address target) throws IOException {
+        if (target == null) {
             throw new IOException("Not able to setup owner connection!");
         }
 
-        ClientMessage clientMessage = ClientCreateProxyCodec.encodeRequest(clientProxy.getName(),
-                clientProxy.getServiceName(), initializationTarget);
-        final ClientContext context = new ClientContext(client, this);
-        new ClientInvocation(client, clientMessage, invocationTarget).invoke().get();
-        clientProxy.setContext(context);
-        clientProxy.onInitialize();
+        final ClientConnectionManager connectionManager = client.getConnectionManager();
+        Connection connection = connectionManager.getConnection(target);
+        if (connection == null) {
+            final Address ownerConnectionAddress = client.getClientClusterService().getOwnerConnectionAddress();
+            if (ownerConnectionAddress == null) {
+                throw new IOException("Not able to setup owner connection!");
+            }
+
+            connection = connectionManager.getConnection(ownerConnectionAddress);
+            if (connection == null) {
+                throw new IOException("Client is not connected to member " + target);
+            }
+        }
+
+        return connection;
     }
 
     public Address findNextAddressToSendCreateRequest() {
