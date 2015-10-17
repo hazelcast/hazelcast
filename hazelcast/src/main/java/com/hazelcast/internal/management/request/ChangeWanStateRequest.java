@@ -63,10 +63,10 @@ public class ChangeWanStateRequest implements ConsoleRequest {
         final JsonObject result = new JsonObject();
         result.add("start", start);
         ChangeWanStateOperation changeWanStateOperation =
-                new ChangeWanStateOperation(memberAddress, schemeName, publisherName, start);
+                new ChangeWanStateOperation(schemeName, publisherName, start);
 
         String[] hostAndPort = memberAddress.split(":");
-        Address address = new Address(hostAndPort[0], Integer.valueOf(hostAndPort[1]));
+        Address address = new Address(hostAndPort[0], Integer.parseInt(hostAndPort[1]));
 
         final Set<Member> members = mcs.getHazelcastInstance().getCluster().getMembers();
         for (Member member : members) {

@@ -26,7 +26,6 @@ import com.hazelcast.wan.WanReplicationService;
  */
 public class ChangeWanStateOperation extends AbstractOperation {
 
-    private String memberAddress;
     private String schemeName;
     private String publisherName;
     private boolean start;
@@ -34,8 +33,7 @@ public class ChangeWanStateOperation extends AbstractOperation {
     public ChangeWanStateOperation() {
     }
 
-    public ChangeWanStateOperation(String memberAddress, String schemeName, String publisherName, boolean start) {
-        this.memberAddress = memberAddress;
+    public ChangeWanStateOperation(String schemeName, String publisherName, boolean start) {
         this.schemeName = schemeName;
         this.publisherName = publisherName;
         this.start = start;
