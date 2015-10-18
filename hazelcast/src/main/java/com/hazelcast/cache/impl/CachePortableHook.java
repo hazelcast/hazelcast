@@ -34,6 +34,7 @@ import com.hazelcast.cache.impl.client.CacheIterateRequest;
 import com.hazelcast.cache.impl.client.CacheListenerRegistrationRequest;
 import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
 import com.hazelcast.cache.impl.client.CacheManagementConfigRequest;
+import com.hazelcast.cache.impl.client.CachePutAllRequest;
 import com.hazelcast.cache.impl.client.CachePutIfAbsentRequest;
 import com.hazelcast.cache.impl.client.CachePutRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
@@ -92,8 +93,9 @@ public class CachePortableHook
     public static final int DESTROY_CACHE = 25;
     public static final int ADD_CACHE_PARTITION_LOST_LISTENER = 26;
     public static final int REMOVE_CACHE_PARTITION_LOST_LISTENER = 27;
+    public static final int PUT_ALL = 28;
 
-    public static final int LEN = 28;
+    public static final int LEN = 29;
 
     public int getFactoryId() {
         return F_ID;
@@ -237,6 +239,11 @@ public class CachePortableHook
                 constructors[REMOVE_CACHE_PARTITION_LOST_LISTENER] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new CacheRemovePartitionLostListenerRequest();
+                    }
+                };
+                constructors[PUT_ALL] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new CachePutAllRequest();
                     }
                 };
             }

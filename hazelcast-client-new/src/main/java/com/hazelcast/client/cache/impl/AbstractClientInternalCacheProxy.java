@@ -160,7 +160,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     protected final ClientCacheStatisticsImpl statistics;
     protected final boolean statisticsEnabled;
 
-    private boolean cacheOnUpdate;
+    protected boolean cacheOnUpdate;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
     private final ConcurrentMap<Integer, CountDownLatch> syncLocks;
@@ -243,13 +243,12 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         super.destroy();
     }
 
-    protected ClientInvocationFuture invoke(ClientMessage req, Data keyData, int completionId) {
+    protected ClientInvocationFuture invoke(ClientMessage req, int partitionId, int completionId) {
         final boolean completionOperation = completionId != -1;
         if (completionOperation) {
             registerCompletionLatch(completionId, 1);
         }
         try {
-            int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
             HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
             final ClientInvocation clientInvocation = new ClientInvocation(client, req, partitionId);
             ClientInvocationFuture f = clientInvocation.invoke();
@@ -266,6 +265,11 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             }
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
+    }
+
+    protected ClientInvocationFuture invoke(ClientMessage req, Data keyData, int completionId) {
+        int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
+        return invoke(req, partitionId, completionId);
     }
 
     protected <T> T getSafely(Future<T> future) {
@@ -479,8 +483,9 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    protected <T> ICompletableFuture<T> putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy, final boolean isGet,
-                                                         boolean withCompletionEvent, boolean async) {
+    protected <T> ICompletableFuture<T> putAsyncInternal(final K key, final V value, final ExpiryPolicy expiryPolicy,
+                                                         final boolean isGet, final boolean withCompletionEvent,
+                                                         final boolean async) {
         final long start = System.nanoTime();
         ensureOpen();
         validateNotNull(key, value);
@@ -494,22 +499,26 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         ClientInvocationFuture future;
         try {
             future = invoke(request, keyData, completionId);
-            if (cacheOnUpdate) {
-                storeInNearCache(keyData, valueData, value);
-            } else {
-                invalidateNearCache(keyData);
-            }
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
 
         ClientDelegatingFuture delegatingFuture =
                 new ClientDelegatingFuture<T>(future, clientContext.getSerializationService(), putResponseDecoder);
-        if (async && statisticsEnabled) {
+        if (nearCache != null || (async && statisticsEnabled)) {
             delegatingFuture.andThen(new ExecutionCallback<Object>() {
                 @Override
                 public void onResponse(Object responseData) {
-                    handleStatisticsOnPut(isGet, start, responseData);
+                    if (nearCache != null) {
+                        if (cacheOnUpdate) {
+                            storeInNearCache(keyData, valueData, value);
+                        } else {
+                            invalidateNearCache(keyData);
+                        }
+                    }
+                    if (async && statisticsEnabled) {
+                        handleStatisticsOnPut(isGet, start, responseData);
+                    }
                 }
 
                 @Override
@@ -535,8 +544,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    protected ICompletableFuture<Boolean> putIfAbsentAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,
-                                                                   boolean withCompletionEvent, boolean async) {
+    protected ICompletableFuture<Boolean> putIfAbsentAsyncInternal(final K key, final V value, final ExpiryPolicy expiryPolicy,
+                                                                   final boolean withCompletionEvent, final boolean async) {
         final long start = System.nanoTime();
         ensureOpen();
         validateNotNull(key, value);
@@ -550,23 +559,27 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         ClientInvocationFuture future;
         try {
             future = invoke(request, keyData, completionId);
-            if (cacheOnUpdate) {
-                storeInNearCache(keyData, valueData, value);
-            } else {
-                invalidateNearCache(keyData);
-            }
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
         ClientDelegatingFuture delegatingFuture =
                 new ClientDelegatingFuture<Boolean>(future, clientContext.getSerializationService(),
                                                     putIfAbsentResponseDecoder);
-        if (async && statisticsEnabled) {
+        if (nearCache != null || (async && statisticsEnabled)) {
             delegatingFuture.andThen(new ExecutionCallback<Object>() {
                 @Override
                 public void onResponse(Object responseData) {
-                    Object response = clientContext.getSerializationService().toObject(responseData);
-                    handleStatisticsOnPutIfAbsent(start, (Boolean) response);
+                    if (nearCache != null) {
+                        if (cacheOnUpdate) {
+                            storeInNearCache(keyData, valueData, value);
+                        } else {
+                            invalidateNearCache(keyData);
+                        }
+                    }
+                    if (async && statisticsEnabled) {
+                        Object response = clientContext.getSerializationService().toObject(responseData);
+                        handleStatisticsOnPutIfAbsent(start, (Boolean) response);
+                    }
                 }
 
                 @Override

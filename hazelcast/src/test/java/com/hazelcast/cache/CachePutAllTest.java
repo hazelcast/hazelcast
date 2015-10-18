@@ -48,17 +48,29 @@ public class CachePutAllTest extends CacheTestSupport {
 
     private static final int INSTANCE_COUNT = 2;
 
-    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
+    private TestHazelcastInstanceFactory factory = getInstanceFactory(INSTANCE_COUNT);
     private HazelcastInstance[] hazelcastInstances;
     private HazelcastInstance hazelcastInstance;
 
+    protected TestHazelcastInstanceFactory getInstanceFactory(int instanceCount) {
+        return createHazelcastInstanceFactory(instanceCount);
+    }
+
     @Override
     protected void onSetup() {
+        Config config = createConfig();
+        hazelcastInstances = new HazelcastInstance[INSTANCE_COUNT];
+        for (int i = 0; i < INSTANCE_COUNT; i++) {
+            hazelcastInstances[i] = factory.newHazelcastInstance(config);
+        }
+        warmUpPartitions(hazelcastInstances);
+        waitAllForSafeState(hazelcastInstances);
+        hazelcastInstance = hazelcastInstances[0];
     }
 
     @Override
     protected void onTearDown() {
-        factory.terminateAll();
+        factory.shutdownAll();
         hazelcastInstances = null;
         hazelcastInstance = null;
     }
@@ -72,14 +84,6 @@ public class CachePutAllTest extends CacheTestSupport {
 
     @Override
     protected HazelcastInstance getHazelcastInstance() {
-        Config config = createConfig();
-        hazelcastInstances = new HazelcastInstance[INSTANCE_COUNT];
-        for (int i = 0; i < INSTANCE_COUNT; i++) {
-            hazelcastInstances[i] = factory.newHazelcastInstance(config);
-        }
-        warmUpPartitions(hazelcastInstances);
-        waitAllForSafeState(hazelcastInstances);
-        hazelcastInstance = hazelcastInstances[0];
         return hazelcastInstance;
     }
 

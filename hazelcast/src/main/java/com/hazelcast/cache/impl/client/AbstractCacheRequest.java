@@ -28,12 +28,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * Abstract cache request to handle a completion id registration.
- */
 public abstract class AbstractCacheRequest
         extends KeyBasedClientRequest
-        implements RetryableRequest {
+        implements RetryableRequest, CompletionAwareCacheRequest {
 
     protected String name;
     protected InMemoryFormat inMemoryFormat;
@@ -54,6 +51,7 @@ public abstract class AbstractCacheRequest
         return ICacheService.SERVICE_NAME;
     }
 
+    @Override
     public void setCompletionId(Integer completionId) {
     }
 
