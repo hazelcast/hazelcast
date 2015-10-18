@@ -423,8 +423,8 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     /**
      * Returns value of removed record.
      */
-    protected Object deleteRecord(Data key) {
-        return storage.remove(key);
+    protected void deleteRecord(Record record) {
+        storage.removeRecord(record);
     }
 
     /**

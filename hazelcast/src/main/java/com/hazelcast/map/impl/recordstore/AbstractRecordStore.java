@@ -164,14 +164,13 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         }
     }
 
-    protected void removeIndex(Collection<Data> keys) {
+    protected void removeIndex(Collection<Record> records) {
         Indexes indexes = mapContainer.getIndexes();
         if (!indexes.hasIndex()) {
             return;
         }
 
-        for (Data key : keys) {
-            Record record = storage.get(key);
+        for (Record record : records) {
             removeIndex(record);
         }
     }
