@@ -20,15 +20,18 @@ import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.client.CacheGetAllRequest;
 import com.hazelcast.cache.impl.client.CacheGetRequest;
+import com.hazelcast.cache.impl.client.CachePutAllRequest;
 import com.hazelcast.cache.impl.client.CacheSizeRequest;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
@@ -36,12 +39,16 @@ import com.hazelcast.util.executor.DelegatingFuture;
 
 import javax.cache.CacheException;
 import javax.cache.expiry.ExpiryPolicy;
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
@@ -301,11 +308,144 @@ abstract class AbstractClientCacheProxy<K, V>
 
     @Override
     public void putAll(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy) {
+        final long start = System.nanoTime();
+
         ensureOpen();
         validateNotNull(map);
-        // TODO implement batch putAll
+
+        ClientPartitionService partitionService = clientContext.getPartitionService();
+        int partitionCount = partitionService.getPartitionCount();
+
+        try {
+            // First we fill entry set per partition
+            List<Map.Entry<Data, Data>>[] entriesPerPartition =
+                    groupDataToPartitions(map, partitionService, partitionCount);
+
+            // Then we invoke the operations and sync on completion of these operations
+            putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy, start);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    private List<Map.Entry<Data, Data>>[] groupDataToPartitions(Map<? extends K, ? extends V> map,
+                                                                ClientPartitionService partitionService,
+                                                                int partitionCount) {
+        List<Map.Entry<Data, Data>>[] entriesPerPartition = new List[partitionCount];
+        SerializationService serializationService = clientContext.getSerializationService();
+
         for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
-            put(entry.getKey(), entry.getValue(), expiryPolicy);
+            K key = entry.getKey();
+            V value = entry.getValue();
+            validateNotNull(key, value);
+
+            Data keyData = serializationService.toData(key);
+            Data valueData = serializationService.toData(value);
+
+            int partitionId = partitionService.getPartitionId(keyData);
+            List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
+            if (entries == null) {
+                entries = new ArrayList<Map.Entry<Data, Data>>();
+                entriesPerPartition[partitionId] = entries;
+            }
+
+            entries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, valueData));
+        }
+
+        return entriesPerPartition;
+    }
+
+    private static final class FutureEntriesTuple {
+
+        private Future future;
+        private List<Map.Entry<Data, Data>> entries;
+
+        private FutureEntriesTuple(Future future, List<Map.Entry<Data, Data>> entries) {
+            this.future = future;
+            this.entries = entries;
+        }
+
+    }
+
+    private void putToAllPartitionsAndWaitForCompletion(List<Map.Entry<Data, Data>>[] entriesPerPartition,
+                                                        ExpiryPolicy expiryPolicy, long start)
+            throws ExecutionException, InterruptedException {
+        List<FutureEntriesTuple> futureEntriesTuples =
+                new ArrayList<FutureEntriesTuple>(entriesPerPartition.length);
+        for (int partitionId = 0; partitionId < entriesPerPartition.length; partitionId++) {
+            List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
+            if (entries != null) {
+                // TODO If there is a single entry, we could make use of a put operation since that is a bit cheaper
+                CachePutAllRequest request = new CachePutAllRequest(nameWithPrefix, cacheConfig.getInMemoryFormat(),
+                                                                    entries, expiryPolicy, partitionId);
+                Future f = invoke(request, partitionId, true);
+                futureEntriesTuples.add(new FutureEntriesTuple(f, entries));
+            }
+        }
+
+        waitResponseFromAllPartitionsForPutAll(futureEntriesTuples, start);
+    }
+
+    private void waitResponseFromAllPartitionsForPutAll(List<FutureEntriesTuple> futureEntriesTuples,
+                                                        long start) {
+        Throwable error = null;
+        for (FutureEntriesTuple tuple : futureEntriesTuples) {
+            Future future = tuple.future;
+            List<Map.Entry<Data, Data>> entries = tuple.entries;
+            try {
+                future.get();
+                if (nearCache != null) {
+                    handleNearCacheOnPutAll(entries, !cacheOnUpdate);
+                }
+                // Note that we count the batch put only if there is no exception while putting to target partition.
+                // In case of error, some of the entries might have been put and others might fail.
+                // But we simply ignore the actual put count here if there is an error.
+                if (statisticsEnabled) {
+                    statistics.increaseCachePuts(entries.size());
+                }
+            } catch (Throwable t) {
+                if (nearCache != null) {
+                    handleNearCacheOnPutAll(entries, true);
+                }
+                logger.finest("Error occurred while putting entries as batch!", t);
+                if (error == null) {
+                    error = t;
+                }
+            }
+        }
+
+        if (statisticsEnabled) {
+            statistics.addPutTimeNanos(System.nanoTime() - start);
+        }
+
+        if (error != null) {
+            /*
+             * There maybe multiple exceptions but we throw only the first one.
+             * There are some ideas to throw all exceptions to caller but all of them have drawbacks:
+             *      - `Thread::addSuppressed` can be used to add other exceptions to the first one
+             *        but it is available since JDK 7.
+             *      - `Thread::initCause` can be used but this is wrong as semantic
+             *        since the other exceptions are not cause of the first one.
+             *      - We may wrap all exceptions in our custom exception (such as `MultipleCacheException`)
+             *        but in this case caller may wait different exception type and this idea causes problem.
+             *        For example see this TCK test:
+             *              `org.jsr107.tck.integration.CacheWriterTest::shouldWriteThoughUsingPutAll_partialSuccess`
+             *        In this test exception is thrown at `CacheWriter` and caller side expects this exception.
+             * So as a result, we only throw the first exception and others are suppressed by only logging.
+             */
+            ExceptionUtil.rethrow(error);
+        }
+    }
+
+    private void handleNearCacheOnPutAll(List<Map.Entry<Data, Data>> entries, boolean invalidate) {
+        if (invalidate) {
+            for (Map.Entry<Data, Data> entry : entries) {
+                nearCache.remove(entry.getKey());
+            }
+        } else {
+            for (Map.Entry<Data, Data> entry : entries) {
+                nearCache.put(entry.getKey(), entry.getValue());
+            }
         }
     }
 

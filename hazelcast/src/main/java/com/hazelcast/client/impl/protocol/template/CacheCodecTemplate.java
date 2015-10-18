@@ -25,6 +25,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @GenerateCodec(id = TemplateConstants.JCACHE_TEMPLATE_ID, name = "Cache", ns = "Hazelcast.Client.Protocol.Codec")
@@ -356,8 +357,19 @@ public interface CacheCodecTemplate {
      * @param registrationId ID of registered listener.
      * @return true if registration is removed, false otherwise.
      */
-
     @Request(id = 27, retryable = true, response = ResponseMessageConst.BOOLEAN)
     Object removePartitionLostListener(String name, String registrationId);
+
+    /**
+     *
+     * @param name          name of the cache
+     * @param entries       entries to be put as batch
+     * @param expiryPolicy  expiry policy for the entry. Byte-array which is serialized from an object implementing
+     *                      {@link javax.cache.expiry.ExpiryPolicy} interface.
+     * @param completionId  user generated id which shall be received as a field of the cache event upon completion of
+     *                      the request in the cluster.
+     */
+    @Request(id = 28, retryable = false, response = ResponseMessageConst.VOID)
+    void putAll(String name, List<Map.Entry<Data, Data>> entries, @Nullable Data expiryPolicy, int completionId);
 
 }

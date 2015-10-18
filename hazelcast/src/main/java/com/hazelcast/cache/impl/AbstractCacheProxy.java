@@ -288,7 +288,7 @@ abstract class AbstractCacheProxy<K, V>
              * There maybe multiple exceptions but we throw only the first one.
              * There are some ideas to throw all exceptions to caller but all of them have drawbacks:
              *      - `Thread::addSuppressed` can be used to add other exceptions to the first one
-             *        but it is available after JDK 7.
+             *        but it is available since JDK 7.
              *      - `Thread::initCause` can be used but this is wrong as semantic
              *        since the other exceptions are not cause of the first one.
              *      - We may wrap all exceptions in our custom exception (such as `MultipleCacheException`)
