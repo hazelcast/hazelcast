@@ -437,7 +437,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return keys;
     }
 
-    private int removeRecords(Collection<Record> recordsToRemove) {
+    protected int removeRecords(Collection<Record> recordsToRemove) {
         if (CollectionUtil.isEmpty(recordsToRemove)) {
             return 0;
         }
@@ -451,7 +451,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return removalSize;
     }
 
-    private Collection<Record> getNotLockedRecords() {
+    protected Collection<Record> getNotLockedRecords() {
         Set<Data> lockedKeySet = lockStore == null ? null : lockStore.getLockedKeys();
         if (CollectionUtil.isEmpty(lockedKeySet)) {
             return storage.values();
@@ -719,7 +719,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return putInternal(key, value, ttl, true);
     }
 
-    private Object putInternal(Data key, Object value, long ttl, boolean loadFromStore) {
+    protected Object putInternal(Data key, Object value, long ttl, boolean loadFromStore) {
         checkIfLoaded();
 
         long now = getNow();
@@ -961,7 +961,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return getOrNullIfExpired(record, now, backup);
     }
 
-    private void onStore(Record record) {
+    protected void onStore(Record record) {
         if (record == null || mapDataStore == EMPTY_MAP_DATA_STORE) {
             return;
         }
