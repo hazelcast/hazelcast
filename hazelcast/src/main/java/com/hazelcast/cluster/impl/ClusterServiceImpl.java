@@ -519,7 +519,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 final ClusterState clusterState = clusterStateManager.getState();
                 if (clusterState == ClusterState.FROZEN || clusterState == ClusterState.PASSIVE) {
                     if (logger.isFinestEnabled()) {
-                        logger.info(deadMember + " is dead, added to members left while cluster is " + clusterState + " state");
+                        logger.finest(deadMember + " is dead, added to members left while cluster is " + clusterState + " state");
                     }
                     Map<Address, MemberImpl> membersRemovedInNotActiveState
                             = new LinkedHashMap<Address, MemberImpl>(membersRemovedInNotActiveStateRef.get());
