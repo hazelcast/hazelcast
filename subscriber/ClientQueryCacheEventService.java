@@ -3,7 +3,7 @@ package com.hazelcast.client.impl.querycache.subscriber;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
+import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
@@ -116,7 +116,7 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
         String listenerName = generateListenerName(mapName, cacheName);
         MapAddListenerAdapterRequest request = new MapAddListenerAdapterRequest(listenerName);
         EventHandler<EventData> handler = createHandler(adapter);
-        return listenerService.startListening(request, null, handler);
+        return listenerService.registerListener(request, handler);
     }
 
     @Override
