@@ -46,33 +46,13 @@ import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
-public class SerializationV1CompatibilityTest {
+public class AbstractSerializationCompatibilityTest {
 
-    private SerializationService serializationService;
-
-    @Before
-    public void setup() {
-        DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
-        serializationService = defaultSerializationServiceBuilder
-                .setVersion(SerializationService.VERSION_1)
-                .addPortableFactory(TestSerializationConstants.PORTABLE_FACTORY_ID, new PortableTest.TestPortableFactory())
-                .build();
-    }
-
-    @After
-    public void tearDown() {
-        serializationService.destroy();
-    }
+    protected SerializationService serializationService;
 
     @Test
     public void testSampleEncodeDecode() throws IOException {
-        SerializationV1Dataserializable testData = new SerializationV1Dataserializable((byte) 99, true, 'c', (short) 11, 1234134,
-                1341431221l, 1.12312f, 432.424, new byte[]{(byte) 1, (byte) 2, (byte) 3}, new boolean[]{true, false, true},
-                new char[]{'a', 'b', 'c'}, new short[]{1, 2, 3}, new int[]{4, 2, 3}, new long[]{11, 2, 3},
-                new float[]{1.0f, 2.1f, 3.4f}, new double[]{11.1, 22.2, 33.3}, "the string text",
-                new String[]{"item1", "item2", "item3"});
+        SerializationV1Dataserializable testData = SerializationV1Dataserializable.createInstanceWithNonNullFields();
         Data data = serializationService.toData(testData);
         SerializationV1Dataserializable testDataFromSerializer = serializationService.toObject(data);
 
@@ -88,14 +68,9 @@ public class SerializationV1CompatibilityTest {
         assertEquals(testData, testDataFromSerializer);
     }
 
-
     @Test
     public void testSamplePortableEncodeDecode() throws IOException {
-        SerializationV1Portable testData = new SerializationV1Portable((byte) 99, true, 'c', (short) 11, 1234134,
-                1341431221l, 1.12312f, 432.424, new byte[]{(byte) 1, (byte) 2, (byte) 3}, new boolean[]{true, false, true},
-                new char[]{'a', 'b', 'c'}, new short[]{1, 2, 3}, new int[]{4, 2, 3}, new long[]{11, 2, 3},
-                new float[]{1.0f, 2.1f, 3.4f}, new double[]{11.1, 22.2, 33.3}, "the string text",
-                new String[]{"item1", "item2", "item3"});
+        SerializationV1Portable testData = SerializationV1Portable.createInstanceWithNonNullFields();
         Data data = serializationService.toData(testData);
         SerializationV1Portable testDataFromSerializer = serializationService.toObject(data);
 
@@ -104,20 +79,16 @@ public class SerializationV1CompatibilityTest {
 
     @Test
     public void testSamplePortableEncodeDecode_with_null_arrays() throws IOException {
-        SerializationV1Portable testDataw = new SerializationV1Portable((byte) 99, true, 'c', (short) 11, 1234134,
-                1341431221l, 1.12312f, 432.424, new byte[]{(byte) 1, (byte) 2, (byte) 3}, new boolean[]{true, false, true},
-                new char[]{'a', 'b', 'c'}, new short[]{1, 2, 3}, new int[]{4, 2, 3}, new long[]{11, 2, 3},
-                new float[]{1.0f, 2.1f, 3.4f}, new double[]{11.1, 22.2, 33.3}, "the string text",
-                new String[]{"item1", "item2", "item3"});
-
+        SerializationV1Portable testDataw = SerializationV1Portable.createInstanceWithNonNullFields();
         serializationService.toData(testDataw);
 
-        SerializationV1Dataserializable testData = new SerializationV1Dataserializable();
+        SerializationV1Portable testData = new SerializationV1Portable();
+
         Data data = serializationService.toData(testData);
-        SerializationV1Dataserializable testDataFromSerializer = serializationService.toObject(data);
+
+        SerializationV1Portable testDataFromSerializer = serializationService.toObject(data);
 
         assertEquals(testData, testDataFromSerializer);
     }
-
 
 }

@@ -92,10 +92,9 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
     public final int read(byte[] b, int off, int len) throws IOException {
         if (b == null) {
             throw new NullPointerException();
-        } else if ((off < 0) || (off > b.length) || (len < 0) || ((off + len) > b.length) || ((off + len) < 0)) {
+        } else if (off < 0 || len < 0 || len > b.length - off) {
             throw new IndexOutOfBoundsException();
-        }
-        if (len <= 0) {
+        } else if (len == 0) {
             return 0;
         }
         if (pos >= size) {

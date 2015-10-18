@@ -27,9 +27,6 @@ public class FieldDefinitionImpl implements FieldDefinition {
     int classId;
     int factoryId;
 
-    public FieldDefinitionImpl() {
-    }
-
     public FieldDefinitionImpl(int index, String fieldName, FieldType type) {
         this(index, fieldName, type, 0, 0);
     }
@@ -68,10 +65,6 @@ public class FieldDefinitionImpl implements FieldDefinition {
         return classId;
     }
 
-    boolean isPortable() {
-        return type == FieldType.PORTABLE || type == FieldType.PORTABLE_ARRAY;
-    }
-
     //CHECKSTYLE:OFF
     //Generated equals method has too high NPath Complexity
     @Override
@@ -85,27 +78,25 @@ public class FieldDefinitionImpl implements FieldDefinition {
 
         FieldDefinitionImpl that = (FieldDefinitionImpl) o;
 
+        if (index != that.index) {
+            return false;
+        }
         if (classId != that.classId) {
             return false;
         }
         if (factoryId != that.factoryId) {
             return false;
         }
-
         if (fieldName != null ? !fieldName.equals(that.fieldName) : that.fieldName != null) {
             return false;
         }
-        if (type != that.type) {
-            return false;
-        }
-
-        return true;
+        return type == that.type;
     }
     //CHECKSTYLE:ON
-
     @Override
     public int hashCode() {
-        int result = fieldName != null ? fieldName.hashCode() : 0;
+        int result = index;
+        result = 31 * result + (fieldName != null ? fieldName.hashCode() : 0);
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + classId;
         result = 31 * result + factoryId;

@@ -253,6 +253,9 @@ public abstract class AbstractSerializationService
         for (SerializerAdapter serializer : typeMap.values()) {
             serializer.destroy();
         }
+        for (SerializerAdapter serializer : constantTypesMap.values()) {
+            serializer.destroy();
+        }
         typeMap.clear();
         idMap.clear();
         global.set(null);
