@@ -16,4 +16,12 @@
     <bean id="springApplicationContextProvider"
                 class="com.hazelcast.wm.test.spring.SpringApplicationContextProvider" />
 
+    <bean id="springAwareWebFilterWithProperties" class="com.hazelcast.web.spring.SpringAwareWebFilter">
+        <constructor-arg>
+            <props>
+                <prop key="propKey">propValue</prop>
+            </props>
+        </constructor-arg>
+    </bean>
+
 </beans>
