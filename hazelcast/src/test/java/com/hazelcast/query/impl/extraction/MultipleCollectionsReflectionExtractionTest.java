@@ -26,12 +26,12 @@ public class MultipleCollectionsReflectionExtractionTest extends AbstractExtract
     private static final Person KRUEGER = person(limb("Zeigefinger", "Mittelfinger"),
             limb("Ringfinger", "Mittelfinger"));
 
-    public MultipleCollectionsReflectionExtractionTest(InMemoryFormat inMemoryFormat, Index index) {
-        super(inMemoryFormat, index);
+    public MultipleCollectionsReflectionExtractionTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
+        super(inMemoryFormat, index, null);
     }
 
     @Override
-    public List<String> getIndexedAttributes() {
+    public List<String> indexAttributes() {
         return Arrays.asList("limbs[1].fingers[1]", "limbs[1].fingers[any]",
                 "limbs[any].fingers[1]", "limbs[1].fingers[1]");
     }

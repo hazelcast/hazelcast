@@ -6,8 +6,8 @@ import static com.hazelcast.query.impl.extraction.MultipleCollectionsDataStructu
 
 public class MultipleCollectionsExtractorExtractionTest extends MultipleCollectionsReflectionExtractionTest {
 
-    public MultipleCollectionsExtractorExtractionTest(InMemoryFormat inMemoryFormat, Index index) {
-        super(inMemoryFormat, index);
+    public MultipleCollectionsExtractorExtractionTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
+        super(inMemoryFormat, index, null);
     }
 
     protected Configurator getConfigurator() {

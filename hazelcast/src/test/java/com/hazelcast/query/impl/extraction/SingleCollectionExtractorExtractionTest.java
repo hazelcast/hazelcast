@@ -4,8 +4,8 @@ import com.hazelcast.config.InMemoryFormat;
 
 public class SingleCollectionExtractorExtractionTest extends SingleCollectionReflectionExtractionTest {
 
-    public SingleCollectionExtractorExtractionTest(InMemoryFormat inMemoryFormat, Index index) {
-        super(inMemoryFormat, index);
+    public SingleCollectionExtractorExtractionTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
+        super(inMemoryFormat, index, null);
     }
 
     protected Configurator getConfigurator() {

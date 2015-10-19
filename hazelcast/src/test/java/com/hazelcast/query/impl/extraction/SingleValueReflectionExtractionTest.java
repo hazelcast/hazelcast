@@ -28,12 +28,12 @@ public class SingleValueReflectionExtractionTest extends AbstractExtractionTest 
     private static final Person BOND = person(130);
     private static final Person HUNT = person(120);
 
-    public SingleValueReflectionExtractionTest(InMemoryFormat inMemoryFormat, Index index) {
-        super(inMemoryFormat, index);
+    public SingleValueReflectionExtractionTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
+        super(inMemoryFormat, index, null);
     }
 
     @Override
-    public List<String> getIndexedAttributes() {
+    public List<String> indexAttributes() {
         return Arrays.asList("brain.iq", "brain.name");
     }
 

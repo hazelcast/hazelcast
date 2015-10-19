@@ -25,12 +25,12 @@ public class SingleCollectionReflectionExtractionTest extends AbstractExtraction
     private static final Person BOND = person(limb("left", 49), limb("right", 51));
     private static final Person KRUEGER = person(limb("links", 27), limb("rechts", 29));
 
-    public SingleCollectionReflectionExtractionTest(InMemoryFormat inMemoryFormat, Index index) {
-        super(inMemoryFormat, index);
+    public SingleCollectionReflectionExtractionTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
+        super(inMemoryFormat, index, null);
     }
 
     @Override
-    public List<String> getIndexedAttributes() {
+    public List<String> indexAttributes() {
         return Arrays.asList("limbs[1].power", "limbs[any].power", "limbs[1].name", "limbs[any].name");
     }
 
