@@ -1,10 +1,5 @@
 package com.hazelcast.query.impl.extraction;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapAttributeConfig;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.query.extractor.ValueExtractor;
-
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -51,38 +46,6 @@ public class SingleValueDataStructure {
         Person person = new Person();
         person.brain = brain;
         return person;
-    }
-
-    public static class IqExtractor extends ValueExtractor {
-        @Override
-        public Object extract(Object target) {
-            return ((Person) target).brain.iq;
-        }
-    }
-
-    public static class NameExtractor extends ValueExtractor {
-        @Override
-        public Object extract(Object target) {
-            return ((Person) target).brain.name;
-        }
-    }
-
-    public static class BrainExtractorsConfigurator extends AbstractExtractionTest.Configurator {
-        @Override
-        public void doWithConfig(Config config) {
-            MapConfig mapConfig = config.getMapConfig("map");
-
-            MapAttributeConfig iqConfig = new AbstractExtractionTest.TestMapAttributeIndexConfig();
-            iqConfig.setName("brain.iq");
-            iqConfig.setExtractor("com.hazelcast.query.impl.extraction.SingleValueDataStructure$IqExtractor");
-            mapConfig.addMapAttributeConfig(iqConfig);
-
-            MapAttributeConfig nameConfig = new AbstractExtractionTest.TestMapAttributeIndexConfig();
-            nameConfig.setName("brain.name");
-            nameConfig.setExtractor("com.hazelcast.query.impl.extraction.SingleValueDataStructure$NameExtractor");
-            mapConfig.addMapAttributeConfig(nameConfig);
-
-        }
     }
 
 }

@@ -1,22 +1,14 @@
 package com.hazelcast.query.impl.extraction;
 
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-
 import static com.hazelcast.query.impl.extraction.MultipleCollectionsDataStructure.Person;
 import static com.hazelcast.query.impl.extraction.MultipleCollectionsDataStructure.limb;
 import static com.hazelcast.query.impl.extraction.MultipleCollectionsDataStructure.person;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
 
 
 @RunWith(Parameterized.class)
@@ -26,78 +18,36 @@ public class MultipleCollectionsReflectionExtractionTest extends AbstractExtract
     private static final Person KRUEGER = person(limb("Zeigefinger", "Mittelfinger"),
             limb("Ringfinger", "Mittelfinger"));
 
-    public MultipleCollectionsReflectionExtractionTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
-        super(inMemoryFormat, index, null);
-    }
-
-    @Override
-    public List<String> indexAttributes() {
-        return Arrays.asList("limbs[1].fingers[1]", "limbs[1].fingers[any]",
-                "limbs[any].fingers[1]", "limbs[1].fingers[1]");
+    public MultipleCollectionsReflectionExtractionTest(InMemoryFormat format, Index index, Multivalue multivalue) {
+        super(format, index, multivalue);
     }
 
     @Test
     public void equals_predicate() {
-        // GIVEN
-        setup(getConfigurator());
-        map.put("bond", BOND);
-        map.put("krueger", KRUEGER);
-
-        // WHEN
-        Predicate predicate = Predicates.equal("limbs[1].fingers[1]", "index");
-        Collection<Person> values = map.values(predicate);
-
-        // THEN
-        assertThat(values, hasSize(1));
-        assertThat(values, contains(BOND));
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.equal("limbs_[1].fingers_[1]", "index"), mv),
+                Expected.of(BOND));
     }
 
     @Test
     public void equals_predicate_reducedLast() {
-        // GIVEN
-        setup(getConfigurator());
-        map.put("bond", BOND);
-        map.put("krueger", KRUEGER);
-
-        // WHEN
-        Predicate predicate = Predicates.equal("limbs[1].fingers[any]", "Ringfinger");
-        Collection<Person> values = map.values(predicate);
-
-        // THEN
-        assertThat(values, hasSize(1));
-        assertThat(values, contains(KRUEGER));
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.equal("limbs_[1].fingers_[any]", "Ringfinger"), mv),
+                Expected.of(KRUEGER));
     }
 
     @Test
     public void equals_predicate_reducedFirst() {
-        // GIVEN
-        setup(getConfigurator());
-        map.put("bond", BOND);
-        map.put("krueger", KRUEGER);
-
-        // WHEN
-        Predicate predicate = Predicates.equal("limbs[any].fingers[1]", "Mittelfinger");
-        Collection<Person> values = map.values(predicate);
-
-        // THEN
-        assertThat(values, hasSize(1));
-        assertThat(values, contains(KRUEGER));
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.equal("limbs_[any].fingers_[1]", "Mittelfinger"), mv),
+                Expected.of(KRUEGER));
     }
 
     @Test
     public void equals_predicate_reducedBoth() {
-        // GIVEN
-        setup(getConfigurator());
-        map.put("bond", BOND);
-        map.put("krueger", KRUEGER);
-
-        // WHEN
-        Predicate predicate = Predicates.equal("limbs[any].fingers[any]", "Ringfinger");
-        Collection<Person> values = map.values(predicate);
-
-        // THEN
-        assertThat(values, hasSize(1));
-        assertThat(values, contains(KRUEGER));
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.equal("limbs_[any].fingers_[any]", "Ringfinger"), mv),
+                Expected.of(KRUEGER));
     }
 
 }

@@ -1,11 +1,5 @@
 package com.hazelcast.query.impl.extraction;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapAttributeConfig;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.query.extractor.MultiResult;
-import com.hazelcast.query.extractor.ValueExtractor;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,18 +10,19 @@ import java.util.Objects;
 public class SingleCollectionDataStructure {
 
     public static class Person implements Serializable {
-        List<Limb> limbs = new ArrayList<Limb>();
+        List<Limb> limbs_list = new ArrayList<Limb>();
+        Limb[] limbs_array = null;
 
         @Override
         public boolean equals(Object o) {
             if (!(o instanceof Person)) return false;
             final Person other = (Person) o;
-            return Objects.equals(this.limbs, other.limbs);
+            return Objects.equals(this.limbs_list, other.limbs_list);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(limbs);
+            return Objects.hashCode(limbs_list);
         }
     }
 
@@ -57,75 +52,9 @@ public class SingleCollectionDataStructure {
 
     public static Person person(Limb... limbs) {
         Person person = new Person();
-        person.limbs.addAll(Arrays.asList(limbs));
+        person.limbs_list.addAll(Arrays.asList(limbs));
+        person.limbs_array = limbs;
         return person;
-    }
-
-    public static class IndexOneLimbPowerExtractor extends ValueExtractor {
-        @Override
-        public Object extract(Object target) {
-            return ((Person) target).limbs.get(1).power;
-        }
-    }
-
-    public static class IndexOneLimbNameExtractor extends ValueExtractor {
-        @Override
-        public Object extract(Object target) {
-            return ((Person) target).limbs.get(1).name;
-        }
-    }
-
-    public static class ReducedLimbPowerExtractor extends ValueExtractor {
-        @Override
-        public Object extract(Object target) {
-            MultiResult multiResult = new MultiResult();
-            for (Limb limb : ((Person) target).limbs) {
-                multiResult.add(limb.power);
-            }
-            return multiResult;
-        }
-    }
-
-    public static class ReducedLimbNameExtractor extends ValueExtractor {
-        @Override
-        public Object extract(Object target) {
-            MultiResult multiResult = new MultiResult();
-            for (Limb limb : ((Person) target).limbs) {
-                multiResult.add(limb.name);
-            }
-            return multiResult;
-        }
-    }
-
-    public static class LimbExtractorsConfigurator extends AbstractExtractionTest.Configurator {
-        @Override
-        public void doWithConfig(Config config) {
-            MapConfig mapConfig = config.getMapConfig("map");
-
-            MapAttributeConfig reducedNameAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
-            reducedNameAttribute.setName("limb[any].name");
-            reducedNameAttribute.setExtractor(
-                    "com.hazelcast.query.impl.extraction.SingleCollectionDataStructure$ReducedLimbNameExtractor");
-            mapConfig.addMapAttributeConfig(reducedNameAttribute);
-
-            MapAttributeConfig indexOneNameAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
-            indexOneNameAttribute.setName("limb[1].name");
-            indexOneNameAttribute.setExtractor(
-                    "com.hazelcast.query.impl.extraction.SingleCollectionDataStructure$IndexOneLimbNameExtractor");
-            mapConfig.addMapAttributeConfig(indexOneNameAttribute);
-
-            MapAttributeConfig reducedPowerAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
-            reducedPowerAttribute.setName("limb[any].power");
-            reducedPowerAttribute.setExtractor(
-                    "com.hazelcast.query.impl.extraction.SingleCollectionDataStructure$ReducedLimbPowerExtractor");
-            mapConfig.addMapAttributeConfig(reducedPowerAttribute);
-
-            MapAttributeConfig indexOnePowerAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
-            indexOnePowerAttribute.setName("limb[1].power");
-            indexOnePowerAttribute.setExtractor(
-                    "com.hazelcast.query.impl.extraction.SingleCollectionDataStructure$IndexOneLimbPowerExtractor");
-            mapConfig.addMapAttributeConfig(indexOnePowerAttribute);
-        }
     }
 
 }

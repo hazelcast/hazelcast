@@ -37,7 +37,7 @@ import java.util.Map;
  */
 public abstract class AbstractPredicate implements Predicate, DataSerializable {
 
-    protected String attributeName;
+    String attributeName;
     private transient volatile AttributeType attributeType;
 
     protected AbstractPredicate() {

@@ -7,14 +7,27 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.predicates.AbstractPredicate;
+import com.hazelcast.query.impl.predicates.PredicateTestUtils;
 import com.hazelcast.test.HazelcastTestSupport;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
 import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertThat;
+
 public abstract class AbstractExtractionTest extends HazelcastTestSupport {
+
+    @Rule
+    public ExpectedException expected = ExpectedException.none();
+
 
     enum Index {
         NO_INDEX, UNORDERED, ORDERED
@@ -30,32 +43,23 @@ public abstract class AbstractExtractionTest extends HazelcastTestSupport {
 
     private InMemoryFormat inMemoryFormat;
     private Index index;
-    protected Multivalue multivalue;
+    protected Multivalue mv;
 
     public AbstractExtractionTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
         this.inMemoryFormat = inMemoryFormat;
         this.index = index;
-        this.multivalue = multivalue;
+        this.mv = multivalue;
     }
 
     public abstract static class Configurator {
-        public abstract void doWithConfig(Config config);
+        public abstract void doWithConfig(Config config, Multivalue mv);
     }
 
-    /**
-     * @return Attribute names to be indexed
-     */
-    public abstract List<String> indexAttributes();
-
-    public void setup() {
-        setup(null);
+    public void setupMap() {
+        setupMap(null);
     }
 
-    public void setup(Configurator configurator) {
-        if (instance != null) {
-            instance.shutdown();
-        }
-
+    public Config setupMap(Configurator configurator) {
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName("map");
         mapConfig.setInMemoryFormat(inMemoryFormat);
@@ -63,21 +67,27 @@ public abstract class AbstractExtractionTest extends HazelcastTestSupport {
         Config config = new Config();
         config.addMapConfig(mapConfig);
 
-        if (index != Index.NO_INDEX) {
-            for (String indexedAttribute : indexAttributes()) {
-                MapIndexConfig mapIndexConfig = new MapIndexConfig();
-                mapIndexConfig.setAttribute(indexedAttribute);
-                mapIndexConfig.setOrdered(index == Index.ORDERED);
-                mapConfig.addMapIndexConfig(mapIndexConfig);
-            }
+        if (configurator != null) {
+            configurator.doWithConfig(config, mv);
         }
 
-        if (configurator != null) {
-            configurator.doWithConfig(config);
+        return config;
+    }
+
+    private void setupIndexes(Config config, Query query) {
+        if (index != Index.NO_INDEX) {
+            MapIndexConfig mapIndexConfig = new MapIndexConfig();
+            mapIndexConfig.setAttribute(query.expression);
+            mapIndexConfig.setOrdered(index == Index.ORDERED);
+            config.getMapConfig("map").addMapIndexConfig(mapIndexConfig);
         }
+    }
+
+    private void setupInstance(Config config) {
         instance = createHazelcastInstance(config);
         map = instance.getMap("map");
     }
+
 
     @Parameterized.Parameters(name = "{index}: {0}, {1}, {2}")
     public static Collection<Object[]> data() {
@@ -95,7 +105,7 @@ public abstract class AbstractExtractionTest extends HazelcastTestSupport {
         return combinations;
     }
 
-    protected Configurator getConfigurator() {
+    protected Configurator getInstanceConfigurator() {
         return null;
     }
 
@@ -113,25 +123,29 @@ public abstract class AbstractExtractionTest extends HazelcastTestSupport {
         }
     }
 
+    //
+    // TEST EXECUTION UTILITIES
+    //
     static class Input {
-        Object[] persons;
+        Object[] objects;
 
         static Input of(Object... objects) {
             Input input = new Input();
-            input.persons = objects;
+            input.objects = objects;
             return input;
         }
     }
 
     static class Query {
+        AbstractPredicate predicate;
         String expression;
-        Comparable input;
 
-        static Query of(String exp, Comparable input, Multivalue multivalue) {
+        static Query of(Predicate predicate, Multivalue mv) {
+            AbstractPredicate ap = (AbstractPredicate) predicate;
             Query query = new Query();
-            // add _array[ or _list[ prefix
-            query.expression = exp.replaceAll("_", "_" + multivalue.name().toLowerCase());
-            query.input = input;
+            query.expression = parametrize(PredicateTestUtils.getAttributeName(ap), mv);
+            PredicateTestUtils.setAttributeName((AbstractPredicate) predicate, query.expression);
+            query.predicate = ap;
             return query;
         }
     }
@@ -159,5 +173,40 @@ public abstract class AbstractExtractionTest extends HazelcastTestSupport {
         }
     }
 
+    private void putTestDataToMap(Object... objects) {
+        int i = 0;
+        for (Object person : objects) {
+            map.put(String.valueOf(i++), person);
+        }
+    }
+
+    protected void execute(Input input, Query query, Expected expected) {
+        // GIVEN
+        Config config = setupMap(getInstanceConfigurator());
+        setupIndexes(config, query);
+        setupInstance(config);
+        putTestDataToMap(input.objects);
+
+        // EXPECT
+        if (expected.throwable != null) {
+            this.expected.expect(expected.throwable);
+        }
+
+        // WHEN
+        Collection<?> values = map.values(query.predicate);
+
+        // THEN
+        assertThat(values, hasSize(expected.objects.length));
+        if (expected.objects.length > 0) {
+            assertThat(values, containsInAnyOrder(expected.objects));
+        }
+    }
+
+    static String parametrize(String expression, AbstractExtractionTest.Multivalue mv) {
+        if (!expression.contains("__")) {
+            return expression.replaceAll("_", "_" + mv.name().toLowerCase());
+        }
+        return expression;
+    }
 
 }
