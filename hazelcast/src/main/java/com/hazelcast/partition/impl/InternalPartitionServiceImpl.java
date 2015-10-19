@@ -40,6 +40,7 @@ import com.hazelcast.partition.InternalPartitionLostEvent;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationInfo;
+import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.PartitionEvent;
 import com.hazelcast.partition.PartitionEventListener;
 import com.hazelcast.partition.PartitionInfo;
@@ -47,7 +48,6 @@ import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.PartitionRuntimeState;
 import com.hazelcast.partition.PartitionServiceProxy;
-import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.partition.membergroup.MemberGroupFactoryFactory;
@@ -768,16 +768,20 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     private void searchUnknownAddressesInPartitionTable(Address sender, Set<Address> unknownAddresses, int partitionId,
                                                         PartitionInfo partitionInfo) {
+        final ClusterServiceImpl clusterService = node.clusterService;
+        final ClusterState clusterState = clusterService.getClusterState();
         for (int index = 0; index < InternalPartition.MAX_REPLICA_COUNT; index++) {
             Address address = partitionInfo.getReplicaAddress(index);
             if (address != null && getMember(address) == null) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest(
-                            "Unknown " + address + " found in partition table sent from master "
-                                    + sender + ". It has probably already left the cluster. partitionId="
-                                    + partitionId);
+                if (clusterState == ClusterState.ACTIVE || !clusterService.isMemberRemovedWhileClusterIsNotActive(address)) {
+                    if (logger.isFinestEnabled()) {
+                        logger.finest(
+                                "Unknown " + address + " found in partition table sent from master "
+                                        + sender + ". It has probably already left the cluster. partitionId="
+                                        + partitionId);
+                    }
+                    unknownAddresses.add(address);
                 }
-                unknownAddresses.add(address);
             }
         }
     }
@@ -1009,8 +1013,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         int replicaIndex = syncInfo.replicaIndex;
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Scheduling [" + delayMillis + "ms] sync replica request to -> " + target + "; for partitionId="
-                            + partitionId + ", replicaIndex=" + replicaIndex + ". Reason: [" + reason + "]");
+            logger.finest(
+                    "Scheduling [" + delayMillis + "ms] sync replica request to -> " + target + "; for partitionId=" + partitionId
+                            + ", replicaIndex=" + replicaIndex + ". Reason: [" + reason + "]");
         }
         replicaSyncScheduler.schedule(delayMillis, partitionId, syncInfo);
     }
@@ -1309,17 +1314,23 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 createErrorLoggingResponseHandler(responseLogger);
 
         int maxBackupCount = getMaxBackupCount();
+
         for (InternalPartitionImpl partition : partitions) {
             Address owner = partition.getOwnerOrNull();
             if (thisAddress.equals(owner)) {
                 for (int i = 1; i <= maxBackupCount; i++) {
-                    if (partition.getReplicaAddress(i) != null) {
-                        SyncReplicaVersion op = new SyncReplicaVersion(i, callback);
-                        op.setService(this);
-                        op.setNodeEngine(nodeEngine);
-                        op.setOperationResponseHandler(responseHandler);
-                        op.setPartitionId(partition.getPartitionId());
-                        nodeEngine.getOperationService().executeOperation(op);
+                    final Address replicaAddress = partition.getReplicaAddress(i);
+                    if (replicaAddress != null) {
+                        if (checkClusterStateForReplicaSync(replicaAddress)) {
+                            SyncReplicaVersion op = new SyncReplicaVersion(i, callback);
+                            op.setService(this);
+                            op.setNodeEngine(nodeEngine);
+                            op.setOperationResponseHandler(responseHandler);
+                            op.setPartitionId(partition.getPartitionId());
+                            nodeEngine.getOperationService().executeOperation(op);
+                        } else {
+                            s.release();
+                        }
                     } else {
                         ok.set(false);
                         s.release();
@@ -1331,6 +1342,17 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
         }
         return ownedCount;
+    }
+
+    private boolean checkClusterStateForReplicaSync(final Address address) {
+        final ClusterServiceImpl clusterService = node.clusterService;
+        final ClusterState clusterState = clusterService.getClusterState();
+
+        if (clusterState == ClusterState.ACTIVE || clusterState == ClusterState.IN_TRANSITION) {
+            return true;
+        }
+
+        return !clusterService.isMemberRemovedWhileClusterIsNotActive(address);
     }
 
     private boolean shouldWaitMigrationOrBackups(Level level) {

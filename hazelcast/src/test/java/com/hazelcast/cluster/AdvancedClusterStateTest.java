@@ -452,11 +452,11 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
     public void nodesCanShutDown_whenClusterState_frozen() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances(new Config());
-        warmUpPartitions(instances);
-        waitAllForSafeState(instances);
 
         HazelcastInstance hz = instances[instances.length - 1];
-        hz.getCluster().changeClusterState(ClusterState.FROZEN);
+        hz.getMap(randomMapName()).put(1, 1);
+
+        changeClusterStateEventually(hz, ClusterState.FROZEN);
 
         List<HazelcastInstance> instanceList = new ArrayList<HazelcastInstance>(Arrays.asList(instances));
         while (!instanceList.isEmpty()) {
@@ -472,11 +472,11 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
     public void nodesCanShutDown_whenClusterState_passive() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances();
-        warmUpPartitions(instances);
-        waitAllForSafeState(instances);
 
         HazelcastInstance hz = instances[instances.length - 1];
-        hz.getCluster().changeClusterState(ClusterState.PASSIVE);
+        hz.getMap(randomMapName()).put(1, 1);
+
+        changeClusterStateEventually(hz, ClusterState.PASSIVE);
 
         List<HazelcastInstance> instanceList = new ArrayList<HazelcastInstance>(Arrays.asList(instances));
         while (!instanceList.isEmpty()) {
