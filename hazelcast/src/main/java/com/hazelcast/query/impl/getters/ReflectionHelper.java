@@ -171,6 +171,9 @@ public final class ReflectionHelper {
                                 final Method method = clazz.getMethod(methodName);
                                 method.setAccessible(true);
                                 localGetter = GetterFactory.newMethodGetter(obj, parent, method, modifier);
+                                if (localGetter == NULL_GETTER) {
+                                    return localGetter;
+                                }
                                 clazz = method.getReturnType();
                                 break;
                             } catch (NoSuchMethodException ignored) {
