@@ -23,6 +23,7 @@ import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.SingleIMapEvent;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.Extractors;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
@@ -264,7 +265,7 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
             }
             Object value = getValueOrOldValue(eventData);
             Data keyData = eventData.getKeyData();
-            QueryEntry entry = new QueryEntry(serializationService, keyData, value);
+            QueryEntry entry = new QueryEntry(serializationService, keyData, value, Extractors.empty());
             return filter.eval(entry);
         }
 
