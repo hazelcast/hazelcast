@@ -515,8 +515,14 @@ public class ClientMapNearCacheTest {
     public void testServerMapExpiration_doesNotInvalidateClientNearCache() throws Exception {
         final String mapName = randomMapName(NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME);
         final IMap clientMap = client.getMap(mapName);
+        final CountDownLatch addEventsToBeFired = new CountDownLatch(1);
         final CountDownLatch waitEventsToBeFired = new CountDownLatch(1);
         clientMap.addEntryListener(new EntryAdapter() {
+            @Override
+            public void entryAdded(EntryEvent event) {
+                addEventsToBeFired.countDown();
+            }
+
             @Override
             public void entryEvicted(EntryEvent event) {
                 waitEventsToBeFired.countDown();
@@ -524,6 +530,8 @@ public class ClientMapNearCacheTest {
         }, false);
 
         clientMap.put(1, 1, 3, TimeUnit.SECONDS);
+
+        assertOpenEventually(addEventsToBeFired);
 
         // get entry in near cache.
         clientMap.get(1);
