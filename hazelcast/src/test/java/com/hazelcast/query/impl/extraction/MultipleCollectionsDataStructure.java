@@ -32,13 +32,13 @@ public class MultipleCollectionsDataStructure {
     }
 
     public static class Limb implements Serializable {
-        List<String> fingers = new ArrayList<String>();
+        String[] fingers;
 
         @Override
         public boolean equals(Object o) {
             if (!(o instanceof Limb)) return false;
             final Limb other = (Limb) o;
-            return Objects.equals(this.fingers, other.fingers);
+            return Arrays.equals(fingers, other.fingers);
         }
 
         @Override
@@ -49,7 +49,11 @@ public class MultipleCollectionsDataStructure {
 
     public static Limb limb(String... fingers) {
         Limb limb = new Limb();
-        limb.fingers.addAll(Arrays.asList(fingers));
+        limb.fingers = new String[fingers.length];
+        int i = 0;
+        for (String finger : fingers) {
+            limb.fingers[i++] = finger;
+        }
         return limb;
     }
 
@@ -62,7 +66,7 @@ public class MultipleCollectionsDataStructure {
     public static class BothIndexOneExtractor extends ValueExtractor {
         @Override
         public Object extract(Object target) {
-            return ((Person) target).limbs.get(1).fingers.get(1);
+            return ((Person) target).limbs.get(1).fingers[1];
         }
     }
 
@@ -84,7 +88,7 @@ public class MultipleCollectionsDataStructure {
         public Object extract(Object target) {
             MultiResult multiResult = new MultiResult();
             for (Limb limb : ((Person) target).limbs) {
-                multiResult.add(limb.fingers.get(1));
+                multiResult.add(limb.fingers[1]);
             }
             return multiResult;
         }
