@@ -32,11 +32,14 @@ public final class GetterFactory {
     public static Getter newFieldGetter(Object object, Getter parentGetter, Field field, String modifierSuffix)
             throws Exception {
         Class<?> fieldType = field.getType();
-
         Class<?> returnType = null;
         if (isExtractingFromCollection(fieldType, modifierSuffix)) {
             Object currentObject = getCurrentObject(object, parentGetter);
-            returnType = getCollectionType(currentObject, field);
+            if (currentObject == null) {
+                return NullGetter.NULL_GETTER;
+            }
+            Collection collection = (Collection) field.get(currentObject);
+            returnType = getCollectionType(collection);
             if (returnType == null) {
                 return NullGetter.NULL_GETTER;
             }
@@ -50,7 +53,11 @@ public final class GetterFactory {
         Class<?> returnType = null;
         if (isExtractingFromCollection(methodReturnType, modifierSuffix)) {
             Object currentObject = getCurrentObject(object, parentGetter);
-            returnType = getCollectionType(currentObject, method);
+            if (currentObject == null) {
+                return NullGetter.NULL_GETTER;
+            }
+            Collection collection = (Collection) method.invoke(currentObject);
+            returnType = getCollectionType(collection);
             if (returnType == null) {
                 return NullGetter.NULL_GETTER;
             }
@@ -62,42 +69,22 @@ public final class GetterFactory {
         return new ThisGetter(parent, object);
     }
 
-    private static Class<?> getCollectionType(Object currentObject, Field field) throws Exception {
-        if (currentObject instanceof MultiResult) {
-            currentObject = getFirstObjectFromMultiResult(currentObject);
-        }
-        if (currentObject == null) {
+    private static Class<?> getCollectionType(Collection collection) throws Exception {
+        if (collection == null || collection.isEmpty()) {
             return null;
         }
-
-        Collection targetCollection = (Collection) field.get(currentObject);
-        if (targetCollection == null || targetCollection.isEmpty()) {
-            return null;
-        }
-        Object targetObject = CollectionUtil.getItemAtPositionOrNull(targetCollection, 0);
+        Object targetObject = CollectionUtil.getItemAtPositionOrNull(collection, 0);
         if (targetObject == null) {
             return null;
         }
         return targetObject.getClass();
     }
 
-    private static Class<?> getCollectionType(Object currentObject, Method method) throws Exception {
+    private static Object unwrapMultiResult(Object currentObject) {
         if (currentObject instanceof MultiResult) {
             currentObject = getFirstObjectFromMultiResult(currentObject);
         }
-        if (currentObject == null) {
-            return null;
-        }
-
-        Collection targetCollection = (Collection) method.invoke(currentObject);
-        if (targetCollection == null || targetCollection.isEmpty()) {
-            return null;
-        }
-        Object targetObject = CollectionUtil.getItemAtPositionOrNull(targetCollection, 0);
-        if (targetObject == null) {
-            return null;
-        }
-        return targetObject.getClass();
+        return currentObject;
     }
 
     private static Object getFirstObjectFromMultiResult(Object currentObject) {
@@ -112,12 +99,13 @@ public final class GetterFactory {
         return currentObject;
     }
 
-    private static boolean isExtractingFromCollection(Class<?> fieldType, String modifierSuffix) {
-        return modifierSuffix != null && Collection.class.isAssignableFrom(fieldType);
+    private static boolean isExtractingFromCollection(Class<?> type, String modifierSuffix) {
+        return modifierSuffix != null && Collection.class.isAssignableFrom(type);
     }
 
     private static Object getCurrentObject(Object obj, Getter parent) throws Exception {
-        return parent == null ? obj : parent.getValue(obj);
+        Object currentObject = parent == null ? obj : parent.getValue(obj);
+        return unwrapMultiResult(currentObject);
     }
 
 }
