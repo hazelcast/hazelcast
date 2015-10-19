@@ -321,7 +321,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
         // TODO: Can't we just use the original set?
         Set<Object> keySet = new HashSet<Object>(queryResult);
-        Extractors extractors = mapServiceContext.getMapContainer(name).getExtractors();
+        Extractors extractors = mapServiceContext.getExtractors(name);
         for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
             Data keyData = entry.getKey();
             if (!TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type)) {
@@ -368,7 +368,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         // TODO: Can't we just use the original set?
         List<Object> valueSet = new ArrayList<Object>();
         Set<Object> keyWontBeIncluded = new HashSet<Object>();
-        Extractors extractors = mapServiceContext.getMapContainer(name).getExtractors();
+        Extractors extractors = mapServiceContext.getExtractors(name);
 
         // iterate over the txMap and see if the values are updated or removed
         for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {

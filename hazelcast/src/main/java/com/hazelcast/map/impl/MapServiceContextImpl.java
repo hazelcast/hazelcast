@@ -39,6 +39,7 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.query.impl.Extractors;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -507,6 +508,12 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public MapOperationProvider getMapOperationProvider(String name) {
         return operationProvider;
+    }
+
+    @Override
+    public Extractors getExtractors(String mapName) {
+        MapContainer mapContainer = getMapContainer(mapName);
+        return mapContainer.getExtractors();
     }
 
     @Override

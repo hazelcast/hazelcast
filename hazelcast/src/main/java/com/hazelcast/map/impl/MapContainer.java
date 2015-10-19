@@ -171,10 +171,6 @@ public class MapContainer {
         return indexes;
     }
 
-    public Extractors getExtractors() {
-        return extractors;
-    }
-
     public WanReplicationPublisher getWanReplicationPublisher() {
         return wanReplicationPublisher;
     }
@@ -278,6 +274,10 @@ public class MapContainer {
     // only used for testing purposes.
     public void setEvictor(Evictor evictor) {
         this.evictor = evictor;
+    }
+
+    Extractors getExtractors() {
+        return extractors;
     }
 }
 

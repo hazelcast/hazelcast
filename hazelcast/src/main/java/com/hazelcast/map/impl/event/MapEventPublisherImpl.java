@@ -188,7 +188,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
     //CHECKSTYLE:OFF
     protected boolean doFilter(EventFilter filter, boolean syntheticEvent, Data dataKey,
-                               Data dataOldValue, Data dataValue, EntryEventType eventType, String mapName) {
+                               Data dataOldValue, Data dataValue, EntryEventType eventType, String mapNameOrNull) {
 
         if (filter instanceof MapPartitionLostEventFilter) {
             return false;
@@ -218,7 +218,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         }
 
         if (filter instanceof QueryEventFilter) {
-            return processQueryEventFilter(filter, eventType, dataKey, dataOldValue, dataValue, mapName);
+            return processQueryEventFilter(filter, eventType, dataKey, dataOldValue, dataValue, mapNameOrNull);
         }
 
         if (filter instanceof EntryEventFilter) {
@@ -303,7 +303,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     }
 
     private boolean processQueryEventFilter(EventFilter filter, EntryEventType eventType,
-                                            Data dataKey, Data dataOldValue, Data dataValue, String mapName) {
+                                            Data dataKey, Data dataOldValue, Data dataValue, String mapNameOrNull) {
         Data testValue;
         if (eventType == REMOVED || eventType == EVICTED || eventType == EXPIRED) {
             testValue = dataOldValue;
@@ -311,10 +311,17 @@ public class MapEventPublisherImpl implements MapEventPublisher {
             testValue = dataValue;
         }
 
-        Extractors extractors = mapServiceContext.getMapContainer(mapName).getExtractors();
+        Extractors extractors = getExtractorsForMapName(mapNameOrNull);
         QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
         QueryableEntry entry = new CachedQueryEntry(serializationService, dataKey, testValue, extractors);
         return queryEventFilter.eval(entry);
+    }
+
+    private Extractors getExtractorsForMapName(String mapName) {
+        if (mapName == null) {
+            return Extractors.empty();
+        }
+        return mapServiceContext.getExtractors(mapName);
     }
 
     protected void publishWanReplicationEventInternal(String mapName, ReplicationEventObject event) {
