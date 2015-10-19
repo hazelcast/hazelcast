@@ -83,7 +83,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout = MINUTE)
+    @Test(timeout = 2*MINUTE)
     public void testQueryDuringAndAfterMigration() throws Exception {
         HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         int count = 500;
@@ -162,7 +162,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     /**
      * test for issue #359
      */
-    @Test(timeout = MINUTE)
+    @Test(timeout = 2*MINUTE)
     public void testIndexCleanupOnMigration() throws Exception {
         int nodeCount = 6;
         final int runCount = 500;
