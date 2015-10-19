@@ -17,9 +17,30 @@
 package com.hazelcast.query.extractor;
 
 /***
- * Common superclass for all custom attribute extractors.
- * TODO: Improve this.
- *
+ * Common superclass for all extractors that enable the users to define custom attributes and extract their values.
+ * The extraction logic may just extract the underlying value or group, reduce or transform it.
+ * <p/>
+ * How to use a ValueExtractor?
+ * <p/>
+ * First, extend this class and implement the com.hazelcast.query.extractorValueExtractor#extract method.
+ * Then, define a new attribute with the above-mentioned extractor in the configuration of the map.
+ * <p/>
+ * How to define a new custom attribute?
+ * <code>
+ * MapAttributeConfig attributeConfig = new MapAttributeConfig();
+ * extractorConfig.setName("currency");
+ * extractorConfig.setExtractor("com.bank.CurrencyExtractor");
+ * </code>
+ * <p/>
+ * How to register the newly-defined attribute in a configuration of a Map?
+ * <code>
+ * MapConfig mapConfig = (...);
+ * mapConfig.addMapAttributeConfig(attributeConfig);
+ * </code>
+ * Extractors may be also defined in the XML configuration.
+ * <p/>
+ * Please, bear in mind that extractor may not be added while the map has been instantiated.
+ * All extractor have to be defined upfront int he map's initial configuration.
  */
 public abstract class ValueExtractor {
 
@@ -34,9 +55,10 @@ public abstract class ValueExtractor {
      * <p/>
      * May return:
      * <ul>
-     * <li>a single single-value result (not a collection)</li>
-     * <li>a single multi-value result (a collection)</li>
-     * <li>multiple single-value or multi-value results (@see com.hazelcast.query.extractor.MultiResult)</li>
+     * <li>a single 'single-value' result (not a collection)</li>
+     * <li>a single 'multi-value' result (a collection)</li>
+     * <li>multiple 'single-value' or 'multi-value' results encompassed in
+     * (@see com.hazelcast.query.extractor.MultiResult)</li>
      * </ul>
      * <p/>
      * MultiResult is an aggregate of results that is returned if the extractor returns multiple results
