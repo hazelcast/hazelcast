@@ -14,6 +14,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -55,8 +56,9 @@ public class ClassAndFieldDefinitionTest {
     @Test
     public void testClassDef_hasField() throws Exception {
         for (int i = 0; i < classDefinition.getFieldCount(); i++) {
-            FieldDefinition field = classDefinition.getField(i);
-            assertNotNull(field);
+            String fieldName = fieldNames[i];
+            boolean hasField = classDefinition.hasField(fieldName);
+            assertTrue(hasField);
         }
     }
 
@@ -66,6 +68,19 @@ public class ClassAndFieldDefinitionTest {
             FieldType fieldType = classDefinition.getFieldType(fieldName);
             assertNotNull(fieldType);
         }
+    }
+
+    @Test
+    public void testClassDef_getFieldClassId() throws Exception {
+        for (String fieldName : fieldNames) {
+            int classId = classDefinition.getFieldClassId(fieldName);
+            assertEquals(0, classId);
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testClassDef_getFieldClassId_invalidField() throws Exception {
+        classDefinition.getFieldClassId("The Invalid Field");
     }
 
     @Test(expected = IllegalArgumentException.class)

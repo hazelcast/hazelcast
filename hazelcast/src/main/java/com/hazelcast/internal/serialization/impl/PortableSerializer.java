@@ -131,6 +131,17 @@ final class PortableSerializer implements StreamSerializer<Portable> {
         return createReader(in, factoryId, classId, version, version);
     }
 
+    DefaultPortableReader createMorphingReader(BufferObjectDataInput in) throws IOException {
+        int factoryId = in.readInt();
+        int classId = in.readInt();
+        int version = in.readInt();
+
+        Portable portable = createNewPortableInstance(factoryId, classId);
+        int portableVersion = findPortableVersion(factoryId, classId, portable);
+
+        return createReader(in, factoryId, classId, version, portableVersion);
+    }
+
     private DefaultPortableReader createReader(BufferObjectDataInput in, int factoryId, int classId, int version,
             int portableVersion) throws IOException {
 

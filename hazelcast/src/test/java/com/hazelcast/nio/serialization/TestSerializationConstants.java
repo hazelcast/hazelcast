@@ -29,6 +29,7 @@ public class TestSerializationConstants {
     public static final int NAMED_PORTABLE = 6;
     public static final int OBJECT_CARRYING_PORTABLE = 7;
     public static final int ALL_FIELD_OBJECT_PORTABLE = 8;
+    public static final int MORPHING_PORTABLE = 9;
 
 
     public static final int DATA_SERIALIZABLE_FACTORY_ID = 1;
