@@ -454,7 +454,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         final HazelcastInstance[] instances = factory.newInstances(new Config());
 
         HazelcastInstance hz = instances[instances.length - 1];
-        hz.getMap(randomMapName()).put(1, 1);
+        hz.getMap(randomMapName()).put(1, 1); // for updating partition version
 
         changeClusterStateEventually(hz, ClusterState.FROZEN);
 
@@ -474,7 +474,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = factory.newInstances();
 
         HazelcastInstance hz = instances[instances.length - 1];
-        hz.getMap(randomMapName()).put(1, 1);
+        hz.getMap(randomMapName()).put(1, 1); // for updating partition version
 
         changeClusterStateEventually(hz, ClusterState.PASSIVE);
 

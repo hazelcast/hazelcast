@@ -222,6 +222,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         warmUpPartitions(hz);
 
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        assertClusterSizeEventually(2, hz);
         hz2.getCluster().changeClusterState(ClusterState.PASSIVE);
     }
 
@@ -240,6 +241,8 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
 
         changeClusterStateEventually(hz2, ClusterState.FROZEN);
         terminateInstance(hz1);
+        assertClusterSizeEventually(2, hz2);
+        assertClusterSizeEventually(2, hz3);
 
         hz3.getCluster().changeClusterState(ClusterState.ACTIVE);
 
@@ -261,6 +264,8 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
 
         changeClusterStateEventually(hz2, ClusterState.FROZEN);
         terminateInstance(hz1);
+        assertClusterSizeEventually(2, hz2);
+        assertClusterSizeEventually(2, hz3);
 
         hz3.getCluster().changeClusterState(ClusterState.PASSIVE);
 
