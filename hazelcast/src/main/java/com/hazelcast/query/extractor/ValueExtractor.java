@@ -22,7 +22,7 @@ package com.hazelcast.query.extractor;
  * <p/>
  * How to use a ValueExtractor?
  * <p/>
- * First, extend this class and implement the com.hazelcast.query.extractorValueExtractor#extract method.
+ * First, extend this class and implement the @see com.hazelcast.query.extractor.ValueExtractor#extract method.
  * Then, define a new attribute with the above-mentioned extractor in the configuration of the map.
  * <p/>
  * How to define a new custom attribute?
