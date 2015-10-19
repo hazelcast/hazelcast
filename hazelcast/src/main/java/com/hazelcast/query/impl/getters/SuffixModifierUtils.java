@@ -17,44 +17,66 @@
 package com.hazelcast.query.impl.getters;
 
 /**
- * TODO: This has to be refactored and hardened.
+ * Convenient utilities to parse attribute suffix modifiers from attributes.
+ *
+ * Example:
+ * Attribute <code>foo[*]</code> consists of baseName <code>foo</code>
+ * and a modifier suffix <code>[*]</code>.
+ *
+ * Getters can use modifier suffixes to adjust getter behaviour.
  *
  */
 public final class SuffixModifierUtils {
-    private static final String ANY_TOKEN = "any";
-
-    public static final int DO_NOT_REDUCE = -1;
-    public static final int REDUCE_EVERYTHING = -2;
+    private static final char MODIFIER_OPENING_TOKEN = '[';
+    private static final char MODIFIER_CLOSING_TOKEN = ']';
 
     private SuffixModifierUtils() {
 
     }
 
 
-    public static String removeModifierSuffix(String name) {
-        int indexOfOpeningBracket = name.indexOf('[');
-        if (indexOfOpeningBracket == -1) {
-            return name;
+    /**
+     * Remove modifier suffix from given fullName.
+     *
+     * @param fullName
+     * @return
+     */
+    public static String removeModifierSuffix(String fullName) {
+        int indexOfFirstOpeningToken = fullName.indexOf(MODIFIER_OPENING_TOKEN);
+        if (indexOfFirstOpeningToken == -1) {
+            return fullName;
         }
-        return name.substring(0, indexOfOpeningBracket);
+        int indexOfSecondOpeningToken = fullName.lastIndexOf(MODIFIER_OPENING_TOKEN);
+        if (indexOfSecondOpeningToken != indexOfFirstOpeningToken) {
+            throw new IllegalArgumentException("Attribute name '" + fullName
+                    + "' is not valid as it contains more than one " + MODIFIER_OPENING_TOKEN);
+        }
+        int indexOfFirstClosingToken = fullName.indexOf(MODIFIER_CLOSING_TOKEN);
+        if (indexOfFirstClosingToken != fullName.length() - 1) {
+            throw new IllegalArgumentException("Attribute name '" + fullName
+                    + "' is not valid as the last character is not " + MODIFIER_CLOSING_TOKEN);
+        }
+
+        return fullName.substring(0, indexOfFirstOpeningToken);
     }
 
 
+    /**
+     * Get modifier suffix if fullName contains any otherwise returns null.
+     *
+     * In contains no validation of input parameters as it assumes the validation
+     * has been already done by {@link #removeModifierSuffix(String)}
+     *
+     * @param fullName
+     * @param baseName as returned by {@link #removeModifierSuffix(String)}
+     * @return modifier suffix or null if no suffix is present
+     */
     public static String getModifierSuffix(String fullName, String baseName) {
-        if (baseName == fullName) {
+        if (fullName.equals(baseName)) {
             return null;
         }
-        int indexOfOpeningBracket = fullName.indexOf('[');
+        int indexOfOpeningBracket = fullName.indexOf(MODIFIER_OPENING_TOKEN);
         return fullName.substring(indexOfOpeningBracket, fullName.length());
     }
 
-
-    public static int parseModifier(String modifier) {
-        String stringValue = modifier.substring(1, modifier.length() - 1);
-        if (ANY_TOKEN.equals(stringValue)) {
-            return REDUCE_EVERYTHING;
-        } else {
-            return Integer.parseInt(stringValue);
-        }
-    }
 }

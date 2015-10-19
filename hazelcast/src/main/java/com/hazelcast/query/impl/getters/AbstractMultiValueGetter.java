@@ -23,10 +23,13 @@ import com.hazelcast.util.collection.ArrayUtils;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 
-import static com.hazelcast.query.impl.getters.SuffixModifierUtils.DO_NOT_REDUCE;
-import static com.hazelcast.query.impl.getters.SuffixModifierUtils.REDUCE_EVERYTHING;
 
 public abstract class AbstractMultiValueGetter extends Getter {
+    public static final String REDUCER_ANY_TOKEN = "any";
+
+    public static final int DO_NOT_REDUCE = -1;
+    public static final int REDUCE_EVERYTHING = -2;
+
     private final int modifier;
     private final Class resultType;
 
@@ -129,7 +132,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
         if (!isArray && !isCollection) {
             throw new IllegalArgumentException("Reducer is allowed only when extracting from arrays or collections");
         }
-        return SuffixModifierUtils.parseModifier(modifierSuffix);
+        return parseModifier(modifierSuffix);
     }
 
 
@@ -176,6 +179,15 @@ public abstract class AbstractMultiValueGetter extends Getter {
         } else {
             throw new IllegalArgumentException("Can't reduce result from a type " + currentObject.getClass()
                     + " Only Collections and Arrays are supported.");
+        }
+    }
+
+    private int parseModifier(String modifier) {
+        String stringValue = modifier.substring(1, modifier.length() - 1);
+        if (REDUCER_ANY_TOKEN.equals(stringValue)) {
+            return REDUCE_EVERYTHING;
+        } else {
+            return Integer.parseInt(stringValue);
         }
     }
 
