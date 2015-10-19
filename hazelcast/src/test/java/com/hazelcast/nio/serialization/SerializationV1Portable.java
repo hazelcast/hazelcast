@@ -9,8 +9,9 @@ import java.util.Arrays;
 /**
  * Sample DataSerializable for testing internal constant serializers
  */
-public class SerializationV1Portable implements Portable{
+public class SerializationV1Portable implements Portable {
 
+    static NamedPortable INNER_PORTABLE = new NamedPortable("name", 1);
 
     byte aByte;
     boolean aBoolean;
@@ -30,15 +31,16 @@ public class SerializationV1Portable implements Portable{
     double[] doubles;
     String string;
     String[] strings;
-
+    NamedPortable innerPortable;
+    DataSerializable dataSerializable;
 
     public SerializationV1Portable() {
     }
 
     public SerializationV1Portable(byte aByte, boolean aBoolean, char character, short aShort, int integer, long aLong,
-                                   float aFloat, double aDouble, byte[] bytes, boolean[] booleans, char[] chars,
-                                   short[] shorts, int[] ints, long[] longs, float[] floats, double[] doubles,
-                                   String string, String[] strings) {
+            float aFloat, double aDouble, byte[] bytes, boolean[] booleans, char[] chars, short[] shorts, int[] ints,
+            long[] longs, float[] floats, double[] doubles, String string, String[] strings, NamedPortable innerPortable,
+            DataSerializable dataSerializable) {
         this.aByte = aByte;
         this.aBoolean = aBoolean;
         this.character = character;
@@ -57,6 +59,8 @@ public class SerializationV1Portable implements Portable{
         this.doubles = doubles;
         this.string = string;
         this.strings = strings;
+        this.innerPortable = innerPortable;
+        this.dataSerializable = dataSerializable;
     }
 
     @Override
@@ -90,6 +94,21 @@ public class SerializationV1Portable implements Portable{
         out.writeFloatArray("a7", floats);
         out.writeDoubleArray("a8", doubles);
         out.writeUTFArray("a9", strings);
+
+        if (innerPortable == null) {
+            out.writeNullPortable("p", INNER_PORTABLE.getFactoryId(), INNER_PORTABLE.getClassId());
+        } else {
+            out.writePortable("p", innerPortable);
+        }
+
+        ObjectDataOutput rawDataOutput = out.getRawDataOutput();
+        boolean isNotNull = dataSerializable != null;
+        if (isNotNull) {
+            rawDataOutput.writeBoolean(isNotNull);
+            dataSerializable.writeData(rawDataOutput);
+        } else {
+            rawDataOutput.writeBoolean(isNotNull);
+        }
     }
 
     @Override
@@ -113,8 +132,18 @@ public class SerializationV1Portable implements Portable{
         this.floats = in.readFloatArray("a7");
         this.doubles = in.readDoubleArray("a8");
         this.strings = in.readUTFArray("a9");
+
+        this.innerPortable = in.readPortable("p");
+
+        ObjectDataInput rawDataInput = in.getRawDataInput();
+        boolean isNotNull = rawDataInput.readBoolean();
+        if (isNotNull) {
+            SerializationV1Dataserializable dataserializable = new SerializationV1Dataserializable();
+            dataserializable.readData(rawDataInput);
+            this.dataSerializable = dataserializable;
+        }
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -177,10 +206,25 @@ public class SerializationV1Portable implements Portable{
         if (string != null ? !string.equals(that.string) : that.string != null) {
             return false;
         }
-        if(!Arrays.equals(strings, that.strings)) {
+        if (!Arrays.equals(strings, that.strings)) {
+            return false;
+        }
+        if (innerPortable != null ? !innerPortable.equals(that.innerPortable) : that.innerPortable != null) {
+            return false;
+        }
+        if (dataSerializable != null ? !dataSerializable.equals(that.dataSerializable) : that.dataSerializable != null) {
             return false;
         }
         return true;
+    }
+
+    public static SerializationV1Portable createInstanceWithNonNullFields() {
+        SerializationV1Dataserializable dataserializable = SerializationV1Dataserializable.createInstanceWithNonNullFields();
+        return new SerializationV1Portable((byte) 99, true, 'c', (short) 11, 1234134, 1341431221l, 1.12312f, 432.424,
+                new byte[]{(byte) 1, (byte) 2, (byte) 3}, new boolean[]{true, false, true}, new char[]{'a', 'b', 'c'},
+                new short[]{1, 2, 3}, new int[]{4, 2, 3}, new long[]{11, 2, 3}, new float[]{1.0f, 2.1f, 3.4f},
+                new double[]{11.1, 22.2, 33.3}, "the string text", new String[]{"item1", "item2", "item3"}, INNER_PORTABLE,
+                dataserializable);
     }
 
 }
