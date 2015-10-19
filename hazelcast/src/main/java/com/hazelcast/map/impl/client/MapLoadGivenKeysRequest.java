@@ -42,8 +42,6 @@ import java.util.Map;
  */
 public class MapLoadGivenKeysRequest extends MapAllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
 
-    private String name;
-
     private List<Data> keys;
 
     private boolean replaceExistingValues;
