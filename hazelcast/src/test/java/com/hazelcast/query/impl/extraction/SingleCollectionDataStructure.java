@@ -103,7 +103,7 @@ public class SingleCollectionDataStructure {
             MapConfig mapConfig = config.getMapConfig("map");
 
             MapAttributeConfig reducedNameAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
-            reducedNameAttribute.setName("limb[*].name");
+            reducedNameAttribute.setName("limb[any].name");
             reducedNameAttribute.setExtractor(
                     "com.hazelcast.query.impl.extraction.SingleCollectionDataStructure$ReducedLimbNameExtractor");
             mapConfig.addMapAttributeConfig(reducedNameAttribute);
@@ -115,7 +115,7 @@ public class SingleCollectionDataStructure {
             mapConfig.addMapAttributeConfig(indexOneNameAttribute);
 
             MapAttributeConfig reducedPowerAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
-            reducedPowerAttribute.setName("limb[*].power");
+            reducedPowerAttribute.setName("limb[any].power");
             reducedPowerAttribute.setExtractor(
                     "com.hazelcast.query.impl.extraction.SingleCollectionDataStructure$ReducedLimbPowerExtractor");
             mapConfig.addMapAttributeConfig(reducedPowerAttribute);

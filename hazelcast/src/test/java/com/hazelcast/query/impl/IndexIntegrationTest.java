@@ -89,7 +89,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
     public void putAndQuery_whenMultipleMappingFound_thenDoNotReturnDuplicatedEntry() {
         HazelcastInstance instance = createHazelcastInstance();
         IMap<Integer, Body> map = instance.getMap(randomMapName());
-        map.addIndex("limbArray[*].fingerCount", true);
+        map.addIndex("limbArray[any].fingerCount", true);
 
         Limb leftHand = new Limb("hand", new Nail("red"));
         Limb rightHand = new Limb("hand");
@@ -97,7 +97,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         map.put(1, body);
 
-        Predicate predicate = Predicates.greaterEqual("limbArray[*].fingerCount", 0);
+        Predicate predicate = Predicates.greaterEqual("limbArray[any].fingerCount", 0);
         Collection<Body> values = map.values(predicate);
 
         assertThat(values, hasSize(1));
@@ -168,7 +168,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         SillySequence sillySequence = new SillySequence(0, 100);
         map.put(0, sillySequence);
 
-        Predicate predicate = Predicates.equal("payload[*]", 3);
+        Predicate predicate = Predicates.equal("payload[any]", 3);
         Collection<SillySequence> result = map.values(predicate);
         assertThat(result, hasSize(1));
     }
@@ -181,7 +181,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         SillySequence sillySequence = new SillySequence(0, 100);
         map.put(0, sillySequence);
 
-        Predicate predicate = Predicates.equal("payloadField[*]", 3);
+        Predicate predicate = Predicates.equal("payloadField[any]", 3);
         Collection<SillySequence> result = map.values(predicate);
         assertThat(result, hasSize(1));
     }

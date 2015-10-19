@@ -56,7 +56,7 @@ public class MultiValuePredicateTest extends HazelcastTestSupport {
         map.put(3, body2);
         map.put(2, body3);
 
-        SqlPredicate predicate = new SqlPredicate("limbs[*].name = 'missing hand'");
+        SqlPredicate predicate = new SqlPredicate("limbs[any].name = 'missing hand'");
         Collection<Body> values = map.values(predicate);
 
         assertThat(values, contains(body1));
@@ -69,7 +69,7 @@ public class MultiValuePredicateTest extends HazelcastTestSupport {
         final HazelcastInstance instance = createHazelcastInstance();
         final IMap<Integer, Body> map = instance.getMap("map");
         map.addIndex("limbs[0].name", false);
-        map.addIndex("limbs[*].name", true);
+        map.addIndex("limbs[any].name", true);
 
         Body body1 = new Body("body1")
                 .addLimb(new Limb("ugly leg")
@@ -95,7 +95,7 @@ public class MultiValuePredicateTest extends HazelcastTestSupport {
         map.put(2, body2);
         map.put(3, body3);
 
-        Predicate predicate = new EqualPredicate("limbs[*].nails[*].colour", "red");
+        Predicate predicate = new EqualPredicate("limbs[any].nails[any].colour", "red");
         Collection<Body> values = map.values(predicate);
         assertThat(values, containsInAnyOrder(body1, body2));
         for (Body body : values) {
@@ -103,7 +103,7 @@ public class MultiValuePredicateTest extends HazelcastTestSupport {
         }
         System.out.println("-----");
 
-        predicate = new EqualPredicate("limbs[*].name", "ugly leg");
+        predicate = new EqualPredicate("limbs[any].name", "ugly leg");
         values = map.values(predicate);
         assertThat(values, containsInAnyOrder(body1, body2));
         for (Body body : values) {
@@ -137,7 +137,7 @@ public class MultiValuePredicateTest extends HazelcastTestSupport {
         System.out.println("-----");
 
 
-        predicate = new EqualPredicate("limbs[0].nails[*].colour", "yellow");
+        predicate = new EqualPredicate("limbs[0].nails[any].colour", "yellow");
         values = map.values(predicate);
         assertThat(values, contains(body2));
         for (Body body : values) {
@@ -161,7 +161,7 @@ public class MultiValuePredicateTest extends HazelcastTestSupport {
         final HazelcastInstance instance = createHazelcastInstance();
         final IMap<Integer, ArrayBody> map = instance.getMap("map");
         map.addIndex("limbs[0].name", false);
-        map.addIndex("limbs[*].name", true);
+        map.addIndex("limbs[any].name", true);
 
         ArrayBody body1 = new ArrayBody("body1",
                 new ArrayLimb("ugly leg",
@@ -189,7 +189,7 @@ public class MultiValuePredicateTest extends HazelcastTestSupport {
         map.put(2, body2);
         map.put(3, body3);
 
-        Predicate predicate = new EqualPredicate("limbs[*].nails[*].colour", "red");
+        Predicate predicate = new EqualPredicate("limbs[any].nails[any].colour", "red");
         Collection<ArrayBody> values = map.values(predicate);
         assertThat(values, containsInAnyOrder(body1, body2));
         for (ArrayBody body : values) {
@@ -197,7 +197,7 @@ public class MultiValuePredicateTest extends HazelcastTestSupport {
         }
         System.out.println("-----");
 
-        predicate = new EqualPredicate("limbs[*].name", "ugly leg");
+        predicate = new EqualPredicate("limbs[any].name", "ugly leg");
         values = map.values(predicate);
         assertThat(values, containsInAnyOrder(body1, body2));
         for (ArrayBody body : values) {
@@ -231,7 +231,7 @@ public class MultiValuePredicateTest extends HazelcastTestSupport {
         System.out.println("-----");
 
 
-        predicate = new EqualPredicate("limbs[0].nails[*].colour", "yellow");
+        predicate = new EqualPredicate("limbs[0].nails[any].colour", "yellow");
         values = map.values(predicate);
         assertThat(values, contains(body2));
         for (ArrayBody body : values) {
@@ -247,7 +247,7 @@ public class MultiValuePredicateTest extends HazelcastTestSupport {
         }
         System.out.println("-----");
 
-        predicate = new EqualPredicate("limbs[*].nails[*].colour", "red");
+        predicate = new EqualPredicate("limbs[any].nails[any].colour", "red");
         values = map.values(predicate);
         assertThat(values, containsInAnyOrder(body1, body2));
         for (ArrayBody body : values) {

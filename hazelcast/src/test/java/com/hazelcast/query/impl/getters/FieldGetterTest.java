@@ -82,12 +82,12 @@ public class FieldGetterTest {
     @Test(expected = IllegalArgumentException.class)
     public void constructor_whenModifierIsNotNullAndFieldTypeIsNotArrayOrCollection_thenThrowIllegalArgumentException() throws NoSuchFieldException {
         Field field = Body.class.getDeclaredField("name");
-        new FieldGetter(null, field, "[*]", null);
+        new FieldGetter(null, field, "[any]", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void constructor_whenModifierIsStarAndFieldTypeIsCollection_thenThrowIllegalArgumentException() throws NoSuchFieldException {
-        new FieldGetter(null, limbCollectionField, "[*]", null);
+        new FieldGetter(null, limbCollectionField, "[any]", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -97,7 +97,7 @@ public class FieldGetterTest {
 
     @Test
     public void getValue_whenModifierOnArrayIsStar_thenReturnMultiValueResultWithAllItems() throws Exception {
-        FieldGetter getter = new FieldGetter(null, limbArrayField, "[*]", null);
+        FieldGetter getter = new FieldGetter(null, limbArrayField, "[any]", null);
         MultiResult result = (MultiResult) getter.getValue(body);
 
         assertContainsInAnyOrder(result, leg, hand, unnamedLimb);
@@ -105,8 +105,8 @@ public class FieldGetterTest {
 
     @Test
     public void getValue_whenParentIsMultiValueAndModifierOnArrayIsStar_thenReturnMultiValueResultWithAllItems() throws Exception {
-        FieldGetter limbGetter = new FieldGetter(null, limbArrayField, "[*]", null);
-        FieldGetter nailGetter = new FieldGetter(limbGetter, nailArrayField, "[*]", null);
+        FieldGetter limbGetter = new FieldGetter(null, limbArrayField, "[any]", null);
+        FieldGetter nailGetter = new FieldGetter(limbGetter, nailArrayField, "[any]", null);
 
         MultiResult result = (MultiResult) nailGetter.getValue(body);
 
@@ -115,7 +115,7 @@ public class FieldGetterTest {
 
     @Test
     public void getValue_whenParentIsMultiValueAndModifierOnArrayIsPosition_thenReturnMultiValueResultWithItemsAtPosition() throws Exception {
-        FieldGetter limbGetter = new FieldGetter(null, limbArrayField, "[*]", null);
+        FieldGetter limbGetter = new FieldGetter(null, limbArrayField, "[any]", null);
         FieldGetter nailGetter = new FieldGetter(limbGetter, nailArrayField, "[0]", null);
 
         MultiResult result = (MultiResult) nailGetter.getValue(body);
@@ -125,8 +125,8 @@ public class FieldGetterTest {
 
     @Test
     public void getValue_whenParentIsMultiValueAndModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems() throws Exception {
-        FieldGetter limbGetter = new FieldGetter(null, limbArrayField, "[*]", null);
-        FieldGetter nailGetter = new FieldGetter(limbGetter, nailCollectionField, "[*]", Nail.class);
+        FieldGetter limbGetter = new FieldGetter(null, limbArrayField, "[any]", null);
+        FieldGetter nailGetter = new FieldGetter(limbGetter, nailCollectionField, "[any]", Nail.class);
 
         MultiResult result = (MultiResult) nailGetter.getValue(body);
 
@@ -135,7 +135,7 @@ public class FieldGetterTest {
 
     @Test
     public void getValue_whenParentIsMultiValueAndModifierOnCollectionIsPosition_thenReturnMultiValueResultWithItemsAtPosition() throws Exception {
-        FieldGetter limbGetter = new FieldGetter(null, limbArrayField, "[*]", null);
+        FieldGetter limbGetter = new FieldGetter(null, limbArrayField, "[any]", null);
         FieldGetter nailGetter = new FieldGetter(limbGetter, nailArrayField, "[0]", Nail.class);
 
         MultiResult result = (MultiResult) nailGetter.getValue(body);
@@ -145,7 +145,7 @@ public class FieldGetterTest {
 
     @Test
     public void getValue_whenModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems() throws Exception {
-        FieldGetter getter = new FieldGetter(null, limbCollectionField, "[*]", Limb.class);
+        FieldGetter getter = new FieldGetter(null, limbCollectionField, "[any]", Limb.class);
         MultiResult result = (MultiResult) getter.getValue(body);
 
         assertContainsInAnyOrder(result, leg, hand, unnamedLimb);
@@ -194,7 +194,7 @@ public class FieldGetterTest {
 
     @Test
     public void getValue_whenParentIsMultiResultAndNoModifier_thenReturnTheMultiResultContainingCurrentObjects() throws Exception {
-        FieldGetter limbGetter = new FieldGetter(null, limbArrayField, "[*]", null);
+        FieldGetter limbGetter = new FieldGetter(null, limbArrayField, "[any]", null);
         Field limbNameField = Limb.class.getDeclaredField("name");
         FieldGetter nailNameGetter = new FieldGetter(limbGetter, limbNameField, null, null);
         MultiResult result = (MultiResult) nailNameGetter.getValue(body);
@@ -221,7 +221,7 @@ public class FieldGetterTest {
 
     @Test
     public void getReturnType_whenSetExplicitly_thenReturnIt() {
-        FieldGetter getter = new FieldGetter(null, limbCollectionField, "[*]", Limb.class);
+        FieldGetter getter = new FieldGetter(null, limbCollectionField, "[any]", Limb.class);
         Class returnType = getter.getReturnType();
 
         assertEquals(Limb.class, returnType);
@@ -237,7 +237,7 @@ public class FieldGetterTest {
 
     @Test
     public void getReturnType_whenModifierIsStarAndFieldIsArray_thenInferReturnTypeFromTheArray() {
-        FieldGetter getter = new FieldGetter(null, limbArrayField, "[*]", null);
+        FieldGetter getter = new FieldGetter(null, limbArrayField, "[any]", null);
         Class returnType = getter.getReturnType();
 
         assertEquals(Limb.class, returnType);

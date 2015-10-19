@@ -129,12 +129,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
         if (!isArray && !isCollection) {
             throw new IllegalArgumentException("Reducer is allowed only when extracting from arrays or collections");
         }
-        String stringValue = modifierSuffix.substring(1, modifierSuffix.length() - 1);
-        if ("*".equals(stringValue)) {
-            return REDUCE_EVERYTHING;
-        } else {
-            return Integer.parseInt(stringValue);
-        }
+        return SuffixModifierUtils.parseModifier(modifierSuffix);
     }
 
 

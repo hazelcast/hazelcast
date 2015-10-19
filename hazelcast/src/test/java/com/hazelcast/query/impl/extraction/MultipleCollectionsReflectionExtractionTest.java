@@ -32,8 +32,8 @@ public class MultipleCollectionsReflectionExtractionTest extends AbstractExtract
 
     @Override
     public List<String> getIndexedAttributes() {
-        return Arrays.asList("limbs[1].fingers[1]", "limbs[1].fingers[*]",
-                "limbs[*].fingers[1]", "limbs[1].fingers[1]");
+        return Arrays.asList("limbs[1].fingers[1]", "limbs[1].fingers[any]",
+                "limbs[any].fingers[1]", "limbs[1].fingers[1]");
     }
 
     @Test
@@ -60,7 +60,7 @@ public class MultipleCollectionsReflectionExtractionTest extends AbstractExtract
         map.put("krueger", KRUEGER);
 
         // WHEN
-        Predicate predicate = Predicates.equal("limbs[1].fingers[*]", "Ringfinger");
+        Predicate predicate = Predicates.equal("limbs[1].fingers[any]", "Ringfinger");
         Collection<Person> values = map.values(predicate);
 
         // THEN
@@ -76,7 +76,7 @@ public class MultipleCollectionsReflectionExtractionTest extends AbstractExtract
         map.put("krueger", KRUEGER);
 
         // WHEN
-        Predicate predicate = Predicates.equal("limbs[*].fingers[1]", "Mittelfinger");
+        Predicate predicate = Predicates.equal("limbs[any].fingers[1]", "Mittelfinger");
         Collection<Person> values = map.values(predicate);
 
         // THEN
@@ -92,7 +92,7 @@ public class MultipleCollectionsReflectionExtractionTest extends AbstractExtract
         map.put("krueger", KRUEGER);
 
         // WHEN
-        Predicate predicate = Predicates.equal("limbs[*].fingers[*]", "Ringfinger");
+        Predicate predicate = Predicates.equal("limbs[any].fingers[any]", "Ringfinger");
         Collection<Person> values = map.values(predicate);
 
         // THEN

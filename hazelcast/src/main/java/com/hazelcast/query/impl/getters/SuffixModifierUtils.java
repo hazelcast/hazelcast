@@ -21,6 +21,8 @@ package com.hazelcast.query.impl.getters;
  *
  */
 public final class SuffixModifierUtils {
+    private static final String ANY_TOKEN = "any";
+
     public static final int DO_NOT_REDUCE = -1;
     public static final int REDUCE_EVERYTHING = -2;
 
@@ -37,8 +39,22 @@ public final class SuffixModifierUtils {
         return name.substring(0, indexOfOpeningBracket);
     }
 
-    public static String getModifier(String name) {
-        int indexOfOpeningBracket = name.indexOf('[');
-        return name.substring(indexOfOpeningBracket, name.length());
+
+    public static String getModifierSuffix(String fullName, String baseName) {
+        if (baseName == fullName) {
+            return null;
+        }
+        int indexOfOpeningBracket = fullName.indexOf('[');
+        return fullName.substring(indexOfOpeningBracket, fullName.length());
+    }
+
+
+    public static int parseModifier(String modifier) {
+        String stringValue = modifier.substring(1, modifier.length() - 1);
+        if (ANY_TOKEN.equals(stringValue)) {
+            return REDUCE_EVERYTHING;
+        } else {
+            return Integer.parseInt(stringValue);
+        }
     }
 }

@@ -114,19 +114,19 @@ public class MultipleCollectionsDataStructure {
             mapConfig.addMapAttributeConfig(reducedNameAttribute);
 
             MapAttributeConfig indexOneNameAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
-            indexOneNameAttribute.setName("limbs[*].fingers[*]");
+            indexOneNameAttribute.setName("limbs[any].fingers[any]");
             indexOneNameAttribute.setExtractor(
                     "com.hazelcast.query.impl.extraction.MultipleCollectionsDataStructure$BothReducedExtractor");
             mapConfig.addMapAttributeConfig(indexOneNameAttribute);
 
             MapAttributeConfig reducedPowerAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
-            reducedPowerAttribute.setName("limbs[*].fingers[1]");
+            reducedPowerAttribute.setName("limbs[any].fingers[1]");
             reducedPowerAttribute.setExtractor(
                     "com.hazelcast.query.impl.extraction.MultipleCollectionsDataStructure$FirstReducedExtractor");
             mapConfig.addMapAttributeConfig(reducedPowerAttribute);
 
             MapAttributeConfig indexOnePowerAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
-            indexOnePowerAttribute.setName("limbs[1].fingers[*]");
+            indexOnePowerAttribute.setName("limbs[1].fingers[any]");
             indexOnePowerAttribute.setExtractor(
                     "com.hazelcast.query.impl.extraction.MultipleCollectionsDataStructure$LastReducedExtractor");
             mapConfig.addMapAttributeConfig(indexOnePowerAttribute);

@@ -31,7 +31,7 @@ public class SingleCollectionReflectionExtractionTest extends AbstractExtraction
 
     @Override
     public List<String> getIndexedAttributes() {
-        return Arrays.asList("limbs[1].power", "limbs[*].power", "limbs[1].name", "limbs[*].name");
+        return Arrays.asList("limbs[1].power", "limbs[any].power", "limbs[1].name", "limbs[any].name");
     }
 
     @Test
@@ -58,7 +58,7 @@ public class SingleCollectionReflectionExtractionTest extends AbstractExtraction
         map.put("krueger", KRUEGER);
 
         // WHEN
-        Predicate predicate = Predicates.equal("limbs[*].power", 51);
+        Predicate predicate = Predicates.equal("limbs[any].power", 51);
         Collection<Person> values = map.values(predicate);
 
         // THEN
@@ -90,7 +90,7 @@ public class SingleCollectionReflectionExtractionTest extends AbstractExtraction
         map.put("krueger", KRUEGER);
 
         // WHEN
-        Predicate predicate = Predicates.between("limbs[*].power", 20, 40);
+        Predicate predicate = Predicates.between("limbs[any].power", 20, 40);
         Collection<Person> values = map.values(predicate);
 
         // THEN
@@ -122,7 +122,7 @@ public class SingleCollectionReflectionExtractionTest extends AbstractExtraction
         map.put("krueger", KRUEGER);
 
         // WHEN
-        Predicate predicate = Predicates.lessEqual("limbs[*].power", 27);
+        Predicate predicate = Predicates.lessEqual("limbs[any].power", 27);
         Collection<Person> values = map.values(predicate);
 
         // THEN
@@ -154,7 +154,7 @@ public class SingleCollectionReflectionExtractionTest extends AbstractExtraction
         map.put("krueger", KRUEGER);
 
         // WHEN
-        Predicate predicate = Predicates.in("limbs[*].power", 26, 27, 51);
+        Predicate predicate = Predicates.in("limbs[any].power", 26, 27, 51);
         Collection<Person> values = map.values(predicate);
 
         // THEN
@@ -186,7 +186,7 @@ public class SingleCollectionReflectionExtractionTest extends AbstractExtraction
         map.put("krueger", KRUEGER);
 
         // WHEN
-        Predicate predicate = Predicates.notEqual("limbs[*].power", 27);
+        Predicate predicate = Predicates.notEqual("limbs[any].power", 27);
         Collection<Person> values = map.values(predicate);
 
         // THEN
@@ -218,7 +218,7 @@ public class SingleCollectionReflectionExtractionTest extends AbstractExtraction
         map.put("krueger", KRUEGER);
 
         // WHEN
-        Predicate predicate = Predicates.like("limbs[*].name", "le%");
+        Predicate predicate = Predicates.like("limbs[any].name", "le%");
         Collection<Person> values = map.values(predicate);
 
         // THEN
@@ -250,7 +250,7 @@ public class SingleCollectionReflectionExtractionTest extends AbstractExtraction
         map.put("krueger", KRUEGER);
 
         // WHEN
-        Predicate predicate = Predicates.ilike("limbs[*].name", "LE%");
+        Predicate predicate = Predicates.ilike("limbs[any].name", "LE%");
         Collection<Person> values = map.values(predicate);
 
         // THEN
@@ -282,7 +282,7 @@ public class SingleCollectionReflectionExtractionTest extends AbstractExtraction
         map.put("krueger", KRUEGER);
 
         // WHEN
-        Predicate predicate = Predicates.regex("limbs[*].name", "li.*");
+        Predicate predicate = Predicates.regex("limbs[any].name", "li.*");
         Collection<Person> values = map.values(predicate);
 
         // THEN

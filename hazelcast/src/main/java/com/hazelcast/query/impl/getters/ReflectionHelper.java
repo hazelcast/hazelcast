@@ -38,6 +38,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 import static com.hazelcast.query.impl.getters.NullGetter.NULL_GETTER;
+import static com.hazelcast.query.impl.getters.SuffixModifierUtils.getModifierSuffix;
+import static com.hazelcast.query.impl.getters.SuffixModifierUtils.removeModifierSuffix;
 
 /**
  * Scans your classpath, indexes the metadata, allows you to query it on runtime.
@@ -146,16 +148,16 @@ public final class ReflectionHelper {
             Getter parent = null;
             List<String> possibleMethodNames = new ArrayList<String>(INITIAL_CAPACITY);
             for (final String fullname : attribute.split("\\.")) {
-                String name = SuffixModifierUtils.removeModifierSuffix(fullname);
-                String modifier = (name == fullname) ? null : SuffixModifierUtils.getModifier(fullname);
+                String baseName = removeModifierSuffix(fullname);
+                String modifier = getModifierSuffix(fullname, baseName);
 
                 Getter localGetter = null;
                 possibleMethodNames.clear();
-                possibleMethodNames.add(name);
-                final String camelName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
+                possibleMethodNames.add(baseName);
+                final String camelName = Character.toUpperCase(baseName.charAt(0)) + baseName.substring(1);
                 possibleMethodNames.add("get" + camelName);
                 possibleMethodNames.add("is" + camelName);
-                if (name.equals(THIS_ATTRIBUTE_NAME.value())) {
+                if (baseName.equals(THIS_ATTRIBUTE_NAME.value())) {
                     localGetter = GetterFactory.newThisGetter(parent, obj);
                 } else {
 
@@ -178,7 +180,7 @@ public final class ReflectionHelper {
                     }
                     if (localGetter == null) {
                         try {
-                            final Field field = clazz.getField(name);
+                            final Field field = clazz.getField(baseName);
                             localGetter = GetterFactory.newFieldGetter(obj, parent, field, modifier);
                             if (localGetter == NULL_GETTER) {
                                 return localGetter;
@@ -192,7 +194,7 @@ public final class ReflectionHelper {
                         Class c = clazz;
                         while (!c.isInterface() && !Object.class.equals(c)) {
                             try {
-                                final Field field = c.getDeclaredField(name);
+                                final Field field = c.getDeclaredField(baseName);
                                 field.setAccessible(true);
                                 localGetter = GetterFactory.newFieldGetter(obj, parent, field, modifier);
                                 if (localGetter == NULL_GETTER) {
@@ -208,7 +210,7 @@ public final class ReflectionHelper {
                 }
                 if (localGetter == null) {
                     throw new IllegalArgumentException("There is no suitable accessor for '"
-                            + name + "' on class '" + clazz + "'");
+                            + baseName + "' on class '" + clazz + "'");
                 }
                 parent = localGetter;
             }
