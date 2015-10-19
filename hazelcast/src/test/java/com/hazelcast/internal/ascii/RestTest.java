@@ -28,6 +28,7 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.util.ExceptionUtil;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,6 +38,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.SocketException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -164,5 +166,20 @@ public class RestTest {
         }
 
         Assert.assertEquals(queue.size(), communicator.size(name));
+    }
+
+    @Test
+    public void testDisabledRest() throws IOException {
+        Config config = new XmlConfigBuilder().build(); //REST should be disabled by default
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        String mapName = "testMap";
+
+        try {
+            communicator.put("testMap", "1", "1");
+        } catch (SocketException ignore) {
+        }
+
+        assertEquals(0, instance.getMap(mapName).size());
     }
 }
