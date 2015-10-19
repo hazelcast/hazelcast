@@ -362,7 +362,7 @@ public class InternalPartitionServiceLiteMemberTest
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance lite = factory.newHazelcastInstance(liteMemberConfig);
 
-        assertMemberGroupsSize(lite, 0);
+        assertMemberGroupsSizeEventually(lite, 0);
     }
 
     @Test
@@ -375,7 +375,7 @@ public class InternalPartitionServiceLiteMemberTest
         assertClusterSizeEventually(2, lite2);
 
         for (HazelcastInstance instance : asList(lite, lite2)) {
-            assertMemberGroupsSize(instance, 0);
+            assertMemberGroupsSizeEventually(instance, 0);
         }
     }
 
@@ -389,7 +389,7 @@ public class InternalPartitionServiceLiteMemberTest
         assertClusterSizeEventually(2, other);
 
         for (HazelcastInstance instance : asList(lite, other)) {
-            assertMemberGroupsSize(instance, 1);
+            assertMemberGroupsSizeEventually(instance, 1);
         }
     }
 
@@ -403,12 +403,12 @@ public class InternalPartitionServiceLiteMemberTest
         assertClusterSizeEventually(2, other);
 
         for (HazelcastInstance instance : asList(lite, other)) {
-            assertMemberGroupsSize(instance, 1);
+            assertMemberGroupsSizeEventually(instance, 1);
         }
 
         other.getLifecycleService().shutdown();
         assertClusterSizeEventually(1, lite);
-        assertMemberGroupsSize(lite, 0);
+        assertMemberGroupsSizeEventually(lite, 0);
     }
 
     @Test
@@ -421,17 +421,23 @@ public class InternalPartitionServiceLiteMemberTest
         assertClusterSizeEventually(2, other);
 
         for (HazelcastInstance instance : asList(lite, other)) {
-            assertMemberGroupsSize(instance, 1);
+            assertMemberGroupsSizeEventually(instance, 1);
         }
 
         lite.getLifecycleService().shutdown();
         assertClusterSizeEventually(1, other);
-        assertMemberGroupsSize(other, 1);
+        assertMemberGroupsSizeEventually(other, 1);
     }
 
-    private void assertMemberGroupsSize(final HazelcastInstance instance, final int memberGroupSize) {
-        final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(instance);
-        assertEquals(memberGroupSize, partitionService.getMemberGroupsSize());
+    private void assertMemberGroupsSizeEventually(final HazelcastInstance instance, final int memberGroupSize) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(instance);
+                assertEquals(memberGroupSize, partitionService.getMemberGroupsSize());
+            }
+        });
     }
 
     /**
@@ -443,7 +449,7 @@ public class InternalPartitionServiceLiteMemberTest
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance lite = factory.newHazelcastInstance(liteMemberConfig);
 
-        assertMaxBackupCount(lite, 0);
+        assertMaxBackupCountEventually(lite, 0);
     }
 
     @Test
@@ -456,7 +462,7 @@ public class InternalPartitionServiceLiteMemberTest
         assertClusterSizeEventually(2, lite2);
 
         for (HazelcastInstance instance : asList(lite, lite2)) {
-            assertMaxBackupCount(instance, 0);
+            assertMaxBackupCountEventually(instance, 0);
         }
     }
 
@@ -470,7 +476,7 @@ public class InternalPartitionServiceLiteMemberTest
         assertClusterSizeEventually(2, other);
 
         for (HazelcastInstance instance : asList(lite, other)) {
-            assertMaxBackupCount(instance, 0);
+            assertMaxBackupCountEventually(instance, 0);
         }
     }
 
@@ -486,13 +492,19 @@ public class InternalPartitionServiceLiteMemberTest
         assertClusterSizeEventually(3, other2);
 
         for (HazelcastInstance instance : asList(lite, other, other2)) {
-            assertMaxBackupCount(instance, 1);
+            assertMaxBackupCountEventually(instance, 1);
         }
     }
 
-    private void assertMaxBackupCount(final HazelcastInstance instance, final int maxBackupCount) {
-        final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(instance);
-        assertEquals(maxBackupCount, partitionService.getMaxBackupCount());
+    private void assertMaxBackupCountEventually(final HazelcastInstance instance, final int maxBackupCount) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(instance);
+                assertEquals(maxBackupCount, partitionService.getMaxBackupCount());
+            }
+        });
     }
 
     private InternalPartitionServiceImpl getInternalPartitionServiceImpl(HazelcastInstance instance) {
