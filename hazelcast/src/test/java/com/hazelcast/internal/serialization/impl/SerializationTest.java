@@ -20,6 +20,7 @@ public class SerializationTest extends HazelcastTestSupport{
         assertUtilityConstructor(FactoryIdHelper.class);
         assertUtilityConstructor(SerializationUtil.class);
         assertUtilityConstructor(JavaDefaultSerializers.class);
+        assertUtilityConstructor(SerializationConstants.class);
     }
 
 

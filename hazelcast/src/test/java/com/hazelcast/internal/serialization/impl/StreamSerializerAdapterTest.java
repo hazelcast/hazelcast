@@ -16,6 +16,7 @@ import java.nio.ByteOrder;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -59,13 +60,19 @@ public class StreamSerializerAdapterTest {
         StreamSerializerAdapter theOther = new StreamSerializerAdapter(mockSerializationService, serializer);
         StreamSerializerAdapter theEmptyOne = new StreamSerializerAdapter(mockSerializationService, null);
 
+        assertEquals(adapter, adapter);
         assertEquals(adapter, theOther);
+        assertNotEquals(adapter, null);
+        assertNotEquals(adapter, "Not An Adaptor");
+        assertNotEquals(adapter, theEmptyOne);
+
         assertEquals(adapter.hashCode(), serializer.hashCode());
 
         assertEquals(0, theEmptyOne.hashCode());
-
-        assertNotEquals(adapter, theEmptyOne);
-
     }
 
+    @Test
+    public void testString() throws Exception {
+        assertNotNull(adapter.toString());
+    }
 }

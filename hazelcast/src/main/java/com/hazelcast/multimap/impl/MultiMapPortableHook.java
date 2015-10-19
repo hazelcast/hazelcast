@@ -16,6 +16,8 @@
 
 package com.hazelcast.multimap.impl;
 
+import com.hazelcast.internal.serialization.PortableHook;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.multimap.impl.client.AddEntryListenerRequest;
 import com.hazelcast.multimap.impl.client.ClearRequest;
 import com.hazelcast.multimap.impl.client.ContainsRequest;
@@ -43,10 +45,6 @@ import com.hazelcast.multimap.impl.client.ValuesRequest;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.internal.serialization.PortableHook;
-import com.hazelcast.internal.serialization.impl.ArrayPortableFactory;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
@@ -54,9 +52,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MULTIMAP
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MULTIMAP_PORTABLE_FACTORY_ID;
 
 public class MultiMapPortableHook implements PortableHook {
-
     public static final int F_ID = FactoryIdHelper.getFactoryId(MULTIMAP_PORTABLE_FACTORY, MULTIMAP_PORTABLE_FACTORY_ID);
-
     public static final int CLEAR = 1;
     public static final int CONTAINS_ENTRY = 2;
     public static final int COUNT = 3;
@@ -75,7 +71,6 @@ public class MultiMapPortableHook implements PortableHook {
     public static final int LOCK = 16;
     public static final int UNLOCK = 17;
     public static final int IS_LOCKED = 18;
-
     public static final int TXN_MM_PUT = 19;
     public static final int TXN_MM_GET = 20;
     public static final int TXN_MM_REMOVE = 21;
@@ -90,135 +85,66 @@ public class MultiMapPortableHook implements PortableHook {
         return F_ID;
     }
 
-    @Override
     public PortableFactory createFactory() {
-        ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[KEY_BASED_CONTAINS + 1];
-        constructors[CLEAR] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new ClearRequest();
-            }
-        };
-        constructors[CONTAINS_ENTRY] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new ContainsRequest();
-            }
-        };
-        constructors[COUNT] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new CountRequest();
-            }
-        };
-        constructors[ENTRY_SET] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new EntrySetRequest();
-            }
-        };
-        constructors[GET_ALL] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new GetAllRequest();
-            }
-        };
-        constructors[KEY_SET] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new KeySetRequest();
-            }
-        };
-        constructors[PUT] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new PutRequest();
-            }
-        };
-        constructors[REMOVE_ALL] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new RemoveAllRequest();
-            }
-        };
-        constructors[REMOVE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new RemoveRequest();
-            }
-        };
-        constructors[SIZE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new SizeRequest();
-            }
-        };
-        constructors[VALUES] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new ValuesRequest();
-            }
-        };
-        constructors[ADD_ENTRY_LISTENER] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new AddEntryListenerRequest();
-            }
-        };
-        constructors[ENTRY_SET_RESPONSE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new PortableEntrySetResponse();
-            }
-        };
-        constructors[LOCK] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new MultiMapLockRequest();
-            }
-        };
-        constructors[UNLOCK] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new MultiMapUnlockRequest();
-            }
-        };
-        constructors[IS_LOCKED] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new MultiMapIsLockedRequest();
-            }
-        };
-        constructors[TXN_MM_PUT] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnMultiMapPutRequest();
-            }
-        };
-        constructors[TXN_MM_GET] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnMultiMapGetRequest();
-            }
-        };
-        constructors[TXN_MM_REMOVE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnMultiMapRemoveRequest();
-            }
-        };
-        constructors[TXN_MM_VALUE_COUNT] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnMultiMapValueCountRequest();
-            }
-        };
-        constructors[TXN_MM_SIZE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnMultiMapSizeRequest();
-            }
-        };
-        constructors[REMOVE_ENTRY_LISTENER] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new RemoveEntryListenerRequest();
-            }
-        };
-        constructors[TXN_MM_REMOVEALL] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnMultiMapRemoveAllRequest();
-            }
-        };
-        constructors[KEY_BASED_CONTAINS] = new ConstructorFunction<Integer, Portable>() {
+        return new PortableFactory() {
             @Override
-            public Portable createNew(Integer arg) {
-                return new KeyBasedContainsRequest();
+            public Portable create(int classId) {
+                switch (classId) {
+                    case CLEAR:
+                        return new ClearRequest();
+                    case CONTAINS_ENTRY:
+                        return new ContainsRequest();
+                    case COUNT:
+                        return new CountRequest();
+                    case ENTRY_SET:
+                        return new EntrySetRequest();
+                    case GET_ALL:
+                        return new GetAllRequest();
+                    case KEY_SET:
+                        return new KeySetRequest();
+                    case PUT:
+                        return new PutRequest();
+                    case REMOVE_ALL:
+                        return new RemoveAllRequest();
+                    case REMOVE:
+                        return new RemoveRequest();
+                    case SIZE:
+                        return new SizeRequest();
+                    case VALUES:
+                        return new ValuesRequest();
+                    case ADD_ENTRY_LISTENER:
+                        return new AddEntryListenerRequest();
+                    case ENTRY_SET_RESPONSE:
+                        return new PortableEntrySetResponse();
+                    case LOCK:
+                        return new MultiMapLockRequest();
+                    case UNLOCK:
+                        return new MultiMapUnlockRequest();
+                    case IS_LOCKED:
+                        return new MultiMapIsLockedRequest();
+                    case TXN_MM_PUT:
+                        return new TxnMultiMapPutRequest();
+                    case TXN_MM_GET:
+                        return new TxnMultiMapGetRequest();
+                    case TXN_MM_REMOVE:
+                        return new TxnMultiMapRemoveRequest();
+                    case TXN_MM_VALUE_COUNT:
+                        return new TxnMultiMapValueCountRequest();
+                    case TXN_MM_SIZE:
+                        return new TxnMultiMapSizeRequest();
+                    case REMOVE_ENTRY_LISTENER:
+                        return new RemoveEntryListenerRequest();
+                    case TXN_MM_REMOVEALL:
+                        return new TxnMultiMapRemoveAllRequest();
+                    case KEY_BASED_CONTAINS:
+                        return new KeyBasedContainsRequest();
+                    default:
+                        return null;
+                }
             }
         };
-
-        return new ArrayPortableFactory(constructors);
     }
 
-    @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }
