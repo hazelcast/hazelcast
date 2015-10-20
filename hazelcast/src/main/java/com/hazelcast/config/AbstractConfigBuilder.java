@@ -77,7 +77,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
         NodeList importTags = (NodeList) xpath.evaluate("/*[name()='"
                 + this.getXmlType().name + "']/*[name()='"
                 + IMPORT.name + "']", document, XPathConstants.NODESET);
-        for (Node node : new AbstractXmlConfigHelper.IterableNodeList(importTags)) {
+        for (Node node : asElementIterable(importTags)) {
             loadAndReplaceImportElement(root, node);
         }
     }
@@ -97,7 +97,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
         Element importedRoot = doc.getDocumentElement();
         traverseChildsAndReplaceVariables(importedRoot);
         replaceImportElementsWithActualFileContents(importedRoot);
-        for (Node fromImportedDoc : new AbstractXmlConfigHelper.IterableNodeList(importedRoot.getChildNodes())) {
+        for (Node fromImportedDoc : childElements(importedRoot)) {
             Node importedNode = root.getOwnerDocument().importNode(fromImportedDoc, true);
             root.insertBefore(importedNode, node);
         }

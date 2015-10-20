@@ -38,13 +38,13 @@ final class QueryCacheConfigBuilderHelper extends AbstractXmlConfigHelper {
     }
 
     void handleQueryCache(ClientConfig clientConfig, Node node) {
-        for (org.w3c.dom.Node queryCacheNode : new AbstractXmlConfigHelper.IterableNodeList(node.getChildNodes())) {
+        for (Node queryCacheNode : childElements(node)) {
             if ("query-cache".equals(cleanNodeName(queryCacheNode))) {
                 NamedNodeMap attrs = queryCacheNode.getAttributes();
                 String cacheName = getTextContent(attrs.getNamedItem("name"));
                 String mapName = getTextContent(attrs.getNamedItem("mapName"));
                 QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
-                for (org.w3c.dom.Node childNode : new AbstractXmlConfigHelper.IterableNodeList(queryCacheNode.getChildNodes())) {
+                for (Node childNode : childElements(queryCacheNode)) {
                     String textContent = getTextContent(childNode);
                     String nodeName = cleanNodeName(childNode);
                     populateQueryCacheConfig(queryCacheConfig, childNode, textContent, nodeName);
@@ -91,7 +91,7 @@ final class QueryCacheConfigBuilderHelper extends AbstractXmlConfigHelper {
         }
     }
 
-    private EvictionConfig getEvictionConfig(final org.w3c.dom.Node node) {
+    private EvictionConfig getEvictionConfig(final Node node) {
         final EvictionConfig evictionConfig = new EvictionConfig();
         final Node size = node.getAttributes().getNamedItem("size");
         final Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
@@ -115,7 +115,7 @@ final class QueryCacheConfigBuilderHelper extends AbstractXmlConfigHelper {
     }
 
     private void handleEntryListeners(QueryCacheConfig queryCacheConfig, Node childNode) {
-        for (Node listenerNode : new IterableNodeList(childNode.getChildNodes())) {
+        for (Node listenerNode : childElements(childNode)) {
             if ("entry-listener".equals(cleanNodeName(listenerNode))) {
                 NamedNodeMap listenerNodeAttributes = listenerNode.getAttributes();
                 boolean incValue
@@ -143,7 +143,7 @@ final class QueryCacheConfigBuilderHelper extends AbstractXmlConfigHelper {
     }
 
     private void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
-        for (org.w3c.dom.Node indexNode : new AbstractXmlConfigHelper.IterableNodeList(n.getChildNodes())) {
+        for (Node indexNode : childElements(n)) {
             if ("index".equals(cleanNodeName(indexNode))) {
                 final NamedNodeMap attrs = indexNode.getAttributes();
                 boolean ordered = checkTrue(getTextContent(attrs.getNamedItem("ordered")));

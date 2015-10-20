@@ -16,7 +16,6 @@
 
 package com.hazelcast.aws.utility;
 
-import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -34,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.config.AbstractXmlConfigHelper.childElements;
 import static com.hazelcast.config.AbstractXmlConfigHelper.cleanNodeName;
 import static java.lang.String.format;
 
@@ -76,8 +76,8 @@ public final class CloudyUtility {
 
         public NodeHolder getSub(String name) {
             if (node != null) {
-                for (org.w3c.dom.Node node : new AbstractXmlConfigHelper.IterableNodeList(this.node.getChildNodes())) {
-                    String nodeName = cleanNodeName(node.getNodeName());
+                for (Node node : childElements(this.node)) {
+                    String nodeName = cleanNodeName(node);
                     if (name.equals(nodeName)) {
                         return new NodeHolder(node);
                     }
@@ -89,8 +89,8 @@ public final class CloudyUtility {
         public List<NodeHolder> getSubNodes(String name) {
             List<NodeHolder> list = new ArrayList<NodeHolder>();
             if (node != null) {
-                for (org.w3c.dom.Node node : new AbstractXmlConfigHelper.IterableNodeList(this.node.getChildNodes())) {
-                    String nodeName = cleanNodeName(node.getNodeName());
+                for (Node node : childElements(this.node)) {
+                    String nodeName = cleanNodeName(node);
                     if (name.equals(nodeName)) {
                         list.add(new NodeHolder(node));
                     }
@@ -105,8 +105,8 @@ public final class CloudyUtility {
                 return privatePublicPairs;
             }
 
-            for (org.w3c.dom.Node node : new AbstractXmlConfigHelper.IterableNodeList(this.node.getChildNodes())) {
-                String nodeName = cleanNodeName(node.getNodeName());
+            for (Node node : childElements(this.node)) {
+                String nodeName = cleanNodeName(node);
                 if (!"item".equals(nodeName)) {
                     continue;
                 }
