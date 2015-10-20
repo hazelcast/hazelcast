@@ -343,6 +343,14 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         }
     }
 
+    @Override public void runOnAllPartitionThreads(Runnable task) {
+        checkNotNull(task, "task can't be null");
+
+        for (OperationThread partitionOperationThread : partitionOperationThreads) {
+            partitionOperationThread.scheduleQueue.addUrgent(task);
+        }
+    }
+
     @Override
     public void execute(Packet packet) {
         checkNotNull(packet, "packet can't be null");
