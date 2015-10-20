@@ -14,12 +14,12 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.cluster.AdvancedClusterStateTest.changeClusterStateEventually;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClusterShutdownTest extends HazelcastTestSupport {
+public class ClusterShutdownTest
+        extends HazelcastTestSupport {
 
     @Test
     public void cluster_mustBeShutDown_by_singleMember_when_clusterState_ACTIVE() {
@@ -49,38 +49,35 @@ public class ClusterShutdownTest extends HazelcastTestSupport {
     private void testClusterShutdownWithSingleMember(final ClusterState clusterState) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         final HazelcastInstance[] instances = factory.newInstances();
-        warmUpPartitions(instances);
 
-        changeClusterStateEventually(instances[0], clusterState);
+        final HazelcastInstance hz1 = instances[0];
 
-        final Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                instances[0].getCluster().shutdown();
-            }
-        });
+        hz1.getCluster().changeClusterState(clusterState);
+        hz1.getCluster().shutdown();
 
-        thread.start();
-
-        assertNodesShutDownEventually(instances);
+        for (final HazelcastInstance instance : instances) {
+            assertEquals(NodeState.SHUT_DOWN, getNode(instance).getState());
+        }
     }
 
     private void testClusterShutdownWithMultipleMembers(final int clusterSize, final int nodeCountToTriggerShutdown) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
         final HazelcastInstance[] instances = factory.newInstances();
-        warmUpPartitions(instances);
 
-        changeClusterStateEventually(instances[0], ClusterState.PASSIVE);
+        instances[0].getCluster().changeClusterState(ClusterState.PASSIVE);
+
         final CountDownLatch latch = new CountDownLatch(1);
-        final Runnable shutdownRunnable = new Runnable() {
-            @Override
-            public void run() {
-                assertOpenEventually(latch);
-                instances[0].getCluster().shutdown();
-            }
-        };
 
         for (int i = 0; i < nodeCountToTriggerShutdown; i++) {
+            final HazelcastInstance instance = instances[i];
+            final Runnable shutdownRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    assertOpenEventually(latch);
+                    instance.getCluster().shutdown();
+                }
+            };
+
             new Thread(shutdownRunnable).start();
         }
 
