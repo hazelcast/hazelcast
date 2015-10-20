@@ -21,8 +21,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.util.StringUtil;
 
-import java.util.Collections;
 import java.util.Map;
+
+import static java.util.Collections.unmodifiableMap;
 
 /**
  * An common abstract superclass for {@link DiscoveryStrategy} implementations,
@@ -39,7 +40,7 @@ public abstract class AbstractDiscoveryStrategy implements DiscoveryStrategy {
 
     public AbstractDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
         this.logger = logger;
-        this.properties = Collections.unmodifiableMap(properties);
+        this.properties = unmodifiableMap(properties);
     }
 
     @Override
@@ -159,7 +160,7 @@ public abstract class AbstractDiscoveryStrategy implements DiscoveryStrategy {
      * or JVM properties, otherwise the given default value
      */
     protected <T extends Comparable> T getOrDefault(String prefix, PropertyDefinition property, T defaultValue) {
-        if (properties == null || property == null) {
+        if (property == null) {
             return defaultValue;
         }
 
