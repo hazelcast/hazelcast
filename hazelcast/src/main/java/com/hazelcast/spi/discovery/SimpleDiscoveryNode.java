@@ -18,10 +18,12 @@ package com.hazelcast.spi.discovery;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.annotation.Beta;
-import com.hazelcast.util.Preconditions;
 
 import java.util.Collections;
 import java.util.Map;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.Collections.unmodifiableMap;
 
 /**
  * Simple immutable implementation of the {@link DiscoveryNode} interface for convenience
@@ -80,11 +82,11 @@ public final class SimpleDiscoveryNode
      * @param properties     the discovered node's additional properties
      */
     public SimpleDiscoveryNode(Address privateAddress, Address publicAddress, Map<String, Object> properties) {
-        Preconditions.checkNotNull(privateAddress, "The private address cannot be null");
-        Preconditions.checkNotNull(properties, "The properties cannot be null");
+        checkNotNull(privateAddress, "The private address cannot be null");
+        checkNotNull(properties, "The properties cannot be null");
         this.privateAddress = privateAddress;
         this.publicAddress = publicAddress;
-        this.properties = properties == null ? Collections.<String, Object>emptyMap() : Collections.unmodifiableMap(properties);
+        this.properties = unmodifiableMap(properties);
     }
 
     @Override

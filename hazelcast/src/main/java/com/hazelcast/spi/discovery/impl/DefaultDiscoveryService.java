@@ -21,14 +21,12 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.ValueValidator;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 import com.hazelcast.spi.discovery.NodeFilter;
-import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.util.ServiceLoader;
@@ -209,9 +207,5 @@ public class DefaultDiscoveryService
             return factory.getDiscoveryStrategyType().getName();
         }
         return config.getClassName();
-    }
-
-    private DiscoveryNode buildDiscoveryNode(Member member) {
-        return member == null ? null : new SimpleDiscoveryNode(member.getAddress(), member.getAttributes());
     }
 }
