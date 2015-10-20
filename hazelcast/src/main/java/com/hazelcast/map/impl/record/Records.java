@@ -55,12 +55,20 @@ public final class Records {
             value = record.getValue();
         } else if (value == null) {
             value = record.getValue();
-            if (record instanceof CachedDataRecord && value instanceof Data && !((Data) value).isPortable()) {
+            if (shouldCache(record, value)) {
                 value = serializationService.toObject(value);
                 record.setCachedValue(value);
             }
         }
         return value;
+    }
+
+    private static boolean shouldCache(Record record, Object value) {
+        boolean isCachableRecordType = record instanceof CachedDataRecordWithStats || record instanceof CachedDataRecord;
+        if (!isCachableRecordType) {
+            return false;
+        }
+        return value instanceof Data && !((Data) value).isPortable();
     }
 
 }
