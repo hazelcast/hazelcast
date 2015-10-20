@@ -11,7 +11,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.SizeEstimator;
-import com.hazelcast.map.impl.eviction.EvictionCheckerImpl;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
@@ -129,7 +128,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     /**
      * https://github.com/hazelcast/hazelcast/issues/5516
      *
-     * @see EvictionCheckerImpl#getApproximateMaxSize(int)
+     * @see EvictorImpl#getApproximateMaxSize(int)
      */
     @Test
     public void testUsedHeapSizePolicy_doesNotTriggerEviction_whenEntryHeapCostIsSmallerThanApproximateMaxSize() {
@@ -238,7 +237,6 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         final MapProxyImpl mapProxy = (MapProxyImpl) map;
         final MapService mapService = (MapService) mapProxy.getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        EvictionCheckerImpl evictionChecker = new EvictionCheckerImpl(mapServiceContext);
         MemoryInfoAccessor memoryInfoAccessor = new MemoryInfoAccessor() {
             @Override
             public long getTotalMemory() {
@@ -256,8 +254,8 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
             }
         };
 
-        evictionChecker.setMemoryInfoAccessor(memoryInfoAccessor);
-        Evictor evictor = new EvictorImpl(evictionChecker, mapServiceContext);
+        Evictor evictor = new EvictorImpl(mapServiceContext);
+        ((EvictorImpl) evictor).setMemoryInfoAccessor(memoryInfoAccessor);
         mapServiceContext.getMapContainer(map.getName()).setEvictor(evictor);
     }
 

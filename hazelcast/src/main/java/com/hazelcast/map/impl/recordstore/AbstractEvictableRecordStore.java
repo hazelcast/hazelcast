@@ -23,7 +23,6 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
-import com.hazelcast.map.impl.eviction.EvictionChecker;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.Address;
@@ -54,6 +53,8 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      */
     private static final int POST_READ_CHECK_POINT = 63;
 
+    protected final Evictor evictor;
+
     /**
      * Iterates over a pre-set entry count/percentage in one round.
      * Used in expiration logic for traversing entries. Initializes lazily.
@@ -75,10 +76,8 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * Last run time of cleanup operation.
      */
     private long lastEvictionTime;
-
     private volatile boolean hasEntryWithCustomTTL;
     private final long expiryDelayMillis;
-    private final Evictor evictor;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
@@ -213,40 +212,12 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (size() == 0) {
             return;
         }
-        if (shouldEvict(now)) {
-            evict();
+
+        if (isEvictionEnabled() && inEvictableTimeWindow(now)) {
+            evictor.evict(this);
             lastEvictionTime = now;
             readCountBeforeCleanUp = 0;
         }
-    }
-
-    protected boolean shouldEvict(long now) {
-        return isEvictionEnabled() && inEvictableTimeWindow(now) && checkEvictionPossible();
-    }
-
-    private void evict() {
-        int removalSize = getRemovalSize();
-        if (removalSize < 1) {
-            return;
-        }
-        evictor.removeSize(removalSize, this);
-    }
-
-    private int getRemovalSize() {
-        final int size = size();
-        if (size < 1) {
-            return 0;
-        }
-        int removalSize = evictor.findRemovalSize(this);
-        if (removalSize < 1) {
-            return 0;
-        }
-        return removalSize;
-    }
-
-
-    private Evictor getEvictor() {
-        return mapContainer.getEvictor();
     }
 
     /**
@@ -266,11 +237,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return mapConfig.getMinEvictionCheckMillis();
     }
 
-    private boolean checkEvictionPossible() {
-        Evictor evictor = getEvictor();
-        EvictionChecker evictionChecker = evictor.getEvictionChecker();
-        return evictionChecker.checkEvictionPossible(this);
-    }
 
     protected void markRecordStoreExpirable(long ttl) {
         if (ttl > 0L && ttl < Long.MAX_VALUE) {

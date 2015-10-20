@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
-import static com.hazelcast.map.impl.eviction.EvictionCheckerImpl.getApproximateMaxSize;
+import static com.hazelcast.map.impl.eviction.EvictorImpl.getApproximateMaxSize;
 
 
 public final class MapKeyLoaderUtil {
