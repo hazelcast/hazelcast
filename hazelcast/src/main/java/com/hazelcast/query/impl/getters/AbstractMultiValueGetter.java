@@ -186,9 +186,13 @@ public abstract class AbstractMultiValueGetter extends Getter {
         String stringValue = modifier.substring(1, modifier.length() - 1);
         if (REDUCER_ANY_TOKEN.equals(stringValue)) {
             return REDUCE_EVERYTHING;
-        } else {
-            return Integer.parseInt(stringValue);
         }
+
+        int pos = Integer.parseInt(stringValue);
+        if (pos < 0) {
+            throw new IllegalArgumentException("Position argument cannot be negative. Passed argument: " + modifier);
+        }
+        return pos;
     }
 
 }

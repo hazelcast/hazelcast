@@ -86,6 +86,12 @@ public class FieldGetterTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
+    public void constructor_whenModifierIsNegative_thenThrowIllegalArgumentException() throws NoSuchFieldException {
+        Field field = Body.class.getDeclaredField("name");
+        new FieldGetter(null, field, "[-1]", null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
     public void constructor_whenModifierIsStarAndFieldTypeIsCollection_thenThrowIllegalArgumentException() throws NoSuchFieldException {
         new FieldGetter(null, limbCollectionField, "[any]", null);
     }

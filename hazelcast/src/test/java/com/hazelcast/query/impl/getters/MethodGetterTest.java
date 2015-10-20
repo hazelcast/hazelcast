@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -83,6 +84,12 @@ public class MethodGetterTest {
     public void constructor_whenModifierIsNotNullAndMethodReturnTypeIsNotArrayOrCollection_thenThrowIllegalArgumentException() throws NoSuchMethodException {
         Method method = Body.class.getMethod("getName");
         new MethodGetter(null, method, "[any]", null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void constructor_whenModifierIsNegative_thenThrowIllegalArgumentException() throws NoSuchMethodException {
+        Method method = Body.class.getMethod("getName");
+        new MethodGetter(null, method, "[-1]", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
