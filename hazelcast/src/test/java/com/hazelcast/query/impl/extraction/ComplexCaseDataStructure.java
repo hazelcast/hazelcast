@@ -64,7 +64,7 @@ public class ComplexCaseDataStructure {
 
         @Override
         public int compareTo(Finger o) {
-            return equals(o) ? 0 : -1;
+            return this.name.compareTo(o.name);
         }
     }
 

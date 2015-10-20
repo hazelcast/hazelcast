@@ -185,12 +185,13 @@ public abstract class AbstractExtractionTest extends HazelcastTestSupport {
         Config config = setupMap(getInstanceConfigurator());
         setupIndexes(config, query);
         setupInstance(config);
-        putTestDataToMap(input.objects);
 
         // EXPECT
         if (expected.throwable != null) {
             this.expected.expect(expected.throwable);
         }
+
+        putTestDataToMap(input.objects);
 
         // WHEN
         Collection<?> values = map.values(query.predicate);

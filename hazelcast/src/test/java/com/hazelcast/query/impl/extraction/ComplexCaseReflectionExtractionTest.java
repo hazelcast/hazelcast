@@ -19,7 +19,6 @@ import static com.hazelcast.query.impl.extraction.ComplexCaseDataStructure.perso
 import static com.hazelcast.query.impl.extraction.ComplexCaseDataStructure.tattoos;
 
 
-@Ignore("multiple failures")
 @RunWith(Parameterized.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ComplexCaseReflectionExtractionTest extends AbstractExtractionTest {

@@ -55,11 +55,11 @@ public abstract class BaseIndexStore implements IndexStore {
             multiResultHasToDetectDuplicates = true;
             List<Object> results = ((MultiResult) newValue).getResults();
             for (Object o : results) {
-                Comparable sanitizedValue = sanitizeValue((Comparable) o);
+                Comparable sanitizedValue = sanitizeValue(o);
                 newIndexInternal(sanitizedValue, record);
             }
         } else {
-            Comparable sanitizedValue = sanitizeValue((Comparable) newValue);
+            Comparable sanitizedValue = sanitizeValue(newValue);
             newIndexInternal(sanitizedValue, record);
         }
     }
@@ -78,11 +78,11 @@ public abstract class BaseIndexStore implements IndexStore {
         if (oldValue instanceof MultiResult) {
             List<Object> results = ((MultiResult) oldValue).getResults();
             for (Object o : results) {
-                Comparable sanitizedValue = sanitizeValue((Comparable) o);
+                Comparable sanitizedValue = sanitizeValue(o);
                 removeIndexInternal(sanitizedValue, indexKey);
             }
         } else {
-            Comparable sanitizedValue = sanitizeValue((Comparable) oldValue);
+            Comparable sanitizedValue = sanitizeValue(oldValue);
             removeIndexInternal(sanitizedValue, indexKey);
         }
     }
@@ -116,13 +116,20 @@ public abstract class BaseIndexStore implements IndexStore {
         readLock.unlock();
     }
 
-    private Comparable sanitizeValue(Comparable value) {
-        if (value == null) {
-            value = IndexImpl.NULL;
-        } else if (value.getClass().isEnum()) {
-            value = TypeConverters.ENUM_CONVERTER.convert(value);
+    private Comparable sanitizeValue(Object input) {
+        if (input == null || input instanceof Comparable) {
+            Comparable value = (Comparable) input;
+            if (value == null) {
+                value = IndexImpl.NULL;
+            } else if (value.getClass().isEnum()) {
+                value = TypeConverters.ENUM_CONVERTER.convert(value);
+            }
+            return value;
+        } else {
+            throw new IllegalArgumentException("It is not allowed to used a type that is not Comparable: "
+                    + input.getClass());
         }
-        return value;
+
     }
 
     protected MultiResultSet createMultiResultSet() {
