@@ -24,8 +24,26 @@ import com.hazelcast.nio.serialization.Portable;
 
 import java.io.IOException;
 
-public class MorphingPortableReader extends DefaultPortableReader {
+import static com.hazelcast.nio.serialization.FieldType.BOOLEAN;
+import static com.hazelcast.nio.serialization.FieldType.BOOLEAN_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.BYTE;
+import static com.hazelcast.nio.serialization.FieldType.BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.CHAR;
+import static com.hazelcast.nio.serialization.FieldType.CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.DOUBLE;
+import static com.hazelcast.nio.serialization.FieldType.DOUBLE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.FLOAT;
+import static com.hazelcast.nio.serialization.FieldType.FLOAT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.INT;
+import static com.hazelcast.nio.serialization.FieldType.INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.LONG;
+import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.PORTABLE;
+import static com.hazelcast.nio.serialization.FieldType.PORTABLE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.UTF;
 
+public class MorphingPortableReader extends DefaultPortableReader {
 
     public MorphingPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinition cd) {
         super(serializer, in, cd);
@@ -47,7 +65,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
             case SHORT:
                 return super.readShort(fieldName);
             default:
-                throw new IncompatibleClassChangeError();
+                throw createIncompatibleClassChangeError(fd, INT);
         }
     }
 
@@ -69,7 +87,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
             case SHORT:
                 return super.readShort(fieldName);
             default:
-                throw new IncompatibleClassChangeError();
+                throw createIncompatibleClassChangeError(fd, LONG);
         }
     }
 
@@ -79,9 +97,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
         if (fd == null) {
             return null;
         }
-        if (fd.getType() != FieldType.UTF) {
-            throw new IncompatibleClassChangeError();
-        }
+        validateTypeCompatibility(fd, UTF);
         return super.readUTF(fieldName);
     }
 
@@ -91,9 +107,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
         if (fd == null) {
             return false;
         }
-        if (fd.getType() != FieldType.BOOLEAN) {
-            throw new IncompatibleClassChangeError();
-        }
+        validateTypeCompatibility(fd, BOOLEAN);
         return super.readBoolean(fieldName);
     }
 
@@ -103,9 +117,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
         if (fd == null) {
             return 0;
         }
-        if (fd.getType() != FieldType.BYTE) {
-            throw new IncompatibleClassChangeError();
-        }
+        validateTypeCompatibility(fd, BYTE);
         return super.readByte(fieldName);
     }
 
@@ -115,9 +127,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
         if (fd == null) {
             return 0;
         }
-        if (fd.getType() != FieldType.CHAR) {
-            throw new IncompatibleClassChangeError();
-        }
+        validateTypeCompatibility(fd, CHAR);
         return super.readChar(fieldName);
     }
 
@@ -143,7 +153,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
             case SHORT:
                 return super.readShort(fieldName);
             default:
-                throw new IncompatibleClassChangeError();
+                throw createIncompatibleClassChangeError(fd, DOUBLE);
         }
     }
 
@@ -165,7 +175,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
             case SHORT:
                 return super.readShort(fieldName);
             default:
-                throw new IncompatibleClassChangeError();
+                throw createIncompatibleClassChangeError(fd, FLOAT);
         }
     }
 
@@ -181,7 +191,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
             case BYTE:
                 return super.readByte(fieldName);
             default:
-                throw new IncompatibleClassChangeError();
+                throw createIncompatibleClassChangeError(fd, FLOAT);
         }
     }
 
@@ -189,23 +199,29 @@ public class MorphingPortableReader extends DefaultPortableReader {
     public byte[] readByteArray(String fieldName) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
-            return new byte[0];
+            return null;
         }
-        if (fd.getType() != FieldType.BYTE_ARRAY) {
-            throw new IncompatibleClassChangeError();
-        }
+        validateTypeCompatibility(fd, BYTE_ARRAY);
         return super.readByteArray(fieldName);
+    }
+
+    @Override
+    public boolean[] readBooleanArray(String fieldName) throws IOException {
+        FieldDefinition fd = cd.getField(fieldName);
+        if (fd == null) {
+            return null;
+        }
+        validateTypeCompatibility(fd, BOOLEAN_ARRAY);
+        return super.readBooleanArray(fieldName);
     }
 
     @Override
     public char[] readCharArray(String fieldName) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
-            return new char[0];
+            return null;
         }
-        if (fd.getType() != FieldType.CHAR_ARRAY) {
-            throw new IncompatibleClassChangeError();
-        }
+        validateTypeCompatibility(fd, CHAR_ARRAY);
         return super.readCharArray(fieldName);
     }
 
@@ -213,11 +229,9 @@ public class MorphingPortableReader extends DefaultPortableReader {
     public int[] readIntArray(String fieldName) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
-            return new int[0];
+            return null;
         }
-        if (fd.getType() != FieldType.INT_ARRAY) {
-            throw new IncompatibleClassChangeError();
-        }
+        validateTypeCompatibility(fd, INT_ARRAY);
         return super.readIntArray(fieldName);
     }
 
@@ -225,11 +239,9 @@ public class MorphingPortableReader extends DefaultPortableReader {
     public long[] readLongArray(String fieldName) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
-            return new long[0];
+            return null;
         }
-        if (fd.getType() != FieldType.LONG_ARRAY) {
-            throw new IncompatibleClassChangeError();
-        }
+        validateTypeCompatibility(fd, LONG_ARRAY);
         return super.readLongArray(fieldName);
     }
 
@@ -237,11 +249,9 @@ public class MorphingPortableReader extends DefaultPortableReader {
     public double[] readDoubleArray(String fieldName) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
-            return new double[0];
+            return null;
         }
-        if (fd.getType() != FieldType.DOUBLE_ARRAY) {
-            throw new IncompatibleClassChangeError();
-        }
+        validateTypeCompatibility(fd, DOUBLE_ARRAY);
         return super.readDoubleArray(fieldName);
     }
 
@@ -249,11 +259,9 @@ public class MorphingPortableReader extends DefaultPortableReader {
     public float[] readFloatArray(String fieldName) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
-            return new float[0];
+            return null;
         }
-        if (fd.getType() != FieldType.FLOAT_ARRAY) {
-            throw new IncompatibleClassChangeError();
-        }
+        validateTypeCompatibility(fd, FLOAT_ARRAY);
         return super.readFloatArray(fieldName);
     }
 
@@ -261,11 +269,9 @@ public class MorphingPortableReader extends DefaultPortableReader {
     public short[] readShortArray(String fieldName) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
-            return new short[0];
+            return null;
         }
-        if (fd.getType() != FieldType.SHORT_ARRAY) {
-            throw new IncompatibleClassChangeError();
-        }
+        validateTypeCompatibility(fd, SHORT_ARRAY);
         return super.readShortArray(fieldName);
     }
 
@@ -275,9 +281,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
         if (fd == null) {
             return null;
         }
-        if (fd.getType() != FieldType.PORTABLE) {
-            throw new IncompatibleClassChangeError();
-        }
+        validateTypeCompatibility(fd, PORTABLE);
         return super.readPortable(fieldName);
     }
 
@@ -285,11 +289,20 @@ public class MorphingPortableReader extends DefaultPortableReader {
     public Portable[] readPortableArray(String fieldName) throws IOException {
         FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
-            return new Portable[0];
+            return null;
         }
-        if (fd.getType() != FieldType.PORTABLE_ARRAY) {
-            throw new IncompatibleClassChangeError();
-        }
+        validateTypeCompatibility(fd, PORTABLE_ARRAY);
         return super.readPortableArray(fieldName);
+    }
+
+    private void validateTypeCompatibility(FieldDefinition fd, FieldType expectedType) {
+        if (fd.getType() != expectedType) {
+            throw createIncompatibleClassChangeError(fd, expectedType);
+        }
+    }
+
+    private IncompatibleClassChangeError createIncompatibleClassChangeError(FieldDefinition fd, FieldType expectedType) {
+        return new IncompatibleClassChangeError("Incompatible to read " + expectedType + " from " + fd.getType()
+                + " while reading field :" + fd.getName() + " on " + cd);
     }
 }

@@ -297,10 +297,6 @@ public class ByteArrayObjectDataOutputTest {
     }
 
     @Test
-    public void testWriteData() throws Exception {
-    }
-
-    @Test
     public void testPosition() throws Exception {
         out.pos = 21;
         assertEquals(21, out.position());

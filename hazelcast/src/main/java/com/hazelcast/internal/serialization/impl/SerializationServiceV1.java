@@ -184,4 +184,7 @@ public class SerializationServiceV1
         portableContext.registerClassDefinition(cd);
     }
 
+    final PortableSerializer getPortableSerializer() {
+        return portableSerializer;
+    }
 }

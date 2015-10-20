@@ -190,7 +190,7 @@ public interface PortableReader {
 
     /**
      * @param fieldName name of the field
-     * @return the portabke value read
+     * @return the portable value read
      * @throws IOException
      */
     Portable[] readPortableArray(String fieldName) throws IOException;

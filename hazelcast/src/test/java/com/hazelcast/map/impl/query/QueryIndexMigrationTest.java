@@ -83,7 +83,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout = 2*MINUTE)
+    @Test(timeout = MINUTE)
     public void testQueryDuringAndAfterMigration() throws Exception {
         HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         int count = 500;
@@ -162,7 +162,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     /**
      * test for issue #359
      */
-    @Test(timeout = 2*MINUTE)
+    @Test(timeout = MINUTE)
     public void testIndexCleanupOnMigration() throws Exception {
         int nodeCount = 6;
         final int runCount = 500;
@@ -196,7 +196,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     /**
      * see Zendesk ticket #82
      */
-    @Test(timeout = 2*MINUTE)
+    @Test(timeout = MINUTE)
     public void testQueryWithIndexDuringJoin() throws InterruptedException {
         final String name = "test";
         final String findMe = "find-me";
