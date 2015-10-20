@@ -165,20 +165,18 @@ public final class ReflectionHelper {
                         clazz = parent.getReturnType();
                     }
 
-                    if (localGetter == null) {
-                        for (String methodName : possibleMethodNames) {
-                            try {
-                                final Method method = clazz.getMethod(methodName);
-                                method.setAccessible(true);
-                                localGetter = GetterFactory.newMethodGetter(obj, parent, method, modifier);
-                                if (localGetter == NULL_GETTER) {
-                                    return localGetter;
-                                }
-                                clazz = method.getReturnType();
-                                break;
-                            } catch (NoSuchMethodException ignored) {
-                                EmptyStatement.ignore(ignored);
+                    for (String methodName : possibleMethodNames) {
+                        try {
+                            final Method method = clazz.getMethod(methodName);
+                            method.setAccessible(true);
+                            localGetter = GetterFactory.newMethodGetter(obj, parent, method, modifier);
+                            if (localGetter == NULL_GETTER) {
+                                return localGetter;
                             }
+                            clazz = method.getReturnType();
+                            break;
+                        } catch (NoSuchMethodException ignored) {
+                            EmptyStatement.ignore(ignored);
                         }
                     }
                     if (localGetter == null) {
