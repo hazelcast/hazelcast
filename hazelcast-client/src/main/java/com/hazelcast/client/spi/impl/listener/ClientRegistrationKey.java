@@ -16,40 +16,40 @@
 
 package com.hazelcast.client.spi.impl.listener;
 
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 
 public class ClientRegistrationKey {
 
     private final String userRegistrationId;
-    private final ClientRequest request;
+    private final ClientMessage request;
     private final EventHandler handler;
+    private final ListenerMessageCodec codec;
 
-
-    public ClientRegistrationKey(String userRegistrationId, ClientRequest request, EventHandler handler) {
+    public ClientRegistrationKey(String userRegistrationId, ClientMessage request,
+                                 EventHandler handler, ListenerMessageCodec codec) {
         this.userRegistrationId = userRegistrationId;
         this.request = request;
         this.handler = handler;
+        this.codec = codec;
     }
 
     public ClientRegistrationKey(String userRegistrationId) {
         this.userRegistrationId = userRegistrationId;
         this.request = null;
         this.handler = null;
+        this.codec = null;
     }
 
-    /**
-     * Add listener request
-     *
-     * @return request
-     */
-    public ClientRequest getRequest() {
+    public ListenerMessageCodec getCodec() {
+        return codec;
+    }
+
+    public ClientMessage getRequest() {
         return request;
     }
 
-    /**
-     * @return related event handler
-     */
     public EventHandler getHandler() {
         return handler;
     }

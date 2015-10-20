@@ -347,7 +347,6 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
     @Test
     public void testInterceptor() throws InterruptedException {
-
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
@@ -356,6 +355,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
         final String id = map.addInterceptor(interceptor);
         assertNotNull(id);
+
 
         map.put("key1", "value");
         assertEquals("value", map.get("key1"));
@@ -527,7 +527,6 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
     @Test
     public void testNearCache_WhenRegisteredNodeIsDead() {
-
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
         final ClientConfig clientConfig = new ClientConfig();
@@ -576,6 +575,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         clientConfig.getNetworkConfig().setSmartRouting(smart);
 
         final int tryCount = 5;
+
         for (int i = 0; i < tryCount; i++) {
             final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
             final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);

@@ -89,14 +89,36 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetObject()
+    public void testPutAll() throws TimeoutException {
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        final ReplicatedMap<String, String> map1 = client.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = server.getReplicatedMap("default");
+
+        final Map<String, String> mapTest = new HashMap<String, String>();
+        for (int i = 0; i < 100; i++) {
+            mapTest.put("foo-" + i, "bar");
+        }
+        map1.putAll(mapTest);
+        for (Entry<String, String> entry : map2.entrySet()) {
+            assertStartsWith("foo-", entry.getKey());
+            assertEquals("bar", entry.getValue());
+        }
+        for (Entry<String, String> entry : map1.entrySet()) {
+            assertStartsWith("foo-", entry.getKey());
+            assertEquals("bar", entry.getValue());
+        }
+    }
+
+    @Test
+    public void testGetObjectDelay0()
             throws Exception {
 
         testGet(buildConfig(InMemoryFormat.OBJECT, 0));
     }
 
     @Test
-    public void testGetBinary()
+    public void testGetBinaryDelay0()
             throws Exception {
 
         testGet(buildConfig(InMemoryFormat.BINARY, 0));
@@ -128,6 +150,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         }
     }
 
+
     @Test
     public void testPutNullReturnValueDeserialization() {
         hazelcastFactory.newHazelcastInstance();
@@ -147,14 +170,14 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testAddObject()
+    public void testAddObjectDelay0()
             throws Exception {
 
         testAdd(buildConfig(InMemoryFormat.OBJECT, 0));
     }
 
     @Test
-    public void testAddBinary()
+    public void testAddBinaryDelay0()
             throws Exception {
 
         testAdd(buildConfig(InMemoryFormat.BINARY, 0));
@@ -192,14 +215,14 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testClearObject()
+    public void testClearObjectDelay0()
             throws Exception {
 
         testClear(buildConfig(InMemoryFormat.OBJECT, 0));
     }
 
     @Test
-    public void testClearBinary()
+    public void testClearBinaryDelay0()
             throws Exception {
 
         testClear(buildConfig(InMemoryFormat.BINARY, 0));
@@ -238,7 +261,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         // TODO Should clear be a sychronous operation? What happens on lost clear message?
         final AtomicBoolean happened = new AtomicBoolean(false);
         for (int i = 0; i < 10; i++) {
-            map2.clear();
+            map1.clear();
             Thread.sleep(1000);
             try {
                 assertEquals(0, map1.size());
@@ -254,14 +277,14 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testUpdateObject()
+    public void testUpdateObjectDelay0()
             throws Exception {
 
         testUpdate(buildConfig(InMemoryFormat.OBJECT, 0));
     }
 
     @Test
-    public void testUpdateBinary()
+    public void testUpdateBinaryDelay0()
             throws Exception {
 
         testUpdate(buildConfig(InMemoryFormat.BINARY, 0));
@@ -322,14 +345,14 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemoveObject()
+    public void testRemoveObjectDelay0()
             throws Exception {
 
         testRemove(buildConfig(InMemoryFormat.OBJECT, 0));
     }
 
     @Test
-    public void testRemoveBinary()
+    public void testRemoveBinaryDelay0()
             throws Exception {
 
         testRemove(buildConfig(InMemoryFormat.BINARY, 0));
@@ -391,14 +414,14 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSizeObject()
+    public void testSizeObjectDelay0()
             throws Exception {
 
         testSize(buildConfig(InMemoryFormat.OBJECT, 0));
     }
 
     @Test
-    public void testSizeBinary()
+    public void testSizeBinaryDelay0()
             throws Exception {
 
         testSize(buildConfig(InMemoryFormat.BINARY, 0));
@@ -432,14 +455,14 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testContainsKeyObject()
+    public void testContainsKeyObjectDelay0()
             throws Exception {
 
         testContainsKey(buildConfig(InMemoryFormat.OBJECT, 0));
     }
 
     @Test
-    public void testContainsKeyBinary()
+    public void testContainsKeyBinaryDelay0()
             throws Exception {
 
         testContainsKey(buildConfig(InMemoryFormat.BINARY, 0));
@@ -482,14 +505,14 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testContainsValueObject()
+    public void testContainsValueObjectDelay0()
             throws Exception {
 
         testContainsValue(buildConfig(InMemoryFormat.OBJECT, 0));
     }
 
     @Test
-    public void testContainsValueBinary()
+    public void testContainsValueBinaryDelay0()
             throws Exception {
 
         testContainsValue(buildConfig(InMemoryFormat.BINARY, 0));
@@ -536,14 +559,14 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testValuesObject()
+    public void testValuesObjectDelay0()
             throws Exception {
 
         testValues(buildConfig(InMemoryFormat.OBJECT, 0));
     }
 
     @Test
-    public void testValuesBinary()
+    public void testValuesBinaryDelay0()
             throws Exception {
 
         testValues(buildConfig(InMemoryFormat.BINARY, 0));
@@ -593,14 +616,14 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testKeySetObject()
+    public void testKeySetObjectDelay0()
             throws Exception {
 
         testKeySet(buildConfig(InMemoryFormat.OBJECT, 0));
     }
 
     @Test
-    public void testKeySetBinary()
+    public void testKeySetBinaryDelay0()
             throws Exception {
 
         testKeySet(buildConfig(InMemoryFormat.BINARY, 0));
@@ -650,14 +673,14 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEntrySetObject()
+    public void testEntrySetObjectDelay0()
             throws Exception {
 
         testEntrySet(buildConfig(InMemoryFormat.OBJECT, 0));
     }
 
     @Test
-    public void testEntrySetBinary()
+    public void testEntrySetBinaryDelay0()
             throws Exception {
 
         testEntrySet(buildConfig(InMemoryFormat.BINARY, 0));
@@ -710,14 +733,13 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRetrieveUnknownValueObject()
+    public void testRetrieveUnknownValueObjectDelay0()
             throws Exception {
 
         testRetrieveUnknownValue(buildConfig(InMemoryFormat.OBJECT, 0));
     }
-
     @Test
-    public void testRetrieveUnknownValueBinary()
+    public void testRetrieveUnknownValueBinaryDelay0()
             throws Exception {
 
         testRetrieveUnknownValue(buildConfig(InMemoryFormat.BINARY, 0));
@@ -808,28 +830,6 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         sampleMap.put(1, new SamplePortable(666));
         final SamplePortable samplePortable = sampleMap.get(1);
         assertEquals(666, samplePortable.a);
-    }
-
-    @Test
-    public void testPutAll() throws TimeoutException {
-        HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
-        final ReplicatedMap<String, String> map1 = client.getReplicatedMap("default");
-        final ReplicatedMap<String, String> map2 = server.getReplicatedMap("default");
-
-        final Map<String, String> mapTest = new HashMap<String, String>();
-        for (int i = 0; i < 100; i++) {
-            mapTest.put("foo-" + i, "bar");
-        }
-        map1.putAll(mapTest);
-        for (Entry<String, String> entry : map2.entrySet()) {
-            assertStartsWith("foo-", entry.getKey());
-            assertEquals("bar", entry.getValue());
-        }
-        for (Entry<String, String> entry : map1.entrySet()) {
-            assertStartsWith("foo-", entry.getKey());
-            assertEquals("bar", entry.getValue());
-        }
     }
 
     private ClientConfig getClientConfigWithNearCacheInvalidationEnabled() {

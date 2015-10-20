@@ -45,6 +45,7 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
         if (owner == null) {
             throw new IOException("Partition does not have owner. partitionId : " + partitionId);
         }
+        invocation.getClientMessage().setPartitionId(partitionId);
         Connection connection = getConnection(owner);
         send(invocation, (ClientConnection) connection);
     }

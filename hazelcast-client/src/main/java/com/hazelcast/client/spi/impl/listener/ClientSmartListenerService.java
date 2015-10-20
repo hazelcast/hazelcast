@@ -17,12 +17,11 @@
 package com.hazelcast.client.spi.impl.listener;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
-import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
@@ -49,8 +48,8 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl {
             return Collections.newSetFromMap(new ConcurrentHashMap<ClientEventRegistration, Boolean>());
         }
     };
-    private final ConcurrentMap<ClientRegistrationKey, Set<ClientEventRegistration>> registrations =
-            new ConcurrentHashMap<ClientRegistrationKey, Set<ClientEventRegistration>>();
+    private final ConcurrentMap<ClientRegistrationKey, Set<ClientEventRegistration>> registrations
+            = new ConcurrentHashMap<ClientRegistrationKey, Set<ClientEventRegistration>>();
     private final Object regMutex = new Object();
 
     public ClientSmartListenerService(HazelcastClientInstanceImpl client, int eventThreadCount, int eventQueueCapacity) {
@@ -58,13 +57,13 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl {
     }
 
     @Override
-    public String registerListener(BaseClientAddListenerRequest request, EventHandler handler) {
-        request.setLocalOnly();
+    public String registerListener(ListenerMessageCodec codec, EventHandler handler) {
+        ClientMessage request = codec.encodeAddRequest(true);
 
         Collection<Member> members = client.getClientClusterService().getMemberList();
 
         String userRegistrationId = UuidUtil.newUnsecureUuidString();
-        ClientRegistrationKey registrationKey = new ClientRegistrationKey(userRegistrationId, request, handler);
+        ClientRegistrationKey registrationKey = new ClientRegistrationKey(userRegistrationId, request, handler, codec);
         for (Member member : members) {
             invoke(registrationKey, member.getAddress());
         }
@@ -72,21 +71,22 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl {
     }
 
     private void invoke(ClientRegistrationKey registrationKey, Address address) {
-        ClientRequest request = registrationKey.getRequest();
+        ClientMessage request = registrationKey.getRequest();
         EventHandler handler = registrationKey.getHandler();
         handler.beforeListenerRegister();
-        ClientInvocation invocation = new ClientInvocation(client, handler, request, address);
+        ClientInvocation invocation = new ClientInvocation(client, request, address);
+        invocation.setEventHandler(handler);
+        ListenerMessageCodec codec = registrationKey.getCodec();
         try {
             ClientInvocationFuture future = invocation.invoke();
-            String serverRegistrationId = serializationService.toObject(future.get());
+            String serverRegistrationId = codec.decodeAddResponse(future.get());
             handler.onListenerRegister();
-            int callId = invocation.getRequest().getCallId();
+            int correlationId = request.getCorrelationId();
             ClientEventRegistration registration
-                    = new ClientEventRegistration(serverRegistrationId, callId, address);
+                    = new ClientEventRegistration(serverRegistrationId, correlationId, address, codec);
             registerListener(registrationKey, registration);
         } catch (Exception e) {
             //if invocation cannot be done that means connection is broken and there is no need to add listener
-            e.printStackTrace();
             EmptyStatement.ignore(e);
         }
     }
@@ -97,8 +97,9 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl {
         regSet.add(registration);
     }
 
+
     @Override
-    public boolean deregisterListener(BaseClientRemoveListenerRequest request, String userRegistrationId) {
+    public boolean deregisterListener(String userRegistrationId) {
         Set<ClientEventRegistration> regSet = registrations.remove(new ClientRegistrationKey(userRegistrationId));
         if (regSet == null) {
             return false;
@@ -106,7 +107,8 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl {
         for (ClientEventRegistration registration : regSet) {
             try {
                 removeEventHandler(registration.getCallId());
-                request.setRegistrationId(registration.getServerRegistrationId());
+                ListenerMessageCodec listenerMessageCodec = registration.getCodec();
+                ClientMessage request = listenerMessageCodec.encodeRemoveRequest(registration.getServerRegistrationId());
                 Future future = new ClientInvocation(client, request, registration.getSubscriber()).invoke();
                 future.get();
             } catch (Exception e) {

@@ -62,7 +62,6 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     private final ConcurrentMap<String, MessageRunner> runnersMap
             = new ConcurrentHashMap<String, MessageRunner>();
 
-    private final String name;
     private final Ringbuffer ringbuffer;
     private final SerializationService serializationService;
     private final ClientReliableTopicConfig config;
@@ -71,8 +70,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
 
     public ClientReliableTopicProxy(String objectId, HazelcastClientInstanceImpl client) {
         super(SERVICE_NAME, objectId);
-        this.name = objectId;
-        this.ringbuffer = client.getRingbuffer(TOPIC_RB_PREFIX + name);
+        this.ringbuffer = client.getRingbuffer(TOPIC_RB_PREFIX + objectId);
         this.serializationService = client.getSerializationService();
 
         this.config = client.getClientConfig().getReliableTopicConfig(objectId);
@@ -112,7 +110,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            throw new HazelcastException("Failed to publish message: " + payload + " to topic:" + getName(), e);
+            throw new HazelcastException("Failed to publish message: " + payload + " to topic:" + name, e);
         }
     }
 
@@ -123,7 +121,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     private void addOrFail(ReliableTopicMessage message) throws Exception {
         long sequenceId = (Long) ringbuffer.addAsync(message, OverflowPolicy.FAIL).get();
         if (sequenceId == -1) {
-            throw new TopicOverloadException("Failed to publish message: " + message + " on topic:" + getName());
+            throw new TopicOverloadException("Failed to publish message: " + message + " on topic:" + name);
         }
     }
 
@@ -183,7 +181,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
 
     @Override
     public String toString() {
-        return "ITopic{" + "name='" + getName() + '\'' + '}';
+        return "ITopic{" + "name='" + name + '\'' + '}';
     }
 
     class MessageRunner implements ExecutionCallback<ReadResultSet<ReliableTopicMessage>> {

@@ -134,7 +134,7 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
 
         assertCachePartitionLostEventEventually(listener, partitionId);
     }
-    
+
     @Test
     public void test_cachePartitionLostListener_removed() {
         final String cacheName = randomName();

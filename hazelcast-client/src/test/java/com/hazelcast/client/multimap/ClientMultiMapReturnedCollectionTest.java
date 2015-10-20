@@ -34,7 +34,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -66,12 +66,12 @@ public class ClientMultiMapReturnedCollectionTest {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(SET_MAP);
 
         multiMap.put(0, 1);
+        multiMap.put(0, 1);
         multiMap.put(0, 2);
-        multiMap.put(0, 3);
 
         Collection<Integer> collection = multiMap.get(0);
 
-        assertTrue(collection instanceof Set);
+        assertEquals(2, collection.size());
     }
 
     @Test
@@ -79,7 +79,7 @@ public class ClientMultiMapReturnedCollectionTest {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(SET_MAP);
         Collection<Integer> collection = multiMap.get(0);
 
-        assertTrue(collection instanceof Set);
+        assertEquals(0, collection.size());
     }
 
     @Test
@@ -87,12 +87,12 @@ public class ClientMultiMapReturnedCollectionTest {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(LIST_MAP);
 
         multiMap.put(0, 1);
+        multiMap.put(0, 1);
         multiMap.put(0, 2);
-        multiMap.put(0, 3);
 
         Collection<Integer> collection = multiMap.get(0);
 
-        assertTrue(collection instanceof List);
+        assertEquals(3, collection.size());
     }
 
     @Test
@@ -100,7 +100,7 @@ public class ClientMultiMapReturnedCollectionTest {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(LIST_MAP);
         Collection<Integer> collection = multiMap.get(0);
 
-        assertTrue(collection instanceof List);
+        assertEquals(0, collection.size());
     }
 
 
@@ -109,12 +109,12 @@ public class ClientMultiMapReturnedCollectionTest {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(SET_MAP);
 
         multiMap.put(0, 1);
+        multiMap.put(0, 1);
         multiMap.put(0, 2);
-        multiMap.put(0, 3);
 
         Collection<Integer> collection = multiMap.remove(0);
 
-        assertTrue(collection instanceof Set);
+        assertEquals(2, collection.size());
     }
 
     @Test
@@ -122,7 +122,7 @@ public class ClientMultiMapReturnedCollectionTest {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(SET_MAP);
         Collection<Integer> collection = multiMap.remove(0);
 
-        assertTrue(collection instanceof Set);
+        assertEquals(0, collection.size());
     }
 
     @Test
@@ -130,12 +130,12 @@ public class ClientMultiMapReturnedCollectionTest {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(LIST_MAP);
 
         multiMap.put(0, 1);
+        multiMap.put(0, 1);
         multiMap.put(0, 2);
-        multiMap.put(0, 3);
 
         Collection<Integer> collection = multiMap.remove(0);
 
-        assertTrue(collection instanceof List);
+        assertEquals(3, collection.size());
     }
 
     @Test
@@ -143,6 +143,6 @@ public class ClientMultiMapReturnedCollectionTest {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(LIST_MAP);
         Collection<Integer> collection = multiMap.remove(0);
 
-        assertTrue(collection instanceof List);
+        assertEquals(0, collection.size());
     }
 }

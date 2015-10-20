@@ -137,15 +137,14 @@ public class ClientCacheConfigTest {
     public void cacheManagerByInstanceNameTest()
             throws URISyntaxException {
         assertEquals(0, HazelcastClient.getAllHazelcastClients().size());
+        String instanceName = "ClientInstanceTest";
+
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getGroupConfig().setName("cluster1");
         clientConfig.getGroupConfig().setPassword("cluster1pass");
-
-        String instanceName = "ClientInstanceTest";
         clientConfig.setInstanceName(instanceName);
-        
+
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        
         assertEquals(instanceName, client.getName());
         
         URI uri1 = new URI("MY-SCOPE");

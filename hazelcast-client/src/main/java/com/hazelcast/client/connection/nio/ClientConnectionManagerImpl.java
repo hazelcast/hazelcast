@@ -25,12 +25,13 @@ import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
-import com.hazelcast.cluster.client.ClientPingRequest;
+import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
@@ -38,7 +39,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
@@ -48,6 +48,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
@@ -84,7 +85,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final SocketInterceptor socketInterceptor;
     private final SocketOptions socketOptions;
     private NonBlockingIOThread inputThread;
-    private NonBlockingIOThread outSelector;
+    private NonBlockingIOThread outputThread;
 
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
     private final ClientExecutionServiceImpl executionService;
@@ -104,7 +105,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         final ClientConfig config = client.getClientConfig();
         final ClientNetworkConfig networkConfig = config.getNetworkConfig();
 
-        int connTimeout = networkConfig.getConnectionTimeout();
+        final int connTimeout = networkConfig.getConnectionTimeout();
         connectionTimeout = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
 
         ClientProperties clientProperties = client.getClientProperties();
@@ -130,7 +131,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 client.getName() + ".ClientInSelector",
                 Logger.getLogger(NonBlockingIOThread.class),
                 OUT_OF_MEMORY_HANDLER);
-        outSelector = new ClientNonBlockingOutputThread(
+        outputThread = new ClientNonBlockingOutputThread(
                 client.getThreadGroup(),
                 client.getName() + ".ClientOutSelector",
                 Logger.getLogger(ClientNonBlockingOutputThread.class),
@@ -163,7 +164,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     protected void startSelectors() {
         inputThread.start();
-        outSelector.start();
+        outputThread.start();
     }
 
     @Override
@@ -183,7 +184,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     protected void shutdownSelectors() {
         inputThread.shutdown();
-        outSelector.shutdown();
+        outputThread.shutdown();
     }
 
     public ClientConnection getConnection(Address target) {
@@ -248,11 +249,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
             socket.setSendBufferSize(bufferSize);
             socket.setReceiveBufferSize(bufferSize);
-            socketChannel.socket().connect(address.getInetSocketAddress(), connectionTimeout);
+            InetSocketAddress inetSocketAddress = address.getInetSocketAddress();
+            socketChannel.socket().connect(inetSocketAddress, connectionTimeout);
             SocketChannelWrapper socketChannelWrapper =
                     socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
             final ClientConnection clientConnection = new ClientConnection(client, inputThread,
-                    outSelector, connectionIdGen.incrementAndGet(), socketChannelWrapper);
+                    outputThread, connectionIdGen.incrementAndGet(), socketChannelWrapper);
             socketChannel.configureBlocking(true);
             if (socketInterceptor != null) {
                 socketInterceptor.onConnect(socket);
@@ -289,15 +291,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     @Override
-    public void handlePacket(Packet packet) {
-        ClientConnection conn = (ClientConnection) packet.getConn();
+    public void handleClientMessage(ClientMessage message, Connection connection) {
+        ClientConnection conn = (ClientConnection) connection;
+        ClientInvocationService invocationService = client.getInvocationService();
         conn.incrementPacketCount();
-        if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
+        if (message.isFlagSet(ClientMessage.LISTENER_EVENT_FLAG)) {
             ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
-            listenerService.handleEventPacket(packet);
+            listenerService.handleClientMessage(message);
         } else {
-            ClientInvocationService invocationService = client.getInvocationService();
-            invocationService.handlePacket(packet);
+            invocationService.handleClientMessage(message, connection);
         }
     }
 
@@ -324,15 +326,19 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             for (ClientConnection connection : connections.values()) {
                 if (now - connection.lastReadTimeMillis() > heartBeatTimeout) {
                     if (connection.isHeartBeating()) {
+                        LOGGER.warning("Heartbeat failed to connection : " + connection);
                         connection.heartBeatingFailed();
                         fireHeartBeatStopped(connection);
                     }
                 }
                 if (now - connection.lastReadTimeMillis() > heartBeatInterval) {
-                    final ClientPingRequest request = new ClientPingRequest();
-                    new ClientInvocation(client, request, connection).invoke();
+                    ClientMessage request = ClientPingCodec.encodeRequest();
+                    ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
+                    clientInvocation.setBypassHeartbeatCheck(true);
+                    clientInvocation.invoke();
                 } else {
                     if (!connection.isHeartBeating()) {
+                        LOGGER.warning("Heartbeat is back to healthy for connection : " + connection);
                         connection.heartBeatingSucceed();
                         fireHeartBeatStarted(connection);
                     }

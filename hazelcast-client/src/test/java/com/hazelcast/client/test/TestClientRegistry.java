@@ -25,6 +25,7 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressTranslator;
@@ -38,7 +39,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.OutboundFrame;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.TestNodeRegistry;
@@ -48,7 +48,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.util.logging.Level;
 
 public class TestClientRegistry {
@@ -163,41 +162,21 @@ public class TestClientRegistry {
                     localAddress, serverNodeEngine, this);
         }
 
-        void handlePacket(Packet packet) {
+        void handleClientMessage(ClientMessage clientMessage) {
             lastReadTime = System.currentTimeMillis();
-            getConnectionManager().handlePacket(packet);
+            getConnectionManager().handleClientMessage(clientMessage, this);
         }
 
         @Override
         public boolean write(OutboundFrame frame) {
-            Packet newPacket = readFromPacket((Packet) frame);
+            ClientMessage newPacket = readFromPacket((ClientMessage) frame);
             lastWriteTime = System.currentTimeMillis();
-            serverNodeEngine.getNode().clientEngine.handlePacket(newPacket);
+            serverNodeEngine.getNode().clientEngine.handleClientMessage(newPacket, serverSideConnection);
             return true;
         }
 
-        private Packet readFromPacket(Packet packet) {
-            Packet newPacket = new Packet();
-            ByteBuffer buffer = ByteBuffer.allocate(4096);
-            boolean writeDone;
-            boolean readDone;
-            do {
-                writeDone = packet.writeTo(buffer);
-                buffer.flip();
-                readDone = newPacket.readFrom(buffer);
-                if (buffer.hasRemaining()) {
-                    throw new IllegalStateException("Buffer should be empty! " + buffer);
-                }
-                buffer.clear();
-            } while (!writeDone);
-
-            if (!readDone) {
-                throw new IllegalStateException("Read should be completed!");
-            }
-
-
-            newPacket.setConn(serverSideConnection);
-            return newPacket;
+        private ClientMessage readFromPacket(ClientMessage packet) {
+            return ClientMessage.createForDecode(packet.buffer(), 0);
         }
 
         @Override
@@ -270,10 +249,10 @@ public class TestClientRegistry {
 
         @Override
         public boolean write(OutboundFrame frame) {
-            final Packet packet = (Packet) frame;
+            final ClientMessage packet = (ClientMessage) frame;
             if (nodeEngine.isRunning()) {
-                Packet newPacket = readFromPacket(packet);
-                responseConnection.handlePacket(newPacket);
+                ClientMessage newPacket = readFromPacket(packet);
+                responseConnection.handleClientMessage(newPacket);
                 return true;
             }
             return false;
@@ -284,27 +263,8 @@ public class TestClientRegistry {
             return true;
         }
 
-        private Packet readFromPacket(Packet packet) {
-            Packet newPacket = new Packet();
-            ByteBuffer buffer = ByteBuffer.allocate(4096);
-            boolean writeDone;
-            boolean readDone;
-            do {
-                writeDone = packet.writeTo(buffer);
-                buffer.flip();
-                readDone = newPacket.readFrom(buffer);
-                if (buffer.hasRemaining()) {
-                    throw new IllegalStateException("Buffer should be empty! " + buffer);
-                }
-                buffer.clear();
-            } while (!writeDone);
-
-            if (!readDone) {
-                throw new IllegalStateException("Read should be completed!");
-            }
-
-            newPacket.setConn(responseConnection);
-            return newPacket;
+        private ClientMessage readFromPacket(ClientMessage packet) {
+            return ClientMessage.createForDecode(packet.buffer(), 0);
         }
 
         @Override

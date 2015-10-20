@@ -16,76 +16,44 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.topic.impl.client.AddMessageListenerRequest;
-import com.hazelcast.topic.impl.client.PortableMessage;
-import com.hazelcast.topic.impl.client.PublishRequest;
-import com.hazelcast.topic.impl.client.RemoveMessageListenerRequest;
 
-public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
-
-    private final String name;
-    private volatile Data key;
+public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements ITopic<E> {
 
     public ClientTopicProxy(String serviceName, String objectId) {
         super(serviceName, objectId);
-        this.name = objectId;
     }
 
     @Override
     public void publish(E message) {
         SerializationService serializationService = getContext().getSerializationService();
-        final Data data = serializationService.toData(message);
-        PublishRequest request = new PublishRequest(name, data);
-        invoke(request);
+        Data data = serializationService.toData(message);
+        ClientMessage request = TopicPublishCodec.encodeRequest(name, data);
+        invokeOnPartition(request);
     }
 
     @Override
     public String addMessageListener(final MessageListener<E> listener) {
-        if (listener == null) {
-            throw new NullPointerException("listener can't be null");
-        }
-
-        AddMessageListenerRequest request = new AddMessageListenerRequest(name);
-
-        EventHandler<PortableMessage> handler = new EventHandler<PortableMessage>() {
-            @Override
-            public void handle(PortableMessage event) {
-                SerializationService serializationService = getContext().getSerializationService();
-                ClientClusterService clusterService = getContext().getClusterService();
-
-                E messageObject = serializationService.toObject(event.getMessage());
-                Member member = clusterService.getMember(event.getUuid());
-                Message<E> message = new Message<E>(name, messageObject, event.getPublishTime(), member);
-                listener.onMessage(message);
-            }
-
-            @Override
-            public void beforeListenerRegister() {
-            }
-
-            @Override
-            public void onListenerRegister() {
-
-            }
-        };
-        return registerListener(request, handler);
+        EventHandler<ClientMessage> handler = new TopicItemHandler(listener);
+        return registerListener(new Codec(), handler);
     }
 
     @Override
     public boolean removeMessageListener(String registrationId) {
-        final RemoveMessageListenerRequest request = new RemoveMessageListenerRequest(name, registrationId);
-        return deregisterListener(request, registrationId);
+        return deregisterListener(registrationId);
     }
 
     @Override
@@ -93,20 +61,61 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
-    private Data getKey() {
-        if (key == null) {
-            key = getContext().getSerializationService().toData(name);
-        }
-        return key;
-    }
-
-    @Override
-    protected  <T> T invoke(ClientRequest req) {
-        return super.invoke(req, getKey());
-    }
-
     @Override
     public String toString() {
-        return "ITopic{" + "name='" + getName() + '\'' + '}';
+        return "ITopic{" + "name='" + name + '\'' + '}';
+    }
+
+    private final class TopicItemHandler extends TopicAddMessageListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
+        private final MessageListener<E> listener;
+
+        private TopicItemHandler(MessageListener<E> listener) {
+            this.listener = listener;
+        }
+
+        @Override
+        public void handle(Data item, long publishTime, String uuid) {
+            final SerializationService serializationService = getContext().getSerializationService();
+            final ClientClusterService clusterService = getContext().getClusterService();
+
+            E messageObject = serializationService.toObject(item);
+            Member member = clusterService.getMember(uuid);
+            Message<E> message = new Message<E>(name, messageObject, publishTime, member);
+            listener.onMessage(message);
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+
+        }
+
+        @Override
+        public void onListenerRegister() {
+
+        }
+    }
+
+    private class Codec implements ListenerMessageCodec {
+
+        @Override
+        public ClientMessage encodeAddRequest(boolean localOnly) {
+            return TopicAddMessageListenerCodec.encodeRequest(name, localOnly);
+        }
+
+        @Override
+        public String decodeAddResponse(ClientMessage clientMessage) {
+            return TopicAddMessageListenerCodec.decodeResponse(clientMessage).response;
+        }
+
+        @Override
+        public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            return TopicRemoveMessageListenerCodec.encodeRequest(name, realRegistrationId);
+        }
+
+        @Override
+        public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+            return TopicRemoveMessageListenerCodec.decodeResponse(clientMessage).response;
+        }
     }
 }

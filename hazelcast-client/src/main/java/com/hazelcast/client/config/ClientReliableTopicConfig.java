@@ -84,7 +84,7 @@ public class ClientReliableTopicConfig {
      * If no Executor is selected, then the {@link com.hazelcast.spi.ExecutionService#ASYNC_EXECUTOR} is used.
      *
      * @return the Executor used to process events.
-     * @see #setExecutor(java.util.concurrent.Executor)
+     * @see #setExecutor(Executor)
      */
     public Executor getExecutor() {
         return executor;

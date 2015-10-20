@@ -319,6 +319,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         }
     }
 
+
     private static class CollectingDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
         private final List<DiscoveryNode> discoveryNodes;

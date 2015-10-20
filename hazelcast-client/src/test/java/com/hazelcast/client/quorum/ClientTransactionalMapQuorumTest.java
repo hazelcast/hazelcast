@@ -72,15 +72,15 @@ public class ClientTransactionalMapQuorumTest {
     @Parameterized.Parameters(name = "Executing: {0}")
     public static Collection<Object[]> parameters() {
 
-        TransactionOptions onePhaseOption = TransactionOptions.getDefault();
-        onePhaseOption.setTransactionType(ONE_PHASE);
+        TransactionOptions localOption = TransactionOptions.getDefault();
+        localOption.setTransactionType(ONE_PHASE);
 
         TransactionOptions twoPhaseOption = TransactionOptions.getDefault();
         twoPhaseOption.setTransactionType(TWO_PHASE);
 
         return Arrays.asList(
                 new Object[]{twoPhaseOption}, //
-                new Object[]{onePhaseOption} //
+                new Object[]{localOption} //
         );
     }
 
@@ -105,7 +105,6 @@ public class ClientTransactionalMapQuorumTest {
         c4 = factory.newHazelcastClient(getClientConfig(cluster.h4));
         c5 = factory.newHazelcastClient(getClientConfig(cluster.h5));
     }
-
     private static ClientConfig getClientConfig(HazelcastInstance instance) {
         ClientConfig clientConfig = new ClientConfig();
         Address address = getNode(instance).address;

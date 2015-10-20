@@ -17,9 +17,12 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientPartitionService;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
@@ -29,23 +32,22 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.NoDataMemberInClusterException;
-import com.hazelcast.partition.client.GetPartitionsRequest;
-import com.hazelcast.partition.client.PartitionsResponse;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.HashUtil;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.util.HashUtil.hashToIndex;
-
 /**
  * The {@link ClientPartitionService} implementation.
  */
-public final class ClientPartitionServiceImpl implements ClientPartitionService {
+public final class ClientPartitionServiceImpl
+        implements ClientPartitionService {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientPartitionService.class);
     private static final long PERIOD = 10;
@@ -95,7 +97,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     private boolean isClusterFormedByOnlyLiteMembers() {
         final ClientClusterService clusterService = client.getClientClusterService();
-        return clusterService.getMembers(DATA_MEMBER_SELECTOR).isEmpty();
+        return clusterService.getMembers(MemberSelectors.DATA_MEMBER_SELECTOR).isEmpty();
     }
 
     private boolean getPartitions() {
@@ -105,22 +107,22 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
             return false;
         }
         Connection connection = client.getConnectionManager().getConnection(ownerAddress);
-        PartitionsResponse response = getPartitionsFrom(connection);
+        ClientGetPartitionsCodec.ResponseParameters response = getPartitionsFrom(connection);
         if (response != null) {
-            processPartitionResponse(response);
-            return true;
+            return processPartitionResponse(response);
         }
         return false;
     }
 
-    private PartitionsResponse getPartitionsFrom(Connection connection) {
+    private ClientGetPartitionsCodec.ResponseParameters getPartitionsFrom(Connection connection) {
         if (connection == null) {
             return null;
         }
         try {
-            final GetPartitionsRequest request = new GetPartitionsRequest();
-            Future<PartitionsResponse> future = new ClientInvocation(client, request, connection).invoke();
-            return client.getSerializationService().toObject(future.get());
+            ClientMessage requestMessage = ClientGetPartitionsCodec.encodeRequest();
+            Future<ClientMessage> future = new ClientInvocation(client, requestMessage, connection).invoke();
+            ClientMessage responseMessage = future.get();
+            return ClientGetPartitionsCodec.decodeResponse(responseMessage);
         } catch (Exception e) {
             if (client.getLifecycleService().isRunning()) {
                 LOGGER.severe("Error while fetching cluster partition table!", e);
@@ -129,18 +131,16 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         return null;
     }
 
-    private void processPartitionResponse(PartitionsResponse response) {
-        Address[] members = response.getMembers();
-        int[] ownerIndexes = response.getOwnerIndexes();
-        if (partitionCount == 0) {
-            partitionCount = ownerIndexes.length;
-        }
-        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            final int ownerIndex = ownerIndexes[partitionId];
-            if (ownerIndex > -1) {
-                partitions.put(partitionId, members[ownerIndex]);
+    private boolean processPartitionResponse(ClientGetPartitionsCodec.ResponseParameters response) {
+        Map<Address, Set<Integer>> partitionResponse = response.partitions;
+        for (Map.Entry<Address, Set<Integer>> entry : partitionResponse.entrySet()) {
+            Address address = entry.getKey();
+            for (Integer partition : entry.getValue()) {
+                this.partitions.put(partition, address);
             }
         }
+        partitionCount = partitions.size();
+        return partitionResponse.size() > 0;
     }
 
     public void stop() {
@@ -163,7 +163,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
             return 0;
         }
         int hash = key.getPartitionHash();
-        return hashToIndex(hash, pc);
+        return HashUtil.hashToIndex(hash, pc);
     }
 
     @Override
@@ -185,7 +185,8 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         return new PartitionImpl(partitionId);
     }
 
-    private final class PartitionImpl implements Partition {
+    private final class PartitionImpl
+            implements Partition {
 
         private final int partitionId;
 
@@ -214,7 +215,8 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
     }
 
-    private class RefreshTask implements Runnable {
+    private class RefreshTask
+            implements Runnable {
 
         @Override
         public void run() {

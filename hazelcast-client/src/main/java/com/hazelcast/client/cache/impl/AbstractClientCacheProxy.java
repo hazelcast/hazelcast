@@ -18,24 +18,25 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.ICacheInternal;
-import com.hazelcast.cache.impl.client.CacheGetAllRequest;
-import com.hazelcast.cache.impl.client.CacheGetRequest;
-import com.hazelcast.cache.impl.client.CachePutAllRequest;
-import com.hazelcast.cache.impl.client.CacheSizeRequest;
 import com.hazelcast.cache.impl.nearcache.NearCache;
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.CacheGetAllCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheGetCodec;
+import com.hazelcast.client.impl.protocol.codec.CachePutAllCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheSizeCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.executor.DelegatingFuture;
 
 import javax.cache.CacheException;
 import javax.cache.expiry.ExpiryPolicy;
@@ -66,6 +67,13 @@ abstract class AbstractClientCacheProxy<K, V>
         extends AbstractClientInternalCacheProxy<K, V>
         implements ICacheInternal<K, V> {
 
+    private static ClientMessageDecoder cacheGetResponseDecoder = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) CacheGetCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
     protected AbstractClientCacheProxy(CacheConfig cacheConfig, ClientContext clientContext,
                                        HazelcastClientCacheManager cacheManager) {
         super(cacheConfig, clientContext, cacheManager);
@@ -88,8 +96,8 @@ abstract class AbstractClientCacheProxy<K, V>
         if (cached != null) {
             return cached;
         }
-        CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy,
-                                                      cacheConfig.getInMemoryFormat());
+        final Data expiryPolicyData = toData(expiryPolicy);
+        ClientMessage request = CacheGetCodec.encodeRequest(nameWithPrefix, keyData, expiryPolicyData);
         ClientInvocationFuture future;
         try {
             final int partitionId = clientContext.getPartitionService().getPartitionId(key);
@@ -99,9 +107,12 @@ abstract class AbstractClientCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
+        SerializationService serializationService = clientContext.getSerializationService();
+        ClientDelegatingFuture<V> delegatingFuture =
+                new ClientDelegatingFuture<V>(future, serializationService, cacheGetResponseDecoder);
         if (async) {
             if (nearCache != null) {
-                future.andThenInternal(new ExecutionCallback<Data>() {
+                delegatingFuture.andThenInternal(new ExecutionCallback<Data>() {
                     public void onResponse(Data valueData) {
                         storeInNearCache(keyData, valueData, null);
                         if (statisticsEnabled) {
@@ -113,18 +124,21 @@ abstract class AbstractClientCacheProxy<K, V>
                     }
                 });
             }
-            return new DelegatingFuture<V>(future, clientContext.getSerializationService());
+            return delegatingFuture;
         } else {
             try {
-                Object value = future.get();
+                Object value = delegatingFuture.get();
                 if (nearCache != null) {
-                    storeInNearCache(keyData, toData(value), null);
+                    storeInNearCache(keyData, (Data) delegatingFuture.getResponse(), null);
                 }
-                Object result = toObject(value);
                 if (statisticsEnabled) {
-                    handleStatisticsOnGet(start, result);
+                    handleStatisticsOnGet(start, value);
                 }
-                return result;
+                if (!(value instanceof Data)) {
+                    return value;
+                } else {
+                    return serializationService.toObject(value);
+                }
             } catch (Throwable e) {
                 throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
             }
@@ -182,47 +196,47 @@ abstract class AbstractClientCacheProxy<K, V>
 
     @Override
     public ICompletableFuture<Boolean> removeAsync(K key) {
-        return removeAsyncInternal(key, null, false, false, false, true);
+        return removeAsyncInternal(key, null, false, false, true);
     }
 
     @Override
     public ICompletableFuture<Boolean> removeAsync(K key, V oldValue) {
-        return removeAsyncInternal(key, oldValue, true, false, false, true);
+        return removeAsyncInternal(key, oldValue, true, false, true);
     }
 
     @Override
     public ICompletableFuture<V> getAndRemoveAsync(K key) {
-        return removeAsyncInternal(key, null, false, true, false, true);
+        return getAndRemoveAsyncInternal(key, false, true);
     }
 
     @Override
     public ICompletableFuture<Boolean> replaceAsync(K key, V value) {
-        return replaceAsyncInternal(key, null, value, null, false, false, false, true);
+        return replaceAsyncInternal(key, null, value, null, false, false, true);
     }
 
     @Override
     public ICompletableFuture<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return replaceAsyncInternal(key, null, value, expiryPolicy, false, false, false, true);
+        return replaceAsyncInternal(key, null, value, expiryPolicy, false, false, true);
     }
 
     @Override
     public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue) {
-        return replaceAsyncInternal(key, oldValue, newValue, null, true, false, false, true);
+        return replaceAsyncInternal(key, oldValue, newValue, null, true, false, true);
     }
 
     @Override
     public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
-        return replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false, false, true);
+        return replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false, true);
     }
 
     @Override
     public ICompletableFuture<V> getAndReplaceAsync(K key, V value) {
-        return replaceAsyncInternal(key, null, value, null, false, true, false, true);
+        return replaceAndGetAsyncInternal(key, null, value, null, false, false, true);
     }
 
     @Override
     public ICompletableFuture<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return replaceAsyncInternal(key, null, value, expiryPolicy, false, true, false, true);
+        return replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, false, true);
     }
 
     @Override
@@ -238,24 +252,29 @@ abstract class AbstractClientCacheProxy<K, V>
         if (keys.isEmpty()) {
             return Collections.EMPTY_MAP;
         }
-        final Set<Data> keySet = new HashSet(keys.size());
+        final Set<Data> keySet = new HashSet<Data>(keys.size());
         for (K key : keys) {
             final Data k = toData(key);
             keySet.add(k);
         }
         Map<K, V> result = getAllFromNearCache(keySet);
-        final CacheGetAllRequest request = new CacheGetAllRequest(nameWithPrefix, keySet, expiryPolicy);
-        final MapEntries mapEntries = invoke(request);
-        for (Map.Entry<Data, Data> dataEntry : mapEntries) {
-            final Data keyData = dataEntry.getKey();
-            final Data valueData = dataEntry.getValue();
-            final K key = toObject(keyData);
-            final V value = toObject(valueData);
+        if (keySet.isEmpty()) {
+            return result;
+        }
+        Data expiryPolicyData = toData(expiryPolicy);
+        ClientMessage request = CacheGetAllCodec.encodeRequest(nameWithPrefix, keySet, expiryPolicyData);
+        ClientMessage responseMessage = invoke(request);
+        Set<Map.Entry<Data, Data>> entrySet = CacheGetAllCodec.decodeResponse(responseMessage).entrySet;
+        for (Map.Entry<Data, Data> dataEntry : entrySet) {
+            Data keyData = dataEntry.getKey();
+            Data valueData = dataEntry.getValue();
+            K key = toObject(keyData);
+            V value = toObject(valueData);
             result.put(key, value);
             storeInNearCache(keyData, valueData, value);
         }
         if (statisticsEnabled) {
-            statistics.increaseCacheHits(mapEntries.size());
+            statistics.increaseCacheHits(entrySet.size());
             statistics.addGetTimeNanos(System.nanoTime() - start);
         }
         return result;
@@ -283,7 +302,7 @@ abstract class AbstractClientCacheProxy<K, V>
         final ICompletableFuture<Object> f = putAsyncInternal(key, value, expiryPolicy, false, true, false);
         try {
             f.get();
-            if (statisticsEnabled)  {
+            if (statisticsEnabled) {
                 handleStatisticsOnPut(false, start, null);
             }
         } catch (Throwable e) {
@@ -297,7 +316,7 @@ abstract class AbstractClientCacheProxy<K, V>
         final ICompletableFuture<V> f = putAsyncInternal(key, value, expiryPolicy, true, true, false);
         try {
             V oldValue = f.get();
-            if (statisticsEnabled)  {
+            if (statisticsEnabled) {
                 handleStatisticsOnPut(true, start, oldValue);
             }
             return oldValue;
@@ -370,16 +389,29 @@ abstract class AbstractClientCacheProxy<K, V>
     private void putToAllPartitionsAndWaitForCompletion(List<Map.Entry<Data, Data>>[] entriesPerPartition,
                                                         ExpiryPolicy expiryPolicy, long start)
             throws ExecutionException, InterruptedException {
+        Data expiryPolicyData = toData(expiryPolicy);
         List<FutureEntriesTuple> futureEntriesTuples =
                 new ArrayList<FutureEntriesTuple>(entriesPerPartition.length);
         for (int partitionId = 0; partitionId < entriesPerPartition.length; partitionId++) {
             List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
             if (entries != null) {
+                int completionId = nextCompletionId();
                 // TODO If there is a single entry, we could make use of a put operation since that is a bit cheaper
-                CachePutAllRequest request = new CachePutAllRequest(nameWithPrefix, cacheConfig.getInMemoryFormat(),
-                                                                    entries, expiryPolicy, partitionId);
-                Future f = invoke(request, partitionId, true);
+                ClientMessage request =
+                        CachePutAllCodec.encodeRequest(nameWithPrefix, entries, expiryPolicyData, completionId);
+                Future f = invoke(request, partitionId, completionId);
                 futureEntriesTuples.add(new FutureEntriesTuple(f, entries));
+                if (nearCache != null) {
+                    if (cacheOnUpdate) {
+                        for (Map.Entry<Data, Data> entry : entries) {
+                            storeInNearCache(entry.getKey(), entry.getValue(), null);
+                        }
+                    } else {
+                        for (Map.Entry<Data, Data> entry : entries) {
+                            invalidateNearCache(entry.getKey());
+                        }
+                    }
+                }
             }
         }
 
@@ -438,15 +470,7 @@ abstract class AbstractClientCacheProxy<K, V>
     }
 
     private void handleNearCacheOnPutAll(List<Map.Entry<Data, Data>> entries, boolean invalidate) {
-        if (invalidate) {
-            for (Map.Entry<Data, Data> entry : entries) {
-                nearCache.remove(entry.getKey());
-            }
-        } else {
-            for (Map.Entry<Data, Data> entry : entries) {
-                nearCache.put(entry.getKey(), entry.getValue());
-            }
-        }
+
     }
 
     @Override
@@ -467,7 +491,7 @@ abstract class AbstractClientCacheProxy<K, V>
     @Override
     public boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
         final long start = System.nanoTime();
-        final Future<Boolean> f = replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false, true, false);
+        final Future<Boolean> f = replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, true, false);
         try {
             boolean replaced = f.get();
             if (statisticsEnabled) {
@@ -482,7 +506,7 @@ abstract class AbstractClientCacheProxy<K, V>
     @Override
     public boolean replace(K key, V value, ExpiryPolicy expiryPolicy) {
         final long start = System.nanoTime();
-        final Future<Boolean> f = replaceAsyncInternal(key, null, value, expiryPolicy, false, false, true, false);
+        final Future<Boolean> f = replaceAsyncInternal(key, null, value, expiryPolicy, false, true, false);
         try {
             boolean replaced = f.get();
             if (statisticsEnabled) {
@@ -497,7 +521,7 @@ abstract class AbstractClientCacheProxy<K, V>
     @Override
     public V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy) {
         final long start = System.nanoTime();
-        final Future<V> f = replaceAsyncInternal(key, null, value, expiryPolicy, false, true, true, false);
+        final Future<V> f = replaceAndGetAsyncInternal(key, null, value, expiryPolicy, false, true, false);
         try {
             V oldValue = f.get();
             if (statisticsEnabled) {
@@ -513,12 +537,9 @@ abstract class AbstractClientCacheProxy<K, V>
     public int size() {
         ensureOpen();
         try {
-            CacheSizeRequest request = new CacheSizeRequest(nameWithPrefix);
-            Integer result = invoke(request);
-            if (result == null) {
-                return 0;
-            }
-            return result;
+            ClientMessage request = CacheSizeCodec.encodeRequest(nameWithPrefix);
+            ClientMessage resultMessage = invoke(request);
+            return CacheSizeCodec.decodeResponse(resultMessage).response;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
         }

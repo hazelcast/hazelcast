@@ -56,8 +56,7 @@ public class ClientNetworkConfig {
     }
 
     /**
-     * Defines the Discovery Provider SPI configuration. If <tt>null</tt> is given as the argument it will
-     * reset the discovery strategies to defaults.
+     * Defines the Discovery Provider SPI configuration
      *
      * @param discoveryConfig the Discovery Provider SPI configuration
      */

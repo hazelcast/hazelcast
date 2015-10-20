@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static org.junit.Assert.assertTrue;
@@ -91,8 +90,7 @@ public class MapReduceLiteMemberTest {
     }
 
     @Test(timeout = 60000)
-    public void testMapReduceJobSubmissionWithNoDataNode()
-            throws ExecutionException, InterruptedException, TimeoutException {
+    public void testMapReduceJobSubmissionWithNoDataNode() throws Exception {
         instance.shutdown();
         instance2.shutdown();
         assertClusterSizeEventually(2, lite);
@@ -107,7 +105,6 @@ public class MapReduceLiteMemberTest {
         } catch (ExecutionException e) {
             assertTrue(e.getCause() instanceof IllegalStateException);
         }
-
     }
 
 }
