@@ -21,7 +21,7 @@ import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AbstractConfigBuilder;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.DiscoveryStrategyConfig;
-import com.hazelcast.config.DiscoveryStrategiesConfig;
+import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
@@ -338,27 +338,27 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleDiscoveryStrategies(Node node, ClientNetworkConfig clientNetworkConfig) {
-        DiscoveryStrategiesConfig discoveryStrategiesConfig = clientNetworkConfig.getDiscoveryStrategiesConfig();
+        DiscoveryConfig discoveryConfig = clientNetworkConfig.getDiscoveryConfig();
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             String name = cleanNodeName(child.getNodeName());
             if ("discovery-strategy".equals(name)) {
-                handleDiscoveryStrategy(child, discoveryStrategiesConfig);
+                handleDiscoveryStrategy(child, discoveryConfig);
             } else if ("node-filter".equals(name)) {
-                handleDiscoveryNodeFilter(child, discoveryStrategiesConfig);
+                handleDiscoveryNodeFilter(child, discoveryConfig);
             }
         }
     }
 
-    private void handleDiscoveryNodeFilter(Node node, DiscoveryStrategiesConfig discoveryStrategiesConfig) {
+    private void handleDiscoveryNodeFilter(Node node, DiscoveryConfig discoveryConfig) {
         NamedNodeMap atts = node.getAttributes();
 
         Node att = atts.getNamedItem("class");
         if (att != null) {
-            discoveryStrategiesConfig.setNodeFilterClass(getTextContent(att).trim());
+            discoveryConfig.setNodeFilterClass(getTextContent(att).trim());
         }
     }
 
-    private void handleDiscoveryStrategy(Node node, DiscoveryStrategiesConfig discoveryStrategiesConfig) {
+    private void handleDiscoveryStrategy(Node node, DiscoveryConfig discoveryConfig) {
         NamedNodeMap atts = node.getAttributes();
 
         boolean enabled = false;
@@ -386,7 +386,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             }
         }
 
-        discoveryStrategiesConfig.addDiscoveryProviderConfig(new DiscoveryStrategyConfig(clazz, properties));
+        discoveryConfig.addDiscoveryProviderConfig(new DiscoveryStrategyConfig(clazz, properties));
     }
 
     private void handleAWS(Node node, ClientNetworkConfig clientNetworkConfig) {

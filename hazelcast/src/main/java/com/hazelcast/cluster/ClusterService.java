@@ -87,6 +87,13 @@ public interface ClusterService extends CoreService, Cluster {
     Address getThisAddress();
 
     /**
+     * Gets the local member instance.
+     *
+     * @return the local member instance. The returned value will never be null.
+     */
+    Member getLocalMember();
+
+    /**
      * Gets the current number of members.
      *
      * @return the current number of members.

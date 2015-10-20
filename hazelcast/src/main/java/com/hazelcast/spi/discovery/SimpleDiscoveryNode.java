@@ -17,17 +17,21 @@
 package com.hazelcast.spi.discovery;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.util.Preconditions;
 
 import java.util.Collections;
 import java.util.Map;
 
 /**
- * Simple immutable implementation of the {@link DiscoveredNode} interface for convenience
+ * Simple immutable implementation of the {@link DiscoveryNode} interface for convenience
  * when implementing a {@link DiscoveryStrategy}.
+ *
+ * @since 3.6
  */
-public class SimpleDiscoveredNode
-        implements DiscoveredNode {
+@Beta
+public final class SimpleDiscoveryNode
+        extends DiscoveryNode {
 
     private final Address privateAddress;
     private final Address publicAddress;
@@ -39,7 +43,7 @@ public class SimpleDiscoveredNode
      *
      * @param privateAddress the discovered node's private address
      */
-    public SimpleDiscoveredNode(Address privateAddress) {
+    public SimpleDiscoveryNode(Address privateAddress) {
         this(privateAddress, privateAddress, Collections.<String, Object>emptyMap());
     }
 
@@ -49,7 +53,7 @@ public class SimpleDiscoveredNode
      * @param privateAddress the discovered node's private address
      * @param properties     the discovered node's additional properties
      */
-    public SimpleDiscoveredNode(Address privateAddress, Map<String, Object> properties) {
+    public SimpleDiscoveryNode(Address privateAddress, Map<String, Object> properties) {
         this(privateAddress, privateAddress, properties);
     }
 
@@ -62,7 +66,7 @@ public class SimpleDiscoveredNode
      * @param privateAddress the discovered node's private address
      * @param publicAddress  the discovered node's public address
      */
-    public SimpleDiscoveredNode(Address privateAddress, Address publicAddress) {
+    public SimpleDiscoveryNode(Address privateAddress, Address publicAddress) {
         this(privateAddress, publicAddress, Collections.<String, Object>emptyMap());
     }
 
@@ -75,12 +79,12 @@ public class SimpleDiscoveredNode
      * @param publicAddress  the discovered node's public address
      * @param properties     the discovered node's additional properties
      */
-    public SimpleDiscoveredNode(Address privateAddress, Address publicAddress, Map<String, Object> properties) {
+    public SimpleDiscoveryNode(Address privateAddress, Address publicAddress, Map<String, Object> properties) {
         Preconditions.checkNotNull(privateAddress, "The private address cannot be null");
         Preconditions.checkNotNull(properties, "The properties cannot be null");
         this.privateAddress = privateAddress;
         this.publicAddress = publicAddress;
-        this.properties = Collections.unmodifiableMap(properties);
+        this.properties = properties == null ? Collections.<String, Object>emptyMap() : Collections.unmodifiableMap(properties);
     }
 
     @Override

@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi.discovery;
 
+import com.hazelcast.spi.annotation.Beta;
+
 /**
  * The <tt>DiscoveryStrategy</tt> itself is the actual implementation to discover
  * nodes based on whatever environment is used to run the Hazelcast cloud. The
@@ -29,17 +31,18 @@ package com.hazelcast.spi.discovery;
  * Using the simple lifecycle management strategies like multicast discovery is able to
  * register and destroy sockets based on Hazelcast’s lifecycle. Deactivated services will
  * also never be started.
+ *
+ * @since 3.6
  */
+@Beta
 public interface DiscoveryStrategy {
 
     /**
      * The <tt>start</tt> method is used to initialize internal state and perform any kind of
      * startup procedure like multicast socket creation. The behavior of this method might
-     * change based on the passed {@link DiscoveredNode}.
-     *
-     * @param discoveryMode the provided discovery mode
+     * change based on the {@link DiscoveryNode} instance passed to the {@link DiscoveryStrategyFactory}.
      */
-    void start(DiscoveryMode discoveryMode);
+    void start();
 
     /**
      * Returns a set of all discovered nodes based on the defined properties that were used
@@ -47,7 +50,7 @@ public interface DiscoveryStrategy {
      *
      * @return a set of all discovered nodes
      */
-    Iterable<DiscoveredNode> discoverNodes();
+    Iterable<DiscoveryNode> discoverNodes();
 
     /**
      * The <tt>stop</tt> method is used to stop internal services, sockets or to destroy any

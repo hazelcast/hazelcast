@@ -31,7 +31,7 @@ public class JoinConfig {
 
     private AwsConfig awsConfig = new AwsConfig();
 
-    private DiscoveryStrategiesConfig discoveryStrategiesConfig = new DiscoveryStrategiesConfig();
+    private DiscoveryConfig discoveryConfig = new DiscoveryConfig();
 
     /**
      * @return the multicastConfig join configuration
@@ -82,22 +82,22 @@ public class JoinConfig {
     }
 
     /**
-     * Returns the currently defined {@link DiscoveryStrategiesConfig}
+     * Returns the currently defined {@link DiscoveryConfig}
      *
      * @return current DiscoveryProvidersConfig instance
      */
-    public DiscoveryStrategiesConfig getDiscoveryStrategiesConfig() {
-        return discoveryStrategiesConfig;
+    public DiscoveryConfig getDiscoveryConfig() {
+        return discoveryConfig;
     }
 
     /**
-     * Sets a custom defined {@link DiscoveryStrategiesConfig}
+     * Sets a custom defined {@link DiscoveryConfig}
      *
-     * @param discoveryStrategiesConfig configuration to set
+     * @param discoveryConfig configuration to set
      * @throws java.lang.IllegalArgumentException if discoveryProvidersConfig is null
      */
-    public JoinConfig setDiscoveryStrategiesConfig(DiscoveryStrategiesConfig discoveryStrategiesConfig) {
-        this.discoveryStrategiesConfig = isNotNull(discoveryStrategiesConfig, "discoveryProvidersConfig");
+    public JoinConfig setDiscoveryConfig(DiscoveryConfig discoveryConfig) {
+        this.discoveryConfig = isNotNull(discoveryConfig, "discoveryProvidersConfig");
         return this;
     }
 
@@ -119,7 +119,7 @@ public class JoinConfig {
             throw new InvalidConfigurationException("Multicast and AWS join can't be enabled at the same time");
         }
 
-        Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = discoveryStrategiesConfig.getDiscoveryStrategyConfigs();
+        Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = discoveryConfig.getDiscoveryStrategyConfigs();
         if (getMulticastConfig().isEnabled() && discoveryStrategyConfigs.size() > 0) {
             throw new InvalidConfigurationException(
                     "Multicast and DiscoveryProviders join can't be enabled at the same time");
@@ -137,7 +137,7 @@ public class JoinConfig {
         sb.append("multicastConfig=").append(multicastConfig);
         sb.append(", tcpIpConfig=").append(tcpIpConfig);
         sb.append(", awsConfig=").append(awsConfig);
-        sb.append(", discoveryProvidersConfig=").append(discoveryStrategiesConfig);
+        sb.append(", discoveryProvidersConfig=").append(discoveryConfig);
         sb.append('}');
         return sb.toString();
     }

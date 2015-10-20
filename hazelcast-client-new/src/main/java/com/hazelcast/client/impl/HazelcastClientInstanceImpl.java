@@ -48,7 +48,7 @@ import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DiscoveryStrategiesConfig;
+import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientService;
@@ -88,10 +88,11 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.spi.discovery.DiscoveryMode;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
+import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
+import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -205,15 +206,20 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private DiscoveryService initDiscoveryService(ClientConfig config) {
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
-        DiscoveryStrategiesConfig discoveryStrategiesConfig = networkConfig.getDiscoveryStrategiesConfig().getAsReadOnly();
-        if (discoveryStrategiesConfig == null || !discoveryStrategiesConfig.isEnabled()) {
+        DiscoveryConfig discoveryConfig = networkConfig.getDiscoveryConfig().getAsReadOnly();
+        if (discoveryConfig == null || !discoveryConfig.isEnabled()) {
             return null;
         }
-        DiscoveryServiceProvider factory = discoveryStrategiesConfig.getDiscoveryServiceProvider();
+        DiscoveryServiceProvider factory = discoveryConfig.getDiscoveryServiceProvider();
         if (factory == null) {
             factory = new DefaultDiscoveryServiceProvider();
         }
-        return factory.newDiscoveryService(DiscoveryMode.Client, discoveryStrategiesConfig, config.getClassLoader());
+        ILogger logger = Logger.getLogger(DiscoveryService.class);
+
+        DiscoveryServiceSettings settings = new DiscoveryServiceSettings().setConfigClassLoader(config.getClassLoader())
+                .setLogger(logger).setDiscoveryMode(DiscoveryMode.Client).setDiscoveryConfig(discoveryConfig);
+
+        return factory.newDiscoveryService(settings);
     }
 
     private LoadBalancer initLoadBalancer(ClientConfig config) {

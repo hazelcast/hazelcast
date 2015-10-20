@@ -20,7 +20,7 @@ import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.discovery.DiscoveredNode;
+import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
 import java.net.InetSocketAddress;
@@ -43,8 +43,8 @@ public class DiscoveryAddressProvider
     @Override
     public Collection<InetSocketAddress> loadAddresses() {
         Collection<InetSocketAddress> possibleMembers = new ArrayList<InetSocketAddress>();
-        for (DiscoveredNode discoveredNode : discoveryService.discoverNodes()) {
-            Address discoveredAddress = discoveredNode.getPrivateAddress();
+        for (DiscoveryNode discoveryNode : discoveryService.discoverNodes()) {
+            Address discoveredAddress = discoveryNode.getPrivateAddress();
             try {
                 possibleMembers.add(discoveredAddress.getInetSocketAddress());
             } catch (UnknownHostException e) {

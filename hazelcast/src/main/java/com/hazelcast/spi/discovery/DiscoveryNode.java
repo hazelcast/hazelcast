@@ -17,11 +17,12 @@
 package com.hazelcast.spi.discovery;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.annotation.Beta;
 
 import java.util.Map;
 
 /**
- * A <tt>DiscoveredNode</tt> describes a nodes addresses (private and if
+ * A <tt>DiscoveryNode</tt> describes a nodes addresses (private and if
  * necessary a public one) as well as attributes assigned to this node.
  * Private address defines the typical internal communication port, all
  * cluster communication and also client communication inside the same
@@ -40,8 +41,15 @@ import java.util.Map;
  * {@link com.hazelcast.spi.discovery.NodeFilter} is configured, these
  * properties might be used for further refinement of the discovered nodes
  * based on whatever the filter decides.
+ * <p/>
+ * This class is implemented as an abstract class to offer easy extensibility
+ * in later versions of the SPI. Since Java only offers forward evolution of
+ * interfaces starting with Java 8, this is the best option.
+ *
+ * @since 3.6
  */
-public interface DiscoveredNode {
+@Beta
+public abstract class DiscoveryNode {
 
     /**
      * Returns the private address of the discovered node. The private address
@@ -49,7 +57,7 @@ public interface DiscoveredNode {
      *
      * @return the private address of the discovered node
      */
-    Address getPrivateAddress();
+    public abstract Address getPrivateAddress();
 
     /**
      * Returns the public address of the discovered node if available. Public addresses
@@ -57,7 +65,7 @@ public interface DiscoveredNode {
      *
      * @return the public address of the discovered node if available otherwise null or {@link #getPrivateAddress()}
      */
-    Address getPublicAddress();
+    public abstract Address getPublicAddress();
 
     /**
      * Returns a set of unmodifiable properties that are assigned to the discovered node. These properties
@@ -65,5 +73,5 @@ public interface DiscoveredNode {
      *
      * @return assigned properties of that node
      */
-    Map<String, Object> getProperties();
+    public abstract Map<String, Object> getProperties();
 }

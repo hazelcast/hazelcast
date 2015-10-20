@@ -18,7 +18,7 @@ package com.hazelcast.client.spi.impl.discovery;
 
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.discovery.DiscoveredNode;
+import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
 import java.util.HashMap;
@@ -64,11 +64,11 @@ public class DiscoveryAddressTranslator
 
     @Override
     public void refresh() {
-        Iterable<DiscoveredNode> discoveredNodes = discoveryService.discoverNodes();
+        Iterable<DiscoveryNode> discoveredNodes = discoveryService.discoverNodes();
 
         Map<Address, Address> privateToPublic = new HashMap<Address, Address>();
-        for (DiscoveredNode discoveredNode : discoveredNodes) {
-            privateToPublic.put(discoveredNode.getPrivateAddress(), discoveredNode.getPublicAddress());
+        for (DiscoveryNode discoveryNode : discoveredNodes) {
+            privateToPublic.put(discoveryNode.getPrivateAddress(), discoveryNode.getPublicAddress());
         }
         this.privateToPublic = privateToPublic;
     }

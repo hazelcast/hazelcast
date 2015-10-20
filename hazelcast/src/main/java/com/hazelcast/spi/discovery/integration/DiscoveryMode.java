@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.discovery;
+package com.hazelcast.spi.discovery.integration;
+
+import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.spi.discovery.DiscoveryStrategy;
 
 /**
  * <p>The <tt>DiscoveryMode</tt> describes how the {@link DiscoveryStrategy} is going
@@ -23,7 +26,10 @@ package com.hazelcast.spi.discovery;
  * <p>Implementors of {@link DiscoveryStrategy}s are free to change behavior as necessary.
  * One possible use case is to prevent to start a multicast service on clients when only
  * discovery is necessary.</p>
+ *
+ * @since 3.6
  */
+@Beta
 public enum DiscoveryMode {
     /**
      * The current runtime environment is a Hazelcast member node
