@@ -19,8 +19,8 @@ package com.noctarius.hazelcast.kubernetes;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.discovery.DiscoveredNode;
-import com.hazelcast.spi.discovery.SimpleDiscoveredNode;
+import com.hazelcast.spi.discovery.DiscoveryNode;
+import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import org.xbill.DNS.AAAARecord;
 import org.xbill.DNS.ARecord;
 import org.xbill.DNS.Lookup;
@@ -42,12 +42,13 @@ final class DnsEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.End
     private final String serviceDns;
     private final IpType serviceDnsIpType;
 
-    public DnsEndpointResolver(String serviceDns, IpType serviceDnsIpType) {
+    public DnsEndpointResolver(ILogger logger, String serviceDns, IpType serviceDnsIpType) {
+        super(logger);
         this.serviceDns = serviceDns;
         this.serviceDnsIpType = serviceDnsIpType;
     }
 
-    List<DiscoveredNode> resolve() {
+    List<DiscoveryNode> resolve() {
         try {
             Lookup lookup = buildLookup();
             Record[] records = lookup.run();
@@ -57,7 +58,7 @@ final class DnsEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.End
                 return Collections.emptyList();
             }
 
-            List<DiscoveredNode> discoveredNodes = new ArrayList<DiscoveredNode>();
+            List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
             for (Record record : records) {
                 if (record.getType() != Type.A && record.getType() != Type.AAAA) {
                     continue;
@@ -68,7 +69,7 @@ final class DnsEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.End
                 int port = getServicePort(null);
 
                 Address address = new Address(inetAddress, port);
-                discoveredNodes.add(new SimpleDiscoveredNode(address, Collections.<String, Object>emptyMap()));
+                discoveredNodes.add(new SimpleDiscoveryNode(address, Collections.<String, Object>emptyMap()));
             }
 
             return discoveredNodes;

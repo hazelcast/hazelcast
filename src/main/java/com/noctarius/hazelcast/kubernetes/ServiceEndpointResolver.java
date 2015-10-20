@@ -16,9 +16,10 @@
  */
 package com.noctarius.hazelcast.kubernetes;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.discovery.DiscoveredNode;
-import com.hazelcast.spi.discovery.SimpleDiscoveredNode;
+import com.hazelcast.spi.discovery.DiscoveryNode;
+import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import io.fabric8.kubernetes.api.model.EndpointAddress;
 import io.fabric8.kubernetes.api.model.EndpointSubset;
 import io.fabric8.kubernetes.api.model.Endpoints;
@@ -37,16 +38,17 @@ final class ServiceEndpointResolver extends HazelcastKubernetesDiscoveryStrategy
 
     private final KubernetesClient client;
 
-    public ServiceEndpointResolver(String serviceName, String namespace) {
+    public ServiceEndpointResolver(ILogger logger, String serviceName, String namespace) {
+        super(logger);
         this.client = new DefaultKubernetesClient();
         this.serviceName = serviceName;
         this.namespace = namespace;
     }
 
-    List<DiscoveredNode> resolve() {
+    List<DiscoveryNode> resolve() {
         Endpoints endpoints = client.endpoints().inNamespace(namespace).withName(serviceName).get();
 
-        List<DiscoveredNode> discoveredNodes = new ArrayList<DiscoveredNode>();
+        List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
         for (EndpointSubset endpointSubset : endpoints.getSubsets()) {
             for (EndpointAddress endpointAddress : endpointSubset.getAddresses()) {
                 Map<String, Object> properties = endpointAddress.getAdditionalProperties();
@@ -56,7 +58,7 @@ final class ServiceEndpointResolver extends HazelcastKubernetesDiscoveryStrategy
                 int port = getServicePort(properties);
 
                 Address address = new Address(inetAddress, port);
-                discoveredNodes.add(new SimpleDiscoveredNode(address, properties));
+                discoveredNodes.add(new SimpleDiscoveryNode(address, properties));
             }
         }
 

@@ -19,9 +19,7 @@ package com.noctarius.hazelcast.kubernetes;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.discovery.DiscoveredNode;
-import com.hazelcast.spi.discovery.DiscoveryMode;
+import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 
 import java.net.InetAddress;
@@ -33,13 +31,15 @@ import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.IpType;
 
 public final class HazelcastKubernetesDiscoveryStrategy implements DiscoveryStrategy {
 
-    private static final ILogger LOGGER = Logger.getLogger(HazelcastKubernetesDiscoveryStrategy.class);
 
     private static final String HAZELCAST_SERVICE_PORT = "hazelcast-service-port";
 
     private final EndpointResolver endpointResolver;
+    private final ILogger logger;
 
-    public HazelcastKubernetesDiscoveryStrategy(Map<String, Comparable> properties) {
+    public HazelcastKubernetesDiscoveryStrategy(DiscoveryNode node, ILogger logger, Map<String, Comparable> properties) {
+        this.logger = logger;
+
         String serviceDns = getOrNull(properties, KubernetesProperties.SERVICE_DNS);
         IpType serviceDnsIpType = getOrDefault(properties, KubernetesProperties.SERVICE_DNS_IP_TYPE, IpType.IPV4);
         String serviceName = getOrNull(properties, KubernetesProperties.SERVICE_NAME);
@@ -52,17 +52,17 @@ public final class HazelcastKubernetesDiscoveryStrategy implements DiscoveryStra
 
         EndpointResolver endpointResolver;
         if (serviceDns != null) {
-            endpointResolver = new DnsEndpointResolver(serviceDns, serviceDnsIpType);
+            endpointResolver = new DnsEndpointResolver(logger, serviceDns, serviceDnsIpType);
         } else {
-            endpointResolver = new ServiceEndpointResolver(serviceName, namespace);
+            endpointResolver = new ServiceEndpointResolver(logger, serviceName, namespace);
         }
         this.endpointResolver = endpointResolver;
     }
 
-    public void start(DiscoveryMode discoveryMode) {
+    public void start() {
     }
 
-    public Iterable<DiscoveredNode> discoverNodes() {
+    public Iterable<DiscoveryNode> discoverNodes() {
         return endpointResolver.resolve();
     }
 
@@ -90,7 +90,13 @@ public final class HazelcastKubernetesDiscoveryStrategy implements DiscoveryStra
     }
 
     static abstract class EndpointResolver {
-        abstract List<DiscoveredNode> resolve();
+        private final ILogger logger;
+
+        EndpointResolver(ILogger logger) {
+            this.logger = logger;
+        }
+
+        abstract List<DiscoveryNode> resolve();
 
         void destroy() {
         }
@@ -102,7 +108,7 @@ public final class HazelcastKubernetesDiscoveryStrategy implements DiscoveryStra
             try {
                 return InetAddress.getByName(address);
             } catch (UnknownHostException e) {
-                LOGGER.warning("Address '" + address + "' could not be resolved");
+                logger.warning("Address '" + address + "' could not be resolved");
             }
             return null;
         }
