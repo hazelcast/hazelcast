@@ -63,6 +63,8 @@ import java.util.List;
  * legs[0].currency -> returns one 'multi value' result - an array of Legs
  * legs[any] -> returns a MultiResult - that contains a collection of Leg objects
  * legs[any].currency -> returns a MultiResult - that contains a collection of String objects
+ *
+ * @param <T> type of the underlying result store in the MultiResult
  */
 public final class MultiResult<T> {
 
