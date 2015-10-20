@@ -51,11 +51,11 @@ public final class NotEqualPredicate extends EqualPredicate {
 
     @Override
     public String toString() {
-        return attribute + " != " + value;
+        return attributeName + " != " + value;
     }
 
     @Override
     public Predicate negate() {
-        return new EqualPredicate(attribute, value);
+        return new EqualPredicate(attributeName, value);
     }
 }

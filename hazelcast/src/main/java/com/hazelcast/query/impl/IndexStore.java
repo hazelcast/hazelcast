@@ -26,14 +26,14 @@ import java.util.concurrent.ConcurrentMap;
  */
 public interface IndexStore {
 
-    void newIndex(Comparable newValue, QueryableEntry entry);
-    void updateIndex(Comparable oldValue, Comparable newValue, QueryableEntry entry);
-    void removeIndex(Comparable oldValue, Data indexKey);
+    void newIndex(Object newValue, QueryableEntry entry);
+    void updateIndex(Object oldValue, Object newValue, QueryableEntry entry);
+    void removeIndex(Object oldValue, Data indexKey);
     void clear();
 
-    void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to);
-    void getSubRecords(MultiResultSet results, ComparisonType comparisonType, Comparable searchedValue);
+    Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to);
+    Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue);
     Set<QueryableEntry> getRecords(Comparable value);
-    void getRecords(MultiResultSet results, Set<Comparable> values);
+    Set<QueryableEntry> getRecords(Set<Comparable> values);
     ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue);
 }

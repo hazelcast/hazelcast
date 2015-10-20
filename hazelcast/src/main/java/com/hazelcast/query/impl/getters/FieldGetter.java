@@ -16,26 +16,20 @@
 
 package com.hazelcast.query.impl.getters;
 
+
 import java.lang.reflect.Field;
 
-final class FieldGetter extends Getter {
+public class FieldGetter extends AbstractMultiValueGetter {
     private final Field field;
 
-    FieldGetter(Getter parent, Field field) {
-        super(parent);
+    public FieldGetter(Getter parent, Field field, String modifierSuffix, Class resultType) {
+        super(parent, modifierSuffix, field.getType(), resultType);
         this.field = field;
     }
 
     @Override
-    Object getValue(Object obj) throws Exception {
-        Object paramObj = obj;
-        paramObj = parent != null ? parent.getValue(paramObj) : paramObj;
-        return paramObj != null ? field.get(paramObj) : null;
-    }
-
-    @Override
-    Class getReturnType() {
-        return this.field.getType();
+    protected Object extractFrom(Object object) throws IllegalAccessException {
+        return field.get(object);
     }
 
     @Override
@@ -45,6 +39,6 @@ final class FieldGetter extends Getter {
 
     @Override
     public String toString() {
-        return "FieldGetter [parent=" + parent + ", field=" + field + "]";
+        return "FieldGetter [parent=" + parent + ", field=" + field + ", modifier = " + getModifier() + "]";
     }
 }

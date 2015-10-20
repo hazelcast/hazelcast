@@ -66,7 +66,7 @@ public class ConfigXmlGeneratorTest {
         Config xmlConfig = configBuilder.build();
 
         CacheSimpleConfig xmlCacheConfig = xmlConfig.getCacheConfig("testCache");
-        assertEquals("testQuorum",xmlCacheConfig.getQuorumName());
+        assertEquals("testQuorum", xmlCacheConfig.getQuorumName());
     }
 
     @Test
@@ -83,7 +83,31 @@ public class ConfigXmlGeneratorTest {
         Config xmlConfig = configBuilder.build();
 
         CacheSimpleConfig xmlCacheConfig = xmlConfig.getCacheConfig("testCache");
-        assertEquals("testMergePolicy",xmlCacheConfig.getMergePolicy());
+        assertEquals("testMergePolicy", xmlCacheConfig.getMergePolicy());
     }
+
+    @Test
+    public void testMapAttributesConfig() {
+        Config config = new Config();
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setName("carMap");
+
+        MapAttributeConfig attrConfig = new MapAttributeConfig();
+        attrConfig.setName("power");
+        attrConfig.setExtractor("com.car.PowerExtractor");
+        mapConfig.addMapAttributeConfig(attrConfig);
+        config.addMapConfig(mapConfig);
+
+        ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator();
+        String xml = configXmlGenerator.generate(config);
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        Config xmlConfig = configBuilder.build();
+
+        MapAttributeConfig xmlAttrConfig = xmlConfig.getMapConfig("carMap").getMapAttributeConfigs().get(0);
+        assertEquals(attrConfig.getName(), xmlAttrConfig.getName());
+        assertEquals(attrConfig.getExtractor(), xmlAttrConfig.getExtractor());
+    }
+
 
 }

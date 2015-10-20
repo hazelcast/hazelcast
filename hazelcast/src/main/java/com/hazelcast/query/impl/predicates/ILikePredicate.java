@@ -32,9 +32,9 @@ public class ILikePredicate extends LikePredicate {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder(attribute)
+        StringBuilder builder = new StringBuilder(attributeName)
                 .append(" ILIKE '")
-                .append(second)
+                .append(expression)
                 .append("'");
         return builder.toString();
     }

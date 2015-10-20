@@ -16,35 +16,28 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.query.QueryException;
-import com.hazelcast.query.impl.getters.ReflectionHelper;
-
-import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
-import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 
 /**
  * Entry of the Query.
  */
-public class CachedQueryEntry implements QueryableEntry {
+public class CachedQueryEntry extends QueryableEntry {
 
     private Data keyData;
     private Object keyObject;
     private Data valueData;
     private Object valueObject;
-    private SerializationService serializationService;
 
     public CachedQueryEntry() {
     }
 
-    public CachedQueryEntry(SerializationService serializationService, Data key, Object value) {
-        init(serializationService, key, value);
+    public CachedQueryEntry(SerializationService serializationService, Data key, Object value, Extractors extractors) {
+        init(serializationService, key, value, extractors);
     }
 
-    public void init(SerializationService serializationService, Data key, Object value) {
+    public void init(SerializationService serializationService, Data key, Object value, Extractors extractors) {
         if (key == null) {
             throw new IllegalArgumentException("keyData cannot be null");
         }
@@ -59,14 +52,7 @@ public class CachedQueryEntry implements QueryableEntry {
             this.valueObject = value;
             this.valueData = null;
         }
-    }
-
-    @Override
-    public Object getValue() {
-        if (valueObject == null) {
-            valueObject = serializationService.toObject(valueData);
-        }
-        return valueObject;
+        this.extractors = extractors;
     }
 
     @Override
@@ -75,6 +61,14 @@ public class CachedQueryEntry implements QueryableEntry {
             keyObject = serializationService.toObject(keyData);
         }
         return keyObject;
+    }
+
+    @Override
+    public Object getValue() {
+        if (valueObject == null) {
+            valueObject = serializationService.toObject(valueData);
+        }
+        return valueObject;
     }
 
     @Override
@@ -93,23 +87,8 @@ public class CachedQueryEntry implements QueryableEntry {
         return valueData;
     }
 
-
     @Override
-    public Comparable getAttribute(String attributeName) throws QueryException {
-        if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
-            return (Comparable) getKey();
-        } else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
-            return (Comparable) getValue();
-        }
-
-        boolean key = QueryEntryUtils.isKey(attributeName);
-        attributeName = QueryEntryUtils.getAttributeName(key, attributeName);
-        Object targetObject = getTargetObject(key);
-
-        return QueryEntryUtils.extractAttribute(attributeName, targetObject, serializationService);
-    }
-
-    private Object getTargetObject(boolean key) {
+    protected Object getTargetObject(boolean key) {
         Object targetObject;
         if (key) {
             if (keyObject == null) {
@@ -141,30 +120,6 @@ public class CachedQueryEntry implements QueryableEntry {
             }
         }
         return targetObject;
-    }
-
-    @Override
-    public AttributeType getAttributeType(String attributeName) {
-        if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
-            return ReflectionHelper.getAttributeType(getKey().getClass());
-        } else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
-            return ReflectionHelper.getAttributeType(getValue().getClass());
-        }
-
-        boolean isKey = QueryEntryUtils.isKey(attributeName);
-        attributeName = QueryEntryUtils.getAttributeName(isKey, attributeName);
-
-        Object target = getTargetObject(isKey);
-
-        if (target instanceof Portable || target instanceof Data) {
-            Data data = serializationService.toData(target);
-            if (data.isPortable()) {
-                PortableContext portableContext = serializationService.getPortableContext();
-                return PortableExtractor.getAttributeType(portableContext, data, attributeName);
-            }
-        }
-
-        return ReflectionHelper.getAttributeType(isKey ? getKey() : getValue(), attributeName);
     }
 
     @Override

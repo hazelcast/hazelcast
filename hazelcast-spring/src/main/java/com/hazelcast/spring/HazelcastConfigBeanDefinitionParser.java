@@ -41,6 +41,7 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.ManagementCenterConfig;
+import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -589,6 +590,14 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         indexes.add(indexConfBuilder.getBeanDefinition());
                     }
                     mapConfigBuilder.addPropertyValue("mapIndexConfigs", indexes);
+                } else if ("attributes".equals(nodeName)) {
+                    ManagedList attributes = new ManagedList();
+                    for (Node attributeNode : new IterableNodeList(childNode.getChildNodes(), Node.ELEMENT_NODE)) {
+                        final BeanDefinitionBuilder attributeConfBuilder = createBeanBuilder(MapAttributeConfig.class);
+                        fillAttributeValues(attributeNode, attributeConfBuilder);
+                        attributes.add(attributeConfBuilder.getBeanDefinition());
+                    }
+                    mapConfigBuilder.addPropertyValue("mapAttributeConfigs", attributes);
                 } else if ("entry-listeners".equals(nodeName)) {
                     ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
                     mapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);

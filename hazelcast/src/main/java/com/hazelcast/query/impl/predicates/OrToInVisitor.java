@@ -35,7 +35,7 @@ import static com.hazelcast.util.collection.ArrayUtils.createCopy;
  * the extract an attribute for {@link com.hazelcast.query.impl.QueryableEntry} while
  * disjunction of equalPredicate(s) requires one reflective call for each equalPredicate.
  *
- * The performance is even more significant when tha {@link InPredicate#attribute} is indexed.
+ * The performance is even more significant when tha {@link InPredicate#attributeName} is indexed.
  * As then the InPrecicate can be evaluated by just a single hit into index.
  *
  *
@@ -127,7 +127,7 @@ public class OrToInVisitor extends AbstractVisitor {
             Predicate p = innerPredicates[i];
             if (p.getClass().equals(EqualPredicate.class)) {
                 EqualPredicate equalPredicate = (EqualPredicate) p;
-                String attribute = equalPredicate.attribute;
+                String attribute = equalPredicate.attributeName;
                 if (candidates == null) {
                     candidates = new InternalMultiMap<String, Integer>();
                 }

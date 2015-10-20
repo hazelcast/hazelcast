@@ -35,6 +35,7 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.Extractors;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
@@ -61,6 +62,7 @@ public class MapContainer {
     protected final MapServiceContext mapServiceContext;
     protected final Map<String, MapInterceptor> interceptorMap;
     protected final Indexes indexes;
+    protected final Extractors extractors;
     protected final SizeEstimator nearCacheSizeEstimator;
     protected final PartitioningStrategy partitioningStrategy;
     protected final MapStoreContext mapStoreContext;
@@ -103,7 +105,8 @@ public class MapContainer {
         this.nearCacheSizeEstimator = createNearCacheSizeEstimator(mapConfig.getNearCacheConfig());
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
-        this.indexes = new Indexes(serializationService);
+        this.extractors = new Extractors(mapConfig.getMapAttributeConfigs());
+        this.indexes = new Indexes(serializationService, extractors);
         this.evictor = createEvictor(mapServiceContext);
     }
 
@@ -261,7 +264,7 @@ public class MapContainer {
     }
 
     public QueryableEntry newQueryEntry(Data key, Object value) {
-        return queryEntryFactory.newEntry(serializationService, key, value);
+        return queryEntryFactory.newEntry(serializationService, key, value, extractors);
     }
 
     public Evictor getEvictor() {
@@ -271,6 +274,10 @@ public class MapContainer {
     // only used for testing purposes.
     public void setEvictor(Evictor evictor) {
         this.evictor = evictor;
+    }
+
+    Extractors getExtractors() {
+        return extractors;
     }
 }
 
