@@ -1035,4 +1035,15 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
             assertEquals(maxSizePolicy, maxSizeConfig.getMaxSizePolicy());
         }
     }
+
+    @Test
+    public void testInstanceName() {
+        String name = randomName();
+        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                "<instance-name>" + name + "</instance-name>\n" +
+            "</hazelcast>";
+
+        Config config = new InMemoryXmlConfig(xml);
+        assertEquals(name, config.getInstanceName());
+    }
 }
