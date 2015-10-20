@@ -22,37 +22,73 @@ import java.util.List;
 /**
  * Represents multiple results from a single attribute extraction.
  * <p/>
- * It sounds counter-intuitive, but a single extract can result
- * in multiple values when arrays or collections are involved.
+ * MultiResult is an aggregate of results that is returned if the ValueExtractor returns multiple results due to a
+ * reduce operation executed on a hierarchy of values.
  * <p/>
- * Example 1: I have a class Body containing a collection of limbs.
- * Then extraction of attribute <code>limb[any].name</code> results
- * in MultiResult where each result contains a name of a limb.
+ * It sounds counter-intuitive, but a single extraction may return multiple values when arrays or collections are
+ * involved.
  * <p/>
- * Example 2: If I used just <code>limb[any]</code> then I would
- * get a MultiResult as well - each result would represent a limb.
+ * Let's have a look at the following data structure:
+ * <code>
+ * class Swap {
+ * Leg legs[2];
+ * }
  * <p/>
- * Example 3: If I used <code>limb</code> as attribute
- * (without the modifier) then the result of extraction WOULD
- * not be a MultiResult. It would be just a single result -
- * - the single collection of all limbs.
+ * class Leg {
+ * String currency;
+ * }
+ * </code>
+ * <p/>
+ * The following extraction of the currency attribute <code>legs[any].currency</code> results in two currencies for each
+ * Leg. In order to return both values in one result of the extract operation both currencies are returned in a
+ * single MultiResult object where each result contains a name of the currency.
+ * It allows the user to operate on multiple "reduced" values as if they were single-values.
+ * <p/>
+ * Let's have a look at the following queries:
+ * <ul>
+ * <li>leg[1].currency   = 'EUR'</li>
+ * <li>leg[any].currency = 'EUR'</li>
+ * <p/>
+ * </ul>
+ * In the first query, the extraction will return just one currency, whereas the extraction in the second query will
+ * return a MultiResult containing two currencies.
+ * During the evaluation of the "=" equals predicate the MultiResult will be "unfolded" and the condition will
+ * evaluated against all currencies from the MultiResult. If there is "any" currency that matches the condition the
+ * whole predicate will be evaluated to "true" and the matching Swap will be returned.
+ * As a result all Swaps will be returned where there's at lease one Leg with EUR currency.
+ * <p/>
+ * Other examples:
+ * legs -> returns one 'single-value' result -> a collection of values
+ * legs[0] -> returns one 'single result' - a Leg object
+ * legs[0].currency -> returns one 'multi value' result - an array of Legs
+ * legs[any] -> returns a MultiResult - that contains a collection of Leg objects
+ * legs[any].currency -> returns a MultiResult - that contains a collection of String objects
  */
-public final class MultiResult {
+public final class MultiResult<T> {
 
-    private List<Object> results;
+    private List<T> results;
 
     public MultiResult() {
-        this.results = new ArrayList<Object>();
+        this.results = new ArrayList<T>();
     }
 
-    public void add(Object result) {
+    /**
+     * @param result result to be added to this MultiResult
+     */
+    public void add(T result) {
         results.add(result);
     }
 
-    public List<Object> getResults() {
+    /**
+     * @return a mutable underlying list of collected results
+     */
+    public List<T> getResults() {
         return results;
     }
 
+    /**
+     * @return true if the MultiResult is empty; false otherwise
+     */
     public boolean isEmpty() {
         return results.isEmpty();
     }

@@ -17,7 +17,7 @@
 package com.hazelcast.query.extractor;
 
 /***
- * Common superclass for all extractors that enable the users to define custom attributes and extract their values.
+ * Common superclass for all extractors that enable the user to define custom attributes and extract their values.
  * The extraction logic may just extract the underlying value or group, reduce or transform it.
  * <p/>
  * How to use a ValueExtractor?
@@ -39,10 +39,17 @@ package com.hazelcast.query.extractor;
  * </code>
  * Extractors may be also defined in the XML configuration.
  * <p/>
- * Please, bear in mind that extractor may not be added while the map has been instantiated.
- * All extractor have to be defined upfront int he map's initial configuration.
+ * Please, bear in mind that an extractor may not be added after the map has been instantiated.
+ * All extractor have to be defined upfront in the map's initial configuration.
+ * <p/>
+ * Reflection-based extraction is the default mechanism - ValueExtractors are an alternative way of getting values
+ * from objects.
+ *
+ * @param <T> type of the target object to extract the value from
+ * @param <R> type of the result object - the extracted value
+ * @see com.hazelcast.query.extractor.MultiResult
  */
-public abstract class ValueExtractor {
+public abstract class ValueExtractor<T, R> {
 
     /**
      * No-arg constructor required for the runtime instantiation of the extractor
@@ -57,8 +64,7 @@ public abstract class ValueExtractor {
      * <ul>
      * <li>a single 'single-value' result (not a collection)</li>
      * <li>a single 'multi-value' result (a collection)</li>
-     * <li>multiple 'single-value' or 'multi-value' results encompassed in
-     * (@see com.hazelcast.query.extractor.MultiResult)</li>
+     * <li>multiple 'single-value' or 'multi-value' results encompassed in a MultiResult</li>
      * </ul>
      * <p/>
      * MultiResult is an aggregate of results that is returned if the extractor returns multiple results
@@ -66,7 +72,18 @@ public abstract class ValueExtractor {
      *
      * @param target object to extract the value from
      * @return extracted value
+     * @see com.hazelcast.query.extractor.MultiResult
      */
-    public abstract Object extract(Object target);
+    public abstract R extract(T target);
+
+    /**
+     * Factory method for the MultiResult
+     *
+     * @return a new instance of the MultiResult class
+     * @see com.hazelcast.query.extractor.MultiResult
+     */
+    protected MultiResult<R> createMultiResult() {
+        return new MultiResult<R>();
+    }
 
 }
