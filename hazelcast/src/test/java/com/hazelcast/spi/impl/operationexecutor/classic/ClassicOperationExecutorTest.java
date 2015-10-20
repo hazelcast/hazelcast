@@ -9,6 +9,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -82,5 +85,39 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
                 assertEquals(expectedCount, executor.getOperationExecutorQueueSize());
             }
         });
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void test_runOnAllPartitionThreads_whenTaskNull() {
+        initExecutor();
+        executor.runOnAllPartitionThreads(null);
+    }
+
+    @Test
+    public void test_runOnAllPartitionThreads() throws Exception {
+        initExecutor();
+
+        int threadCount = executor.getPartitionOperationThreadCount();
+        final CyclicBarrier barrier = new CyclicBarrier(threadCount + 1);
+
+        executor.runOnAllPartitionThreads(new Runnable() {
+            @Override
+            public void run() {
+                // current thread must be a PartitionOperationThread
+                if (Thread.currentThread() instanceof PartitionOperationThread) {
+                    try {
+                        awaitBarrier(barrier);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+
+        awaitBarrier(barrier);
+    }
+
+    private static void awaitBarrier(CyclicBarrier barrier) throws Exception {
+        barrier.await(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
     }
 }
