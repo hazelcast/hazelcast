@@ -40,7 +40,7 @@ public interface ListCodecTemplate {
     /**
      * Returns true if this list contains the specified element.
      *
-     * @param name Name of the List
+     * @param name  Name of the List
      * @param value Element whose presence in this list is to be tested
      * @return True if this list contains the specified element, false otherwise
      */
@@ -50,10 +50,10 @@ public interface ListCodecTemplate {
     /**
      * Returns true if this list contains all of the elements of the specified collection.
      *
-     * @param name Name of the List
+     * @param name     Name of the List
      * @param valueSet Collection to be checked for containment in this list
      * @return True if this list contains all of the elements of the
-     *         specified collection
+     * specified collection
      */
     @Request(id = 3, retryable = true, response = ResponseMessageConst.BOOLEAN)
     Object containsAll(String name, Set<Data> valueSet);
@@ -64,7 +64,7 @@ public interface ListCodecTemplate {
      * elements, and others will impose restrictions on the type of elements that may be added. List classes should
      * clearly specify in their documentation any restrictions on what elements may be added.
      *
-     * @param name Name of the List
+     * @param name  Name of the List
      * @param value Element to be appended to this list
      * @return true if this list changed as a result of the call, false otherwise
      */
@@ -76,7 +76,7 @@ public interface ListCodecTemplate {
      * If this list does not contain the element, it is unchanged.
      * Returns true if this list contained the specified element (or equivalently, if this list changed as a result of the call).
      *
-     * @param name Name of the List
+     * @param name  Name of the List
      * @param value Element to be removed from this list, if present
      * @return True if this list contained the specified element, false otherwise
      */
@@ -90,7 +90,7 @@ public interface ListCodecTemplate {
      * The behavior of this operation is undefined if the specified collection is modified while the operation is in progress.
      * (Note that this will occur if the specified collection is this list, and it's nonempty.)
      *
-     * @param name Name of the List
+     * @param name      Name of the List
      * @param valueList Collection containing elements to be added to this list
      * @return True if this list changed as a result of the call, false otherwise
      */
@@ -100,7 +100,7 @@ public interface ListCodecTemplate {
     /**
      * Removes from this list all of its elements that are contained in the specified collection (optional operation).
      *
-     * @param name Name of the List
+     * @param name     Name of the List
      * @param valueSet The list of values to compare for removal.
      * @return True if removed at least one of the items, false otherwise.
      */
@@ -111,7 +111,7 @@ public interface ListCodecTemplate {
      * Retains only the elements in this list that are contained in the specified collection (optional operation).
      * In other words, removes from this list all of its elements that are not contained in the specified collection.
      *
-     * @param name Name of the List
+     * @param name     Name of the List
      * @param valueSet The list of values to compare for retaining.
      * @return True if this list changed as a result of the call, false otherwise.
      */
@@ -138,17 +138,18 @@ public interface ListCodecTemplate {
     /**
      * Adds an item listener for this collection. Listener will be notified for all collection add/remove events.
      *
-     * @param name Name of the List
+     * @param name         Name of the List
      * @param includeValue Set to true if you want the event to contain the value.
+     * @param localOnly    if true fires events that originated from this node only, otherwise fires all events
      * @return Registration id for the listener.
      */
     @Request(id = 11, retryable = true, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_ITEM})
-    Object addListener(String name, boolean includeValue);
+    Object addListener(String name, boolean includeValue, boolean localOnly);
 
     /**
      * Removes the specified item listener. Returns silently if the specified listener was not added before.
      *
-     * @param name Name of the List
+     * @param name           Name of the List
      * @param registrationId The id of the listener which was provided during registration.
      * @return True if unregistered, false otherwise.
      */
@@ -171,8 +172,8 @@ public interface ListCodecTemplate {
      * The behavior of this operation is undefined if the specified collection is modified while the operation is in progress.
      * (Note that this will occur if the specified collection is this list, and it's nonempty.)
      *
-     * @param name Name of the List
-     * @param index index at which to insert the first element from the specified collection.
+     * @param name      Name of the List
+     * @param index     index at which to insert the first element from the specified collection.
      * @param valueList The list of value to insert into the list.
      * @return True if this list changed as a result of the call, false otherwise.
      */
@@ -192,7 +193,7 @@ public interface ListCodecTemplate {
     /**
      * The element previously at the specified position
      *
-     * @param name Name of the List
+     * @param name  Name of the List
      * @param index Index of the element to replace
      * @param value Element to be stored at the specified position
      * @return The element previously at the specified position
@@ -204,7 +205,7 @@ public interface ListCodecTemplate {
      * Inserts the specified element at the specified position in this list (optional operation). Shifts the element
      * currently at that position (if any) and any subsequent elements to the right (adds one to their indices).
      *
-     * @param name Name of the List
+     * @param name  Name of the List
      * @param index index at which the specified element is to be inserted
      * @param value Value to be inserted.
      */
@@ -215,7 +216,7 @@ public interface ListCodecTemplate {
      * Removes the element at the specified position in this list (optional operation). Shifts any subsequent elements
      * to the left (subtracts one from their indices). Returns the element that was removed from the list.
      *
-     * @param name Name of the List
+     * @param name  Name of the List
      * @param index The index of the element to be removed
      * @return The element previously at the specified position
      */
@@ -226,10 +227,10 @@ public interface ListCodecTemplate {
      * Returns the index of the last occurrence of the specified element in this list, or -1 if this list does not
      * contain the element.
      *
-     * @param name Name of the List
+     * @param name  Name of the List
      * @param value Element to search for
      * @return the index of the last occurrence of the specified element in
-     *         this list, or -1 if this list does not contain the element
+     * this list, or -1 if this list does not contain the element
      */
     @Request(id = 19, retryable = true, response = ResponseMessageConst.INTEGER)
     Object lastIndexOf(String name, Data value);
@@ -238,10 +239,10 @@ public interface ListCodecTemplate {
      * Returns the index of the first occurrence of the specified element in this list, or -1 if this list does not
      * contain the element.
      *
-     * @param name Name of the List
+     * @param name  Name of the List
      * @param value Element to search for
      * @return The index of the first occurrence of the specified element in
-     *         this list, or -1 if this list does not contain the element
+     * this list, or -1 if this list does not contain the element
      */
     @Request(id = 20, retryable = true, response = ResponseMessageConst.INTEGER)
     Object indexOf(String name, Data value);
@@ -261,7 +262,7 @@ public interface ListCodecTemplate {
      *
      * @param name Name of the List
      * @param from Low endpoint (inclusive) of the subList
-     * @param to High endpoint (exclusive) of the subList
+     * @param to   High endpoint (exclusive) of the subList
      * @return A view of the specified range within this list
      */
 
@@ -283,10 +284,10 @@ public interface ListCodecTemplate {
      * ListIterator#next next. An initial call to ListIterator#previous previous would return the element with the
      * specified index minus one.
      *
-     * @param name Name of the List
+     * @param name  Name of the List
      * @param index index of the first element to be returned from the list iterator next
      * @return a list iterator over the elements in this list (in proper
-     *         sequence), starting at the specified position in the list
+     * sequence), starting at the specified position in the list
      */
     @Request(id = 23, retryable = true, response = ResponseMessageConst.LIST_DATA)
     Object listIterator(String name, int index);

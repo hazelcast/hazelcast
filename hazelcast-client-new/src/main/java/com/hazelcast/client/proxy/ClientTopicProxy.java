@@ -16,14 +16,13 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
@@ -48,31 +47,13 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
 
     @Override
     public String addMessageListener(final MessageListener<E> listener) {
-        ClientMessage request = TopicAddMessageListenerCodec.encodeRequest(name);
-
         EventHandler<ClientMessage> handler = new TopicItemHandler(listener);
-        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
-            @Override
-            public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                return (T) TopicAddMessageListenerCodec.decodeResponse(clientMessage).response;
-            }
-        };
-        return listen(request, getPartitionKey(), handler, responseDecoder);
+        return registerListener(new Codec(), handler);
     }
 
     @Override
     public boolean removeMessageListener(String registrationId) {
-        return stopListening(registrationId, new ListenerRemoveCodec() {
-            @Override
-            public ClientMessage encodeRequest(String realRegistrationId) {
-                return TopicRemoveMessageListenerCodec.encodeRequest(name, realRegistrationId);
-            }
-
-            @Override
-            public boolean decodeResponse(ClientMessage clientMessage) {
-                return TopicRemoveMessageListenerCodec.decodeResponse(clientMessage).response;
-            }
-        });
+        return deregisterListener(registrationId);
     }
 
     @Override
@@ -112,6 +93,29 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
         @Override
         public void onListenerRegister() {
 
+        }
+    }
+
+    private class Codec implements ListenerMessageCodec {
+
+        @Override
+        public ClientMessage encodeAddRequest(boolean localOnly) {
+            return TopicAddMessageListenerCodec.encodeRequest(name, localOnly);
+        }
+
+        @Override
+        public String decodeAddResponse(ClientMessage clientMessage) {
+            return TopicAddMessageListenerCodec.decodeResponse(clientMessage).response;
+        }
+
+        @Override
+        public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            return TopicRemoveMessageListenerCodec.encodeRequest(name, realRegistrationId);
+        }
+
+        @Override
+        public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+            return TopicRemoveMessageListenerCodec.decodeResponse(clientMessage).response;
         }
     }
 }

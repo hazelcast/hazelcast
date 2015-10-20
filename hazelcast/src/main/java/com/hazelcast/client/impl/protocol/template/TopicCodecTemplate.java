@@ -39,11 +39,12 @@ public interface TopicCodecTemplate {
      * MessageListener is called. More than one message listener can be added on one instance.
      *
      * @param name Name of the Topic
+     * @param localOnly if true listens only local events on registered member
      * @return returns the registration id
      */
     @Request(id = 2, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_TOPIC})
-    Object addMessageListener(String name);
+    Object addMessageListener(String name, boolean localOnly);
     /**
      * Stops receiving messages for the given message listener.If the given listener already removed, this method does nothing.
      *

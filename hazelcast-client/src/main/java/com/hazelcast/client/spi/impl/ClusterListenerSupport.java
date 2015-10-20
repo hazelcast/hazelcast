@@ -73,7 +73,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     private Credentials credentials;
     private ClientConnectionManager connectionManager;
-    private ClientListenerServiceImpl clientListenerService;
     private ClientMembershipListener clientMembershipListener;
     private volatile Address ownerConnectionAddress;
     private volatile ClientPrincipal principal;
@@ -95,7 +94,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     protected void init() {
         this.connectionManager = client.getConnectionManager();
-        this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         this.clientMembershipListener = new ClientMembershipListener(client);
         connectionManager.addConnectionListener(this);
         connectionManager.addConnectionHeartbeatListener(this);
@@ -140,6 +138,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             final Data addressData = iter.next();
             final Address address = ss.toObject(addressData);
             connection.setRemoteEndpoint(address);
+            connection.setIsAuthenticatedAsOwner();
             final Data principalData = iter.next();
             principal = ss.toObject(principalData);
         }
@@ -148,7 +147,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     protected void connectToCluster() throws Exception {
         connectToOne();
         clientMembershipListener.listenMembershipEvents(ownerConnectionAddress);
-        clientListenerService.triggerFailedListeners();
     }
 
     private Collection<InetSocketAddress> getSocketAddresses() {
@@ -226,7 +224,11 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 if (LOGGER.isFinestEnabled()) {
                     LOGGER.finest("Trying to connect to " + address);
                 }
-                final Connection connection = connectionManager.getOrConnect(address, managerAuthenticator);
+                ClientConnection connection =
+                        (ClientConnection) connectionManager.getOrConnect(address, managerAuthenticator);
+                if (!connection.isAuthenticatedAsOwner()) {
+                    managerAuthenticator.authenticate(connection);
+                }
                 fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 ownerConnectionAddress = connection.getEndPoint();
                 return true;

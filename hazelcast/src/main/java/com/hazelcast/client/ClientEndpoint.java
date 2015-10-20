@@ -54,7 +54,7 @@ public interface ClientEndpoint {
      * @param topic   topic name of listener(mostly distributed object name)
      * @param id      registration id of remove action
      */
-    void addListenerDestroyAction(String service, String topic, String id);
+    void   addListenerDestroyAction(String service, String topic, String id);
 
     /**
      * Adds a remove callable to be called when endpoint is destroyed

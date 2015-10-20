@@ -22,15 +22,14 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientRemoveAllListenersCodec;
 import com.hazelcast.client.impl.protocol.parameters.ErrorCodec;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -51,38 +50,43 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 
 
-abstract class ClientInvocationServiceSupport implements ClientInvocationService,
-        ConnectionHeartbeatListener, ConnectionListener {
+abstract class ClientInvocationServiceSupport implements ClientInvocationService, ConnectionListener {
 
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED = 10;
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD = 5000;
     protected final HazelcastClientInstanceImpl client;
-    protected final ClientConnectionManager connectionManager;
-    protected final ClientPartitionService partitionService;
-    protected final ClientExecutionService executionService;
-    private final ILogger logger = Logger.getLogger(ClientInvocationService.class);
-    private final ResponseThread responseThread;
-    private final ConcurrentMap<Integer, ClientInvocation> callIdMap
+    protected  ClientConnectionManager connectionManager;
+    protected  ClientPartitionService partitionService;
+    protected  ClientExecutionService executionService;
+    protected  ClientListenerServiceImpl clientListenerService;
+    private  ILogger logger = Logger.getLogger(ClientInvocationService.class);
+    private  ResponseThread responseThread;
+    private  ConcurrentMap<Integer, ClientInvocation> callIdMap
             = new ConcurrentHashMap<Integer, ClientInvocation>();
-    private final ConcurrentMap<Integer, ClientListenerInvocation> eventHandlerMap
-            = new ConcurrentHashMap<Integer, ClientListenerInvocation>();
+
     private final AtomicInteger callIdIncrementer = new AtomicInteger();
-    private final ClientExceptionFactory clientExceptionFactory;
+    private ClientExceptionFactory clientExceptionFactory;
     private volatile boolean isShutdown;
 
 
     public ClientInvocationServiceSupport(HazelcastClientInstanceImpl client) {
         this.client = client;
-        this.connectionManager = client.getConnectionManager();
-        this.executionService = client.getClientExecutionService();
+
+    }
+
+    @Override
+    public void start() {
+        connectionManager = client.getConnectionManager();
+        executionService = client.getClientExecutionService();
+        clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         connectionManager.addConnectionListener(this);
-        connectionManager.addConnectionHeartbeatListener(this);
-        this.partitionService = client.getClientPartitionService();
-        this.clientExceptionFactory = initClientExceptionFactory();
+        partitionService = client.getClientPartitionService();
+        clientExceptionFactory = initClientExceptionFactory();
         responseThread = new ResponseThread(client.getThreadGroup(), client.getName() + ".response-",
                 client.getClientConfig().getClassLoader());
         responseThread.start();
     }
+
 
     private ClientExceptionFactory initClientExceptionFactory() {
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
@@ -105,7 +109,6 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         if (!isAllowedToSendRequest(connection, invocation) || !writeToConnection(connection, clientMessage)) {
             final int callId = clientMessage.getCorrelationId();
             ClientInvocation clientInvocation = deRegisterCallId(callId);
-            deRegisterEventHandler(callId);
             if (clientInvocation != null) {
                 throw new IOException("Packet not send to " + connection.getRemoteEndpoint());
             } else {
@@ -144,37 +147,15 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         final int correlationId = newCorrelationId();
         clientInvocation.getClientMessage().setCorrelationId(correlationId).setVersion(protocolVersion);
         callIdMap.put(correlationId, clientInvocation);
-        if (clientInvocation instanceof ClientListenerInvocation) {
-            eventHandlerMap.put(correlationId, (ClientListenerInvocation) clientInvocation);
+        EventHandler handler = clientInvocation.getEventHandler();
+        if (handler != null) {
+            clientListenerService.addEventHandler(correlationId, handler);
         }
     }
 
     private ClientInvocation deRegisterCallId(int callId) {
         return callIdMap.remove(callId);
     }
-
-    private ClientInvocation deRegisterEventHandler(int callId) {
-        return eventHandlerMap.remove(callId);
-    }
-
-    @Override
-    public EventHandler getEventHandler(int callId) {
-        final ClientListenerInvocation clientInvocation = eventHandlerMap.get(callId);
-        if (clientInvocation == null) {
-            return null;
-        }
-        return clientInvocation.getHandler();
-    }
-
-    @Override
-    public boolean removeEventHandler(Integer callId) {
-        if (callId != null) {
-            return eventHandlerMap.remove(callId) != null;
-
-        }
-        return false;
-    }
-
 
     public void cleanResources(ConstructorFunction<Object, Throwable> responseCtor, ClientConnection connection) {
         final Iterator<Map.Entry<Integer, ClientInvocation>> iter = callIdMap.entrySet().iterator();
@@ -184,41 +165,6 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             if (connection.equals(invocation.getSendConnection())) {
                 iter.remove();
                 invocation.notifyException(responseCtor.createNew(null));
-                eventHandlerMap.remove(entry.getKey());
-            }
-        }
-        final Iterator<ClientListenerInvocation> iterator = eventHandlerMap.values().iterator();
-        while (iterator.hasNext()) {
-            final ClientInvocation invocation = iterator.next();
-            if (connection.equals(invocation.getSendConnection())) {
-                iterator.remove();
-                invocation.notifyException(responseCtor.createNew(null));
-            }
-        }
-
-    }
-
-    @Override
-    public void heartBeatStarted(Connection connection) {
-
-    }
-
-    @Override
-    public void heartBeatStopped(Connection connection) {
-        ClientMessage request = ClientRemoveAllListenersCodec.encodeRequest();
-        ClientInvocation removeListenerInvocation = new ClientInvocation(client, request, connection);
-        removeListenerInvocation.setBypassHeartbeatCheck(true);
-        removeListenerInvocation.invoke();
-
-        final Address remoteEndpoint = connection.getEndPoint();
-        final Iterator<ClientListenerInvocation> iterator = eventHandlerMap.values().iterator();
-        final TargetDisconnectedException response = new TargetDisconnectedException(remoteEndpoint);
-
-        while (iterator.hasNext()) {
-            final ClientInvocation clientInvocation = iterator.next();
-            if (clientInvocation.getSendConnection().equals(connection)) {
-                iterator.remove();
-                clientInvocation.notifyException(response);
             }
         }
     }

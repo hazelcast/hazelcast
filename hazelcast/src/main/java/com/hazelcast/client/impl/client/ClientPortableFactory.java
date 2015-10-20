@@ -56,7 +56,7 @@ public class ClientPortableFactory implements PortableFactory {
                 portable = new ClientDestroyRequest();
                 break;
             case ClientPortableHook.LISTENER:
-                portable = new DistributedObjectListenerRequest();
+                portable = new AddDistributedObjectListenerRequest();
                 break;
             case ClientPortableHook.MEMBERSHIP_LISTENER:
                 portable = new AddMembershipListenerRequest();

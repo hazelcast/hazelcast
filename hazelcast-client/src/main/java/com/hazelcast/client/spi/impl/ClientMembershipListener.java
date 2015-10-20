@@ -91,7 +91,7 @@ class ClientMembershipListener implements EventHandler<ClientInitialMembershipEv
     void listenMembershipEvents(Address ownerConnectionAddress) {
         initialListFetchedLatch = new CountDownLatch(1);
         try {
-            RegisterMembershipListenerRequest request = new RegisterMembershipListenerRequest();
+            RegisterMembershipListenerRequest request = new RegisterMembershipListenerRequest(false);
 
             Connection connection = connectionManager.getConnection(ownerConnectionAddress);
             if (connection == null) {

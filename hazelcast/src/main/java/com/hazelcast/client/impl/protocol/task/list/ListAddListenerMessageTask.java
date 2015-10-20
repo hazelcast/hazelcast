@@ -44,13 +44,18 @@ public class ListAddListenerMessageTask
 
     @Override
     protected Object call() {
-        final ClientEndpoint endpoint = getEndpoint();
+        ClientEndpoint endpoint = getEndpoint();
         Data partitionKey = serializationService.toData(parameters.name);
         ItemListener listener = createItemListener(endpoint, partitionKey);
-        final EventService eventService = clientEngine.getEventService();
-        final CollectionEventFilter filter = new CollectionEventFilter(parameters.includeValue);
-        final EventRegistration registration = eventService.registerListener(getServiceName(), parameters.name, filter, listener);
-        final String registrationId = registration.getId();
+        EventService eventService = clientEngine.getEventService();
+        CollectionEventFilter filter = new CollectionEventFilter(parameters.includeValue);
+        EventRegistration registration;
+        if (parameters.localOnly) {
+            registration = eventService.registerLocalListener(getServiceName(), parameters.name, filter, listener);
+        } else {
+            registration = eventService.registerListener(getServiceName(), parameters.name, filter, listener);
+        }
+        String registrationId = registration.getId();
         endpoint.addListenerDestroyAction(getServiceName(), parameters.name, registrationId);
         return registrationId;
     }

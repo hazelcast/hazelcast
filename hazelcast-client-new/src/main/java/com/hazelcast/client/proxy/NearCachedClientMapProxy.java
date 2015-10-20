@@ -17,16 +17,14 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
-import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.map.impl.nearcache.ClientHeapNearCache;
-import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEventType;
@@ -329,22 +327,40 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
     }
 
-
     protected void addNearCacheInvalidateListener() {
         try {
-            ClientMessage request = MapAddNearCacheEntryListenerCodec.encodeRequest(name, false, ALL_LISTENER_FLAGS);
             EventHandler handler = new ClientMapAddNearCacheEventHandler(this.nearCache);
-            invalidationListenerId = getContext().getListenerService().startListening(request, null, handler,
-                    new ClientMessageDecoder() {
-                        @Override
-                        public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                            return (T) MapAddNearCacheEntryListenerCodec.decodeResponse(clientMessage).response;
-                        }
-                    });
+            invalidationListenerId = registerListener(createNearCacheEntryListenerCodec(), handler);
+
         } catch (Exception e) {
             Logger.getLogger(ClientHeapNearCache.class).severe(
                     "-----------------\n Near Cache is not initialized!!! \n-----------------", e);
         }
+    }
+
+    private ListenerMessageCodec createNearCacheEntryListenerCodec() {
+        return new ListenerMessageCodec() {
+            @Override
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return MapAddNearCacheEntryListenerCodec.encodeRequest(name, false,
+                        ALL_LISTENER_FLAGS, localOnly);
+            }
+
+            @Override
+            public String decodeAddResponse(ClientMessage clientMessage) {
+                return MapAddNearCacheEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+                return MapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+                return MapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+        };
     }
 
     protected void removeNearCacheInvalidationListener() {
@@ -352,20 +368,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         if (invalidationListenerId == null) {
             return;
         }
-
-        ClientListenerService listenerService = getContext().getListenerService();
-
-        listenerService.stopListening(invalidationListenerId, new ListenerRemoveCodec() {
-            @Override
-            public ClientMessage encodeRequest(String realRegistrationId) {
-                return MapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
-            }
-
-            @Override
-            public boolean decodeResponse(ClientMessage clientMessage) {
-                return MapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
-            }
-        });
+        deregisterListener(invalidationListenerId);
     }
 
     protected static final class ClientMapAddNearCacheEventHandler extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler

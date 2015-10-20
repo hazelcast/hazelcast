@@ -45,13 +45,18 @@ public class AddPartitionLostListenerMessageTask
                 if (endpoint.isAlive()) {
                     ClientMessage eventMessage =
                             ClientAddPartitionLostListenerCodec.encodePartitionLostEvent(event.getPartitionId(),
-                            event.getLostBackupCount(), event.getEventSource());
+                                    event.getLostBackupCount(), event.getEventSource());
                     sendClientMessage(null, eventMessage);
                 }
             }
         };
 
-        final String registrationId = partitionService.addPartitionLostListener(listener);
+        String registrationId;
+        if (parameters.localOnly) {
+            registrationId = partitionService.addLocalPartitionLostListener(listener);
+        } else {
+            registrationId = partitionService.addPartitionLostListener(listener);
+        }
         endpoint.addListenerDestroyAction(getServiceName(), PARTITION_LOST_EVENT_TOPIC, registrationId);
         return registrationId;
 

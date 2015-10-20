@@ -71,11 +71,12 @@ public interface EnterpriseMapCodecTemplate {
     /**
      *
      * @param listenerName Name of the MapListener which will be used to listen this QueryCache
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return Registration id for the listener.
      */
     @Request(id = 4, retryable = true, response = ResponseMessageConst.STRING,
              event = {EventMessageConst.EVENT_QUERYCACHESINGLE, EventMessageConst.EVENT_QUERYCACHEBATCH})
-    Object addListener(String listenerName);
+    Object addListener(String listenerName, boolean localOnly);
 
     /**
      *

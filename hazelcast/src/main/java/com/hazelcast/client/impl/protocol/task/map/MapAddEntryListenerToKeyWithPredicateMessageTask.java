@@ -41,6 +41,11 @@ public class MapAddEntryListenerToKeyWithPredicateMessageTask
     }
 
     @Override
+    protected boolean isLocalOnly() {
+        return parameters.localOnly;
+    }
+
+    @Override
     protected MapAddEntryListenerToKeyWithPredicateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapAddEntryListenerToKeyWithPredicateCodec.decodeRequest(clientMessage);
     }

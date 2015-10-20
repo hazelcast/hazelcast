@@ -58,6 +58,7 @@ public class ClientConnection implements Connection, Closeable {
 
     private volatile Address remoteEndpoint;
     private volatile boolean heartBeating = true;
+    private boolean isAuthenticatedAsOwner;
 
     public ClientConnection(HazelcastClientInstanceImpl client, NonBlockingIOThread in, NonBlockingIOThread out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
@@ -239,6 +240,14 @@ public class ClientConnection implements Connection, Closeable {
 
     public boolean isHeartBeating() {
         return live.get() && heartBeating;
+    }
+
+    public boolean isAuthenticatedAsOwner() {
+        return isAuthenticatedAsOwner;
+    }
+
+    public void setIsAuthenticatedAsOwner() {
+        this.isAuthenticatedAsOwner = true;
     }
 
     @Override

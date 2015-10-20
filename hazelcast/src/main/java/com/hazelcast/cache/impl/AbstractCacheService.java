@@ -105,7 +105,8 @@ public abstract class AbstractCacheService
         postInit(nodeEngine, properties);
     }
 
-    protected void postInit(NodeEngine nodeEngine, Properties properties) { };
+    protected void postInit(NodeEngine nodeEngine, Properties properties) {
+    }
 
     protected abstract ICacheRecordStore createNewRecordStore(String name, int partitionId);
 
@@ -345,24 +346,34 @@ public abstract class AbstractCacheService
     }
 
     @Override
-    public String registerListener(String name, CacheEventListener listener) {
-        return registerListenerInternal(name, listener, null);
+    public String registerListener(String name, CacheEventListener listener, boolean isLocal) {
+        return registerListenerInternal(name, listener, null, isLocal);
     }
 
     @Override
-    public String registerListener(String name, CacheEventListener listener, EventFilter eventFilter) {
-        return registerListenerInternal(name, listener, eventFilter);
+    public String registerListener(String name, CacheEventListener listener, EventFilter eventFilter, boolean isLocal) {
+        return registerListenerInternal(name, listener, eventFilter, isLocal);
     }
 
-    protected String registerListenerInternal(String name, CacheEventListener listener, EventFilter eventFilter) {
-        final EventService eventService = getNodeEngine().getEventService();
-        final EventRegistration registration;
-        if (eventFilter == null) {
-            registration = eventService.registerListener(AbstractCacheService.SERVICE_NAME, name, listener);
+    protected String registerListenerInternal(String name, CacheEventListener listener,
+                                              EventFilter eventFilter, boolean isLocal) {
+        EventService eventService = getNodeEngine().getEventService();
+        EventRegistration reg;
+        if (isLocal) {
+            if (eventFilter == null) {
+                reg = eventService.registerLocalListener(AbstractCacheService.SERVICE_NAME, name, listener);
+            } else {
+                reg = eventService.registerLocalListener(AbstractCacheService.SERVICE_NAME, name, eventFilter, listener);
+            }
         } else {
-            registration = eventService.registerListener(AbstractCacheService.SERVICE_NAME, name, eventFilter, listener);
+            if (eventFilter == null) {
+                reg = eventService.registerListener(AbstractCacheService.SERVICE_NAME, name, listener);
+            } else {
+                reg = eventService.registerListener(AbstractCacheService.SERVICE_NAME, name, eventFilter, listener);
+            }
         }
-        final String id = registration.getId();
+
+        final String id = reg.getId();
         if (listener instanceof Closeable) {
             closeableListeners.put(id, (Closeable) listener);
         } else if (listener instanceof CacheEntryListenerProvider) {
@@ -521,7 +532,7 @@ public abstract class AbstractCacheService
      *
      * @param cacheName name of the cache
      * @return name of the associated quorum
-     *         null if there is no associated quorum
+     * null if there is no associated quorum
      */
     @Override
     public String getQuorumName(String cacheName) {
@@ -536,12 +547,19 @@ public abstract class AbstractCacheService
      *
      * @param name      the name of the cache that {@link com.hazelcast.cache.impl.CacheEventListener} will be registered for
      * @param listener  the {@link com.hazelcast.cache.impl.CacheEventListener} to be registered for specified <code>cache</code>
+     * @param localOnly true if only events originated from this member wants be listened, false if all invalidation events in the
+     *                  cluster wants to be listened
      * @return the id which is unique for current registration
      */
     @Override
-    public String addInvalidationListener(String name, CacheEventListener listener) {
+    public String addInvalidationListener(String name, CacheEventListener listener, boolean localOnly) {
         EventService eventService = nodeEngine.getEventService();
-        EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, name, listener);
+        EventRegistration registration;
+        if (localOnly) {
+            registration = eventService.registerLocalListener(SERVICE_NAME, name, listener);
+        } else {
+            registration = eventService.registerListener(SERVICE_NAME, name, listener);
+        }
         return registration.getId();
     }
 

@@ -29,6 +29,8 @@ import java.io.IOException;
  */
 public interface ClientInvocationService {
 
+    void start();
+
     void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) throws IOException;
 
     void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException;
@@ -39,19 +41,10 @@ public interface ClientInvocationService {
 
     boolean isRedoOperation();
 
-    /**
-     * Removes event handler corresponding to callId
-     *
-     * @param callId of event handler registration request
-     * @return true if found and removed, false otherwise
-     */
-    boolean removeEventHandler(Integer callId);
-
     void shutdown();
 
     void handleClientMessage(ClientMessage message, Connection connection);
 
     void cleanConnectionResources(ClientConnection connection);
 
-    EventHandler getEventHandler(int callId);
 }

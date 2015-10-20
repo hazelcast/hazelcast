@@ -18,9 +18,7 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
-import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.map.impl.nearcache.ClientHeapNearCache;
-import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.config.NearCacheConfig;
@@ -200,7 +198,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     public boolean removeEntryListener(String id) {
         final ClientReplicatedMapRemoveEntryListenerRequest request =
                 new ClientReplicatedMapRemoveEntryListenerRequest(getName(), id);
-        return stopListeningOnPartition(request, id, getOrInitTargetPartitionId());
+        return deregisterListener(request, id);
     }
 
     @Override
@@ -208,7 +206,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientReplicatedMapAddEntryListenerRequest request =
                 new ClientReplicatedMapAddEntryListenerRequest(getName(), null, null);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
-        return listen(request, handler);
+        return registerListener(request, handler);
     }
 
     @Override
@@ -217,7 +215,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName()
                 , null, dataKey);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
-        return listen(request, handler);
+        return registerListener(request, handler);
     }
 
     @Override
@@ -225,15 +223,16 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName()
                 , predicate, null);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
-        return listen(request, handler);
+        return registerListener(request, handler);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key) {
         Data dataKey = toData(key);
-        ClientRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), predicate, dataKey);
+        ClientReplicatedMapAddEntryListenerRequest request =
+                new ClientReplicatedMapAddEntryListenerRequest(getName(), predicate, dataKey);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
-        return listen(request, handler);
+        return registerListener(request, handler);
     }
 
     @Override
@@ -310,9 +309,10 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     private void addNearCacheInvalidateListener() {
         try {
-            ClientRequest request = new ClientReplicatedMapAddNearCacheListenerRequest(getName());
+            ClientReplicatedMapAddNearCacheListenerRequest request =
+                    new ClientReplicatedMapAddNearCacheListenerRequest(getName());
             EventHandler handler = new ReplicatedMapNearCacheEventHandler();
-            invalidationListenerId = getContext().getListenerService().startListening(request, getName(), handler);
+            invalidationListenerId = registerListener(request, handler);
         } catch (Exception e) {
             Logger.getLogger(ClientHeapNearCache.class).severe(
                     "-----------------\n Near Cache is not initialized!!! \n-----------------", e);
@@ -321,10 +321,9 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     private void removeNearCacheInvalidationListener() {
         if (nearCache != null && invalidationListenerId != null) {
-            BaseClientRemoveListenerRequest request
-                    = new ClientReplicatedMapRemoveEntryListenerRequest(getName(), invalidationListenerId);
-            ClientListenerService listenerService = getContext().getListenerService();
-            listenerService.stopListeningOnPartition(request, invalidationListenerId, getOrInitTargetPartitionId());
+            BaseClientRemoveListenerRequest request =
+                    new ClientReplicatedMapRemoveEntryListenerRequest(getName(), invalidationListenerId);
+            deregisterListener(request, invalidationListenerId);
         }
     }
 

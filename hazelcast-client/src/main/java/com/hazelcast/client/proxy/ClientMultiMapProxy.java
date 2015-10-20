@@ -27,7 +27,6 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.map.impl.client.MapLockRequest;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Job;
@@ -217,19 +216,19 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         isNotNull(listener, "listener");
         AddEntryListenerRequest request = new AddEntryListenerRequest(name, null, includeValue);
         EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
-        return listen(request, handler);
+        return registerListener(request, handler);
     }
 
     public boolean removeEntryListener(String registrationId) {
         final RemoveEntryListenerRequest request = new RemoveEntryListenerRequest(name, registrationId);
-        return stopListening(request, registrationId);
+        return deregisterListener(request, registrationId);
     }
 
     public String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         final Data keyData = toData(key);
         AddEntryListenerRequest request = new AddEntryListenerRequest(name, keyData, includeValue);
         EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
-        return listen(request, keyData, handler);
+        return registerListener(request, handler);
     }
 
     public void lock(K key) {
