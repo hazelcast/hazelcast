@@ -300,12 +300,14 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         }
     }
 
-    @Test
     @SuppressWarnings("WhileLoopReplaceableByForEach")
-    public void testIteratorDuringInsertion_withoutEviction() {
-        CacheConfig<Integer, Integer> config = getCacheConfigWithMaxSize(1000000);
+    private void testIteratorDuringInsertion(boolean withoutEviction) {
+        final int MAX_SIZE = withoutEviction ? 1000000 : 10000;
+        final CacheConfig<Integer, Integer> config = getCacheConfigWithMaxSize(MAX_SIZE);
         final ICache<Integer, Integer> cache = createCache(config);
-        final int maxSize = getMaxCacheSizeWithoutEviction(config);
+        final int maxSize = withoutEviction
+                                ? getMaxCacheSizeWithoutEviction(config)
+                                : getMaxCacheSizeWithEviction(config);
 
         // we prefill the cache with half of the max size, so there will be new inserts from the AbstractCacheWorker
         int prefillSize = maxSize / 2;
@@ -332,19 +334,33 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
                 assertEquals(key, value);
                 i++;
             }
-            assertTrue("should have iterated over at least " + prefillSize + " entries, but was " + i, i >= prefillSize);
-            assertThatNoCacheEvictionHappened(cache);
+            if (withoutEviction) {
+                assertTrue("should have iterated over at least " + prefillSize + " entries, but was " + i, i >= prefillSize);
+                assertThatNoCacheEvictionHappened(cache);
+            }
         } finally {
             worker.shutdown();
         }
     }
 
     @Test
+    public void testIteratorDuringInsertion_withoutEviction() {
+        testIteratorDuringInsertion(true);
+    }
+
+    @Test
+    public void testIteratorDuringInsertion_withEviction() {
+        testIteratorDuringInsertion(false);
+    }
+
     @SuppressWarnings("WhileLoopReplaceableByForEach")
-    public void testIteratorDuringUpdate_withoutEviction() {
-        CacheConfig<Integer, Integer> config = getCacheConfigWithMaxSize(1000000);
+    private void testIteratorDuringUpdate(boolean withoutEviction) {
+        final int MAX_SIZE = withoutEviction ? 1000000 : 10000;
+        final CacheConfig<Integer, Integer> config = getCacheConfigWithMaxSize(MAX_SIZE);
         final ICache<Integer, Integer> cache = createCache(config);
-        final int maxSize = getMaxCacheSizeWithoutEviction(config);
+        final int maxSize = withoutEviction
+                ? getMaxCacheSizeWithoutEviction(config)
+                : getMaxCacheSizeWithEviction(config);
 
         for (int i = 0; i < maxSize; i++) {
             cache.put(i, i);
@@ -369,19 +385,33 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
                 assertTrue("key: " + key + ", value: " + value, key == Math.abs(value));
                 i++;
             }
-            assertEquals("should have iterated over all " + maxSize + " entries", maxSize, i);
-            assertThatNoCacheEvictionHappened(cache);
+            if (withoutEviction) {
+                assertEquals("should have iterated over all " + maxSize + " entries", maxSize, i);
+                assertThatNoCacheEvictionHappened(cache);
+            }
         } finally {
             worker.shutdown();
         }
     }
 
     @Test
+    public void testIteratorDuringUpdate_withoutEviction() {
+        testIteratorDuringUpdate(true);
+    }
+
+    @Test
+    public void testIteratorDuringUpdate_withEviction() {
+        testIteratorDuringUpdate(true);
+    }
+
     @SuppressWarnings("WhileLoopReplaceableByForEach")
-    public void testIteratorDuringRemoval_withoutEviction() {
-        CacheConfig<Integer, Integer> config = getCacheConfigWithMaxSize(1000000);
+    private void testIteratorDuringRemoval(boolean withoutEviction) {
+        final int MAX_SIZE = withoutEviction ? 1000000 : 10000;
+        final CacheConfig<Integer, Integer> config = getCacheConfigWithMaxSize(MAX_SIZE);
         final ICache<Integer, Integer> cache = createCache(config);
-        final int maxSize = getMaxCacheSizeWithoutEviction(config);
+        final int maxSize = withoutEviction
+                ? getMaxCacheSizeWithoutEviction(config)
+                : getMaxCacheSizeWithEviction(config);
 
         for (int i = 0; i < maxSize; i++) {
             cache.put(i, i);
@@ -408,11 +438,23 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
                 }
                 i++;
             }
-            assertTrue("should have iterated over at most " + maxSize + " entries, but was " + i, i <= maxSize);
-            assertThatNoCacheEvictionHappened(cache);
+            if (withoutEviction) {
+                assertTrue("should have iterated over at most " + maxSize + " entries, but was " + i, i <= maxSize);
+                assertThatNoCacheEvictionHappened(cache);
+            }
         } finally {
             worker.shutdown();
         }
+    }
+
+    @Test
+    public void testIteratorDuringRemoval_withoutEviction() {
+        testIteratorDuringRemoval(true);
+    }
+
+    @Test
+    public void testIteratorDuringRemoval_withEviction() {
+        testIteratorDuringRemoval(false);
     }
 
     @Test

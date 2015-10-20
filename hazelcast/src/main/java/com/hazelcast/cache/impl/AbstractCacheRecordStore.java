@@ -190,8 +190,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected EvictionPolicyEvaluator<Data, R> createEvictionPolicyEvaluator(EvictionConfig cacheEvictionConfig) {
         final EvictionPolicy evictionPolicy = cacheEvictionConfig.getEvictionPolicy();
-        if (evictionPolicy == null || evictionPolicy == EvictionPolicy.NONE) {
-            throw new IllegalArgumentException("Eviction policy cannot be null or NONE");
+        if (evictionPolicy == null || evictionPolicy == EvictionPolicy.NONE || evictionPolicy == EvictionPolicy.RANDOM) {
+            throw new IllegalArgumentException("Eviction policy cannot be `null`, `NONE` or `RANDOM`");
         }
         return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(cacheEvictionConfig);
     }
@@ -222,6 +222,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (isEvictionEnabled()) {
             evictedCount = evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker, this);
             if (isStatisticsEnabled() && evictedCount > 0) {
+
                 statistics.increaseCacheEvictions(evictedCount);
             }
         }
