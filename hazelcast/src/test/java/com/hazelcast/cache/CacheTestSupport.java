@@ -90,7 +90,6 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
 
     protected <K, V> CacheConfig<K, V> getCacheConfigWithMaxSize(int maxCacheSize) {
         CacheConfig<K, V> config = createCacheConfig();
-        config.getEvictionConfig().setEvictionPolicy(EvictionPolicy.RANDOM);
         config.getEvictionConfig().setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
         config.getEvictionConfig().setSize(maxCacheSize);
         return config;
@@ -103,6 +102,12 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
     protected int getMaxCacheSizeWithoutEviction(CacheConfig cacheConfig) {
         int maxEntryCount = cacheConfig.getEvictionConfig().getSize();
         return calculateMaxPartitionSize(maxEntryCount, getPartitionCount());
+    }
+
+    protected int getMaxCacheSizeWithEviction(CacheConfig cacheConfig) {
+        int maxEntryCount = cacheConfig.getEvictionConfig().getSize();
+        int partitionCount = getPartitionCount();
+        return 10 * partitionCount * calculateMaxPartitionSize(maxEntryCount, partitionCount);
     }
 
     private int getPartitionCount() {
