@@ -79,18 +79,17 @@ public final class CollectionUtil {
      * @return
      */
     public static <T> T getItemAtPositionOrNull(Collection<T> collection, int position) {
-        if (collection.size() > position) {
-            if (collection instanceof List) {
-                return ((List<T>) collection).get(position);
-            } else {
-                Iterator<T> iterator = collection.iterator();
-                T item = null;
-                for (int i = 0; i < position + 1; i++) {
-                    item = iterator.next();
-                }
-                return item;
-            }
+        if (position >= collection.size()) {
+            return null;
         }
-        return null;
+        if (collection instanceof List) {
+            return ((List<T>) collection).get(position);
+        }
+        Iterator<T> iterator = collection.iterator();
+        T item = null;
+        for (int i = 0; i < position + 1; i++) {
+            item = iterator.next();
+        }
+        return item;
     }
 }
