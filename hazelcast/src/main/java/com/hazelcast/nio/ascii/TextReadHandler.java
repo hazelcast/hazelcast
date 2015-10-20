@@ -19,14 +19,15 @@ package com.hazelcast.nio.ascii;
 import com.hazelcast.internal.ascii.CommandParser;
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.ascii.memcache.GetCommandParser;
-import com.hazelcast.internal.ascii.memcache.SetCommandParser;
 import com.hazelcast.internal.ascii.memcache.DeleteCommandParser;
+import com.hazelcast.internal.ascii.memcache.ErrorCommand;
+import com.hazelcast.internal.ascii.memcache.GetCommandParser;
 import com.hazelcast.internal.ascii.memcache.IncrementCommandParser;
+import com.hazelcast.internal.ascii.memcache.SetCommandParser;
 import com.hazelcast.internal.ascii.memcache.SimpleCommandParser;
 import com.hazelcast.internal.ascii.memcache.TouchCommandParser;
-import com.hazelcast.internal.ascii.memcache.ErrorCommand;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
+import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpDeleteCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpGetCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
@@ -43,17 +44,17 @@ import java.util.Map;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ADD;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.APPEND;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.DECREMENT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.INCREMENT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.PREPEND;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.QUIT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.REPLACE;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.SET;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.DECREMENT;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.PREPEND;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.TOUCH;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.QUIT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.STATS;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.TOUCH;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
 
 public class TextReadHandler implements ReadHandler {
 
@@ -164,7 +165,9 @@ public class TextReadHandler implements ReadHandler {
     public void publishRequest(TextCommand command) {
         if (!connectionTypeSet) {
             if (command instanceof HttpCommand) {
-                if (!restEnabled) {
+                boolean isMancenterRequest = ((HttpCommand) command).getURI().
+                        startsWith(HttpCommandProcessor.URI_MANCENTER_CHANGE_URL);
+                if (!restEnabled && !isMancenterRequest) {
                     connection.close();
                 }
                 connection.setType(ConnectionType.REST_CLIENT);
