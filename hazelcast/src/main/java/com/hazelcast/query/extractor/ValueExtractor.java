@@ -52,12 +52,6 @@ package com.hazelcast.query.extractor;
 public abstract class ValueExtractor<T, R> {
 
     /**
-     * No-arg constructor required for the runtime instantiation of the extractor
-     */
-    public ValueExtractor() {
-    }
-
-    /**
      * Extracts a value from the given target object.
      * <p/>
      * May return:
