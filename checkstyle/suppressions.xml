@@ -348,7 +348,7 @@
 
     <!-- Collections (incl. Agrona backport) -->
     <suppress checks="JavadocType" files="com/hazelcast/util/collection/\w*2ObjectHashMap"/>
-    <suppress checks="MethodCount" files="com/hazelcast/util/collection/\w*HashSet"/>
+    <suppress checks="MethodCount" files="com/hazelcast/util/collection/\w*Hash\w*"/>
     <suppress checks="MethodCount" files="com/hazelcast/collection/impl/collection/CollectionContainer"/>
     <suppress checks="MagicNumber|Header" files="com/hazelcast/util/collection/"/>
     <suppress checks="SuperClone" files="com/hazelcast/util/collection/InflatableSet"/>
@@ -502,8 +502,7 @@
     <suppress checks="JavadocMethod" files="com/hazelcast/util/executor/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/util/executor/"/>
 
-    <!-- Written by Doug Lea with assistance from members of JCP JSR-166 Expert Group and released to the public domain,
-    as explained at http://creativecommons/org/licenses/publicdomain -->
+    <!-- Written by Doug Lea  -->
     <suppress checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|NPath|Cyclomatic"
               files="com/hazelcast/util/ConcurrentReferenceHashMap"/>
 
