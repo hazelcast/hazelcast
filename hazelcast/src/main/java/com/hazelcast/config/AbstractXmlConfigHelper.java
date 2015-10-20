@@ -68,7 +68,6 @@ public abstract class AbstractXmlConfigHelper {
 
     protected boolean domLevel3 = true;
     private final String xmlns = "http://www.hazelcast.com/schema/" + getNamespaceType();
-    private final String xsi = "http://www.w3.org/2001/XMLSchema-instance";
     private final String hazelcastSchemaLocation = getXmlType().name + "-config-" + getReleaseVersion() + ".xsd";
 
     /**
@@ -138,8 +137,7 @@ public abstract class AbstractXmlConfigHelper {
         return getXmlType().name.equals("hazelcast") ? "config" : "client-config";
     }
 
-    protected void schemaValidation(Document doc)
-            throws Exception {
+    protected void schemaValidation(Document doc) throws Exception {
         ArrayList<StreamSource> schemas = new ArrayList<StreamSource>();
         InputStream inputStream = null;
         String lineSeperator = StringUtil.getLineSeperator();
@@ -175,6 +173,7 @@ public abstract class AbstractXmlConfigHelper {
 
         // set schema settings, so user don't have to set hazelcast xsd namespace,uri
         root.setAttribute("xmlns", xmlns);
+        String xsi = "http://www.w3.org/2001/XMLSchema-instance";
         root.setAttribute("xmlns:xsi", xsi);
         root.setAttribute("xsi:schemaLocation", hazelcastSchemaLocation);
 
@@ -295,21 +294,17 @@ public abstract class AbstractXmlConfigHelper {
     }
 
     public static String cleanNodeName(final String nodeName) {
-        String name = nodeName;
-        if (name != null) {
-            name = StringUtil.lowerCaseInternal(nodeName.replaceAll("\\w+:", ""));
-        }
-        return name;
+        return nodeName != null ? StringUtil.lowerCaseInternal(nodeName.replaceFirst("^\\w+:", "")) : null;
     }
 
-    protected boolean checkTrue(final String value) {
+    public static boolean checkTrue(final String value) {
         String lowerCaseValue = StringUtil.lowerCaseInternal(value);
         return "true".equals(lowerCaseValue)
                 || "yes".equals(lowerCaseValue)
                 || "on".equals(lowerCaseValue);
     }
 
-    protected int getIntegerValue(final String parameterName, final String value, final int defaultValue) {
+    public static int getIntegerValue(final String parameterName, final String value, final int defaultValue) {
         try {
             return Integer.parseInt(value);
         } catch (final Exception e) {
@@ -320,7 +315,7 @@ public abstract class AbstractXmlConfigHelper {
         }
     }
 
-    protected long getLongValue(final String parameterName, final String value, final long defaultValue) {
+    public static long getLongValue(final String parameterName, final String value, final long defaultValue) {
         try {
             return Long.parseLong(value);
         } catch (final Exception e) {
