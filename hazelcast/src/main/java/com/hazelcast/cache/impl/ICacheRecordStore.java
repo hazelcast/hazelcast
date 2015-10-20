@@ -43,8 +43,7 @@ import java.util.Set;
  */
 public interface ICacheRecordStore {
 
-    // Defined as constant for check-style error
-    int ONE_HUNDRED_PERCENT = 100;
+    int UNIT_PERCENTAGE = 100;
 
     /**
      * Gets the value to which the specified key is mapped,
@@ -308,12 +307,27 @@ public interface ICacheRecordStore {
     void removeAll(Set<Data> keys, int completionId);
 
     /**
+     * Close is equivalent to below operations in the given order:
+     * <ul>
+     *     <li>close resources.</li>
+     *     <li>unregister all listeners.</li>
+     * </ul>
+     *
+     * @see #clear()
+     * @see #destroy()
+     */
+    void close();
+
+    /**
      * Destroy is equivalent to below operations in the given order:
      * <ul>
      *     <li>clear all.</li>
      *     <li>close resources.</li>
      *     <li>unregister all listeners.</li>
      * </ul>
+     *
+     * @see #clear()
+     * @see #close()
      */
     void destroy();
 

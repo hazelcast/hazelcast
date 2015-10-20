@@ -602,7 +602,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             Data eventDataValue = toEventData(dataValue);
             Data eventDataOldValue = toEventData(dataOldValue);
 
-            record.setValue(recordValue);
+            updateRecordValue(record, recordValue);
             onUpdateRecord(key, record, value, dataOldValue);
             invalidateEntry(key, source);
 
@@ -618,6 +618,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             onUpdateRecordError(key, record, value, dataValue, dataOldValue, error);
             throw ExceptionUtil.rethrow(error);
         }
+    }
+
+    protected void updateRecordValue(R record, Object recordValue) {
+        record.setValue(recordValue);
     }
 
     protected boolean updateRecordWithExpiry(Data key, Object value, R record, long expiryTime,
@@ -851,7 +855,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         doPutRecord(key, (R) record);
     }
 
-    protected final R doPutRecord(Data key, R record) {
+    public final R doPutRecord(Data key, R record) {
         return doPutRecord(key, record, SOURCE_NOT_AVAILABLE);
     }
 
@@ -1445,6 +1449,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected void onClear() {
         invalidateAllEntries();
+    }
+
+    @Override
+    public void close() {
+        clear();
+        closeListeners();
     }
 
     @Override

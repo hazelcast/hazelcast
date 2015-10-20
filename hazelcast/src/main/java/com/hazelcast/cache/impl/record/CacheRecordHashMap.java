@@ -149,5 +149,4 @@ public class CacheRecordHashMap
     public Iterable<EvictableSamplingEntry> sample(int sampleCount) {
         return super.getRandomSamples(sampleCount);
     }
-
 }
