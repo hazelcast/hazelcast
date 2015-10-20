@@ -69,7 +69,6 @@ import static com.hazelcast.client.config.ClientXmlElements.QUERY_CACHES;
 import static com.hazelcast.client.config.ClientXmlElements.SECURITY;
 import static com.hazelcast.client.config.ClientXmlElements.SERIALIZATION;
 import static com.hazelcast.client.config.ClientXmlElements.canOccurMultipleTimes;
-import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
@@ -338,9 +337,9 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleDiscoveryStrategies(Node node, ClientNetworkConfig clientNetworkConfig) {
-        DiscoveryStrategiesConfig discoveryStrategiesConfig = clientNetworkConfig.getDiscoveryStrategiesConfig();
+        final DiscoveryStrategiesConfig discoveryStrategiesConfig = clientNetworkConfig.getDiscoveryStrategiesConfig();
         for (Node child : new IterableNodeList(node.getChildNodes())) {
-            String name = cleanNodeName(child.getNodeName());
+            final String name = cleanNodeName(child.getNodeName());
             if ("discovery-strategy".equals(name)) {
                 handleDiscoveryStrategy(child, discoveryStrategiesConfig);
             } else if ("node-filter".equals(name)) {
@@ -350,24 +349,24 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleDiscoveryNodeFilter(Node node, DiscoveryStrategiesConfig discoveryStrategiesConfig) {
-        NamedNodeMap atts = node.getAttributes();
+        final NamedNodeMap atts = node.getAttributes();
 
-        Node att = atts.getNamedItem("class");
+        final Node att = atts.getNamedItem("class");
         if (att != null) {
             discoveryStrategiesConfig.setNodeFilterClass(getTextContent(att).trim());
         }
     }
 
     private void handleDiscoveryStrategy(Node node, DiscoveryStrategiesConfig discoveryStrategiesConfig) {
-        NamedNodeMap atts = node.getAttributes();
+        final NamedNodeMap atts = node.getAttributes();
 
         boolean enabled = false;
         String clazz = null;
 
         for (int a = 0; a < atts.getLength(); a++) {
-            Node att = atts.item(a);
-            String value = getTextContent(att).trim();
-            if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
+            final Node att = atts.item(a);
+            final String value = getTextContent(att).trim();
+            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
                 enabled = checkTrue(value);
             } else if ("class".equals(att.getNodeName())) {
                 clazz = value;
@@ -380,7 +379,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
         Map<String, Comparable> properties = new HashMap<String, Comparable>();
         for (Node child : new IterableNodeList(node.getChildNodes())) {
-            String name = cleanNodeName(child.getNodeName());
+            final String name = cleanNodeName(child.getNodeName());
             if ("properties".equals(name)) {
                 fillProperties(child, properties);
             }
@@ -412,7 +411,6 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             } else if ("iam-role".equals(cleanNodeName(n.getNodeName()))) {
                 clientAwsConfig.setIamRole(value);
             }
-
         }
         if (!clientAwsConfig.isInsideAws() && clientAwsConfig.getIamRole() != null) {
             throw new InvalidConfigurationException("You cannot set IAM Role from outside EC2");
@@ -426,7 +424,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         for (int i = 0; i < atts.getLength(); i++) {
             final Node att = atts.item(i);
             final String value = getTextContent(att).trim();
-            if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
+            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
                 clientAwsConfig.setEnabled(checkTrue(value));
             } else if (att.getNodeName().equals("connection-timeout-seconds")) {
                 int timeout = getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE);

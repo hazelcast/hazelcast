@@ -59,7 +59,7 @@
         </socket-interceptor>
 
         <ssl enabled="false">
-           <factory-class-name>com.hazelcast.examples.MySslFactory</factory-class-name>
+            <factory-class-name>com.hazelcast.examples.MySslFactory</factory-class-name>
         </ssl>
         <aws enabled="true" connection-timeout-seconds="11">
             <inside-aws>true</inside-aws>
@@ -115,7 +115,7 @@
         <page-size>1</page-size>
         <metadata-space-percentage>40.5</metadata-space-percentage>
     </native-memory>
-    
+
     <proxy-factories>
         <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ1" service="sampleService1"/>
         <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ2" service="sampleService1"/>

@@ -17,6 +17,7 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.AuthenticationException;
+import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.Authenticator;
@@ -24,8 +25,11 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.LifecycleServiceImpl;
-import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.client.impl.protocol.AuthenticationStatus;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.core.LifecycleEvent;
@@ -38,7 +42,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
@@ -48,7 +52,6 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -122,25 +125,48 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         @Override
         public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
             final SerializationService ss = client.getSerializationService();
-            AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
+            byte serializationVersion = ss.getVersion();
+            String uuid = null;
+            String ownerUuid = null;
+            if (principal != null) {
+                uuid = principal.getUuid();
+                ownerUuid = principal.getOwnerUuid();
+            }
+            ClientMessage clientMessage;
+            if (credentials instanceof UsernamePasswordCredentials) {
+                UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
+                clientMessage = ClientAuthenticationCodec.encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid,
+                        true, ClientTypes.JAVA, serializationVersion);
+            } else {
+                Data data = ss.toData(credentials);
+                clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid, true, ClientTypes.JAVA,
+                        serializationVersion);
+
+            }
             connection.init();
-            auth.setOwnerConnection(true);
-            //contains remoteAddress and principal
-            SerializableList collectionWrapper;
-            final ClientInvocation clientInvocation = new ClientInvocation(client, auth, connection);
-            final Future<SerializableList> future = clientInvocation.invoke();
+
+            ClientMessage response;
+            final ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
+            final Future<ClientMessage> future = clientInvocation.invoke();
             try {
-                collectionWrapper = ss.toObject(future.get());
+                response = future.get();
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e, IOException.class);
             }
-            final Iterator<Data> iter = collectionWrapper.iterator();
-            final Data addressData = iter.next();
-            final Address address = ss.toObject(addressData);
-            connection.setRemoteEndpoint(address);
-            connection.setIsAuthenticatedAsOwner();
-            final Data principalData = iter.next();
-            principal = ss.toObject(principalData);
+            ClientAuthenticationCodec.ResponseParameters result = ClientAuthenticationCodec.decodeResponse(response);
+
+            AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(result.status);
+            switch (authenticationStatus) {
+                case AUTHENTICATED:
+                    connection.setRemoteEndpoint(result.address);
+                    connection.setIsAuthenticatedAsOwner();
+                    principal = new ClientPrincipal(result.uuid, result.ownerUuid);
+                    return;
+                case CREDENTIALS_FAILED:
+                    throw new AuthenticationException("Invalid credentials!");
+                default:
+                    throw new AuthenticationException("Authentication status code not supported. status:" + authenticationStatus);
+            }
         }
     }
 
@@ -174,6 +200,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     private void connectToOne() throws Exception {
         ownerConnectionAddress = null;
+
         final ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
         final int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();

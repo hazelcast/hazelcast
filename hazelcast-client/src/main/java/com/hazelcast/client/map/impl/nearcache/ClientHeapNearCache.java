@@ -39,7 +39,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Implementation of the {@link NearCache} fo client-side.
+ * Implementation of the {@link NearCache}.
+ * <p/>
+ * todo: improve javadoc.
  *
  * @param <K>
  */
@@ -71,6 +73,7 @@ public class ClientHeapNearCache<K>
     private final Comparator<NearCacheRecord> selectedComparator;
 
     private volatile long lastCleanup;
+
 
     public ClientHeapNearCache(String mapName, ClientContext context, NearCacheConfig nearCacheConfig) {
         this.mapName = mapName;

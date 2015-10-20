@@ -55,10 +55,9 @@ public class DefaultClientExtension implements ClientExtension {
 
     @Override
     public void afterStart(HazelcastClientInstanceImpl client) {
-
     }
 
-    public SerializationService createSerializationService() {
+    public SerializationService createSerializationService(byte version) {
         SerializationService ss;
         try {
             ClientConfig config = client.getClientConfig();
@@ -70,6 +69,9 @@ public class DefaultClientExtension implements ClientExtension {
             SerializationServiceBuilder builder = new DefaultSerializationServiceBuilder();
             SerializationConfig serializationConfig = config.getSerializationConfig() != null ? config
                     .getSerializationConfig() : new SerializationConfig();
+            if (version > 0) {
+                builder.setVersion(version);
+            }
             ss = builder.setClassLoader(configClassLoader)
                     .setConfig(serializationConfig)
                     .setManagedContext(new HazelcastClientManagedContext(client, config.getManagedContext()))
@@ -132,5 +134,4 @@ public class DefaultClientExtension implements ClientExtension {
         // Currently "DefaultNearCacheManager" is enough.
         return new DefaultNearCacheManager();
     }
-
 }

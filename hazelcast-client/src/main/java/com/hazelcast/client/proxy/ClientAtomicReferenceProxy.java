@@ -16,109 +16,116 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.atomicreference.client.GetRequest;
-import com.hazelcast.concurrent.atomicreference.client.ApplyRequest;
-import com.hazelcast.concurrent.atomicreference.client.AlterRequest;
-import com.hazelcast.concurrent.atomicreference.client.AlterAndGetRequest;
-import com.hazelcast.concurrent.atomicreference.client.GetAndAlterRequest;
-import com.hazelcast.concurrent.atomicreference.client.CompareAndSetRequest;
-import com.hazelcast.concurrent.atomicreference.client.ContainsRequest;
-import com.hazelcast.concurrent.atomicreference.client.SetRequest;
-import com.hazelcast.concurrent.atomicreference.client.GetAndSetRequest;
-import com.hazelcast.concurrent.atomicreference.client.IsNullRequest;
-
-import com.hazelcast.core.IFunction;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceAlterAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceApplyCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceClearCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceCompareAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceContainsCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceGetAndAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceGetAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceIsNullCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceSetAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceSetCodec;
 import com.hazelcast.core.IAtomicReference;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.core.IFunction;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
-public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomicReference<E> {
-
-    private final String name;
-    private volatile Data key;
+public class ClientAtomicReferenceProxy<E> extends PartitionSpecificClientProxy implements IAtomicReference<E> {
 
     public ClientAtomicReferenceProxy(String serviceName, String objectId) {
         super(serviceName, objectId);
-        this.name = objectId;
     }
 
     @Override
     public <R> R apply(IFunction<E, R> function) {
         isNotNull(function, "function");
-        return invoke(new ApplyRequest(name, toData(function)));
+        ClientMessage request = AtomicReferenceApplyCodec.encodeRequest(name, toData(function));
+        ClientMessage response = invokeOnPartition(request);
+        AtomicReferenceApplyCodec.ResponseParameters resultParameters =
+                AtomicReferenceApplyCodec.decodeResponse(response);
+        return toObject(resultParameters.response);
     }
 
     @Override
     public void alter(IFunction<E, E> function) {
         isNotNull(function, "function");
-        invoke(new AlterRequest(name, toData(function)));
+        ClientMessage request = AtomicReferenceAlterCodec.encodeRequest(name, toData(function));
+        invokeOnPartition(request);
     }
 
     @Override
     public E alterAndGet(IFunction<E, E> function) {
         isNotNull(function, "function");
-        return invoke(new AlterAndGetRequest(name, toData(function)));
+        ClientMessage request = AtomicReferenceAlterAndGetCodec.encodeRequest(name, toData(function));
+        ClientMessage response = invokeOnPartition(request);
+        return toObject(AtomicReferenceAlterAndGetCodec.decodeResponse(response).response);
     }
 
     @Override
     public E getAndAlter(IFunction<E, E> function) {
         isNotNull(function, "function");
-        return invoke(new GetAndAlterRequest(name, toData(function)));
+        ClientMessage request = AtomicReferenceGetAndAlterCodec.encodeRequest(name, toData(function));
+        ClientMessage response = invokeOnPartition(request);
+        return toObject(AtomicReferenceGetAndAlterCodec.decodeResponse(response).response);
+
     }
 
     @Override
     public boolean compareAndSet(E expect, E update) {
-        return (Boolean) invoke(new CompareAndSetRequest(name, toData(expect), toData(update)));
+        ClientMessage request = AtomicReferenceCompareAndSetCodec.encodeRequest(name, toData(expect), toData(update));
+        ClientMessage response = invokeOnPartition(request);
+        return AtomicReferenceCompareAndSetCodec.decodeResponse(response).response;
     }
 
     @Override
     public boolean contains(E expected) {
-        return (Boolean) invoke(new ContainsRequest(name, toData(expected)));
+        ClientMessage request = AtomicReferenceContainsCodec.encodeRequest(name, toData(expected));
+        ClientMessage response = invokeOnPartition(request);
+        return AtomicReferenceContainsCodec.decodeResponse(response).response;
     }
 
     @Override
     public E get() {
-        return invoke(new GetRequest(name));
+        ClientMessage request = AtomicReferenceGetCodec.encodeRequest(name);
+        ClientMessage response = invokeOnPartition(request);
+        return toObject(AtomicReferenceGetCodec.decodeResponse(response).response);
     }
 
     @Override
     public void set(E newValue) {
-        invoke(new SetRequest(name, toData(newValue)));
+        ClientMessage request = AtomicReferenceSetCodec.encodeRequest(name, toData(newValue));
+        invokeOnPartition(request);
     }
 
     @Override
     public void clear() {
-        set(null);
+        ClientMessage request = AtomicReferenceClearCodec.encodeRequest(name);
+        invokeOnPartition(request);
     }
 
     @Override
     public E getAndSet(E newValue) {
-        return invoke(new GetAndSetRequest(name, toData(newValue)));
+        ClientMessage request = AtomicReferenceGetAndSetCodec.encodeRequest(name, toData(newValue));
+        ClientMessage response = invokeOnPartition(request);
+        return toObject(AtomicReferenceGetAndSetCodec.decodeResponse(response).response);
     }
 
     @Override
     public E setAndGet(E update) {
-        invoke(new SetRequest(name, toData(update)));
-        return update;
+        ClientMessage request = AtomicReferenceSetAndGetCodec.encodeRequest(name, toData(update));
+        ClientMessage response = invokeOnPartition(request);
+        return toObject(AtomicReferenceSetAndGetCodec.decodeResponse(response).response);
     }
 
     @Override
     public boolean isNull() {
-        return (Boolean) invoke(new IsNullRequest(name));
-    }
-
-    protected <T> T invoke(ClientRequest req) {
-        return super.invoke(req, getKey());
-    }
-
-    private Data getKey() {
-        if (key == null) {
-            key = toData(name);
-        }
-        return key;
+        ClientMessage request = AtomicReferenceIsNullCodec.encodeRequest(name);
+        ClientMessage response = invokeOnPartition(request);
+        return AtomicReferenceIsNullCodec.decodeResponse(response).response;
     }
 
     @Override

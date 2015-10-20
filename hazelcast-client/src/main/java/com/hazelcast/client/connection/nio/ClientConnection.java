@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.LifecycleService;
@@ -104,7 +103,7 @@ public class ClientConnection implements Connection, Closeable {
     public boolean write(OutboundFrame frame) {
         if (!live.get()) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Connection is closed, won't write packet -> " + frame);
+                logger.finest("Connection is closed, dropping frame -> " + frame);
             }
             return false;
         }
@@ -113,9 +112,8 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public void init() throws IOException {
-        final ByteBuffer buffer = ByteBuffer.allocate(6);
-        buffer.put(stringToBytes(Protocols.CLIENT_BINARY));
-        buffer.put(stringToBytes(ClientTypes.JAVA));
+        final ByteBuffer buffer = ByteBuffer.allocate(3);
+        buffer.put(stringToBytes(Protocols.CLIENT_BINARY_NEW));
         buffer.flip();
         socketChannelWrapper.write(buffer);
     }

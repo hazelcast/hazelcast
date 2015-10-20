@@ -20,7 +20,6 @@ import static com.hazelcast.cluster.AdvancedClusterStateTest.changeClusterStateE
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static com.hazelcast.test.HazelcastTestSupport.warmUpPartitions;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -44,7 +43,7 @@ public class ClientClusterStateTest {
 
     @After
     public void after() {
-        factory.terminateAll();
+        factory.shutdownAll();
     }
 
     @Test
@@ -57,9 +56,8 @@ public class ClientClusterStateTest {
     public void testClient_canExecuteWriteOperations_whenClusterState_frozen() {
         warmUpPartitions(instances);
 
-        final HazelcastInstance client = factory.newHazelcastClient();
         changeClusterStateEventually(instance, ClusterState.FROZEN);
-        assertEquals(ClusterState.FROZEN, instance.getCluster().getClusterState());
+        final HazelcastInstance client = factory.newHazelcastClient();
         final IMap<Object, Object> map = client.getMap(randomMapName());
         map.put(1, 1);
     }
@@ -85,8 +83,7 @@ public class ClientClusterStateTest {
         warmUpPartitions(instances);
 
         final ClientConfig clientConfig = new ClientConfig().setProperty(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS, "3");
-        final HazelcastInstance client = factory.newHazelcastClient(
-                clientConfig);
+        final HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         final IMap<Object, Object> map = client.getMap(randomMapName());
         changeClusterStateEventually(instance, ClusterState.PASSIVE);
         map.put(1, 1);
@@ -98,7 +95,6 @@ public class ClientClusterStateTest {
 
         final HazelcastInstance client = factory.newHazelcastClient();
         final IMap<Object, Object> map = client.getMap(randomMapName());
-
         changeClusterStateEventually(instance, ClusterState.PASSIVE);
         map.get(1);
     }

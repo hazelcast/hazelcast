@@ -16,11 +16,11 @@
 
 package com.hazelcast.client.connection;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.Packet;
 
 import java.io.IOException;
 
@@ -75,9 +75,10 @@ public interface ClientConnectionManager {
     /**
      * Handles incoming network package
      *
-     * @param packet to be processed
+     * @param message to be processed
+     * @param connection that client message come from
      */
-    void handlePacket(Packet packet);
+    void handleClientMessage(ClientMessage message, Connection connection);
 
     void addConnectionListener(ConnectionListener connectionListener);
 

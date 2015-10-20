@@ -27,7 +27,6 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.logging.Level;
 
 public class DiscoveryAddressProvider
         implements AddressProvider {
@@ -42,13 +41,15 @@ public class DiscoveryAddressProvider
 
     @Override
     public Collection<InetSocketAddress> loadAddresses() {
+        Iterable<DiscoveredNode> discoveredNodes = discoveryService.discoverNodes();
+
         Collection<InetSocketAddress> possibleMembers = new ArrayList<InetSocketAddress>();
-        for (DiscoveredNode discoveredNode : discoveryService.discoverNodes()) {
+        for (DiscoveredNode discoveredNode : discoveredNodes) {
             Address discoveredAddress = discoveredNode.getPrivateAddress();
             try {
                 possibleMembers.add(discoveredAddress.getInetSocketAddress());
             } catch (UnknownHostException e) {
-                LOGGER.log(Level.WARNING, "Unresolvable host exception: " + discoveredAddress, e);
+                LOGGER.warning("Unresolvable host exception", e);
             }
         }
         return possibleMembers;

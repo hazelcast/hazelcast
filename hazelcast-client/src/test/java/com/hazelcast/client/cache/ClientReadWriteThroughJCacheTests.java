@@ -190,7 +190,7 @@ public class ClientReadWriteThroughJCacheTests extends HazelcastTestSupport {
         @Override
         public Map<Integer, Integer> loadAll(Iterable<? extends Integer> keys) throws CacheLoaderException {
             Map<Integer, Integer> result = new HashMap<Integer, Integer>();
-            for (Integer key : keys ) {
+            for (Integer key : keys) {
                 Integer value = load(key);
                 if (value != null) {
                     result.put(key, value);
