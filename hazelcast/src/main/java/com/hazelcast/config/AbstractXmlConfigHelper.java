@@ -68,7 +68,7 @@ public abstract class AbstractXmlConfigHelper {
     private static final ILogger LOGGER = Logger.getLogger(AbstractXmlConfigHelper.class);
 
     protected boolean domLevel3 = true;
-    private final String xmlns = "http://www.hazelcast.com/schema/" + getNamespaceType();
+    final String xmlns = "http://www.hazelcast.com/schema/" + getNamespaceType();
     private final String hazelcastSchemaLocation = getXmlType().name + "-config-" + getReleaseVersion() + ".xsd";
 
     public static Iterable<Node> childElements(Node node) {
