@@ -182,6 +182,7 @@ public interface Cluster {
      * @see {@link com.hazelcast.instance.GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}
      *
      * @throws IllegalStateException    if member-list changes during the transaction
+     *                                  or there are ongoing/pending migration operations
      * @throws TransactionException     if there's already an ongoing transaction
      *                                  or this transaction fails
      *                                  or this transaction timeouts
@@ -206,6 +207,7 @@ public interface Cluster {
      *
      * @param transactionOptions transaction options
      * @throws IllegalStateException    if member-list changes during the transaction
+     *                                  or there are ongoing/pending migration operations
      * @throws TransactionException     if there's already an ongoing transaction
      *                                  or this transaction fails
      *                                  or this transaction timeouts
