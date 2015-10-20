@@ -25,9 +25,10 @@ import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.ClientCreateRequest;
-import com.hazelcast.client.impl.client.AddDistributedObjectListenerRequest;
-import com.hazelcast.client.impl.client.RemoveDistributedObjectListenerRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
 import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
@@ -44,8 +45,9 @@ import com.hazelcast.client.proxy.ClientRingbufferProxy;
 import com.hazelcast.client.proxy.ClientSemaphoreProxy;
 import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
+import com.hazelcast.client.proxy.txn.xa.XAResourceProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.txn.proxy.xa.XAResourceProxy;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
@@ -75,7 +77,6 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.exception.RetryableException;
-import com.hazelcast.spi.impl.PortableDistributedObjectEvent;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
@@ -107,6 +108,28 @@ public final class ProxyManager {
     private final ConcurrentMap<ObjectNamespace, ClientProxyFuture> proxies
             = new ConcurrentHashMap<ObjectNamespace, ClientProxyFuture>();
 
+    private final ListenerMessageCodec distributedObjectListenerCodec = new ListenerMessageCodec() {
+        @Override
+        public ClientMessage encodeAddRequest(boolean localOnly) {
+            return ClientAddDistributedObjectListenerCodec.encodeRequest(localOnly);
+        }
+
+        @Override
+        public String decodeAddResponse(ClientMessage clientMessage) {
+            return ClientAddDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
+        }
+
+        @Override
+        public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+            return ClientRemoveDistributedObjectListenerCodec.encodeRequest(realRegistrationId);
+        }
+
+        @Override
+        public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+            return ClientRemoveDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
     public ProxyManager(HazelcastClientInstanceImpl client) {
         this.client = client;
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
@@ -137,23 +160,18 @@ public final class ProxyManager {
         register(MapReduceService.SERVICE_NAME, ClientMapReduceProxy.class);
         register(ReplicatedMapService.SERVICE_NAME, ClientReplicatedMapProxy.class);
         register(XAService.SERVICE_NAME, XAResourceProxy.class);
-
+        register(RingbufferService.SERVICE_NAME, ClientRingbufferProxy.class);
         register(ReliableTopicService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
                 return new ClientReliableTopicProxy(id, client);
             }
         });
-
-
         register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
                 IAtomicLong atomicLong = client.getAtomicLong(IdGeneratorService.ATOMIC_LONG_NAME + id);
                 return new ClientIdGeneratorProxy(IdGeneratorService.SERVICE_NAME, id, atomicLong);
             }
         });
-
-        register(RingbufferService.SERVICE_NAME, ClientRingbufferProxy.class);
-
 
         for (ProxyFactoryConfig proxyFactoryConfig : config.getProxyFactoryConfigs()) {
             try {
@@ -261,7 +279,8 @@ public final class ProxyManager {
     }
 
     private boolean isRetryable(final Throwable t) {
-        return t instanceof RetryableException || ClientInvocation.isRetryable(t);
+        return t instanceof RetryableException
+                || ClientInvocation.isRetryable(t);
     }
 
     private void sleepForProxyInitRetry() {
@@ -272,12 +291,13 @@ public final class ProxyManager {
         }
     }
 
-    private void initialize(final ClientProxy clientProxy) throws Exception {
-        final Address target = findNextAddressToSendCreateRequest();
-        final Connection connection = getTargetOrOwnerConnection(target);
-        final ClientCreateRequest request = new ClientCreateRequest(clientProxy.getName(), clientProxy.getServiceName(), target);
+    private void initialize(ClientProxy clientProxy) throws Exception {
+        final Address initializationTarget = findNextAddressToSendCreateRequest();
+        final Connection connection = getTargetOrOwnerConnection(initializationTarget);
+        final ClientMessage clientMessage = ClientCreateProxyCodec.encodeRequest(clientProxy.getName(),
+                clientProxy.getServiceName(), initializationTarget);
         final ClientContext context = new ClientContext(client, this);
-        new ClientInvocation(client, request, connection).invoke().get();
+        new ClientInvocation(client, clientMessage, connection).invoke().get();
         clientProxy.setContext(context);
         clientProxy.onInitialize();
     }
@@ -337,39 +357,51 @@ public final class ProxyManager {
     }
 
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
-        final AddDistributedObjectListenerRequest request = new AddDistributedObjectListenerRequest();
-        final EventHandler<PortableDistributedObjectEvent> eventHandler = new EventHandler<PortableDistributedObjectEvent>() {
-            public void handle(PortableDistributedObjectEvent e) {
-                final ObjectNamespace ns = new DefaultObjectNamespace(e.getServiceName(), e.getName());
-                ClientProxyFuture future = proxies.get(ns);
-                ClientProxy proxy = future == null ? null : future.get();
-                if (proxy == null) {
-                    proxy = getOrCreateProxy(e.getServiceName(), e.getName());
-                }
+        final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener);
+        return client.getListenerService().registerListener(distributedObjectListenerCodec, eventHandler);
+    }
 
-                DistributedObjectEvent event = new DistributedObjectEvent(e.getEventType(), e.getServiceName(), proxy);
-                if (DistributedObjectEvent.EventType.CREATED.equals(e.getEventType())) {
-                    listener.distributedObjectCreated(event);
-                } else if (DistributedObjectEvent.EventType.DESTROYED.equals(e.getEventType())) {
-                    listener.distributedObjectDestroyed(event);
-                }
+    private final class DistributedObjectEventHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
+
+        private final DistributedObjectListener listener;
+
+        private DistributedObjectEventHandler(DistributedObjectListener listener) {
+            this.listener = listener;
+        }
+
+        @Override
+        public void handle(String name, String serviceName, String eventTypeName) {
+            final ObjectNamespace ns = new DefaultObjectNamespace(serviceName, name);
+            ClientProxyFuture future = proxies.get(ns);
+            ClientProxy proxy = future == null ? null : future.get();
+            if (proxy == null) {
+                proxy = getOrCreateProxy(serviceName, name);
             }
 
-            @Override
-            public void beforeListenerRegister() {
+            DistributedObjectEvent.EventType eventType = DistributedObjectEvent.EventType.valueOf(eventTypeName);
+            DistributedObjectEvent event = new DistributedObjectEvent(eventType,
+                    serviceName, proxy);
+            if (DistributedObjectEvent.EventType.CREATED.equals(eventType)) {
+                listener.distributedObjectCreated(event);
+            } else if (DistributedObjectEvent.EventType.DESTROYED.equals(eventType)) {
+                listener.distributedObjectDestroyed(event);
             }
+        }
 
-            @Override
-            public void onListenerRegister() {
+        @Override
+        public void beforeListenerRegister() {
 
-            }
-        };
-        return client.getListenerService().registerListener(request, eventHandler);
+        }
+
+        @Override
+        public void onListenerRegister() {
+
+        }
     }
 
     public boolean removeDistributedObjectListener(String id) {
-        final RemoveDistributedObjectListenerRequest request = new RemoveDistributedObjectListenerRequest(id);
-        return client.getListenerService().deregisterListener(request, id);
+        return client.getListenerService().deregisterListener(id);
     }
 
     private static class ClientProxyFuture {

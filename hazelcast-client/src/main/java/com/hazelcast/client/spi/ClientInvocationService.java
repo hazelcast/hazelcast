@@ -17,11 +17,11 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.Connection;
+
 import java.io.IOException;
 
 /**
@@ -43,10 +43,8 @@ public interface ClientInvocationService {
 
     void shutdown();
 
-    void handlePacket(Packet packet);
+    void handleClientMessage(ClientMessage message, Connection connection);
 
     void cleanConnectionResources(ClientConnection connection);
 
-    //TODO just to be called by stabilizer at the moment
-    <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target) throws Exception;
 }

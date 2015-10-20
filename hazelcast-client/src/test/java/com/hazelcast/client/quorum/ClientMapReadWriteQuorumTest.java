@@ -90,7 +90,6 @@ public class ClientMapReadWriteQuorumTest {
         c4 = factory.newHazelcastClient(getClientConfig(cluster.h4));
         c5 = factory.newHazelcastClient(getClientConfig(cluster.h5));
     }
-
     private static ClientConfig getClientConfig(HazelcastInstance instance) {
         ClientConfig clientConfig = new ClientConfig();
         Address address = getNode(instance).address;

@@ -1,5 +1,6 @@
 package com.hazelcast.client.cluster;
 
+import com.hazelcast.client.impl.ClientTestUtil;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
@@ -17,7 +18,6 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
-import static com.hazelcast.client.impl.ClientTestUtil.getClientClusterService;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
@@ -42,6 +42,7 @@ public class ClientClusterServiceMemberListTest {
     private HazelcastInstance dataInstance2;
 
     private HazelcastInstance client;
+
 
     @Before
     public void before() {
@@ -99,4 +100,7 @@ public class ClientClusterServiceMemberListTest {
         return getNode(instance).getLocalMember();
     }
 
+    private ClientClusterService getClientClusterService(HazelcastInstance client) {
+        return ClientTestUtil.getHazelcastClientInstanceImpl(client).getClientClusterService();
+    }
 }

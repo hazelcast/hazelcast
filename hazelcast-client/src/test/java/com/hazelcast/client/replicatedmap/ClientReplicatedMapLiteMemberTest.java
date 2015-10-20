@@ -110,7 +110,6 @@ public class ClientReplicatedMapLiteMemberTest {
         map.put(1, 2);
     }
 
-
     private void configureDummyClientConnection(final HazelcastInstance instance) throws UnknownHostException {
         final InetSocketAddress socketAddress = getAddress(instance).getInetSocketAddress();
         dummyClientConfig.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST, "false");

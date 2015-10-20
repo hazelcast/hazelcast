@@ -9,7 +9,7 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -24,34 +24,35 @@ import static com.hazelcast.ringbuffer.OverflowPolicy.OVERWRITE;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class RingbufferTest extends HazelcastTestSupport {
 
     public static int CAPACITY = 10;
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private HazelcastInstance client;
+    private HazelcastInstance server;
     private Ringbuffer<String> clientRingbuffer;
     private Ringbuffer<String> serverRingbuffer;
-    private HazelcastInstance server;
-    private HazelcastInstance client;
 
     @Before
-    public void setup() {
+    public void init() {
+        setLoggingLog4j();
         Config config = new Config();
         config.addRingBufferConfig(new RingbufferConfig("rb*").setCapacity(CAPACITY));
 
         server = hazelcastFactory.newHazelcastInstance(config);
         client = hazelcastFactory.newHazelcastClient();
 
-        String name = "rb-" + HazelcastTestSupport.randomString();
-        clientRingbuffer = client.getRingbuffer(name);
+        String name = "rb-" + randomString();
         serverRingbuffer = server.getRingbuffer(name);
+        clientRingbuffer = client.getRingbuffer(name);
     }
 
     @After
-    public void destroy() {
-        hazelcastFactory.shutdownAll();
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
     @Test
@@ -215,4 +216,3 @@ public class RingbufferTest extends HazelcastTestSupport {
         }
     }
 }
-

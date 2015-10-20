@@ -16,121 +16,133 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.atomiclong.client.ApplyRequest;
-import com.hazelcast.concurrent.atomiclong.client.AlterRequest;
-import com.hazelcast.concurrent.atomiclong.client.AlterAndGetRequest;
-import com.hazelcast.concurrent.atomiclong.client.AddAndGetRequest;
-import com.hazelcast.concurrent.atomiclong.client.CompareAndSetRequest;
-import com.hazelcast.concurrent.atomiclong.client.GetAndAlterRequest;
-import com.hazelcast.concurrent.atomiclong.client.GetAndAddRequest;
-import com.hazelcast.concurrent.atomiclong.client.GetAndSetRequest;
-import com.hazelcast.concurrent.atomiclong.client.SetRequest;
-
-import com.hazelcast.core.IFunction;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAddAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongApplyCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongCompareAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongDecrementAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAddCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndIncrementCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongIncrementAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongSetCodec;
 import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.core.IFunction;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
-public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
-
-    private final String name;
-    private volatile Data key;
+public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implements IAtomicLong {
 
     public ClientAtomicLongProxy(String serviceName, String objectId) {
         super(serviceName, objectId);
-        this.name = objectId;
     }
 
     @Override
     public <R> R apply(IFunction<Long, R> function) {
         isNotNull(function, "function");
-        return invoke(new ApplyRequest(name, toData(function)));
+        ClientMessage request = AtomicLongApplyCodec.encodeRequest(name, toData(function));
+        ClientMessage response = invokeOnPartition(request);
+        AtomicLongApplyCodec.ResponseParameters resultParameters = AtomicLongApplyCodec.decodeResponse(response);
+        return toObject(resultParameters.response);
     }
 
     @Override
     public void alter(IFunction<Long, Long> function) {
         isNotNull(function, "function");
-        invoke(new AlterRequest(name, toData(function)));
+        ClientMessage request = AtomicLongAlterCodec.encodeRequest(name, toData(function));
+        invokeOnPartition(request);
     }
 
     @Override
     public long alterAndGet(IFunction<Long, Long> function) {
         isNotNull(function, "function");
-        return (Long) invoke(new AlterAndGetRequest(name, toData(function)));
+        ClientMessage request = AtomicLongAlterAndGetCodec.encodeRequest(name, toData(function));
+        AtomicLongAlterAndGetCodec.ResponseParameters resultParameters
+                = AtomicLongAlterAndGetCodec.decodeResponse(invokeOnPartition(request));
+        return resultParameters.response;
     }
 
     @Override
     public long getAndAlter(IFunction<Long, Long> function) {
         isNotNull(function, "function");
-        return (Long) invoke(new GetAndAlterRequest(name, toData(function)));
+        ClientMessage request = AtomicLongGetAndAlterCodec.encodeRequest(name, toData(function));
+        AtomicLongGetAndAlterCodec.ResponseParameters resultParameters
+                = AtomicLongGetAndAlterCodec.decodeResponse(invokeOnPartition(request));
+        return resultParameters.response;
     }
 
     @Override
     public long addAndGet(long delta) {
-        AddAndGetRequest request = new AddAndGetRequest(name, delta);
-        Long result = invoke(request);
-        return result;
+        ClientMessage request = AtomicLongAddAndGetCodec.encodeRequest(name, delta);
+        AtomicLongAddAndGetCodec.ResponseParameters resultParameters
+                = AtomicLongAddAndGetCodec.decodeResponse(invokeOnPartition(request));
+        return resultParameters.response;
     }
 
     @Override
     public boolean compareAndSet(long expect, long update) {
-        CompareAndSetRequest request = new CompareAndSetRequest(name, expect, update);
-        Boolean result = invoke(request);
-        return result;
+        ClientMessage request = AtomicLongCompareAndSetCodec.encodeRequest(name, expect, update);
+        AtomicLongCompareAndSetCodec.ResponseParameters resultParameters
+                = AtomicLongCompareAndSetCodec.decodeResponse(invokeOnPartition(request));
+        return resultParameters.response;
     }
 
     @Override
     public long decrementAndGet() {
-        return addAndGet(-1);
+        ClientMessage request = AtomicLongDecrementAndGetCodec.encodeRequest(name);
+        AtomicLongDecrementAndGetCodec.ResponseParameters resultParameters
+                = AtomicLongDecrementAndGetCodec.decodeResponse(invokeOnPartition(request));
+        return resultParameters.response;
     }
 
     @Override
     public long get() {
-        return getAndAdd(0);
+        ClientMessage request = AtomicLongGetCodec.encodeRequest(name);
+        AtomicLongGetCodec.ResponseParameters resultParameters
+                = AtomicLongGetCodec.decodeResponse(invokeOnPartition(request));
+        return resultParameters.response;
     }
 
     @Override
     public long getAndAdd(long delta) {
-        GetAndAddRequest request = new GetAndAddRequest(name, delta);
-        Long result = invoke(request);
-        return result;
+        ClientMessage request = AtomicLongGetAndAddCodec.encodeRequest(name, delta);
+        AtomicLongGetAndAddCodec.ResponseParameters resultParameters
+                = AtomicLongGetAndAddCodec.decodeResponse(invokeOnPartition(request));
+        return resultParameters.response;
     }
 
     @Override
     public long getAndSet(long newValue) {
-        GetAndSetRequest request = new GetAndSetRequest(name, newValue);
-        Long result = invoke(request);
-        return result;
+        ClientMessage request = AtomicLongGetAndSetCodec.encodeRequest(name, newValue);
+        AtomicLongGetAndSetCodec.ResponseParameters resultParameters
+                = AtomicLongGetAndSetCodec.decodeResponse(invokeOnPartition(request));
+        return resultParameters.response;
     }
 
     @Override
     public long incrementAndGet() {
-        return addAndGet(1);
+        ClientMessage request = AtomicLongIncrementAndGetCodec.encodeRequest(name);
+        AtomicLongIncrementAndGetCodec.ResponseParameters resultParameters
+                = AtomicLongIncrementAndGetCodec.decodeResponse(invokeOnPartition(request));
+        return resultParameters.response;
     }
 
     @Override
     public long getAndIncrement() {
-        return getAndAdd(1);
+        ClientMessage request = AtomicLongGetAndIncrementCodec.encodeRequest(name);
+        AtomicLongGetAndIncrementCodec.ResponseParameters resultParameters
+                = AtomicLongGetAndIncrementCodec.decodeResponse(invokeOnPartition(request));
+        return resultParameters.response;
     }
 
     @Override
     public void set(long newValue) {
-        SetRequest request = new SetRequest(name, newValue);
-        invoke(request);
-    }
-
-    protected <T> T invoke(ClientRequest req) {
-        return super.invoke(req, getKey());
-    }
-
-    private Data getKey() {
-        if (key == null) {
-            key = toData(name);
-        }
-        return key;
+        ClientMessage request = AtomicLongSetCodec.encodeRequest(name, newValue);
+        invokeOnPartition(request);
     }
 
     @Override

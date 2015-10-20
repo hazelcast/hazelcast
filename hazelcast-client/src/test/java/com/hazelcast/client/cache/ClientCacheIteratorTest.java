@@ -32,7 +32,7 @@ import javax.cache.spi.CachingProvider;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class  ClientCacheIteratorTest extends CacheIteratorAbstractTest {
+public class ClientCacheIteratorTest extends CacheIteratorAbstractTest {
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();
 

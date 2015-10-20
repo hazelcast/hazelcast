@@ -22,6 +22,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.quorum.PartitionedCluster;
 import com.hazelcast.quorum.QuorumException;
@@ -89,7 +90,6 @@ public class ClientMapWriteQuorumTest {
         c4 = factory.newHazelcastClient(getClientConfig(cluster.h4));
         c5 = factory.newHazelcastClient(getClientConfig(cluster.h5));
     }
-
     private static ClientConfig getClientConfig(HazelcastInstance instance) {
         ClientConfig clientConfig = new ClientConfig();
         Address address = getNode(instance).address;

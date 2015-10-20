@@ -324,7 +324,6 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         return getNode(node).getNodeEngine().getGroupProperties().getInteger(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY);
     }
 
-
     @Test
     public void testIssue3023_testWithSubStringMapNames() throws Exception {
         String mapNameWithStore = "MapStore*";

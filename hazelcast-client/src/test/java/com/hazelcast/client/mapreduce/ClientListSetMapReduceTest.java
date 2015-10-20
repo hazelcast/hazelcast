@@ -81,6 +81,7 @@ public class ClientListSetMapReduceTest
 
         assertEquals(1, result.size());
 
+        int count = 0;
         for (Map.Entry<String, Integer> entry : result.entrySet()) {
             assertEquals(list.getName(), entry.getKey());
             assertEquals(expectedResult, (int) entry.getValue());

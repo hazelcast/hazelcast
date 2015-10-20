@@ -16,9 +16,8 @@
 
 package com.hazelcast.client.spi.impl.listener;
 
-import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.ClientResponse;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
@@ -27,8 +26,6 @@ import com.hazelcast.core.MembershipListener;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
 
@@ -67,11 +64,11 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
         eventHandlerMap.remove(callId);
     }
 
-    public void handleEventPacket(Packet packet) {
+    public void handleClientMessage(ClientMessage clientMessage) {
         try {
-            eventExecutor.execute(new ClientEventProcessor(packet));
+            eventExecutor.execute(new ClientEventProcessor(clientMessage));
         } catch (RejectedExecutionException e) {
-            logger.log(Level.WARNING, " event packet could not be handled ", e);
+            logger.log(Level.WARNING, " event clientMessage could not be handled ", e);
         }
     }
 
@@ -84,34 +81,27 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
     }
 
     private final class ClientEventProcessor implements StripedRunnable {
-        private final Packet packet;
+        final ClientMessage clientMessage;
 
-        private ClientEventProcessor(Packet packet) {
-            this.packet = packet;
+        private ClientEventProcessor(ClientMessage clientMessage) {
+            this.clientMessage = clientMessage;
         }
 
         @Override
         public void run() {
-            ClientConnection conn = (ClientConnection) packet.getConn();
-            ClientResponse clientResponse = serializationService.toObject(packet);
-            int callId = clientResponse.getCallId();
-            Data response = clientResponse.getResponse();
-            handleEvent(response, callId, conn);
-        }
-
-        private void handleEvent(Data event, int callId, ClientConnection conn) {
-            Object eventObject = serializationService.toObject(event);
-            EventHandler eventHandler = eventHandlerMap.get(callId);
+            int correlationId = clientMessage.getCorrelationId();
+            final EventHandler eventHandler = eventHandlerMap.get(correlationId);
             if (eventHandler == null) {
-                logger.warning("No eventHandler for callId: " + callId + ", event: " + eventObject + ", conn: " + conn);
+                logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
                 return;
             }
-            eventHandler.handle(eventObject);
+
+            eventHandler.handle(clientMessage);
         }
 
         @Override
         public int getKey() {
-            return packet.getPartitionId();
+            return clientMessage.getPartitionId();
         }
     }
 }

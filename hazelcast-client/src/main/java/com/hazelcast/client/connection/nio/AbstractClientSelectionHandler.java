@@ -46,7 +46,7 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
     }
 
     @Override
-    public void onFailure(Throwable e) {
+    public final void onFailure(Throwable e) {
         if (sk != null) {
             sk.cancel();
         }

@@ -16,7 +16,8 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.nio.Packet;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.util.ClientMessageBuilder;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.Clock;
 
@@ -24,18 +25,24 @@ import java.io.EOFException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
-public class ClientReadHandler extends AbstractClientSelectionHandler {
+public class ClientReadHandler
+        extends AbstractClientSelectionHandler {
 
     private final ByteBuffer buffer;
+    private final ClientMessageBuilder builder;
 
     private volatile long lastHandle;
 
-    private Packet packet;
-
-    public ClientReadHandler(ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize) {
+    public ClientReadHandler(final ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize) {
         super(connection, ioThread);
         buffer = ByteBuffer.allocate(bufferSize);
         lastHandle = Clock.currentTimeMillis();
+        builder = new ClientMessageBuilder(new ClientMessageBuilder.MessageHandler() {
+            @Override
+            public void handleMessage(ClientMessage message) {
+                connectionManager.handleClientMessage(message, connection);
+            }
+        });
     }
 
     @Override
@@ -63,28 +70,12 @@ public class ClientReadHandler extends AbstractClientSelectionHandler {
 
         buffer.flip();
 
-        readPacket();
+        builder.onData(buffer);
 
         if (buffer.hasRemaining()) {
             buffer.compact();
         } else {
             buffer.clear();
-        }
-    }
-
-    private void readPacket() {
-        while (buffer.hasRemaining()) {
-            if (packet == null) {
-                packet = new Packet();
-            }
-            boolean complete = packet.readFrom(buffer);
-            if (complete) {
-                packet.setConn(connection);
-                connectionManager.handlePacket(packet);
-                packet = null;
-            } else {
-                break;
-            }
         }
     }
 

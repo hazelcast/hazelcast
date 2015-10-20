@@ -13,7 +13,8 @@ import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
-import com.hazelcast.client.impl.client.GetDistributedObjectsRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.ClientClusterService;
@@ -27,15 +28,15 @@ import com.hazelcast.client.spi.impl.AwsAddressProvider;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.spi.impl.ClientNonSmartInvocationServiceImpl;
-import com.hazelcast.client.spi.impl.listener.ClientNonSmartListenerService;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
-import com.hazelcast.client.spi.impl.listener.ClientSmartListenerService;
 import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.spi.impl.DefaultAddressProvider;
 import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressProvider;
+import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
+import com.hazelcast.client.spi.impl.listener.ClientNonSmartListenerService;
+import com.hazelcast.client.spi.impl.listener.ClientSmartListenerService;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -81,7 +82,6 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -92,7 +92,6 @@ import com.hazelcast.spi.discovery.DiscoveryMode;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
-import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -118,6 +117,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
     private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
+    private static final short protocolVersion = 1;
 
     private final ClientProperties clientProperties;
     private final int id = CLIENT_ID.getAndIncrement();
@@ -125,21 +125,21 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientConfig config;
     private final ThreadGroup threadGroup;
     private final LifecycleServiceImpl lifecycleService;
-    private final SerializationService serializationService;
     private final ClientConnectionManager connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
     private final ClientInvocationService invocationService;
     private final ClientExecutionServiceImpl executionService;
     private final ClientListenerServiceImpl listenerService;
-    private final NearCacheManager nearCacheManager;
     private final ClientTransactionManagerService transactionManager;
+    private final NearCacheManager nearCacheManager;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
     private final LoadBalancer loadBalancer;
     private final ClientExtension clientExtension;
     private final Credentials credentials;
     private final DiscoveryService discoveryService;
+    private SerializationService serializationService;
 
     public HazelcastClientInstanceImpl(ClientConfig config,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
@@ -160,7 +160,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
         clientProperties = new ClientProperties(config);
-        serializationService = clientExtension.createSerializationService();
+        serializationService = clientExtension.createSerializationService((byte)-1);
         proxyManager = new ProxyManager(this);
         executionService = initExecutionService();
         loadBalancer = initLoadBalancer(config);
@@ -248,7 +248,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         final ClientNetworkConfig networkConfig = config.getNetworkConfig();
         if (networkConfig.isSmartRouting()) {
             return new ClientSmartInvocationServiceImpl(this, loadBalancer);
-
         } else {
             return new ClientNonSmartInvocationServiceImpl(this);
         }
@@ -334,11 +333,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     @Override
-    public <E> ITopic<E> getReliableTopic(String name) {
-        return getDistributedObject(ReliableTopicService.SERVICE_NAME, name);
-    }
-
-    @Override
     public <E> ISet<E> getSet(String name) {
         return getDistributedObject(SetService.SERVICE_NAME, name);
     }
@@ -371,6 +365,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public ILock getLock(String key) {
         return getDistributedObject(LockServiceImpl.SERVICE_NAME, key);
+    }
+
+    @Override
+    public <E> ITopic<E> getReliableTopic(String name) {
+        return getDistributedObject(ReliableTopicService.SERVICE_NAME, name);
     }
 
     @Override
@@ -444,13 +443,15 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public Collection<DistributedObject> getDistributedObjects() {
         try {
-            GetDistributedObjectsRequest request = new GetDistributedObjectsRequest();
+            ClientMessage request = ClientGetDistributedObjectsCodec.encodeRequest();
+            final Future<ClientMessage> future = new ClientInvocation(this, request).invoke();
+            ClientMessage response = future.get();
+            ClientGetDistributedObjectsCodec.ResponseParameters resultParameters =
+                    ClientGetDistributedObjectsCodec.decodeResponse(response);
 
-            final Future<SerializableList> future = new ClientInvocation(this, request).invoke();
-            final SerializableList serializableList = serializationService.toObject(future.get());
-            for (Data data : serializableList) {
-                final DistributedObjectInfo o = serializationService.toObject(data);
-                getDistributedObject(o.getServiceName(), o.getName());
+            Collection<DistributedObjectInfo> infoCollection = resultParameters.infoCollection;
+            for (DistributedObjectInfo distributedObjectInfo : infoCollection) {
+                getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
             }
             return (Collection<DistributedObject>) proxyManager.getDistributedObjects();
         } catch (Exception e) {
@@ -559,6 +560,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return credentials;
     }
 
+    public short getProtocolVersion() {
+        return protocolVersion;
+    }
+
     @Override
     public void shutdown() {
         getLifecycleService().shutdown();
@@ -576,4 +581,5 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         serializationService.destroy();
         nearCacheManager.destroyAllNearCaches();
     }
+
 }

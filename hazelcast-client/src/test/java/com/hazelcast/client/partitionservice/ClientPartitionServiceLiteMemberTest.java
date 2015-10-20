@@ -19,7 +19,8 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientPartitionServiceLiteMemberTest extends TestHazelcastFactory {
+public class ClientPartitionServiceLiteMemberTest
+        extends TestHazelcastFactory {
 
     private TestHazelcastFactory factory;
 

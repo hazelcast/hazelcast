@@ -17,12 +17,11 @@
 package com.hazelcast.client.spi.impl.listener;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
-import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.nio.Address;
@@ -35,8 +34,8 @@ import java.util.concurrent.Future;
 
 public class ClientNonSmartListenerService extends ClientListenerServiceImpl {
 
-    private final Map<ClientRegistrationKey, ClientEventRegistration> registrations =
-            new ConcurrentHashMap<ClientRegistrationKey, ClientEventRegistration>();
+    private final Map<ClientRegistrationKey, ClientEventRegistration> registrations
+            = new ConcurrentHashMap<ClientRegistrationKey, ClientEventRegistration>();
 
     public ClientNonSmartListenerService(HazelcastClientInstanceImpl client,
                                          int eventThreadCount, int eventQueueCapacity) {
@@ -44,26 +43,28 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl {
     }
 
     @Override
-    public String registerListener(BaseClientAddListenerRequest request, EventHandler handler) {
-        handler.beforeListenerRegister();
-
+    public String registerListener(ListenerMessageCodec codec, EventHandler handler) {
         String userRegistrationId = UuidUtil.newUnsecureUuidString();
-        ClientRegistrationKey registrationKey = new ClientRegistrationKey(userRegistrationId, request, handler);
+        ClientMessage request = codec.encodeAddRequest(false);
+        ClientRegistrationKey registrationKey = new ClientRegistrationKey(userRegistrationId, request, handler, codec);
         invoke(registrationKey);
         return userRegistrationId;
     }
 
     public void invoke(ClientRegistrationKey registrationKey) {
         EventHandler handler = registrationKey.getHandler();
-        ClientRequest request = registrationKey.getRequest();
-        ClientInvocation invocation = new ClientInvocation(client, handler, request);
+        ClientMessage request = registrationKey.getRequest();
+
+        handler.beforeListenerRegister();
+        ClientInvocation invocation = new ClientInvocation(client, request);
+        invocation.setEventHandler(handler);
         try {
             ClientInvocationFuture future = invocation.invoke();
-            String registrationId = serializationService.toObject(future.get());
+            String registrationId = registrationKey.getCodec().decodeAddResponse(future.get());
             handler.onListenerRegister();
             Address address = future.getInvocation().getSendConnection().getRemoteEndpoint();
             ClientEventRegistration registration = new ClientEventRegistration(registrationId,
-                    request.getCallId(), address);
+                    request.getCorrelationId(), address, registrationKey.getCodec());
             registrations.put(registrationKey, registration);
         } catch (Exception e) {
             //if invocation cannot be done that means connection is broken and there is no need to add listener
@@ -72,13 +73,13 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl {
     }
 
     @Override
-    public boolean deregisterListener(BaseClientRemoveListenerRequest request, String userRegistrationId) {
+    public boolean deregisterListener(String userRegistrationId) {
         ClientEventRegistration registration = registrations.remove(new ClientRegistrationKey(userRegistrationId));
         if (registration == null) {
             return false;
         }
         removeEventHandler(registration.getCallId());
-        request.setRegistrationId(registration.getServerRegistrationId());
+        ClientMessage request = registration.getCodec().encodeRemoveRequest(registration.getServerRegistrationId());
         try {
             Future future = new ClientInvocation(client, request, registration.getSubscriber()).invoke();
             future.get();
@@ -118,5 +119,4 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl {
     public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
         //ignore
     }
-
 }

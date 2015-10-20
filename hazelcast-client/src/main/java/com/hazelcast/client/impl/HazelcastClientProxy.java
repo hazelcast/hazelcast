@@ -45,8 +45,8 @@ import com.hazelcast.instance.TerminatedLifecycleService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -69,11 +69,6 @@ public final class HazelcastClientProxy implements HazelcastInstance, Serializat
     }
 
     @Override
-    public <E> Ringbuffer<E> getRingbuffer(String name) {
-        return getClient().getRingbuffer(name);
-    }
-
-    @Override
     public Config getConfig() {
         return getClient().getConfig();
     }
@@ -81,6 +76,11 @@ public final class HazelcastClientProxy implements HazelcastInstance, Serializat
     @Override
     public String getName() {
         return getClient().getName();
+    }
+
+    @Override
+    public <E> Ringbuffer<E> getRingbuffer(String name) {
+        return getClient().getRingbuffer(name);
     }
 
     @Override

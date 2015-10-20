@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi.impl.listener;
 
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.nio.Address;
 
 /**
@@ -26,14 +27,15 @@ public class ClientEventRegistration {
     private Address subscriber;
     private final String serverRegistrationId;
     private final int callId;
+    private final ListenerMessageCodec codec;
 
     public ClientEventRegistration(String serverRegistrationId,
-                                   int callId, Address subscriber) {
+                                   int callId, Address subscriber, ListenerMessageCodec codec) {
         this.serverRegistrationId = serverRegistrationId;
         this.callId = callId;
         this.subscriber = subscriber;
+        this.codec = codec;
     }
-
 
     /**
      * Alias registration id is same as registration id in the beginning. If listener had to be re-registered
@@ -67,5 +69,8 @@ public class ClientEventRegistration {
         return callId;
     }
 
+    public ListenerMessageCodec getCodec() {
+        return codec;
+    }
 }
 
