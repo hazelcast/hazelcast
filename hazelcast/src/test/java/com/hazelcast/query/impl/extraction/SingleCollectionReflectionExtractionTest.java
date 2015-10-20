@@ -2,7 +2,10 @@ package com.hazelcast.query.impl.extraction;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -11,6 +14,7 @@ import static com.hazelcast.query.impl.extraction.SingleCollectionDataStructure.
 import static com.hazelcast.query.impl.extraction.SingleCollectionDataStructure.person;
 
 @RunWith(Parameterized.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class SingleCollectionReflectionExtractionTest extends AbstractExtractionTest {
 
     private static final Person BOND = person(limb("left", 49), limb("right", 51));

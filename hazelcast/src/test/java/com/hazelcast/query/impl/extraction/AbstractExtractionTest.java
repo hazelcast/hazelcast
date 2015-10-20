@@ -196,9 +196,11 @@ public abstract class AbstractExtractionTest extends HazelcastTestSupport {
         Collection<?> values = map.values(query.predicate);
 
         // THEN
-        assertThat(values, hasSize(expected.objects.length));
-        if (expected.objects.length > 0) {
-            assertThat(values, containsInAnyOrder(expected.objects));
+        if (expected.throwable == null) {
+            assertThat(values, hasSize(expected.objects.length));
+            if (expected.objects.length > 0) {
+                assertThat(values, containsInAnyOrder(expected.objects));
+            }
         }
     }
 

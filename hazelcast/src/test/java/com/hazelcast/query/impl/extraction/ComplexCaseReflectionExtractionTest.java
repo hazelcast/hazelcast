@@ -3,8 +3,11 @@ package com.hazelcast.query.impl.extraction;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -18,6 +21,7 @@ import static com.hazelcast.query.impl.extraction.ComplexCaseDataStructure.tatto
 
 @Ignore("multiple failures")
 @RunWith(Parameterized.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ComplexCaseReflectionExtractionTest extends AbstractExtractionTest {
 
     private static final Person BOND = person("Bond",
@@ -54,8 +58,6 @@ public class ComplexCaseReflectionExtractionTest extends AbstractExtractionTest 
 
     @Test
     public void indexOutOfBound_negative() {
-        // TODO inconsistent with indexOutOfBound()
-        // TODO inconsistent exception type with indexOutOfBound_negative_atLeaf
         execute(Input.of(BOND, KRUEGER),
                 Query.of(Predicates.equal("limbs_[-1].tattoos_[1]", "knife"), mv),
                 Expected.of(QueryException.class));
@@ -70,11 +72,9 @@ public class ComplexCaseReflectionExtractionTest extends AbstractExtractionTest 
 
     @Test
     public void indexOutOfBound_negative_atLeaf() {
-        // TODO inconsistent with indexOutOfBound_atLeaf()
-        // TODO inconsistent exception type with indexOutOfBound_negative
         execute(Input.of(BOND, KRUEGER),
                 Query.of(Predicates.equal("limbs_[0].tattoos_[-1]", "knife"), mv),
-                Expected.of(IllegalArgumentException.class));
+                Expected.of(QueryException.class));
     }
 
     @Test
@@ -91,22 +91,6 @@ public class ComplexCaseReflectionExtractionTest extends AbstractExtractionTest 
         execute(Input.of(BOND, KRUEGER),
                 Query.of(Predicates.equal("limbs_[0].tattoos_[100].asdfas", "knife"), mv),
                 Expected.of(QueryException.class));
-    }
-
-    @Test
-    @Ignore // TODO does not work for arrays (works for lists only)
-    public void sizeProperty() {
-        execute(Input.of(BOND, KRUEGER),
-                Query.of(Predicates.equal("limbs_[0].tattoos_.size", 1), mv),
-                Expected.of(KRUEGER));
-    }
-
-    @Test
-    @Ignore // TODO does not work for arrays nor lists
-    public void lengthProperty() {
-        execute(Input.of(BOND, KRUEGER),
-                Query.of(Predicates.equal("limbs_[0].tattoos_.length", 1), mv),
-                Expected.of(KRUEGER));
     }
 
     @Test
@@ -160,7 +144,7 @@ public class ComplexCaseReflectionExtractionTest extends AbstractExtractionTest 
 
     @Test
     @Ignore
-    // TODO BUG to fix -> null values handling in MultiResult like in IndexStore
+    // TODO @Jaromir BUG to fix -> null values handling in MultiResult like in IndexStore
     public void comparable_primitive_comparedToNull_reduced_matching() {
         execute(Input.of(BOND, KRUEGER),
                 Query.of(Predicates.equal("limbs_[0].fingers_[any].name", null), mv),
@@ -169,7 +153,7 @@ public class ComplexCaseReflectionExtractionTest extends AbstractExtractionTest 
 
     @Test
     @Ignore
-    // TODO BUG to fix -> null values handling in MultiResult like in IndexStore
+    // TODO @Jaromir BUG to fix -> null values handling in MultiResult like in IndexStore
     public void comparable_primitive_reduced_atLeaf_comparedToNull_matching() {
         execute(Input.of(BOND, KRUEGER),
                 Query.of(Predicates.equal("limbs_[any].fingers_[1].name", null), mv),
@@ -178,7 +162,7 @@ public class ComplexCaseReflectionExtractionTest extends AbstractExtractionTest 
 
     @Test
     @Ignore
-    // TODO BUG to fix -> Collection throws NullPointer, Array throws QueryException
+    // TODO @Jaromir BUG to fix -> Collection throws NullPointer, Array throws QueryException
     // TODO Should be QueryException for consistency with null_arrayOrCollection_size
     public void null_arrayOrCollection() {
         execute(Input.of(HUNT),
@@ -188,7 +172,7 @@ public class ComplexCaseReflectionExtractionTest extends AbstractExtractionTest 
 
     @Test
     @Ignore
-    // TODO BUG to fix -> see null_arrayOrCollection() test
+    // TODO @Jaromir BUG to fix -> see null_arrayOrCollection() test
     public void null_arrayOrCollection_reduced() {
         execute(Input.of(HUNT),
                 Query.of(Predicates.equal("limbs_[0].fingers_[any].name", "index"), mv),
@@ -196,6 +180,7 @@ public class ComplexCaseReflectionExtractionTest extends AbstractExtractionTest 
     }
 
     @Test
+    @Ignore // TODO @Tom: move to list-only specific tests
     public void null_arrayOrCollection_size() {
         execute(Input.of(HUNT),
                 Query.of(Predicates.equal("limbs_[0].fingers_.size", 1), mv),
@@ -203,10 +188,27 @@ public class ComplexCaseReflectionExtractionTest extends AbstractExtractionTest 
     }
 
     @Test
+    @Ignore // TODO @Tom: move to list-only specific tests
     public void null_arrayOrCollection_size_reduced() {
         execute(Input.of(HUNT),
                 Query.of(Predicates.equal("limbs_[any].fingers_.size", 1), mv),
                 Expected.of(QueryException.class));
+    }
+
+    @Test
+    @Ignore // TODO @Tom: move to list-only specific tests
+    public void sizeProperty() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.equal("limbs_[0].tattoos_.size", 1), mv),
+                Expected.of(KRUEGER));
+    }
+
+    @Test
+    @Ignore // TODO @Tom: move to list-only specific tests
+    public void lengthProperty() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.equal("limbs_[0].tattoos_.length", 1), mv),
+                Expected.of(KRUEGER));
     }
 
 }

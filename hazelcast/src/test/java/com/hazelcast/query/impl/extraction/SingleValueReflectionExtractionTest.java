@@ -2,7 +2,10 @@ package com.hazelcast.query.impl.extraction;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -14,6 +17,7 @@ import static com.hazelcast.query.impl.extraction.SingleValueDataStructure.perso
  * It does not make sense to test: and, or, not, instanceof predicates in this context
  */
 @RunWith(Parameterized.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class SingleValueReflectionExtractionTest extends AbstractExtractionTest {
 
     private static final Person BOND = person(130);
