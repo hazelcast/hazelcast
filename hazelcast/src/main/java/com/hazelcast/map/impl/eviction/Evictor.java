@@ -20,32 +20,28 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 
 /**
  * Evicts a {@link RecordStore}.
- *
- * When the {@link RecordStore} needs to be evicted according to {@link EvictionChecker#checkEvictionPossible},
+ * <p/>
+ * When the {@link RecordStore} needs to be evicted according to ,
  * {@link Evictor} removes records from {@link RecordStore}.
  */
 public interface Evictor {
 
     /**
-     * Find size to evict from a record-store.
+     * Evicts entries from record-store if eviction is possible
+     * according to the {@link com.hazelcast.config.MaxSizeConfig}
      *
      * @param recordStore the recordStore
-     * @return removal size.
      */
-    int findRemovalSize(RecordStore recordStore);
+    void evict(RecordStore recordStore);
 
     /**
-     * Remove supplied number of elements from record-store.
+     * Check whether the supplied record-store reached the configured max-size to start eviction.
      *
-     * @param removalSize supplied size to remove.
      * @param recordStore the recordStore
-     */
-    void removeSize(int removalSize, RecordStore recordStore);
-
-    /**
-     * Get eviction checker for this {@link Evictor}
+     * @return {@code true} if eviction is required, {@code false} otherwise.
      *
-     * @return the {@link EvictionChecker}
+     * @see com.hazelcast.map.impl.recordstore.DefaultRecordStore#putFromLoad
      */
-    EvictionChecker getEvictionChecker();
+    boolean isReachedMaxSize(RecordStore recordStore);
+
 }

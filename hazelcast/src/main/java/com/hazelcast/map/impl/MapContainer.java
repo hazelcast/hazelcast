@@ -23,8 +23,6 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.map.impl.eviction.EvictionChecker;
-import com.hazelcast.map.impl.eviction.EvictionCheckerImpl;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
@@ -109,8 +107,7 @@ public class MapContainer {
 
     // this method is overridden.
     Evictor createEvictor(MapServiceContext mapServiceContext) {
-        EvictionChecker evictionChecker = new EvictionCheckerImpl(mapServiceContext);
-        return new EvictorImpl(evictionChecker, mapServiceContext);
+        return new EvictorImpl(mapServiceContext);
     }
 
     // overridden in different context.

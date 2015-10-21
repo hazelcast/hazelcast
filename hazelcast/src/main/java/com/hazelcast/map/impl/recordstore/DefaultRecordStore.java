@@ -865,7 +865,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public Object putFromLoad(Data key, Object value, long ttl) {
         final long now = getNow();
 
-        if (shouldEvict(now)) {
+        if (evictor.isReachedMaxSize(this)) {
             return null;
         }
         markRecordStoreExpirable(ttl);
