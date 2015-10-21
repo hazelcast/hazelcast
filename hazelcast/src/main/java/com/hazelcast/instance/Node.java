@@ -62,6 +62,7 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.VersionCheck;
@@ -361,7 +362,14 @@ public class Node {
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                 logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
-            clusterService.sendShutdownMessage();
+            try {
+                clusterService.sendShutdownMessage();
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Shutdown message sent to other members");
+                }
+            } catch (Throwable t) {
+                EmptyStatement.ignore(t);
+            }
         } else {
             logger.warning("Terminating forcefully...");
         }
@@ -376,8 +384,6 @@ public class Node {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             }
             discoveryService.destroy();
-            logger.info("Shutting down connection manager...");
-            connectionManager.shutdown();
         } catch (Throwable ignored) {
         }
         versionCheck.shutdown();
