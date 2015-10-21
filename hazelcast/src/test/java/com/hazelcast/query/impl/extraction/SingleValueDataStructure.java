@@ -1,7 +1,8 @@
 package com.hazelcast.query.impl.extraction;
 
+import com.hazelcast.test.ObjectTestUtils;
+
 import java.io.Serializable;
-import java.util.Objects;
 
 // PRD: CASE 1
 public class SingleValueDataStructure {
@@ -13,12 +14,12 @@ public class SingleValueDataStructure {
         public boolean equals(Object o) {
             if (!(o instanceof Person)) return false;
             final Person other = (Person) o;
-            return Objects.equals(this.brain, other.brain);
+            return ObjectTestUtils.equals(this.brain, other.brain);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(brain);
+            return ObjectTestUtils.hashCode(brain);
         }
     }
 
@@ -30,12 +31,12 @@ public class SingleValueDataStructure {
         public boolean equals(Object o) {
             if (!(o instanceof Brain)) return false;
             final Brain other = (Brain) o;
-            return Objects.equals(this.iq, other.iq);
+            return ObjectTestUtils.equals(this.iq, other.iq);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(iq);
+            return ObjectTestUtils.hashCode(iq);
         }
     }
 

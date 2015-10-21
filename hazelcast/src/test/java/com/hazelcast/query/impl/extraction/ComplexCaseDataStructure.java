@@ -1,10 +1,11 @@
 package com.hazelcast.query.impl.extraction;
 
+import com.hazelcast.test.ObjectTestUtils;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public class ComplexCaseDataStructure {
 
@@ -17,12 +18,12 @@ public class ComplexCaseDataStructure {
         public boolean equals(Object o) {
             if (!(o instanceof Person)) return false;
             final Person other = (Person) o;
-            return Objects.equals(this.name, other.name) && Objects.equals(this.limbs_list, other.limbs_list);
+            return ObjectTestUtils.equals(this.name, other.name) && ObjectTestUtils.equals(this.limbs_list, other.limbs_list);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(name, limbs_list);
+            return ObjectTestUtils.hash(name, limbs_list);
         }
     }
 
@@ -37,13 +38,13 @@ public class ComplexCaseDataStructure {
         public boolean equals(Object o) {
             if (!(o instanceof Limb)) return false;
             final Limb other = (Limb) o;
-            return Objects.equals(this.name, other.name) && Objects.equals(this.fingers_list, other.fingers_list)
-                    && Objects.equals(this.tattoos_list, other.tattoos_list);
+            return ObjectTestUtils.equals(this.name, other.name) && ObjectTestUtils.equals(this.fingers_list, other.fingers_list)
+                    && ObjectTestUtils.equals(this.tattoos_list, other.tattoos_list);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(name, fingers_list, tattoos_list);
+            return ObjectTestUtils.hash(name, fingers_list, tattoos_list);
         }
     }
 
@@ -54,12 +55,12 @@ public class ComplexCaseDataStructure {
         public boolean equals(Object o) {
             if (!(o instanceof Finger)) return false;
             final Finger other = (Finger) o;
-            return Objects.equals(this.name, other.name);
+            return ObjectTestUtils.equals(this.name, other.name);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(name);
+            return ObjectTestUtils.hashCode(name);
         }
 
         @Override
