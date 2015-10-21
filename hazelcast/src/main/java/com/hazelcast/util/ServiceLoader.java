@@ -66,6 +66,19 @@ public final class ServiceLoader {
 
     public static <T> Iterator<T> iterator(final Class<T> clazz, String factoryId, ClassLoader classLoader)
             throws Exception {
+        final Set<ServiceDefinition> serviceDefinitions = getServiceDefinitions(factoryId, classLoader);
+
+        return new NewInstanceIterator<T>(serviceDefinitions, clazz);
+    }
+
+    public static <T> Iterator<Class<T>> classIterator(String factoryId, ClassLoader classLoader)
+            throws Exception {
+        final Set<ServiceDefinition> serviceDefinitions = getServiceDefinitions(factoryId, classLoader);
+
+        return new LoadClassIterator<T>(serviceDefinitions);
+    }
+
+    private static Set<ServiceDefinition> getServiceDefinitions(String factoryId, ClassLoader classLoader) {
         final List<ClassLoader> classLoaders = selectClassLoaders(classLoader);
 
         final Set<URLDefinition> factoryUrls = new HashSet<URLDefinition>();
@@ -81,29 +94,7 @@ public final class ServiceLoader {
             Logger.getLogger(ServiceLoader.class).finest(
                     "Service loader could not load 'META-INF/services/" + factoryId + "' It may be empty or does not exist.");
         }
-
-        return new Iterator<T>() {
-            final Iterator<ServiceDefinition> iterator = serviceDefinitions.iterator();
-
-            public boolean hasNext() {
-                return iterator.hasNext();
-            }
-
-            public T next() {
-                final ServiceDefinition definition = iterator.next();
-                try {
-                    String className = definition.className;
-                    ClassLoader classLoader = definition.classLoader;
-                    return clazz.cast(ClassLoaderUtil.newInstance(classLoader, className));
-                } catch (Exception e) {
-                    throw new HazelcastException(e);
-                }
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
+        return serviceDefinitions;
     }
 
     private static Set<URLDefinition> collectFactoryUrls(String factoryId, ClassLoader classLoader) {
@@ -324,4 +315,59 @@ public final class ServiceLoader {
         }
     }
 
+    private static class NewInstanceIterator<T> implements Iterator<T> {
+        final java.util.Iterator<ServiceDefinition> iterator;
+        private final Class<T> clazz;
+
+        public NewInstanceIterator(Set<ServiceDefinition> serviceDefinitions, Class<T> clazz) {
+            this.clazz = clazz;
+            iterator = serviceDefinitions.iterator();
+        }
+
+        public boolean hasNext() {
+            return iterator.hasNext();
+        }
+
+        public T next() {
+            final ServiceDefinition definition = iterator.next();
+            try {
+                String className = definition.className;
+                ClassLoader classLoader = definition.classLoader;
+                return clazz.cast(ClassLoaderUtil.newInstance(classLoader, className));
+            } catch (Exception e) {
+                throw new HazelcastException(e);
+            }
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class LoadClassIterator<T> implements Iterator<Class<T>> {
+        final Iterator<ServiceDefinition> iterator;
+
+        public LoadClassIterator(Set<ServiceDefinition> serviceDefinitions) {
+            iterator = serviceDefinitions.iterator();
+        }
+
+        public boolean hasNext() {
+            return iterator.hasNext();
+        }
+
+        public Class<T> next() {
+            final ServiceDefinition definition = iterator.next();
+            try {
+                String className = definition.className;
+                ClassLoader classLoader = definition.classLoader;
+                return (Class<T>) ClassLoaderUtil.loadClass(classLoader, className);
+            } catch (Exception e) {
+                throw new HazelcastException(e);
+            }
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
 }

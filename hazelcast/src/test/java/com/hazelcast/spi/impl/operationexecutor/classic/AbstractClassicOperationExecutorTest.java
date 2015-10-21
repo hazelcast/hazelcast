@@ -6,6 +6,7 @@ import com.hazelcast.instance.DefaultNodeExtension;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.Logger;
@@ -27,6 +28,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -72,7 +74,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
                 "foo",
                 loggingService.getLogger(HazelcastThreadGroup.class),
                 Thread.currentThread().getContextClassLoader());
-        nodeExtension = new DefaultNodeExtension();
+        nodeExtension = new DefaultNodeExtension(Mockito.mock(Node.class));
         handlerFactory = new DummyOperationRunnerFactory();
 
         metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistry.class), INFO);

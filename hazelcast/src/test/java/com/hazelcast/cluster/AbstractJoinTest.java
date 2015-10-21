@@ -24,8 +24,10 @@ public class AbstractJoinTest extends HazelcastTestSupport {
 
         h1.shutdown();
         h1 = Hazelcast.newHazelcastInstance(config);
+        // when h1 is returned, it's guaranteed that it should see 2 members
         assertClusterSize(2, h1);
-        assertClusterSize(2, h2);
+        // but h2 will report newly joining member eventually
+        assertClusterSizeEventually(2, h2);
     }
 
     protected void testJoin_With_DifferentBuildNumber(Config config) {

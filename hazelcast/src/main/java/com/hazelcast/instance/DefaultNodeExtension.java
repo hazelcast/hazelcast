@@ -55,21 +55,24 @@ import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceC
 
 public class DefaultNodeExtension implements NodeExtension {
 
-    protected volatile Node node;
-    protected volatile ILogger logger;
-    protected volatile ILogger systemLogger;
+    protected final Node node;
+    protected final ILogger logger;
+    protected final ILogger systemLogger;
 
     private final MemoryStats memoryStats = new DefaultMemoryStats();
 
-    @Override
-    public void beforeStart(Node node) {
+    public DefaultNodeExtension(Node node) {
         this.node = node;
         logger = node.getLogger(NodeExtension.class);
         systemLogger = node.getLogger("com.hazelcast.system");
     }
 
     @Override
-    public void printNodeInfo(Node node) {
+    public void beforeStart() {
+    }
+
+    @Override
+    public void printNodeInfo() {
         BuildInfo buildInfo = node.getBuildInfo();
 
         String build = buildInfo.getBuild();
@@ -84,7 +87,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void afterStart(Node node) {
+    public void afterStart() {
     }
 
     @Override
