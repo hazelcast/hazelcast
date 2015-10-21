@@ -166,7 +166,7 @@ public class BetweenVisitor extends AbstractVisitor {
             if (!(greaterLessPredicate.equal)) {
                 continue;
             }
-            String attributeName = greaterLessPredicate.attribute;
+            String attributeName = greaterLessPredicate.attributeName;
             Index index = indexService.getIndex(attributeName);
             if (index == null || index.getConverter() == null) {
                 continue;
@@ -181,7 +181,7 @@ public class BetweenVisitor extends AbstractVisitor {
         if (currentCandidates == null) {
             currentCandidates = new InternalMultiMap<String, GreaterLessPredicate>();
         }
-        String attributeName = predicate.attribute;
+        String attributeName = predicate.attributeName;
         currentCandidates.put(attributeName, predicate);
         return currentCandidates;
     }
@@ -218,7 +218,7 @@ public class BetweenVisitor extends AbstractVisitor {
         }
 
         Predicate createEquivalentPredicate() {
-            String attributeName = leftBoundary.attribute;
+            String attributeName = leftBoundary.attributeName;
             if (isSame()) {
                 return new EqualPredicate(attributeName, leftBoundary.value);
             } else {
@@ -235,7 +235,7 @@ public class BetweenVisitor extends AbstractVisitor {
                 return false;
             }
             GreaterLessPredicate greaterLessPredicate = (GreaterLessPredicate) predicate;
-            if (!greaterLessPredicate.attribute.equals(leftBoundary.attribute)) {
+            if (!greaterLessPredicate.attributeName.equals(leftBoundary.attributeName)) {
                 return false;
             }
 

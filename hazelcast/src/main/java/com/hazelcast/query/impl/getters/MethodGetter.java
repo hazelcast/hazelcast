@@ -16,25 +16,21 @@
 
 package com.hazelcast.query.impl.getters;
 
+
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-final class MethodGetter extends Getter {
+final class MethodGetter extends AbstractMultiValueGetter {
     private final Method method;
 
-    MethodGetter(Getter parent, Method method) {
-        super(parent);
+    MethodGetter(Getter parent, Method method, String modifierSuffix, Class resultType) {
+        super(parent, modifierSuffix, method.getReturnType(), resultType);
         this.method = method;
     }
 
-    Object getValue(Object obj) throws Exception {
-        Object paramObj = obj;
-        paramObj = parent != null ? parent.getValue(paramObj) : paramObj;
-        return paramObj != null ? method.invoke(paramObj) : null;
-    }
-
     @Override
-    Class getReturnType() {
-        return this.method.getReturnType();
+    protected Object extractFrom(Object object) throws IllegalAccessException, InvocationTargetException {
+        return method.invoke(object);
     }
 
     @Override
@@ -44,6 +40,6 @@ final class MethodGetter extends Getter {
 
     @Override
     public String toString() {
-        return "MethodGetter [parent=" + parent + ", method=" + method.getName() + "]";
+        return "MethodGetter [parent=" + parent + ", method=" + method.getName() + ", modifier = " + getModifier() + "]";
     }
 }

@@ -28,9 +28,8 @@ import static org.mockito.Mockito.withSettings;
 
 /**
  * Convenient utility methods to create mock predicates
- *
  */
-class PredicateTestUtils {
+public class PredicateTestUtils {
 
     /**
      * Create a negatable mock predicate. The created mock predicate returns passed the predicate
@@ -53,14 +52,14 @@ class PredicateTestUtils {
 
     static Predicate createMockVisitablePredicate(Predicate transformed) {
         VisitablePredicate visitablePredicate = mock(VisitablePredicate.class, withSettings().extraInterfaces(Predicate.class));
-        when(visitablePredicate.accept((Visitor)anyObject(), (Indexes)anyObject())).thenReturn(transformed);
+        when(visitablePredicate.accept((Visitor) anyObject(), (Indexes) anyObject())).thenReturn(transformed);
         return (Predicate) visitablePredicate;
     }
 
     static Visitor createPassthroughVisitor() {
         Visitor visitor = mock(Visitor.class);
-        when(visitor.visit((AndPredicate) anyObject(), (Indexes)anyObject())).thenAnswer(new ReturnsArgumentAt(0));
-        when(visitor.visit((OrPredicate) anyObject(), (Indexes)anyObject())).thenAnswer(new ReturnsArgumentAt(0));
+        when(visitor.visit((AndPredicate) anyObject(), (Indexes) anyObject())).thenAnswer(new ReturnsArgumentAt(0));
+        when(visitor.visit((OrPredicate) anyObject(), (Indexes) anyObject())).thenAnswer(new ReturnsArgumentAt(0));
         when(visitor.visit((NotPredicate) anyObject(), (Indexes) anyObject())).thenAnswer(new ReturnsArgumentAt(0));
 
         return visitor;
@@ -68,10 +67,19 @@ class PredicateTestUtils {
 
     static Visitor createDelegatingVisitor(Predicate delegate) {
         Visitor visitor = mock(Visitor.class);
-        when(visitor.visit((AndPredicate) anyObject(), (Indexes)anyObject())).thenReturn(delegate);
-        when(visitor.visit((OrPredicate) anyObject(), (Indexes)anyObject())).thenReturn(delegate);
-        when(visitor.visit((NotPredicate) anyObject(), (Indexes)anyObject())).thenReturn(delegate);
+        when(visitor.visit((AndPredicate) anyObject(), (Indexes) anyObject())).thenReturn(delegate);
+        when(visitor.visit((OrPredicate) anyObject(), (Indexes) anyObject())).thenReturn(delegate);
+        when(visitor.visit((NotPredicate) anyObject(), (Indexes) anyObject())).thenReturn(delegate);
 
         return visitor;
     }
+
+    public static String getAttributeName(AbstractPredicate predicate) {
+        return predicate.attributeName;
+    }
+
+    public static String setAttributeName(AbstractPredicate predicate, String attributeName) {
+        return predicate.attributeName = attributeName;
+    }
+
 }

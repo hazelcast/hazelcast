@@ -394,6 +394,8 @@ public class ConfigXmlGenerator {
 
             mapIndexConfigXmlGenerator(xml, m);
 
+            mapAttributeConfigXmlGenerator(xml, m);
+
             mapEntryListenerConfigXmlGenerator(xml, m);
 
             mapPartitionLostListenerConfigXmlGenerator(xml, m);
@@ -530,6 +532,18 @@ public class ConfigXmlGenerator {
                 xml.append("</index>");
             }
             xml.append("</indexes>");
+        }
+    }
+
+    private void mapAttributeConfigXmlGenerator(StringBuilder xml, MapConfig m) {
+        if (!m.getMapAttributeConfigs().isEmpty()) {
+            xml.append("<attributes>");
+            for (MapAttributeConfig attributeCfg : m.getMapAttributeConfigs()) {
+                xml.append("<attribute extractor=\"").append(attributeCfg.getExtractor()).append("\">");
+                xml.append(attributeCfg.getName());
+                xml.append("</attribute>");
+            }
+            xml.append("</attributes>");
         }
     }
 

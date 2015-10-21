@@ -125,6 +125,8 @@ public class MapConfig {
 
     private List<MapIndexConfig> mapIndexConfigs;
 
+    private List<MapAttributeConfig> mapAttributeConfigs;
+
     private List<QueryCacheConfig> queryCacheConfigs;
 
     private boolean statisticsEnabled = true;
@@ -165,6 +167,7 @@ public class MapConfig {
         this.partitionLostListenerConfigs =
                 new ArrayList<MapPartitionLostListenerConfig>(config.getPartitionLostListenerConfigs());
         this.mapIndexConfigs = new ArrayList<MapIndexConfig>(config.getMapIndexConfigs());
+        this.mapAttributeConfigs = new ArrayList<MapAttributeConfig>(config.getMapAttributeConfigs());
         this.queryCacheConfigs = new ArrayList<QueryCacheConfig>(config.getQueryCacheConfigs());
         this.partitioningStrategyConfig = config.partitioningStrategyConfig != null
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
@@ -583,6 +586,23 @@ public class MapConfig {
         return this;
     }
 
+    public MapConfig addMapAttributeConfig(MapAttributeConfig mapAttributeConfig) {
+        getMapAttributeConfigs().add(mapAttributeConfig);
+        return this;
+    }
+
+    public List<MapAttributeConfig> getMapAttributeConfigs() {
+        if (mapAttributeConfigs == null) {
+            mapAttributeConfigs = new ArrayList<MapAttributeConfig>();
+        }
+        return mapAttributeConfigs;
+    }
+
+    public MapConfig setMapAttributeConfigs(List<MapAttributeConfig> mapAttributeConfigs) {
+        this.mapAttributeConfigs = mapAttributeConfigs;
+        return this;
+    }
+
     /**
      * Adds a new {@code queryCacheConfig} to this {@code MapConfig}.
      *
@@ -760,6 +780,7 @@ public class MapConfig {
         sb.append(", wanReplicationRef=").append(wanReplicationRef);
         sb.append(", entryListenerConfigs=").append(entryListenerConfigs);
         sb.append(", mapIndexConfigs=").append(mapIndexConfigs);
+        sb.append(", mapAttributeConfigs=").append(mapAttributeConfigs);
         sb.append(", quorumName=").append(quorumName);
         sb.append(", queryCacheConfigs=").append(queryCacheConfigs);
         sb.append('}');

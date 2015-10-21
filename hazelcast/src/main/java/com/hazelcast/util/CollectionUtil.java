@@ -18,6 +18,7 @@ package com.hazelcast.util;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -67,5 +68,28 @@ public final class CollectionUtil {
         values.add(value);
 
         return values;
+    }
+
+    /**
+     * Return n-th item or null if collection is smaller
+     *
+     * @param collection
+     * @param position
+     * @param <T>
+     * @return
+     */
+    public static <T> T getItemAtPositionOrNull(Collection<T> collection, int position) {
+        if (position >= collection.size()) {
+            return null;
+        }
+        if (collection instanceof List) {
+            return ((List<T>) collection).get(position);
+        }
+        Iterator<T> iterator = collection.iterator();
+        T item = null;
+        for (int i = 0; i < position + 1; i++) {
+            item = iterator.next();
+        }
+        return item;
     }
 }

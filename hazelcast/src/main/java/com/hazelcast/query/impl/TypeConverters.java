@@ -40,6 +40,7 @@ public final class TypeConverters {
     public static final TypeConverter SQL_TIMESTAMP_CONVERTER = new SqlTimestampConverter();
     public static final TypeConverter DATE_CONVERTER = new DateConverter();
     public static final TypeConverter IDENTITY_CONVERTER = new IdentityConverter();
+    public static final TypeConverter NULL_CONVERTER = new IdentityConverter();
     public static final TypeConverter UUID_CONVERTER = new UUIDConverter();
 
     private TypeConverters() {

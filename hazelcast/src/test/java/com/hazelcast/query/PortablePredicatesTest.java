@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.query.impl.Extractors;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -69,7 +70,7 @@ public class PortablePredicatesTest {
     }
 
     private QueryEntry toQueryEntry(Object key, Object value) {
-        return new QueryEntry(ss, ss.toData(key), value);
+        return new QueryEntry(ss, ss.toData(key), value, Extractors.empty());
     }
 
     class TestPortableFactory implements PortableFactory {

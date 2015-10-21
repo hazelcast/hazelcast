@@ -29,6 +29,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ManagementCenterConfig;
+import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -245,6 +246,16 @@ public class TestFullApplicationContext {
                 assertTrue(index.isOrdered());
             } else {
                 fail("unknown index!");
+            }
+        }
+        assertEquals(2, testMapConfig.getMapAttributeConfigs().size());
+        for (MapAttributeConfig attribute : testMapConfig.getMapAttributeConfigs()) {
+            if ("power".equals(attribute.getName())) {
+                assertEquals("com.car.PowerExtractor", attribute.getExtractor());
+            } else if ("weight".equals(attribute.getName())) {
+                assertEquals("com.car.WeightExtractor", attribute.getExtractor());
+            } else {
+                fail("unknown attribute!");
             }
         }
         assertEquals("my-quorum", testMapConfig.getQuorumName());

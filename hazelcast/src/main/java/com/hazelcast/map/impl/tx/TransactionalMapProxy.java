@@ -28,6 +28,7 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.CachedQueryEntry;
+import com.hazelcast.query.impl.Extractors;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
@@ -320,13 +321,14 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
         // TODO: Can't we just use the original set?
         Set<Object> keySet = new HashSet<Object>(queryResult);
+        Extractors extractors = mapServiceContext.getExtractors(name);
         for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
             Data keyData = entry.getKey();
             if (!TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type)) {
                 Object value = (entry.getValue().value instanceof Data)
                         ? mapServiceContext.toObject(entry.getValue().value) : entry.getValue().value;
 
-                QueryableEntry queryEntry = new CachedQueryEntry(serializationService, keyData, value);
+                QueryableEntry queryEntry = new CachedQueryEntry(serializationService, keyData, value, extractors);
                 // apply predicate on txMap
                 if (predicate.apply(queryEntry)) {
                     Object keyObject = serializationService.toObject(keyData);
@@ -366,6 +368,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         // TODO: Can't we just use the original set?
         List<Object> valueSet = new ArrayList<Object>();
         Set<Object> keyWontBeIncluded = new HashSet<Object>();
+        Extractors extractors = mapServiceContext.getExtractors(name);
 
         // iterate over the txMap and see if the values are updated or removed
         for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
@@ -380,7 +383,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                     keyWontBeIncluded.add(keyObject);
                 }
                 Object entryValue = entry.getValue().value;
-                QueryableEntry queryEntry = new CachedQueryEntry(serializationService, entry.getKey(), entryValue);
+                QueryableEntry queryEntry = new CachedQueryEntry(serializationService, entry.getKey(), entryValue, extractors);
                 if (predicate.apply(queryEntry)) {
                     valueSet.add(queryEntry.getValue());
                 }

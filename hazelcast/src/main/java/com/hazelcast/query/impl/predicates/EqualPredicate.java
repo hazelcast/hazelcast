@@ -31,7 +31,8 @@ import java.util.Set;
 /**
  * Equal Predicate
  */
-public class EqualPredicate extends AbstractPredicate implements NegatablePredicate {
+public class EqualPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate {
+
     protected Comparable value;
 
     public EqualPredicate() {
@@ -52,14 +53,12 @@ public class EqualPredicate extends AbstractPredicate implements NegatablePredic
         return index.getRecords(value);
     }
 
-    @Override
-    public boolean apply(Map.Entry mapEntry) {
-        Comparable entryValue = readAttribute(mapEntry);
-        if (entryValue == null) {
+    protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
+        if (attributeValue == null) {
             return value == null || value == IndexImpl.NULL;
         }
-        value = convert(mapEntry, entryValue, value);
-        return entryValue.equals(value);
+        value = convert(mapEntry, attributeValue, value);
+        return attributeValue.equals(value);
     }
 
     @Override
@@ -76,11 +75,11 @@ public class EqualPredicate extends AbstractPredicate implements NegatablePredic
 
     @Override
     public String toString() {
-        return attribute + "=" + value;
+        return attributeName + "=" + value;
     }
 
     @Override
     public Predicate negate() {
-        return new NotEqualPredicate(attribute, value);
+        return new NotEqualPredicate(attributeName, value);
     }
 }

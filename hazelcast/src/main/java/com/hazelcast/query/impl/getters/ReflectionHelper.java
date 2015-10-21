@@ -38,6 +38,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 import static com.hazelcast.query.impl.getters.NullGetter.NULL_GETTER;
+import static com.hazelcast.query.impl.getters.SuffixModifierUtils.getModifierSuffix;
+import static com.hazelcast.query.impl.getters.SuffixModifierUtils.removeModifierSuffix;
 
 /**
  * Scans your classpath, indexes the metadata, allows you to query it on runtime.
@@ -105,7 +107,7 @@ public final class ReflectionHelper {
     }
 
 
-    private static Getter get(Class clazz, String attribute) {
+    private static Getter getFromCache(Class clazz, String attribute) {
         ConcurrentMap<String, Getter> cache = GETTER_CACHE.get(clazz);
         if (cache == null) {
             return null;
@@ -114,7 +116,7 @@ public final class ReflectionHelper {
         return cache.get(attribute);
     }
 
-    private static Getter set(Class clazz, String attribute, Getter getter) {
+    private static Getter storeIntoCache(Class clazz, String attribute, Getter getter) {
         ConcurrentMap<String, Getter> cache = ConcurrencyUtil.getOrPutIfAbsent(GETTER_CACHE, clazz, GETTER_CACHE_CONSTRUCTOR);
         Getter foundGetter = cache.putIfAbsent(attribute, getter);
         return foundGetter == null ? getter : foundGetter;
@@ -125,7 +127,9 @@ public final class ReflectionHelper {
     }
 
     public static AttributeType getAttributeType(Object value, String attribute) {
-        return getAttributeType(createGetter(value, attribute).getReturnType());
+        Getter getter = createGetter(value, attribute);
+        Class returnType = getter.getReturnType();
+        return getAttributeType(returnType);
     }
 
     private static Getter createGetter(Object obj, String attribute) {
@@ -135,7 +139,7 @@ public final class ReflectionHelper {
 
         final Class targetClazz = obj.getClass();
         Class clazz = targetClazz;
-        Getter getter = get(clazz, attribute);
+        Getter getter = getFromCache(clazz, attribute);
         if (getter != null) {
             return getter;
         }
@@ -143,21 +147,32 @@ public final class ReflectionHelper {
         try {
             Getter parent = null;
             List<String> possibleMethodNames = new ArrayList<String>(INITIAL_CAPACITY);
-            for (final String name : attribute.split("\\.")) {
+            for (final String fullname : attribute.split("\\.")) {
+                String baseName = removeModifierSuffix(fullname);
+                String modifier = getModifierSuffix(fullname, baseName);
+
                 Getter localGetter = null;
                 possibleMethodNames.clear();
-                possibleMethodNames.add(name);
-                final String camelName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
+                possibleMethodNames.add(baseName);
+                final String camelName = Character.toUpperCase(baseName.charAt(0)) + baseName.substring(1);
                 possibleMethodNames.add("get" + camelName);
                 possibleMethodNames.add("is" + camelName);
-                if (name.equals(THIS_ATTRIBUTE_NAME)) {
-                    localGetter = new ThisGetter(parent, obj);
+                if (baseName.equals(THIS_ATTRIBUTE_NAME.value())) {
+                    localGetter = GetterFactory.newThisGetter(parent, obj);
                 } else {
+
+                    if (parent != null) {
+                        clazz = parent.getReturnType();
+                    }
+
                     for (String methodName : possibleMethodNames) {
                         try {
                             final Method method = clazz.getMethod(methodName);
                             method.setAccessible(true);
-                            localGetter = new MethodGetter(parent, method);
+                            localGetter = GetterFactory.newMethodGetter(obj, parent, method, modifier);
+                            if (localGetter == NULL_GETTER) {
+                                return localGetter;
+                            }
                             clazz = method.getReturnType();
                             break;
                         } catch (NoSuchMethodException ignored) {
@@ -166,8 +181,11 @@ public final class ReflectionHelper {
                     }
                     if (localGetter == null) {
                         try {
-                            final Field field = clazz.getField(name);
-                            localGetter = new FieldGetter(parent, field);
+                            final Field field = clazz.getField(baseName);
+                            localGetter = GetterFactory.newFieldGetter(obj, parent, field, modifier);
+                            if (localGetter == NULL_GETTER) {
+                                return localGetter;
+                            }
                             clazz = field.getType();
                         } catch (NoSuchFieldException ignored) {
                             EmptyStatement.ignore(ignored);
@@ -177,9 +195,12 @@ public final class ReflectionHelper {
                         Class c = clazz;
                         while (!c.isInterface() && !Object.class.equals(c)) {
                             try {
-                                final Field field = c.getDeclaredField(name);
+                                final Field field = c.getDeclaredField(baseName);
                                 field.setAccessible(true);
-                                localGetter = new FieldGetter(parent, field);
+                                localGetter = GetterFactory.newFieldGetter(obj, parent, field, modifier);
+                                if (localGetter == NULL_GETTER) {
+                                    return NULL_GETTER;
+                                }
                                 clazz = field.getType();
                                 break;
                             } catch (NoSuchFieldException ignored) {
@@ -190,14 +211,14 @@ public final class ReflectionHelper {
                 }
                 if (localGetter == null) {
                     throw new IllegalArgumentException("There is no suitable accessor for '"
-                            + name + "' on class '" + clazz + "'");
+                            + baseName + "' on class '" + clazz + "'");
                 }
                 parent = localGetter;
             }
             getter = parent;
 
             if (getter.isCacheable()) {
-                getter = set(targetClazz, attribute, getter);
+                getter = storeIntoCache(targetClazz, attribute, getter);
             }
             return getter;
         } catch (Throwable e) {
@@ -205,8 +226,8 @@ public final class ReflectionHelper {
         }
     }
 
-    public static Comparable extractValue(Object object, String attributeName) throws Exception {
-        return (Comparable) createGetter(object, attributeName).getValue(object);
+    public static Object extractValue(Object object, String attributeName) throws Exception {
+        return createGetter(object, attributeName).getValue(object);
     }
 
     public static <T> T invokeMethod(Object object, String methodName) throws RuntimeException {
