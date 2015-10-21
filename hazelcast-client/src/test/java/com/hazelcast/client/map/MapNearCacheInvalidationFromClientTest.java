@@ -4,9 +4,11 @@ import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -18,6 +20,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CountDownLatch;
+
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
@@ -173,13 +178,21 @@ public class MapNearCacheInvalidationFromClientTest {
     public void testUpdate() {
         final IMap<Object, Object> map = client.getMap(mapName);
 
+        final CountDownLatch latch = new CountDownLatch(1);
+        final IMap<Object, Object> liteMap = lite.getMap(mapName);
+        liteMap.addEntryListener(new EntryAddedListener<Integer, Integer>() {
+            @Override
+            public void entryAdded(EntryEvent<Integer, Integer> event) {
+                latch.countDown();
+            }
+        }, false);
+
         map.put(1, 1);
 
-        final IMap<Object, Object> liteMap = lite.getMap(mapName);
-        assertNotNull(liteMap.get(1));
+        assertOpenEventually(latch);
+        liteMap.get(1);
 
         final NearCache nearCache = getNearCache(lite, mapName);
-
         final Data keyData = toData(lite, 1);
         assertEquals(keyData, nearCache.get(keyData));
 
@@ -197,13 +210,23 @@ public class MapNearCacheInvalidationFromClientTest {
     @Test
     public void testRemove() {
         final IMap<Object, Object> map = client.getMap(mapName);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        final IMap<Object, Object> liteMap = lite.getMap(mapName);
+        liteMap.addEntryListener(new EntryAddedListener<Integer, Integer>() {
+            @Override
+            public void entryAdded(EntryEvent<Integer, Integer> event) {
+                latch.countDown();
+            }
+        }, false);
+
         map.put(1, 1);
 
-        final IMap<Object, Object> liteMap = lite.getMap(mapName);
-        assertNotNull(liteMap.get(1));
+        assertOpenEventually(latch);
+
+        liteMap.get(1);
 
         final NearCache nearCache = getNearCache(lite, mapName);
-
         final Data keyData = toData(lite, 1);
         assertEquals(keyData, nearCache.get(keyData));
 
