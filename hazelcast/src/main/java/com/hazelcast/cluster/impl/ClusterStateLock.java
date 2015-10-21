@@ -89,10 +89,7 @@ class ClusterStateLock {
 
     boolean allowsUnlock(String txnId) {
         Preconditions.checkNotNull(txnId);
-        if (txnId.equals(transactionId)) {
-            return true;
-        }
-        return false;
+        return txnId.equals(transactionId);
     }
 
     Address getLockOwner() {

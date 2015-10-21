@@ -17,6 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.cluster.impl.ClusterStateManager;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomiclong.operations.AddAndGetOperation;
 import com.hazelcast.config.Config;
@@ -107,41 +108,20 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = factory.newInstances();
 
         final HazelcastInstance hz = instances[instances.length - 1];
-        final ClusterServiceImpl clusterService = spyClusterService(hz);
 
-        final CountDownLatch stateLockedLatch = new CountDownLatch(1);
-        final CountDownLatch transactionPauseLatch = new CountDownLatch(1);
-        MemberListAnswer memberListAnswer = new MemberListAnswer() {
-            @Override
-            Collection<MemberImpl> onAnswer(Collection<MemberImpl> members) throws Exception {
-                if (clusterService.getClusterState() == ClusterState.IN_TRANSITION) {
-                    stateLockedLatch.countDown();
-                    transactionPauseLatch.await(1, TimeUnit.MINUTES);
-                }
-                return members;
-            }
-        };
-        memberListAnswer.cluster = clusterService;
-        when(clusterService.getMemberImpls()).thenAnswer(memberListAnswer);
-
-        Thread stateThread = new Thread() {
-            public void run() {
-                hz.getCluster().changeClusterState(ClusterState.PASSIVE);
-            }
-        };
-        stateThread.start();
-
-        // first node is locked the state
-        assertOpenEventually(stateLockedLatch);
+        lockClusterState(hz);
 
         final HazelcastInstance hz2 = instances[instances.length - 2];
-        try {
-            hz2.getCluster().changeClusterState(ClusterState.PASSIVE);
-            fail("Cluster state change should fail, because state is already locked!");
-        } finally {
-            transactionPauseLatch.countDown();
-            stateThread.join();
-        }
+        hz2.getCluster().changeClusterState(ClusterState.PASSIVE);
+        fail("Cluster state change should fail, because state is already locked!");
+    }
+
+    private void lockClusterState(HazelcastInstance hz) {
+        final Node node = getNode(hz);
+        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
+        long timeoutInMillis = TimeUnit.SECONDS.toMillis(60);
+        ClusterStateManager clusterStateManager = node.clusterService.getClusterStateManager();
+        clusterStateManager.lockClusterState(ClusterState.FROZEN, node.getThisAddress(), "fakeTxn", timeoutInMillis, partitionStateVersion);
     }
 
     @Test
@@ -271,9 +251,10 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = factory.newInstances();
 
         CountDownLatch latch = new CountDownLatch(instances.length);
-        int iteration = 10;
+        int iteration = 20;
+        Random random = new Random();
         for (HazelcastInstance instance : instances) {
-            new IterativeStateChangeThread(instance, iteration, latch).start();
+            new IterativeStateChangeThread(instance, iteration, latch, random).start();
         }
 
         assertOpenEventually(latch);
@@ -628,13 +609,13 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         private final HazelcastInstance instance;
         private final int iteration;
         private final CountDownLatch latch;
+        private final Random random;
 
-        public IterativeStateChangeThread(HazelcastInstance instance, int iteration, CountDownLatch latch) {
+        public IterativeStateChangeThread(HazelcastInstance instance, int iteration, CountDownLatch latch, Random random) {
             this.instance = instance;
             this.iteration = iteration;
             this.latch = latch;
-
-            initialize();
+            this.random = random;
         }
 
         public void run() {
@@ -647,6 +628,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
                     EmptyStatement.ignore(e);
                 }
                 newState = flipState(newState);
+                sleepMillis(random.nextInt(5) + 1);
             }
             latch.countDown();
         }
@@ -654,23 +636,6 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         private static ClusterState flipState(ClusterState state) {
             state = state == ClusterState.ACTIVE ? ClusterState.FROZEN : ClusterState.ACTIVE;
             return state;
-        }
-
-        private void initialize() {
-            try {
-                ClusterServiceImpl clusterService = spyClusterService(instance);
-                MemberListAnswer memberListAnswer = new MemberListAnswer() {
-                    Random random = new Random();
-                    @Override
-                    Collection<MemberImpl> onAnswer(Collection<MemberImpl> members) throws Exception {
-                        sleepMillis(random.nextInt(10) + 1);
-                        return members;
-                    }
-                };
-                when(clusterService.getMemberImpls()).thenAnswer(memberListAnswer);
-            } catch (Throwable e) {
-                throw ExceptionUtil.rethrow(e);
-            }
         }
     }
 
