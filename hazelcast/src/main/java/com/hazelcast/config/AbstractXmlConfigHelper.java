@@ -295,14 +295,14 @@ public abstract class AbstractXmlConfigHelper {
         return StringUtil.lowerCaseInternal(nodeName);
     }
 
-    public static boolean checkTrue(final String value) {
+    protected static boolean getBooleanValue(final String value) {
         String lowerCaseValue = StringUtil.lowerCaseInternal(value);
         return "true".equals(lowerCaseValue)
                 || "yes".equals(lowerCaseValue)
                 || "on".equals(lowerCaseValue);
     }
 
-    public static int getIntegerValue(final String parameterName, final String value, final int defaultValue) {
+    protected static int getIntegerValue(final String parameterName, final String value, final int defaultValue) {
         try {
             return Integer.parseInt(value);
         } catch (final Exception e) {
@@ -313,7 +313,7 @@ public abstract class AbstractXmlConfigHelper {
         }
     }
 
-    public static long getLongValue(final String parameterName, final String value, final long defaultValue) {
+    protected static long getLongValue(final String parameterName, final String value, final long defaultValue) {
         try {
             return Long.parseLong(value);
         } catch (final Exception e) {
@@ -336,7 +336,7 @@ public abstract class AbstractXmlConfigHelper {
         SocketInterceptorConfig socketInterceptorConfig = new SocketInterceptorConfig();
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode).trim());
+        final boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         socketInterceptorConfig.setEnabled(enabled);
 
         for (Node n : childElements(node)) {
@@ -395,9 +395,9 @@ public abstract class AbstractXmlConfigHelper {
                 serializationConfig.setPortableVersion(getIntegerValue(name, value, 0));
             } else if ("check-class-def-errors".equals(name)) {
                 String value = getTextContent(child);
-                serializationConfig.setCheckClassDefErrors(checkTrue(value));
+                serializationConfig.setCheckClassDefErrors(getBooleanValue(value));
             } else if ("use-native-byte-order".equals(name)) {
-                serializationConfig.setUseNativeByteOrder(checkTrue(getTextContent(child)));
+                serializationConfig.setUseNativeByteOrder(getBooleanValue(getTextContent(child)));
             } else if ("byte-order".equals(name)) {
                 String value = getTextContent(child);
                 ByteOrder byteOrder = null;
@@ -408,11 +408,11 @@ public abstract class AbstractXmlConfigHelper {
                 }
                 serializationConfig.setByteOrder(byteOrder != null ? byteOrder : ByteOrder.BIG_ENDIAN);
             } else if ("enable-compression".equals(name)) {
-                serializationConfig.setEnableCompression(checkTrue(getTextContent(child)));
+                serializationConfig.setEnableCompression(getBooleanValue(getTextContent(child)));
             } else if ("enable-shared-object".equals(name)) {
-                serializationConfig.setEnableSharedObject(checkTrue(getTextContent(child)));
+                serializationConfig.setEnableSharedObject(getBooleanValue(getTextContent(child)));
             } else if ("allow-unsafe".equals(name)) {
-                serializationConfig.setAllowUnsafe(checkTrue(getTextContent(child)));
+                serializationConfig.setAllowUnsafe(getBooleanValue(getTextContent(child)));
             } else if ("data-serializable-factories".equals(name)) {
                 fillDataSerializableFactories(child, serializationConfig);
             } else if ("portable-factories".equals(name)) {
@@ -477,7 +477,7 @@ public abstract class AbstractXmlConfigHelper {
     protected void fillNativeMemoryConfig(Node node, NativeMemoryConfig nativeMemoryConfig) {
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode).trim());
+        final boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         nativeMemoryConfig.setEnabled(enabled);
 
         final Node allocTypeNode = atts.getNamedItem("allocator-type");
@@ -512,6 +512,4 @@ public abstract class AbstractXmlConfigHelper {
             }
         }
     }
-
-
 }

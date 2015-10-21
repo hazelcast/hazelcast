@@ -252,7 +252,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 ManagedList listeners = getEntryListeners(node);
                 builder.addPropertyValue("entryListenerConfigs", listeners);
             } else if ("include-value".equals(nodeName)) {
-                boolean includeValue = checkTrue(textContent);
+                boolean includeValue = getBooleanValue(textContent);
                 builder.addPropertyValue("includeValue", includeValue);
             } else if ("batch-size".equals(nodeName)) {
                 int batchSize = getIntegerValue("batch-size", textContent.trim(),
@@ -270,10 +270,10 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 String value = textContent.trim();
                 builder.addPropertyValue("inMemoryFormat", InMemoryFormat.valueOf(upperCaseInternal(value)));
             } else if ("coalesce".equals(nodeName)) {
-                boolean coalesce = checkTrue(textContent);
+                boolean coalesce = getBooleanValue(textContent);
                 builder.addPropertyValue("coalesce", coalesce);
             } else if ("populate".equals(nodeName)) {
-                boolean populate = checkTrue(textContent);
+                boolean populate = getBooleanValue(textContent);
                 builder.addPropertyValue("populate", populate);
             } else if ("indexes".equals(nodeName)) {
                 ManagedList indexes = getIndexes(node);

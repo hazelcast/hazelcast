@@ -248,7 +248,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             final String name = getAttribute(node, "name");
             quorumConfigBuilder.addPropertyValue("name", name);
             Node attrEnabled = node.getAttributes().getNamedItem("enabled");
-            final boolean enabled = attrEnabled != null ? checkTrue(getTextContent(attrEnabled)) : false;
+            final boolean enabled = attrEnabled != null ? getBooleanValue(getTextContent(attrEnabled)) : false;
             quorumConfigBuilder.addPropertyValue("enabled", enabled);
             for (org.w3c.dom.Node n : childElements(node)) {
                 final String value = getTextContent(n).trim();
@@ -656,7 +656,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                     builder.addPropertyValue("entryListenerConfigs", listeners);
                 } else if ("include-value".equals(nodeName)) {
-                    boolean includeValue = checkTrue(textContent);
+                    boolean includeValue = getBooleanValue(textContent);
                     builder.addPropertyValue("includeValue", includeValue);
                 } else if ("batch-size".equals(nodeName)) {
                     int batchSize = getIntegerValue("batch-size", textContent.trim(),
@@ -674,10 +674,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     String value = textContent.trim();
                     builder.addPropertyValue("inMemoryFormat", InMemoryFormat.valueOf(upperCaseInternal(value)));
                 } else if ("coalesce".equals(nodeName)) {
-                    boolean coalesce = checkTrue(textContent);
+                    boolean coalesce = getBooleanValue(textContent);
                     builder.addPropertyValue("coalesce", coalesce);
                 } else if ("populate".equals(nodeName)) {
-                    boolean populate = checkTrue(textContent);
+                    boolean populate = getBooleanValue(textContent);
                     builder.addPropertyValue("populate", populate);
                 } else if ("indexes".equals(nodeName)) {
                     ManagedList indexes = new ManagedList();
@@ -741,7 +741,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             final String name = getTextContent(attName);
             wanRepConfigBuilder.addPropertyValue("name", name);
             final Node attSnapshotEnabled = node.getAttributes().getNamedItem("snapshot-enabled");
-            final boolean snapshotEnabled = checkTrue(getTextContent(attSnapshotEnabled));
+            final boolean snapshotEnabled = getBooleanValue(getTextContent(attSnapshotEnabled));
             wanRepConfigBuilder.addPropertyValue("snapshotEnabled", snapshotEnabled);
 
             final ManagedList targetClusters = new ManagedList();

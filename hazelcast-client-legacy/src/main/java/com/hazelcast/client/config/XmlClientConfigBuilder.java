@@ -368,7 +368,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             Node att = atts.item(a);
             String value = getTextContent(att).trim();
             if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
-                enabled = checkTrue(value);
+                enabled = getBooleanValue(value);
             } else if ("class".equals(att.getNodeName())) {
                 clazz = value;
             }
@@ -408,7 +408,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             } else if ("tag-value".equals(cleanNodeName(n))) {
                 clientAwsConfig.setTagValue(value);
             } else if ("inside-aws".equals(cleanNodeName(n))) {
-                clientAwsConfig.setInsideAws(checkTrue(value));
+                clientAwsConfig.setInsideAws(getBooleanValue(value));
             } else if ("iam-role".equals(cleanNodeName(n))) {
                 clientAwsConfig.setIamRole(value);
             }
@@ -427,7 +427,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             final Node att = atts.item(i);
             final String value = getTextContent(att).trim();
             if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
-                clientAwsConfig.setEnabled(checkTrue(value));
+                clientAwsConfig.setEnabled(getBooleanValue(value));
             } else if (att.getNodeName().equals("connection-timeout-seconds")) {
                 int timeout = getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE);
                 clientAwsConfig.setConnectionTimeoutSeconds(timeout);
@@ -440,7 +440,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         SSLConfig sslConfig = new SSLConfig();
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode).trim());
+        final boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         sslConfig.setEnabled(enabled);
 
         for (Node n : childElements(node)) {

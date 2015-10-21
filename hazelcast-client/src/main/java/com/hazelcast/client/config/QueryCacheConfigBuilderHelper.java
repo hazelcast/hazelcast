@@ -59,7 +59,7 @@ final class QueryCacheConfigBuilderHelper extends AbstractXmlConfigHelper {
         if ("entry-listeners".equals(nodeName)) {
             handleEntryListeners(queryCacheConfig, childNode);
         } else if ("include-value".equals(nodeName)) {
-            boolean includeValue = checkTrue(textContent);
+            boolean includeValue = getBooleanValue(textContent);
             queryCacheConfig.setIncludeValue(includeValue);
         } else if ("batch-size".equals(nodeName)) {
             int batchSize = getIntegerValue("batch-size", textContent.trim(),
@@ -77,10 +77,10 @@ final class QueryCacheConfigBuilderHelper extends AbstractXmlConfigHelper {
             String value = textContent.trim();
             queryCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
         } else if ("coalesce".equals(nodeName)) {
-            boolean coalesce = checkTrue(textContent);
+            boolean coalesce = getBooleanValue(textContent);
             queryCacheConfig.setCoalesce(coalesce);
         } else if ("populate".equals(nodeName)) {
-            boolean populate = checkTrue(textContent);
+            boolean populate = getBooleanValue(textContent);
             queryCacheConfig.setPopulate(populate);
         } else if ("indexes".equals(nodeName)) {
             queryCacheIndexesHandle(childNode, queryCacheConfig);
@@ -119,9 +119,9 @@ final class QueryCacheConfigBuilderHelper extends AbstractXmlConfigHelper {
             if ("entry-listener".equals(cleanNodeName(listenerNode))) {
                 NamedNodeMap listenerNodeAttributes = listenerNode.getAttributes();
                 boolean incValue
-                        = checkTrue(getTextContent(listenerNodeAttributes.getNamedItem("include-value")));
+                        = getBooleanValue(getTextContent(listenerNodeAttributes.getNamedItem("include-value")));
                 boolean local
-                        = checkTrue(getTextContent(listenerNodeAttributes.getNamedItem("local")));
+                        = getBooleanValue(getTextContent(listenerNodeAttributes.getNamedItem("local")));
                 String listenerClass = getTextContent(listenerNode);
                 queryCacheConfig.addEntryListenerConfig(
                         new EntryListenerConfig(listenerClass, local, incValue));
@@ -146,7 +146,7 @@ final class QueryCacheConfigBuilderHelper extends AbstractXmlConfigHelper {
         for (Node indexNode : childElements(n)) {
             if ("index".equals(cleanNodeName(indexNode))) {
                 final NamedNodeMap attrs = indexNode.getAttributes();
-                boolean ordered = checkTrue(getTextContent(attrs.getNamedItem("ordered")));
+                boolean ordered = getBooleanValue(getTextContent(attrs.getNamedItem("ordered")));
                 String attribute = getTextContent(indexNode);
                 queryCacheConfig.addIndexConfig(new MapIndexConfig(attribute, ordered));
             }
