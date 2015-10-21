@@ -1,10 +1,11 @@
 package com.hazelcast.query.impl.extraction;
 
+import com.hazelcast.test.ObjectTestUtils;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 // PRD: CASE 2
 public class SingleCollectionDataStructure {
@@ -17,12 +18,12 @@ public class SingleCollectionDataStructure {
         public boolean equals(Object o) {
             if (!(o instanceof Person)) return false;
             final Person other = (Person) o;
-            return Objects.equals(this.limbs_list, other.limbs_list);
+            return ObjectTestUtils.equals(this.limbs_list, other.limbs_list);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(limbs_list);
+            return ObjectTestUtils.hashCode(limbs_list);
         }
     }
 
@@ -34,12 +35,12 @@ public class SingleCollectionDataStructure {
         public boolean equals(Object o) {
             if (!(o instanceof Limb)) return false;
             final Limb other = (Limb) o;
-            return Objects.equals(this.name, other.name) && Objects.equals(this.power, other.power);
+            return ObjectTestUtils.equals(this.name, other.name) && ObjectTestUtils.equals(this.power, other.power);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(name, power);
+            return ObjectTestUtils.hash(name, power);
         }
     }
 
