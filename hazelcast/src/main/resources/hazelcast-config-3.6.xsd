@@ -33,6 +33,7 @@
 	                    </xs:documentation>
 	                </xs:annotation>
 	            </xs:element>
+                <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="management-center" type="management-center" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="wan-replication" type="wan-replication" minOccurs="0" maxOccurs="unbounded"/>

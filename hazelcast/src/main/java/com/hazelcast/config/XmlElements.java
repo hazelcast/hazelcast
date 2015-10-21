@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 enum XmlElements {
     HAZELCAST("hazelcast", false),
+    INSTANCE_NAME("instance-name", false),
     IMPORT("import", true),
     GROUP("group", false),
     LICENSE_KEY("license-key", false),
