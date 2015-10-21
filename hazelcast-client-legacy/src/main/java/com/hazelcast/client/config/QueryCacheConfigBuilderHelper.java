@@ -38,13 +38,13 @@ final class QueryCacheConfigBuilderHelper extends AbstractXmlConfigHelper {
     }
 
     void handleQueryCache(ClientConfig clientConfig, Node node) {
-        for (org.w3c.dom.Node queryCacheNode : new AbstractXmlConfigHelper.IterableNodeList(node.getChildNodes())) {
+        for (Node queryCacheNode : childElements(node)) {
             if ("query-cache".equals(cleanNodeName(queryCacheNode))) {
                 NamedNodeMap attrs = queryCacheNode.getAttributes();
                 String cacheName = getTextContent(attrs.getNamedItem("name"));
                 String mapName = getTextContent(attrs.getNamedItem("mapName"));
                 QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
-                for (org.w3c.dom.Node childNode : new AbstractXmlConfigHelper.IterableNodeList(queryCacheNode.getChildNodes())) {
+                for (Node childNode : childElements(queryCacheNode)) {
                     String textContent = getTextContent(childNode);
                     String nodeName = cleanNodeName(childNode);
                     populateQueryCacheConfig(queryCacheConfig, childNode, textContent, nodeName);
@@ -59,28 +59,28 @@ final class QueryCacheConfigBuilderHelper extends AbstractXmlConfigHelper {
         if ("entry-listeners".equals(nodeName)) {
             handleEntryListeners(queryCacheConfig, childNode);
         } else if ("include-value".equals(nodeName)) {
-            boolean includeValue = checkTrue(textContent);
+            boolean includeValue = getBooleanValue(textContent);
             queryCacheConfig.setIncludeValue(includeValue);
         } else if ("batch-size".equals(nodeName)) {
-            int batchSize = getIntegerValue("batch-size", textContent.trim(),
-                    QueryCacheConfig.DEFAULT_BATCH_SIZE);
+            int batchSize = getIntegerValue("batch-size", textContent.trim()
+            );
             queryCacheConfig.setBatchSize(batchSize);
         } else if ("buffer-size".equals(nodeName)) {
-            int bufferSize = getIntegerValue("buffer-size", textContent.trim(),
-                    QueryCacheConfig.DEFAULT_BUFFER_SIZE);
+            int bufferSize = getIntegerValue("buffer-size", textContent.trim()
+            );
             queryCacheConfig.setBufferSize(bufferSize);
         } else if ("delay-seconds".equals(nodeName)) {
-            int delaySeconds = getIntegerValue("delay-seconds", textContent.trim(),
-                    QueryCacheConfig.DEFAULT_DELAY_SECONDS);
+            int delaySeconds = getIntegerValue("delay-seconds", textContent.trim()
+            );
             queryCacheConfig.setDelaySeconds(delaySeconds);
         } else if ("in-memory-format".equals(nodeName)) {
             String value = textContent.trim();
             queryCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
         } else if ("coalesce".equals(nodeName)) {
-            boolean coalesce = checkTrue(textContent);
+            boolean coalesce = getBooleanValue(textContent);
             queryCacheConfig.setCoalesce(coalesce);
         } else if ("populate".equals(nodeName)) {
-            boolean populate = checkTrue(textContent);
+            boolean populate = getBooleanValue(textContent);
             queryCacheConfig.setPopulate(populate);
         } else if ("indexes".equals(nodeName)) {
             queryCacheIndexesHandle(childNode, queryCacheConfig);
@@ -91,7 +91,7 @@ final class QueryCacheConfigBuilderHelper extends AbstractXmlConfigHelper {
         }
     }
 
-    private EvictionConfig getEvictionConfig(final org.w3c.dom.Node node) {
+    private EvictionConfig getEvictionConfig(final Node node) {
         final EvictionConfig evictionConfig = new EvictionConfig();
         final Node size = node.getAttributes().getNamedItem("size");
         final Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
@@ -115,13 +115,13 @@ final class QueryCacheConfigBuilderHelper extends AbstractXmlConfigHelper {
     }
 
     private void handleEntryListeners(QueryCacheConfig queryCacheConfig, Node childNode) {
-        for (Node listenerNode : new IterableNodeList(childNode.getChildNodes())) {
+        for (Node listenerNode : childElements(childNode)) {
             if ("entry-listener".equals(cleanNodeName(listenerNode))) {
                 NamedNodeMap listenerNodeAttributes = listenerNode.getAttributes();
                 boolean incValue
-                        = checkTrue(getTextContent(listenerNodeAttributes.getNamedItem("include-value")));
+                        = getBooleanValue(getTextContent(listenerNodeAttributes.getNamedItem("include-value")));
                 boolean local
-                        = checkTrue(getTextContent(listenerNodeAttributes.getNamedItem("local")));
+                        = getBooleanValue(getTextContent(listenerNodeAttributes.getNamedItem("local")));
                 String listenerClass = getTextContent(listenerNode);
                 queryCacheConfig.addEntryListenerConfig(
                         new EntryListenerConfig(listenerClass, local, incValue));
@@ -143,10 +143,10 @@ final class QueryCacheConfigBuilderHelper extends AbstractXmlConfigHelper {
     }
 
     private void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
-        for (org.w3c.dom.Node indexNode : new AbstractXmlConfigHelper.IterableNodeList(n.getChildNodes())) {
+        for (Node indexNode : childElements(n)) {
             if ("index".equals(cleanNodeName(indexNode))) {
                 final NamedNodeMap attrs = indexNode.getAttributes();
-                boolean ordered = checkTrue(getTextContent(attrs.getNamedItem("ordered")));
+                boolean ordered = getBooleanValue(getTextContent(attrs.getNamedItem("ordered")));
                 String attribute = getTextContent(indexNode);
                 queryCacheConfig.addIndexConfig(new MapIndexConfig(attribute, ordered));
             }

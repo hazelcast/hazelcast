@@ -76,8 +76,8 @@ public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefi
         public void handle(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
             Element config = null;
-            for (Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
-                final String nodeName = cleanNodeName(node.getNodeName());
+            for (Node node : childElements(element)) {
+                final String nodeName = cleanNodeName(node);
                 if ("config".equals(nodeName)) {
                     config = (Element) node;
                 }
