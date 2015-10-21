@@ -62,16 +62,16 @@ final class QueryCacheConfigBuilderHelper extends AbstractXmlConfigHelper {
             boolean includeValue = getBooleanValue(textContent);
             queryCacheConfig.setIncludeValue(includeValue);
         } else if ("batch-size".equals(nodeName)) {
-            int batchSize = getIntegerValue("batch-size", textContent.trim(),
-                    QueryCacheConfig.DEFAULT_BATCH_SIZE);
+            int batchSize = getIntegerValue("batch-size", textContent.trim()
+            );
             queryCacheConfig.setBatchSize(batchSize);
         } else if ("buffer-size".equals(nodeName)) {
-            int bufferSize = getIntegerValue("buffer-size", textContent.trim(),
-                    QueryCacheConfig.DEFAULT_BUFFER_SIZE);
+            int bufferSize = getIntegerValue("buffer-size", textContent.trim()
+            );
             queryCacheConfig.setBufferSize(bufferSize);
         } else if ("delay-seconds".equals(nodeName)) {
-            int delaySeconds = getIntegerValue("delay-seconds", textContent.trim(),
-                    QueryCacheConfig.DEFAULT_DELAY_SECONDS);
+            int delaySeconds = getIntegerValue("delay-seconds", textContent.trim()
+            );
             queryCacheConfig.setDelaySeconds(delaySeconds);
         } else if ("in-memory-format".equals(nodeName)) {
             String value = textContent.trim();

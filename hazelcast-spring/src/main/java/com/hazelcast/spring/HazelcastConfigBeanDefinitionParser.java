@@ -254,7 +254,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 final String value = getTextContent(n).trim();
                 final String nodeName = cleanNodeName(n);
                 if ("quorum-size".equals(nodeName)) {
-                    quorumConfigBuilder.addPropertyValue("size", getIntegerValue("quorum-size", value, 0));
+                    quorumConfigBuilder.addPropertyValue("size", getIntegerValue("quorum-size", value));
                 } else if ("quorum-listeners".equals(nodeName)) {
                     ManagedList listeners = parseListeners(n, QuorumListenerConfig.class);
                     quorumConfigBuilder.addPropertyValue("listenerConfigs", listeners);
@@ -659,16 +659,16 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     boolean includeValue = getBooleanValue(textContent);
                     builder.addPropertyValue("includeValue", includeValue);
                 } else if ("batch-size".equals(nodeName)) {
-                    int batchSize = getIntegerValue("batch-size", textContent.trim(),
-                            QueryCacheConfig.DEFAULT_BATCH_SIZE);
+                    int batchSize = getIntegerValue("batch-size", textContent.trim()
+                    );
                     builder.addPropertyValue("batchSize", batchSize);
                 } else if ("buffer-size".equals(nodeName)) {
-                    int bufferSize = getIntegerValue("buffer-size", textContent.trim(),
-                            QueryCacheConfig.DEFAULT_BUFFER_SIZE);
+                    int bufferSize = getIntegerValue("buffer-size", textContent.trim()
+                    );
                     builder.addPropertyValue("bufferSize", bufferSize);
                 } else if ("delay-seconds".equals(nodeName)) {
-                    int delaySeconds = getIntegerValue("delay-seconds", textContent.trim(),
-                            QueryCacheConfig.DEFAULT_DELAY_SECONDS);
+                    int delaySeconds = getIntegerValue("delay-seconds", textContent.trim()
+                    );
                     builder.addPropertyValue("delaySeconds", delaySeconds);
                 } else if ("in-memory-format".equals(nodeName)) {
                     String value = textContent.trim();

@@ -429,7 +429,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
                 clientAwsConfig.setEnabled(getBooleanValue(value));
             } else if (att.getNodeName().equals("connection-timeout-seconds")) {
-                int timeout = getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE);
+                int timeout = getIntegerValue("connection-timeout-seconds", value);
                 clientAwsConfig.setConnectionTimeoutSeconds(timeout);
             }
         }

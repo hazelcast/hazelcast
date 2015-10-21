@@ -363,7 +363,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             final String value = getTextContent(n).trim();
             final String nodeName = cleanNodeName(n);
             if ("quorum-size".equals(nodeName)) {
-                quorumConfig.setSize(getIntegerValue("quorum-size", value, 0));
+                quorumConfig.setSize(getIntegerValue("quorum-size", value));
             } else if ("quorum-listeners".equals(nodeName)) {
                 for (Node listenerNode : childElements(n)) {
                     if ("quorum-listener".equals(cleanNodeName(listenerNode))) {
@@ -709,7 +709,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
                 awsConfig.setEnabled(getBooleanValue(value));
             } else if (att.getNodeName().equals("connection-timeout-seconds")) {
-                awsConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE));
+                awsConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value));
             }
         }
         for (Node n : childElements(node)) {
@@ -781,7 +781,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             if (att.getNodeName().equals("enabled")) {
                 tcpIpConfig.setEnabled(getBooleanValue(value));
             } else if (att.getNodeName().equals("connection-timeout-seconds")) {
-                tcpIpConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE));
+                tcpIpConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value));
             }
         }
         final Set<String> memberTags = new HashSet<String>(Arrays.asList("interface", "member", "members"));
@@ -853,11 +853,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             final String nodeName = cleanNodeName(n);
             final String value = getTextContent(n).trim();
             if ("max-size".equals(nodeName)) {
-                qConfig.setMaxSize(getIntegerValue("max-size", value, QueueConfig.DEFAULT_MAX_SIZE));
+                qConfig.setMaxSize(getIntegerValue("max-size", value));
             } else if ("backup-count".equals(nodeName)) {
-                qConfig.setBackupCount(getIntegerValue("backup-count", value, QueueConfig.DEFAULT_SYNC_BACKUP_COUNT));
+                qConfig.setBackupCount(getIntegerValue("backup-count", value));
             } else if ("async-backup-count".equals(nodeName)) {
-                qConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, QueueConfig.DEFAULT_ASYNC_BACKUP_COUNT));
+                qConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
             } else if ("item-listeners".equals(nodeName)) {
                 for (Node listenerNode : childElements(n)) {
                     if ("item-listener".equals(cleanNodeName(listenerNode))) {
@@ -873,7 +873,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 final QueueStoreConfig queueStoreConfig = createQueueStoreConfig(n);
                 qConfig.setQueueStoreConfig(queueStoreConfig);
             } else if ("empty-queue-ttl".equals(nodeName)) {
-                qConfig.setEmptyQueueTtl(getIntegerValue("empty-queue-ttl", value, QueueConfig.DEFAULT_EMPTY_QUEUE_TTL));
+                qConfig.setEmptyQueueTtl(getIntegerValue("empty-queue-ttl", value));
             }
         }
         this.config.addQueueConfig(qConfig);
@@ -888,11 +888,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             final String nodeName = cleanNodeName(n);
             final String value = getTextContent(n).trim();
             if ("max-size".equals(nodeName)) {
-                lConfig.setMaxSize(getIntegerValue("max-size", value, ListConfig.DEFAULT_MAX_SIZE));
+                lConfig.setMaxSize(getIntegerValue("max-size", value));
             } else if ("backup-count".equals(nodeName)) {
-                lConfig.setBackupCount(getIntegerValue("backup-count", value, ListConfig.DEFAULT_SYNC_BACKUP_COUNT));
+                lConfig.setBackupCount(getIntegerValue("backup-count", value));
             } else if ("async-backup-count".equals(nodeName)) {
-                lConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, ListConfig.DEFAULT_ASYNC_BACKUP_COUNT));
+                lConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
             } else if ("item-listeners".equals(nodeName)) {
                 for (Node listenerNode : childElements(n)) {
                     if ("item-listener".equals(cleanNodeName(listenerNode))) {
@@ -918,11 +918,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             final String nodeName = cleanNodeName(n);
             final String value = getTextContent(n).trim();
             if ("max-size".equals(nodeName)) {
-                sConfig.setMaxSize(getIntegerValue("max-size", value, SetConfig.DEFAULT_MAX_SIZE));
+                sConfig.setMaxSize(getIntegerValue("max-size", value));
             } else if ("backup-count".equals(nodeName)) {
-                sConfig.setBackupCount(getIntegerValue("backup-count", value, SetConfig.DEFAULT_SYNC_BACKUP_COUNT));
+                sConfig.setBackupCount(getIntegerValue("backup-count", value));
             } else if ("async-backup-count".equals(nodeName)) {
-                sConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, SetConfig.DEFAULT_ASYNC_BACKUP_COUNT));
+                sConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
             } else if ("item-listeners".equals(nodeName)) {
                 for (Node listenerNode : childElements(n)) {
                     if ("item-listener".equals(cleanNodeName(listenerNode))) {
@@ -951,10 +951,10 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 multiMapConfig.setValueCollectionType(value);
             } else if ("backup-count".equals(nodeName)) {
                 multiMapConfig.setBackupCount(getIntegerValue("backup-count"
-                        , value, MultiMapConfig.DEFAULT_SYNC_BACKUP_COUNT));
+                        , value));
             } else if ("async-backup-count".equals(nodeName)) {
                 multiMapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count"
-                        , value, MultiMapConfig.DEFAULT_ASYNC_BACKUP_COUNT));
+                        , value));
             } else if ("entry-listeners".equals(nodeName)) {
                 for (Node listenerNode : childElements(n)) {
                     if ("entry-listener".equals(cleanNodeName(listenerNode))) {
@@ -982,12 +982,12 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             final String value = getTextContent(n).trim();
             if ("concurrency-level".equals(nodeName)) {
                 replicatedMapConfig.setConcurrencyLevel(getIntegerValue("concurrency-level"
-                        , value, ReplicatedMapConfig.DEFAULT_CONCURRENCY_LEVEL));
+                        , value));
             } else if ("in-memory-format".equals(nodeName)) {
                 replicatedMapConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
             } else if ("replication-delay-millis".equals(nodeName)) {
                 replicatedMapConfig.setReplicationDelayMillis(getIntegerValue("replication-delay-millis"
-                        , value, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+                        , value));
             } else if ("async-fillup".equals(nodeName)) {
                 replicatedMapConfig.setAsyncFillup(getBooleanValue(value));
             } else if ("statistics-enabled".equals(nodeName)) {
@@ -1018,11 +1018,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             final String nodeName = cleanNodeName(node);
             final String value = getTextContent(node).trim();
             if ("backup-count".equals(nodeName)) {
-                mapConfig.setBackupCount(getIntegerValue("backup-count", value, MapConfig.DEFAULT_BACKUP_COUNT));
+                mapConfig.setBackupCount(getIntegerValue("backup-count", value));
             } else if ("in-memory-format".equals(nodeName)) {
                 mapConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
             } else if ("async-backup-count".equals(nodeName)) {
-                mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, MapConfig.MIN_BACKUP_COUNT));
+                mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
             } else if ("eviction-policy".equals(nodeName)) {
                 mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
             } else if ("max-size".equals(nodeName)) {
@@ -1035,17 +1035,17 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 final int size = sizeParser(value);
                 msc.setSize(size);
             } else if ("eviction-percentage".equals(nodeName)) {
-                mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value,
-                        MapConfig.DEFAULT_EVICTION_PERCENTAGE));
+                mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value
+                ));
             } else if ("min-eviction-check-millis".equals(nodeName)) {
-                mapConfig.setMinEvictionCheckMillis(getLongValue("min-eviction-check-millis", value,
-                        MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS));
+                mapConfig.setMinEvictionCheckMillis(getLongValue("min-eviction-check-millis", value
+                ));
             } else if ("time-to-live-seconds".equals(nodeName)) {
-                mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value,
-                        MapConfig.DEFAULT_TTL_SECONDS));
+                mapConfig.setTimeToLiveSeconds(getIntegerValue("time-to-live-seconds", value
+                ));
             } else if ("max-idle-seconds".equals(nodeName)) {
-                mapConfig.setMaxIdleSeconds(getIntegerValue("max-idle-seconds", value,
-                        MapConfig.DEFAULT_MAX_IDLE_SECONDS));
+                mapConfig.setMaxIdleSeconds(getIntegerValue("max-idle-seconds", value
+                ));
             } else if ("map-store".equals(nodeName)) {
                 MapStoreConfig mapStoreConfig = createMapStoreConfig(node);
                 mapConfig.setMapStoreConfig(mapStoreConfig);
@@ -1112,9 +1112,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("in-memory-format".equals(nodeName)) {
                 cacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
             } else if ("backup-count".equals(nodeName)) {
-                cacheConfig.setBackupCount(getIntegerValue("backup-count", value, CacheSimpleConfig.DEFAULT_BACKUP_COUNT));
+                cacheConfig.setBackupCount(getIntegerValue("backup-count", value));
             } else if ("async-backup-count".equals(nodeName)) {
-                cacheConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, CacheSimpleConfig.MIN_BACKUP_COUNT));
+                cacheConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
             } else if ("wan-replication-ref".equals(nodeName)) {
                 cacheWanReplicationRefHandle(n, cacheConfig);
             } else if ("eviction".equals(nodeName)) {
@@ -1373,16 +1373,16 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                             boolean includeValue = getBooleanValue(textContent);
                             queryCacheConfig.setIncludeValue(includeValue);
                         } else if ("batch-size".equals(nodeName)) {
-                            int batchSize = getIntegerValue("batch-size", textContent.trim(),
-                                    QueryCacheConfig.DEFAULT_BATCH_SIZE);
+                            int batchSize = getIntegerValue("batch-size", textContent.trim()
+                            );
                             queryCacheConfig.setBatchSize(batchSize);
                         } else if ("buffer-size".equals(nodeName)) {
-                            int bufferSize = getIntegerValue("buffer-size", textContent.trim(),
-                                    QueryCacheConfig.DEFAULT_BUFFER_SIZE);
+                            int bufferSize = getIntegerValue("buffer-size", textContent.trim()
+                            );
                             queryCacheConfig.setBufferSize(bufferSize);
                         } else if ("delay-seconds".equals(nodeName)) {
-                            int delaySeconds = getIntegerValue("delay-seconds", textContent.trim(),
-                                    QueryCacheConfig.DEFAULT_DELAY_SECONDS);
+                            int delaySeconds = getIntegerValue("delay-seconds", textContent.trim()
+                            );
                             queryCacheConfig.setDelaySeconds(delaySeconds);
                         } else if ("in-memory-format".equals(nodeName)) {
                             String value = textContent.trim();
@@ -1464,11 +1464,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("factory-class-name".equals(nodeName)) {
                 mapStoreConfig.setFactoryClassName(getTextContent(n).trim());
             } else if ("write-delay-seconds".equals(nodeName)) {
-                mapStoreConfig.setWriteDelaySeconds(getIntegerValue("write-delay-seconds", getTextContent(n).trim(),
-                        MapStoreConfig.DEFAULT_WRITE_DELAY_SECONDS));
+                mapStoreConfig.setWriteDelaySeconds(getIntegerValue("write-delay-seconds", getTextContent(n).trim()
+                ));
             } else if ("write-batch-size".equals(nodeName)) {
-                mapStoreConfig.setWriteBatchSize(getIntegerValue("write-batch-size", getTextContent(n).trim(),
-                        MapStoreConfig.DEFAULT_WRITE_BATCH_SIZE));
+                mapStoreConfig.setWriteBatchSize(getIntegerValue("write-batch-size", getTextContent(n).trim()
+                ));
             } else if ("write-coalescing".equals(nodeName)) {
                 final String writeCoalescing = getTextContent(n).trim();
                 if (isNullOrEmpty(writeCoalescing)) {
@@ -1561,7 +1561,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             if ("read-batch-size".equals(nodeName)) {
                 String batchSize = getTextContent(n);
                 topicConfig.setReadBatchSize(
-                        getIntegerValue("read-batch-size", batchSize, ReliableTopicConfig.DEFAULT_READ_BATCH_SIZE));
+                        getIntegerValue("read-batch-size", batchSize));
             } else if ("statistics-enabled".equals(nodeName)) {
                 topicConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
             } else if ("topic-overload-policy".equals(nodeName)) {
@@ -1587,13 +1587,13 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             final String nodeName = cleanNodeName(n);
             final String value = getTextContent(n).trim();
             if ("max-thread-size".equals(nodeName)) {
-                jConfig.setMaxThreadSize(getIntegerValue("max-thread-size", value, JobTrackerConfig.DEFAULT_MAX_THREAD_SIZE));
+                jConfig.setMaxThreadSize(getIntegerValue("max-thread-size", value));
             } else if ("queue-size".equals(nodeName)) {
-                jConfig.setQueueSize(getIntegerValue("queue-size", value, JobTrackerConfig.DEFAULT_QUEUE_SIZE));
+                jConfig.setQueueSize(getIntegerValue("queue-size", value));
             } else if ("retry-count".equals(nodeName)) {
-                jConfig.setRetryCount(getIntegerValue("retry-count", value, JobTrackerConfig.DEFAULT_RETRY_COUNT));
+                jConfig.setRetryCount(getIntegerValue("retry-count", value));
             } else if ("chunk-size".equals(nodeName)) {
-                jConfig.setChunkSize(getIntegerValue("chunk-size", value, JobTrackerConfig.DEFAULT_CHUNK_SIZE));
+                jConfig.setChunkSize(getIntegerValue("chunk-size", value));
             } else if ("communicate-stats".equals(nodeName)) {
                 jConfig.setCommunicateStats(value == null || value.length() == 0
                         ? JobTrackerConfig.DEFAULT_COMMUNICATE_STATS : parseBoolean(value));
@@ -1619,13 +1619,13 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             final String nodeName = cleanNodeName(n);
             final String value = getTextContent(n).trim();
             if ("initial-permits".equals(nodeName)) {
-                sConfig.setInitialPermits(getIntegerValue("initial-permits", value, 0));
+                sConfig.setInitialPermits(getIntegerValue("initial-permits", value));
             } else if ("backup-count".equals(nodeName)) {
                 sConfig.setBackupCount(getIntegerValue("backup-count"
-                        , value, SemaphoreConfig.DEFAULT_SYNC_BACKUP_COUNT));
+                        , value));
             } else if ("async-backup-count".equals(nodeName)) {
                 sConfig.setAsyncBackupCount(getIntegerValue("async-backup-count"
-                        , value, SemaphoreConfig.DEFAULT_ASYNC_BACKUP_COUNT));
+                        , value));
             }
         }
         config.addSemaphoreConfig(sConfig);
@@ -1639,16 +1639,16 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             String nodeName = cleanNodeName(n);
             String value = getTextContent(n).trim();
             if ("capacity".equals(nodeName)) {
-                int capacity = getIntegerValue("capacity", value, RingbufferConfig.DEFAULT_CAPACITY);
+                int capacity = getIntegerValue("capacity", value);
                 rbConfig.setCapacity(capacity);
             } else if ("backup-count".equals(nodeName)) {
-                int backupCount = getIntegerValue("backup-count", value, RingbufferConfig.DEFAULT_SYNC_BACKUP_COUNT);
+                int backupCount = getIntegerValue("backup-count", value);
                 rbConfig.setBackupCount(backupCount);
             } else if ("async-backup-count".equals(nodeName)) {
-                int asyncBackupCount = getIntegerValue("async-backup-count", value, RingbufferConfig.DEFAULT_ASYNC_BACKUP_COUNT);
+                int asyncBackupCount = getIntegerValue("async-backup-count", value);
                 rbConfig.setAsyncBackupCount(asyncBackupCount);
             } else if ("time-to-live-seconds".equals(nodeName)) {
-                int timeToLiveSeconds = getIntegerValue("time-to-live-seconds", value, RingbufferConfig.DEFAULT_TTL_SECONDS);
+                int timeToLiveSeconds = getIntegerValue("time-to-live-seconds", value);
                 rbConfig.setTimeToLiveSeconds(timeToLiveSeconds);
             } else if ("in-memory-format".equals(nodeName)) {
                 InMemoryFormat inMemoryFormat = InMemoryFormat.valueOf(upperCaseInternal(value));
@@ -1708,7 +1708,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
 
         final Node intervalNode = attrs.getNamedItem("update-interval");
         final int interval = intervalNode != null ? getIntegerValue("update-interval",
-                getTextContent(intervalNode), ManagementCenterConfig.UPDATE_INTERVAL) : ManagementCenterConfig.UPDATE_INTERVAL;
+                getTextContent(intervalNode)) : ManagementCenterConfig.UPDATE_INTERVAL;
 
         final String url = getTextContent(node);
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();

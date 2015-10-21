@@ -302,25 +302,22 @@ public abstract class AbstractXmlConfigHelper {
                 || "on".equals(lowerCaseValue);
     }
 
-    protected static int getIntegerValue(final String parameterName, final String value, final int defaultValue) {
+    protected static int getIntegerValue(final String parameterName, final String value) {
         try {
             return Integer.parseInt(value);
-        } catch (final Exception e) {
-            LOGGER.info(parameterName + " parameter value, [" + value
-                    + "], is not a proper integer. Default value, [" + defaultValue + "], will be used!");
-            LOGGER.warning(e);
-            return defaultValue;
+        } catch (final NumberFormatException e) {
+            throw new InvalidConfigurationException(
+                    String.format("Invalid integer value for parameter %s: %s", parameterName, value));
         }
+
     }
 
-    protected static long getLongValue(final String parameterName, final String value, final long defaultValue) {
+    protected static long getLongValue(final String parameterName, final String value) {
         try {
             return Long.parseLong(value);
         } catch (final Exception e) {
-            LOGGER.info(parameterName + " parameter value, [" + value
-                    + "], is not a proper long. Default value, [" + defaultValue + "], will be used!");
-            LOGGER.warning(e);
-            return defaultValue;
+            throw new InvalidConfigurationException(
+                    String.format("Invalid long integer value for parameter %s: %s", parameterName, value));
         }
     }
 
@@ -392,7 +389,7 @@ public abstract class AbstractXmlConfigHelper {
             final String name = cleanNodeName(child);
             if ("portable-version".equals(name)) {
                 String value = getTextContent(child);
-                serializationConfig.setPortableVersion(getIntegerValue(name, value, 0));
+                serializationConfig.setPortableVersion(getIntegerValue(name, value));
             } else if ("check-class-def-errors".equals(name)) {
                 String value = getTextContent(child);
                 serializationConfig.setCheckClassDefErrors(getBooleanValue(value));
@@ -431,7 +428,8 @@ public abstract class AbstractXmlConfigHelper {
                 final String value = getTextContent(child);
                 final Node factoryIdNode = child.getAttributes().getNamedItem("factory-id");
                 if (factoryIdNode == null) {
-                    throw new IllegalArgumentException("'factory-id' attribute of 'data-serializable-factory' is required!");
+                    throw new IllegalArgumentException(
+                            "'factory-id' attribute of 'data-serializable-factory' is required!");
                 }
                 int factoryId = Integer.parseInt(getTextContent(factoryIdNode));
                 serializationConfig.addDataSerializableFactoryClass(factoryId, value);
@@ -483,7 +481,8 @@ public abstract class AbstractXmlConfigHelper {
         final Node allocTypeNode = atts.getNamedItem("allocator-type");
         final String allocType = getTextContent(allocTypeNode);
         if (allocType != null && !"".equals(allocType)) {
-            nativeMemoryConfig.setAllocatorType(NativeMemoryConfig.MemoryAllocatorType.valueOf(upperCaseInternal(allocType)));
+            nativeMemoryConfig.setAllocatorType(
+                    NativeMemoryConfig.MemoryAllocatorType.valueOf(upperCaseInternal(allocType)));
         }
 
         for (Node n : childElements(node)) {
