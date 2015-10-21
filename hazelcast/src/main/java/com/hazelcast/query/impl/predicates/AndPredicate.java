@@ -119,7 +119,7 @@ public final class AndPredicate implements IndexAwarePredicate, DataSerializable
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("(");
+        sb.append('(');
         int size = predicates.length;
         for (int i = 0; i < size; i++) {
             if (i > 0) {
@@ -127,7 +127,7 @@ public final class AndPredicate implements IndexAwarePredicate, DataSerializable
             }
             sb.append(predicates[i]);
         }
-        sb.append(")");
+        sb.append(')');
         return sb.toString();
     }
 

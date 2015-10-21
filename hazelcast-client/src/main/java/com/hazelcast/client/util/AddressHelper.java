@@ -44,7 +44,7 @@ public final class AddressHelper {
     public static Collection<InetSocketAddress> getSocketAddresses(String address) {
         final AddressHolder addressHolder = AddressUtil.getAddressHolder(address, -1);
         final String scopedAddress = addressHolder.getScopeId() != null
-                ? addressHolder.getAddress() + "%" + addressHolder.getScopeId()
+                ? addressHolder.getAddress() + '%' + addressHolder.getScopeId()
                 : addressHolder.getAddress();
 
         int port = addressHolder.getPort();

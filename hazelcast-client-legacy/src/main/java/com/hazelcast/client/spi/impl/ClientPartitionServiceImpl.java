@@ -207,10 +207,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("PartitionImpl{");
-            sb.append("partitionId=").append(partitionId);
-            sb.append('}');
-            return sb.toString();
+            return "PartitionImpl{partitionId=" + partitionId + '}';
         }
     }
 

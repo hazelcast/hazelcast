@@ -277,12 +277,10 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("UnsafeObjectDataOutput");
-        sb.append("{size=").append(buffer != null ? buffer.length : 0);
-        sb.append(", pos=").append(pos);
-        sb.append(", byteOrder=").append(getByteOrder());
-        sb.append('}');
-        return sb.toString();
+        return "UnsafeObjectDataOutput{"
+                + "size=" + (buffer != null ? buffer.length : 0)
+                + ", pos=" + pos
+                + ", byteOrder=" + getByteOrder()
+                + '}';
     }
 }

@@ -147,13 +147,11 @@ public class ClassDefinitionImpl implements ClassDefinition {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("ClassDefinition");
-        sb.append("{factoryId=").append(factoryId);
-        sb.append(", classId=").append(classId);
-        sb.append(", version=").append(version);
-        sb.append(", fieldDefinitions=").append(fieldDefinitionsMap.values());
-        sb.append('}');
-        return sb.toString();
+        return "ClassDefinition{"
+                + "factoryId=" + factoryId
+                + ", classId=" + classId
+                + ", version=" + version
+                + ", fieldDefinitions=" + fieldDefinitionsMap.values()
+                + '}';
     }
 }

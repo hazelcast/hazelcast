@@ -72,11 +72,6 @@ public class Invalidation implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("Invalidation");
-        sb.append("{key=").append(key);
-        sb.append(", version=").append(version);
-        sb.append('}');
-        return sb.toString();
+        return "Invalidation{key=" + key + ", version=" + version + '}';
     }
 }

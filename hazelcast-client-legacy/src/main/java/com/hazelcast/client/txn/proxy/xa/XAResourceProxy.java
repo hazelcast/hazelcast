@@ -245,9 +245,7 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("HazelcastXaResource {").append(getGroupName()).append('}');
-        return sb.toString();
+        return "HazelcastXaResource {" + getGroupName() + '}';
     }
 
 }

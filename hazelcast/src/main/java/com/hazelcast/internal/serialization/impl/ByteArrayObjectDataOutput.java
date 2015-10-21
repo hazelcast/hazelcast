@@ -429,11 +429,9 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("ByteArrayObjectDataOutput");
-        sb.append("{size=").append(buffer != null ? buffer.length : 0);
-        sb.append(", pos=").append(pos);
-        sb.append('}');
-        return sb.toString();
+        return "ByteArrayObjectDataOutput{"
+                + "size=" + (buffer != null ? buffer.length : 0)
+                + ", pos=" + pos
+                + '}';
     }
 }

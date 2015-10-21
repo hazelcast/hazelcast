@@ -329,12 +329,8 @@ public class Node {
         int clusterSize = clusterService.getSize();
         if (config.getNetworkConfig().isPortAutoIncrement()
                 && address.getPort() >= config.getNetworkConfig().getPort() + clusterSize) {
-            StringBuilder sb = new StringBuilder("Config seed port is ");
-            sb.append(config.getNetworkConfig().getPort());
-            sb.append(" and cluster size is ");
-            sb.append(clusterSize);
-            sb.append(". Some of the ports seem occupied!");
-            logger.warning(sb.toString());
+            logger.warning("Config seed port is " + config.getNetworkConfig().getPort()
+                    + " and cluster size is " + clusterSize + ". Some of the ports seem occupied!");
         }
         try {
             managementCenterService = new ManagementCenterService(hazelcastInstance);

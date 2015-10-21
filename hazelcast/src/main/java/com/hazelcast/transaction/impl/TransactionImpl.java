@@ -450,13 +450,11 @@ public class TransactionImpl implements Transaction {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("Transaction");
-        sb.append("{txnId='").append(txnId).append('\'');
-        sb.append(", state=").append(state);
-        sb.append(", txType=").append(transactionType);
-        sb.append(", timeoutMillis=").append(timeoutMillis);
-        sb.append('}');
-        return sb.toString();
+        return "Transaction{"
+                + "txnId='" + txnId + '\''
+                + ", state=" + state
+                + ", txType=" + transactionType
+                + ", timeoutMillis=" + timeoutMillis
+                + '}';
     }
 }

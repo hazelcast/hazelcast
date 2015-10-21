@@ -51,12 +51,8 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
             sk.cancel();
         }
         connectionManager.destroyConnection(connection);
-        StringBuilder sb = new StringBuilder();
-        sb.append(Thread.currentThread().getName());
-        sb.append(" Closing socket to endpoint ");
-        sb.append(connection.getEndPoint());
-        sb.append(", Cause:").append(e);
-        logger.warning(sb.toString());
+        logger.warning(Thread.currentThread().getName() + " Closing socket to endpoint " + connection.getEndPoint()
+                + ", Cause:" + e);
     }
 
     final void registerOp(final int operation) {

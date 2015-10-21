@@ -175,12 +175,11 @@ public class SemaphoreConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("SemaphoreConfig{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", initialPermits=").append(initialPermits);
-        sb.append(", backupCount=").append(backupCount);
-        sb.append(", asyncBackupCount=").append(asyncBackupCount);
-        sb.append('}');
-        return sb.toString();
+        return "SemaphoreConfig{"
+                + "name='" + name + '\''
+                + ", initialPermits=" + initialPermits
+                + ", backupCount=" + backupCount
+                + ", asyncBackupCount=" + asyncBackupCount
+                + '}';
     }
 }

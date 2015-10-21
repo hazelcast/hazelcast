@@ -188,14 +188,12 @@ public class PermissionConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("PermissionConfig");
-        sb.append("{type=").append(type);
-        sb.append(", name='").append(name).append('\'');
-        sb.append(", principal='").append(principal).append('\'');
-        sb.append(", endpoints=").append(endpoints);
-        sb.append(", actions=").append(actions);
-        sb.append('}');
-        return sb.toString();
+        return "PermissionConfig{"
+                + "type=" + type
+                + ", name='" + name + '\''
+                + ", principal='" + principal + '\''
+                + ", endpoints=" + endpoints
+                + ", actions=" + actions
+                + '}';
     }
 }

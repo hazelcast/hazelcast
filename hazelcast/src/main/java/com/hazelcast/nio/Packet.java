@@ -407,14 +407,13 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("Packet{");
-        sb.append("header=").append(header);
-        sb.append(", isResponse=").append(isHeaderSet(Packet.HEADER_RESPONSE));
-        sb.append(", isOperation=").append(isHeaderSet(Packet.HEADER_OP));
-        sb.append(", isEvent=").append(isHeaderSet(Packet.HEADER_EVENT));
-        sb.append(", partitionId=").append(partitionId);
-        sb.append(", conn=").append(conn);
-        sb.append('}');
-        return sb.toString();
+        return "Packet{"
+                + "header=" + header
+                + ", isResponse=" + isHeaderSet(Packet.HEADER_RESPONSE)
+                + ", isOperation=" + isHeaderSet(Packet.HEADER_OP)
+                + ", isEvent=" + isHeaderSet(Packet.HEADER_EVENT)
+                + ", partitionId=" + partitionId
+                + ", conn=" + conn
+                + '}';
     }
 }

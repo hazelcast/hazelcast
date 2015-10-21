@@ -154,8 +154,8 @@ public abstract class AbstractXmlConfigHelper {
             if (xsdLocation.isEmpty()) {
                 continue;
             }
-            String namespace = xsdLocation.split("[" + lineSeperator + " ]+")[0];
-            String uri = xsdLocation.split("[" + lineSeperator + " ]+")[1];
+            String namespace = xsdLocation.split('[' + lineSeperator + " ]+")[0];
+            String uri = xsdLocation.split('[' + lineSeperator + " ]+")[1];
 
             // if this is hazelcast namespace but location is different log only warning
             if (namespace.equals(xmlns) && !uri.endsWith(hazelcastSchemaLocation)) {

@@ -43,12 +43,7 @@ public class CallTimeoutResponse extends Response implements IdentifiedDataSeria
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("CallTimeoutResponse");
-        sb.append("{callId=").append(callId);
-        sb.append(", urgent=").append(urgent);
-        sb.append('}');
-        return sb.toString();
+        return "CallTimeoutResponse{callId=" + callId + ", urgent=" + urgent + '}';
     }
 }
 

@@ -195,16 +195,15 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ReplicatedRecord{");
-        sb.append("key=").append(key);
-        sb.append(", value=").append(value);
-        sb.append(", ttlMillis=").append(ttlMillis);
-        sb.append(", hits=").append(HITS.get(this));
-        sb.append(", creationTime=").append(creationTime);
-        sb.append(", lastAccessTime=").append(lastAccessTime);
-        sb.append(", updateTime=").append(updateTime);
-        sb.append('}');
-        return sb.toString();
+        return "ReplicatedRecord{"
+                + "key=" + key
+                + ", value=" + value
+                + ", ttlMillis=" + ttlMillis
+                + ", hits=" + HITS.get(this)
+                + ", creationTime=" + creationTime
+                + ", lastAccessTime=" + lastAccessTime
+                + ", updateTime=" + updateTime
+                + '}';
     }
 }
 

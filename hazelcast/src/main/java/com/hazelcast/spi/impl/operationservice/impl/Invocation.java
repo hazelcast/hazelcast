@@ -631,21 +631,19 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
             connectionStr = connection == null ? null : connection.toString();
         }
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("Invocation");
-        sb.append("{ serviceName='").append(serviceName).append('\'');
-        sb.append(", op=").append(op);
-        sb.append(", partitionId=").append(partitionId);
-        sb.append(", replicaIndex=").append(replicaIndex);
-        sb.append(", tryCount=").append(tryCount);
-        sb.append(", tryPauseMillis=").append(tryPauseMillis);
-        sb.append(", invokeCount=").append(invokeCount);
-        sb.append(", callTimeout=").append(callTimeout);
-        sb.append(", target=").append(invTarget);
-        sb.append(", backupsExpected=").append(backupsExpected);
-        sb.append(", backupsCompleted=").append(backupsCompleted);
-        sb.append(", connection=").append(connectionStr);
-        sb.append('}');
-        return sb.toString();
+        return "Invocation{"
+                + "serviceName='" + serviceName + '\''
+                + ", op=" + op
+                + ", partitionId=" + partitionId
+                + ", replicaIndex=" + replicaIndex
+                + ", tryCount=" + tryCount
+                + ", tryPauseMillis=" + tryPauseMillis
+                + ", invokeCount=" + invokeCount
+                + ", callTimeout=" + callTimeout
+                + ", target=" + invTarget
+                + ", backupsExpected=" + backupsExpected
+                + ", backupsCompleted=" + backupsCompleted
+                + ", connection=" + connectionStr
+                + '}';
     }
 }

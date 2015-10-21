@@ -291,20 +291,12 @@ public class ClusterStateManager {
     }
 
     String stateToString() {
-        final StringBuilder sb = new StringBuilder("ClusterState{");
-        sb.append("state=").append(state);
-        sb.append(", lock=").append(stateLockRef.get());
-        sb.append('}');
-        return sb.toString();
+        return "ClusterState{state=" + state + ", lock=" + stateLockRef.get() + '}';
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ClusterStateManager{");
-        sb.append("stateLockRef=").append(stateLockRef);
-        sb.append(", state=").append(state);
-        sb.append('}');
-        return sb.toString();
+        return "ClusterStateManager{stateLockRef=" + stateLockRef + ", state=" + state + '}';
     }
 
     private static final class StateManagerExceptionHandler implements FutureUtil.ExceptionHandler {

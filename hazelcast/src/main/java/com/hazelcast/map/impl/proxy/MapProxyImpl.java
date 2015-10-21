@@ -769,11 +769,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("IMap");
-        sb.append("{name='").append(name).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "IMap{name='" + name + '\'' + '}';
     }
 }
 

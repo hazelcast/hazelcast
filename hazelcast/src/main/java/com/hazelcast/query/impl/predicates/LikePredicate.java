@@ -89,10 +89,6 @@ public class LikePredicate extends AbstractPredicate {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder(attributeName)
-                .append(" LIKE '")
-                .append(expression)
-                .append("'");
-        return builder.toString();
+        return attributeName + " LIKE '" + expression + "'";
     }
 }

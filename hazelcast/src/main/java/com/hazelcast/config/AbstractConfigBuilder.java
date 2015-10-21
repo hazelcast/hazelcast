@@ -127,7 +127,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
         NodeList misplacedHazelcastTag = (NodeList) xpath.evaluate("//" + this.getXmlType().name, root.getOwnerDocument(),
                 XPathConstants.NODESET);
         if (misplacedHazelcastTag.getLength() > 1) {
-            throw new InvalidConfigurationException("<" + this.getXmlType().name + "> element can appear only once in the XML");
+            throw new InvalidConfigurationException('<' + this.getXmlType().name + "> element can appear only once in the XML");
         }
         NamedNodeMap attributes = root.getAttributes();
         if (attributes != null) {

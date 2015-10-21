@@ -178,9 +178,6 @@ public final class HazelcastCachingProvider
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("HazelcastCachingProvider{");
-        sb.append("delegate=").append(delegate);
-        sb.append('}');
-        return sb.toString();
+        return "HazelcastCachingProvider{delegate=" + delegate + '}';
     }
 }

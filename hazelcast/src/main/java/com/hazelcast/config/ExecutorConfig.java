@@ -152,12 +152,10 @@ public class ExecutorConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("ExecutorConfig");
-        sb.append("{name='").append(name).append('\'');
-        sb.append(", poolSize=").append(poolSize);
-        sb.append(", queueCapacity=").append(queueCapacity);
-        sb.append('}');
-        return sb.toString();
+        return "ExecutorConfig{"
+                + "name='" + name + '\''
+                + ", poolSize=" + poolSize
+                + ", queueCapacity=" + queueCapacity
+                + '}';
     }
 }

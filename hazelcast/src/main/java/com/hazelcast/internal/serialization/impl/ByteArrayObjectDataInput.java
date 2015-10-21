@@ -694,12 +694,10 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("ByteArrayObjectDataInput");
-        sb.append("{size=").append(size);
-        sb.append(", pos=").append(pos);
-        sb.append(", mark=").append(mark);
-        sb.append('}');
-        return sb.toString();
+        return "ByteArrayObjectDataInput{"
+                + "size=" + size
+                + ", pos=" + pos
+                + ", mark=" + mark
+                + '}';
     }
 }

@@ -91,11 +91,6 @@ public final class EventEnvelope implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("EventEnvelope{");
-        sb.append("id='").append(id).append('\'');
-        sb.append(", serviceName='").append(serviceName).append('\'');
-        sb.append(", event=").append(event);
-        sb.append('}');
-        return sb.toString();
+        return "EventEnvelope{id='" + id + "', serviceName='" + serviceName + "', event=" + event + '}';
     }
 }
