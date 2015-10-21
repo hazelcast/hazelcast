@@ -20,6 +20,7 @@ import com.hazelcast.config.helpers.DummyMapStore;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.quorum.QuorumType;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -57,32 +58,17 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-//it needs to run serial because some tests are relying on System properties they are setting themselves.
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     public static final String HAZELCAST_START_TAG = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n";
-
-    @Before
-    @After
-    public void beforeAndAfter() {
-        System.clearProperty("hazelcast.config");
-    }
 
     @Test
     public void testConfigurationURL() throws IOException {
         URL configURL = getClass().getClassLoader().getResource("hazelcast-default.xml");
         Config config = new XmlConfigBuilder(configURL).build();
         assertEquals(configURL, config.getConfigurationUrl());
-    }
-
-    @Test
-    public void testConfigurationWithFile() throws Exception {
-        URL url = getClass().getClassLoader().getResource("hazelcast-default.xml");
-        System.setProperty("hazelcast.config", url.getFile());
-        Config config = new XmlConfigBuilder().build();
-        assertEquals(url, config.getConfigurationUrl());
     }
 
     @Test
@@ -102,14 +88,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
         Config config = new XmlConfigBuilder(file.getAbsolutePath()).build();
         assertEquals(file, config.getConfigurationFile());
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void loadingThroughSystemProperty_nonExistingFile() throws IOException {
-        File file = File.createTempFile("foo", "bar");
-        file.delete();
-        System.setProperty("hazelcast.config", file.getAbsolutePath());
-        new XmlConfigBuilder();
     }
 
     @Test(expected = InvalidConfigurationException.class)
@@ -143,44 +121,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(2, interceptorConfigs.size());
         assertEquals("foo", interceptorConfigs.get(0).className);
         assertEquals("bar", interceptorConfigs.get(1).className);
-    }
-
-    @Test
-    public void loadingThroughSystemProperty_existingFile() throws IOException {
-        String xml =
-                HAZELCAST_START_TAG +
-                "    <group>\n" +
-                "        <name>foobar</name>\n" +
-                "        <password>dev-pass</password>\n" +
-                "    </group>" +
-                "</hazelcast>";
-
-        File file = File.createTempFile("foo", "bar");
-        file.deleteOnExit();
-        PrintWriter writer = new PrintWriter(file, "UTF-8");
-        writer.println(xml);
-        writer.close();
-
-        System.setProperty("hazelcast.config", file.getAbsolutePath());
-
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder();
-        Config config = configBuilder.build();
-        assertEquals("foobar", config.getGroupConfig().getName());
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void loadingThroughSystemProperty_nonExistingClasspathResource() throws IOException {
-        System.setProperty("hazelcast.config", "classpath:idontexist");
-        new XmlConfigBuilder();
-    }
-
-    @Test
-    public void loadingThroughSystemProperty_existingClasspathResource() throws IOException {
-        System.setProperty("hazelcast.config", "classpath:test-hazelcast.xml");
-
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder();
-        Config config = configBuilder.build();
-        assertEquals("foobar", config.getGroupConfig().getName());
     }
 
     @Test
