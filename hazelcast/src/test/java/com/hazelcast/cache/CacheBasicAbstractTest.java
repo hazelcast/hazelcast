@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -338,6 +339,10 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
                 assertTrue("should have iterated over at least " + prefillSize + " entries, but was " + i, i >= prefillSize);
                 assertThatNoCacheEvictionHappened(cache);
             }
+        } catch (NoSuchElementException e) {
+            if (withoutEviction) {
+                fail("Without eviction, there should not be `NoSuchElementException`: " + e);
+            }
         } finally {
             worker.shutdown();
         }
@@ -388,6 +393,10 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
             if (withoutEviction) {
                 assertEquals("should have iterated over all " + maxSize + " entries", maxSize, i);
                 assertThatNoCacheEvictionHappened(cache);
+            }
+        } catch (NoSuchElementException e) {
+            if (withoutEviction) {
+                fail("Without eviction, there should not be `NoSuchElementException`: " + e);
             }
         } finally {
             worker.shutdown();
@@ -441,6 +450,10 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
             if (withoutEviction) {
                 assertTrue("should have iterated over at most " + maxSize + " entries, but was " + i, i <= maxSize);
                 assertThatNoCacheEvictionHappened(cache);
+            }
+        } catch (NoSuchElementException e) {
+            if (withoutEviction) {
+                fail("Without eviction, there should not be `NoSuchElementException`: " + e);
             }
         } finally {
             worker.shutdown();
