@@ -77,8 +77,8 @@ public abstract class AbstractSerializationService
     private final byte version;
 
     AbstractSerializationService(InputOutputFactory inputOutputFactory, byte version, ClassLoader classLoader,
-            ManagedContext managedContext, PartitioningStrategy globalPartitionStrategy, int initialOutputBufferSize,
-            BufferPoolFactory bufferPoolFactory) {
+                                 ManagedContext managedContext, PartitioningStrategy globalPartitionStrategy,
+                                 int initialOutputBufferSize, BufferPoolFactory bufferPoolFactory) {
         this.inputOutputFactory = inputOutputFactory;
         this.version = version;
         this.classLoader = classLoader;
@@ -86,8 +86,7 @@ public abstract class AbstractSerializationService
         this.globalPartitioningStrategy = globalPartitionStrategy;
         this.outputBufferSize = initialOutputBufferSize;
         this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, bufferPoolFactory);
-
-        nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer(), this);
+        this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer(), this);
     }
 
     //region Serialization Service
@@ -153,7 +152,7 @@ public abstract class AbstractSerializationService
             final SerializerAdapter serializer = serializerFor(typeId);
             if (serializer == null) {
                 if (active) {
-                    throw new HazelcastSerializationException("There is no suitable de-serializer for type " + typeId);
+                    throw newHazelcastSerializationException(typeId);
                 }
                 throw new HazelcastInstanceNotActiveException();
             }
@@ -168,6 +167,12 @@ public abstract class AbstractSerializationService
         } finally {
             pool.returnInputBuffer(in);
         }
+    }
+
+    private HazelcastSerializationException newHazelcastSerializationException(int typeId) {
+        return new HazelcastSerializationException("There is no suitable de-serializer for type " + typeId + ". "
+                + "This exception is likely to be caused by differences in the serialization configuration between members "
+                + "or between clients and members.");
     }
 
     @Override
@@ -192,7 +197,7 @@ public abstract class AbstractSerializationService
             final SerializerAdapter serializer = serializerFor(typeId);
             if (serializer == null) {
                 if (active) {
-                    throw new HazelcastSerializationException("There is no suitable de-serializer for type " + typeId);
+                    throw newHazelcastSerializationException(typeId);
                 }
                 throw new HazelcastInstanceNotActiveException();
             }
