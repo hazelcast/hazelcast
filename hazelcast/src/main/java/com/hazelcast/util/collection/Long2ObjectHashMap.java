@@ -39,6 +39,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <V> values stored in the {@link java.util.Map}
  */
 public class Long2ObjectHashMap<V> implements Map<Long, V> {
+    /** The default load factor for constructors not explicitly supplying it */
+    public static final double DEFAULT_LOAD_FACTOR = 0.6;
     private final double loadFactor;
     private int resizeThreshold;
     private int capacity;
@@ -54,7 +56,11 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
     private final EntrySet<V> entrySet = new EntrySet<V>();
 
     public Long2ObjectHashMap() {
-        this(8, 0.6);
+        this(8, DEFAULT_LOAD_FACTOR);
+    }
+
+    public Long2ObjectHashMap(int initialCapacity) {
+        this(initialCapacity, DEFAULT_LOAD_FACTOR);
     }
 
     /**
