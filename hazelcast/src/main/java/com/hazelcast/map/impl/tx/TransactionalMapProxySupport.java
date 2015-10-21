@@ -26,11 +26,11 @@ import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.MapEntrySetOperation;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.operation.SizeOperationFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
@@ -130,8 +130,9 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     public int sizeInternal() {
         NodeEngine nodeEngine = getNodeEngine();
         try {
+            OperationFactory sizeOperationFactory = operationProvider.createMapSizeOperationFactory(name);
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME, new SizeOperationFactory(name));
+                    .invokeOnAllPartitions(SERVICE_NAME, sizeOperationFactory);
             int total = 0;
             for (Object result : results.values()) {
                 Integer size = (Integer) getService().getMapServiceContext().toObject(result);
