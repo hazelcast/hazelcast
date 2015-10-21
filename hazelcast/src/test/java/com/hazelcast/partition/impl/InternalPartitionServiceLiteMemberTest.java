@@ -22,6 +22,7 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -189,7 +190,7 @@ public class InternalPartitionServiceLiteMemberTest
         partitionService.getPartitionOwnerOrWait(0);
     }
 
-    @Test(expected = NoDataMemberInClusterException.class)
+    @Test
     public void test_getPartitionOwnerOrWait_onLiteMemberAfterDataMemberTerminates() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance master = factory.newHazelcastInstance();
@@ -198,13 +199,22 @@ public class InternalPartitionServiceLiteMemberTest
         warmUpPartitions(master, lite);
 
         master.getLifecycleService().terminate();
-        assertClusterSizeEventually(1, lite);
 
-        final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(lite);
-        partitionService.getPartitionOwnerOrWait(0);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                try {
+                    final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(lite);
+                    partitionService.getPartitionOwnerOrWait(0);
+                    fail();
+                } catch (NoDataMemberInClusterException expected) {
+                }
+            }
+        });
     }
 
-    @Test(expected = NoDataMemberInClusterException.class)
+    @Test
     public void test_getPartitionOwnerOrWait_onLiteMemberAfterDataMemberShutsDown() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance master = factory.newHazelcastInstance();
@@ -215,10 +225,19 @@ public class InternalPartitionServiceLiteMemberTest
         warmUpPartitions(master, lite);
 
         master.getLifecycleService().shutdown();
-        assertClusterSizeEventually(1, lite);
 
-        final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(lite);
-        partitionService.getPartitionOwnerOrWait(0);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                try {
+                    final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(lite);
+                    partitionService.getPartitionOwnerOrWait(0);
+                    fail();
+                } catch (NoDataMemberInClusterException expected) {
+                }
+            }
+        });
     }
 
     /**
