@@ -15,6 +15,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Comparator;
 
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -92,6 +93,16 @@ public class LocalRegionCacheTest {
         verify(instance).getConfig();
         verify(instance).getTopic(eq(CACHE_NAME));
         verify(topic).addMessageListener(isNotNull(MessageListener.class));
+    }
+
+    @Test
+    public void testTimestampToString() {
+        assertNotNull(new Timestamp().toString());
+    }
+
+    @Test
+    public void testInvalidationToString() {
+        assertNotNull(new Invalidation().toString());
     }
 
     public static void runCleanup(LocalRegionCache cache) {
