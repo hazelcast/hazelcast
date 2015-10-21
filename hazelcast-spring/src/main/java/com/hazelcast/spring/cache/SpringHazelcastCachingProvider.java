@@ -54,9 +54,6 @@ public final class SpringHazelcastCachingProvider {
                 ExceptionUtil.rethrow(e);
             }
         }
-        if (props.getProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME) == null) {
-            props.setProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME, instance.getName());
-        }
         if (instance instanceof HazelcastClientProxy) {
             return HazelcastClientCachingProvider.createCachingProvider(instance).getCacheManager(uri, null, props);
         } else {
