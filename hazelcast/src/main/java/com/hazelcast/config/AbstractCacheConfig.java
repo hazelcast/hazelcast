@@ -94,6 +94,11 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
      */
     protected boolean isManagementEnabled;
 
+    /**
+     * Whether Hot Restart is enabled
+     */
+    protected boolean isHotRestart;
+
     public AbstractCacheConfig() {
         this.keyType = (Class<K>) Object.class;
         this.valueType = (Class<V>) Object.class;
@@ -124,11 +129,8 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
 
         this.isReadThrough = configuration.isReadThrough();
         this.isWriteThrough = configuration.isWriteThrough();
-
         this.isStatisticsEnabled = configuration.isStatisticsEnabled();
-
         this.isStoreByValue = configuration.isStoreByValue();
-
         this.isManagementEnabled = configuration.isManagementEnabled();
     }
 
@@ -197,7 +199,7 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
     }
 
     /**
-     * Sets whether or not statistics gathering is enabled on a cache.
+     * Sets whether or not statistics gathering is enabled on this cache.
      * <p/>
      * Statistics may be enabled or disabled at runtime via
      * {@link javax.cache.CacheManager#enableStatistics(String, boolean)}.
@@ -216,7 +218,7 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
     }
 
     /**
-     * Sets whether or not management is enabled on a cache.
+     * Sets whether or not management is enabled on this cache.
      * <p/>
      * Management may be enabled or disabled at runtime via
      * {@link javax.cache.CacheManager#enableManagement(String, boolean)}.
@@ -227,6 +229,19 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
     public CacheConfiguration<K, V> setManagementEnabled(boolean enabled) {
         this.isManagementEnabled = enabled;
         return this;
+    }
+
+    /**
+     * Sets whether hot restart is enabled on this cache.
+     * @return this
+     */
+    public CacheConfiguration<K, V> setHotRestart(boolean hotRestart) {
+        this.isHotRestart = hotRestart;
+        return this;
+    }
+
+    public boolean isHotRestart() {
+        return isHotRestart;
     }
 
     @Override

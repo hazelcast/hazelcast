@@ -98,7 +98,7 @@ public abstract class AbstractCacheService
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.segments = new CachePartitionSegment[partitionCount];
         for (int i = 0; i < partitionCount; i++) {
-            segments[i] = new CachePartitionSegment(this, i);
+            segments[i] = newPartitionSegment(i);
         }
         this.cacheEventHandler = new CacheEventHandler(nodeEngine);
         this.cacheSplitBrainHandler = new CacheSplitBrainHandler(nodeEngine, configs, segments);
@@ -108,12 +108,14 @@ public abstract class AbstractCacheService
     protected void postInit(NodeEngine nodeEngine, Properties properties) {
     }
 
+    protected abstract CachePartitionSegment newPartitionSegment(int partitionId);
+
     protected abstract ICacheRecordStore createNewRecordStore(String name, int partitionId);
 
     @Override
     public void reset() {
         for (String objectName : configs.keySet()) {
-            destroyCache(objectName, true, null);
+            deleteCache(objectName, true, null, false);
         }
         final CachePartitionSegment[] partitionSegments = segments;
         for (CachePartitionSegment partitionSegment : partitionSegments) {
@@ -180,15 +182,24 @@ public abstract class AbstractCacheService
 
     protected void destroySegments(String name) {
         for (CachePartitionSegment segment : segments) {
-            segment.deleteRecordStore(name);
+            segment.deleteRecordStore(name, true);
+        }
+    }
+
+    protected void closeSegments(String name) {
+        for (CachePartitionSegment segment : segments) {
+            segment.deleteRecordStore(name, false);
         }
     }
 
     @Override
-    public void destroyCache(String name, boolean isLocal, String callerUuid) {
+    public void deleteCache(String name, boolean isLocal, String callerUuid, boolean destroy) {
         CacheConfig config = deleteCacheConfig(name);
-        destroySegments(name);
-
+        if (destroy) {
+            destroySegments(name);
+        } else {
+            closeSegments(name);
+        }
         if (!isLocal) {
             deregisterAllListener(name);
             cacheContexts.remove(name);

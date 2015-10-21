@@ -17,21 +17,23 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheNotExistsException;
+import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
+import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheMaxSizeChecker;
+import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.cache.impl.record.CacheRecordMap;
+import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
+import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider;
 import com.hazelcast.internal.eviction.EvictionStrategy;
 import com.hazelcast.internal.eviction.EvictionStrategyProvider;
-import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
-import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheMaxSizeChecker;
-import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
-import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.nio.Disposable;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.EventRegistration;
@@ -42,10 +44,8 @@ import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.configuration.Factory;
-import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
-import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheLoaderException;
 import javax.cache.integration.CacheWriter;
@@ -58,7 +58,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.CacheEventContextUtil.createBaseEventContext;
 import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheCompleteEvent;
@@ -222,7 +221,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (isEvictionEnabled()) {
             evictedCount = evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker, this);
             if (isStatisticsEnabled() && evictedCount > 0) {
-
                 statistics.increaseCacheEvictions(evictedCount);
             }
         }
@@ -293,14 +291,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         onProcessExpiredEntry(key, removedRecord, removedRecord.getExpirationTime(), now, source, origin);
         if (isEventsEnabled()) {
             publishEvent(createCacheExpiredEvent(keyEventData, recordEventData,
-                                                 CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
-                                                 origin, IGNORE_COMPLETION));
+                    CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE, origin, IGNORE_COMPLETION));
         }
         return true;
-    }
-
-    protected R processExpiredEntry(Data key, R record, long expiryTime, long now) {
-        return processExpiredEntry(key, record, expiryTime, now, SOURCE_NOT_AVAILABLE);
     }
 
     protected R processExpiredEntry(Data key, R record, long expiryTime, long now, String source) {
@@ -457,31 +450,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return v1.equals(v2);
     }
 
-    protected long expiryPolicyToTTL(ExpiryPolicy expiryPolicy) {
-        if (expiryPolicy == null) {
-            return CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE;
-        }
-        try {
-            Duration expiryDuration = expiryPolicy.getExpiryForCreation();
-            if (expiryDuration == null || expiryDuration.isEternal()) {
-                return CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE;
-            }
-            long durationAmount = expiryDuration.getDurationAmount();
-            TimeUnit durationTimeUnit = expiryDuration.getTimeUnit();
-            return TimeUnit.MILLISECONDS.convert(durationAmount, durationTimeUnit);
-        } catch (Exception e) {
-            return CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE;
-        }
-    }
-
-    protected ExpiryPolicy ttlToExpirePolicy(long ttl) {
-        if (ttl >= 0) {
-            return new ModifiedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS, ttl));
-        } else {
-            return new CreatedExpiryPolicy(Duration.ETERNAL);
-        }
-    }
-
     protected R createRecord(long expiryTime) {
         return createRecord(null, Clock.currentTimeMillis(), expiryTime);
     }
@@ -561,14 +529,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                                        Data oldDataValue, Throwable error) {
     }
 
-    protected R updateRecord(Data key, R record, Object value, int completionId) {
-        return updateRecord(key, record, value, completionId, SOURCE_NOT_AVAILABLE);
-    }
-
-    protected R updateRecord(Data key, R record, Object value, int completionId, String source) {
-        return updateRecord(key, record, value, completionId, source, null);
-    }
-
     protected R updateRecord(Data key, R record, Object value, int completionId, String source, String origin) {
         Data dataOldValue = null;
         Data dataValue = null;
@@ -602,7 +562,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             Data eventDataValue = toEventData(dataValue);
             Data eventDataOldValue = toEventData(dataOldValue);
 
-            record.setValue(recordValue);
+            updateRecordValue(record, recordValue);
             onUpdateRecord(key, record, value, dataOldValue);
             invalidateEntry(key, source);
 
@@ -618,6 +578,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             onUpdateRecordError(key, record, value, dataValue, dataOldValue, error);
             throw ExceptionUtil.rethrow(error);
         }
+    }
+
+    protected void updateRecordValue(R record, Object recordValue) {
+        record.setValue(recordValue);
     }
 
     protected boolean updateRecordWithExpiry(Data key, Object value, R record, long expiryTime,
@@ -840,18 +804,13 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public void setRecord(Data key, CacheRecord record) {
-        doPutRecord(key, (R) record);
-    }
-
-    @Override
     public void putRecord(Data key, CacheRecord record) {
         evictIfRequired();
 
         doPutRecord(key, (R) record);
     }
 
-    protected final R doPutRecord(Data key, R record) {
+    public final R doPutRecord(Data key, R record) {
         return doPutRecord(key, record, SOURCE_NOT_AVAILABLE);
     }
 
@@ -1448,6 +1407,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
+    public void close() {
+        clear();
+        closeListeners();
+    }
+
+    @Override
     public void destroy() {
         clear();
         closeListeners();
@@ -1475,5 +1440,19 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public boolean isWanReplicationEnabled() {
         return wanReplicationEnabled;
+    }
+
+    @Override
+    public void transferRecordsFrom(ICacheRecordStore src) {
+        if (!(src instanceof AbstractCacheRecordStore)) {
+            throw new IllegalArgumentException("Expecting AbstractCacheRecordStore!");
+        }
+
+        AbstractCacheRecordStore dest = this;
+        CacheRecordMap oldRecords = dest.records;
+        dest.records = ((AbstractCacheRecordStore) src).records;
+        if (oldRecords instanceof Disposable) {
+            ((Disposable) oldRecords).dispose();
+        }
     }
 }
