@@ -22,7 +22,6 @@ import com.hazelcast.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -47,6 +46,7 @@ public final class CloudyUtility {
         final DocumentBuilder builder;
         try {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setNamespaceAware(true);
             dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             builder = dbf.newDocumentBuilder();
             Document doc = builder.parse(stream);
@@ -57,7 +57,7 @@ public final class CloudyUtility {
             for (NodeHolder reservation : reservationset) {
                 List<NodeHolder> items = reservation.getSubNodes("item");
                 for (NodeHolder item : items) {
-                    NodeHolder instancesset = item.getSub("instancesset");
+                    NodeHolder instancesset = item.getFirstSubNode("instancesset");
                     addresses.putAll(instancesset.getAddresses(awsConfig));
                 }
             }
@@ -67,36 +67,40 @@ public final class CloudyUtility {
         }
         return new LinkedHashMap<String, String>();    }
 
-    static class NodeHolder {
-        Node node;
+    private static class NodeHolder {
+        private final Node node;
 
-        public NodeHolder(Node node) {
+        NodeHolder(Node node) {
             this.node = node;
         }
 
-        public NodeHolder getSub(String name) {
-            if (node != null) {
-                for (Node node : childElements(this.node)) {
-                    String nodeName = cleanNodeName(node);
-                    if (name.equals(nodeName)) {
-                        return new NodeHolder(node);
-                    }
+        public Node getNode() {
+            return node;
+        }
+
+        public NodeHolder getFirstSubNode(String name) {
+            if (node == null) {
+                return new NodeHolder(null);
+            }
+            for (Node child : childElements(node)) {
+                if (name.equals(cleanNodeName(child))) {
+                    return new NodeHolder(child);
                 }
             }
             return new NodeHolder(null);
         }
 
         public List<NodeHolder> getSubNodes(String name) {
-            List<NodeHolder> list = new ArrayList<NodeHolder>();
-            if (node != null) {
-                for (Node node : childElements(this.node)) {
-                    String nodeName = cleanNodeName(node);
-                    if (name.equals(nodeName)) {
-                        list.add(new NodeHolder(node));
-                    }
+            List<NodeHolder> result = new ArrayList<NodeHolder>();
+            if (node == null) {
+                return result;
+            }
+            for (Node child : childElements(node)) {
+                if (name.equals(cleanNodeName(child))) {
+                    result.add(new NodeHolder(child));
                 }
             }
-            return list;
+            return result;
         }
 
         public Map<String, String> getAddresses(AwsConfig awsConfig) {
@@ -105,26 +109,21 @@ public final class CloudyUtility {
                 return privatePublicPairs;
             }
 
-            for (Node node : childElements(this.node)) {
-                String nodeName = cleanNodeName(node);
-                if (!"item".equals(nodeName)) {
-                    continue;
-                }
-
-                final NodeHolder nodeHolder = new NodeHolder(node);
-                final String state = getState(nodeHolder);
-                final String privateIp = getIp("privateipaddress", nodeHolder);
-                final String publicIp = getIp("ipaddress", nodeHolder);
-                final String instanceName = getInstanceName(nodeHolder);
+            for (NodeHolder childHolder : getSubNodes("item")) {
+                final String state = getState(childHolder);
+                final String privateIp = getIp("privateipaddress", childHolder);
+                final String publicIp = getIp("ipaddress", childHolder);
+                final String instanceName = getInstanceName(childHolder);
 
                 if (privateIp != null) {
+                    final Node child = childHolder.getNode();
                     if (!acceptState(state)) {
                         LOGGER.finest(format("Ignoring EC2 instance [%s][%s] reason:"
                                 + " the instance is not running but %s", instanceName, privateIp, state));
-                    } else if (!acceptTag(awsConfig, node)) {
+                    } else if (!acceptTag(awsConfig, child)) {
                         LOGGER.finest(format("Ignoring EC2 instance [%s][%s] reason:"
                                 + " tag-key/tag-value don't match", instanceName, privateIp));
-                    } else if (!acceptGroupName(awsConfig, node)) {
+                    } else if (!acceptGroupName(awsConfig, child)) {
                         LOGGER.finest(format("Ignoring EC2 instance [%s][%s] reason:"
                                 + " security-group-name doesn't match", instanceName, privateIp));
                     } else {
@@ -137,31 +136,22 @@ public final class CloudyUtility {
             return privatePublicPairs;
         }
 
-        private boolean acceptState(String state) {
+        private static boolean acceptState(String state) {
             return "running".equals(state);
         }
 
         private static String getState(NodeHolder nodeHolder) {
-            final NodeHolder instancestate = nodeHolder.getSub("instancestate");
-            return instancestate.getSub("name").getNode().getFirstChild().getNodeValue();
+            final NodeHolder instancestate = nodeHolder.getFirstSubNode("instancestate");
+            return instancestate.getFirstSubNode("name").getNode().getFirstChild().getNodeValue();
         }
 
         private static String getInstanceName(NodeHolder nodeHolder) {
-            final NodeHolder tagSetNode = nodeHolder.getSub("tagset");
-            if (tagSetNode.getNode() == null) {
+            final NodeHolder tagSetHolder = nodeHolder.getFirstSubNode("tagset");
+            if (tagSetHolder.getNode() == null) {
                 return null;
             }
-
-            final NodeList childNodes = tagSetNode.getNode().getChildNodes();
-            for (int k = 0; k < childNodes.getLength(); k++) {
-                Node item = childNodes.item(k);
-                if (!item.getNodeName().equals("item")) {
-                    continue;
-                }
-
-                NodeHolder itemHolder = new NodeHolder(item);
-
-                final Node keyNode = itemHolder.getSub("key").getNode();
+            for (NodeHolder itemHolder : tagSetHolder.getSubNodes("item")) {
+                final Node keyNode = itemHolder.getFirstSubNode("key").getNode();
                 if (keyNode == null || keyNode.getFirstChild() == null) {
                     continue;
                 }
@@ -170,7 +160,7 @@ public final class CloudyUtility {
                     continue;
                 }
 
-                final Node valueNode = itemHolder.getSub("value").getNode();
+                final Node valueNode = itemHolder.getFirstSubNode("value").getNode();
                 if (valueNode == null || valueNode.getFirstChild() == null) {
                     continue;
                 }
@@ -180,24 +170,24 @@ public final class CloudyUtility {
         }
 
         private static String getIp(String name, NodeHolder nodeHolder) {
-            final Node node1 = nodeHolder.getSub(name).getNode();
-            return node1 == null ? null : node1.getFirstChild().getNodeValue();
+            final Node child = nodeHolder.getFirstSubNode(name).getNode();
+            return child == null ? null : child.getFirstChild().getNodeValue();
         }
 
-        private boolean acceptTag(AwsConfig awsConfig, Node node) {
+        private static boolean acceptTag(AwsConfig awsConfig, Node node) {
             return applyTagFilter(node, awsConfig.getTagKey(), awsConfig.getTagValue());
         }
 
-        private boolean acceptGroupName(AwsConfig awsConfig, Node node) {
+        private static boolean acceptGroupName(AwsConfig awsConfig, Node node) {
             return applyFilter(node, awsConfig.getSecurityGroupName(), "groupset", "groupname");
         }
 
-        private boolean applyFilter(Node node, String filter, String set, String filterField) {
+        private static boolean applyFilter(Node node, String filter, String set, String filterField) {
             if (nullOrEmpty(filter)) {
                 return true;
             } else {
-                for (NodeHolder group : new NodeHolder(node).getSub(set).getSubNodes("item")) {
-                    NodeHolder nh = group.getSub(filterField);
+                for (NodeHolder group : new NodeHolder(node).getFirstSubNode(set).getSubNodes("item")) {
+                    NodeHolder nh = group.getFirstSubNode(filterField);
                     if (nh != null && nh.getNode().getFirstChild()
                             != null && filter.equals(nh.getNode().getFirstChild().getNodeValue())) {
                         return true;
@@ -207,11 +197,11 @@ public final class CloudyUtility {
             }
         }
 
-        private boolean applyTagFilter(Node node, String keyExpected, String valueExpected) {
+        private static boolean applyTagFilter(Node node, String keyExpected, String valueExpected) {
             if (nullOrEmpty(keyExpected)) {
                 return true;
             } else {
-                for (NodeHolder group : new NodeHolder(node).getSub("tagset").getSubNodes("item")) {
+                for (NodeHolder group : new NodeHolder(node).getFirstSubNode("tagset").getSubNodes("item")) {
                     if (keyEquals(keyExpected, group)
                             && (nullOrEmpty(valueExpected) || valueEquals(valueExpected, group))) {
                         return true;
@@ -221,24 +211,20 @@ public final class CloudyUtility {
             }
         }
 
-        private boolean valueEquals(String valueExpected, NodeHolder group) {
-            NodeHolder nhValue = group.getSub("value");
+        private static boolean valueEquals(String valueExpected, NodeHolder group) {
+            NodeHolder nhValue = group.getFirstSubNode("value");
             return nhValue != null && nhValue.getNode().getFirstChild()
                     != null && valueExpected.equals(nhValue.getNode().getFirstChild().getNodeValue());
         }
 
-        private boolean nullOrEmpty(String keyExpected) {
-            return keyExpected == null || keyExpected.equals("");
+        private static boolean nullOrEmpty(String keyExpected) {
+            return keyExpected == null || keyExpected.isEmpty();
         }
 
-        private boolean keyEquals(String keyExpected, NodeHolder group) {
-            NodeHolder nhKey = group.getSub("key");
+        private static boolean keyEquals(String keyExpected, NodeHolder group) {
+            NodeHolder nhKey = group.getFirstSubNode("key");
             return nhKey != null && nhKey.getNode().getFirstChild()
                     != null && keyExpected.equals(nhKey.getNode().getFirstChild().getNodeValue());
-        }
-
-        public Node getNode() {
-            return node;
         }
     }
 }
