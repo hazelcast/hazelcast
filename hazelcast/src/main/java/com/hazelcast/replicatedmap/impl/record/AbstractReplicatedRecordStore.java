@@ -280,7 +280,12 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     public void putRecord(RecordMigrationInfo record) {
         K key = (K) marshall(record.getKey());
         V value = (V) marshall(record.getValue());
-        getStorage().putInternal(key, buildReplicatedRecord(key, value, record.getTtl()));
+        ReplicatedRecord newRecord = buildReplicatedRecord(key, value, record.getTtl());
+        newRecord.setHits(record.getHits());
+        newRecord.setCreationTime(record.getCreationTime());
+        newRecord.setLastAccessTime(record.getLastAccessTime());
+        newRecord.setUpdateTime(record.getLastUpdateTime());
+        getStorage().putInternal(key, newRecord);
     }
 
     private ReplicatedRecord buildReplicatedRecord(Object key, Object value, long ttlMillis) {

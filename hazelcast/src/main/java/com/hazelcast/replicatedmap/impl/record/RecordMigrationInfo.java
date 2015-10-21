@@ -27,6 +27,14 @@ public class RecordMigrationInfo implements DataSerializable {
     private Data key;
     private Data value;
     private long ttl;
+    private long hits;
+    private long lastAccessTime;
+    private long lastUpdateTime;
+    private long creationTime;
+
+    public RecordMigrationInfo() {
+    }
+
 
     public RecordMigrationInfo(Data key, Data value, long ttl) {
         this.key = key;
@@ -34,19 +42,60 @@ public class RecordMigrationInfo implements DataSerializable {
         this.ttl = ttl;
     }
 
-    public RecordMigrationInfo() {
-    }
-
     public Data getKey() {
         return key;
+    }
+
+    public void setKey(Data key) {
+        this.key = key;
     }
 
     public Data getValue() {
         return value;
     }
 
+    public void setValue(Data value) {
+        this.value = value;
+    }
+
     public long getTtl() {
         return ttl;
+    }
+
+    public void setTtl(long ttl) {
+        this.ttl = ttl;
+    }
+
+    public long getHits() {
+        return hits;
+    }
+
+    public void setHits(long hits) {
+        this.hits = hits;
+    }
+
+    public long getLastAccessTime() {
+        return lastAccessTime;
+    }
+
+    public void setLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
+    }
+
+    public long getLastUpdateTime() {
+        return lastUpdateTime;
+    }
+
+    public void setLastUpdateTime(long lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime;
+    }
+
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    public void setCreationTime(long creationTime) {
+        this.creationTime = creationTime;
     }
 
     @Override
@@ -54,6 +103,10 @@ public class RecordMigrationInfo implements DataSerializable {
         out.writeData(key);
         out.writeData(value);
         out.writeLong(ttl);
+        out.writeLong(hits);
+        out.writeLong(lastAccessTime);
+        out.writeLong(lastUpdateTime);
+        out.writeLong(creationTime);
     }
 
     @Override
@@ -61,6 +114,10 @@ public class RecordMigrationInfo implements DataSerializable {
         key = in.readData();
         value = in.readData();
         ttl = in.readLong();
+        hits = in.readLong();
+        lastAccessTime = in.readLong();
+        lastUpdateTime = in.readLong();
+        creationTime = in.readLong();
     }
 
     @Override
@@ -68,6 +125,11 @@ public class RecordMigrationInfo implements DataSerializable {
         return "RecordMigrationInfo{"
                 + "key=" + key
                 + ", value=" + value
-                + "} ";
+                + ", ttl=" + ttl
+                + ", hits=" + hits
+                + ", lastAccessTime=" + lastAccessTime
+                + ", lastUpdateTime=" + lastUpdateTime
+                + ", creationTime=" + creationTime
+                + '}';
     }
 }

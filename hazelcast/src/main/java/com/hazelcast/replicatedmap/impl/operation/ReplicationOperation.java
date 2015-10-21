@@ -57,7 +57,11 @@ public class ReplicationOperation extends AbstractOperation {
 
     @Override
     public void run() throws Exception {
-        logger.finest("Moving partition -> " + getPartitionId() + " to the new owner -> " + getNodeEngine().getThisAddress());
+        if (logger.isFinestEnabled()) {
+            logger.finest("Moving partition -> " + getPartitionId()
+                    + " to the new owner -> " + getNodeEngine().getThisAddress()
+                    + " from -> " + getCallerAddress());
+        }
         ReplicatedMapService service = getService();
         if (data == null) {
             return;
@@ -83,7 +87,15 @@ public class ReplicationOperation extends AbstractOperation {
                 ReplicatedRecord record = iterator.next();
                 Data dataKey = serializationService.toData(record.getKeyInternal());
                 Data dataValue = serializationService.toData(record.getValueInternal());
-                recordSet.add(new RecordMigrationInfo(dataKey, dataValue, record.getTtlMillis()));
+                RecordMigrationInfo migrationInfo = new RecordMigrationInfo();
+                migrationInfo.setKey(dataKey);
+                migrationInfo.setValue(dataValue);
+                migrationInfo.setTtl(record.getTtlMillis());
+                migrationInfo.setHits(record.getHits());
+                migrationInfo.setCreationTime(record.getCreationTime());
+                migrationInfo.setLastAccessTime(record.getLastAccessTime());
+                migrationInfo.setLastUpdateTime(record.getUpdateTime());
+                recordSet.add(migrationInfo);
             }
             data.put(name, recordSet);
             versions.put(name, store.getVersion());
