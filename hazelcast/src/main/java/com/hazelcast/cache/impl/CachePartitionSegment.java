@@ -70,14 +70,17 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
     }
 
     public void deleteRecordStore(String name, boolean destroy) {
-        ICacheRecordStore store = recordStores.remove(name);
-        if (store == null) {
-            return;
-        }
+        ICacheRecordStore store;
         if (destroy) {
-            store.destroy();
+            store = recordStores.remove(name);
+            if (store != null) {
+                store.destroy();
+            }
         } else {
-            store.close();
+            store = recordStores.get(name);
+            if (store != null) {
+                store.close();
+            }
         }
     }
 
@@ -95,11 +98,15 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
                 store.clear();
             }
         }
-        recordStores.clear();
     }
 
     public void destroy() {
-        clear();
+        synchronized (mutex) {
+            for (ICacheRecordStore store : recordStores.values()) {
+                store.destroy();
+            }
+        }
+        recordStores.clear();
     }
 
     public void close() {
@@ -108,6 +115,5 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
                 store.close();
             }
         }
-        recordStores.clear();
     }
 }
