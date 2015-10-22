@@ -272,22 +272,22 @@ public final class AddressUtil {
                     + addressMatcher);
         }
         final Collection<String> addresses = new HashSet<String>();
-        final String first3 = addressMatcher.address[0] + "."
+        final String first3 = addressMatcher.address[0] + '.'
                 + addressMatcher.address[1]
-                + "."
+                + '.'
                 + addressMatcher.address[2];
         final String lastPart = addressMatcher.address[3];
         final int dashPos;
         if ("*".equals(lastPart)) {
             for (int j = 0; j <= NUMBER_OF_ADDRESSES; j++) {
-                addresses.add(first3 + "." + j);
+                addresses.add(first3 + '.' + j);
             }
         } else if (lastPart.indexOf('-') > 0) {
             dashPos = lastPart.indexOf('-');
             final int start = Integer.parseInt(lastPart.substring(0, dashPos));
             final int end = Integer.parseInt(lastPart.substring(dashPos + 1));
             for (int j = start; j <= end; j++) {
-                addresses.add(first3 + "." + j);
+                addresses.add(first3 + '.' + j);
             }
         } else {
             addresses.add(addressMatcher.getAddress());
@@ -457,10 +457,7 @@ public final class AddressUtil {
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder();
-            sb.append("AddressHolder ");
-            sb.append('[').append(address).append("]:").append(port);
-            return sb.toString();
+            return "AddressHolder [" + address + "]:" + port;
         }
 
         public String getAddress() {
@@ -539,12 +536,7 @@ public final class AddressUtil {
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder();
-            sb.append(getClass().getSimpleName());
-            sb.append('{');
-            sb.append(getAddress());
-            sb.append('}');
-            return sb.toString();
+            return getClass().getSimpleName() + '{' + getAddress() + '}';
         }
     }
 

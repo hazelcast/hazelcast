@@ -98,5 +98,7 @@ public interface MapOperationProvider {
     OperationFactory createLoadAllOperationFactory(String name, List<Data> keys, boolean replaceExistingValues);
 
     OperationFactory createGetAllOperationFactory(String name, List<Data> keys);
+
+    OperationFactory createMapSizeOperationFactory(String name);
 }
 

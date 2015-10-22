@@ -126,9 +126,6 @@ public final class HazelcastServerCachingProvider
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("HazelcastServerCachingProvider{");
-        sb.append("hazelcastInstance=").append(hazelcastInstance);
-        sb.append('}');
-        return sb.toString();
+        return "HazelcastServerCachingProvider{hazelcastInstance=" + hazelcastInstance + '}';
     }
 }

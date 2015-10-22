@@ -68,12 +68,10 @@ public class WanReplicationConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("WanReplicationConfig");
-        sb.append("{name='").append(name).append('\'');
-        sb.append(", snapshotEnabled=").append(snapshotEnabled);
-        sb.append(", targetClusterConfigs=").append(targetClusterConfigs);
-        sb.append('}');
-        return sb.toString();
+        return "WanReplicationConfig"
+                + "{name='" + name + '\''
+                + ", snapshotEnabled=" + snapshotEnabled
+                + ", targetClusterConfigs=" + targetClusterConfigs
+                + '}';
     }
 }

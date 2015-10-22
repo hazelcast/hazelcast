@@ -233,10 +233,6 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("IQueue");
-        sb.append("{name='").append(name).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "IQueue{name='" + name + '\'' + '}';
     }
 }

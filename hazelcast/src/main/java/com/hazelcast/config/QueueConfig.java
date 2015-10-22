@@ -155,8 +155,8 @@ public class QueueConfig {
      * @param backupCount the number of synchronous backups to set
      * @return the current QueueConfig
      * @throws IllegalArgumentException if backupCount is smaller than 0,
-     *             or larger than the maximum number of backups,
-     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     *                                  or larger than the maximum number of backups,
+     *                                  or the sum of the backups and async backups is larger than the maximum number of backups
      * @see #setAsyncBackupCount(int)
      */
     public QueueConfig setBackupCount(int backupCount) {
@@ -179,8 +179,8 @@ public class QueueConfig {
      * @param asyncBackupCount the number of asynchronous synchronous backups to set
      * @return the updated QueueConfig
      * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
-     *             or larger than the maximum number of backup
-     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     *                                  or larger than the maximum number of backup
+     *                                  or the sum of the backups and async backups is larger than the maximum number of backups
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
      */
@@ -224,7 +224,7 @@ public class QueueConfig {
      * @param statisticsEnabled True to enable statistics for this queue, false to disable.
      * @return the updated QueueConfig
      */
-   public QueueConfig setStatisticsEnabled(boolean statisticsEnabled) {
+    public QueueConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
         return this;
     }
@@ -281,19 +281,17 @@ public class QueueConfig {
         return this;
     }
 
-
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("QueueConfig{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", listenerConfigs=").append(listenerConfigs);
-        sb.append(", backupCount=").append(backupCount);
-        sb.append(", asyncBackupCount=").append(asyncBackupCount);
-        sb.append(", maxSize=").append(maxSize);
-        sb.append(", emptyQueueTtl=").append(emptyQueueTtl);
-        sb.append(", queueStoreConfig=").append(queueStoreConfig);
-        sb.append(", statisticsEnabled=").append(statisticsEnabled);
-        sb.append('}');
-        return sb.toString();
+        return "QueueConfig{"
+                + "name='" + name + '\''
+                + ", listenerConfigs=" + listenerConfigs
+                + ", backupCount=" + backupCount
+                + ", asyncBackupCount=" + asyncBackupCount
+                + ", maxSize=" + maxSize
+                + ", emptyQueueTtl=" + emptyQueueTtl
+                + ", queueStoreConfig=" + queueStoreConfig
+                + ", statisticsEnabled=" + statisticsEnabled
+                + '}';
     }
 }

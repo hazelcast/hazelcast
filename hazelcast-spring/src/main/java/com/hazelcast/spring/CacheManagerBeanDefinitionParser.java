@@ -78,11 +78,11 @@ public class CacheManagerBeanDefinitionParser
             }
 
             Properties properties = new Properties();
-            for (Node n : new IterableNodeList(element, Node.ELEMENT_NODE)) {
-                final String nodeName = cleanNodeName(n.getNodeName());
+            for (Node n : childElements(element)) {
+                final String nodeName = cleanNodeName(n);
                 if ("properties".equals(nodeName)) {
-                    for (Node propNode : new IterableNodeList(n.getChildNodes(), Node.ELEMENT_NODE)) {
-                        final String name = cleanNodeName(propNode.getNodeName());
+                    for (Node propNode : childElements(n)) {
+                        final String name = cleanNodeName(propNode);
                         final String propertyName;
                         if (!"property".equals(name)) {
                             continue;

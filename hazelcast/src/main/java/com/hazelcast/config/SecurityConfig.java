@@ -124,15 +124,13 @@ public class SecurityConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("SecurityConfig");
-        sb.append("{enabled=").append(enabled);
-        sb.append(", memberCredentialsConfig=").append(memberCredentialsConfig);
-        sb.append(", memberLoginModuleConfigs=").append(memberLoginModuleConfigs);
-        sb.append(", clientLoginModuleConfigs=").append(clientLoginModuleConfigs);
-        sb.append(", clientPolicyConfig=").append(clientPolicyConfig);
-        sb.append(", clientPermissionConfigs=").append(clientPermissionConfigs);
-        sb.append('}');
-        return sb.toString();
+        return "SecurityConfig{"
+                + "enabled=" + enabled
+                + ", memberCredentialsConfig=" + memberCredentialsConfig
+                + ", memberLoginModuleConfigs=" + memberLoginModuleConfigs
+                + ", clientLoginModuleConfigs=" + clientLoginModuleConfigs
+                + ", clientPolicyConfig=" + clientPolicyConfig
+                + ", clientPermissionConfigs=" + clientPermissionConfigs
+                + '}';
     }
 }

@@ -61,14 +61,13 @@ public class BuildInfo {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("BuildInfo{");
-        sb.append("version='").append(version).append('\'');
-        sb.append(", build='").append(build).append('\'');
-        sb.append(", buildNumber=").append(buildNumber);
-        sb.append(", revision=").append(revision);
-        sb.append(", enterprise=").append(enterprise);
-        sb.append(", serializationVersion=").append(serializationVersion);
-        sb.append('}');
-        return sb.toString();
+        return "BuildInfo{"
+                + "version='" + version + '\''
+                + ", build='" + build + '\''
+                + ", buildNumber=" + buildNumber
+                + ", revision=" + revision
+                + ", enterprise=" + enterprise
+                + ", serializationVersion=" + serializationVersion
+                + '}';
     }
 }

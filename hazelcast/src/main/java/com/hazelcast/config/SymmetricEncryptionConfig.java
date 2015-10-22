@@ -88,13 +88,12 @@ public class SymmetricEncryptionConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("SymmetricEncryptionConfig{");
-        sb.append("enabled=").append(enabled);
-        sb.append(", iterationCount=").append(iterationCount);
-        sb.append(", algorithm='").append(algorithm).append('\'');
-        sb.append(", key=").append(Arrays.toString(key));
-        sb.append('}');
-        return sb.toString();
+        return "SymmetricEncryptionConfig{"
+                + "enabled=" + enabled
+                + ", iterationCount=" + iterationCount
+                + ", algorithm='" + algorithm + '\''
+                + ", key=" + Arrays.toString(key)
+                + '}';
     }
 
 }

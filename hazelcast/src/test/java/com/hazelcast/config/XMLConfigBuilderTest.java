@@ -20,6 +20,7 @@ import com.hazelcast.config.helpers.DummyMapStore;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.quorum.QuorumType;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -39,14 +40,17 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.Iterator;
 import java.util.List;
 
+import static com.hazelcast.config.AbstractXmlConfigHelper.cleanNodeName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -54,16 +58,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-//it needs to run serial because some tests are relying on System properties they are setting themselves.
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
-    @After
-    @Before
-    public void after() {
-        System.clearProperty("hazelcast.config");
-    }
+    public static final String HAZELCAST_START_TAG = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n";
 
     @Test
     public void testConfigurationURL() throws IOException {
@@ -73,38 +72,22 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testConfigurationWithFile() throws Exception {
-        URL url = getClass().getClassLoader().getResource("hazelcast-default.xml");
-        System.setProperty("hazelcast.config", url.getFile());
-        Config config = new XmlConfigBuilder().build();
-        assertEquals(url, config.getConfigurationUrl());
-    }
-
-    @Test
     public void testConfigurationWithFileName() throws Exception {
         File file = File.createTempFile("foo", "bar");
         file.deleteOnExit();
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
-                        "    <group>\n" +
-                        "        <name>foobar</name>\n" +
-                        "        <password>dev-pass</password>\n" +
-                        "    </group>" +
-                        "</hazelcast>";
-        PrintWriter writer = new PrintWriter(file, "UTF-8");
-        writer.println(xml);
+                HAZELCAST_START_TAG +
+                "    <group>\n" +
+                "        <name>foobar</name>\n" +
+                "        <password>dev-pass</password>\n" +
+                "    </group>\n" +
+                "</hazelcast>\n";
+        final Writer writer = new PrintWriter(file, "UTF-8");
+        writer.write(xml);
         writer.close();
 
         Config config = new XmlConfigBuilder(file.getAbsolutePath()).build();
         assertEquals(file, config.getConfigurationFile());
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void loadingThroughSystemProperty_nonExistingFile() throws IOException {
-        File file = File.createTempFile("foo", "bar");
-        file.delete();
-        System.setProperty("hazelcast.config", file.getAbsolutePath());
-        new XmlConfigBuilder();
     }
 
     @Test(expected = InvalidConfigurationException.class)
@@ -116,29 +99,23 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 "            <tcp-ip enabled=\"true\"/>\n" +
                 "        </join>\n" +
                 "    </network>\n" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
+                        "</hazelcast>";
+        buildConfig(xml);
     }
 
     @Test
     public void testSecurityInterceptorConfig() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">" +
-                        "<security enabled=\"true\">" +
+                HAZELCAST_START_TAG +
+                    "<security enabled=\"true\">" +
                         "<security-interceptors>" +
-                        "<interceptor class-name=\"foo\"/>" +
-                        "<interceptor class-name=\"bar\"/>" +
+                            "<interceptor class-name=\"foo\"/>" +
+                            "<interceptor class-name=\"bar\"/>" +
                         "</security-interceptors>" +
-                        "</security>" +
-                        "</hazelcast>";
+                    "</security>" +
+                "</hazelcast>";
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-
-        final Config config = configBuilder.build();
+        final Config config = buildConfig(xml);
         final SecurityConfig securityConfig = config.getSecurityConfig();
         final List<SecurityInterceptorConfig> interceptorConfigs = securityConfig.getSecurityInterceptorConfigs();
         assertEquals(2, interceptorConfigs.size());
@@ -147,79 +124,33 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void loadingThroughSystemProperty_existingFile() throws IOException {
-        String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
-                        "    <group>\n" +
-                        "        <name>foobar</name>\n" +
-                        "        <password>dev-pass</password>\n" +
-                        "    </group>" +
-                        "</hazelcast>";
-
-        File file = File.createTempFile("foo", "bar");
-        file.deleteOnExit();
-        PrintWriter writer = new PrintWriter(file, "UTF-8");
-        writer.println(xml);
-        writer.close();
-
-        System.setProperty("hazelcast.config", file.getAbsolutePath());
-
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder();
-        Config config = configBuilder.build();
-        assertEquals("foobar", config.getGroupConfig().getName());
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void loadingThroughSystemProperty_nonExistingClasspathResource() throws IOException {
-        System.setProperty("hazelcast.config", "classpath:idontexist");
-        new XmlConfigBuilder();
-    }
-
-    @Test
-    public void loadingThroughSystemProperty_existingClasspathResource() throws IOException {
-        System.setProperty("hazelcast.config", "classpath:test-hazelcast.xml");
-
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder();
-        Config config = configBuilder.build();
-        assertEquals("foobar", config.getGroupConfig().getName());
-    }
-
-    @Test
-    public void testCleanNodeName() {
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder();
-        assertEquals("nocolon", configBuilder.cleanNodeName("noColon"));
-        assertEquals("after", configBuilder.cleanNodeName("Before:After"));
-        assertNull(configBuilder.cleanNodeName((String) null));
-    }
-
-    @Test
     public void readAwsConfig() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
-                        "   <group>\n" +
-                        "        <name>dev</name>\n" +
-                        "        <password>dev-pass</password>\n" +
-                        "    </group>\n" +
-                        "    <network>\n" +
-                        "        <port auto-increment=\"true\">5701</port>\n" +
-                        "        <join>\n" +
-                        "            <multicast enabled=\"false\">\n" +
-                        "                <multicast-group>224.2.2.3</multicast-group>\n" +
-                        "                <multicast-port>54327</multicast-port>\n" +
-                        "            </multicast>\n" +
-                        "            <tcp-ip enabled=\"false\">\n" +
-                        "                <interface>127.0.0.1</interface>\n" +
-                        "            </tcp-ip>\n" +
-                        "            <aws enabled=\"true\" connection-timeout-seconds=\"10\" >\n" +
-                        "                <access-key>access</access-key>\n" +
-                        "                <secret-key>secret</secret-key>\n" +
-                        "            </aws>\n" +
-                        "        </join>\n" +
-                        "        <interfaces enabled=\"false\">\n" +
-                        "            <interface>10.10.1.*</interface>\n" +
-                        "        </interfaces>\n" +
-                        "    </network>\n" +
-                        "</hazelcast>";
+                HAZELCAST_START_TAG +
+                "   <group>\n" +
+                "        <name>dev</name>\n" +
+                "        <password>dev-pass</password>\n" +
+                "    </group>\n" +
+                "    <network>\n" +
+                "        <port auto-increment=\"true\">5701</port>\n" +
+                "        <join>\n" +
+                "            <multicast enabled=\"false\">\n" +
+                "                <multicast-group>224.2.2.3</multicast-group>\n" +
+                "                <multicast-port>54327</multicast-port>\n" +
+                "            </multicast>\n" +
+                "            <tcp-ip enabled=\"false\">\n" +
+                "                <interface>127.0.0.1</interface>\n" +
+                "            </tcp-ip>\n" +
+                "            <aws enabled=\"true\" connection-timeout-seconds=\"10\" >\n" +
+                "                <access-key>access</access-key>\n" +
+                "                <secret-key>secret</secret-key>\n" +
+                "            </aws>\n" +
+                "        </join>\n" +
+                "        <interfaces enabled=\"false\">\n" +
+                "            <interface>10.10.1.*</interface>\n" +
+                "        </interfaces>\n" +
+                "    </network>\n" +
+                "</hazelcast>";
         Config config = buildConfig(xml);
         AwsConfig awsConfig = config.getNetworkConfig().getJoin().getAwsConfig();
         assertTrue(awsConfig.isEnabled());
@@ -231,7 +162,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void readPortCount() {
         //check when it is explicitly set.
-        Config config = buildConfig("<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+        Config config = buildConfig(HAZELCAST_START_TAG +
                 "    <network>\n" +
                 "        <port port-count=\"200\">5701</port>\n" +
                 "    </network>\n" +
@@ -239,7 +170,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(200, config.getNetworkConfig().getPortCount());
 
         //check if the default is passed in correctly
-        config = buildConfig("<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+        config = buildConfig(HAZELCAST_START_TAG +
                 "    <network>\n" +
                 "        <port>5701</port>\n" +
                 "    </network>\n" +
@@ -250,7 +181,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void readPortAutoIncrement() {
         //explicitly set.
-        Config config = buildConfig("<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+        Config config = buildConfig(HAZELCAST_START_TAG +
                 "    <network>\n" +
                 "        <port auto-increment=\"false\">5701</port>\n" +
                 "    </network>\n" +
@@ -258,7 +189,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertFalse(config.getNetworkConfig().isPortAutoIncrement());
 
         //check if the default is picked up correctly
-        config = buildConfig("<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+        config = buildConfig(HAZELCAST_START_TAG +
                 "    <network>\n" +
                 "        <port>5701</port>\n" +
                 "    </network>\n" +
@@ -268,7 +199,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void networkReuseAddress() {
-        Config config = buildConfig("<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+        Config config = buildConfig(HAZELCAST_START_TAG +
                 "    <network>\n" +
                 "        <reuse-address>true</reuse-address>\n" +
                 "    </network>\n" +
@@ -279,7 +210,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void readSemaphoreConfig() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "    <semaphore name=\"default\">\n" +
                         "        <initial-permits>1</initial-permits>\n" +
                         "    </semaphore>" +
@@ -297,7 +228,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void readReliableTopic() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "    <reliable-topic name=\"custom\">\n" +
                         "           <read-batch-size>35</read-batch-size>\n" +
                         "           <statistics-enabled>false</statistics-enabled>\n" +
@@ -327,7 +258,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void readRingbuffer() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "    <ringbuffer name=\"custom\">\n" +
                         "        <capacity>10</capacity>\n" +
                         "        <backup-count>2</backup-count>\n" +
@@ -355,7 +286,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         testConfig2Xml2Config("hazelcast-fullconfig.xml");
     }
 
-    private void testConfig2Xml2Config(String fileName) {
+    private static void testConfig2Xml2Config(String fileName) {
         String pass = "password";
         final Config config = new ClasspathXmlConfig(fileName);
         config.getGroupConfig().setPassword(pass);
@@ -381,7 +312,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testCaseInsensitivityOfSettings() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "<map name=\"testCaseInsensitivity\">" +
                         "<in-memory-format>BINARY</in-memory-format>     " +
                         "<backup-count>1</backup-count>                 " +
@@ -405,7 +336,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testManagementCenterConfig() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "<management-center enabled=\"true\">" +
                         "someUrl" +
                         "</management-center>" +
@@ -419,7 +350,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testNullManagementCenterConfig() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "<management-center>" +
                         "</management-center>" +
                         "</hazelcast>";
@@ -432,7 +363,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testEmptyManagementCenterConfig() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "</hazelcast>";
         final Config config = buildConfig(xml);
         final ManagementCenterConfig manCenterCfg = config.getManagementCenterConfig();
@@ -443,7 +374,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testNotEnabledManagementCenterConfig() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "<management-center enabled=\"false\">" +
                         "</management-center>" +
                         "</hazelcast>";
@@ -456,7 +387,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testNotEnabledWithURLManagementCenterConfig() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "<management-center enabled=\"false\">" +
                         "http://localhost:8080/mancenter" +
                         "</management-center>" +
@@ -470,7 +401,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testMapStoreInitialModeLazy() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "<map name=\"mymap\">" +
                         "<map-store enabled=\"true\" initial-mode=\"LAZY\"></map-store>" +
                         "</map>" +
@@ -485,7 +416,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testMapConfig_minEvictionCheckMillis() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "<map name=\"mymap\">" +
                         "<min-eviction-check-millis>123456789</min-eviction-check-millis>" +
                         "</map>" +
@@ -498,7 +429,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testMapConfig_minEvictionCheckMillis_defaultValue() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "<map name=\"mymap\">" +
                         "</map>" +
                         "</hazelcast>";
@@ -510,7 +441,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testMapConfig_optimizeQueries() {
         String xml1 =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">" +
+                HAZELCAST_START_TAG +
                         "<map name=\"mymap1\">" +
                         "<optimize-queries>true</optimize-queries>" +
                         "</map>" +
@@ -520,7 +451,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertTrue(mapConfig1.isOptimizeQueries());
 
         String xml2 =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">" +
+                HAZELCAST_START_TAG +
                         "<map name=\"mymap2\">" +
                         "<optimize-queries>false</optimize-queries>" +
                         "</map>" +
@@ -545,7 +476,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testMapStoreInitialModeEager() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "<map name=\"mymap\">" +
                         "<map-store enabled=\"true\" initial-mode=\"EAGER\"></map-store>" +
                         "</map>" +
@@ -560,7 +491,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testMapStoreWriteBatchSize() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "<map name=\"mymap\">" +
                         "<map-store >" +
                         "<write-batch-size>23</write-batch-size>" +
@@ -607,7 +538,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     private String getWriteCoalescingConfigXml(boolean value, boolean useDefault) {
         String writeCoalescingConfigPart = useDefault ? ""
                 : "<write-coalescing>" + String.valueOf(value) + "</write-coalescing>";
-        return "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+        return HAZELCAST_START_TAG +
                 "<map name=\"mymap\">" +
                 "<map-store >" +
                 writeCoalescingConfigPart +
@@ -620,7 +551,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     public void testNearCacheInMemoryFormat() {
         String mapName = "testMapNearCacheInMemoryFormat";
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "  <map name=\"" + mapName + "\">\n" +
                         "    <near-cache>\n" +
                         "      <in-memory-format>OBJECT</in-memory-format>\n" +
@@ -640,7 +571,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String refName = "test";
         String mergePolicy = "TestMergePolicy";
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "  <map name=\"" + mapName + "\">\n" +
                         "    <wan-replication-ref name=\"test\">\n" +
                         "      <merge-policy>TestMergePolicy</merge-policy>\n" +
@@ -663,7 +594,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test(expected = InvalidConfigurationException.class)
     public void testParseExceptionIsNotSwallowed() {
         String invalidXml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "</hazelcast";
         buildConfig(invalidXml);
         fail(); //if we, for any reason, we get through the parsing, fail.
@@ -673,7 +604,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     public void setMapStoreConfigImplementationTest() {
         String mapName = "mapStoreImpObjTest";
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "<map name=\"" + mapName + "\">\n" +
                         "<map-store enabled=\"true\">\n" +
                         "<class-name>com.hazelcast.config.helpers.DummyMapStore</class-name>\n" +
@@ -722,7 +653,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     private String createMapPartitionLostListenerConfiguredXml(String mapName, String listenerName) {
-        return "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+        return HAZELCAST_START_TAG +
                 "<map name=\"" + mapName + "\">\n" +
                 "<partition-lost-listeners>\n" +
                 "<partition-lost-listener>" + listenerName + "</partition-lost-listener>\n" +
@@ -759,7 +690,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     private String createCachePartitionLostListenerConfiguredXml(String cacheName, String listenerName) {
-        return "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+        return HAZELCAST_START_TAG +
                 "<cache name=\"" + cacheName + "\">\n" +
                 "<partition-lost-listeners>\n" +
                 "<partition-lost-listener>" + listenerName + "</partition-lost-listener>\n" +
@@ -791,7 +722,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void readMulticastConfig() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "   <group>\n" +
                         "        <name>dev</name>\n" +
                         "        <password>dev-pass</password>\n" +
@@ -827,7 +758,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testWanConfig() {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "<wan-replication name=\"my-wan-cluster\" snapshot-enabled=\"true\">\n" +
                         "    <target-cluster group-name=\"test-cluster-1\" group-password=\"test-pass\">\n" +
                         "       <replication-impl>com.hazelcast.enterprise.wan.replication.WanBatchReplication</replication-impl>\n" +
@@ -858,7 +789,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testQuorumConfig() throws Exception {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "      <quorum enabled=\"true\" name=\"myQuorum\">\n" +
                         "        <quorum-size>3</quorum-size>\n" +
                         "        <quorum-function-class-name>com.my.quorum.function</quorum-function-class-name>\n" +
@@ -877,7 +808,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testQuorumListenerConfig() throws Exception {
         String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                HAZELCAST_START_TAG +
                         "      <quorum enabled=\"true\" name=\"myQuorum\">\n" +
                         "        <quorum-size>3</quorum-size>\n" +
                         "        <quorum-listeners>" +
@@ -1071,7 +1002,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void testLiteMemberConfig() {
-        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+        String xml = HAZELCAST_START_TAG +
                 "    <lite-member enabled=\"true\"/>\n" +
                 "</hazelcast>";
 
@@ -1083,7 +1014,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void testNonLiteMemberConfig() {
-        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+        String xml = HAZELCAST_START_TAG +
                 "    <lite-member enabled=\"false\"/>\n" +
                 "</hazelcast>";
 
@@ -1095,7 +1026,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testNonLiteMemberConfigWithoutEnabledField() {
-        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+        String xml = HAZELCAST_START_TAG +
                 "    <lite-member/>\n" +
                 "</hazelcast>";
 
@@ -1106,7 +1037,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testInvalidLiteMemberConfig() {
-        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+        String xml = HAZELCAST_START_TAG +
                 "    <lite-member enabled=\"dummytext\"/>\n" +
                 "</hazelcast>";
 
@@ -1117,7 +1048,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testDuplicateLiteMemberConfig() {
-        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+        String xml = HAZELCAST_START_TAG +
                 "    <lite-member enabled=\"true\"/>\n" +
                 "    <lite-member enabled=\"true\"/>\n" +
                 "</hazelcast>";
@@ -1139,7 +1070,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void testMapNativeMaxSizePolicy() {
-        String xmlFormat = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+        String xmlFormat = HAZELCAST_START_TAG +
                 "<map name=\"mymap\">" +
                 "<in-memory-format>NATIVE</in-memory-format>" +
                 "<max-size policy=\"{0}\">9991</max-size>" +

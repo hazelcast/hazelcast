@@ -35,10 +35,6 @@ public final class ProxyInfo {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ProxyInfo{");
-        sb.append("serviceName='").append(serviceName).append('\'');
-        sb.append(", objectName='").append(objectName).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "ProxyInfo{serviceName='" + serviceName + "', objectName='" + objectName + "'}";
     }
 }

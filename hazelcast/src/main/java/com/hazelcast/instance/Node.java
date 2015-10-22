@@ -62,6 +62,7 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.VersionCheck;
@@ -329,12 +330,8 @@ public class Node {
         int clusterSize = clusterService.getSize();
         if (config.getNetworkConfig().isPortAutoIncrement()
                 && address.getPort() >= config.getNetworkConfig().getPort() + clusterSize) {
-            StringBuilder sb = new StringBuilder("Config seed port is ");
-            sb.append(config.getNetworkConfig().getPort());
-            sb.append(" and cluster size is ");
-            sb.append(clusterSize);
-            sb.append(". Some of the ports seem occupied!");
-            logger.warning(sb.toString());
+            logger.warning("Config seed port is " + config.getNetworkConfig().getPort()
+                    + " and cluster size is " + clusterSize + ". Some of the ports seem occupied!");
         }
         try {
             managementCenterService = new ManagementCenterService(hazelcastInstance);
@@ -361,7 +358,14 @@ public class Node {
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                 logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
-            clusterService.sendShutdownMessage();
+            try {
+                clusterService.sendShutdownMessage();
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Shutdown message sent to other members");
+                }
+            } catch (Throwable t) {
+                EmptyStatement.ignore(t);
+            }
         } else {
             logger.warning("Terminating forcefully...");
         }
@@ -376,8 +380,6 @@ public class Node {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             }
             discoveryService.destroy();
-            logger.info("Shutting down connection manager...");
-            connectionManager.shutdown();
         } catch (Throwable ignored) {
         }
         versionCheck.shutdown();

@@ -40,7 +40,7 @@ public class MapLoadGivenKeysMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        Data[] keys = parameters.keys.toArray(new Data[0]);
+        Data[] keys = parameters.keys.toArray(new Data[parameters.keys.size()]);
         MapOperationProvider operationProvider = getOperationProvider(parameters.name);
         return operationProvider.createLoadAllOperationFactory(parameters.name,
                 Arrays.asList(keys), parameters.replaceExistingValues);

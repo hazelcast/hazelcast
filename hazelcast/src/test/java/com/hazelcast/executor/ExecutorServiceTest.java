@@ -750,12 +750,12 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
      * Execute a task that is executing
      * something else inside. Nested Execution.
      */
-    @Test(timeout = 10000)
+    @Test
     public void testNestedExecution() throws Exception {
         Callable<String> task = new NestedExecutorTask();
         ExecutorService executor = createSingleNodeExecutorService("testNestedExecution");
         Future future = executor.submit(task);
-        future.get();
+        assertCompletesEventually(future);
     }
 
     /**

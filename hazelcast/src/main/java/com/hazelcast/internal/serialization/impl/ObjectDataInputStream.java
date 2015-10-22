@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.serialization;
+package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.Data;

@@ -761,29 +761,27 @@ public class MapConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("MapConfig");
-        sb.append("{name='").append(name).append('\'');
-        sb.append(", inMemoryFormat=").append(inMemoryFormat).append('\'');
-        sb.append(", backupCount=").append(backupCount);
-        sb.append(", asyncBackupCount=").append(asyncBackupCount);
-        sb.append(", timeToLiveSeconds=").append(timeToLiveSeconds);
-        sb.append(", maxIdleSeconds=").append(maxIdleSeconds);
-        sb.append(", evictionPolicy='").append(evictionPolicy).append('\'');
-        sb.append(", evictionPercentage=").append(evictionPercentage);
-        sb.append(", minEvictionCheckMillis=").append(minEvictionCheckMillis);
-        sb.append(", maxSizeConfig=").append(maxSizeConfig);
-        sb.append(", readBackupData=").append(readBackupData);
-        sb.append(", nearCacheConfig=").append(nearCacheConfig);
-        sb.append(", mapStoreConfig=").append(mapStoreConfig);
-        sb.append(", mergePolicyConfig='").append(mergePolicy).append('\'');
-        sb.append(", wanReplicationRef=").append(wanReplicationRef);
-        sb.append(", entryListenerConfigs=").append(entryListenerConfigs);
-        sb.append(", mapIndexConfigs=").append(mapIndexConfigs);
-        sb.append(", mapAttributeConfigs=").append(mapAttributeConfigs);
-        sb.append(", quorumName=").append(quorumName);
-        sb.append(", queryCacheConfigs=").append(queryCacheConfigs);
-        sb.append('}');
-        return sb.toString();
+        return "MapConfig{"
+                + "name='" + name + '\''
+                + "', inMemoryFormat=" + inMemoryFormat + '\''
+                + ", backupCount=" + backupCount
+                + ", asyncBackupCount=" + asyncBackupCount
+                + ", timeToLiveSeconds=" + timeToLiveSeconds
+                + ", maxIdleSeconds=" + maxIdleSeconds
+                + ", evictionPolicy='" + evictionPolicy + '\''
+                + ", evictionPercentage=" + evictionPercentage
+                + ", minEvictionCheckMillis=" + minEvictionCheckMillis
+                + ", maxSizeConfig=" + maxSizeConfig
+                + ", readBackupData=" + readBackupData
+                + ", nearCacheConfig=" + nearCacheConfig
+                + ", mapStoreConfig=" + mapStoreConfig
+                + ", mergePolicyConfig='" + mergePolicy + '\''
+                + ", wanReplicationRef=" + wanReplicationRef
+                + ", entryListenerConfigs=" + entryListenerConfigs
+                + ", mapIndexConfigs=" + mapIndexConfigs
+                + ", mapAttributeConfigs=" + mapAttributeConfigs
+                + ", quorumName=" + quorumName
+                + ", queryCacheConfigs=" + queryCacheConfigs
+                + '}';
     }
 }

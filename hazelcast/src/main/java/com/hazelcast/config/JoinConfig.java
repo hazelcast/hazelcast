@@ -133,12 +133,11 @@ public class JoinConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("JoinConfig{");
-        sb.append("multicastConfig=").append(multicastConfig);
-        sb.append(", tcpIpConfig=").append(tcpIpConfig);
-        sb.append(", awsConfig=").append(awsConfig);
-        sb.append(", discoveryProvidersConfig=").append(discoveryConfig);
-        sb.append('}');
-        return sb.toString();
+        return "JoinConfig{"
+                + "multicastConfig=" + multicastConfig
+                + ", tcpIpConfig=" + tcpIpConfig
+                + ", awsConfig=" + awsConfig
+                + ", discoveryProvidersConfig=" + discoveryConfig
+                + '}';
     }
 }

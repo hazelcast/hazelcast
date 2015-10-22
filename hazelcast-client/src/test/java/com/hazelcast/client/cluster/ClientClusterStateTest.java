@@ -43,7 +43,7 @@ public class ClientClusterStateTest {
 
     @After
     public void after() {
-        factory.shutdownAll();
+        factory.terminateAll();
     }
 
     @Test

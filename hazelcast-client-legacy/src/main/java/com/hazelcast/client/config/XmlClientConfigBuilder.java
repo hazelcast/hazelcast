@@ -194,8 +194,8 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleConfig(final Element docElement) throws Exception {
-        for (Node node : new IterableNodeList(docElement.getChildNodes())) {
-            final String nodeName = cleanNodeName(node.getNodeName());
+        for (Node node : childElements(docElement)) {
+            final String nodeName = cleanNodeName(node);
             if (occurrenceSet.contains(nodeName)) {
                 throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in XML configuration. ");
             }
@@ -246,7 +246,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     private void handleNearCache(Node node) {
         final String name = getAttribute(node, "name");
         final NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        for (Node child : new IterableNodeList(node.getChildNodes())) {
+        for (Node child : childElements(node)) {
             final String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
             if ("max-size".equals(nodeName)) {
@@ -308,7 +308,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     private void handleNetwork(Node node) {
         final ClientNetworkConfig clientNetworkConfig = new ClientNetworkConfig();
-        for (Node child : new IterableNodeList(node.getChildNodes())) {
+        for (Node child : childElements(node)) {
             final String nodeName = cleanNodeName(child);
             if ("cluster-members".equals(nodeName)) {
                 handleClusterMembers(child, clientNetworkConfig);
@@ -339,8 +339,8 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     private void handleDiscoveryStrategies(Node node, ClientNetworkConfig clientNetworkConfig) {
         DiscoveryConfig discoveryConfig = clientNetworkConfig.getDiscoveryConfig();
-        for (Node child : new IterableNodeList(node.getChildNodes())) {
-            String name = cleanNodeName(child.getNodeName());
+        for (Node child : childElements(node)) {
+            String name = cleanNodeName(child);
             if ("discovery-strategy".equals(name)) {
                 handleDiscoveryStrategy(child, discoveryConfig);
             } else if ("node-filter".equals(name)) {
@@ -368,7 +368,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             Node att = atts.item(a);
             String value = getTextContent(att).trim();
             if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
-                enabled = checkTrue(value);
+                enabled = getBooleanValue(value);
             } else if ("class".equals(att.getNodeName())) {
                 clazz = value;
             }
@@ -379,8 +379,8 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         }
 
         Map<String, Comparable> properties = new HashMap<String, Comparable>();
-        for (Node child : new IterableNodeList(node.getChildNodes())) {
-            String name = cleanNodeName(child.getNodeName());
+        for (Node child : childElements(node)) {
+            String name = cleanNodeName(child);
             if ("properties".equals(name)) {
                 fillProperties(child, properties);
             }
@@ -391,25 +391,25 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     private void handleAWS(Node node, ClientNetworkConfig clientNetworkConfig) {
         final ClientAwsConfig clientAwsConfig = handleAwsAttributes(node);
-        for (Node n : new IterableNodeList(node.getChildNodes())) {
+        for (Node n : childElements(node)) {
             final String value = getTextContent(n).trim();
-            if ("secret-key".equals(cleanNodeName(n.getNodeName()))) {
+            if ("secret-key".equals(cleanNodeName(n))) {
                 clientAwsConfig.setSecretKey(value);
-            } else if ("access-key".equals(cleanNodeName(n.getNodeName()))) {
+            } else if ("access-key".equals(cleanNodeName(n))) {
                 clientAwsConfig.setAccessKey(value);
-            } else if ("region".equals(cleanNodeName(n.getNodeName()))) {
+            } else if ("region".equals(cleanNodeName(n))) {
                 clientAwsConfig.setRegion(value);
-            } else if ("host-header".equals(cleanNodeName(n.getNodeName()))) {
+            } else if ("host-header".equals(cleanNodeName(n))) {
                 clientAwsConfig.setHostHeader(value);
-            } else if ("security-group-name".equals(cleanNodeName(n.getNodeName()))) {
+            } else if ("security-group-name".equals(cleanNodeName(n))) {
                 clientAwsConfig.setSecurityGroupName(value);
-            } else if ("tag-key".equals(cleanNodeName(n.getNodeName()))) {
+            } else if ("tag-key".equals(cleanNodeName(n))) {
                 clientAwsConfig.setTagKey(value);
-            } else if ("tag-value".equals(cleanNodeName(n.getNodeName()))) {
+            } else if ("tag-value".equals(cleanNodeName(n))) {
                 clientAwsConfig.setTagValue(value);
-            } else if ("inside-aws".equals(cleanNodeName(n.getNodeName()))) {
-                clientAwsConfig.setInsideAws(checkTrue(value));
-            } else if ("iam-role".equals(cleanNodeName(n.getNodeName()))) {
+            } else if ("inside-aws".equals(cleanNodeName(n))) {
+                clientAwsConfig.setInsideAws(getBooleanValue(value));
+            } else if ("iam-role".equals(cleanNodeName(n))) {
                 clientAwsConfig.setIamRole(value);
             }
 
@@ -427,9 +427,9 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             final Node att = atts.item(i);
             final String value = getTextContent(att).trim();
             if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
-                clientAwsConfig.setEnabled(checkTrue(value));
+                clientAwsConfig.setEnabled(getBooleanValue(value));
             } else if (att.getNodeName().equals("connection-timeout-seconds")) {
-                int timeout = getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE);
+                int timeout = getIntegerValue("connection-timeout-seconds", value);
                 clientAwsConfig.setConnectionTimeoutSeconds(timeout);
             }
         }
@@ -440,11 +440,11 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         SSLConfig sslConfig = new SSLConfig();
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode).trim());
+        final boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         sslConfig.setEnabled(enabled);
 
-        for (Node n : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = cleanNodeName(n.getNodeName());
+        for (Node n : childElements(node)) {
+            final String nodeName = cleanNodeName(n);
             if ("factory-class-name".equals(nodeName)) {
                 sslConfig.setFactoryClassName(getTextContent(n).trim());
             } else if ("properties".equals(nodeName)) {
@@ -456,7 +456,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     private void handleSocketOptions(Node node, ClientNetworkConfig clientNetworkConfig) {
         SocketOptions socketOptions = clientConfig.getSocketOptions();
-        for (Node child : new IterableNodeList(node.getChildNodes())) {
+        for (Node child : childElements(node)) {
             final String nodeName = cleanNodeName(child);
             if ("tcp-no-delay".equals(nodeName)) {
                 socketOptions.setTcpNoDelay(Boolean.parseBoolean(getTextContent(child)));
@@ -474,7 +474,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleClusterMembers(Node node, ClientNetworkConfig clientNetworkConfig) {
-        for (Node child : new IterableNodeList(node.getChildNodes())) {
+        for (Node child : childElements(node)) {
             if ("address".equals(cleanNodeName(child))) {
                 clientNetworkConfig.addAddress(getTextContent(child));
             }
@@ -482,7 +482,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleListeners(Node node) throws Exception {
-        for (Node child : new IterableNodeList(node.getChildNodes())) {
+        for (Node child : childElements(node)) {
             if ("listener".equals(cleanNodeName(child))) {
                 String className = getTextContent(child);
                 clientConfig.addListenerConfig(new ListenerConfig(className));
@@ -491,9 +491,9 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleGroup(Node node) {
-        for (Node n : new IterableNodeList(node.getChildNodes())) {
+        for (Node n : childElements(node)) {
             final String value = getTextContent(n).trim();
-            final String nodeName = cleanNodeName(n.getNodeName());
+            final String nodeName = cleanNodeName(n);
             if ("name".equals(nodeName)) {
                 clientConfig.getGroupConfig().setName(value);
             } else if ("password".equals(nodeName)) {
@@ -508,8 +508,8 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleProxyFactories(Node node) throws Exception {
-        for (Node child : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = cleanNodeName(child.getNodeName());
+        for (Node child : childElements(node)) {
+            final String nodeName = cleanNodeName(child);
             if ("proxy-factory".equals(nodeName)) {
                 handleProxyFactory(child);
             }
@@ -531,8 +531,8 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     private void handleSecurity(Node node) throws Exception {
         ClientSecurityConfig clientSecurityConfig = new ClientSecurityConfig();
-        for (Node child : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = cleanNodeName(child.getNodeName());
+        for (Node child : childElements(node)) {
+            final String nodeName = cleanNodeName(child);
             if ("credentials".equals(nodeName)) {
                 String className = getTextContent(child);
                 clientSecurityConfig.setCredentialsClassname(className);

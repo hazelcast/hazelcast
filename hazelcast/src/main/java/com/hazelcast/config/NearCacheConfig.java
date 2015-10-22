@@ -414,17 +414,16 @@ public class NearCacheConfig
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("NearCacheConfig{");
-        sb.append("timeToLiveSeconds=").append(timeToLiveSeconds);
-        sb.append(", maxSize=").append(maxSize);
-        sb.append(", evictionPolicy='").append(evictionPolicy).append('\'');
-        sb.append(", maxIdleSeconds=").append(maxIdleSeconds);
-        sb.append(", invalidateOnChange=").append(invalidateOnChange);
-        sb.append(", inMemoryFormat=").append(inMemoryFormat);
-        sb.append(", cacheLocalEntries=").append(cacheLocalEntries);
-        sb.append(", localUpdatePolicy=").append(localUpdatePolicy);
-        sb.append(", evictionConfig=").append(evictionConfig);
-        sb.append('}');
-        return sb.toString();
+        return "NearCacheConfig{"
+                + "timeToLiveSeconds=" + timeToLiveSeconds
+                + ", maxSize=" + maxSize
+                + ", evictionPolicy='" + evictionPolicy + '\''
+                + ", maxIdleSeconds=" + maxIdleSeconds
+                + ", invalidateOnChange=" + invalidateOnChange
+                + ", inMemoryFormat=" + inMemoryFormat
+                + ", cacheLocalEntries=" + cacheLocalEntries
+                + ", localUpdatePolicy=" + localUpdatePolicy
+                + ", evictionConfig=" + evictionConfig
+                + '}';
     }
 }

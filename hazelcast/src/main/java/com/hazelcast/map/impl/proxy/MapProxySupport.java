@@ -58,7 +58,6 @@ import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperationFactory;
 import com.hazelcast.map.impl.operation.RemoveInterceptorOperation;
-import com.hazelcast.map.impl.operation.SizeOperationFactory;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -507,7 +506,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     public int size() {
         try {
-            Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, new SizeOperationFactory(name));
+            OperationFactory sizeOperationFactory = operationProvider.createMapSizeOperationFactory(name);
+            Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, sizeOperationFactory);
             int total = 0;
             for (Object result : results.values()) {
                 Integer size = (Integer) toObject(result);

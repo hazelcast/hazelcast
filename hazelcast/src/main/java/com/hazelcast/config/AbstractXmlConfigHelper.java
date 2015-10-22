@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.AbstractConfigBuilder.ConfigType;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
@@ -67,35 +68,31 @@ public abstract class AbstractXmlConfigHelper {
     private static final ILogger LOGGER = Logger.getLogger(AbstractXmlConfigHelper.class);
 
     protected boolean domLevel3 = true;
-    private final String xmlns = "http://www.hazelcast.com/schema/" + getNamespaceType();
-    private final String xsi = "http://www.w3.org/2001/XMLSchema-instance";
+    final String xmlns = "http://www.hazelcast.com/schema/" + getNamespaceType();
     private final String hazelcastSchemaLocation = getXmlType().name + "-config-" + getReleaseVersion() + ".xsd";
 
-    /**
-     * Iterator for NodeList
-     */
-    public static class IterableNodeList implements Iterable<Node> {
+    public static Iterable<Node> childElements(Node node) {
+        return new IterableNodeList(node, Node.ELEMENT_NODE);
+    }
 
-        private final NodeList parent;
+    public static Iterable<Node> asElementIterable(NodeList list) {
+        return new IterableNodeList(list, Node.ELEMENT_NODE);
+    }
+
+    private static class IterableNodeList implements Iterable<Node> {
+
+        private final NodeList wrapped;
         private final int maximum;
         private final short nodeType;
 
-        public IterableNodeList(final Node node) {
-            this(node.getChildNodes());
+        IterableNodeList(final Node parent, short nodeType) {
+            this(parent.getChildNodes(), nodeType);
         }
 
-        public IterableNodeList(final NodeList list) {
-            this(list, (short) 0);
-        }
-
-        public IterableNodeList(final Node node, short nodeType) {
-            this(node.getChildNodes(), nodeType);
-        }
-
-        public IterableNodeList(final NodeList parent, short nodeType) {
-            this.parent = parent;
+        IterableNodeList(final NodeList wrapped, short nodeType) {
+            this.wrapped = wrapped;
             this.nodeType = nodeType;
-            this.maximum = parent.getLength();
+            this.maximum = wrapped.getLength();
         }
 
         public Iterator<Node> iterator() {
@@ -106,7 +103,7 @@ public abstract class AbstractXmlConfigHelper {
                 public boolean hasNext() {
                     next = null;
                     for (; index < maximum; index++) {
-                        final Node item = parent.item(index);
+                        final Node item = wrapped.item(index);
                         if (nodeType == 0 || item.getNodeType() == nodeType) {
                             next = item;
                             return true;
@@ -138,8 +135,7 @@ public abstract class AbstractXmlConfigHelper {
         return getXmlType().name.equals("hazelcast") ? "config" : "client-config";
     }
 
-    protected void schemaValidation(Document doc)
-            throws Exception {
+    protected void schemaValidation(Document doc) throws Exception {
         ArrayList<StreamSource> schemas = new ArrayList<StreamSource>();
         InputStream inputStream = null;
         String lineSeperator = StringUtil.getLineSeperator();
@@ -154,8 +150,8 @@ public abstract class AbstractXmlConfigHelper {
             if (xsdLocation.isEmpty()) {
                 continue;
             }
-            String namespace = xsdLocation.split("[" + lineSeperator + " ]+")[0];
-            String uri = xsdLocation.split("[" + lineSeperator + " ]+")[1];
+            String namespace = xsdLocation.split('[' + lineSeperator + " ]+")[0];
+            String uri = xsdLocation.split('[' + lineSeperator + " ]+")[1];
 
             // if this is hazelcast namespace but location is different log only warning
             if (namespace.equals(xmlns) && !uri.endsWith(hazelcastSchemaLocation)) {
@@ -175,6 +171,7 @@ public abstract class AbstractXmlConfigHelper {
 
         // set schema settings, so user don't have to set hazelcast xsd namespace,uri
         root.setAttribute("xmlns", xmlns);
+        String xsi = "http://www.w3.org/2001/XMLSchema-instance";
         root.setAttribute("xmlns:xsi", xsi);
         root.setAttribute("xsi:schemaLocation", hazelcastSchemaLocation);
 
@@ -290,48 +287,41 @@ public abstract class AbstractXmlConfigHelper {
         return nodeType != Node.COMMENT_NODE && nodeType != Node.PROCESSING_INSTRUCTION_NODE;
     }
 
-    public final String cleanNodeName(final Node node) {
-        return cleanNodeName(node.getNodeName());
-    }
-
-    public static String cleanNodeName(final String nodeName) {
-        String name = nodeName;
-        if (name != null) {
-            name = StringUtil.lowerCaseInternal(nodeName.replaceAll("\\w+:", ""));
+    public static String cleanNodeName(final Node node) {
+        final String nodeName = node.getLocalName();
+        if (nodeName == null) {
+            throw new HazelcastException("Local node name is null for " + node);
         }
-        return name;
+        return StringUtil.lowerCaseInternal(nodeName);
     }
 
-    protected boolean checkTrue(final String value) {
+    protected static boolean getBooleanValue(final String value) {
         String lowerCaseValue = StringUtil.lowerCaseInternal(value);
         return "true".equals(lowerCaseValue)
                 || "yes".equals(lowerCaseValue)
                 || "on".equals(lowerCaseValue);
     }
 
-    protected int getIntegerValue(final String parameterName, final String value, final int defaultValue) {
+    protected static int getIntegerValue(final String parameterName, final String value) {
         try {
             return Integer.parseInt(value);
-        } catch (final Exception e) {
-            LOGGER.info(parameterName + " parameter value, [" + value
-                    + "], is not a proper integer. Default value, [" + defaultValue + "], will be used!");
-            LOGGER.warning(e);
-            return defaultValue;
+        } catch (final NumberFormatException e) {
+            throw new InvalidConfigurationException(
+                    String.format("Invalid integer value for parameter %s: %s", parameterName, value));
         }
+
     }
 
-    protected long getLongValue(final String parameterName, final String value, final long defaultValue) {
+    protected static long getLongValue(final String parameterName, final String value) {
         try {
             return Long.parseLong(value);
         } catch (final Exception e) {
-            LOGGER.info(parameterName + " parameter value, [" + value
-                    + "], is not a proper long. Default value, [" + defaultValue + "], will be used!");
-            LOGGER.warning(e);
-            return defaultValue;
+            throw new InvalidConfigurationException(
+                    String.format("Invalid long integer value for parameter %s: %s", parameterName, value));
         }
     }
 
-    protected String getAttribute(org.w3c.dom.Node node, String attName) {
+    protected String getAttribute(Node node, String attName) {
         final Node attNode = node.getAttributes().getNamedItem(attName);
         if (attNode == null) {
             return null;
@@ -339,15 +329,15 @@ public abstract class AbstractXmlConfigHelper {
         return getTextContent(attNode);
     }
 
-    protected SocketInterceptorConfig parseSocketInterceptorConfig(final org.w3c.dom.Node node) {
+    protected SocketInterceptorConfig parseSocketInterceptorConfig(final Node node) {
         SocketInterceptorConfig socketInterceptorConfig = new SocketInterceptorConfig();
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode).trim());
+        final boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         socketInterceptorConfig.setEnabled(enabled);
 
-        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = cleanNodeName(n.getNodeName());
+        for (Node n : childElements(node)) {
+            final String nodeName = cleanNodeName(n);
             if ("class-name".equals(nodeName)) {
                 socketInterceptorConfig.setClassName(getTextContent(n).trim());
             } else if ("properties".equals(nodeName)) {
@@ -357,36 +347,30 @@ public abstract class AbstractXmlConfigHelper {
         return socketInterceptorConfig;
     }
 
-    protected void fillProperties(final org.w3c.dom.Node node, Properties properties) {
+    protected void fillProperties(final Node node, Properties properties) {
         if (properties == null) {
             return;
         }
-        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            if (n.getNodeType() == org.w3c.dom.Node.TEXT_NODE || n.getNodeType() == org.w3c.dom.Node.COMMENT_NODE) {
-                continue;
-            }
-            final String name = cleanNodeName(n.getNodeName());
-            final String propertyName;
-            if ("property".equals(name)) {
-                propertyName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
-            } else {
-                // old way - probably should be deprecated
-                propertyName = name;
-            }
+        for (Node n : childElements(node)) {
+            final String name = cleanNodeName(n);
+            final String propertyName = "property".equals(name)
+                    ? getTextContent(n.getAttributes().getNamedItem("name")).trim()
+                    // old way - probably should be deprecated
+                    : name;
             final String value = getTextContent(n).trim();
             properties.setProperty(propertyName, value);
         }
     }
 
-    protected void fillProperties(final org.w3c.dom.Node node, Map<String, Comparable> properties) {
+    protected void fillProperties(final Node node, Map<String, Comparable> properties) {
         if (properties == null) {
             return;
         }
-        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            if (n.getNodeType() == org.w3c.dom.Node.TEXT_NODE || n.getNodeType() == org.w3c.dom.Node.COMMENT_NODE) {
+        for (Node n : childElements(node)) {
+            if (n.getNodeType() == Node.TEXT_NODE || n.getNodeType() == Node.COMMENT_NODE) {
                 continue;
             }
-            final String name = cleanNodeName(n.getNodeName());
+            final String name = cleanNodeName(n);
             final String propertyName;
             if ("property".equals(name)) {
                 propertyName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
@@ -401,16 +385,16 @@ public abstract class AbstractXmlConfigHelper {
 
     protected SerializationConfig parseSerialization(final Node node) {
         SerializationConfig serializationConfig = new SerializationConfig();
-        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+        for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
             if ("portable-version".equals(name)) {
                 String value = getTextContent(child);
-                serializationConfig.setPortableVersion(getIntegerValue(name, value, 0));
+                serializationConfig.setPortableVersion(getIntegerValue(name, value));
             } else if ("check-class-def-errors".equals(name)) {
                 String value = getTextContent(child);
-                serializationConfig.setCheckClassDefErrors(checkTrue(value));
+                serializationConfig.setCheckClassDefErrors(getBooleanValue(value));
             } else if ("use-native-byte-order".equals(name)) {
-                serializationConfig.setUseNativeByteOrder(checkTrue(getTextContent(child)));
+                serializationConfig.setUseNativeByteOrder(getBooleanValue(getTextContent(child)));
             } else if ("byte-order".equals(name)) {
                 String value = getTextContent(child);
                 ByteOrder byteOrder = null;
@@ -421,11 +405,11 @@ public abstract class AbstractXmlConfigHelper {
                 }
                 serializationConfig.setByteOrder(byteOrder != null ? byteOrder : ByteOrder.BIG_ENDIAN);
             } else if ("enable-compression".equals(name)) {
-                serializationConfig.setEnableCompression(checkTrue(getTextContent(child)));
+                serializationConfig.setEnableCompression(getBooleanValue(getTextContent(child)));
             } else if ("enable-shared-object".equals(name)) {
-                serializationConfig.setEnableSharedObject(checkTrue(getTextContent(child)));
+                serializationConfig.setEnableSharedObject(getBooleanValue(getTextContent(child)));
             } else if ("allow-unsafe".equals(name)) {
-                serializationConfig.setAllowUnsafe(checkTrue(getTextContent(child)));
+                serializationConfig.setAllowUnsafe(getBooleanValue(getTextContent(child)));
             } else if ("data-serializable-factories".equals(name)) {
                 fillDataSerializableFactories(child, serializationConfig);
             } else if ("portable-factories".equals(name)) {
@@ -438,13 +422,14 @@ public abstract class AbstractXmlConfigHelper {
     }
 
     protected void fillDataSerializableFactories(Node node, SerializationConfig serializationConfig) {
-        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+        for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
             if ("data-serializable-factory".equals(name)) {
                 final String value = getTextContent(child);
                 final Node factoryIdNode = child.getAttributes().getNamedItem("factory-id");
                 if (factoryIdNode == null) {
-                    throw new IllegalArgumentException("'factory-id' attribute of 'data-serializable-factory' is required!");
+                    throw new IllegalArgumentException(
+                            "'factory-id' attribute of 'data-serializable-factory' is required!");
                 }
                 int factoryId = Integer.parseInt(getTextContent(factoryIdNode));
                 serializationConfig.addDataSerializableFactoryClass(factoryId, value);
@@ -453,7 +438,7 @@ public abstract class AbstractXmlConfigHelper {
     }
 
     protected void fillPortableFactories(Node node, SerializationConfig serializationConfig) {
-        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+        for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
             if ("portable-factory".equals(name)) {
                 final String value = getTextContent(child);
@@ -468,7 +453,7 @@ public abstract class AbstractXmlConfigHelper {
     }
 
     protected void fillSerializers(final Node node, SerializationConfig serializationConfig) {
-        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+        for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
             final String value = getTextContent(child);
             if ("serializer".equals(name)) {
@@ -490,17 +475,18 @@ public abstract class AbstractXmlConfigHelper {
     protected void fillNativeMemoryConfig(Node node, NativeMemoryConfig nativeMemoryConfig) {
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode).trim());
+        final boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         nativeMemoryConfig.setEnabled(enabled);
 
         final Node allocTypeNode = atts.getNamedItem("allocator-type");
         final String allocType = getTextContent(allocTypeNode);
         if (allocType != null && !"".equals(allocType)) {
-            nativeMemoryConfig.setAllocatorType(NativeMemoryConfig.MemoryAllocatorType.valueOf(upperCaseInternal(allocType)));
+            nativeMemoryConfig.setAllocatorType(
+                    NativeMemoryConfig.MemoryAllocatorType.valueOf(upperCaseInternal(allocType)));
         }
 
-        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = cleanNodeName(n.getNodeName());
+        for (Node n : childElements(node)) {
+            final String nodeName = cleanNodeName(n);
             if ("size".equals(nodeName)) {
                 final NamedNodeMap attrs = n.getAttributes();
                 final String value = getTextContent(attrs.getNamedItem("value"));
@@ -525,6 +511,4 @@ public abstract class AbstractXmlConfigHelper {
             }
         }
     }
-
-
 }

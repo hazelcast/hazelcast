@@ -87,12 +87,7 @@ public class EntryListenerConfig extends ListenerConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("EntryListenerConfig");
-        sb.append("{local=").append(local);
-        sb.append(", includeValue=").append(includeValue);
-        sb.append('}');
-        return sb.toString();
+        return "EntryListenerConfig{local=" + local + ", includeValue=" + includeValue + '}';
     }
 
     @Override

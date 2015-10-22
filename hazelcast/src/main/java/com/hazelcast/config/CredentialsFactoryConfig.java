@@ -67,12 +67,10 @@ public class CredentialsFactoryConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("CredentialsFactoryConfig");
-        sb.append("{className='").append(className).append('\'');
-        sb.append(", implementation=").append(implementation);
-        sb.append(", properties=").append(properties);
-        sb.append('}');
-        return sb.toString();
+        return "CredentialsFactoryConfig{"
+                + "className='" + className + '\''
+                + ", implementation=" + implementation
+                + ", properties=" + properties
+                + '}';
     }
 }

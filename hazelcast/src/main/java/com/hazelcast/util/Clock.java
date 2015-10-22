@@ -115,13 +115,7 @@ public final class Clock {
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder();
-            sb.append("SystemOffsetClock");
-            sb.append("{offset=").append(offset);
-            sb.append('}');
-            return sb.toString();
+            return "SystemOffsetClock{offset=" + offset + '}';
         }
     }
-
-
 }

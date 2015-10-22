@@ -1677,11 +1677,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("PartitionManager[" + stateVersion + "] {\n");
-        sb.append("\n");
-        sb.append("migrationQ: ").append(migrationQueue.size());
-        sb.append("\n}");
-        return sb.toString();
+        return "PartitionManager[" + stateVersion + "] {\n\n" + "migrationQ: " + migrationQueue.size() + "\n}";
     }
 
     public Node getNode() {

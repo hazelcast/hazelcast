@@ -18,14 +18,16 @@ package com.hazelcast.config;
 
 import com.hazelcast.spi.ServiceConfigurationParser;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
 public class MyServiceConfigParser extends AbstractXmlConfigHelper implements ServiceConfigurationParser<MyServiceConfig> {
 
     public MyServiceConfig parse(Element element) {
         MyServiceConfig config = new MyServiceConfig();
-        for (org.w3c.dom.Node configNode : new AbstractXmlConfigHelper.IterableNodeList(element.getChildNodes())) {
+        for (Node configNode : childElements(element)) {
             if ("my-service".equals(cleanNodeName(configNode))) {
-                for (org.w3c.dom.Node node : new AbstractXmlConfigHelper.IterableNodeList(configNode.getChildNodes())) {
-                    final String name = cleanNodeName(node.getNodeName());
+                for (Node node : childElements(configNode)) {
+                    final String name = cleanNodeName(node);
                     if ("string-prop".equals(name)) {
                         config.stringProp = getTextContent(node);
                     } else if ("int-prop".equals(name)) {
