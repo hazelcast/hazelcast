@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -33,34 +34,34 @@ public class GroupPropertiesTest {
 
     @Test
     public void setProperty_ensureHighestPriorityOfConfig() {
-        config.setProperty(GroupProperty.ELASTIC_MEMORY_TOTAL_SIZE, "configValue");
-        GroupProperty.ELASTIC_MEMORY_TOTAL_SIZE.setSystemProperty("systemValue");
+        config.setProperty(GroupProperty.ENTERPRISE_LICENSE_KEY, "configValue");
+        GroupProperty.ENTERPRISE_LICENSE_KEY.setSystemProperty("systemValue");
 
         GroupProperties groupProperties = new GroupProperties(config);
-        String loggingType = groupProperties.getString(GroupProperty.ELASTIC_MEMORY_TOTAL_SIZE);
+        String value = groupProperties.getString(GroupProperty.ENTERPRISE_LICENSE_KEY);
 
-        GroupProperty.ELASTIC_MEMORY_TOTAL_SIZE.clearSystemProperty();
+        GroupProperty.ENTERPRISE_LICENSE_KEY.clearSystemProperty();
 
-        assertEquals("configValue", loggingType);
+        assertEquals("configValue", value);
     }
 
     @Test
     public void setProperty_ensureUsageOfSystemProperty() {
-        GroupProperty.ELASTIC_MEMORY_TOTAL_SIZE.setSystemProperty("systemValue");
+        GroupProperty.ENTERPRISE_LICENSE_KEY.setSystemProperty("systemValue");
 
         GroupProperties groupProperties = new GroupProperties(config);
-        String loggingType = groupProperties.getString(GroupProperty.ELASTIC_MEMORY_TOTAL_SIZE);
+        String value = groupProperties.getString(GroupProperty.ENTERPRISE_LICENSE_KEY);
 
-        GroupProperty.ELASTIC_MEMORY_TOTAL_SIZE.clearSystemProperty();
+        GroupProperty.ENTERPRISE_LICENSE_KEY.clearSystemProperty();
 
-        assertEquals("systemValue", loggingType);
+        assertEquals("systemValue", value);
     }
 
     @Test
     public void setProperty_ensureUsageOfDefaultValue() {
-        String loggingType = defaultGroupProperties.getString(GroupProperty.ELASTIC_MEMORY_TOTAL_SIZE);
+        String value = defaultGroupProperties.getString(GroupProperty.ENTERPRISE_LICENSE_KEY);
 
-        assertEquals("128M", loggingType);
+        assertNull(value);
     }
 
     @Test

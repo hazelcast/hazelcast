@@ -27,8 +27,6 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.storage.DataRef;
-import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
@@ -330,11 +328,6 @@ public class NodeEngineImpl implements NodeEngine {
             }
         }
         return postJoinOps.isEmpty() ? null : postJoinOps.toArray(new Operation[postJoinOps.size()]);
-    }
-
-    @Override
-    public Storage<DataRef> getOffHeapStorage() {
-        return node.getNodeExtension().getNativeDataStorage();
     }
 
     public void reset() {

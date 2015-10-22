@@ -22,8 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.storage.DataRef;
-import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -255,11 +253,4 @@ public interface NodeEngine {
      * @throws NullPointerException if the serviceName is null.
      */
     <T extends SharedService> T getSharedService(String serviceName);
-
-    /**
-     * Returns the offheap {@link Storage}.
-     *
-     * @return the offheap storage.
-     */
-    Storage<DataRef> getOffHeapStorage();
 }
