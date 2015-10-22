@@ -33,8 +33,6 @@ import java.util.Map;
 
 public class MapSizeRequest extends MapAllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
 
-    private String name;
-
     public MapSizeRequest() {
     }
 
