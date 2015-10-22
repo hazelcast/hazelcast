@@ -535,41 +535,34 @@ public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testEvictionLFU2() {
-        try {
-            final int k = 2;
-            final int size = 10000;
-            final String mapName = randomMapName("testEvictionLFU2");
+        final int size = 10000;
+        final String mapName = randomMapName("testEvictionLFU2");
 
-            Config cfg = getConfig();
-            cfg.setProperty(GroupProperty.PARTITION_COUNT, "1");
-            MapConfig mc = cfg.getMapConfig(mapName);
-            mc.setEvictionPolicy(EvictionPolicy.LFU);
-            mc.setEvictionPercentage(90);
-            MaxSizeConfig msc = new MaxSizeConfig();
-            msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
-            msc.setSize(size);
-            mc.setMaxSizeConfig(msc);
+        Config cfg = getConfig();
+        cfg.setProperty(GroupProperty.PARTITION_COUNT, "1");
+        MapConfig mc = cfg.getMapConfig(mapName);
+        mc.setEvictionPolicy(EvictionPolicy.LFU);
+        mc.setEvictionPercentage(90);
+        MaxSizeConfig msc = new MaxSizeConfig();
+        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
+        msc.setSize(size);
+        mc.setMaxSizeConfig(msc);
 
-            TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
-            final HazelcastInstance[] instances = factory.newInstances(cfg);
-            IMap<Object, Object> map = instances[0].getMap(mapName);
-            for (int i = 0; i < size; i++) {
-                map.put(i, i);
-                if (i < 100 || i >= size - 100) {
-                    map.get(i);
-                }
+        HazelcastInstance node = createHazelcastInstance();
+        IMap<Object, Object> map = node.getMap(mapName);
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+            if (i < 100 || i >= size - 100) {
+                map.get(i);
             }
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 100; j++) {
-                    assertNotNull(map.get(j));
-                }
-                for (int j = size - 100; j < size; j++) {
-                    assertNotNull(map.get(j));
-                }
-                Thread.sleep(1000);
+        }
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 100; j++) {
+                assertNotNull(map.get(j));
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            for (int j = size - 100; j < size; j++) {
+                assertNotNull(map.get(j));
+            }
         }
     }
 
