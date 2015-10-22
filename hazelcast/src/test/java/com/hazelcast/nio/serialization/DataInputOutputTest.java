@@ -34,12 +34,12 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
 import static com.hazelcast.nio.serialization.SerializationConcurrencyTest.Address;
 import static com.hazelcast.nio.serialization.SerializationConcurrencyTest.Person;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static com.hazelcast.nio.serialization.SerializationServiceUtil.createObjectDataInputStream;
-import static com.hazelcast.nio.serialization.SerializationServiceUtil.createObjectDataOutputStream;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)

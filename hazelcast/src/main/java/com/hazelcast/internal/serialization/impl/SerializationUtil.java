@@ -27,6 +27,8 @@ import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.VersionedPortable;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Collections;
 import java.util.Set;
 
@@ -108,6 +110,14 @@ public final class SerializationUtil {
             }
         }
         return version;
+    }
+
+    public static ObjectDataOutputStream createObjectDataOutputStream(OutputStream out, SerializationService ss) {
+        return new ObjectDataOutputStream(out, ss);
+    }
+
+    public static ObjectDataInputStream createObjectDataInputStream(InputStream in, SerializationService ss) {
+        return new ObjectDataInputStream(in, ss);
     }
 
 }
