@@ -102,7 +102,7 @@ public class MapReduceLiteMemberTest {
                 .testMapReduceJobSubmissionWithNoDataNode(client);
 
         try {
-            future.get(30, TimeUnit.SECONDS);
+            future.get(120, TimeUnit.SECONDS);
             fail("Map-reduce job should not be submitted when there is no data member");
         } catch (ExecutionException e) {
             assertTrue(e.getCause() instanceof IllegalStateException);
