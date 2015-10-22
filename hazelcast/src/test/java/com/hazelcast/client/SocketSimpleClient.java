@@ -19,9 +19,9 @@ package com.hazelcast.client;
 import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.serialization.ObjectDataInputStream;
-import com.hazelcast.internal.serialization.ObjectDataOutputStream;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
+import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -32,8 +32,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 
-import static com.hazelcast.nio.serialization.SerializationServiceUtil.createObjectDataInputStream;
-import static com.hazelcast.nio.serialization.SerializationServiceUtil.createObjectDataOutputStream;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
 
 /**
  * @author ali 5/14/13
