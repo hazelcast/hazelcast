@@ -199,72 +199,63 @@ public class InvalidConfigurationTest {
     @Test
     public void testWhenInvalidTcpIpConfiguration() {
         expectInvalid("Duplicate required-member definition found in XML configuration.");
-        String xml =
-                "<hazelcast  xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
-                    "<network\n>" +
-                        "<join>\n" +
-                            "<tcp-ip enabled=\"true\">\n" +
-                                "<required-member>127.0.0.1</required-member>\n" +
-                                "<required-member>128.0.0.1</required-member>\n" +
-                            "</tcp-ip>\n" +
-                        "</join>\n" +
-                    "</network>\n" +
-                "</hazelcast>\n";
-        buildConfig(xml);
+        buildConfig(HAZELCAST_START_TAG +
+            "<network\n>" +
+                "<join>\n" +
+                    "<tcp-ip enabled=\"true\">\n" +
+                        "<required-member>127.0.0.1</required-member>\n" +
+                        "<required-member>128.0.0.1</required-member>\n" +
+                    "</tcp-ip>\n" +
+                "</join>\n" +
+            "</network>\n" +
+        "</hazelcast>\n");
     }
 
     @Test
     public void invalidConfigurationTest_WhenOrderIsDifferent() {
-        String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
-                        "<list name=\"default\">\n" +
-                            "<statistics-enabled>false</statistics-enabled>\n" +
-                            "<max-size>0</max-size>\n" +
-                            "<backup-count>1</backup-count>\n" +
-                            "<async-backup-count>0</async-backup-count>\n" +
-                        "</list>\n" +
-                "</hazelcast>\n";
-        buildConfig(xml);
-        String xml2 =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
-                        "<list name=\"default\">\n" +
-                            "<backup-count>1</backup-count>\n" +
-                            "<async-backup-count>0</async-backup-count>\n" +
-                            "<statistics-enabled>false</statistics-enabled>\n" +
-                            "<max-size>0</max-size>\n" +
-                        "</list>\n" +
-                "</hazelcast>\n";
-        buildConfig(xml2);
+        buildConfig(HAZELCAST_START_TAG +
+                "<list name=\"default\">\n" +
+                "<statistics-enabled>false</statistics-enabled>\n" +
+                "<max-size>0</max-size>\n" +
+                "<backup-count>1</backup-count>\n" +
+                "<async-backup-count>0</async-backup-count>\n" +
+                "</list>\n" +
+                "</hazelcast>\n");
+        buildConfig(HAZELCAST_START_TAG +
+                "<list name=\"default\">\n" +
+                    "<backup-count>1</backup-count>\n" +
+                    "<async-backup-count>0</async-backup-count>\n" +
+                    "<statistics-enabled>false</statistics-enabled>\n" +
+                    "<max-size>0</max-size>\n" +
+                "</list>\n" +
+        "</hazelcast>\n");
     }
 
     @Test
     public void testWhenDoctypeAddedToXml() {
-        expectInvalid("DOCTYPE is disallowed when the feature " +
-                "\"http://apache.org/xml/features/disallow-doctype-decl\" set to true.");
-        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<!DOCTYPE data [\n" +
-                "<!ENTITY e1 \"0123456789\" > ] >" +
-                "<hazelcast></hazelcast>";
-        buildConfig(xml);
+//        expectInvalid("DOCTYPE is disallowed when the feature " +
+//                "\"http://apache.org/xml/features/disallow-doctype-decl\" set to true.");
+        rule.expect(InvalidConfigurationException.class);
+        buildConfig("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<!DOCTYPE hazelcast [ <!ENTITY e1 \"0123456789\"> ] >\n" +
+                HAZELCAST_START_TAG + "</hazelcast>");
     }
-    
+
     @Test
     public void testWanConfigSnapshotEnabledForWrongPublisher() {
-        String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
-                        "<wan-replication name=\"my-wan-cluster\" snapshot-enabled=\"true\">\n" +
-                        "    <target-cluster group-name=\"test-cluster-1\" group-password=\"test-pass\">\n" +
-                        "       <replication-impl>com.hazelcast.wan.impl.WanNoDelayReplication</replication-impl>\n" +
-                        "       <end-points>\n" +
-                        "          <address>20.30.40.50:5701</address>\n" +
-                        "          <address>20.30.40.50:5702</address>\n" +
-                        "       </end-points>\n" +
-                        "    </target-cluster>\n" +
-                        "</wan-replication>\n" +
-                        "</hazelcast>";
         expectInvalid(
                 "snapshot-enabled property only can be set to true when used with Enterprise Wan Batch Replication");
-        buildConfig(xml);
+        buildConfig(HAZELCAST_START_TAG +
+                "<wan-replication name=\"my-wan-cluster\" snapshot-enabled=\"true\">\n" +
+                "    <target-cluster group-name=\"test-cluster-1\" group-password=\"test-pass\">\n" +
+                "       <replication-impl>com.hazelcast.wan.impl.WanNoDelayReplication</replication-impl>\n" +
+                "       <end-points>\n" +
+                "          <address>20.30.40.50:5701</address>\n" +
+                "          <address>20.30.40.50:5702</address>\n" +
+                "       </end-points>\n" +
+                "    </target-cluster>\n" +
+                "</wan-replication>\n" +
+                "</hazelcast>");
     }
 
     public void testWhenInvalid_CacheBackupCount() {
