@@ -24,9 +24,9 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.storage.DataRef;
-import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.memory.DefaultMemoryStats;
@@ -34,15 +34,13 @@ import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.tcp.DefaultSocketChannelWrapperFactory;
-import com.hazelcast.nio.tcp.MemberWriteHandler;
 import com.hazelcast.nio.tcp.MemberReadHandler;
-import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
+import com.hazelcast.nio.tcp.MemberWriteHandler;
 import com.hazelcast.nio.tcp.ReadHandler;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.NodeEngine;
@@ -102,11 +100,6 @@ public class DefaultNodeExtension implements NodeExtension {
     public SecurityContext getSecurityContext() {
         logger.warning("Security features are only available on Hazelcast Enterprise!");
         return null;
-    }
-
-    @Override
-    public Storage<DataRef> getNativeDataStorage() {
-        throw new UnsupportedOperationException("Native memory feature is only available on Hazelcast Enterprise!");
     }
 
     public SerializationService createSerializationService() {

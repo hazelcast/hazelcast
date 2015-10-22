@@ -19,8 +19,6 @@ package com.hazelcast.instance;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.storage.DataRef;
-import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -71,12 +69,6 @@ public interface NodeExtension {
      * @return security context
      */
     SecurityContext getSecurityContext();
-
-    /**
-     * @deprecated
-     */
-    @Deprecated
-    Storage<DataRef> getNativeDataStorage();
 
     /**
      * Creates a service which is an implementation of given type parameter.

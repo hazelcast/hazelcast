@@ -356,13 +356,6 @@ public enum GroupProperty implements HazelcastProperty {
 
     LOCK_MAX_LEASE_TIME_SECONDS("hazelcast.lock.max.lease.time.seconds", Long.MAX_VALUE, SECONDS),
 
-    // OLD ELASTIC MEMORY PROPS
-    ELASTIC_MEMORY_ENABLED("hazelcast.elastic.memory.enabled", false),
-    ELASTIC_MEMORY_TOTAL_SIZE("hazelcast.elastic.memory.total.size", "128M"),
-    ELASTIC_MEMORY_CHUNK_SIZE("hazelcast.elastic.memory.chunk.size", "1K"),
-    ELASTIC_MEMORY_SHARED_STORAGE("hazelcast.elastic.memory.shared.storage", false),
-    ELASTIC_MEMORY_UNSAFE_ENABLED("hazelcast.elastic.memory.unsafe.enabled", false),
-
     ENTERPRISE_LICENSE_KEY("hazelcast.enterprise.license.key"),
 
     /**
