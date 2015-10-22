@@ -283,8 +283,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         Iterator<Record> iterator = container.getRecordStore(name).loadAwareIterator(getNow(), false);
 
         // we recycle this entry to prevent litter.
-        // todo: extractors is not set correctly.
-        QueryEntry entry = new QueryEntry(serializationService, Extractors.empty());
+        QueryEntry predicateEntry = new QueryEntry(serializationService, mapServiceContext.getExtractors(name));
 
         while (iterator.hasNext()) {
             Record record = iterator.next();
@@ -294,10 +293,10 @@ public class MapQueryEngineImpl implements MapQueryEngine {
                 continue;
             }
 
-            entry.init(key, value);
+            predicateEntry.init(key, value);
 
-            if (predicate.apply(entry)) {
-                queryResult.addFrom(entry);
+            if (predicate.apply(predicateEntry)) {
+                queryResult.addFrom(predicateEntry);
             }
         }
     }

@@ -18,7 +18,6 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.QueryException;
 
 /**
  * Entry of the Query.
@@ -77,11 +76,6 @@ public class QueryEntry extends QueryableEntry {
     @Override
     public Data getValueData() {
         return serializationService.toData(value);
-    }
-
-    @Override
-    public Comparable getAttribute(String attributeName) throws QueryException {
-        return QueryEntryUtils.extractAttribute(attributeName, key, value, serializationService);
     }
 
     @Override
