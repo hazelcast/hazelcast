@@ -21,6 +21,7 @@ import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationEvent.MigrationStatus;
@@ -303,6 +304,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     public Address getPartitionOwnerOrWait(int partitionId) {
         Address owner;
         while ((owner = getPartitionOwner(partitionId)) == null) {
+            if (!nodeEngine.isRunning()) {
+                throw new HazelcastInstanceNotActiveException();
+            }
+
             ClusterState clusterState = node.getClusterService().getClusterState();
             if (clusterState != ClusterState.ACTIVE) {
                 throw new IllegalStateException("Partitions can't be assigned since cluster-state: " + clusterState);
