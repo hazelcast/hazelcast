@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster;
+package com.hazelcast.cluster.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
@@ -35,7 +36,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 
-import static com.hazelcast.cluster.AdvancedClusterStateTest.changeClusterStateEventually;
+import static com.hazelcast.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;

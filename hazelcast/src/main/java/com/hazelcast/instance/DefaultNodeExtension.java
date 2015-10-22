@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.MessageTaskFactoryImpl;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.PartitioningStrategy;
@@ -50,6 +51,9 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationService;
 import com.hazelcast.wan.impl.WanReplicationServiceImpl;
+
+import java.util.Collections;
+import java.util.Map;
 
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
 
@@ -84,6 +88,10 @@ public class DefaultNodeExtension implements NodeExtension {
                 + " (" + build + ") starting at " + node.getThisAddress());
         systemLogger.info("Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.");
         systemLogger.info("Configured Hazelcast Serialization version:" + buildInfo.getSerializationVersion());
+    }
+
+    @Override
+    public void beforeJoin() {
     }
 
     @Override
@@ -150,10 +158,15 @@ public class DefaultNodeExtension implements NodeExtension {
         throw new IllegalArgumentException("Unknown service class: " + clazz);
     }
 
-    <T> T createMapService() {
+    private <T> T createMapService() {
         ConstructorFunction<NodeEngine, MapService> constructor = getDefaultMapServiceConstructor();
         NodeEngineImpl nodeEngine = node.getNodeEngine();
         return (T) constructor.createNew(nodeEngine);
+    }
+
+    @Override
+    public Map<String, Object> createExtensionServices() {
+        return Collections.emptyMap();
     }
 
     @Override
@@ -179,7 +192,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public MessageTaskFactory createMessageTaskFactory(Node node) {
+    public MessageTaskFactory createMessageTaskFactory() {
         return new MessageTaskFactoryImpl(node);
     }
 
@@ -197,12 +210,19 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void destroy() {
+    public void beforeShutdown() {
+    }
+
+    @Override
+    public void shutdown() {
         logger.info("Destroying node NodeExtension.");
     }
 
     @Override
-    public void beforeJoin() {
+    public void validateJoinRequest() {
     }
 
+    @Override
+    public void onClusterStateChange(ClusterState newState) {
+    }
 }

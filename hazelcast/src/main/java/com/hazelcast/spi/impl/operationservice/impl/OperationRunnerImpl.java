@@ -192,7 +192,7 @@ class OperationRunnerImpl extends OperationRunner {
 
         // Cluster is in passive state. There is no need to retry.
         if (nodeEngine.getClusterService().getClusterState() == ClusterState.PASSIVE) {
-            throw new IllegalStateException("Cluster is in " + ClusterState.PASSIVE + " state!");
+            throw new IllegalStateException("Cluster is in " + ClusterState.PASSIVE + " state! Operation: " + op);
         }
 
         // Operation has no partition id. So it is sent to this node in purpose.

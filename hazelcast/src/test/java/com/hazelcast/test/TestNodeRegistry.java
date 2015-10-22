@@ -24,6 +24,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
+import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.instance.NodeExtensionFactory;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -126,6 +128,11 @@ public final class TestNodeRegistry {
             this.nodes = nodes;
             this.thisAddress = thisAddress;
             this.joinerLock = joinerLock;
+        }
+
+        @Override
+        public NodeExtension createNodeExtension(Node node) {
+            return NodeExtensionFactory.create(node);
         }
 
         public AddressPicker createAddressPicker(Node node) {

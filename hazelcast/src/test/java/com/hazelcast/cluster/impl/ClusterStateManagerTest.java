@@ -18,6 +18,8 @@ package com.hazelcast.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.test.AssertTask;
@@ -44,7 +46,6 @@ import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -61,12 +62,17 @@ public class ClusterStateManagerTest {
     private final InternalPartitionService partitionService = mock(InternalPartitionService.class);
     private final ClusterServiceImpl clusterService = mock(ClusterServiceImpl.class);
     private final Lock lock = mock(Lock.class);
-    private final ClusterStateManager clusterStateManager = new ClusterStateManager(node, lock);
+
+    private ClusterStateManager clusterStateManager;
 
     @Before
     public void setup() {
         when(node.getPartitionService()).thenReturn(partitionService);
         when(node.getClusterService()).thenReturn(clusterService);
+        when(node.getNodeExtension()).thenReturn(mock(NodeExtension.class));
+        when(node.getLogger(ClusterStateManager.class)).thenReturn(mock(ILogger.class));
+
+        clusterStateManager = new ClusterStateManager(node, lock);
     }
 
     @Test
@@ -96,11 +102,8 @@ public class ClusterStateManagerTest {
     public void test_initialClusterState_rejected() {
         clusterStateManager.initialClusterState(FROZEN);
 
-        try {
-            clusterStateManager.initialClusterState(ACTIVE);
-            fail("Second 'initialClusterState' should fail!");
-        } catch (IllegalStateException expected) {
-        }
+        clusterStateManager.initialClusterState(ACTIVE);
+        assertEquals(FROZEN, clusterStateManager.getState());
     }
 
     @Test(expected = NullPointerException.class)

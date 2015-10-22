@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.Member;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -68,6 +69,16 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         }
 
         final ClusterServiceImpl clusterService = getService();
+        final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
+
+        if (nodeEngine.getNode().joined()) {
+            ILogger logger = getLogger();
+            if (logger.isFinestEnabled()) {
+                logger.finest("Node is already joined... No need to finalize join...");
+            }
+            return;
+        }
+
         clusterService.initialClusterState(clusterState);
         clusterService.setClusterId(clusterId);
         clusterService.getClusterClock().setClusterStartTime(clusterStartTime);
@@ -76,15 +87,8 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
 
         // Post join operations must be lock free; means no locks at all;
         // no partition locks, no key-based locks, no service level locks!
-        final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
         final Operation[] postJoinOperations = nodeEngine.getPostJoinOperations();
         final OperationService operationService = nodeEngine.getOperationService();
-
-        if (clusterState == ClusterState.PASSIVE) {
-            nodeEngine.getNode().changeNodeStateToPassive();
-        } else {
-            nodeEngine.getNode().changeNodeStateToActive();
-        }
 
         if (postJoinOperations != null && postJoinOperations.length > 0) {
             final Collection<Member> members = clusterService.getMembers();

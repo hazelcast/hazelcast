@@ -24,8 +24,12 @@ import java.util.Locale;
  */
 public final class StringUtil {
 
+    /**
+     * UTF-8 Charset
+     */
+    public static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
+
     private static final Locale LOCALE_INTERNAL = Locale.ENGLISH;
-    private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
     private StringUtil() {
     }

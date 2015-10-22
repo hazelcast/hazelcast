@@ -143,6 +143,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private final MemberGroupFactory memberGroupFactory;
     private final PartitionServiceProxy proxy;
     private final Lock lock = new ReentrantLock();
+    private final InternalPartitionListener partitionListener;
 
     @Probe
     private final AtomicInteger stateVersion = new AtomicInteger();
@@ -182,7 +183,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         partitionStateSyncTimeoutHandler =
                 logAllExceptions(logger, EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT, Level.FINEST);
         this.partitions = new InternalPartitionImpl[partitionCount];
-        PartitionListener partitionListener = new LocalPartitionListener(this, node.getThisAddress());
+        partitionListener = new InternalPartitionListener(this, node.getThisAddress());
         for (int i = 0; i < partitionCount; i++) {
             this.partitions[i] = new InternalPartitionImpl(i, partitionListener, node.getThisAddress());
         }
@@ -406,13 +407,26 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return false;
         }
 
-        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            InternalPartitionImpl partition = partitions[partitionId];
-            Address[] replicas = newState[partitionId];
-            partition.setReplicaAddresses(replicas);
-        }
-        initialized = true;
+        setInitialState(newState);
         return true;
+    }
+
+    public void setInitialState(Address[][] newState) {
+        lock.lock();
+        try {
+            if (initialized) {
+                throw new IllegalStateException("Partition table is already initialized!");
+            }
+            logger.finest("Setting cluster partition table ...");
+            for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+                InternalPartitionImpl partition = partitions[partitionId];
+                Address[] replicas = newState[partitionId];
+                partition.setReplicaAddresses(replicas);
+            }
+            initialized = true;
+        } finally {
+            lock.unlock();
+        }
     }
 
     private void updateMemberGroupsSize() {
@@ -1675,6 +1689,16 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         partitionEventListener.onEvent(partitionEvent);
     }
 
+    public void addPartitionListener(PartitionListener listener) {
+        lock.lock();
+        try {
+            PartitionListenerNode head = partitionListener.listenerHead;
+            partitionListener.listenerHead = new PartitionListenerNode(listener, head);
+        } finally {
+            lock.unlock();
+        }
+    }
+
     @Override
     public String toString() {
         return "PartitionManager[" + stateVersion + "] {\n\n" + "migrationQ: " + migrationQueue.size() + "\n}";
@@ -2077,11 +2101,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
-    private static final class LocalPartitionListener implements PartitionListener {
+    private static final class InternalPartitionListener implements PartitionListener {
         final Address thisAddress;
         final InternalPartitionServiceImpl partitionService;
+        volatile PartitionListenerNode listenerHead;
 
-        private LocalPartitionListener(InternalPartitionServiceImpl partitionService, Address thisAddress) {
+        private InternalPartitionListener(InternalPartitionServiceImpl partitionService, Address thisAddress) {
             this.thisAddress = thisAddress;
             this.partitionService = partitionService;
         }
@@ -2119,6 +2144,20 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
             if (node.isMaster()) {
                 partitionService.stateVersion.incrementAndGet();
+            }
+
+            callListeners(event);
+        }
+
+        private void callListeners(PartitionReplicaChangeEvent event) {
+            PartitionListenerNode listenerNode = listenerHead;
+            while (listenerNode != null) {
+                try {
+                    listenerNode.listener.replicaChanged(event);
+                } catch (Throwable e) {
+                    partitionService.logger.warning("While calling PartitionListener: " + listenerNode.listener, e);
+                }
+                listenerNode = listenerNode.next;
             }
         }
 
@@ -2194,6 +2233,16 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     partitionService.triggerPartitionReplicaSync(partitionId, currentReplicaIndex, 0L);
                 }
             }
+        }
+    }
+
+    private static final class PartitionListenerNode {
+        final PartitionListener listener;
+        final PartitionListenerNode next;
+
+        PartitionListenerNode(PartitionListener listener, PartitionListenerNode next) {
+            this.listener = listener;
+            this.next = next;
         }
     }
 }
