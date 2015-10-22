@@ -90,11 +90,11 @@ public class MapReduceLiteMemberTest {
         com.hazelcast.mapreduce.MapReduceLiteMemberTest.testMapperReducerCollator(client);
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testMapReduceJobSubmissionWithNoDataNode()
             throws ExecutionException, InterruptedException, TimeoutException {
-        instance.shutdown();
-        instance2.shutdown();
+        instance.getLifecycleService().terminate();
+        instance2.getLifecycleService().terminate();
         assertClusterSizeEventually(2, lite);
         assertClusterSizeEventually(2, lite2);
 
