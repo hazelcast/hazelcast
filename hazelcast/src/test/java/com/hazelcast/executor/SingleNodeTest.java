@@ -24,11 +24,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,6 +38,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -73,7 +72,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void submitNullTask_expectFailure() throws Exception {
-        executor.submit((Callable<?>)null);
+        executor.submit((Callable<?>) null);
     }
 
     @Test
@@ -96,32 +95,34 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
 
     @Test
     public void executionCallback_notifiedOnSuccess() throws Exception {
-        Callable<String> task = new BasicTestCallable();
+        final Callable<String> task = new BasicTestCallable();
         final CountDownLatch latch = new CountDownLatch(1);
         final ExecutionCallback<String> executionCallback = new ExecutionCallback<String>() {
             public void onResponse(String response) {
                 latch.countDown();
             }
-            public void onFailure(Throwable t) { }
+
+            public void onFailure(Throwable t) {
+            }
         };
         executor.submit(task, executionCallback);
-        assertTrue(latch.await(2, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
     }
 
     @Test
     public void executionCallback_notifiedOnFailure() throws Exception {
+        final FailingTestTask task = new FailingTestTask();
         final CountDownLatch latch = new CountDownLatch(1);
-        executor.submit(new FailingTestTask(), new ExecutionCallback<String>() {
-            @Override
+        final ExecutionCallback<String> executionCallback = new ExecutionCallback<String>() {
             public void onResponse(String response) {
             }
 
-            @Override
             public void onFailure(Throwable t) {
                 latch.countDown();
             }
-        });
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        };
+        executor.submit(task, executionCallback);
+        assertOpenEventually(latch);
     }
 
     @Test(expected = CancellationException.class)
@@ -197,7 +198,9 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
             public void onResponse(Member response) {
                 qResponse.offer(response);
             }
-            public void onFailure(Throwable t) { }
+
+            public void onFailure(Throwable t) {
+            }
         });
         assertNotNull(qResponse.poll(10, TimeUnit.SECONDS));
     }
@@ -259,7 +262,8 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
                 try {
                     futures.get(i).get();
                     fail();
-                } catch (CancellationException expected) { }
+                } catch (CancellationException expected) {
+                }
             }
         }
     }
@@ -359,7 +363,9 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
 
     static class LatchRunnable implements Runnable, Serializable {
         static CountDownLatch latch;
-        @Override public void run() {
+
+        @Override
+        public void run() {
             latch.countDown();
         }
     }
