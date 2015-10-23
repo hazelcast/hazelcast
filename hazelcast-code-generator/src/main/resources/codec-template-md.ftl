@@ -9,7 +9,7 @@ is encoded as shown below:
 
 |Field|Type|Nullable|Description|
 |-----|----|---------|----------|
-|Length|int32|No|The length of the array. In this example, it is a value of n.|
+|Length|int32|No|The length of the array.|
 |Entry 1|provided data type|No|First entry of the array|
 |Entry 2|provided data type|No|Second entry of the array|
 |...|...|...|...|
@@ -30,7 +30,6 @@ is encoded as shown below:
 |Key|byte-array|Yes|Key of the cache data|
 |Value|byte-array|Yes|Value of the cache data|
 |Old Value|byte-array|Yes|Old value of the cache data if exists|
-|Value|byte-array|Yes|Value of the cache data|
 |isOldValueAvailable|boolean|No|True if old value exist|
 
 ### Distributed Object Info Data Type
@@ -66,6 +65,7 @@ is encoded as shown below:
 |------|-----|---------|------------|
 |Address|Address|No|Address of the member server|
 |Uuid|string|No|Unique user id of the member server|
+|isLiteMember|boolean|No|true if the server member is a liter server, false otherwise|
 |attribute 1 name|string|No|Name of the attribute 1|
 |attribute 1 value|string|No|Value of the attribute 1|
 |attribute 2 name|string|No|Name of the attribute 2|
@@ -80,7 +80,7 @@ is encoded as shown below:
 ### Query Cache Event Data Type
 | Field| Type| Nullable| Description|
 |------|-----|---------|------------|
-|Event Data|int64|No|The data for the cache event|
+|Sequence number|int64|No|The sequence number for the event|
 |Key|byte-array|Yes|The key for the event|
 |New Value|byte-array|Yes|The new value for the event|
 |Event type|int32|No|The type of the event|
@@ -98,7 +98,7 @@ is encoded as shown below:
 |------|-----|---------|------------|
 |Declaring Class|string|No|The name of the class|
 |Method Name|string|No|The name of the method|
-|File Name|string|Yes|The name of the class|
+|File Name|string|Yes|The name of the java source file|
 |Line Number|int32|No|The line number in the source code file|
 
 ## Error Message
