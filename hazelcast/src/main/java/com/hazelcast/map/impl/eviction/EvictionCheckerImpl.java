@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
@@ -43,7 +42,6 @@ import java.util.List;
 public class EvictionCheckerImpl implements EvictionChecker {
 
     protected static final int ONE_HUNDRED_PERCENT = 100;
-    protected static final int EVICTION_START_THRESHOLD_PERCENTAGE = 95;
     protected static final int ONE_KILOBYTE = 1024;
     protected static final int ONE_MEGABYTE = ONE_KILOBYTE * ONE_KILOBYTE;
 
@@ -96,7 +94,7 @@ public class EvictionCheckerImpl implements EvictionChecker {
     protected boolean checkPerNodeEviction(String mapName, MaxSizeConfig maxSizeConfig) {
         long nodeTotalSize = 0;
 
-        final double maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
+        final double maxSize = maxSizeConfig.getSize();
         final List<Integer> partitionIds = findPartitionIds();
         for (int partitionId : partitionIds) {
             final PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
@@ -112,7 +110,7 @@ public class EvictionCheckerImpl implements EvictionChecker {
     }
 
     protected boolean checkPerPartitionEviction(String mapName, MaxSizeConfig maxSizeConfig, int partitionId) {
-        final double maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
+        final double maxSize = maxSizeConfig.getSize();
         final PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
         if (container == null) {
             return false;
@@ -126,13 +124,13 @@ public class EvictionCheckerImpl implements EvictionChecker {
         if (usedHeapSize == -1L) {
             return false;
         }
-        final double maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
+        final double maxSize = maxSizeConfig.getSize();
         return maxSize < (1D * usedHeapSize / ONE_MEGABYTE);
     }
 
     protected boolean checkFreeHeapSizeEviction(MaxSizeConfig maxSizeConfig) {
         final long currentFreeHeapSize = getAvailableMemory();
-        final double minFreeHeapSize = getApproximateMaxSize(maxSizeConfig.getSize());
+        final double minFreeHeapSize = maxSizeConfig.getSize();
         return minFreeHeapSize > (1D * currentFreeHeapSize / ONE_MEGABYTE);
     }
 
@@ -141,14 +139,14 @@ public class EvictionCheckerImpl implements EvictionChecker {
         if (usedHeapSize == -1L) {
             return false;
         }
-        final double maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
+        final double maxSize = maxSizeConfig.getSize();
         final long total = getTotalMemory();
         return maxSize < (1D * ONE_HUNDRED_PERCENT * usedHeapSize / total);
     }
 
     protected boolean checkFreeHeapPercentageEviction(MaxSizeConfig maxSizeConfig) {
         final long currentFreeHeapSize = getAvailableMemory();
-        final double freeHeapPercentage = getApproximateMaxSize(maxSizeConfig.getSize());
+        final double freeHeapPercentage = maxSizeConfig.getSize();
         final long total = getTotalMemory();
         return freeHeapPercentage > (1D * ONE_HUNDRED_PERCENT * currentFreeHeapSize / total);
     }
@@ -202,27 +200,6 @@ public class EvictionCheckerImpl implements EvictionChecker {
             return 0L;
         }
         return existingRecordStore.getHeapCost();
-    }
-
-    /**
-     * used when deciding evictable or not.
-     */
-    protected static double getApproximateMaxSize(int maxSizeFromConfig) {
-        // because not to exceed the max size much we start eviction early.
-        // so decrease the max size with ratio .95 below
-        return 1D * maxSizeFromConfig * EVICTION_START_THRESHOLD_PERCENTAGE / ONE_HUNDRED_PERCENT;
-    }
-
-    /**
-     * Get max size setting form config for given policy
-     *
-     * @return max size or -1 if policy is different or not set
-     */
-    public static double getApproximateMaxSize(MaxSizeConfig maxSizeConfig, MaxSizePolicy policy) {
-        if (maxSizeConfig.getMaxSizePolicy() == policy) {
-            return getApproximateMaxSize(maxSizeConfig.getSize());
-        }
-        return -1D;
     }
 
     protected List<Integer> findPartitionIds() {
