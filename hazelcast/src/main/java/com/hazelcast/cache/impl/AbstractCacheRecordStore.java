@@ -814,7 +814,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return doPutRecord(key, record, SOURCE_NOT_AVAILABLE);
     }
 
-    protected final R doPutRecord(Data key, R record, String source) {
+    protected R doPutRecord(Data key, R record, String source) {
         R oldRecord = records.put(key, record);
         if (oldRecord != null) {
             invalidateEntry(key, source);
