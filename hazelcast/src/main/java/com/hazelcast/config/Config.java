@@ -116,6 +116,8 @@ public class Config {
 
     private NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig();
 
+    private HotRestartConfig hotRestartConfig = new HotRestartConfig();
+
     private String licenseKey;
 
     private boolean liteMember;
@@ -991,6 +993,14 @@ public class Config {
     public Config setPartitionGroupConfig(PartitionGroupConfig partitionGroupConfig) {
         this.partitionGroupConfig = partitionGroupConfig;
         return this;
+    }
+
+    public HotRestartConfig getHotRestartConfig() {
+        return hotRestartConfig;
+    }
+
+    public void setHotRestartConfig(HotRestartConfig hrConfig) {
+        this.hotRestartConfig = hrConfig;
     }
 
     public ManagedContext getManagedContext() {
