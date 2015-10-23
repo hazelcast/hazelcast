@@ -28,8 +28,6 @@ import com.hazelcast.map.impl.MapKeyLoader;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
-import com.hazelcast.map.impl.mapstore.MapStoreContext;
-import com.hazelcast.map.impl.mapstore.MapStoreManager;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.merge.MapMergePolicy;
@@ -68,8 +66,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     protected final ILogger logger;
     protected final LockStore lockStore;
-    protected final MapDataStore<Data, Object> mapDataStore;
-    protected final MapStoreContext mapStoreContext;
     protected final RecordStoreLoader recordStoreLoader;
     protected final MapKeyLoader keyLoader;
     // loadingFutures are modified by partition threads and could be accessed by query threads
@@ -82,9 +78,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.logger = logger;
         this.keyLoader = keyLoader;
         this.lockStore = createLockStore();
-        this.mapStoreContext = mapContainer.getMapStoreContext();
-        MapStoreManager mapStoreManager = mapStoreContext.getMapStoreManager();
-        this.mapDataStore = mapStoreManager.getMapDataStore(partitionId);
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
     }
 
@@ -197,7 +190,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void putRecord(Data key, Record record) {
         markRecordStoreExpirable(record.getTtl());
-
         storage.put(key, record);
     }
 
@@ -205,7 +197,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public Record putBackup(Data key, Object value) {
         return putBackup(key, value, DEFAULT_TTL, false);
     }
-
 
     @Override
     public Record putBackup(Data key, Object value, long ttl, boolean putTransient) {
@@ -445,7 +436,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Iterator<Record> iterator = recordsToRemove.iterator();
         while (iterator.hasNext()) {
             Record record = iterator.next();
-            deleteRecord(record);
+            storage.removeRecord(record);
             iterator.remove();
         }
         return removalSize;
@@ -484,29 +475,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Object evict(Data key, boolean backup) {
-        return evictInternal(key, backup);
-    }
-
-    @Override
-    public Object evict(Data key, Record removedRecord, boolean backup) {
-        return evictInternal(key, removedRecord, backup);
-    }
-
-    @Override
-    Object evictInternal(Data key, boolean backup) {
-        return evictInternal(key, null, backup);
-    }
-
-
-    @Override
-    Object evictInternal(Data key, Record removedRecord, boolean backup) {
-        Record record = removedRecord == null ? storage.get(key) : removedRecord;
+        Record record = storage.get(key);
         Object value = null;
         if (record != null) {
             value = record.getValue();
             mapDataStore.flush(key, value, backup);
             removeIndex(record);
-            deleteRecord(record);
+            storage.removeRecord(record);
             if (!backup) {
                 mapServiceContext.interceptRemove(name, value);
             }
@@ -533,7 +508,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             return;
         }
-        deleteRecord(record);
+        storage.removeRecord(record);
         mapDataStore.removeBackup(key, now);
     }
 
@@ -576,7 +551,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             removeIndex(record);
             mapDataStore.remove(key, now);
             onStore(record);
-            deleteRecord(record);
+            storage.removeRecord(record);
             removed = true;
         }
         return removed;
@@ -773,7 +748,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 removeIndex(record);
                 mapDataStore.remove(key, now);
                 onStore(record);
-                deleteRecord(record);
+                storage.removeRecord(record);
                 return true;
             }
             if (newValue == mergingEntry.getValue()) {
@@ -785,7 +760,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
             newValue = mapDataStore.add(key, newValue, now);
             onStore(record);
-            recordFactory.setValue(record, newValue);
+            storage.updateRecordValue(key, record, newValue);
         }
         saveIndex(record, oldValue);
         return newValue != null;
@@ -845,7 +820,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             value = mapServiceContext.interceptPut(name, null, value);
             record = createRecord(value, ttl, now);
             storage.put(key, record);
-
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);
@@ -884,12 +858,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
         saveIndex(record, oldValue);
         return oldValue;
-    }
-
-    @Override
-    public boolean tryPut(Data key, Object value, long ttl) {
-        putInternal(key, value, ttl, false);
-        return true;
     }
 
     @Override
@@ -942,7 +910,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             mapDataStore.remove(key, now);
             onStore(record);
         }
-        deleteRecord(record);
+        storage.removeRecord(record);
         return oldValue;
     }
 
@@ -958,7 +926,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             return null;
         }
-        return getOrNullIfExpired(record, now, backup);
+        record = getOrNullIfExpired(record, now, backup);
+        if (record != null && record.getValue() == null) {
+            record = null;
+        }
+        return record;
     }
 
     protected void onStore(Record record) {

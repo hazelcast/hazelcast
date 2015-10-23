@@ -420,6 +420,15 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+                                <xs:attribute name="hot-restart-enabled" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            This boolean parameter enables hot-restart feature when set as
+                                            `true`.
+                                            Only available on Hazelcast Enterprise.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
 
                             </xs:complexType>
                         </xs:element>
