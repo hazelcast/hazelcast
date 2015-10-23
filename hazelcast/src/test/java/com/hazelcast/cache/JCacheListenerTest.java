@@ -59,8 +59,13 @@ public class JCacheListenerTest extends HazelcastTestSupport {
 
     protected CachingProvider getCachingProvider() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        factory.newHazelcastInstance();
-        hazelcastInstance = factory.newHazelcastInstance();
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+
+        warmUpPartitions(hz1, hz2);
+        waitAllForSafeState(hz1, hz2);
+
+        hazelcastInstance = hz1;
 
         return HazelcastServerCachingProvider.createCachingProvider(hazelcastInstance);
     }
