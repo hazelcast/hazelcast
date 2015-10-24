@@ -54,12 +54,13 @@ public final class HazelcastKubernetesDiscoveryStrategy implements DiscoveryStra
         if (serviceDns != null) {
             endpointResolver = new DnsEndpointResolver(logger, serviceDns, serviceDnsIpType);
         } else {
-            endpointResolver = new ServiceEndpointResolver(logger, serviceName, namespace);
+            endpointResolver = new ServiceEndpointResolver(node, logger, serviceName, namespace);
         }
         this.endpointResolver = endpointResolver;
     }
 
     public void start() {
+        endpointResolver.start();
     }
 
     public Iterable<DiscoveryNode> discoverNodes() {
@@ -97,6 +98,9 @@ public final class HazelcastKubernetesDiscoveryStrategy implements DiscoveryStra
         }
 
         abstract List<DiscoveryNode> resolve();
+
+        void start() {
+        }
 
         void destroy() {
         }
