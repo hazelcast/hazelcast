@@ -135,7 +135,6 @@ class MapServiceContextImpl implements MapServiceContext {
         return new NearCacheProvider(this, nodeEngine);
     }
 
-    // this method is overridden.
     PartitionContainer[] createPartitionContainers() {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         return new PartitionContainer[partitionCount];
@@ -164,7 +163,6 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public void initPartitionsContainers() {
         final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        final PartitionContainer[] partitionContainers = this.partitionContainers;
         for (int i = 0; i < partitionCount; i++) {
             partitionContainers[i] = new PartitionContainer(getService(), i);
         }

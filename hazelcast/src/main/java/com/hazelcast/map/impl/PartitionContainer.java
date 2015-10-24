@@ -133,7 +133,7 @@ public class PartitionContainer {
         }
     }
 
-    void clear() {
+    public void clear() {
         for (RecordStore recordStore : maps.values()) {
             recordStore.clearPartition();
         }
