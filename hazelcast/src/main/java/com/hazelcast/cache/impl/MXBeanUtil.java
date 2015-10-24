@@ -57,7 +57,7 @@ public final class MXBeanUtil {
         }
     }
 
-    static boolean isRegistered(String cacheManagerName, String name, boolean stats) {
+    public static boolean isRegistered(String cacheManagerName, String name, boolean stats) {
         Set<ObjectName> registeredObjectNames = null;
 
         ObjectName objectName = calculateObjectName(cacheManagerName, name, stats);

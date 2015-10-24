@@ -16,7 +16,7 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.nio.serialization.DataSerializable;
+import java.io.Serializable;
 
 /**
  * <p>
@@ -29,7 +29,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
  * (s)he should use {@link StorageTypeAwareCacheMergePolicy} which is sub-type of this interface.
  * </p>
  */
-public interface CacheMergePolicy extends DataSerializable {
+public interface CacheMergePolicy extends Serializable {
 
     /**
      * <p>
