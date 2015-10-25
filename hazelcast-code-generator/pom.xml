@@ -38,7 +38,7 @@
                     <perCoreThreadCount>true</perCoreThreadCount>
                     <parallel>methods</parallel -->
 
-                    <!-- the argLine variable is needed for jacoco-->
+                    <!-- the argLine variable is needed for JaCoco-->
                     <argLine>
                         -Xms128m -Xmx1G -XX:MaxPermSize=128M
                         -Dhazelcast.version.check.enabled=false
@@ -60,11 +60,11 @@
 
     <profiles>
         <profile>
-            <!-- This profile is needed to override configuration from the root pom.xml.
-
-                Otherwise a build of hazelcast-code-generation module is failing as the Surefire Maven plugin
-                cannot load com.hazelcast.test.annotation.ParallelTest classes
-                -->
+            <!--
+            This profile is needed to override configuration from the root pom.xml.
+            Otherwise a build of hazelcast-code-generation module is failing as the Surefire Maven plugin
+            cannot load com.hazelcast.test.annotation.ParallelTest classes
+            -->
             <id>parallelTest</id>
             <build>
                 <plugins>
@@ -126,7 +126,6 @@
                 </plugins>
             </build>
         </profile>
-
     </profiles>
 
     <dependencies>
@@ -136,10 +135,4 @@
             <version>2.3.23</version>
         </dependency>
     </dependencies>
-
-
-
-
-
-
 </project>

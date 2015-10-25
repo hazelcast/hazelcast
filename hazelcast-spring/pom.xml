@@ -30,19 +30,19 @@
     </parent>
 
     <properties>
-        <org.springframework.version>4.0.2.RELEASE</org.springframework.version>
-        <jsr250.api.version>1.0</jsr250.api.version>
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.basedir}</main.basedir>
+
+        <org.springframework.version>4.0.2.RELEASE</org.springframework.version>
+        <jsr250.api.version>1.0</jsr250.api.version>
     </properties>
 
     <build>
         <plugins>
-
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
-                <version>${animal.sniffer.plugin.version}</version>
+                <version>${maven.animal.sniffer.plugin.version}</version>
                 <configuration>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
@@ -127,6 +127,7 @@
             </plugin>
         </plugins>
     </build>
+
     <profiles>
         <profile>
             <id>hibernate-4</id>
@@ -134,18 +135,6 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <dependencies>
-                <dependency>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-context</artifactId>
-                    <version>${org.springframework.version}</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>javax.annotation</groupId>
-                    <artifactId>jsr250-api</artifactId>
-                    <version>${jsr250.api.version}</version>
-                    <scope>provided</scope>
-                </dependency>
                 <dependency>
                     <groupId>com.hazelcast</groupId>
                     <artifactId>hazelcast</artifactId>
@@ -157,13 +146,26 @@
                     <version>${project.parent.version}</version>
                     <optional>true</optional>
                 </dependency>
+                <dependency>
+                    <groupId>javax.annotation</groupId>
+                    <artifactId>jsr250-api</artifactId>
+                    <version>${jsr250.api.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-context</artifactId>
+                    <version>${org.springframework.version}</version>
+                    <scope>provided</scope>
+                </dependency>
 
                 <!--TEST DEPENDENCIES-->
                 <dependency>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-test</artifactId>
-                    <version>${org.springframework.version}</version>
+                    <groupId>com.hazelcast</groupId>
+                    <artifactId>hazelcast</artifactId>
                     <scope>test</scope>
+                    <version>${project.parent.version}</version>
+                    <classifier>tests</classifier>
                 </dependency>
                 <dependency>
                     <groupId>com.hazelcast</groupId>
@@ -173,21 +175,14 @@
                 </dependency>
                 <dependency>
                     <groupId>org.springframework</groupId>
-                    <artifactId>spring-tx</artifactId>
+                    <artifactId>spring-test</artifactId>
                     <version>${org.springframework.version}</version>
                     <scope>test</scope>
                 </dependency>
                 <dependency>
-                    <groupId>com.hazelcast</groupId>
-                    <artifactId>hazelcast</artifactId>
-                    <scope>test</scope>
-                    <version>${project.parent.version}</version>
-                    <classifier>tests</classifier>
-                </dependency>
-                <dependency>
-                    <groupId>org.hibernate</groupId>
-                    <artifactId>hibernate-core</artifactId>
-                    <version>4.3.8.Final</version>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-tx</artifactId>
+                    <version>${org.springframework.version}</version>
                     <scope>test</scope>
                 </dependency>
                 <dependency>
@@ -196,23 +191,18 @@
                     <version>${org.springframework.version}</version>
                     <scope>test</scope>
                 </dependency>
+                <dependency>
+                    <groupId>org.hibernate</groupId>
+                    <artifactId>hibernate-core</artifactId>
+                    <version>4.3.8.Final</version>
+                    <scope>test</scope>
+                </dependency>
             </dependencies>
         </profile>
+
         <profile>
             <id>hibernate-3</id>
             <dependencies>
-                <dependency>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-context</artifactId>
-                    <version>${org.springframework.version}</version>
-                    <scope>provided</scope>
-                </dependency>
-                <dependency>
-                    <groupId>javax.annotation</groupId>
-                    <artifactId>jsr250-api</artifactId>
-                    <version>${jsr250.api.version}</version>
-                    <scope>provided</scope>
-                </dependency>
                 <dependency>
                     <groupId>com.hazelcast</groupId>
                     <artifactId>hazelcast</artifactId>
@@ -224,24 +214,24 @@
                     <version>${project.parent.version}</version>
                     <optional>true</optional>
                 </dependency>
-
-                <!--TEST DEPENDENCIES-->
+                <dependency>
+                    <groupId>javax.annotation</groupId>
+                    <artifactId>jsr250-api</artifactId>
+                    <version>${jsr250.api.version}</version>
+                    <scope>provided</scope>
+                </dependency>
                 <dependency>
                     <groupId>org.springframework</groupId>
-                    <artifactId>spring-test</artifactId>
+                    <artifactId>spring-context</artifactId>
                     <version>${org.springframework.version}</version>
-                    <scope>test</scope>
+                    <scope>provided</scope>
                 </dependency>
+
+                <!--TEST DEPENDENCIES-->
                 <dependency>
                     <groupId>com.hazelcast</groupId>
                     <artifactId>hazelcast-hibernate3</artifactId>
                     <version>${project.parent.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-tx</artifactId>
-                    <version>${org.springframework.version}</version>
                     <scope>test</scope>
                 </dependency>
                 <dependency>
@@ -252,21 +242,33 @@
                     <classifier>tests</classifier>
                 </dependency>
                 <dependency>
-                    <groupId>org.hibernate</groupId>
-                    <artifactId>hibernate-core</artifactId>
-                    <version>3.6.10.Final</version>
+                    <groupId>javax.cache</groupId>
+                    <artifactId>cache-api</artifactId>
+                    <version>${jsr107.api.version}</version>
                     <scope>test</scope>
                 </dependency>
                 <dependency>
-                    <groupId>javax.cache</groupId>
-                    <artifactId>cache-api</artifactId>
-                    <version>1.0.0</version>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-test</artifactId>
+                    <version>${org.springframework.version}</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-tx</artifactId>
+                    <version>${org.springframework.version}</version>
                     <scope>test</scope>
                 </dependency>
                 <dependency>
                     <groupId>org.springframework</groupId>
                     <artifactId>spring-context-support</artifactId>
                     <version>${org.springframework.version}</version>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.hibernate</groupId>
+                    <artifactId>hibernate-core</artifactId>
+                    <version>3.6.10.Final</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>
