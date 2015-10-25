@@ -142,7 +142,7 @@ public class LoggingServiceImpl implements LoggingService {
         }
     }
 
-    private class DefaultLogger implements ILogger {
+    private class DefaultLogger extends AbstractLogger {
         final String name;
         final ILogger logger;
 
@@ -151,63 +151,7 @@ public class LoggingServiceImpl implements LoggingService {
             this.logger = loggerFactory.getLogger(name);
         }
 
-        @Override
-        public void finest(String message) {
-            log(Level.FINEST, message);
-        }
-
-        @Override
-        public void finest(String message, Throwable thrown) {
-            log(Level.FINEST, message, thrown);
-        }
-
-        @Override
-        public void finest(Throwable thrown) {
-            log(Level.FINEST, thrown.getMessage(), thrown);
-        }
-
-        @Override
-        public boolean isFinestEnabled() {
-            return isLoggable(Level.FINEST);
-        }
-
-        @Override
-        public void info(String message) {
-            log(Level.INFO, message);
-        }
-
-        @Override
-        public void severe(String message) {
-            log(Level.SEVERE, message);
-        }
-
-        @Override
-        public void severe(Throwable thrown) {
-            log(Level.SEVERE, thrown.getMessage(), thrown);
-        }
-
-        @Override
-        public void severe(String message, Throwable thrown) {
-            log(Level.SEVERE, message, thrown);
-        }
-
-        @Override
-        public void warning(String message) {
-            log(Level.WARNING, message);
-        }
-
-        @Override
-        public void warning(Throwable thrown) {
-            log(Level.WARNING, thrown.getMessage(), thrown);
-        }
-
-        @Override
-        public void warning(String message, Throwable thrown) {
-            log(Level.WARNING, message, thrown);
-        }
-
-        @Override
-        public void log(Level level, String message) {
+        @Override public void log(Level level, String message) {
             log(level, message, null);
         }
 
@@ -217,8 +161,7 @@ public class LoggingServiceImpl implements LoggingService {
             if (loggable || level.intValue() >= minLevel.intValue()) {
                 String address = thisAddressString;
                 String logMessage = (address != null ? address : "")
-                        + " [" + groupName + "] "
-                        + "[" + buildInfo.getVersion() + "] " + message;
+                        + " [" + groupName + "] [" + buildInfo.getVersion() + "] " + message;
 
                 if (loggable) {
                     logger.log(level, logMessage, thrown);

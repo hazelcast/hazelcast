@@ -27,13 +27,6 @@ import java.util.logging.Level;
 public interface ILogger {
 
     /**
-     * Logs a message at {@link Level#INFO}.
-     *
-     * @param message the message to log.
-     */
-    void info(String message);
-
-    /**
      * Logs a message at {@link Level#FINEST}.
      *
      * @param message the message to log.
@@ -63,26 +56,25 @@ public interface ILogger {
     boolean isFinestEnabled();
 
     /**
-     * Logs a message at {@link Level#SEVERE}.
+     * Logs a message at {@link Level#FINE}.
      *
      * @param message the message to log.
      */
-    void severe(String message);
+    void fine(String message);
 
     /**
-     * Logs a throwable at {@link Level#SEVERE}.  The message of the Throwable will be the message.
+     * Checks if the {@link Level#FINE} is enabled.
      *
-     * @param thrown the Throwable to log.
+     * @return true if enabled, false otherwise.
      */
-    void severe(Throwable thrown);
+    boolean isFineEnabled();
 
     /**
-     * Logs message with associated throwable information at {@link Level#SEVERE}.
+     * Logs a message at {@link Level#INFO}.
      *
-     * @param message the message to log
-     * @param thrown  the Throwable associated to the message.
+     * @param message the message to log.
      */
-    void severe(String message, Throwable thrown);
+    void info(String message);
 
     /**
      * Logs a message at {@link Level#WARNING}.
@@ -105,6 +97,28 @@ public interface ILogger {
      * @param thrown  the Throwable associated to the message.
      */
     void warning(String message, Throwable thrown);
+
+    /**
+     * Logs a message at {@link Level#SEVERE}.
+     *
+     * @param message the message to log.
+     */
+    void severe(String message);
+
+    /**
+     * Logs a throwable at {@link Level#SEVERE}.  The message of the Throwable will be the message.
+     *
+     * @param thrown the Throwable to log.
+     */
+    void severe(Throwable thrown);
+
+    /**
+     * Logs message with associated throwable information at {@link Level#SEVERE}.
+     *
+     * @param message the message to log
+     * @param thrown  the Throwable associated to the message.
+     */
+    void severe(String message, Throwable thrown);
 
     /**
      * Logs a message at the provided Level.
