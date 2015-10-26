@@ -19,6 +19,8 @@ package com.hazelcast.client.spi.impl.listener;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.nio.Address;
 
+import static com.hazelcast.util.Preconditions.isNotNull;
+
 /**
  * Keeps the information related to to an event registration made by clients
  */
@@ -31,6 +33,7 @@ public class ClientEventRegistration {
 
     public ClientEventRegistration(String serverRegistrationId,
                                    int callId, Address subscriber, ListenerMessageCodec codec) {
+        isNotNull(serverRegistrationId, "serverRegistrationId");
         this.serverRegistrationId = serverRegistrationId;
         this.callId = callId;
         this.subscriber = subscriber;
@@ -71,6 +74,26 @@ public class ClientEventRegistration {
 
     public ListenerMessageCodec getCodec() {
         return codec;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ClientEventRegistration that = (ClientEventRegistration) o;
+
+        return serverRegistrationId.equals(that.serverRegistrationId);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return serverRegistrationId.hashCode();
     }
 }
 
