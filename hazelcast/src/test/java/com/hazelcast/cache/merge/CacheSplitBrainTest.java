@@ -14,8 +14,6 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -29,7 +27,6 @@ import org.junit.runner.RunWith;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
@@ -359,16 +356,6 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
                 return mergingEntry.getValue();
             }
             return null;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-
         }
 
     }

@@ -18,10 +18,6 @@ package com.hazelcast.cache.merge;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.StorageTypeAwareCacheMergePolicy;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
 
 /**
  * `HigherHitsCacheMergePolicy` merges cache entry from source to destination cache
@@ -30,20 +26,16 @@ import java.io.IOException;
 public class HigherHitsCacheMergePolicy
         implements StorageTypeAwareCacheMergePolicy {
 
+    public HigherHitsCacheMergePolicy() {
+
+    }
+
     @Override
     public Object merge(String cacheName, CacheEntryView mergingEntry, CacheEntryView existingEntry) {
         if (existingEntry == null || mergingEntry.getAccessHit() >= existingEntry.getAccessHit()) {
             return mergingEntry.getValue();
         }
         return existingEntry.getValue();
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
     }
 
 }

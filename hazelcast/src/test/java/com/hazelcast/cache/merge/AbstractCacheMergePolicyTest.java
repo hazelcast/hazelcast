@@ -32,6 +32,14 @@ public abstract class AbstractCacheMergePolicyTest {
     }
 
     @Test
+    public void merge_mergingWins_sinceExistingIsNotExist() {
+        CacheEntryView existing = null;
+        CacheEntryView merging = entryWithGivenPropertyAndValue(1, MERGING);
+
+        assertEquals(MERGING, policy.merge("cache", merging, existing));
+    }
+
+    @Test
     public void merge_existingWins() {
         CacheEntryView existing = entryWithGivenPropertyAndValue(333, EXISTING);
         CacheEntryView merging = entryWithGivenPropertyAndValue(1, MERGING);

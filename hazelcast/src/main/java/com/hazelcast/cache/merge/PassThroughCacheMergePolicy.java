@@ -18,10 +18,6 @@ package com.hazelcast.cache.merge;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.StorageTypeAwareCacheMergePolicy;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
 
 /**
  * `PassThroughCacheMergePolicy` policy merges cache entry from source to destination directly.
@@ -29,17 +25,13 @@ import java.io.IOException;
 public class PassThroughCacheMergePolicy
         implements StorageTypeAwareCacheMergePolicy {
 
+    public PassThroughCacheMergePolicy() {
+
+    }
+
     @Override
     public Object merge(String cacheName, CacheEntryView mergingEntry, CacheEntryView existingEntry) {
         return mergingEntry != null ? mergingEntry.getValue() : existingEntry.getValue();
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput objectDataOutput) throws IOException {
-    }
-
-    @Override
-    public void readData(ObjectDataInput objectDataInput) throws IOException {
     }
 
 }

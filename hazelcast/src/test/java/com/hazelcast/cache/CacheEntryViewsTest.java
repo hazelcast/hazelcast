@@ -33,9 +33,9 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class CacheEntryViewsTests extends HazelcastTestSupport {
+public class CacheEntryViewsTest extends HazelcastTestSupport {
 
-    SerializationService serializationService;
+    private SerializationService serializationService;
 
     @Before
     public void setup() {
@@ -47,19 +47,36 @@ public class CacheEntryViewsTests extends HazelcastTestSupport {
         HazelcastTestSupport.assertUtilityConstructor(CacheEntryViews.class);
     }
 
-    @Test
-    public void testCreateDefaultEntryView() {
+    private void doCacheEntryViewTest(CacheEntryViews.CacheEntryViewType cacheEntryViewType) {
         String key = "testKey";
         String value = "testValue";
         CacheObjectRecord record = new CacheObjectRecord(value, System.currentTimeMillis(), 1234L);
-        CacheEntryView cacheEntryView = CacheEntryViews.createDefaultEntryView(serializationService.toData(key),
-                serializationService.toData(value), record);
+        CacheEntryView cacheEntryView =
+                CacheEntryViews.createEntryView(serializationService.toData(key),
+                        serializationService.toData(value),
+                        record,
+                        cacheEntryViewType);
 
         assertEquals(key, serializationService.toObject(cacheEntryView.getKey()));
         assertEquals(value, serializationService.toObject(cacheEntryView.getValue()));
         assertEquals(record.getAccessHit(), cacheEntryView.getAccessHit());
         assertEquals(record.getExpirationTime(), cacheEntryView.getExpirationTime());
         assertEquals(record.getAccessTime(), cacheEntryView.getLastAccessTime());
+    }
+
+    @Test
+    public void testDefaultCacheEntryView() {
+        doCacheEntryViewTest(CacheEntryViews.CacheEntryViewType.DEFAULT);
+    }
+
+    @Test
+    public void testLazyCacheEntryView() {
+        doCacheEntryViewTest(CacheEntryViews.CacheEntryViewType.LAZY);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidCacheEntryView() {
+        doCacheEntryViewTest(null);
     }
 
 }

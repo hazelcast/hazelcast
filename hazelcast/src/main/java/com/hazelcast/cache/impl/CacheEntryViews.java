@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.merge.entry.DefaultCacheEntryView;
+import com.hazelcast.cache.impl.merge.entry.LazyCacheEntryView;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.serialization.Data;
 
@@ -30,19 +31,79 @@ public final class CacheEntryViews {
     }
 
     /**
-     *
+     * Types of built-in {@link CacheEntryView} implementations.
+     */
+    public enum CacheEntryViewType {
+
+        /**
+         * Represents {@link DefaultCacheEntryView}
+         */
+        DEFAULT,
+
+        /**
+         * Represents {@link LazyCacheEntryView}
+         */
+        LAZY
+
+    }
+
+    /**
      * Creates a {@link DefaultCacheEntryView} instance.
      *
-     * @param key - Key to be wrapped
-     * @param value - Value to be wrapped
-     * @param record - {@link CacheRecord} instance to gather additional entry view properties like access time,
-     *               expiration time and access hit.
-     * @return {@link DefaultCacheEntryView} instance
+     * @param key       the key to be wrapped
+     * @param value     the value to be wrapped
+     * @param record    {@link CacheRecord} instance to gather additional entry view properties like access time,
+     *                  expiration time and access hit
+     * @return the {@link DefaultCacheEntryView} instance
      */
     public static CacheEntryView<Data, Data> createDefaultEntryView(Data key, Data value, CacheRecord record) {
-        DefaultCacheEntryView entryView = new DefaultCacheEntryView(key, value,
-                record.getExpirationTime(), record.getAccessTime(), record.getAccessHit());
+        CacheEntryView entryView = new DefaultCacheEntryView(key, value,
+                                                             record.getExpirationTime(),
+                                                             record.getAccessTime(),
+                                                             record.getAccessHit());
         return entryView;
+    }
+
+    /**
+     * Creates a {@link LazyCacheEntryView} instance.
+     *
+     * @param key       the key to be wrapped
+     * @param value     the value to be wrapped
+     * @param record    {@link CacheRecord} instance to gather additional entry view properties like access time,
+     *                  expiration time and access hit
+     * @return the {@link LazyCacheEntryView} instance
+     */
+    public static CacheEntryView<Data, Data> createLazyEntryView(Data key, Data value, CacheRecord record) {
+        CacheEntryView entryView = new LazyCacheEntryView(key, value,
+                                                          record.getExpirationTime(),
+                                                          record.getAccessTime(),
+                                                          record.getAccessHit());
+        return entryView;
+    }
+
+    /**
+     * Creates a {@link CacheEntryView} instance.
+     *
+     * @param key                   the key to be wrapped
+     * @param value                 the value to be wrapped
+     * @param record                {@link CacheRecord} instance to gather additional entry view properties like
+     *                              access time, expiration time and access hit
+     * @param cacheEntryViewType    the type of the {@link CacheEntryView} represented as {@link CacheEntryViewType}
+     * @return the {@link CacheEntryView} instance
+     */
+    public static CacheEntryView<Data, Data> createEntryView(Data key, Data value, CacheRecord record,
+                                                             CacheEntryViewType cacheEntryViewType) {
+        if (cacheEntryViewType == null) {
+            throw new IllegalArgumentException("Empty cache entry view type");
+        }
+        switch (cacheEntryViewType) {
+            case DEFAULT:
+                return createDefaultEntryView(key, value, record);
+            case LAZY:
+                return createLazyEntryView(key, value, record);
+            default:
+                throw new IllegalArgumentException("Invalid cache entry view type: " + cacheEntryViewType);
+        }
     }
 
 }
