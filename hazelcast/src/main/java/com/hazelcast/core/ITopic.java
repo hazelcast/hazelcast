@@ -32,7 +32,7 @@ import com.hazelcast.topic.TopicOverloadException;
  * Since Hazelcast 3.5 it is possible to have reliable topics. Normally all topics rely on the a shared eventing system and
  * shared threads. With Hazelcast 3.5 it is possible to configure a topic to be reliable and to gets its own
  * {@link com.hazelcast.ringbuffer.Ringbuffer} to store events and to gets its own executor to process events. The events
- * in the rinbuffer are replicated, so they won't get lost when a node goes down.
+ * in the ringbuffer are replicated, so they won't get lost when a node goes down.
  */
 public interface ITopic<E> extends DistributedObject {
 
