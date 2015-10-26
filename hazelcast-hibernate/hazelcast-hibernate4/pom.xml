@@ -30,9 +30,10 @@
     </parent>
 
     <properties>
-        <hibernate.core.version>4.3.8.Final</hibernate.core.version>
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.parent.basedir}</main.basedir>
+
+        <hibernate.core.version>4.3.8.Final</hibernate.core.version>
     </properties>
 
     <build>
@@ -74,5 +75,4 @@
             </exclusions>
         </dependency>
     </dependencies>
-
 </project>

@@ -78,7 +78,6 @@
                                 <transformer
                                         implementation="com.hazelcast.buildutils.HazelcastManifestTransformer">
                                     <mainClass>com.hazelcast.console.ConsoleApp</mainClass>
-
                                     <overrideInstructions>
                                         <Import-Package>
                                             org.hibernate.*;resolution:=optional,
@@ -166,5 +165,4 @@
             <version>${project.version}</version>
         </dependency>
     </dependencies>
-
 </project>

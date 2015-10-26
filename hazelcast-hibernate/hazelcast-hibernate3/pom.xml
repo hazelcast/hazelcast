@@ -29,10 +29,11 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-     <properties>
-        <hibernate.core.version>3.6.10.Final</hibernate.core.version>
+    <properties>
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.parent.basedir}</main.basedir>
+
+        <hibernate.core.version>3.6.10.Final</hibernate.core.version>
     </properties>
 
     <dependencies>
@@ -49,5 +50,4 @@
             </exclusions>
         </dependency>
     </dependencies>
-
 </project>

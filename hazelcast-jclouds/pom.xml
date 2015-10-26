@@ -32,7 +32,7 @@
     <properties>
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <jclouds.version>1.9.1</jclouds.version>
+
         <jclouds.version>1.9.1</jclouds.version>
     </properties>
 
@@ -41,7 +41,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
-                <version>${animal.sniffer.plugin.version}</version>
+                <version>${maven.animal.sniffer.plugin.version}</version>
                 <configuration>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
