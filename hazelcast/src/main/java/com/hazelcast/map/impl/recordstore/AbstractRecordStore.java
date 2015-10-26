@@ -25,7 +25,9 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.SizeEstimator;
+import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
+import com.hazelcast.map.impl.mapstore.MapStoreManager;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.record.Records;
@@ -56,6 +58,11 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final MapContainer mapContainer;
     protected final MapServiceContext mapServiceContext;
     protected final SerializationService serializationService;
+
+    protected final MapDataStore<Data, Object> mapDataStore;
+
+    protected final MapStoreContext mapStoreContext;
+
     protected final int partitionId;
     protected final InMemoryFormat inMemoryFormat;
 
@@ -68,6 +75,9 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         this.storage = createStorage(recordFactory, inMemoryFormat);
+        this.mapStoreContext = mapContainer.getMapStoreContext();
+        MapStoreManager mapStoreManager = mapStoreContext.getMapStoreManager();
+        this.mapDataStore = mapStoreManager.getMapDataStore(partitionId);
     }
 
     @Override

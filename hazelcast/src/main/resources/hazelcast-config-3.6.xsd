@@ -248,6 +248,14 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="hot-restart-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        True if hot-restart is enabled, false otherwise
+                        Only available on Hazelcast Enterprise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="map-store" type="map-store" minOccurs="0" maxOccurs="1"/>
             <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1"/>
             <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0" maxOccurs="1"/>

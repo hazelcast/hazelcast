@@ -81,6 +81,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     NearCacheProvider getNearCacheProvider();
 
+    RecordStore createRecordStore(MapContainer mapContainer, int partitionId, MapKeyLoader keyLoader);
+
     RecordStore getRecordStore(int partitionId, String mapName);
 
     RecordStore getExistingRecordStore(int partitionId, String mapName);

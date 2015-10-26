@@ -278,10 +278,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
     }
 
-    abstract Object evictInternal(Data key, boolean backup);
-
-    abstract Object evictInternal(Data key, Record removedRecord, boolean backup);
-
     /**
      * Check if record is reachable according to ttl or idle times.
      * If not reachable return null.
@@ -304,7 +300,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             return record;
         }
         final Object value = record.getValue();
-        evictInternal(key, backup);
+        evict(key, backup);
         if (!backup) {
             doPostEvictionOperations(key, value, true);
         }
@@ -418,13 +414,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         setExpirationTime(record, maxIdleMillis);
 
         markRecordStoreExpirable(record.getTtl());
-    }
-
-    /**
-     * Returns value of removed record.
-     */
-    protected void deleteRecord(Record record) {
-        storage.removeRecord(record);
     }
 
     /**

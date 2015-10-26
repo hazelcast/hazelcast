@@ -20,8 +20,6 @@ import com.hazelcast.nio.serialization.Data;
 
 public class TryPutOperation extends BasePutOperation {
 
-    private boolean successful;
-
     public TryPutOperation() {
     }
 
@@ -32,19 +30,12 @@ public class TryPutOperation extends BasePutOperation {
 
     @Override
     public void run() {
-        successful = recordStore.tryPut(dataKey, dataValue, ttl);
-    }
-
-    @Override
-    public void afterRun() {
-        if (successful) {
-            super.afterRun();
-        }
+        recordStore.put(dataKey, dataValue, ttl);
     }
 
     @Override
     public boolean shouldBackup() {
-        return successful && recordStore.getRecord(dataKey) != null;
+        return recordStore.getRecord(dataKey) != null;
     }
 
     @Override
@@ -54,6 +45,6 @@ public class TryPutOperation extends BasePutOperation {
 
     @Override
     public Object getResponse() {
-        return successful;
+        return true;
     }
 }

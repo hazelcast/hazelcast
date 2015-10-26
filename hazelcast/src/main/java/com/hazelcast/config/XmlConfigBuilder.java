@@ -1053,6 +1053,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 handleViaReflection(node, mapConfig, new NearCacheConfig());
             } else if ("merge-policy".equals(nodeName)) {
                 mapConfig.setMergePolicy(value);
+            } else if ("hot-restart-enabled".equals(nodeName)) {
+                mapConfig.setHotRestartEnabled(getBooleanValue(value));
             } else if ("read-backup-data".equals(nodeName)) {
                 mapConfig.setReadBackupData(getBooleanValue(value));
             } else if ("statistics-enabled".equals(nodeName)) {

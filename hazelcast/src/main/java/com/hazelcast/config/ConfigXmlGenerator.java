@@ -385,6 +385,8 @@ public class ConfigXmlGenerator {
                     .append("</merge-policy>");
             xml.append("<read-backup-data>").append(m.isReadBackupData())
                     .append("</read-backup-data>");
+            xml.append("<hot-restart-enabled>").append(m.isHotRestartEnabled())
+                    .append("</hot-restart-enabled>");
             xml.append("<statistics-enabled>").append(m.isStatisticsEnabled())
                     .append("</statistics-enabled>");
 

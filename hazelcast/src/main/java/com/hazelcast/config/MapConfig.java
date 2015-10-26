@@ -135,6 +135,8 @@ public class MapConfig {
 
     private String quorumName;
 
+    private boolean hotRestartEnabled;
+
     private MapConfigReadOnly readOnly;
 
     public MapConfig(String name) {
@@ -172,6 +174,7 @@ public class MapConfig {
         this.partitioningStrategyConfig = config.partitioningStrategyConfig != null
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
         this.quorumName = config.quorumName;
+        this.hotRestartEnabled = config.hotRestartEnabled;
     }
     //CHECKSTYLE:ON
 
@@ -180,6 +183,14 @@ public class MapConfig {
             readOnly = new MapConfigReadOnly(this);
         }
         return readOnly;
+    }
+
+    public boolean isHotRestartEnabled() {
+        return hotRestartEnabled;
+    }
+
+    public void setHotRestartEnabled(boolean hotRestartEnabled) {
+        this.hotRestartEnabled = hotRestartEnabled;
     }
 
     /**
@@ -686,6 +697,7 @@ public class MapConfig {
                 || (Math.min(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == 0
                 && Math.max(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == Integer.MAX_VALUE))
                 && this.timeToLiveSeconds == other.timeToLiveSeconds
+                && this.hotRestartEnabled == other.hotRestartEnabled
                 && this.readBackupData == other.readBackupData;
     }
 
@@ -773,6 +785,7 @@ public class MapConfig {
                 + ", minEvictionCheckMillis=" + minEvictionCheckMillis
                 + ", maxSizeConfig=" + maxSizeConfig
                 + ", readBackupData=" + readBackupData
+                + ", hotRestartEnabled=" + hotRestartEnabled
                 + ", nearCacheConfig=" + nearCacheConfig
                 + ", mapStoreConfig=" + mapStoreConfig
                 + ", mergePolicyConfig='" + mergePolicy + '\''

@@ -137,6 +137,7 @@
                     eviction-percentage="30"
                     min-eviction-check-millis="1000"
                     read-backup-data="true"
+                    hot-restart-enabled="true"
                     eviction-policy="NONE"
                     merge-policy="PUT_IF_ABSENT"
                     in-memory-format="BINARY">

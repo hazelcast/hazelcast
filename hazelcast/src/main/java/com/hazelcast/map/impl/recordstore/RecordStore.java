@@ -59,8 +59,6 @@ public interface RecordStore<R extends Record> {
      */
     R putBackup(Data key, Object value, long ttl, boolean putTransient);
 
-    boolean tryPut(Data dataKey, Object value, long ttl);
-
     /**
      * Returns {@code true} if key doesn't exist previously, otherwise returns {@code false}.
      *
@@ -210,8 +208,6 @@ public interface RecordStore<R extends Record> {
 
     Object evict(Data key, boolean backup);
 
-    Object evict(Data key, R removedRecord, boolean backup);
-
     /**
      * Evicts all keys except locked ones.
      *
@@ -324,4 +320,9 @@ public interface RecordStore<R extends Record> {
     Storage getStorage();
 
     boolean isEvictionEnabled();
+
+    /**
+     * Starts mapLoader
+     */
+    void startLoading();
 }

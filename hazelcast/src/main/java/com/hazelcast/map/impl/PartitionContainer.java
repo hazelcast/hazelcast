@@ -20,8 +20,6 @@ import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.DefaultObjectNamespace;
@@ -46,29 +44,20 @@ public class PartitionContainer {
 
         @Override
         public RecordStore createNew(String name) {
-            MapServiceContext serviceContext = mapService.getMapServiceContext();
-            MapContainer mapContainer = serviceContext.getMapContainer(name);
-            MapConfig mapConfig = mapContainer.getMapConfig();
-            NodeEngine nodeEngine = serviceContext.getNodeEngine();
-            InternalPartitionService ps = nodeEngine.getPartitionService();
-            OperationService opService = nodeEngine.getOperationService();
-            ExecutionService execService = nodeEngine.getExecutionService();
-            GroupProperties groupProperties = nodeEngine.getGroupProperties();
-
-            MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, execService, mapContainer.toData());
-            keyLoader.setMaxBatch(groupProperties.getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE));
-            keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getMaxSizeConfig()));
-            keyLoader.setHasBackup(mapConfig.getBackupCount() > 0 || mapConfig.getAsyncBackupCount() > 0);
-            keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
-
-            ILogger logger = nodeEngine.getLogger(DefaultRecordStore.class);
-            DefaultRecordStore recordStore = new DefaultRecordStore(mapContainer, partitionId, keyLoader, logger);
+            RecordStore recordStore = createRecordStore(name);
             recordStore.startLoading();
-
             return recordStore;
         }
     };
 
+    final ConstructorFunction<String, RecordStore> recordStoreConstructorForHotRestart
+            = new ConstructorFunction<String, RecordStore>() {
+
+        @Override
+        public RecordStore createNew(String name) {
+            return createRecordStore(name);
+        }
+    };
     /**
      * Flag to check if there is a {@link com.hazelcast.map.impl.operation.ClearExpiredOperation}
      * is running on this partition at this moment or not.
@@ -91,6 +80,24 @@ public class PartitionContainer {
         this.partitionId = partitionId;
     }
 
+    private RecordStore createRecordStore(String name) {
+        MapServiceContext serviceContext = mapService.getMapServiceContext();
+        MapContainer mapContainer = serviceContext.getMapContainer(name);
+        MapConfig mapConfig = mapContainer.getMapConfig();
+        NodeEngine nodeEngine = serviceContext.getNodeEngine();
+        InternalPartitionService ps = nodeEngine.getPartitionService();
+        OperationService opService = nodeEngine.getOperationService();
+        ExecutionService execService = nodeEngine.getExecutionService();
+        GroupProperties groupProperties = nodeEngine.getGroupProperties();
+
+        MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, execService, mapContainer.toData());
+        keyLoader.setMaxBatch(groupProperties.getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE));
+        keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getMaxSizeConfig()));
+        keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
+        keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
+        return serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
+    }
+
     public ConcurrentMap<String, RecordStore> getMaps() {
         return maps;
     }
@@ -105,6 +112,10 @@ public class PartitionContainer {
 
     public RecordStore getRecordStore(String name) {
         return ConcurrencyUtil.getOrPutSynchronized(maps, name, this, recordStoreConstructor);
+    }
+
+    public RecordStore getRecordStoreForHotRestart(String name) {
+        return ConcurrencyUtil.getOrPutSynchronized(maps, name, this, recordStoreConstructorForHotRestart);
     }
 
     public RecordStore getExistingRecordStore(String mapName) {
