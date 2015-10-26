@@ -29,6 +29,8 @@ import java.util.logging.Level;
 
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -45,22 +47,50 @@ public class Slf4jLoggerTest {
     }
 
     @Test
-    public void logLevelAndMessage_whenOffLevel_thenDoNotLogMessage() {
+    public void isLoggable_whenLevelOff_shouldReturnFalse() {
+        assertFalse(hazelcastLogger.isLoggable(Level.OFF));
+    }
+
+    @Test
+    public void logWithThrowable_shouldCallLogWithThrowable() {
+        final Exception thrown = new Exception();
+        hazelcastLogger.warning("message", thrown);
+        verify(mockLogger, times(1)).warn("message", thrown);
+    }
+
+    @Test
+    public void logAtLevelOff_shouldNotLog() {
         hazelcastLogger.log(Level.OFF, "message");
         verifyZeroInteractions(mockLogger);
     }
 
     @Test
-    public void logLevelAndMessageAndThrowable_whenOffLevel_thenDoNotLogMessage() {
-        hazelcastLogger.log(Level.OFF, "message", new Exception());
-        verifyZeroInteractions(mockLogger);
+    public void logFinest_shouldLogTrace() {
+        hazelcastLogger.finest("message");
+        verify(mockLogger, times(1)).trace("message");
     }
 
     @Test
-    public void isLoggable_whenOffLevel_thenReturnFalse() {
-        boolean loggable = hazelcastLogger.isLoggable(Level.OFF);
-        assertFalse(loggable);
+    public void logFine_shouldLogDebug() {
+        hazelcastLogger.fine("message");
+        verify(mockLogger, times(1)).debug("message");
     }
 
+    @Test
+    public void logInfo_shouldLogInfo() {
+        hazelcastLogger.info("message");
+        verify(mockLogger, times(1)).info("message");
+    }
 
+    @Test
+    public void logWarning_shouldLogWarn() {
+        hazelcastLogger.warning("message");
+        verify(mockLogger, times(1)).warn("message");
+    }
+
+    @Test
+    public void logSevere_shouldLogError() {
+        hazelcastLogger.severe("message");
+        verify(mockLogger, times(1)).error("message");
+    }
 }
