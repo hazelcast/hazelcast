@@ -39,6 +39,7 @@ import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
+import com.hazelcast.spi.exception.ResponseNotSentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.WrongTargetException;
@@ -336,17 +337,19 @@ class OperationRunnerImpl extends OperationRunner {
 
         operation.logError(e);
 
+        if (e instanceof ResponseNotSentException || !operation.returnsResponse()) {
+            return;
+        }
+
         OperationResponseHandler responseHandler = operation.getOperationResponseHandler();
-        if (operation.returnsResponse() && responseHandler != null) {
-            try {
-                if (nodeEngine.isRunning()) {
-                    responseHandler.sendResponse(operation, e);
-                } else if (responseHandler.isLocal()) {
-                    responseHandler.sendResponse(operation, new HazelcastInstanceNotActiveException());
-                }
-            } catch (Throwable t) {
-                logger.warning("While sending op error... op: " + operation + ", error: " + e, t);
+        try {
+            if (nodeEngine.isRunning()) {
+                responseHandler.sendResponse(operation, e);
+            } else if (responseHandler.isLocal()) {
+                responseHandler.sendResponse(operation, new HazelcastInstanceNotActiveException());
             }
+        } catch (Throwable t) {
+            logger.warning("While sending op error... op: " + operation + ", error: " + e, t);
         }
     }
 
