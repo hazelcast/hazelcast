@@ -33,6 +33,7 @@
 	                    </xs:documentation>
 	                </xs:annotation>
 	            </xs:element>
+                <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="management-center" type="management-center" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="wan-replication" type="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
@@ -247,6 +248,14 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="hot-restart-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        True if hot-restart is enabled, false otherwise
+                        Only available on Hazelcast Enterprise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="map-store" type="map-store" minOccurs="0" maxOccurs="1"/>
             <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1"/>
             <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0" maxOccurs="1"/>
@@ -254,6 +263,13 @@
                 <xs:complexType>
                     <xs:sequence>
                         <xs:element name="index" type="index" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="attributes" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="attribute" type="map-attribute" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -485,15 +501,15 @@
                         key? The conflict is resolved by the policy set here.
                         <p>
                             <br/>There are built-in merge policies, such as:
-                            <br/>`com.hazelcast.cache.impl.merge.policy.PassThroughCacheMergePolicy` or `PASS_THROUGH`:
+                            <br/>`com.hazelcast.cache.merge.PassThroughCacheMergePolicy` or `PASS_THROUGH`:
                             The entry will be added directly even though there is an existing entry for the key.
-                            <br/>`com.hazelcast.cache.impl.merge.policy.PutIfAbsentCacheMergePolicy` or `PUT_IF_ABSENT`:
+                            <br/>`com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy` or `PUT_IF_ABSENT`:
                             The entry will be added if there is no existing entry for the key.
-                            <br/>`com.hazelcast.cache.impl.merge.policy.HigherHitsCacheMergePolicy` or `HIGHER_HITS`:
+                            <br/>`com.hazelcast.cache.merge.HigherHitsCacheMergePolicy` or `HIGHER_HITS`:
                             The entry with the higher number of hits wins.
-                            <br/>`com.hazelcast.cache.impl.merge.policy.LatestAccessCacheMergePolicy` or `LATEST_ACCESS`:
+                            <br/>`com.hazelcast.cache.merge.LatestAccessCacheMergePolicy` or `LATEST_ACCESS`:
                             The entry which has been accessed more recently wins.
-                            <br/>Default policy is 'com.hazelcast.cache.impl.merge.policy.PassThroughCacheMergePolicy'
+                            <br/>Default policy is 'com.hazelcast.cache.merge.PassThroughCacheMergePolicy'
                         </p>
                     </xs:documentation>
                 </xs:annotation>
@@ -1793,6 +1809,7 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="end-points" type="end-points" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="acknowledge-type" type="wan-ack-type" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="group-name" type="xs:string" use="required">
             <xs:annotation>
@@ -1873,6 +1890,13 @@
         <xs:simpleContent>
             <xs:extension base="xs:string">
                 <xs:attribute name="ordered" type="xs:boolean" use="optional" default="false"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="map-attribute">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="extractor" type="xs:string" />
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
@@ -2589,6 +2613,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0" maxOccurs="1"></xs:element>
             <xs:element name="republishing-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
                 <xs:annotation>
                     <xs:documentation>
@@ -2673,4 +2698,16 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+    <xs:complexType name="wan-replication-ref-filters">
+        <xs:sequence>
+            <xs:element name="filter-impl" type="xs:string" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="wan-ack-type">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="ACK_ON_TRANSMIT"/>
+            <xs:enumeration value="ACK_ON_OPERATION_COMPLETE"/>
+        </xs:restriction>
+    </xs:simpleType>
 </xs:schema>

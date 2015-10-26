@@ -9,11 +9,8 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerMock;
 import com.hazelcast.util.Clock;
 import org.junit.After;
@@ -36,7 +33,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category(NightlyTest.class)
 public class ClientReliableTopicTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
@@ -46,6 +43,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
+        setLoggingLog4j();
         Config config = new Config();
 
         server = hazelcastFactory.newHazelcastInstance(config);
@@ -94,7 +92,6 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
         boolean removed = topic.removeMessageListener(id);
         assertTrue(removed);
-
         topic.publish("1");
 
         // it should not receive any events.
@@ -251,8 +248,8 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
     @Test
     public void testListener() throws InterruptedException {
         ITopic topic = client.getReliableTopic(randomString());
-        int messageCount = 10;
-        final CountDownLatch latch = new CountDownLatch(messageCount);
+
+        final CountDownLatch latch = new CountDownLatch(10);
         MessageListener listener = new MessageListener() {
             public void onMessage(Message message) {
                 System.out.println("Message received");
@@ -261,7 +258,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
         };
         topic.addMessageListener(listener);
 
-        for (int i = 0; i < messageCount; i++) {
+        for (int i = 0; i < 10; i++) {
             topic.publish(i);
         }
         assertTrue(latch.await(20, TimeUnit.SECONDS));

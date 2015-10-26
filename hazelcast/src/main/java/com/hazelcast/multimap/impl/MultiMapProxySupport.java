@@ -275,10 +275,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("MultiMap{");
-        sb.append("name=").append(name);
-        sb.append('}');
-        return sb.toString();
+        return "MultiMap{name=" + name + '}';
     }
 
 }

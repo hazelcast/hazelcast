@@ -67,12 +67,11 @@ public abstract class AbstractHazelcastCachingProvider
     private final Map<ClassLoader, Map<URI, AbstractHazelcastCacheManager>> cacheManagers;
 
     public AbstractHazelcastCachingProvider() {
-        //we use a WeakHashMap to prevent strong references to a classLoader to avoid memory leak.
+        // We use a WeakHashMap to prevent strong references to a classLoader to avoid memory leak.
         this.cacheManagers = new WeakHashMap<ClassLoader, Map<URI, AbstractHazelcastCacheManager>>();
         this.defaultClassLoader = this.getClass().getClassLoader();
         try {
             defaultURI = new URI("hazelcast");
-            //            defaultURI = new URI(this.getClass().getName());
         } catch (URISyntaxException e) {
             throw new CacheException("Cannot create Default URI", e);
         }
@@ -95,7 +94,7 @@ public abstract class AbstractHazelcastCachingProvider
                     cacheManager = createHazelcastCacheManager(uri, classLoader, managerProperties);
                     cacheManagersByURI.put(managerURI, cacheManager);
                 } catch (Exception e) {
-                    throw new CacheException("Error opening URI [" + managerURI.toString() + "]", e);
+                    throw new CacheException("Error opening URI [" + managerURI.toString() + ']', e);
                 }
             }
             return cacheManager;
@@ -129,7 +128,7 @@ public abstract class AbstractHazelcastCachingProvider
 
     @Override
     public void close() {
-        //closing a cacheProvider do not close it forever see javadoc of close()
+        // Closing a `CachingProvider` does not mean to close it forever see javadoc of `close()`
         synchronized (cacheManagers) {
             for (Map<URI, AbstractHazelcastCacheManager> cacheManagersByURI : cacheManagers.values()) {
                 for (AbstractHazelcastCacheManager cacheManager : cacheManagersByURI.values()) {
@@ -187,8 +186,8 @@ public abstract class AbstractHazelcastCachingProvider
     @Override
     public boolean isSupported(OptionalFeature optionalFeature) {
         switch (optionalFeature) {
-            // Hazelcast is distributed only and does not have a local in-process mode. Therefore the optional
-            // store-by-reference mode is not supported.
+            // Hazelcast is distributed only and does not have a local in-process mode.
+            // Therefore the optional store-by-reference mode is not supported.
             case STORE_BY_REFERENCE:
                 return false;
             default:

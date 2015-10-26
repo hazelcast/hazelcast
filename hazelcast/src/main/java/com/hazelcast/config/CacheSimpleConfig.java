@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.cache.BuiltInCacheMergePolicies;
-import com.hazelcast.cache.impl.merge.policy.PassThroughCacheMergePolicy;
+import com.hazelcast.cache.merge.PassThroughCacheMergePolicy;
 import com.hazelcast.partition.InternalPartition;
 
 import java.util.ArrayList;

@@ -60,13 +60,6 @@ public class PostJoinProxyOperation extends AbstractOperation {
                         registry.createProxy(proxy.getObjectName(), false, true);
                     }
                 });
-//                DistributedObjectFuture future = registry.createProxy(proxy.getObjectName(), false, false);
-//                if (future != null) {
-//                    final DistributedObject object = future.get();
-//                    if (object instanceof InitializingObject) {
-//                        executionService.execute(ExecutionService.SYSTEM_EXECUTOR, new InitializeRunnable(object));
-//                    }
-//                }
             } catch (Throwable t) {
                 getLogger().warning("Cannot create proxy [" + proxy.getServiceName() + ":"
                         + proxy.getObjectName() + "]!", t);

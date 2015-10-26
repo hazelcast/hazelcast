@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -24,6 +25,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.DataInput;
 import java.io.DataOutput;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -305,6 +307,27 @@ public final class IOUtil {
             } catch (IOException e) {
                 Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
             }
+        }
+    }
+
+    /**
+     * Ensures that the file described by the supplied parameter does not exist
+     * after the method returns. If the file didn't exist, returns silently.
+     * If the file could not be deleted, fails with an exception.
+     * If the file is a directory, its children are recursively deleted.
+     */
+    public static void delete(File f) {
+        if (!f.exists()) {
+            return;
+        }
+        final File[] subFiles = f.listFiles();
+        if (subFiles != null) {
+            for (File sf : subFiles) {
+                delete(sf);
+            }
+        }
+        if (!f.delete()) {
+            throw new HazelcastException("Failed to delete " + f);
         }
     }
 }

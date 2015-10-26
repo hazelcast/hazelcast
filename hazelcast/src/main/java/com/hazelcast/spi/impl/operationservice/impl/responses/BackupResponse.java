@@ -41,11 +41,6 @@ public final class BackupResponse extends Response {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("BackupResponse");
-        sb.append("{callId=").append(callId);
-        sb.append(", urgent=").append(urgent);
-        sb.append('}');
-        return sb.toString();
+        return "BackupResponse{callId=" + callId + ", urgent=" + urgent + '}';
     }
 }

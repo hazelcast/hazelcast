@@ -18,9 +18,11 @@ package com.hazelcast.query;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.Visitor;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,9 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.hazelcast.query.impl.predicates.AbstractPredicate;
-import com.hazelcast.query.impl.predicates.Visitor;
 
 import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.between;
@@ -48,8 +47,7 @@ import static com.hazelcast.query.Predicates.regex;
 /**
  * This class contains methods related to conversion of sql query to predicate.
  */
-
-public class SqlPredicate extends AbstractPredicate implements IndexAwarePredicate, VisitablePredicate {
+public class SqlPredicate implements IndexAwarePredicate, VisitablePredicate, DataSerializable {
 
     private static final long serialVersionUID = 1;
 

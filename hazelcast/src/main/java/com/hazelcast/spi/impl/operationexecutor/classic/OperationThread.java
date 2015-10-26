@@ -55,6 +55,8 @@ public abstract class OperationThread extends HazelcastManagedThread {
     private final SwCounter processedOperationsCount = newSwCounter();
     @Probe
     private final SwCounter processedPartitionSpecificRunnableCount = newSwCounter();
+    @Probe
+    private final SwCounter processedRunnableCount = newSwCounter();
 
     private final NodeExtension nodeExtension;
     private final ILogger logger;
@@ -141,6 +143,11 @@ public abstract class OperationThread extends HazelcastManagedThread {
             return;
         }
 
+        if (task instanceof Runnable) {
+            processRunnable((Runnable) task);
+            return;
+        }
+
         throw new IllegalStateException("Unhandled task type for task:" + task);
     }
 
@@ -155,6 +162,17 @@ public abstract class OperationThread extends HazelcastManagedThread {
             logger.severe("Failed to process task: " + runnable + " on " + getName(), e);
         } finally {
             currentOperationRunner = null;
+        }
+    }
+
+    private void processRunnable(Runnable runnable) {
+        processedRunnableCount.inc();
+
+        try {
+            runnable.run();
+        } catch (Throwable e) {
+            inspectOutputMemoryError(e);
+            logger.severe("Failed to process task: " + runnable + " on " + getName(), e);
         }
     }
 

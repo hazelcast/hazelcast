@@ -20,7 +20,9 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
@@ -78,8 +80,13 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
 
     public abstract Data getKey();
 
+    protected abstract boolean isLocalOnly();
+
     private void handleEvent(EntryEvent<Object, Object> event) {
-        if (endpoint.isAlive()) {
+        if (!shouldSendEvent(event)) {
+            return;
+        }
+
             Data key = serializationService.toData(event.getKey());
             Data newValue = serializationService.toData(event.getValue());
             Data oldValue = serializationService.toData(event.getOldValue());
@@ -89,16 +96,30 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
                     , newValue, oldValue, mergingValue, event.getEventType().getType(),
                     event.getMember().getUuid(), 1);
             sendClientMessage(key, clientMessage);
-        }
     }
 
     private void handleMapEvent(MapEvent event) {
-        if (endpoint.isAlive()) {
+        if (!shouldSendEvent(event)) {
+            return;
+        }
+
             ClientMessage clientMessage = encodeEvent(null
                     , null, null, null, event.getEventType().getType(),
                     event.getMember().getUuid(), event.getNumberOfEntriesAffected());
             sendClientMessage(null, clientMessage);
+    }
+
+    private boolean shouldSendEvent(IMapEvent event) {
+        if (!endpoint.isAlive()) {
+            return false;
         }
+
+        Member originatedMember = event.getMember();
+        if (isLocalOnly() && !nodeEngine.getLocalMember().equals(originatedMember)) {
+            //if listener is registered local only, do not let the events originated from other members pass through
+            return false;
+        }
+        return true;
     }
 
 

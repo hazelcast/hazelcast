@@ -17,27 +17,27 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.AuthenticationException;
+import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.client.impl.protocol.AuthenticationStatus;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.concurrent.Future;
 
 /**
  * Used to authenticate client connections to cluster as parameter to ClientConnectionManager.
- *
- * @see com.hazelcast.client.connection.ClientConnectionManager#getOrConnect(Address, Authenticator)
  */
 public class ClusterAuthenticator implements Authenticator {
 
@@ -52,23 +52,45 @@ public class ClusterAuthenticator implements Authenticator {
 
     @Override
     public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
+        final SerializationService ss = client.getSerializationService();
         final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         final ClientPrincipal principal = clusterService.getPrincipal();
-        final SerializationService ss = client.getSerializationService();
-        AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
+        String uuid = principal.getUuid();
+        String ownerUuid = principal.getOwnerUuid();
+
+        ClientMessage clientMessage;
+        if (credentials instanceof UsernamePasswordCredentials) {
+            UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
+            clientMessage = ClientAuthenticationCodec.encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, false,
+                    ClientTypes.JAVA, client.getSerializationService().getVersion());
+        } else {
+            Data data = ss.toData(credentials);
+            clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid, false, ClientTypes.JAVA,
+                    client.getSerializationService().getVersion());
+
+        }
         connection.init();
-        //contains remoteAddress and principal
-        SerializableList collectionWrapper;
-        final ClientInvocation clientInvocation = new ClientInvocation(client, auth, connection);
-        final Future<SerializableList> future = clientInvocation.invoke();
+
+        ClientMessage response;
+        final ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
+        final Future<ClientMessage> future = clientInvocation.invoke();
         try {
-            collectionWrapper = ss.toObject(future.get());
+            response = future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e, IOException.class);
         }
-        final Iterator<Data> iter = collectionWrapper.iterator();
-        final Data addressData = iter.next();
-        final Address address = ss.toObject(addressData);
-        connection.setRemoteEndpoint(address);
+        ClientAuthenticationCodec.ResponseParameters result = ClientAuthenticationCodec.decodeResponse(response);
+
+        AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(result.status);
+        switch (authenticationStatus) {
+            case AUTHENTICATED:
+                connection.setRemoteEndpoint(result.address);
+                return;
+            case CREDENTIALS_FAILED:
+                throw new AuthenticationException("Invalid credentials!");
+            default:
+                //we do not need serialization version here as we already connected to master and agreed on the version
+                throw new AuthenticationException("Authentication status code not supported. status:" + authenticationStatus);
+        }
     }
 }

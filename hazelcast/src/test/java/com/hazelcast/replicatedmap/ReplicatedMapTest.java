@@ -934,6 +934,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         testEviction(buildConfig(InMemoryFormat.OBJECT));
     }
 
+    @Test
     public void testEvictionBinary() throws Exception {
         testEviction(buildConfig(InMemoryFormat.BINARY));
     }

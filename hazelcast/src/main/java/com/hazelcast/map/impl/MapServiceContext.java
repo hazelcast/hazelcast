@@ -26,6 +26,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.Extractors;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 
@@ -56,8 +57,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     Data toData(Object object);
 
-    boolean compare(String mapName, Object value1, Object value2);
-
     MapContainer getMapContainer(String mapName);
 
     Map<String, MapContainer> getMapContainers();
@@ -81,6 +80,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     void reset();
 
     NearCacheProvider getNearCacheProvider();
+
+    RecordStore createRecordStore(MapContainer mapContainer, int partitionId, MapKeyLoader keyLoader);
 
     RecordStore getRecordStore(int partitionId, String mapName);
 
@@ -107,6 +108,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     LocalMapStatsProvider getLocalMapStatsProvider();
 
     MapOperationProvider getMapOperationProvider(String name);
+
+    Extractors getExtractors(String mapName);
 
     void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation);
 }

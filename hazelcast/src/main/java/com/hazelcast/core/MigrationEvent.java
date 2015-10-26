@@ -145,12 +145,11 @@ public class MigrationEvent implements DataSerializable, PartitionEvent {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("MigrationEvent{");
-        sb.append("partitionId=").append(partitionId);
-        sb.append(", status=").append(status);
-        sb.append(", oldOwner=").append(oldOwner);
-        sb.append(", newOwner=").append(newOwner);
-        sb.append('}');
-        return sb.toString();
+        return "MigrationEvent{"
+                + "partitionId=" + partitionId
+                + ", status=" + status
+                + ", oldOwner=" + oldOwner
+                + ", newOwner=" + newOwner
+                + '}';
     }
 }

@@ -118,8 +118,7 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                     Data key = recordReplicationInfo.getKey();
                     final Data value = recordReplicationInfo.getValue();
-                    final MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-                    Record newRecord = mapContainer.createRecord(key, value, -1L, Clock.currentTimeMillis());
+                    Record newRecord = recordStore.createRecord(value, -1L, Clock.currentTimeMillis());
                     applyRecordInfo(newRecord, recordReplicationInfo);
                     recordStore.putRecord(key, newRecord);
                 }

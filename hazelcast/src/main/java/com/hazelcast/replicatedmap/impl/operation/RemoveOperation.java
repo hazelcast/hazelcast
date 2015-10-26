@@ -20,12 +20,11 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.PartitionAwareOperation;
 import java.io.IOException;
-
-import static com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore.TOMBSTONE_REMOVAL_PERIOD_MS;
 
 /**
  * Removes the key from replicated map.
@@ -34,6 +33,7 @@ public class RemoveOperation extends AbstractReplicatedMapOperation implements P
 
     private transient ReplicatedMapService service;
     private transient ReplicatedRecordStore store;
+    private transient Data oldValue;
 
 
     public RemoveOperation() {
@@ -44,16 +44,14 @@ public class RemoveOperation extends AbstractReplicatedMapOperation implements P
         this.key = key;
     }
 
-    @Override
-    public void beforeRun() throws Exception {
-        this.ttl = TOMBSTONE_REMOVAL_PERIOD_MS;
-    }
 
     @Override
     public void run() throws Exception {
         service = getService();
         store = service.getReplicatedRecordStore(name, true, getPartitionId());
-        response = new VersionResponsePair(store.remove(key), store.getVersion());
+        Object removed = store.remove(key);
+        this.oldValue = getNodeEngine().toData(removed);
+        response = new VersionResponsePair(removed, store.getVersion());
         Address thisAddress = getNodeEngine().getThisAddress();
         if (!getCallerAddress().equals(thisAddress)) {
             sendUpdateCallerOperation(true);
@@ -63,6 +61,8 @@ public class RemoveOperation extends AbstractReplicatedMapOperation implements P
     @Override
     public void afterRun() throws Exception {
         sendReplicationOperation(true);
+        ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
+        eventPublishingService.fireEntryListenerEvent(key, oldValue, null, name, getCallerAddress());
     }
 
     @Override

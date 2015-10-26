@@ -267,12 +267,11 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("ClientEndpoint{");
-        sb.append("conn=").append(conn);
-        sb.append(", principal='").append(principal).append('\'');
-        sb.append(", firstConnection=").append(firstConnection);
-        sb.append(", authenticated=").append(authenticated);
-        sb.append('}');
-        return sb.toString();
+        return "ClientEndpoint{"
+                + "conn=" + conn
+                + ", principal='" + principal + '\''
+                + ", firstConnection=" + firstConnection
+                + ", authenticated=" + authenticated
+                + '}';
     }
 }

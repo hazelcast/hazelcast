@@ -174,13 +174,11 @@ public final class TransactionOptions implements DataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("TransactionOptions");
-        sb.append("{timeoutMillis=").append(timeoutMillis);
-        sb.append(", durability=").append(durability);
-        sb.append(", txType=").append(transactionType);
-        sb.append('}');
-        return sb.toString();
+        return "TransactionOptions{"
+                + "timeoutMillis=" + timeoutMillis
+                + ", durability=" + durability
+                + ", txType=" + transactionType
+                + '}';
     }
 
     /**

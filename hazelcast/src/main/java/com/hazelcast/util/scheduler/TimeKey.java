@@ -65,10 +65,6 @@ final class TimeKey {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("TimeKey{");
-        sb.append("key=").append(key);
-        sb.append(",time=").append(time);
-        sb.append('}');
-        return sb.toString();
+        return "TimeKey{" + "key=" + key + ",time=" + time + '}';
     }
 }

@@ -20,9 +20,9 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClusterAuthenticator;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.proxy.txn.TransactionContextProxy;
+import com.hazelcast.client.proxy.txn.xa.XATransactionContextProxy;
 import com.hazelcast.client.spi.ClientTransactionManagerService;
-import com.hazelcast.client.txn.TransactionContextProxy;
-import com.hazelcast.client.txn.proxy.xa.XATransactionContextProxy;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
@@ -43,13 +43,12 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
     final HazelcastClientInstanceImpl client;
 
     private final LoadBalancer loadBalancer;
-    private final Credentials credentials;
     private final ClusterAuthenticator authenticator;
 
     public ClientTransactionManagerServiceImpl(HazelcastClientInstanceImpl client, LoadBalancer loadBalancer) {
         this.client = client;
         this.loadBalancer = loadBalancer;
-        credentials = client.getCredentials();
+        Credentials credentials = client.getCredentials();
         authenticator = new ClusterAuthenticator(client, credentials);
     }
 

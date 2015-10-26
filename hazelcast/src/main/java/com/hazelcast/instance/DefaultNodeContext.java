@@ -29,6 +29,11 @@ import java.nio.channels.ServerSocketChannel;
 public class DefaultNodeContext implements NodeContext {
 
     @Override
+    public NodeExtension createNodeExtension(Node node) {
+        return NodeExtensionFactory.create(node);
+    }
+
+    @Override
     public AddressPicker createAddressPicker(Node node) {
         return new DefaultAddressPicker(node);
     }

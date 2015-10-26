@@ -19,5 +19,10 @@
  * people that integrate Hazelcast into their own systems or frameworks and cannot
  * use the default discovery service implementation (for example using a different
  * {@link com.hazelcast.spi.discovery.DiscoveryStrategy} lookup strategy like OSGi).
+ *
+ * @since 3.6
  */
+@Beta
 package com.hazelcast.spi.discovery.integration;
+
+import com.hazelcast.spi.annotation.Beta;

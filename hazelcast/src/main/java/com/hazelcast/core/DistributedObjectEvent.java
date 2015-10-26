@@ -100,11 +100,10 @@ public class DistributedObjectEvent {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("DistributedObjectEvent{");
-        sb.append("eventType=").append(eventType);
-        sb.append(", serviceName='").append(serviceName).append('\'');
-        sb.append(", distributedObject=").append(distributedObject);
-        sb.append('}');
-        return sb.toString();
+        return "DistributedObjectEvent{"
+                + "eventType=" + eventType
+                + ", serviceName='" + serviceName + '\''
+                + ", distributedObject=" + distributedObject
+                + '}';
     }
 }

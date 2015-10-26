@@ -1131,26 +1131,24 @@ public class Config {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("Config");
-        sb.append("{groupConfig=").append(groupConfig);
-        sb.append(", properties=").append(properties);
-        sb.append(", networkConfig=").append(networkConfig);
-        sb.append(", mapConfigs=").append(mapConfigs);
-        sb.append(", topicConfigs=").append(topicConfigs);
-        sb.append(", reliableTopicConfigs=").append(reliableTopicConfigs);
-        sb.append(", queueConfigs=").append(queueConfigs);
-        sb.append(", multiMapConfigs=").append(multiMapConfigs);
-        sb.append(", executorConfigs=").append(executorConfigs);
-        sb.append(", semaphoreConfigs=").append(semaphoreConfigs);
-        sb.append(", ringbufferConfigs=").append(ringbufferConfigs);
-        sb.append(", wanReplicationConfigs=").append(wanReplicationConfigs);
-        sb.append(", listenerConfigs=").append(listenerConfigs);
-        sb.append(", partitionGroupConfig=").append(partitionGroupConfig);
-        sb.append(", managementCenterConfig=").append(managementCenterConfig);
-        sb.append(", securityConfig=").append(securityConfig);
-        sb.append(", liteMember=").append(liteMember);
-        sb.append('}');
-        return sb.toString();
+        return "Config{"
+                + "groupConfig=" + groupConfig
+                + ", properties=" + properties
+                + ", networkConfig=" + networkConfig
+                + ", mapConfigs=" + mapConfigs
+                + ", topicConfigs=" + topicConfigs
+                + ", reliableTopicConfigs=" + reliableTopicConfigs
+                + ", queueConfigs=" + queueConfigs
+                + ", multiMapConfigs=" + multiMapConfigs
+                + ", executorConfigs=" + executorConfigs
+                + ", semaphoreConfigs=" + semaphoreConfigs
+                + ", ringbufferConfigs=" + ringbufferConfigs
+                + ", wanReplicationConfigs=" + wanReplicationConfigs
+                + ", listenerConfigs=" + listenerConfigs
+                + ", partitionGroupConfig=" + partitionGroupConfig
+                + ", managementCenterConfig=" + managementCenterConfig
+                + ", securityConfig=" + securityConfig
+                + ", liteMember=" + liteMember
+                + '}';
     }
 }

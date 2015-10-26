@@ -35,6 +35,8 @@ import java.util.Set;
  * A Probing hashmap specialised for long key and value pairs.
  */
 public class Long2LongHashMap implements Map<Long, Long> {
+    /** The default load factor for constructors not explicitly supplying it */
+    public static final double DEFAULT_LOAD_FACTOR = 0.6;
     private final Set<Long> keySet;
     private final LongIterator valueIterator = new LongIterator(1);
     private final Collection<Long> values;
@@ -49,39 +51,30 @@ public class Long2LongHashMap implements Map<Long, Long> {
     private int resizeThreshold;
     private int size;
 
-    public Long2LongHashMap(final long missingValue) {
-        this(16, 0.6, missingValue);
+    public Long2LongHashMap(int initialCapacity, double loadFactor, long missingValue) {
+        this(loadFactor, missingValue);
+        capacity(QuickMath.nextPowerOfTwo(initialCapacity));
     }
 
-    @SuppressWarnings("unchecked")
-    public Long2LongHashMap(final int initialCapacity, final double loadFactor, final long missingValue) {
+    public Long2LongHashMap(long missingValue) {
+        this(16, DEFAULT_LOAD_FACTOR, missingValue);
+    }
+
+    public Long2LongHashMap(Long2LongHashMap that) {
+        this(that.loadFactor, that.missingValue);
+        this.entries = Arrays.copyOf(that.entries, that.entries.length);
+        this.capacity = that.capacity;
+        this.mask = that.mask;
+        this.resizeThreshold = that.resizeThreshold;
+        this.size = that.size;
+    }
+
+    private Long2LongHashMap(double loadFactor, long missingValue) {
+        this.entrySet = entrySetSingleton();
+        this.keySet = keySetSingleton();
+        this.values = valuesSingleton();
         this.loadFactor = loadFactor;
         this.missingValue = missingValue;
-        capacity(QuickMath.nextPowerOfTwo(initialCapacity));
-        final LongIterator keyIterator = new LongIterator(0);
-        keySet = new MapDelegatingSet<Long>(this, new IteratorSupplier(keyIterator), new Predicate() {
-            @Override public boolean test(Object value) {
-                return containsValue(value);
-            }
-        });
-        values = new MapDelegatingSet<Long>(this, new Supplier<Iterator<Long>>() {
-            @Override public Iterator<Long> get() {
-                return valueIterator.reset();
-            }
-        }, new Predicate() {
-            @Override
-            public boolean test(Object key) {
-                return containsKey(key);
-            }
-        });
-        final EntryIterator entryIterator = new EntryIterator();
-        entrySet = new MapDelegatingSet<Entry<Long, Long>>(this, new EntryIteratorSupplier(entryIterator), new
-                Predicate() {
-            @Override
-            public boolean test(Object e) {
-                return Long2LongHashMap.this.containsKey(((Entry<Long, Long>) e).getKey());
-            }
-        });
     }
 
     /**
@@ -173,6 +166,37 @@ public class Long2LongHashMap implements Map<Long, Long> {
             if (key != missingValue) {
                 consumer.accept(entries[i], entries[i + 1]);
             }
+        }
+    }
+
+    /**
+     * Provides a cursor over the map's entries. Similar to {@code entrySet().iterator()},
+     * but with a simpler and more clear API.
+     */
+    public LongLongCursor cursor() {
+        return new LongLongCursor();
+    }
+
+    /**
+     * Implements the cursor.
+     */
+    public final class LongLongCursor {
+        private int i = -2;
+
+        public boolean advance() {
+            final long[] es = entries;
+            do {
+                i += 2;
+            } while (i < es.length && es[i] == missingValue);
+            return i < es.length;
+        }
+
+        public long key() {
+            return entries[i];
+        }
+
+        public long value() {
+            return entries[i + 1];
         }
     }
 
@@ -303,6 +327,19 @@ public class Long2LongHashMap implements Map<Long, Long> {
         return missingValue;
     }
 
+    @Override public String toString() {
+        final StringBuilder b = new StringBuilder(size() * 8);
+        b.append('{');
+        longForEach(new LongLongConsumer() {
+            String separator = "";
+            @Override public void accept(long key, long value) {
+                b.append(separator).append(key).append("->").append(value);
+                separator = " ";
+            }
+        });
+        return b.append('}').toString();
+    }
+
     private void compactChain(int deleteIndex) {
         final long[] entries = this.entries;
         int index = deleteIndex;
@@ -321,15 +358,6 @@ public class Long2LongHashMap implements Map<Long, Long> {
                 deleteIndex = index;
             }
         }
-    }
-
-    public long minValue() {
-        long min = Long.MAX_VALUE;
-        final LongIterator iterator = valueIterator.reset();
-        while (iterator.hasNext()) {
-            min = Math.min(min, iterator.nextValue());
-        }
-        return min;
     }
 
     private static class IteratorSupplier implements Supplier<Iterator<Long>> {
@@ -480,5 +508,35 @@ public class Long2LongHashMap implements Map<Long, Long> {
         entries = new long[newCapacity * 2];
         size = 0;
         Arrays.fill(entries, missingValue);
+    }
+
+    private MapDelegatingSet<Entry<Long, Long>> entrySetSingleton() {
+        return new MapDelegatingSet<Entry<Long, Long>>(this, new EntryIteratorSupplier(new EntryIterator()),
+                new Predicate() {
+                    @SuppressWarnings("unchecked")
+                    @Override public boolean test(Object e) {
+                        return containsKey(((Entry<Long, Long>) e).getKey());
+                    }
+                });
+    }
+
+    private MapDelegatingSet<Long> keySetSingleton() {
+        return new MapDelegatingSet<Long>(this, new IteratorSupplier(new LongIterator(0)), new Predicate() {
+            @Override public boolean test(Object value) {
+                return containsValue(value);
+            }
+        });
+    }
+
+    private MapDelegatingSet<Long> valuesSingleton() {
+        return new MapDelegatingSet<Long>(this, new Supplier<Iterator<Long>>() {
+            @Override public Iterator<Long> get() {
+                return valueIterator.reset();
+            }
+        }, new Predicate() {
+            @Override public boolean test(Object key) {
+                return containsKey(key);
+            }
+        });
     }
 }

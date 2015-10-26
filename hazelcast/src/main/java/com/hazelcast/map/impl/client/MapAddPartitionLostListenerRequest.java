@@ -17,11 +17,11 @@
 package com.hazelcast.map.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.client.CallableClientRequest;
-import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -32,9 +32,7 @@ import com.hazelcast.spi.impl.PortableMapPartitionLostEvent;
 import java.io.IOException;
 import java.security.Permission;
 
-public class MapAddPartitionLostListenerRequest extends CallableClientRequest
-        implements RetryableRequest {
-
+public class MapAddPartitionLostListenerRequest extends BaseClientAddListenerRequest {
 
     private String name;
 
@@ -48,7 +46,6 @@ public class MapAddPartitionLostListenerRequest extends CallableClientRequest
     @Override
     public Object call() {
         final ClientEndpoint endpoint = getEndpoint();
-        final MapService mapService = getService();
 
         final MapPartitionLostListener listener = new MapPartitionLostListener() {
             @Override
@@ -61,7 +58,15 @@ public class MapAddPartitionLostListenerRequest extends CallableClientRequest
             }
         };
 
-        final String registrationId = mapService.getMapServiceContext().addPartitionLostListener(listener, name);
+        MapService mapService = getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        String registrationId;
+        if (localOnly) {
+            registrationId = mapServiceContext.addLocalPartitionLostListener(listener, name);
+        } else {
+            registrationId = mapServiceContext.addPartitionLostListener(listener, name);
+        }
+
         endpoint.addListenerDestroyAction(MapService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
@@ -69,11 +74,13 @@ public class MapAddPartitionLostListenerRequest extends CallableClientRequest
 
     @Override
     public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeUTF("name", name);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         name = reader.readUTF("name");
     }
 
@@ -81,6 +88,7 @@ public class MapAddPartitionLostListenerRequest extends CallableClientRequest
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
+
     @Override
     public String getMethodName() {
         return "addPartitionLostListener";

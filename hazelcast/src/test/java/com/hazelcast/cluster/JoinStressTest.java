@@ -16,7 +16,6 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
@@ -28,8 +27,10 @@ import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.CustomSerializationTest;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -67,8 +68,9 @@ public class JoinStressTest extends HazelcastTestSupport {
 
     @Before
     @After
-    public void tearDown() {
-        System.clearProperty("hazelcast.serialization.custom.override");
+    public void tearDown() throws Exception{
+        System.clearProperty(SerializationUtil.PROP_DEFAULT_SERIALIZER_OVERRIDE);
+        CustomSerializationTest.resetConfigField();
         HazelcastInstanceFactory.terminateAll();
     }
 
@@ -83,7 +85,7 @@ public class JoinStressTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testJoincompletesCorrectlyWhenMultipleNodesStartedParallel() {
+    public void testJoincompletesCorrectlyWhenMultipleNodesStartedParallel() throws Exception {
         int count = 10;
         final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(count);
         final HazelcastInstance[] instances = new HazelcastInstance[count];
@@ -95,7 +97,8 @@ public class JoinStressTest extends HazelcastTestSupport {
         serializerConfig.setImplementation(new MemberInfoUpdateOperationSerializer());
         serializationConfig.addSerializerConfig(serializerConfig);
         config.setSerializationConfig(serializationConfig);
-        System.setProperty("hazelcast.serialization.custom.override", "true");
+        System.setProperty(SerializationUtil.PROP_DEFAULT_SERIALIZER_OVERRIDE, "true");
+        CustomSerializationTest.resetConfigField();
 
         for (int i = 0; i < count; i++) {
             final int index = i;

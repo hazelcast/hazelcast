@@ -18,8 +18,6 @@ package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.Member;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
@@ -28,10 +26,10 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_TRY_COUNT;
+
 
 public abstract class AbstractReplicatedMapOperation extends AbstractOperation {
-
-    private static ILogger logger = Logger.getLogger(AbstractReplicatedMapOperation.class.getName());
 
     protected String name;
     protected Data key;
@@ -65,10 +63,13 @@ public abstract class AbstractReplicatedMapOperation extends AbstractOperation {
     private void invoke(boolean isRemove, OperationService operationService, Address address, String name, Data key,
                         Data value, long ttl, VersionResponsePair response) {
         ReplicateUpdateOperation updateOperation = new ReplicateUpdateOperation(name, key, value, ttl, response,
-                isRemove);
+                isRemove, getCallerAddress());
         updateOperation.setPartitionId(getPartitionId());
         updateOperation.setValidateTarget(false);
-        operationService.invokeOnTarget(getServiceName(), updateOperation, address);
+        operationService
+                .createInvocationBuilder(getServiceName(), updateOperation, address)
+                .setTryCount(INVOCATION_TRY_COUNT)
+                .invoke();
     }
 
     protected void sendUpdateCallerOperation(boolean isRemove) {
@@ -78,7 +79,10 @@ public abstract class AbstractReplicatedMapOperation extends AbstractOperation {
         updateCallerOperation.setPartitionId(getPartitionId());
         updateCallerOperation.setValidateTarget(false);
         updateCallerOperation.setServiceName(getServiceName());
-        operationService.invokeOnTarget(getServiceName(), updateCallerOperation, getCallerAddress());
+        operationService
+                .createInvocationBuilder(getServiceName(), updateCallerOperation, getCallerAddress())
+                .setTryCount(INVOCATION_TRY_COUNT)
+                .invoke();
     }
 
     @Override

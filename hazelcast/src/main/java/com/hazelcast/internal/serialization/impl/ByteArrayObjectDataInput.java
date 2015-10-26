@@ -16,11 +16,10 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.UTFEncoderDecoder;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -30,6 +29,7 @@ import java.nio.ByteOrder;
 import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataInput {
@@ -44,7 +44,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
 
     final SerializationService service;
 
-    private byte[] utfBuffer;
+    char[] charBuffer;
 
     private final boolean bigEndian;
 
@@ -59,7 +59,8 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         this.pos = offset;
         this.bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
     }
-   @Override
+
+    @Override
     public void init(byte[] data, int offset) {
         this.data = data;
         this.size = data != null ? data.length : 0;
@@ -72,6 +73,9 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         this.pos = 0;
         this.size = 0;
         this.mark = 0;
+        if (charBuffer != null && charBuffer.length > UTF_BUFFER_SIZE * 8) {
+            this.charBuffer = new char[UTF_BUFFER_SIZE * 8];
+        }
     }
 
     @Override
@@ -88,12 +92,9 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
     public final int read(byte[] b, int off, int len) throws IOException {
         if (b == null) {
             throw new NullPointerException();
-        } else if ((off < 0) || (off > b.length) || (len < 0)
-                || ((off + len) > b.length)
-                || ((off + len) < 0)) {
+        } else if (off < 0 || len < 0 || len > b.length - off) {
             throw new IndexOutOfBoundsException();
-        }
-        if (len <= 0) {
+        } else if (len == 0) {
             return 0;
         }
         if (pos >= size) {
@@ -385,6 +386,9 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
     @Override
     public byte[] readByteArray() throws IOException {
         int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
         if (len > 0) {
             byte[] b = new byte[len];
             readFully(b);
@@ -394,8 +398,27 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
     }
 
     @Override
+    public boolean[] readBooleanArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            boolean[] values = new boolean[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readBoolean();
+            }
+            return values;
+        }
+        return new boolean[0];
+    }
+
+    @Override
     public char[] readCharArray() throws IOException {
         int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
         if (len > 0) {
             char[] values = new char[len];
             for (int i = 0; i < len; i++) {
@@ -409,6 +432,9 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
     @Override
     public int[] readIntArray() throws IOException {
         int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
         if (len > 0) {
             int[] values = new int[len];
             for (int i = 0; i < len; i++) {
@@ -422,6 +448,9 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
     @Override
     public long[] readLongArray() throws IOException {
         int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
         if (len > 0) {
             long[] values = new long[len];
             for (int i = 0; i < len; i++) {
@@ -435,6 +464,9 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
     @Override
     public double[] readDoubleArray() throws IOException {
         int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
         if (len > 0) {
             double[] values = new double[len];
             for (int i = 0; i < len; i++) {
@@ -448,6 +480,9 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
     @Override
     public float[] readFloatArray() throws IOException {
         int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
         if (len > 0) {
             float[] values = new float[len];
             for (int i = 0; i < len; i++) {
@@ -461,6 +496,9 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
     @Override
     public short[] readShortArray() throws IOException {
         int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
         if (len > 0) {
             short[] values = new short[len];
             for (int i = 0; i < len; i++) {
@@ -469,6 +507,22 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
             return values;
         }
         return new short[0];
+    }
+
+    @Override
+    public String[] readUTFArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            String[] values = new String[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readUTF();
+            }
+            return values;
+        }
+        return new String[0];
     }
 
     /**
@@ -522,10 +576,23 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      */
     @Override
     public final String readUTF() throws IOException {
-        if (utfBuffer == null) {
-            utfBuffer = new byte[UTF_BUFFER_SIZE];
+        int charCount = readInt();
+        if (charCount == NULL_ARRAY_LENGTH) {
+            return null;
         }
-        return UTFEncoderDecoder.readUTF(this, utfBuffer);
+        if (charBuffer == null || charCount > charBuffer.length) {
+            charBuffer = new char[charCount];
+        }
+        byte b;
+        for (int i = 0; i < charCount; i++) {
+            b = readByte();
+            if (b < 0) {
+                charBuffer[i] = Bits.readUtf8Char(this, b);
+            } else {
+                charBuffer[i] = (char) b;
+            }
+        }
+        return new String(charBuffer, 0, charCount);
     }
 
     @Override
@@ -535,7 +602,9 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
 
     @Override
     public final Data readData() throws IOException {
-        return service.readData(this);
+        byte[] bytes = readByteArray();
+        Data data = bytes == null ? null : new HeapData(bytes);
+        return data;
     }
 
     @Override
@@ -611,7 +680,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
     @Override
     public final void close() {
         data = null;
-        utfBuffer = null;
+        charBuffer = null;
     }
 
     @Override
@@ -625,12 +694,10 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("ByteArrayObjectDataInput");
-        sb.append("{size=").append(size);
-        sb.append(", pos=").append(pos);
-        sb.append(", mark=").append(mark);
-        sb.append('}');
-        return sb.toString();
+        return "ByteArrayObjectDataInput{"
+                + "size=" + size
+                + ", pos=" + pos
+                + ", mark=" + mark
+                + '}';
     }
 }

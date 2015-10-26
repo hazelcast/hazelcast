@@ -30,6 +30,7 @@ import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.MemberPartitionState;
 import com.hazelcast.monitor.MemberState;
 
@@ -53,6 +54,7 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalExecutorStats> executorStats = new HashMap<String, LocalExecutorStats>();
     private Map<String, LocalReplicatedMapStats> replicatedMapStats = new HashMap<String, LocalReplicatedMapStats>();
     private Map<String, LocalCacheStats> cacheStats = new HashMap<String, LocalCacheStats>();
+    private Map<String, LocalWanStats> wanStats = new HashMap<String, LocalWanStats>();
     private Collection<ClientEndPointDTO> clients = new HashSet<ClientEndPointDTO>();
     private MXBeansDTO beans = new MXBeansDTO();
     private LocalMemoryStats memoryStats = new LocalMemoryStatsImpl();
@@ -107,6 +109,11 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    public LocalWanStats getLocalWanStats(String schemeName) {
+        return wanStats.get(schemeName);
+    }
+
+    @Override
     public String getAddress() {
         return address;
     }
@@ -141,6 +148,10 @@ public class MemberStateImpl implements MemberState {
 
     public void putLocalCacheStats(String name, LocalCacheStats localCacheStats) {
         cacheStats.put(name, localCacheStats);
+    }
+
+    public void putLocalWanStats(String name, LocalWanStats localWanStats) {
+        wanStats.put(name, localWanStats);
     }
 
     public Collection<ClientEndPointDTO> getClients() {
@@ -222,6 +233,11 @@ public class MemberStateImpl implements MemberState {
             cacheStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("cacheStats", cacheStatsObject);
+        JsonObject wanStatsObject = new JsonObject();
+        for (Map.Entry<String, LocalWanStats> entry : wanStats.entrySet()) {
+            wanStatsObject.add(entry.getKey(), entry.getValue().toJson());
+        }
+        root.add("wanStats", wanStatsObject);
         JsonObject runtimePropsObject = new JsonObject();
         for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
             runtimePropsObject.add(entry.getKey(), entry.getValue());
@@ -277,6 +293,11 @@ public class MemberStateImpl implements MemberState {
             LocalCacheStats stats = new LocalCacheStatsImpl();
             stats.fromJson(next.getValue().asObject());
             cacheStats.put(next.getName(), stats);
+        }
+        for (JsonObject.Member next : getObject(json, "wanStats", new JsonObject())) {
+            LocalWanStats stats = new LocalWanStatsImpl();
+            stats.fromJson(next.getValue().asObject());
+            wanStats.put(next.getName(), stats);
         }
         for (JsonObject.Member next : getObject(json, "runtimeProps")) {
             runtimeProps.put(next.getName(), next.getValue().asLong());

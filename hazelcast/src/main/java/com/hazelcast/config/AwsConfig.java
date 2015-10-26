@@ -277,16 +277,14 @@ public class AwsConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("AwsConfig{");
-        sb.append("enabled=").append(enabled);
-        sb.append(", region='").append(region).append('\'');
-        sb.append(", securityGroupName='").append(securityGroupName).append('\'');
-        sb.append(", tagKey='").append(tagKey).append('\'');
-        sb.append(", tagValue='").append(tagValue).append('\'');
-        sb.append(", hostHeader='").append(hostHeader).append('\'');
-        sb.append(", iamRole='").append(iamRole).append('\'');
-        sb.append(", connectionTimeoutSeconds=").append(connectionTimeoutSeconds);
-        sb.append('}');
-        return sb.toString();
+        return "AwsConfig{"
+                + "enabled=" + enabled
+                + ", region='" + region + '\''
+                + ", securityGroupName='" + securityGroupName + '\''
+                + ", tagKey='" + tagKey + '\''
+                + ", tagValue='" + tagValue + '\''
+                + ", hostHeader='" + hostHeader + '\''
+                + ", iamRole='" + iamRole + '\''
+                + ", connectionTimeoutSeconds=" + connectionTimeoutSeconds + '}';
     }
 }

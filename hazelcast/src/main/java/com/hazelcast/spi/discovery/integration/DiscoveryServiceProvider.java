@@ -16,8 +16,7 @@
 
 package com.hazelcast.spi.discovery.integration;
 
-import com.hazelcast.config.DiscoveryStrategiesConfig;
-import com.hazelcast.spi.discovery.DiscoveryMode;
+import com.hazelcast.spi.annotation.Beta;
 
 /**
  * The <tt>DiscoveryServiceProvider</tt> interface provides the possibility to build {@link DiscoveryService}s.
@@ -25,18 +24,18 @@ import com.hazelcast.spi.discovery.DiscoveryMode;
  * provide this ability. Every service should have its own provider, however in rare cases a single provider might
  * create different <tt>DiscoveryService</tt> implementations based on the provided {@link DiscoveryMode} or other
  * configuration details.
+ *
+ * @since 3.6
  */
+@Beta
 public interface DiscoveryServiceProvider {
 
     /**
      * Instantiates a new instance of the {@link DiscoveryService}.
      *
-     * @param discoveryMode            the current discovery mode
-     * @param discoveryStrategiesConfig the configuration parsed from the XML or provided using the programmatic API
-     * @param configClassLoader        the classloader set in the configuration
+     * @param settings The settings to pass to creation of the <tt>DiscoveryService</tt>
      * @return a new instance of the discovery service
      */
-    DiscoveryService newDiscoveryService(DiscoveryMode discoveryMode, DiscoveryStrategiesConfig discoveryStrategiesConfig,
-                                         ClassLoader configClassLoader);
+    DiscoveryService newDiscoveryService(DiscoveryServiceSettings settings);
 
 }

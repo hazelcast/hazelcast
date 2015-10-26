@@ -41,6 +41,11 @@ public class MapAddEntryListenerWithPredicateMessageTask
     }
 
     @Override
+    protected boolean isLocalOnly() {
+        return parameters.localOnly;
+    }
+
+    @Override
     public String getDistributedObjectName() {
         return parameters.name;
     }

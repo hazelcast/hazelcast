@@ -137,13 +137,11 @@ public class SocketInterceptorConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("SocketInterceptorConfig");
-        sb.append("{className='").append(className).append('\'');
-        sb.append(", enabled=").append(enabled);
-        sb.append(", implementation=").append(implementation);
-        sb.append(", properties=").append(properties);
-        sb.append('}');
-        return sb.toString();
+        return "SocketInterceptorConfig{"
+                + "className='" + className + '\''
+                + ", enabled=" + enabled
+                + ", implementation=" + implementation
+                + ", properties=" + properties
+                + '}';
     }
 }

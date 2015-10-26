@@ -17,11 +17,13 @@
 package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.client.CallableClientRequest;
+import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.core.Member;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -37,6 +39,7 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedEntryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedQueryEventFilter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
+
 import java.io.IOException;
 import java.security.Permission;
 
@@ -44,7 +47,7 @@ import java.security.Permission;
  * Client request class for {@link com.hazelcast.core.ReplicatedMap#addEntryListener(com.hazelcast.core.EntryListener)}
  * implementation
  */
-public class ClientReplicatedMapAddEntryListenerRequest extends CallableClientRequest {
+public class ClientReplicatedMapAddEntryListenerRequest extends BaseClientAddListenerRequest {
 
     private String mapName;
     private Predicate predicate;
@@ -86,31 +89,48 @@ public class ClientReplicatedMapAddEntryListenerRequest extends CallableClientRe
     private class ClientReplicatedMapEntryListener implements EntryListener {
 
         private void handleEvent(EntryEvent event) {
-            if (endpoint.isAlive()) {
-                if (!(event instanceof DataAwareEntryEvent)) {
-                    throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
-                            + event.getClass().getSimpleName());
-                }
-                DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                Data key = dataAwareEntryEvent.getKeyData();
-                Data value = dataAwareEntryEvent.getNewValueData();
-                Data oldValue = dataAwareEntryEvent.getOldValueData();
-                EntryEventType eventType = event.getEventType();
-                String uuid = event.getMember().getUuid();
-                Portable portableEntryEvent = new ReplicatedMapPortableEntryEvent(key, value, oldValue, eventType, uuid);
-                Data partitionKey = serializationService.toData(key);
-                endpoint.sendEvent(partitionKey, portableEntryEvent, getCallId());
+            if (!shouldSendEvent(event)) {
+                return;
             }
+
+            if (!(event instanceof DataAwareEntryEvent)) {
+                throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
+                        + event.getClass().getSimpleName());
+            }
+            DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
+            Data key = dataAwareEntryEvent.getKeyData();
+            Data value = dataAwareEntryEvent.getNewValueData();
+            Data oldValue = dataAwareEntryEvent.getOldValueData();
+            EntryEventType eventType = event.getEventType();
+            String uuid = event.getMember().getUuid();
+            Portable portableEntryEvent = new ReplicatedMapPortableEntryEvent(key, value, oldValue, eventType, uuid);
+            Data partitionKey = serializationService.toData(key);
+            endpoint.sendEvent(partitionKey, portableEntryEvent, getCallId());
         }
 
         private void handleMapEvent(MapEvent event) {
-            if (endpoint.isAlive()) {
-                final EntryEventType type = event.getEventType();
-                final String uuid = event.getMember().getUuid();
-                ReplicatedMapPortableEntryEvent portableEntryEvent = new ReplicatedMapPortableEntryEvent(null,
-                        null, null, type, uuid, event.getNumberOfEntriesAffected());
-                endpoint.sendEvent(null, portableEntryEvent, getCallId());
+            if (!shouldSendEvent(event)) {
+                return;
             }
+
+            final EntryEventType type = event.getEventType();
+            final String uuid = event.getMember().getUuid();
+            ReplicatedMapPortableEntryEvent portableEntryEvent = new ReplicatedMapPortableEntryEvent(null,
+                    null, null, type, uuid, event.getNumberOfEntriesAffected());
+            endpoint.sendEvent(null, portableEntryEvent, getCallId());
+        }
+
+        private boolean shouldSendEvent(IMapEvent event) {
+            if (!endpoint.isAlive()) {
+                return false;
+            }
+
+            Member originatedMember = event.getMember();
+            if (localOnly && !getClientEngine().getLocalMember().equals(originatedMember)) {
+                //if listener is registered local only, do not let the events originated from other members pass through
+                return false;
+            }
+            return true;
         }
 
         @Override
@@ -151,6 +171,7 @@ public class ClientReplicatedMapAddEntryListenerRequest extends CallableClientRe
 
     @Override
     public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeUTF("n", mapName);
         ObjectDataOutput out = writer.getRawDataOutput();
         out.writeData(key);
@@ -159,6 +180,7 @@ public class ClientReplicatedMapAddEntryListenerRequest extends CallableClientRe
 
     @Override
     public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         mapName = reader.readUTF("n");
         ObjectDataInput in = reader.getRawDataInput();
         key = in.readData();

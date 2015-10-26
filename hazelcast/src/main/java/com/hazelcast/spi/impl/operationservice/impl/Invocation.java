@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
@@ -300,18 +301,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         final ClusterService clusterService = nodeEngine.getClusterService();
         if (invTarget == null) {
             remote = false;
-            if (nodeEngine.isRunning()) {
-                if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
-                    final NoDataMemberInClusterException exception = new NoDataMemberInClusterException(
-                            "Partitions can't be assigned since all nodes in the cluster are lite members");
-                    notify(exception);
-                } else {
-                    notify(new WrongTargetException(thisAddress, null, partitionId
-                            , replicaIndex, op.getClass().getName(), serviceName));
-                }
-            } else {
-                notify(new HazelcastInstanceNotActiveException());
-            }
+            notifyWithExceptionWhenTargetIsNull();
             return false;
         }
 
@@ -335,6 +325,33 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
 
         remote = !thisAddress.equals(invTarget);
         return true;
+    }
+
+    private void notifyWithExceptionWhenTargetIsNull() {
+        Address thisAddress = nodeEngine.getThisAddress();
+        ClusterService clusterService = nodeEngine.getClusterService();
+
+        if (!nodeEngine.isRunning()) {
+            notify(new HazelcastInstanceNotActiveException());
+            return;
+        }
+
+        ClusterState clusterState = clusterService.getClusterState();
+        if (clusterState == ClusterState.FROZEN || clusterState == ClusterState.PASSIVE) {
+            notify(new IllegalStateException("Partitions can't be assigned since cluster-state: "
+                    + clusterState));
+            return;
+        }
+
+        if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
+            final NoDataMemberInClusterException exception = new NoDataMemberInClusterException(
+                    "Partitions can't be assigned since all nodes in the cluster are lite members");
+            notify(exception);
+            return;
+        }
+
+        notify(new WrongTargetException(thisAddress, null, partitionId,
+                replicaIndex, op.getClass().getName(), serviceName));
     }
 
     @Override
@@ -614,21 +631,19 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
             connectionStr = connection == null ? null : connection.toString();
         }
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("Invocation");
-        sb.append("{ serviceName='").append(serviceName).append('\'');
-        sb.append(", op=").append(op);
-        sb.append(", partitionId=").append(partitionId);
-        sb.append(", replicaIndex=").append(replicaIndex);
-        sb.append(", tryCount=").append(tryCount);
-        sb.append(", tryPauseMillis=").append(tryPauseMillis);
-        sb.append(", invokeCount=").append(invokeCount);
-        sb.append(", callTimeout=").append(callTimeout);
-        sb.append(", target=").append(invTarget);
-        sb.append(", backupsExpected=").append(backupsExpected);
-        sb.append(", backupsCompleted=").append(backupsCompleted);
-        sb.append(", connection=").append(connectionStr);
-        sb.append('}');
-        return sb.toString();
+        return "Invocation{"
+                + "serviceName='" + serviceName + '\''
+                + ", op=" + op
+                + ", partitionId=" + partitionId
+                + ", replicaIndex=" + replicaIndex
+                + ", tryCount=" + tryCount
+                + ", tryPauseMillis=" + tryPauseMillis
+                + ", invokeCount=" + invokeCount
+                + ", callTimeout=" + callTimeout
+                + ", target=" + invTarget
+                + ", backupsExpected=" + backupsExpected
+                + ", backupsCompleted=" + backupsCompleted
+                + ", connection=" + connectionStr
+                + '}';
     }
 }

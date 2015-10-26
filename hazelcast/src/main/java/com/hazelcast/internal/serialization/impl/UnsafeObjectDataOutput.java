@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.UnsafeHelper;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.UnsafeHelper;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -27,6 +27,7 @@ import static com.hazelcast.nio.Bits.DOUBLE_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.FLOAT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
@@ -170,8 +171,26 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
     }
 
     @Override
+    public void writeBooleanArray(boolean[] booleans) throws IOException {
+        int len = (booleans != null) ? booleans.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        if (len > 0) {
+            memCopy(booleans, UnsafeHelper.BOOLEAN_ARRAY_BASE_OFFSET, len, UnsafeHelper.BOOLEAN_ARRAY_INDEX_SCALE);
+        }
+    }
+
+    @Override
+    public void writeByteArray(byte[] bytes) throws IOException {
+        int len = (bytes != null) ? bytes.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        if (len > 0) {
+            memCopy(bytes, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET, len, UnsafeHelper.BYTE_ARRAY_INDEX_SCALE);
+        }
+    }
+
+    @Override
     public void writeCharArray(char[] values) throws IOException {
-        int len = values != null ? values.length : 0;
+        int len = values != null ? values.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             memCopy(values, UnsafeHelper.CHAR_ARRAY_BASE_OFFSET, len, UnsafeHelper.CHAR_ARRAY_INDEX_SCALE);
@@ -180,7 +199,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
 
     @Override
     public void writeShortArray(short[] values) throws IOException {
-        int len = values != null ? values.length : 0;
+        int len = values != null ? values.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             memCopy(values, UnsafeHelper.SHORT_ARRAY_BASE_OFFSET, len, UnsafeHelper.SHORT_ARRAY_INDEX_SCALE);
@@ -189,7 +208,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
 
     @Override
     public void writeIntArray(int[] values) throws IOException {
-        int len = values != null ? values.length : 0;
+        int len = values != null ? values.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             memCopy(values, UnsafeHelper.INT_ARRAY_BASE_OFFSET, len, UnsafeHelper.INT_ARRAY_INDEX_SCALE);
@@ -198,7 +217,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
 
     @Override
     public void writeFloatArray(float[] values) throws IOException {
-        int len = values != null ? values.length : 0;
+        int len = values != null ? values.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             memCopy(values, UnsafeHelper.FLOAT_ARRAY_BASE_OFFSET, len, UnsafeHelper.FLOAT_ARRAY_INDEX_SCALE);
@@ -207,7 +226,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
 
     @Override
     public void writeLongArray(long[] values) throws IOException {
-        int len = values != null ? values.length : 0;
+        int len = values != null ? values.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             memCopy(values, UnsafeHelper.LONG_ARRAY_BASE_OFFSET, len, UnsafeHelper.LONG_ARRAY_INDEX_SCALE);
@@ -216,7 +235,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
 
     @Override
     public void writeDoubleArray(double[] values) throws IOException {
-        int len = values != null ? values.length : 0;
+        int len = values != null ? values.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             memCopy(values, UnsafeHelper.DOUBLE_ARRAY_BASE_OFFSET, len, UnsafeHelper.DOUBLE_ARRAY_INDEX_SCALE);
@@ -258,12 +277,10 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("UnsafeObjectDataOutput");
-        sb.append("{size=").append(buffer != null ? buffer.length : 0);
-        sb.append(", pos=").append(pos);
-        sb.append(", byteOrder=").append(getByteOrder());
-        sb.append('}');
-        return sb.toString();
+        return "UnsafeObjectDataOutput{"
+                + "size=" + (buffer != null ? buffer.length : 0)
+                + ", pos=" + pos
+                + ", byteOrder=" + getByteOrder()
+                + '}';
     }
 }

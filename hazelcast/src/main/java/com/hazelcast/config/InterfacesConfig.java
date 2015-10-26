@@ -83,11 +83,6 @@ public class InterfacesConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("InterfacesConfig");
-        sb.append("{enabled=").append(enabled);
-        sb.append(", interfaces=").append(interfaceSet);
-        sb.append('}');
-        return sb.toString();
+        return "InterfacesConfig{enabled=" + enabled + ", interfaces=" + interfaceSet + '}';
     }
 }

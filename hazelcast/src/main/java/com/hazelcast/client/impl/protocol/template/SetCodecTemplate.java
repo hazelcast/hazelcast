@@ -149,11 +149,12 @@ public interface SetCodecTemplate {
      *
      * @param name Name of the Set
      * @param includeValue if set to true, the event shall also include the value.
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return The registration id.
      */
     @Request(id = 11, retryable = true, response = ResponseMessageConst.STRING,
     event = {EventMessageConst.EVENT_ITEM})
-    Object addListener(String name, boolean includeValue);
+    Object addListener(String name, boolean includeValue, boolean localOnly);
 
     /**
      * Removes the specified item listener. Returns silently if the specified listener was not added before.

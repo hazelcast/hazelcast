@@ -189,4 +189,20 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         assertEquals(10, dummyEntityCacheStats.getMissCount());
         assertEquals(0, dummyEntityCacheStats.getHitCount());
     }
+
+    @Test
+    public void testUpdateQueryCausesInvalidationOfEntireCollectionRegion() {
+        insertDummyEntities(1, 10);
+
+        //properties reference in DummyEntity is evicted because of custom SQL query on Collection region
+        executeUpdateQuery(sf, "update DummyProperty ent set ent.key='manually-updated'");
+        sf.getStatistics().clear();
+
+        //property reference missed in cache.
+        getPropertiesOfEntity(sf, 0);
+
+        SecondLevelCacheStatistics dummyPropertyCacheStats = sf.getStatistics().getSecondLevelCacheStatistics(CACHE_ENTITY + ".properties");
+        assertEquals(0, dummyPropertyCacheStats.getHitCount());
+        assertEquals(1, dummyPropertyCacheStats.getMissCount());
+    }
 }

@@ -93,11 +93,10 @@ public class CacheBatchInvalidationMessage extends CacheInvalidationMessage {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("CacheBatchInvalidationMessage{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", invalidationMessages=").append(invalidationMessages);
-        sb.append('}');
-        return sb.toString();
+        return "CacheBatchInvalidationMessage{"
+                + "name='" + name + '\''
+                + ", invalidationMessages=" + invalidationMessages
+                + '}';
     }
 
 }

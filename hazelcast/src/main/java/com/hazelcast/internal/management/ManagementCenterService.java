@@ -32,6 +32,8 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
+import com.hazelcast.internal.management.request.ChangeWanStateRequest;
+import com.hazelcast.internal.management.request.AsyncConsoleRequest;
 import com.hazelcast.internal.management.request.ClusterPropsRequest;
 import com.hazelcast.internal.management.request.ConsoleCommandRequest;
 import com.hazelcast.internal.management.request.ConsoleRequest;
@@ -50,6 +52,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
@@ -75,6 +78,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getObject;
@@ -422,12 +426,16 @@ public class ManagementCenterService {
         private final Map<Integer, Class<? extends ConsoleRequest>> consoleRequests
                 = new HashMap<Integer, Class<? extends ConsoleRequest>>();
 
+        private final ExecutionService executionService = instance.node.getNodeEngine()
+                .getExecutionService();
+
         TaskPollThread() {
             super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("MC.Task.Poller"));
             register(new ThreadDumpRequest());
             register(new ExecuteScriptRequest());
             register(new ConsoleCommandRequest());
             register(new MapConfigRequest());
+            register(new ChangeWanStateRequest());
             register(new MemberConfigRequest());
             register(new ClusterPropsRequest());
             register(new GetLogsRequest());
@@ -496,9 +504,15 @@ public class ManagementCenterService {
                     }
                     ConsoleRequest task = requestClass.newInstance();
                     task.fromJson(getObject(innerRequest, "request"));
-                    boolean success = processTaskAndSendResponse(taskId, task);
+                    boolean success;
+                    if (task instanceof AsyncConsoleRequest) {
+                        executionService.execute(ASYNC_EXECUTOR, new AsyncConsoleRequestTask(taskId, task));
+                        success = true;
+                    } else {
+                        success = processTaskAndSendResponse(taskId, task);
+                    }
                     if (taskPollFailed && success) {
-                        logger.info("Management center task polling successfull.");
+                        logger.info("Management center task polling successful.");
                         taskPollFailed = false;
                     }
                 }
@@ -556,6 +570,25 @@ public class ManagementCenterService {
             String urlString = cleanupUrl(managementCenterUrl) + "getTask.do?member=" + localAddress.getHost()
                     + ":" + localAddress.getPort() + "&cluster=" + groupConfig.getName();
             return new URL(urlString);
+        }
+
+        private class AsyncConsoleRequestTask implements Runnable {
+            private final int taskId;
+            private final ConsoleRequest task;
+
+            public AsyncConsoleRequestTask(int taskId, ConsoleRequest task) {
+                this.taskId = taskId;
+                this.task = task;
+            }
+
+            @Override
+            public void run() {
+                try {
+                    processTaskAndSendResponse(taskId, task);
+                } catch (Exception e) {
+                    logger.warning("Problem while handling task: " + task, e);
+                }
+            }
         }
     }
 

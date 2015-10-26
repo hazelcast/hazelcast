@@ -99,9 +99,6 @@ public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("DefaultSocketChannelWrapper{");
-        sb.append("socketChannel=").append(socketChannel);
-        sb.append('}');
-        return sb.toString();
+        return "DefaultSocketChannelWrapper{socketChannel=" + socketChannel + '}';
     }
 }

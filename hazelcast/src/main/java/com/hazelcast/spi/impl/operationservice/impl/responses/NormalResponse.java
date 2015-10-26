@@ -105,13 +105,11 @@ public class NormalResponse extends Response {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("NormalResponse");
-        sb.append("{callId=").append(callId);
-        sb.append(", urgent=").append(urgent);
-        sb.append(", value=").append(value);
-        sb.append(", backupCount=").append(backupCount);
-        sb.append('}');
-        return sb.toString();
+        return "NormalResponse{"
+                + "callId=" + callId
+                + ", urgent=" + urgent
+                + ", value=" + value
+                + ", backupCount=" + backupCount
+                + '}';
     }
 }

@@ -16,7 +16,8 @@
 
 package com.hazelcast.spi.discovery.integration;
 
-import com.hazelcast.spi.discovery.DiscoveredNode;
+import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.NodeFilter;
 
@@ -36,14 +37,16 @@ import com.hazelcast.spi.discovery.NodeFilter;
  * <tt>DiscoveryService</tt> implementation, multiple {@link DiscoveryStrategy}s
  * might be enabled at the same time (e.g. TCP-IP Joiner with well known addresses
  * and Cloud discovery).
+ *
+ * @since 3.6
  */
+@Beta
 public interface DiscoveryService {
 
     /**
      * The <tt>start</tt> method is called on system startup to implement simple
      * lifecycle management. This method is expected to call
-     * {@link DiscoveryStrategy#start(com.hazelcast.spi.discovery.DiscoveryMode)} on all
-     * discovered and activated strategies.
+     * {@link DiscoveryStrategy#start()} on all discovered and start up strategies.
      */
     void start();
 
@@ -53,13 +56,13 @@ public interface DiscoveryService {
      *
      * @return a set of discovered and filtered nodes
      */
-    Iterable<DiscoveredNode> discoverNodes();
+    Iterable<DiscoveryNode> discoverNodes();
 
     /**
      * The <tt>start</tt> method is called on system startup to implement simple
      * lifecycle management. This method is expected to call
-     * {@link DiscoveryStrategy#destroy()} on all discovered and activated strategies
-     * before the service itself will shutdown.
+     * {@link DiscoveryStrategy#destroy()} on all discovered and destroy strategies
+     * before the service itself will be destroyed.
      */
     void destroy();
 }

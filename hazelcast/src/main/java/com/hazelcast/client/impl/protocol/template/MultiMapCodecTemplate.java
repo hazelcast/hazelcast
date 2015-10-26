@@ -157,22 +157,24 @@ public interface MultiMapCodecTemplate {
      * @param name Name of the MultiMap
      * @param key The key to listen to
      * @param includeValue True if EntryEvent should contain the value,false otherwise
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return Returns registration id for the entry listener
      */
     @Request(id = 13, retryable = true, response = ResponseMessageConst.STRING,
             event = {EventMessageConst.EVENT_ENTRY})
-    Object addEntryListenerToKey(String name, Data key, boolean includeValue);
+    Object addEntryListenerToKey(String name, Data key, boolean includeValue, boolean localOnly);
 
     /**
      * Adds an entry listener for this multimap. The listener will be notified for all multimap add/remove/update/evict events.
      *
      * @param name Name of the MultiMap
      * @param includeValue True if EntryEvent should contain the value,false otherwise
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return Returns registration id for the entry listener
      */
     @Request(id = 14, retryable = true, response = ResponseMessageConst.STRING,
              event = {EventMessageConst.EVENT_ENTRY})
-    Object addEntryListener(String name, boolean includeValue);
+    Object addEntryListener(String name, boolean includeValue, boolean localOnly);
 
     /**
      * Removes the specified entry listener. Returns silently if no such listener was added before.

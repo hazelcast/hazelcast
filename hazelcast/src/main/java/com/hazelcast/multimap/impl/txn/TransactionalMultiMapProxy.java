@@ -90,9 +90,6 @@ public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxy
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("TransactionalMultiMap{");
-        sb.append("name=").append(getName());
-        sb.append('}');
-        return sb.toString();
+        return "TransactionalMultiMap{name=" + getName() + '}';
     }
 }

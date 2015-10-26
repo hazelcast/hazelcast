@@ -47,7 +47,7 @@ public class TopicAddMessageListenerMessageTask
     protected Object call() throws Exception {
         TopicService service = getService(TopicService.SERVICE_NAME);
         ClientEndpoint endpoint = getEndpoint();
-        String registrationId = service.addMessageListener(parameters.name, this);
+        String registrationId = service.addMessageListener(parameters.name, this, parameters.localOnly);
         endpoint.addListenerDestroyAction(TopicService.SERVICE_NAME, parameters.name, registrationId);
         return registrationId;
     }

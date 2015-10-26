@@ -19,6 +19,7 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -88,7 +89,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private volatile long dirtyEntryCount;
     private volatile int backupCount;
 
-    private volatile NearCacheStatsImpl nearCacheStats;
+    private volatile NearCacheStats nearCacheStats;
 
     public LocalMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -291,11 +292,11 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     @Override
-    public NearCacheStatsImpl getNearCacheStats() {
+    public NearCacheStats getNearCacheStats() {
         return nearCacheStats;
     }
 
-    public void setNearCacheStats(NearCacheStatsImpl nearCacheStats) {
+    public void setNearCacheStats(NearCacheStats nearCacheStats) {
         this.nearCacheStats = nearCacheStats;
     }
 

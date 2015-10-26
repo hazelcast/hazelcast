@@ -109,15 +109,18 @@ public abstract class AbstractClusterWideIterator<K, V>
 
     @Override
     public Cache.Entry<K, V> next() {
-        if (!hasNext()) {
-            throw new NoSuchElementException();
+        while (hasNext()) {
+            currentIndex = index;
+            index++;
+            final Data keyData = result.getKey(currentIndex);
+            final K key = toObject(keyData);
+            final V value = cache.get(key);
+            // Value might be removed or evicted
+            if (value != null) {
+                return new CacheEntry<K, V>(key, value);
+            }
         }
-        currentIndex = index;
-        index++;
-        final Data keyData = result.getKey(currentIndex);
-        final K key = toObject(keyData);
-        final V value = cache.get(key);
-        return new CacheEntry<K, V>(key, value);
+        throw new NoSuchElementException();
     }
 
     @Override

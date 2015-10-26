@@ -50,6 +50,13 @@ public final class LongHashSet implements Set<Long> {
         iterator = new LongIterator(missingValue, values);
     }
 
+    public LongHashSet(long[] items, long missingValue) {
+        this(items.length, missingValue);
+        for (long item : items) {
+            add(item);
+        }
+    }
+
     /**
      * {@inheritDoc}
      */

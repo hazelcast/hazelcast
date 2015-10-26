@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.nio.Packet;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.Clock;
@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ClientWriteHandler extends AbstractClientSelectionHandler implements Runnable {
 
-    private final Queue<Packet> writeQueue = new ConcurrentLinkedQueue<Packet>();
+    private final Queue<ClientMessage> writeQueue = new ConcurrentLinkedQueue<ClientMessage>();
 
     private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
@@ -38,7 +38,7 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
 
     private boolean ready;
 
-    private Packet lastPacket;
+    private ClientMessage lastMessage;
 
     private volatile long lastHandle;
 
@@ -48,17 +48,17 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
     }
 
     @Override
-    public void handle() throws IOException {
+    public void handle() throws Exception {
         lastHandle = Clock.currentTimeMillis();
         if (!connection.isAlive()) {
             return;
         }
 
-        if (lastPacket == null) {
-            lastPacket = poll();
+        if (lastMessage == null) {
+            lastMessage = poll();
         }
 
-        if (lastPacket == null && buffer.position() == 0) {
+        if (lastMessage == null && buffer.position() == 0) {
             ready = true;
             return;
         }
@@ -69,28 +69,32 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
     }
 
     private void writeBuffer() throws IOException {
-        while (buffer.hasRemaining() && lastPacket != null) {
-            boolean complete = lastPacket.writeTo(buffer);
+        while (buffer.hasRemaining() && lastMessage != null) {
+            boolean complete = lastMessage.writeTo(buffer);
             if (complete) {
-                lastPacket = poll();
+                lastMessage = poll();
             } else {
                 break;
             }
         }
-        if (buffer.position() > 0) {
-            buffer.flip();
-            socketChannel.write(buffer);
 
-            if (buffer.hasRemaining()) {
-                buffer.compact();
-            } else {
-                buffer.clear();
-            }
+        if (buffer.position() == 0) {
+            // there is nothing to write, we are done
+            return;
+        }
+
+        buffer.flip();
+        socketChannel.write(buffer);
+
+        if (buffer.hasRemaining()) {
+            buffer.compact();
+        } else {
+            buffer.clear();
         }
     }
 
     public void enqueue(OutboundFrame frame) {
-        writeQueue.offer((Packet) frame);
+        writeQueue.offer((ClientMessage) frame);
         if (informSelector.compareAndSet(true, false)) {
             // we don't have to call wake up if this WriteHandler is
             // already in the task queue.
@@ -100,7 +104,7 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
         }
     }
 
-    private Packet poll() {
+    private ClientMessage poll() {
         return writeQueue.poll();
     }
 

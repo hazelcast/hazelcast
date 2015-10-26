@@ -19,6 +19,7 @@ package com.hazelcast.util.collection;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.collection.Long2LongHashMap.LongLongCursor;
 import com.hazelcast.util.function.LongLongConsumer;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -106,6 +107,18 @@ public class Long2LongHashMapTest {
         inOrder.verify(mockConsumer).accept(1L, 1L);
         inOrder.verify(mockConsumer).accept(100L, 100L);
         inOrder.verifyNoMoreInteractions();
+    }
+
+    @Test public void cursorShouldLoopOverEveryElement() {
+        map.put(1L, 1L);
+        map.put(100L, 100L);
+        final LongLongCursor cursor = map.cursor();
+        assertTrue(cursor.advance());
+        assertEquals(1L, cursor.key());
+        assertEquals(1L, cursor.value());
+        assertTrue(cursor.advance());
+        assertEquals(100L, cursor.key());
+        assertEquals(100L, cursor.value());
     }
 
     @Test public void shouldNotContainKeyOfAMissingKey() {
@@ -218,16 +231,10 @@ public class Long2LongHashMapTest {
         }
     }
 
-    @Test public void shouldHaveNoMinValueForEmptyCollection() {
-        assertEquals(MAX_VALUE, map.minValue());
-    }
-
-    @Test public void shouldFindMinValue() {
+    @Test public void toStringShouldReportAllEntries() {
         map.put(1, 2);
-        map.put(2, 10);
-        map.put(3, -5);
-
-        assertEquals(-5, map.minValue());
+        map.put(3, 4);
+        assertEquals("{1->2 3->4}", map.toString());
     }
 
     private static void assertEntryIs(final Entry<Long, Long> entry, final long expectedKey, final long expectedValue) {

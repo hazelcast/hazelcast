@@ -29,6 +29,8 @@ import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.map.impl.event.MapEventData;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
@@ -41,6 +43,9 @@ import java.util.Collection;
 import java.util.EventListener;
 import java.util.HashMap;
 
+import static com.hazelcast.core.EntryEventType.ADDED;
+import static com.hazelcast.core.EntryEventType.REMOVED;
+import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 
 /**
@@ -145,13 +150,13 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
     public void fireMapClearedEvent(int deletedEntrySize, String name) {
         EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(
-                ReplicatedMapService.SERVICE_NAME, name);
+                SERVICE_NAME, name);
         if (registrations.isEmpty()) {
             return;
         }
         MapEventData mapEventData = new MapEventData(name, name, nodeEngine.getThisAddress(),
                 EntryEventType.CLEAR_ALL.getType(), deletedEntrySize);
-        eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, mapEventData, name.hashCode());
+        eventService.publishEvent(SERVICE_NAME, registrations, mapEventData, name.hashCode());
     }
 
     private Member getMember(EventData eventData) {
@@ -167,5 +172,28 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
                 entryEventData.getDataKey(), entryEventData.getDataNewValue(), entryEventData.getDataOldValue(),
                 entryEventData.getDataMergingValue(), nodeEngine.getSerializationService());
     }
+
+
+    public void fireEntryListenerEvent(Data key, Data oldValue, Data value, String name, Address caller) {
+        EntryEventType eventType = value == null ? REMOVED : oldValue == null ? ADDED : UPDATED;
+        fireEntryListenerEvent(key, oldValue, value, eventType, name, caller);
+    }
+
+    public void fireEntryListenerEvent(Data key, Data oldValue, Data value, EntryEventType eventType, String name,
+                                       Address caller) {
+        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
+        if (registrations.isEmpty()) {
+            return;
+        }
+        EntryEventData eventData = new EntryEventData(name, name, caller, key, value, oldValue, eventType.getType());
+        for (EventRegistration registration : registrations) {
+            EventFilter filter = registration.getFilter();
+            boolean publish = filter == null || filter.eval(key);
+            if (publish) {
+                eventService.publishEvent(SERVICE_NAME, registration, eventData, key.hashCode());
+            }
+        }
+    }
+
 
 }

@@ -218,16 +218,6 @@ public class GroupProperties extends HazelcastProperties {
     public static final String PROP_SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED
             = GroupProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED.getName();
     @Deprecated
-    public static final String PROP_ELASTIC_MEMORY_ENABLED = GroupProperty.ELASTIC_MEMORY_ENABLED.getName();
-    @Deprecated
-    public static final String PROP_ELASTIC_MEMORY_TOTAL_SIZE = GroupProperty.ELASTIC_MEMORY_TOTAL_SIZE.getName();
-    @Deprecated
-    public static final String PROP_ELASTIC_MEMORY_CHUNK_SIZE = GroupProperty.ELASTIC_MEMORY_CHUNK_SIZE.getName();
-    @Deprecated
-    public static final String PROP_ELASTIC_MEMORY_SHARED_STORAGE = GroupProperty.ELASTIC_MEMORY_SHARED_STORAGE.getName();
-    @Deprecated
-    public static final String PROP_ELASTIC_MEMORY_UNSAFE_ENABLED = GroupProperty.ELASTIC_MEMORY_UNSAFE_ENABLED.getName();
-    @Deprecated
     public static final String PROP_ENTERPRISE_LICENSE_KEY = GroupProperty.ENTERPRISE_LICENSE_KEY.getName();
     @Deprecated
     public static final String PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY = GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.getName();

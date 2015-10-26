@@ -29,6 +29,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ManagementCenterConfig;
+import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -52,6 +53,7 @@ import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
@@ -215,6 +217,8 @@ public class TestFullApplicationContext {
         WanReplicationRef wanRef = cacheConfig.getWanReplicationRef();
         assertEquals("testWan", wanRef.getName());
         assertEquals("PUT_IF_ABSENT", wanRef.getMergePolicy());
+        assertEquals(1,wanRef.getFilters().size());
+        assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
         assertFalse(wanRef.isRepublishingEnabled());
     }
 
@@ -231,6 +235,7 @@ public class TestFullApplicationContext {
         assertEquals(Integer.MAX_VALUE, testMapConfig.getMaxSizeConfig().getSize());
         assertEquals(30, testMapConfig.getEvictionPercentage());
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
+        assertTrue(testMapConfig.isHotRestartEnabled());
         assertEquals(1000, testMapConfig.getMinEvictionCheckMillis());
         assertEquals("PUT_IF_ABSENT", testMapConfig.getMergePolicy());
         assertTrue(testMapConfig.isReadBackupData());
@@ -242,6 +247,16 @@ public class TestFullApplicationContext {
                 assertTrue(index.isOrdered());
             } else {
                 fail("unknown index!");
+            }
+        }
+        assertEquals(2, testMapConfig.getMapAttributeConfigs().size());
+        for (MapAttributeConfig attribute : testMapConfig.getMapAttributeConfigs()) {
+            if ("power".equals(attribute.getName())) {
+                assertEquals("com.car.PowerExtractor", attribute.getExtractor());
+            } else if ("weight".equals(attribute.getName())) {
+                assertEquals("com.car.WeightExtractor", attribute.getExtractor());
+            } else {
+                fail("unknown attribute!");
             }
         }
         assertEquals("my-quorum", testMapConfig.getQuorumName());
@@ -533,6 +548,8 @@ public class TestFullApplicationContext {
         assertEquals("10.2.1.1:5701", targetCfg.getEndpoints().get(0));
         assertEquals("10.2.1.2:5701", targetCfg.getEndpoints().get(1));
         assertEquals(wanReplication, wcfg.getTargetClusterConfigs().get(1).getReplicationImplObject());
+        assertEquals(WanAcknowledgeType.ACK_ON_TRANSMIT, wcfg.getTargetClusterConfigs().get(0).getAcknowledgeType());
+        assertEquals(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE, wcfg.getTargetClusterConfigs().get(1).getAcknowledgeType());
     }
 
     @Test

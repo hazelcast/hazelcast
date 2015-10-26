@@ -87,10 +87,6 @@ public final class GenericError implements Portable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("GenericError{");
-        sb.append("message='").append(message).append('\'');
-        sb.append(", type=").append(type);
-        sb.append('}');
-        return sb.toString();
+        return "GenericError{message='" + message + '\'' + ", type=" + type + '}';
     }
 }

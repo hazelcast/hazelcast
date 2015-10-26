@@ -226,12 +226,10 @@ public class PartitionGroupConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("PartitionGroupConfig");
-        sb.append("{enabled=").append(enabled);
-        sb.append(", groupType=").append(groupType);
-        sb.append(", memberGroupConfigs=").append(memberGroupConfigs);
-        sb.append('}');
-        return sb.toString();
+        return "PartitionGroupConfig{"
+                + "enabled=" + enabled
+                + ", groupType=" + groupType
+                + ", memberGroupConfigs=" + memberGroupConfigs
+                + '}';
     }
 }

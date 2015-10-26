@@ -85,10 +85,6 @@ public final class ServiceInfo {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ServiceInfo{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", service=").append(service);
-        sb.append('}');
-        return sb.toString();
+        return "ServiceInfo{name='" + name + "', service=" + service + '}';
     }
 }

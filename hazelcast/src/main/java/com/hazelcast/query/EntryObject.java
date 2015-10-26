@@ -29,8 +29,8 @@ public class EntryObject {
     }
 
     public EntryObject get(String attribute) {
-        if (KEY_ATTRIBUTE_NAME.equals(qb.getAttribute())) {
-            qb.setAttribute(KEY_ATTRIBUTE_NAME + "#" + attribute);
+        if (KEY_ATTRIBUTE_NAME.value().equals(qb.getAttribute())) {
+            qb.setAttribute(KEY_ATTRIBUTE_NAME.value() + "#" + attribute);
         } else {
             qb.setAttribute(attribute);
         }
@@ -38,7 +38,7 @@ public class EntryObject {
     }
 
     public EntryObject key() {
-        qb.setAttribute(KEY_ATTRIBUTE_NAME);
+        qb.setAttribute(KEY_ATTRIBUTE_NAME.value());
         return this;
     }
 

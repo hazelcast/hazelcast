@@ -17,8 +17,7 @@
 package com.hazelcast.map.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.client.CallableClientRequest;
-import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.MapEvent;
@@ -42,8 +41,7 @@ import java.security.Permission;
 /**
  * Base class for adding entry listener to map
  */
-public abstract class AbstractMapAddEntryListenerRequest extends CallableClientRequest
-        implements RetryableRequest {
+public abstract class AbstractMapAddEntryListenerRequest extends BaseClientAddListenerRequest {
     protected String name;
     protected Data key;
     protected boolean includeValue;
@@ -104,11 +102,15 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
 
         EventFilter eventFilter = getEventFilter();
         EventFilter eventListenerFilter = new EventListenerFilter(listenerFlags, eventFilter);
-        String registrationId = mapServiceContext.addEventListener(listener, eventListenerFilter, name);
+        String registrationId;
+        if (localOnly) {
+            registrationId = mapServiceContext.addLocalEventListener(listener, eventListenerFilter, name);
+        } else {
+            registrationId = mapServiceContext.addEventListener(listener, eventListenerFilter, name);
+        }
         endpoint.addListenerDestroyAction(MapService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
-
 
     protected EventFilter getEventFilter() {
         if (getPredicate() == null) {
@@ -116,7 +118,6 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
         }
         return new QueryEventFilter(includeValue, key, getPredicate());
     }
-
 
     @Override
     public String getServiceName() {

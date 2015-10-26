@@ -105,7 +105,6 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
         return members != null ? members.values() : Collections.<Member>emptySet();
     }
 
-    @Override
     public Collection<Member> getMembers(MemberSelector selector) {
         return new MemberSelectingCollection<Member>(getMemberList(), selector);
     }
@@ -113,8 +112,7 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
     @Override
     public Address getMasterAddress() {
         final Collection<Member> memberList = getMemberList();
-        Member member = memberList.iterator().next();
-        return !memberList.isEmpty() ? member.getAddress() : null;
+        return !memberList.isEmpty() ? new Address(memberList.iterator().next().getSocketAddress()) : null;
     }
 
     @Override

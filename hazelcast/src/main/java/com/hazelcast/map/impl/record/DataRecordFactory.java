@@ -16,11 +16,10 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 
 public class DataRecordFactory implements RecordFactory<Data> {
 
@@ -38,18 +37,13 @@ public class DataRecordFactory implements RecordFactory<Data> {
     }
 
     @Override
-    public InMemoryFormat getStorageFormat() {
-        return InMemoryFormat.BINARY;
-    }
-
-    @Override
-    public Record<Data> newRecord(Data key, Object value) {
+    public Record<Data> newRecord(Object value) {
         final Data data = serializationService.toData(value, partitionStrategy);
         if (optimizeQuery) {
-            return statisticsEnabled ? new CachedDataRecordWithStats(key, data)
-                    : new CachedDataRecord(key, data);
+            return statisticsEnabled ? new CachedDataRecordWithStats(data)
+                    : new CachedDataRecord(data);
         }
-        return statisticsEnabled ? new DataRecordWithStats(key, data) : new DataRecord(key, data);
+        return statisticsEnabled ? new DataRecordWithStats(data) : new DataRecord(data);
     }
 
     @Override
@@ -65,6 +59,16 @@ public class DataRecordFactory implements RecordFactory<Data> {
 
     @Override
     public boolean isEquals(Object value1, Object value2) {
+        if (value1 == null && value2 == null) {
+            return true;
+        }
+        if (value1 == null) {
+            return false;
+        }
+        if (value2 == null) {
+            return false;
+        }
+
         return serializationService.toData(value1).equals(serializationService.toData(value2));
     }
 }

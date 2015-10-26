@@ -136,6 +136,15 @@ public interface PortableWriter {
     void writeByteArray(String fieldName, byte[] bytes) throws IOException;
 
     /**
+     * Writes a primitive boolean-array.
+     *
+     * @param fieldName name of the field
+     * @param booleans     boolean array to be written
+     * @throws IOException
+     */
+    void writeBooleanArray(String fieldName, boolean[] booleans) throws IOException;
+
+    /**
      * Writes a primitive char-array.
      *
      * @param fieldName name of the field
@@ -188,6 +197,15 @@ public interface PortableWriter {
      * @throws IOException
      */
     void writeShortArray(String fieldName, short[] values) throws IOException;
+
+    /**
+     * Writes a String-array.
+     *
+     * @param fieldName name of the field
+     * @param values    String array to be written
+     * @throws IOException
+     */
+    void writeUTFArray(String fieldName, String[] values) throws IOException;
 
     /**
      * Writes a an array of Portables.

@@ -46,7 +46,7 @@ public class CachePartitionLostEvent extends AbstractICacheEvent {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{"
+        return getClass().getSimpleName() + '{'
                 + super.toString()
                 + ", partitionId=" + partitionId
                 + '}';

@@ -75,11 +75,6 @@ public class CountDownLatchContainer implements DataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("LocalCountDownLatch");
-        sb.append("{name='").append(name).append('\'');
-        sb.append(", count=").append(count);
-        sb.append('}');
-        return sb.toString();
+        return "LocalCountDownLatch{name='" + name + '\'' + ", count=" + count + '}';
     }
 }

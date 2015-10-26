@@ -121,6 +121,10 @@ public class WebFilter implements Filter {
         this.properties = properties;
     }
 
+    public Properties getProperties() {
+        return properties;
+    }
+
     void destroyOriginalSession(HttpSession originalSession) {
         String hazelcastSessionId = originalSessions.remove(originalSession.getId());
         if (hazelcastSessionId != null) {

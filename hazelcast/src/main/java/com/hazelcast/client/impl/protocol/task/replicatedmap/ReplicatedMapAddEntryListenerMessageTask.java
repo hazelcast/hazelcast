@@ -41,6 +41,11 @@ public class ReplicatedMapAddEntryListenerMessageTask
     }
 
     @Override
+    protected boolean isLocalOnly() {
+        return parameters.localOnly;
+    }
+
+    @Override
     protected ClientMessage encodeEvent(Data key, Data newValue, Data oldValue, Data mergingValue,
                                         int type, String uuid, int numberOfAffectedEntries) {
         return ReplicatedMapAddEntryListenerCodec.encodeEntryEvent(key, newValue,

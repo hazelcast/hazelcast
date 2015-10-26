@@ -17,9 +17,8 @@
 package com.hazelcast.partition.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.client.CallableClientRequest;
+import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
 import com.hazelcast.client.impl.client.ClientPortableHook;
-import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
@@ -30,9 +29,7 @@ import java.security.Permission;
 import static com.hazelcast.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 import static com.hazelcast.partition.InternalPartitionService.SERVICE_NAME;
 
-public class AddPartitionLostListenerRequest
-        extends CallableClientRequest
-        implements RetryableRequest {
+public class AddPartitionLostListenerRequest extends BaseClientAddListenerRequest {
 
     public AddPartitionLostListenerRequest() {
     }
@@ -53,7 +50,12 @@ public class AddPartitionLostListenerRequest
             }
         };
 
-        final String registrationId = partitionService.addPartitionLostListener(listener);
+        String registrationId;
+        if (localOnly) {
+            registrationId = partitionService.addLocalPartitionLostListener(listener);
+        } else {
+            registrationId = partitionService.addPartitionLostListener(listener);
+        }
         endpoint.addListenerDestroyAction(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, registrationId);
         return registrationId;
     }

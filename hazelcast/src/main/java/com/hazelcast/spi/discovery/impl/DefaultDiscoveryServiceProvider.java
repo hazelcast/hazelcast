@@ -16,18 +16,16 @@
 
 package com.hazelcast.spi.discovery.impl;
 
-import com.hazelcast.config.DiscoveryStrategiesConfig;
-import com.hazelcast.spi.discovery.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
+import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 
 public class DefaultDiscoveryServiceProvider
         implements DiscoveryServiceProvider {
 
     @Override
-    public DiscoveryService newDiscoveryService(DiscoveryMode discoveryMode, DiscoveryStrategiesConfig discoveryStrategiesConfig,
-                                                ClassLoader configClassLoader) {
+    public DiscoveryService newDiscoveryService(DiscoveryServiceSettings settings) {
 
-        return new DefaultDiscoveryService(discoveryMode, discoveryStrategiesConfig, configClassLoader);
+        return new DefaultDiscoveryService(settings);
     }
 }

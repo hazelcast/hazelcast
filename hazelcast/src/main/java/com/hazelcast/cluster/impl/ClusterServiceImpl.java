@@ -22,6 +22,7 @@ import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.cluster.impl.operations.MemberRemoveOperation;
+import com.hazelcast.cluster.impl.operations.ShutdownNodeOperation;
 import com.hazelcast.cluster.impl.operations.TriggerMemberListPublishOperation;
 import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.InitialMembershipListener;
@@ -51,6 +52,7 @@ import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
 import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionOptions;
@@ -77,6 +79,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 import static java.util.Collections.unmodifiableMap;
@@ -91,6 +94,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private static final int DEFAULT_MERGE_RUN_DELAY_MILLIS = 100;
     private static final int CLUSTER_EXECUTOR_QUEUE_CAPACITY = 1000;
+    private static final long CLUSTER_SHUTDOWN_SLEEP_DURATION_IN_MILLIS = 1000;
 
     private static final String MEMBERSHIP_EVENT_EXECUTOR_NAME = "hz:cluster:event";
 
@@ -307,6 +311,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             clusterHeartbeatManager.reset();
             clusterStateManager.reset();
             clusterJoinManager.reset();
+            membersRemovedInNotActiveStateRef.set(Collections.<Address, MemberImpl>emptyMap());
         } finally {
             lock.unlock();
         }
@@ -515,7 +520,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 final ClusterState clusterState = clusterStateManager.getState();
                 if (clusterState == ClusterState.FROZEN || clusterState == ClusterState.PASSIVE) {
                     if (logger.isFinestEnabled()) {
-                        logger.info(deadMember + " is dead, added to members left while cluster is " + clusterState + " state");
+                        logger.finest(deadMember + " is dead, added to members left while cluster is " + clusterState + " state");
                     }
                     Map<Address, MemberImpl> membersRemovedInNotActiveState
                             = new LinkedHashMap<Address, MemberImpl>(membersRemovedInNotActiveStateRef.get());
@@ -812,12 +817,82 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public void changeClusterState(ClusterState newState) {
-        clusterStateManager.changeClusterState(newState);
+        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
+        clusterStateManager.changeClusterState(newState, getMembers(), partitionStateVersion);
     }
 
     @Override
     public void changeClusterState(ClusterState newState, TransactionOptions options) {
-        clusterStateManager.changeClusterState(newState, options);
+        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
+        clusterStateManager.changeClusterState(newState, getMembers(), options, partitionStateVersion);
+    }
+
+    // for testing
+    void changeClusterState(ClusterState newState, Collection<Member> members) {
+        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
+        clusterStateManager.changeClusterState(newState, members, partitionStateVersion);
+    }
+
+    // for testing
+    void changeClusterState(ClusterState newState, int partitionStateVersion) {
+        clusterStateManager.changeClusterState(newState, getMembers(), partitionStateVersion);
+    }
+
+    void addMembersRemovedInNotActiveState(Collection<Address> addresses) {
+        lock.lock();
+        try {
+            Map<Address, MemberImpl> membersRemovedInNotActiveState
+                    = new LinkedHashMap<Address, MemberImpl>(membersRemovedInNotActiveStateRef.get());
+
+            for (Address address : addresses) {
+                membersRemovedInNotActiveState.put(address, new MemberImpl(address, false));
+            }
+
+            membersRemovedInNotActiveStateRef.set(Collections.unmodifiableMap(membersRemovedInNotActiveState));
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        changeClusterState(ClusterState.PASSIVE);
+        shutdownNodes();
+    }
+
+    @Override
+    public void shutdown(TransactionOptions options) {
+        changeClusterState(ClusterState.PASSIVE, options);
+        shutdownNodes();
+    }
+
+    private void shutdownNodes() {
+        final Operation op = new ShutdownNodeOperation();
+
+        logger.info("Sending shutting down operations to all members...");
+
+        Collection<Member> members = getMembers(NON_LOCAL_MEMBER_SELECTOR);
+        final long timeout = node.groupProperties.getNanos(GroupProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
+        final long startTime = System.nanoTime();
+
+        while ((System.nanoTime() - startTime) < timeout && !members.isEmpty()) {
+            for (Member member : members) {
+                nodeEngine.getOperationService().send(op, member.getAddress());
+            }
+
+            try {
+                Thread.sleep(CLUSTER_SHUTDOWN_SLEEP_DURATION_IN_MILLIS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.warning("Shutdown sleep interrupted. ", e);
+                break;
+            }
+
+            members = getMembers(NON_LOCAL_MEMBER_SELECTOR);
+        }
+
+        logger.info("Number of other nodes remaining: " + getSize(NON_LOCAL_MEMBER_SELECTOR) + ". Shutting down itself.");
+        node.shutdown(false);
     }
 
     public void initialClusterState(ClusterState clusterState) {

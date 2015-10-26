@@ -49,7 +49,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -79,8 +78,6 @@ public abstract class HazelcastTestSupport {
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     static {
-        System.setProperty("hazelcast.repmap.hooks.allowed", "true");
-
         ASSERT_TRUE_EVENTUALLY_TIMEOUT = Integer.getInteger("hazelcast.assertTrueEventually.timeout", 120);
         System.out.println("ASSERT_TRUE_EVENTUALLY_TIMEOUT = " + ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }

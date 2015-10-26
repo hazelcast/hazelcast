@@ -89,10 +89,7 @@ class ClusterStateLock {
 
     boolean allowsUnlock(String txnId) {
         Preconditions.checkNotNull(txnId);
-        if (txnId.equals(transactionId)) {
-            return true;
-        }
-        return false;
+        return txnId.equals(transactionId);
     }
 
     Address getLockOwner() {
@@ -109,11 +106,10 @@ class ClusterStateLock {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ClusterStateLock{");
-        sb.append("lockOwner=").append(lockOwner);
-        sb.append(", transactionId='").append(transactionId).append('\'');
-        sb.append(", lockExpiryTime=").append(lockExpiryTime);
-        sb.append('}');
-        return sb.toString();
+        return "ClusterStateLock{"
+                + "lockOwner=" + lockOwner
+                + ", transactionId='" + transactionId + '\''
+                + ", lockExpiryTime=" + lockExpiryTime
+                + '}';
     }
 }

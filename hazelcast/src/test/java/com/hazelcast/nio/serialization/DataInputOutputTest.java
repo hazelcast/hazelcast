@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
 import static com.hazelcast.nio.serialization.SerializationConcurrencyTest.Address;
 import static com.hazelcast.nio.serialization.SerializationConcurrencyTest.Person;
 import static org.junit.Assert.assertEquals;
@@ -70,7 +72,7 @@ public class DataInputOutputTest {
                 .setUseNativeByteOrder(false).setAllowUnsafe(allowUnsafe).setByteOrder(byteOrder).build();
 
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        ObjectDataOutput out = ss.createObjectDataOutputStream(bout);
+        ObjectDataOutput out = createObjectDataOutputStream(bout, ss);
         out.writeObject(object);
         byte[] data1 = bout.toByteArray();
 
@@ -82,7 +84,7 @@ public class DataInputOutputTest {
         assertTrue(Arrays.equals(data1, data2));
 
         final ByteArrayInputStream bin = new ByteArrayInputStream(data2);
-        final ObjectDataInput in = ss.createObjectDataInputStream(bin);
+        final ObjectDataInput in = createObjectDataInputStream(bin, ss);
         final Object object1 = in.readObject();
 
         final ObjectDataInput in2 = ss.createObjectDataInput(data1);

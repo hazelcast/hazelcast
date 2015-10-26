@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static org.junit.Assert.assertTrue;
@@ -90,11 +89,10 @@ public class MapReduceLiteMemberTest {
         com.hazelcast.mapreduce.MapReduceLiteMemberTest.testMapperReducerCollator(client);
     }
 
-    @Test(timeout = 60000)
-    public void testMapReduceJobSubmissionWithNoDataNode()
-            throws ExecutionException, InterruptedException, TimeoutException {
-        instance.shutdown();
-        instance2.shutdown();
+    @Test(timeout = 120000)
+    public void testMapReduceJobSubmissionWithNoDataNode() throws Exception {
+        instance.getLifecycleService().terminate();
+        instance2.getLifecycleService().terminate();
         assertClusterSizeEventually(2, lite);
         assertClusterSizeEventually(2, lite2);
 
@@ -102,12 +100,11 @@ public class MapReduceLiteMemberTest {
                 .testMapReduceJobSubmissionWithNoDataNode(client);
 
         try {
-            future.get(30, TimeUnit.SECONDS);
+            future.get(120, TimeUnit.SECONDS);
             fail("Map-reduce job should not be submitted when there is no data member");
         } catch (ExecutionException e) {
             assertTrue(e.getCause() instanceof IllegalStateException);
         }
-
     }
 
 }

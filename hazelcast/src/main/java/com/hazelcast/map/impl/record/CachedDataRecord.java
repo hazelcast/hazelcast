@@ -28,8 +28,8 @@ class CachedDataRecord extends DataRecord {
     CachedDataRecord() {
     }
 
-    CachedDataRecord(Data keyData, Data value) {
-        super(keyData, value);
+    CachedDataRecord(Data value) {
+        super(value);
     }
 
     @Override

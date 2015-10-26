@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastTestRunner.class)
 @Category(SlowTest.class)
@@ -105,6 +106,13 @@ public class NaturalIdTest extends HibernateStatisticsTestSupport {
         AnnotatedEntity toBeUpdated = (AnnotatedEntity)session.byNaturalId(AnnotatedEntity.class).using("title", "dummy:0").getReference();
         assertEquals("dummy:0", toBeUpdated.getTitle());
         session.close();
+    }
+
+    @Test
+    public void testEvictionNaturalId() {
+        insertAnnotatedEntities(1);
+        sf.getCache().evictNaturalIdRegion(AnnotatedEntity.class);
+        assertFalse(sf.getCache().containsEntity(AnnotatedEntity.class, 0L));
     }
 
     public static class InternalMockRegionFactory

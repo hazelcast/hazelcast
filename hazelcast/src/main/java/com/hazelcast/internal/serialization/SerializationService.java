@@ -24,14 +24,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.Serializer;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.ByteOrder;
 
 public interface SerializationService {
+
+    byte VERSION_1 = 1;
 
     <B extends Data> B toData(Object obj);
 
@@ -47,10 +46,6 @@ public interface SerializationService {
 
     <T> T readObject(ObjectDataInput in);
 
-    void writeData(ObjectDataOutput out, Data data);
-
-    <B extends Data> B readData(ObjectDataInput in);
-
     void disposeData(Data data);
 
     BufferObjectDataInput createObjectDataInput(byte[] data);
@@ -61,23 +56,17 @@ public interface SerializationService {
 
     BufferObjectDataOutput createObjectDataOutput();
 
-    ObjectDataOutputStream createObjectDataOutputStream(OutputStream out);
-
-    ObjectDataInputStream createObjectDataInputStream(InputStream in);
-
-    void register(Class type, Serializer serializer);
-
-    void registerGlobal(Serializer serializer);
+    PortableReader createPortableReader(Data data) throws IOException;
 
     PortableContext getPortableContext();
-
-    PortableReader createPortableReader(Data data) throws IOException;
 
     ClassLoader getClassLoader();
 
     ManagedContext getManagedContext();
 
     ByteOrder getByteOrder();
+
+    byte getVersion();
 
     void destroy();
 }

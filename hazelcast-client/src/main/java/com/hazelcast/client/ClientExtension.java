@@ -18,9 +18,9 @@ package com.hazelcast.client;
 
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.nio.SocketInterceptor;
+import com.hazelcast.client.spi.ClientProxyFactory;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 
 /**
@@ -42,16 +42,18 @@ public interface ClientExtension {
     /**
      * Creates a {@link SerializationService} instance to be used by this client.
      *
+     * @param version serialization version to be created. Values less than 1 will be ignored and max supported version
+     * will be used
      * @return the created {@link SerializationService} instance
      */
-    SerializationService createSerializationService();
+    SerializationService createSerializationService(byte version);
 
     /**
      * Creates a {@link SocketInterceptor} to be used by this client if available,
-     * otherwise returns <code>null</code>.
+     * otherwise returns <code>null</code>
      *
      * @return the created {@link SocketInterceptor} instance if available,
-     *         otherwise <code>null</code>
+     * +          otherwise <code>null</code>
      */
     SocketInterceptor createSocketInterceptor();
 
@@ -69,13 +71,12 @@ public interface ClientExtension {
      */
     NearCacheManager createNearCacheManager();
 
-
     /**
-     * Returns a proxy for the corresponding service.
+     * Creates a {@code ClientProxyFactory} for the supplied service class.
      *
      * @param service service for the proxy to create.
-     * @return proxy for the service.
-     * @throws java.lang.IllegalArgumentException if type is not known
+     * @return {@code ClientProxyFactory} for the service.
+     * @throws java.lang.IllegalArgumentException if service is not known
      */
-    <T> Class<? extends ClientProxy> getServiceProxy(Class<T> service);
+    <T> ClientProxyFactory createServiceProxyFactory(Class<T> service);
 }

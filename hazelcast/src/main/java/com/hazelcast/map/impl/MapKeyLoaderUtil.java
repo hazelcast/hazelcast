@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
@@ -31,7 +30,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
-import static com.hazelcast.map.impl.eviction.EvictionCheckerImpl.getApproximateMaxSize;
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
 
 
 public final class MapKeyLoaderUtil {
@@ -87,7 +86,8 @@ public final class MapKeyLoaderUtil {
     }
 
     public static int getMaxSizePerNode(MaxSizeConfig maxSizeConfig) {
-        double maxSizePerNode = getApproximateMaxSize(maxSizeConfig, MaxSizePolicy.PER_NODE);
+        // max size or -1 if policy is different or not set
+        double maxSizePerNode = maxSizeConfig.getMaxSizePolicy() == PER_NODE ? maxSizeConfig.getSize() : -1D;
 
         if (maxSizePerNode == MaxSizeConfig.DEFAULT_MAX_SIZE) {
             // unlimited

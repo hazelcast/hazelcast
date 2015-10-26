@@ -16,18 +16,19 @@
 
 package com.hazelcast.spi.discovery.impl;
 
-import com.hazelcast.config.DiscoveryStrategiesConfig;
+import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.ValueValidator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.TypeConverter;
-import com.hazelcast.spi.discovery.DiscoveredNode;
-import com.hazelcast.spi.discovery.DiscoveryMode;
-import com.hazelcast.spi.discovery.integration.DiscoveryService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 import com.hazelcast.spi.discovery.NodeFilter;
+import com.hazelcast.spi.discovery.integration.DiscoveryService;
+import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.util.ServiceLoader;
 
 import java.util.ArrayList;
@@ -45,40 +46,40 @@ public class DefaultDiscoveryService
 
     private static final String SERVICE_LOADER_TAG = DiscoveryStrategyFactory.class.getCanonicalName();
 
+    private final DiscoveryNode discoveryNode;
+    private final ILogger logger;
     private final Iterable<DiscoveryStrategy> discoveryProviders;
-    private final DiscoveryMode discoveryMode;
     private final NodeFilter nodeFilter;
 
-    public DefaultDiscoveryService(DiscoveryMode discoveryMode, DiscoveryStrategiesConfig discoveryStrategiesConfig,
-                                   ClassLoader configClassLoader) {
-
-        this.discoveryMode = discoveryMode;
-        this.nodeFilter = getNodeFilter(discoveryStrategiesConfig, configClassLoader);
-        this.discoveryProviders = loadDiscoveryProviders(discoveryStrategiesConfig, configClassLoader);
+    public DefaultDiscoveryService(DiscoveryServiceSettings settings) {
+        this.discoveryNode = settings.getDiscoveryNode();
+        this.logger = settings.getLogger();
+        this.nodeFilter = getNodeFilter(settings);
+        this.discoveryProviders = loadDiscoveryProviders(settings);
     }
 
     @Override
     public void start() {
         for (DiscoveryStrategy discoveryStrategy : discoveryProviders) {
-            discoveryStrategy.start(discoveryMode);
+            discoveryStrategy.start();
         }
     }
 
     @Override
-    public Iterable<DiscoveredNode> discoverNodes() {
-        Set<DiscoveredNode> discoveredNodes = new HashSet<DiscoveredNode>();
+    public Iterable<DiscoveryNode> discoverNodes() {
+        Set<DiscoveryNode> discoveryNodes = new HashSet<DiscoveryNode>();
         for (DiscoveryStrategy discoveryStrategy : discoveryProviders) {
-            Iterable<DiscoveredNode> candidates = discoveryStrategy.discoverNodes();
+            Iterable<DiscoveryNode> candidates = discoveryStrategy.discoverNodes();
 
             if (candidates != null) {
-                for (DiscoveredNode candidate : candidates) {
+                for (DiscoveryNode candidate : candidates) {
                     if (validateCandidate(candidate)) {
-                        discoveredNodes.add(candidate);
+                        discoveryNodes.add(candidate);
                     }
                 }
             }
         }
-        return discoveredNodes;
+        return discoveryNodes;
     }
 
     @Override
@@ -88,18 +89,20 @@ public class DefaultDiscoveryService
         }
     }
 
-    private NodeFilter getNodeFilter(DiscoveryStrategiesConfig discoveryStrategiesConfig, ClassLoader configClassLoader) {
-        if (discoveryStrategiesConfig.getNodeFilter() != null) {
-            return discoveryStrategiesConfig.getNodeFilter();
+    private NodeFilter getNodeFilter(DiscoveryServiceSettings settings) {
+        DiscoveryConfig discoveryConfig = settings.getDiscoveryConfig();
+        ClassLoader configClassLoader = settings.getConfigClassLoader();
+        if (discoveryConfig.getNodeFilter() != null) {
+            return discoveryConfig.getNodeFilter();
         }
-        if (discoveryStrategiesConfig.getNodeFilterClass() != null) {
+        if (discoveryConfig.getNodeFilterClass() != null) {
             try {
                 ClassLoader cl = configClassLoader;
                 if (cl == null) {
                     cl = DefaultDiscoveryService.class.getClassLoader();
                 }
 
-                String className = discoveryStrategiesConfig.getNodeFilterClass();
+                String className = discoveryConfig.getNodeFilterClass();
                 return (NodeFilter) cl.loadClass(className).newInstance();
             } catch (Exception e) {
                 throw new RuntimeException("Failed to configure discovery node filter", e);
@@ -108,21 +111,35 @@ public class DefaultDiscoveryService
         return null;
     }
 
-    private boolean validateCandidate(DiscoveredNode candidate) {
+    private boolean validateCandidate(DiscoveryNode candidate) {
         return nodeFilter == null || nodeFilter.test(candidate);
     }
 
-    private Iterable<DiscoveryStrategy> loadDiscoveryProviders(DiscoveryStrategiesConfig providersConfig,
-                                                               ClassLoader configClassLoader) {
+    private Iterable<DiscoveryStrategy> loadDiscoveryProviders(DiscoveryServiceSettings settings) {
+        DiscoveryConfig discoveryConfig = settings.getDiscoveryConfig();
+        ClassLoader configClassLoader = settings.getConfigClassLoader();
+
         try {
-            Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = providersConfig.getDiscoveryStrategyConfigs();
+            Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>(
+                    discoveryConfig.getDiscoveryStrategyConfigs());
 
             Iterator<DiscoveryStrategyFactory> iterator = ServiceLoader
                     .iterator(DiscoveryStrategyFactory.class, SERVICE_LOADER_TAG, configClassLoader);
 
-            List<DiscoveryStrategy> discoveryStrategies = new ArrayList<DiscoveryStrategy>();
+            // Collect possible factories
+            List<DiscoveryStrategyFactory> factories = new ArrayList<DiscoveryStrategyFactory>();
             while (iterator.hasNext()) {
-                DiscoveryStrategyFactory factory = iterator.next();
+                factories.add(iterator.next());
+            }
+            for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {
+                DiscoveryStrategyFactory factory = config.getDiscoveryStrategyFactory();
+                if (factory != null) {
+                    factories.add(factory);
+                }
+            }
+
+            List<DiscoveryStrategy> discoveryStrategies = new ArrayList<DiscoveryStrategy>();
+            for (DiscoveryStrategyFactory factory : factories) {
                 DiscoveryStrategy discoveryStrategy = buildDiscoveryProvider(factory, discoveryStrategyConfigs);
                 if (discoveryStrategy != null) {
                     discoveryStrategies.add(discoveryStrategy);
@@ -175,12 +192,20 @@ public class DefaultDiscoveryService
         String className = discoveryProviderType.getName();
 
         for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {
-            if (config.getClassName().equals(className)) {
+            String factoryClassName = getFactoryClassName(config);
+            if (className.equals(factoryClassName)) {
                 Map<String, Comparable> properties = buildProperties(factory, config, className);
-                return factory.newDiscoveryStrategy(properties);
+                return factory.newDiscoveryStrategy(discoveryNode, logger, properties);
             }
         }
         return null;
     }
 
+    private String getFactoryClassName(DiscoveryStrategyConfig config) {
+        if (config.getDiscoveryStrategyFactory() != null) {
+            DiscoveryStrategyFactory factory = config.getDiscoveryStrategyFactory();
+            return factory.getDiscoveryStrategyType().getName();
+        }
+        return config.getClassName();
+    }
 }

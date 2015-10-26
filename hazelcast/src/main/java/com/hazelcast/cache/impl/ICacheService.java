@@ -56,7 +56,7 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     CacheContext getOrCreateCacheContext(String name);
 
-    void destroyCache(String objectName, boolean isLocal, String callerUuid);
+    void deleteCache(String objectName, boolean isLocal, String callerUuid, boolean destroy);
 
     void deleteCacheStat(String name);
 
@@ -70,9 +70,9 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     NodeEngine getNodeEngine();
 
-    String registerListener(String name, CacheEventListener listener);
+    String registerListener(String name, CacheEventListener listener, boolean isLocal);
 
-    String registerListener(String name, CacheEventListener listener, EventFilter eventFilter);
+    String registerListener(String name, CacheEventListener listener, EventFilter eventFilter, boolean isLocal);
 
     boolean deregisterListener(String name, String registrationId);
 
@@ -85,7 +85,7 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
      */
     CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, InMemoryFormat storageType);
 
-    String addInvalidationListener(String name, CacheEventListener listener);
+    String addInvalidationListener(String name, CacheEventListener listener, boolean localOnly);
 
     void sendInvalidationEvent(String name, Data key, String sourceUuid);
 

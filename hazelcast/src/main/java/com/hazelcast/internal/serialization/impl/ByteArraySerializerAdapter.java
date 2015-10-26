@@ -65,10 +65,7 @@ class ByteArraySerializerAdapter implements SerializerAdapter {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("SerializerAdapter{");
-        sb.append("serializer=").append(serializer);
-        sb.append('}');
-        return sb.toString();
+        return "SerializerAdapter{serializer=" + serializer + '}';
     }
 
     @Override

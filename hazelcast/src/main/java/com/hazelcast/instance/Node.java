@@ -21,14 +21,14 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.cluster.impl.ConfigCheck;
-import com.hazelcast.cluster.impl.JoinMessage;
 import com.hazelcast.cluster.impl.DiscoveryJoiner;
+import com.hazelcast.cluster.impl.JoinMessage;
 import com.hazelcast.cluster.impl.JoinRequest;
 import com.hazelcast.cluster.impl.MulticastJoiner;
 import com.hazelcast.cluster.impl.MulticastService;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DiscoveryStrategiesConfig;
+import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -53,13 +53,16 @@ import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.discovery.DiscoveryMode;
+import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
+import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
-import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
+import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.VersionCheck;
@@ -163,8 +166,8 @@ public class Node {
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
-            nodeExtension = NodeExtensionFactory.create(configClassLoader);
-            nodeExtension.beforeStart(this);
+            this.nodeExtension = nodeContext.createNodeExtension(this);
+            nodeExtension.beforeStart();
 
             serializationService = nodeExtension.createSerializationService();
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;
@@ -176,7 +179,7 @@ public class Node {
             partitionService = new InternalPartitionServiceImpl(this);
             clusterService = new ClusterServiceImpl(this);
             textCommandService = new TextCommandServiceImpl(this);
-            nodeExtension.printNodeInfo(this);
+            nodeExtension.printNodeInfo();
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
             discoveryService = createDiscoveryService(config);
             initializeListeners(config);
@@ -196,13 +199,19 @@ public class Node {
 
     private DiscoveryService createDiscoveryService(Config config) {
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
-        DiscoveryStrategiesConfig providersConfig = joinConfig.getDiscoveryStrategiesConfig().getAsReadOnly();
+        DiscoveryConfig discoveryConfig = joinConfig.getDiscoveryConfig().getAsReadOnly();
 
-        DiscoveryServiceProvider factory = providersConfig.getDiscoveryServiceProvider();
+        DiscoveryServiceProvider factory = discoveryConfig.getDiscoveryServiceProvider();
         if (factory == null) {
             factory = new DefaultDiscoveryServiceProvider();
         }
-        return factory.newDiscoveryService(DiscoveryMode.Member, providersConfig, config.getClassLoader());
+        ILogger logger = getLogger(DiscoveryService.class);
+
+        DiscoveryServiceSettings settings = new DiscoveryServiceSettings().setConfigClassLoader(configClassLoader)
+                .setLogger(logger).setDiscoveryMode(DiscoveryMode.Member).setDiscoveryConfig(discoveryConfig)
+                .setDiscoveryNode(new SimpleDiscoveryNode(localMember.getAddress(), localMember.getAttributes()));
+
+        return factory.newDiscoveryService(settings);
     }
 
     private void initializeListeners(Config config) {
@@ -317,23 +326,20 @@ public class Node {
         }
         state = NodeState.ACTIVE;
 
+        nodeExtension.beforeJoin();
         join();
         int clusterSize = clusterService.getSize();
         if (config.getNetworkConfig().isPortAutoIncrement()
                 && address.getPort() >= config.getNetworkConfig().getPort() + clusterSize) {
-            StringBuilder sb = new StringBuilder("Config seed port is ");
-            sb.append(config.getNetworkConfig().getPort());
-            sb.append(" and cluster size is ");
-            sb.append(clusterSize);
-            sb.append(". Some of the ports seem occupied!");
-            logger.warning(sb.toString());
+            logger.warning("Config seed port is " + config.getNetworkConfig().getPort()
+                    + " and cluster size is " + clusterSize + ". Some of the ports seem occupied!");
         }
         try {
             managementCenterService = new ManagementCenterService(hazelcastInstance);
         } catch (Exception e) {
             logger.warning("ManagementCenterService could not be constructed!", e);
         }
-        nodeExtension.afterStart(this);
+        nodeExtension.afterStart();
         versionCheck.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
     }
 
@@ -348,12 +354,19 @@ public class Node {
             return;
         }
 
-        if (!terminate && clusterService.getClusterState() != ClusterState.PASSIVE) {
+        if (!terminate) {
             final int maxWaitSeconds = groupProperties.getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                 logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
-            clusterService.sendShutdownMessage();
+            try {
+                clusterService.sendShutdownMessage();
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Shutdown message sent to other members");
+                }
+            } catch (Throwable t) {
+                EmptyStatement.ignore(t);
+            }
         } else {
             logger.warning("Terminating forcefully...");
         }
@@ -368,10 +381,10 @@ public class Node {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             }
             discoveryService.destroy();
-            logger.info("Shutting down connection manager...");
-            connectionManager.shutdown();
         } catch (Throwable ignored) {
         }
+
+        nodeExtension.beforeShutdown();
         versionCheck.shutdown();
         if (managementCenterService != null) {
             managementCenterService.shutdown();
@@ -391,11 +404,11 @@ public class Node {
         if (securityContext != null) {
             securityContext.destroy();
         }
-        nodeExtension.destroy();
         logger.finest("Destroying serialization service...");
         serializationService.destroy();
 
         hazelcastThreadGroup.destroy();
+        nodeExtension.shutdown();
         logger.info("Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
         state = NodeState.SHUT_DOWN;
     }
@@ -545,8 +558,6 @@ public class Node {
         try {
             masterAddress = null;
             joined.set(false);
-            clusterService.reset();
-
             joiner.join();
         } catch (Throwable e) {
             logger.severe("Error while joining the cluster!", e);

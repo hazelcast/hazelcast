@@ -50,7 +50,7 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public Address getAddress() {
-        throw new UnsupportedOperationException();
+        return new Address(address);
     }
 
     @Override

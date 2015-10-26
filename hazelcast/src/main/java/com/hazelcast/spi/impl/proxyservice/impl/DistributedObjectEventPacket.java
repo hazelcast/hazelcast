@@ -68,12 +68,10 @@ public final class DistributedObjectEventPacket implements DataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("DistributedObjectEvent");
-        sb.append("{eventType=").append(eventType);
-        sb.append(", serviceName='").append(serviceName).append('\'');
-        sb.append(", name=").append(name);
-        sb.append('}');
-        return sb.toString();
+        return "DistributedObjectEvent{"
+                + "eventType=" + eventType
+                + ", serviceName='" + serviceName + '\''
+                + ", name=" + name
+                + '}';
     }
 }

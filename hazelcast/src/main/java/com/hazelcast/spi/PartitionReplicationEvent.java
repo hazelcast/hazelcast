@@ -59,10 +59,6 @@ public class PartitionReplicationEvent extends EventObject {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("PartitionReplicationEvent{");
-        sb.append("partitionId=").append(partitionId);
-        sb.append(", replicaIndex=").append(replicaIndex);
-        sb.append('}');
-        return sb.toString();
+        return "PartitionReplicationEvent{partitionId=" + partitionId + ", replicaIndex=" + replicaIndex + '}';
     }
 }

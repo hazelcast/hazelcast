@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.LifecycleService;
@@ -59,6 +58,7 @@ public class ClientConnection implements Connection, Closeable {
 
     private volatile Address remoteEndpoint;
     private volatile boolean heartBeating = true;
+    private boolean isAuthenticatedAsOwner;
 
     public ClientConnection(HazelcastClientInstanceImpl client, NonBlockingIOThread in, NonBlockingIOThread out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
@@ -103,7 +103,7 @@ public class ClientConnection implements Connection, Closeable {
     public boolean write(OutboundFrame frame) {
         if (!live.get()) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Connection is closed, won't write packet -> " + frame);
+                logger.finest("Connection is closed, dropping frame -> " + frame);
             }
             return false;
         }
@@ -112,9 +112,8 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public void init() throws IOException {
-        final ByteBuffer buffer = ByteBuffer.allocate(6);
-        buffer.put(stringToBytes(Protocols.CLIENT_BINARY));
-        buffer.put(stringToBytes(ClientTypes.JAVA));
+        final ByteBuffer buffer = ByteBuffer.allocate(3);
+        buffer.put(stringToBytes(Protocols.CLIENT_BINARY_NEW));
         buffer.flip();
         socketChannelWrapper.write(buffer);
     }
@@ -212,7 +211,7 @@ public class ClientConnection implements Connection, Closeable {
         }
         String message = "Connection [" + getRemoteSocketAddress() + "] lost. Reason: ";
         if (t != null) {
-            message += t.getClass().getName() + "[" + t.getMessage() + "]";
+            message += t.getClass().getName() + '[' + t.getMessage() + ']';
         } else {
             message += "Socket explicitly closed";
         }
@@ -243,6 +242,14 @@ public class ClientConnection implements Connection, Closeable {
         return live.get() && heartBeating;
     }
 
+    public boolean isAuthenticatedAsOwner() {
+        return isAuthenticatedAsOwner;
+    }
+
+    public void setIsAuthenticatedAsOwner() {
+        this.isAuthenticatedAsOwner = true;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -268,14 +275,13 @@ public class ClientConnection implements Connection, Closeable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ClientConnection{");
-        sb.append("live=").append(live);
-        sb.append(", writeHandler=").append(writeHandler);
-        sb.append(", readHandler=").append(readHandler);
-        sb.append(", connectionId=").append(connectionId);
-        sb.append(", socketChannel=").append(socketChannelWrapper);
-        sb.append(", remoteEndpoint=").append(remoteEndpoint);
-        sb.append('}');
-        return sb.toString();
+        return "ClientConnection{"
+                + "live=" + live
+                + ", writeHandler=" + writeHandler
+                + ", readHandler=" + readHandler
+                + ", connectionId=" + connectionId
+                + ", socketChannel=" + socketChannelWrapper
+                + ", remoteEndpoint=" + remoteEndpoint
+                + '}';
     }
 }

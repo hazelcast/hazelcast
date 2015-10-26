@@ -299,7 +299,7 @@ public class CacheProxy<K, V>
         final CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(this,
                 cacheEntryListenerConfiguration, getNodeEngine().getSerializationService());
         final String regId =
-                service.registerListener(getDistributedObjectName(), entryListener, entryListener);
+                service.registerListener(getDistributedObjectName(), entryListener, entryListener, false);
         if (regId != null) {
             cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
             addListenerLocally(regId, cacheEntryListenerConfiguration);
@@ -330,8 +330,8 @@ public class CacheProxy<K, V>
         for (Member member : members) {
             if (!member.localMember()) {
                 final Operation op = new CacheListenerRegistrationOperation(getDistributedObjectName(),
-                                                                            cacheEntryListenerConfiguration,
-                                                                            isRegister);
+                        cacheEntryListenerConfiguration,
+                        isRegister);
                 final InternalCompletableFuture<Object> future =
                         operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
                 futures.add(future);
@@ -355,7 +355,7 @@ public class CacheProxy<K, V>
         final ICacheService service = getService();
         final EventRegistration registration =
                 service.getNodeEngine().getEventService()
-                    .registerListener(AbstractCacheService.SERVICE_NAME, name, filter, listenerAdapter);
+                        .registerListener(AbstractCacheService.SERVICE_NAME, name, filter, listenerAdapter);
         return registration.getId();
     }
 
@@ -364,7 +364,7 @@ public class CacheProxy<K, V>
         checkNotNull(id, "Listener id should not be null!");
         final ICacheService service = getService();
         return service.getNodeEngine().getEventService()
-                    .deregisterListener(AbstractCacheService.SERVICE_NAME, name, id);
+                .deregisterListener(AbstractCacheService.SERVICE_NAME, name, id);
     }
 
 }

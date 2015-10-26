@@ -41,7 +41,6 @@ public class MapAddNearCacheEntryListenerRequest extends MapAddEntryListenerRequ
         return new SyntheticEventFilter(eventFilter);
     }
 
-
     @Override
     public int getClassId() {
         return MapPortableHook.ADD_NEAR_CACHE_ENTRY_LISTENER;

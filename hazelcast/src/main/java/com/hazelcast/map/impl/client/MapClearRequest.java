@@ -35,7 +35,6 @@ import java.util.Map;
 
 public class MapClearRequest extends MapAllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
 
-
     public MapClearRequest() {
     }
 

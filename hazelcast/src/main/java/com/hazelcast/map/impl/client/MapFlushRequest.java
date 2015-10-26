@@ -36,7 +36,7 @@ public class MapFlushRequest extends MapAllPartitionsClientRequest implements Po
     }
 
     public MapFlushRequest(String name) {
-        this.name = name;
+        super(name);
     }
 
     public int getFactoryId() {

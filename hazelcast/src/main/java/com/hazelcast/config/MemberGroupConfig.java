@@ -89,9 +89,6 @@ public class MemberGroupConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("MemberGroupConfig{");
-        sb.append("interfaces=").append(interfaces);
-        sb.append('}');
-        return sb.toString();
+        return "MemberGroupConfig{interfaces=" + interfaces + '}';
     }
 }

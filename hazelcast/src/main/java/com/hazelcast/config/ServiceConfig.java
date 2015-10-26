@@ -100,13 +100,12 @@ public class ServiceConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ServiceConfig{");
-        sb.append("enabled=").append(enabled);
-        sb.append(", name='").append(name).append('\'');
-        sb.append(", className='").append(className).append('\'');
-        sb.append(", serviceImpl=").append(serviceImpl);
-        sb.append(", properties=").append(properties);
-        sb.append('}');
-        return sb.toString();
+        return "ServiceConfig{"
+                + "enabled=" + enabled
+                + ", name='" + name + '\''
+                + ", className='" + className + '\''
+                + ", serviceImpl=" + serviceImpl
+                + ", properties=" + properties
+                + '}';
     }
 }

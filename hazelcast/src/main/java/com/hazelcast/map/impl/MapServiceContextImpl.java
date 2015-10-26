@@ -19,13 +19,10 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.event.MapEventPublisherImpl;
-import com.hazelcast.map.impl.eviction.EvictionChecker;
-import com.hazelcast.map.impl.eviction.EvictionCheckerImpl;
-import com.hazelcast.map.impl.eviction.Evictor;
-import com.hazelcast.map.impl.eviction.EvictorImpl;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.BasePutOperation;
@@ -36,6 +33,7 @@ import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.MapPartitionDestroyOperation;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.MapQueryEngineImpl;
+import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.map.merge.MergePolicyProvider;
@@ -43,6 +41,7 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.query.impl.Extractors;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -104,7 +103,6 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final MergePolicyProvider mergePolicyProvider;
     protected final MapQueryEngine mapQueryEngine;
     protected MapEventPublisher mapEventPublisher;
-    protected Evictor evictor;
     protected MapService mapService;
     protected EventService eventService;
     protected MapOperationProvider operationProvider;
@@ -115,20 +113,13 @@ class MapServiceContextImpl implements MapServiceContext {
         this.mapContainers = new ConcurrentHashMap<String, MapContainer>();
         this.ownedPartitions = new AtomicReference<Collection<Integer>>();
         this.expirationManager = new ExpirationManager(this, nodeEngine);
-        this.evictor = createEvictor();
-        this.nearCacheProvider = createNearCacheProvider(nodeEngine);
+        this.nearCacheProvider = createNearCacheProvider();
         this.localMapStatsProvider = createLocalMapStatsProvider();
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
         this.mapEventPublisher = createMapEventPublisherSupport();
-        this.mapQueryEngine = createMapQueryEngine(nodeEngine);
+        this.mapQueryEngine = createMapQueryEngine();
         this.eventService = nodeEngine.getEventService();
         this.operationProvider = new DefaultMapOperationProvider();
-    }
-
-    // this method is overridden in another context.
-    Evictor createEvictor() {
-        EvictionChecker evictionChecker = new EvictionCheckerImpl(this);
-        return new EvictorImpl(evictionChecker, this);
     }
 
     // this method is overridden in another context.
@@ -137,22 +128,21 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     // this method is overridden in another context.
-    MapQueryEngineImpl createMapQueryEngine(NodeEngine nodeEngine) {
+    MapQueryEngineImpl createMapQueryEngine() {
         return new MapQueryEngineImpl(this, newOptimizer(nodeEngine.getGroupProperties()));
     }
 
     // this method is overridden in another context.
-    NearCacheProvider createNearCacheProvider(NodeEngine nodeEngine) {
+    NearCacheProvider createNearCacheProvider() {
         return new NearCacheProvider(this, nodeEngine);
     }
 
-    // this method is overridden.
     PartitionContainer[] createPartitionContainers() {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         return new PartitionContainer[partitionCount];
     }
 
-    // this method is overridden in another context.
+    // this method is overridden.
     MapEventPublisherImpl createMapEventPublisherSupport() {
         return new MapEventPublisherImpl(this);
     }
@@ -175,7 +165,6 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public void initPartitionsContainers() {
         final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        final PartitionContainer[] partitionContainers = this.partitionContainers;
         for (int i = 0; i < partitionCount; i++) {
             partitionContainers[i] = new PartitionContainer(getService(), i);
         }
@@ -354,21 +343,6 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public boolean compare(String mapName, Object value1, Object value2) {
-        if (value1 == null && value2 == null) {
-            return true;
-        }
-        if (value1 == null) {
-            return false;
-        }
-        if (value2 == null) {
-            return false;
-        }
-        final MapContainer mapContainer = getMapContainer(mapName);
-        return mapContainer.getRecordFactory().isEquals(value1, value2);
-    }
-
-    @Override
     public void interceptAfterGet(String mapName, Object value) {
         List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
         if (!interceptors.isEmpty()) {
@@ -487,6 +461,14 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public String addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName) {
+        ListenerAdapter listenerAdapter = new InternalMapPartitionLostListenerAdapter(listener);
+        EventFilter filter = new MapPartitionLostEventFilter();
+        EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, mapName, filter, listenerAdapter);
+        return registration.getId();
+    }
+
+    @Override
     public String addEventListener(Object listener, EventFilter eventFilter, String mapName) {
         EventRegistration registration = addListenerInternal(listener, eventFilter, mapName, false);
         return registration.getId();
@@ -529,6 +511,12 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public Extractors getExtractors(String mapName) {
+        MapContainer mapContainer = getMapContainer(mapName);
+        return mapContainer.getExtractors();
+    }
+
+    @Override
     public void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation) {
         if (operation instanceof BasePutOperation) {
             localMapStats.incrementPuts(Clock.currentTimeMillis() - startTime);
@@ -546,4 +534,8 @@ class MapServiceContextImpl implements MapServiceContext {
         }
     }
 
+    public RecordStore createRecordStore(MapContainer mapContainer, int partitionId, MapKeyLoader keyLoader) {
+        ILogger logger = nodeEngine.getLogger(DefaultRecordStore.class);
+        return new DefaultRecordStore(mapContainer, partitionId, keyLoader, logger);
+    }
 }

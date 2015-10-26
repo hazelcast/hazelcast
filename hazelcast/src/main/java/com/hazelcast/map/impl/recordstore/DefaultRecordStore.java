@@ -28,8 +28,6 @@ import com.hazelcast.map.impl.MapKeyLoader;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
-import com.hazelcast.map.impl.mapstore.MapStoreContext;
-import com.hazelcast.map.impl.mapstore.MapStoreManager;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.merge.MapMergePolicy;
@@ -38,6 +36,7 @@ import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 
@@ -52,25 +51,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.ExpirationTimeSetter.updateExpiryTime;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
+import static java.util.Collections.EMPTY_MAP;
+import static java.util.Collections.EMPTY_SET;
+import static java.util.Collections.emptyList;
 
 /**
  * Default implementation of record-store.
  */
-public class DefaultRecordStore extends AbstractEvictableRecordStore implements RecordStore {
+public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
-    private final ILogger logger;
-    private final LockStore lockStore;
-    private final MapDataStore<Data, Object> mapDataStore;
-    private final MapStoreContext mapStoreContext;
-    private final RecordStoreLoader recordStoreLoader;
-    private final MapKeyLoader keyLoader;
+    protected final ILogger logger;
+    protected final LockStore lockStore;
+    protected final RecordStoreLoader recordStoreLoader;
+    protected final MapKeyLoader keyLoader;
     // loadingFutures are modified by partition threads and could be accessed by query threads
-    private final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<Future>();
+    protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<Future>();
 
     public DefaultRecordStore(MapContainer mapContainer, int partitionId,
                               MapKeyLoader keyLoader, ILogger logger) {
@@ -79,9 +78,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         this.logger = logger;
         this.keyLoader = keyLoader;
         this.lockStore = createLockStore();
-        this.mapStoreContext = mapContainer.getMapStoreContext();
-        MapStoreManager mapStoreManager = mapStoreContext.getMapStoreManager();
-        this.mapDataStore = mapStoreManager.getMapDataStore(partitionId);
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
     }
 
@@ -130,6 +126,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
+    public void destroy() {
+        clearPartition();
+        storage.destroy();
+    }
+
+    @Override
     public void checkIfLoaded() {
         if (loadingFutures.isEmpty()) {
             return;
@@ -166,25 +168,35 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         }
     }
 
+    /**
+     * Flushes evicted records to map store.
+     *
+     * @param recordsToBeFlushed records to be flushed to map-store.
+     * @param backup             <code>true</code> if backup, false otherwise.
+     */
+    protected void flush(Collection<Record> recordsToBeFlushed, boolean backup) {
+        Iterator<Record> iterator = recordsToBeFlushed.iterator();
+        while (iterator.hasNext()) {
+            Record record = iterator.next();
+            mapDataStore.flush(record.getKey(), record.getValue(), backup);
+        }
+    }
+
     @Override
     public Record getRecord(Data key) {
-        return records.get(key);
+        return storage.get(key);
     }
 
     @Override
     public void putRecord(Data key, Record record) {
         markRecordStoreExpirable(record.getTtl());
-
-        final Record existingRecord = records.put(key, record);
-        updateSizeEstimator(-calculateRecordHeapCost(existingRecord));
-        updateSizeEstimator(calculateRecordHeapCost(record));
+        storage.put(key, record);
     }
 
     @Override
     public Record putBackup(Data key, Object value) {
         return putBackup(key, value, DEFAULT_TTL, false);
     }
-
 
     @Override
     public Record putBackup(Data key, Object value, long ttl, boolean putTransient) {
@@ -193,13 +205,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
         Record record = getRecordOrNull(key, now, true);
         if (record == null) {
-            record = createRecord(key, value, ttl, now);
-            records.put(key, record);
-            updateSizeEstimator(calculateRecordHeapCost(record));
+            record = createRecord(value, ttl, now);
+            storage.put(key, record);
         } else {
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            updateRecord(record, value, now);
-            updateSizeEstimator(calculateRecordHeapCost(record));
+            updateRecord(key, record, value, now);
         }
         if (putTransient) {
             mapDataStore.addTransient(key, now);
@@ -209,14 +218,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return record;
     }
 
-    @Override
     public Iterator<Record> iterator() {
-        return new ReadOnlyRecordIterator(records.values());
+        return new ReadOnlyRecordIterator(storage.values());
     }
 
     @Override
     public Iterator<Record> iterator(long now, boolean backup) {
-        return new ReadOnlyRecordIterator(records.values(), now, backup);
+        return new ReadOnlyRecordIterator(storage.values(), now, backup);
     }
 
     @Override
@@ -226,32 +234,26 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public Map<Data, Record> getRecordMap() {
-        return records;
-    }
-
-    @Override
     public void clearPartition() {
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
-            final DefaultObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
+            final DefaultObjectNamespace namespace
+                    = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
             lockService.clearLockStore(partitionId, namespace);
         }
 
-        final Indexes indexes = mapContainer.getIndexes();
-
+        Indexes indexes = mapContainer.getIndexes();
         if (indexes.hasIndex()) {
-            for (Record record : records.values()) {
+            for (Record record : storage.values()) {
                 Data key = record.getKey();
                 Object value = Records.getValueOrCachedValue(record, serializationService);
                 indexes.removeEntryIndex(key, value);
             }
         }
-        clearRecordsMap(Collections.<Data, Record>emptyMap());
-        resetSizeEstimator();
         resetAccessSequenceNumber();
         mapDataStore.clear();
+        storage.clear();
     }
 
     /**
@@ -263,24 +265,25 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     @Override
     public int size() {
         // do not add checkIfLoaded(), size() is also used internally
-        return records.size();
+        return storage.size();
     }
 
     @Override
     public boolean isEmpty() {
         checkIfLoaded();
-        return records.isEmpty();
+        return storage.isEmpty();
     }
 
     @Override
     public boolean containsValue(Object value) {
         checkIfLoaded();
         final long now = getNow();
-        for (Record record : records.values()) {
+        Collection<Record> records = storage.values();
+        for (Record record : records) {
             if (getOrNullIfExpired(record, now, false) == null) {
                 continue;
             }
-            if (mapServiceContext.compare(name, value, record.getValue())) {
+            if (recordFactory.isEquals(value, record.getValue())) {
                 return true;
             }
         }
@@ -334,25 +337,21 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     @Override
     public Set<Map.Entry<Data, Data>> entrySetData() {
         checkIfLoaded();
-        final long now = getNow();
+        long now = getNow();
 
-        final ConcurrentMap<Data, Record> records = this.records;
-        final Collection<Record> values = records.values();
-        Map<Data, Data> tempMap = null;
-        for (Record record : values) {
+        Collection<Record> records = storage.values();
+        Map<Data, Data> tempMap = EMPTY_MAP;
+        for (Record record : records) {
+            Data key = record.getKey();
             record = getOrNullIfExpired(record, now, false);
             if (record == null) {
                 continue;
             }
-            if (tempMap == null) {
+            if (tempMap == EMPTY_MAP) {
                 tempMap = new HashMap<Data, Data>();
             }
-            final Data key = record.getKey();
-            final Data value = toData(record.getValue());
+            Data value = toData(record.getValue());
             tempMap.put(key, value);
-        }
-        if (tempMap == null) {
-            return Collections.emptySet();
         }
         return tempMap.entrySet();
     }
@@ -371,16 +370,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return new AbstractMap.SimpleImmutableEntry<Data, Object>(key, value);
     }
 
-    private Record loadRecordOrNull(Data key, boolean backup) {
+    protected Record loadRecordOrNull(Data key, boolean backup) {
         Record record = null;
         final Object value = mapDataStore.load(key);
         if (value != null) {
-            record = createRecord(key, value, getNow());
-            records.put(key, record);
+            record = createRecord(value, DEFAULT_TTL, getNow());
+            storage.put(key, record);
             if (!backup) {
                 saveIndex(record, null);
             }
-            updateSizeEstimator(calculateRecordHeapCost(record));
         }
         return record;
     }
@@ -388,83 +386,81 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     @Override
     public Set<Data> keySet() {
         checkIfLoaded();
-        final long now = getNow();
+        long now = getNow();
 
-        final ConcurrentMap<Data, Record> records = this.records;
-        final Collection<Record> values = records.values();
-        Set<Data> keySet = null;
-        for (Record record : values) {
+        Collection<Record> records = storage.values();
+        Set<Data> keySet = EMPTY_SET;
+        for (Record record : records) {
+            Data key = record.getKey();
             record = getOrNullIfExpired(record, now, false);
             if (record == null) {
                 continue;
             }
-            if (keySet == null) {
+            if (keySet == EMPTY_SET) {
                 keySet = new HashSet<Data>();
             }
-            keySet.add(record.getKey());
+            keySet.add(key);
         }
 
-        if (keySet == null) {
-            return Collections.emptySet();
-        }
         return keySet;
-    }
-
-    @Override
-    public Collection<Data> valuesData() {
-        checkIfLoaded();
-        final long now = getNow();
-
-        final ConcurrentMap<Data, Record> records = this.records;
-        final Collection<Record> values = records.values();
-        List<Data> dataValueList = null;
-        for (Record record : values) {
-            record = getOrNullIfExpired(record, now, false);
-            if (record == null) {
-                continue;
-            }
-            if (dataValueList == null) {
-                dataValueList = new ArrayList<Data>();
-            }
-            final Data dataValue = toData(record.getValue());
-            dataValueList.add(dataValue);
-        }
-
-        if (dataValueList == null) {
-            return Collections.emptyList();
-        }
-        return dataValueList;
     }
 
     @Override
     public int clear() {
         checkIfLoaded();
-        resetSizeEstimator();
-        final Collection<Data> lockedKeys = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
-        final Map<Data, Record> lockedRecords = new HashMap<Data, Record>(lockedKeys.size());
-        // Locked records should not be removed!
-        for (Data key : lockedKeys) {
-            Record record = records.get(key);
-            if (record != null) {
-                lockedRecords.put(key, record);
-                updateSizeEstimator(calculateRecordHeapCost(record));
+
+        // we don't remove locked keys. These are clearable records.
+        Collection<Record> clearableRecords = getNotLockedRecords();
+        // This conversion is required by mapDataStore#removeAll call.
+        List<Data> keys = getKeysFromRecords(clearableRecords);
+        mapDataStore.removeAll(keys);
+        mapDataStore.clear();
+        removeIndex(clearableRecords);
+        resetAccessSequenceNumber();
+        return removeRecords(clearableRecords);
+    }
+
+    protected List<Data> getKeysFromRecords(Collection<Record> clearableRecords) {
+        List<Data> keys = new ArrayList<Data>(clearableRecords.size());
+        for (Record clearableRecord : clearableRecords) {
+            keys.add(clearableRecord.getKey());
+        }
+        return keys;
+    }
+
+    protected int removeRecords(Collection<Record> recordsToRemove) {
+        if (CollectionUtil.isEmpty(recordsToRemove)) {
+            return 0;
+        }
+        int removalSize = recordsToRemove.size();
+        Iterator<Record> iterator = recordsToRemove.iterator();
+        while (iterator.hasNext()) {
+            Record record = iterator.next();
+            storage.removeRecord(record);
+            iterator.remove();
+        }
+        return removalSize;
+    }
+
+    protected Collection<Record> getNotLockedRecords() {
+        Set<Data> lockedKeySet = lockStore == null ? null : lockStore.getLockedKeys();
+        if (CollectionUtil.isEmpty(lockedKeySet)) {
+            return storage.values();
+        }
+
+        int notLockedKeyCount = storage.size() - lockedKeySet.size();
+        if (notLockedKeyCount <= 0) {
+            return emptyList();
+        }
+
+        List<Record> notLockedRecords = new ArrayList<Record>(notLockedKeyCount);
+        Collection<Record> records = storage.values();
+        for (Record record : records) {
+            if (!lockedKeySet.contains(record.getKey())) {
+                notLockedRecords.add(record);
             }
         }
-        final Set<Data> keysToDelete = records.keySet();
-        keysToDelete.removeAll(lockedRecords.keySet());
-
-        mapDataStore.removeAll(keysToDelete);
-
-        final int numOfClearedEntries = keysToDelete.size();
-        for (Data key : keysToDelete) {
-            Record record = records.get(key);
-            removeIndex(record);
-        }
-
-        clearRecordsMap(lockedRecords);
-        resetAccessSequenceNumber();
-        mapDataStore.clear();
-        return numOfClearedEntries;
+        return notLockedRecords;
     }
 
     /**
@@ -472,31 +468,23 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
      */
     @Override
     public void reset() {
-        clearRecordsMap(Collections.<Data, Record>emptyMap());
-        resetSizeEstimator();
         resetAccessSequenceNumber();
         mapDataStore.clear();
+        storage.clear();
     }
 
     @Override
     public Object evict(Data key, boolean backup) {
-        return evictInternal(key, backup);
-    }
-
-    @Override
-    Object evictInternal(Data key, boolean backup) {
-        Record record = records.get(key);
+        Record record = storage.get(key);
         Object value = null;
         if (record != null) {
             value = record.getValue();
-            final long lastUpdateTime = record.getLastUpdateTime();
-            mapDataStore.flush(key, value, lastUpdateTime, backup);
+            mapDataStore.flush(key, value, backup);
+            removeIndex(record);
+            storage.removeRecord(record);
             if (!backup) {
                 mapServiceContext.interceptRemove(name, value);
             }
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            removeIndex(record);
-            deleteRecord(key);
         }
         return value;
     }
@@ -504,60 +492,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     @Override
     public int evictAll(boolean backup) {
         checkIfLoaded();
-        final int sizeBeforeEviction = size();
-        resetSizeEstimator();
+
+        Collection<Record> evictableRecords = getNotLockedRecords();
+        flush(evictableRecords, backup);
+        removeIndex(evictableRecords);
         resetAccessSequenceNumber();
-
-        Map<Data, Record> recordsToPreserve = getLockedRecords();
-        updateSizeEstimator(calculateRecordHeapCost(recordsToPreserve.values()));
-
-        flush(recordsToPreserve, backup);
-        removeIndexByPreservingKeys(records.values(), recordsToPreserve.keySet());
-        clearRecordsMap(recordsToPreserve);
-
-        return sizeBeforeEviction - recordsToPreserve.size();
-    }
-
-    /**
-     * Flushes evicted records to map store.
-     *
-     * @param excludeRecords Records which should not be flushed.
-     * @param backup         <code>true</code> if backup, false otherwise.
-     */
-    private void flush(Map<Data, Record> excludeRecords, boolean backup) {
-        final Collection<Record> values = records.values();
-        final MapDataStore<Data, Object> mapDataStore = this.mapDataStore;
-        for (Record record : values) {
-            if (excludeRecords == null || !excludeRecords.containsKey(record.getKey())) {
-                final Data key = record.getKey();
-                final long lastUpdateTime = record.getLastUpdateTime();
-                mapDataStore.flush(key, record.getValue(), lastUpdateTime, backup);
-            }
-        }
-    }
-
-    /**
-     * Returns locked records.
-     *
-     * @return map of locked records.
-     */
-    private Map<Data, Record> getLockedRecords() {
-        if (lockStore == null) {
-            return Collections.emptyMap();
-        }
-        final Collection<Data> lockedKeys = lockStore.getLockedKeys();
-        if (lockedKeys.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        final Map<Data, Record> lockedRecords = new HashMap<Data, Record>(lockedKeys.size());
-        // Locked records should not be removed!
-        for (Data key : lockedKeys) {
-            final Record record = records.get(key);
-            if (record != null) {
-                lockedRecords.put(key, record);
-            }
-        }
-        return lockedRecords;
+        return removeRecords(evictableRecords);
     }
 
     @Override
@@ -568,9 +508,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         if (record == null) {
             return;
         }
-        // reduce size
-        updateSizeEstimator(-calculateRecordHeapCost(record));
-        deleteRecord(key);
+        storage.removeRecord(record);
         mapDataStore.removeBackup(key, now);
     }
 
@@ -608,14 +546,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         } else {
             oldValue = record.getValue();
         }
-        if (mapServiceContext.compare(name, testValue, oldValue)) {
+        if (recordFactory.isEquals(testValue, oldValue)) {
             mapServiceContext.interceptRemove(name, oldValue);
             removeIndex(record);
             mapDataStore.remove(key, now);
             onStore(record);
-            // reduce size
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            deleteRecord(key);
+            storage.removeRecord(record);
             removed = true;
         }
         return removed;
@@ -688,7 +624,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             final Data key = iterator.next();
             final Record record = getRecordOrNull(key, now, false);
             if (record != null) {
-                addMapEntrySet(record.getKey(), record.getValue(), mapEntries);
+                addMapEntrySet(key, record.getValue(), mapEntries);
                 accessRecord(record);
                 iterator.remove();
             }
@@ -700,7 +636,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return mapEntries;
     }
 
-    private Map loadEntries(Set<Data> keys) {
+    protected Map loadEntries(Set<Data> keys) {
         Map loadedEntries = mapDataStore.loadAll(keys);
         if (loadedEntries == null || loadedEntries.isEmpty()) {
             return Collections.emptyMap();
@@ -714,7 +650,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return loadedEntries;
     }
 
-    private void addMapEntrySet(Object key, Object value, MapEntries mapEntries) {
+    protected void addMapEntrySet(Object key, Object value, MapEntries mapEntries) {
         if (key == null || value == null) {
             return;
         }
@@ -724,8 +660,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         mapEntries.add(dataKey, dataValue);
     }
 
-
-    private void addMapEntrySet(Map<Object, Object> entries, MapEntries mapEntries) {
+    protected void addMapEntrySet(Map<Object, Object> entries, MapEntries mapEntries) {
         for (Map.Entry<Object, Object> entry : entries.entrySet()) {
             addMapEntrySet(entry.getKey(), entry.getValue(), mapEntries);
         }
@@ -741,9 +676,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         if (record == null) {
             Object value = mapDataStore.load(key);
             if (value != null) {
-                record = createRecord(key, value, now);
-                records.put(key, record);
-                updateSizeEstimator(calculateRecordHeapCost(record));
+                record = createRecord(value, DEFAULT_TTL, now);
+                storage.put(key, record);
             }
         }
         boolean contains = record != null;
@@ -760,7 +694,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return putInternal(key, value, ttl, true);
     }
 
-    private Object putInternal(Data key, Object value, long ttl, boolean loadFromStore) {
+    protected Object putInternal(Data key, Object value, long ttl, boolean loadFromStore) {
         checkIfLoaded();
 
         long now = getNow();
@@ -773,17 +707,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         onStore(record);
 
         if (record == null) {
-            record = createRecord(key, value, ttl, now);
-            records.put(key, record);
+            record = createRecord(value, ttl, now);
+            storage.put(key, record);
         } else {
-            updateRecord(record, value, now);
-            updateSizeEstimator(-calculateRecordHeapCost(record));
+            updateRecord(key, record, value, now);
             updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
 
-        updateSizeEstimator(calculateRecordHeapCost(record));
         saveIndex(record, oldValue);
-
         return oldValue;
     }
 
@@ -804,10 +735,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
                 return false;
             }
             newValue = mapDataStore.add(key, newValue, now);
-            record = createRecord(key, newValue, now);
+            record = createRecord(newValue, DEFAULT_TTL, now);
             mergeRecordExpiration(record, mergingEntry);
-            records.put(key, record);
-            updateSizeEstimator(calculateRecordHeapCost(record));
+            storage.put(key, record);
         } else {
             oldValue = record.getValue();
             EntryView existingEntry = EntryViews.createLazyEntryView(record.getKey(), record.getValue(),
@@ -818,24 +748,19 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
                 removeIndex(record);
                 mapDataStore.remove(key, now);
                 onStore(record);
-                // reduce size.
-                updateSizeEstimator(-calculateRecordHeapCost(record));
-                //remove from map & invalidate.
-                deleteRecord(key);
+                storage.removeRecord(record);
                 return true;
             }
             if (newValue == mergingEntry.getValue()) {
                 mergeRecordExpiration(record, mergingEntry);
             }
             // same with the existing entry so no need to map-store etc operations.
-            if (mapServiceContext.compare(name, newValue, oldValue)) {
+            if (recordFactory.isEquals(newValue, oldValue)) {
                 return true;
             }
             newValue = mapDataStore.add(key, newValue, now);
             onStore(record);
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            recordFactory.setValue(record, newValue);
-            updateSizeEstimator(calculateRecordHeapCost(record));
+            storage.updateRecordValue(key, record, newValue);
         }
         saveIndex(record, oldValue);
         return newValue != null;
@@ -851,13 +776,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         if (record == null || record.getValue() == null) {
             return null;
         }
-        final Object oldValue = record.getValue();
+        Object oldValue = record.getValue();
         update = mapServiceContext.interceptPut(name, oldValue, update);
         update = mapDataStore.add(key, update, now);
         onStore(record);
-        updateSizeEstimator(-calculateRecordHeapCost(record));
-        updateRecord(record, update, now);
-        updateSizeEstimator(calculateRecordHeapCost(record));
+        updateRecord(key, record, update, now);
         saveIndex(record, oldValue);
         return oldValue;
     }
@@ -874,15 +797,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         final MapServiceContext mapServiceContext = this.mapServiceContext;
         final Object current = record.getValue();
         final String mapName = this.name;
-        if (!mapServiceContext.compare(mapName, current, expect)) {
+        if (!recordFactory.isEquals(expect, current)) {
             return false;
         }
         update = mapServiceContext.interceptPut(mapName, current, update);
         update = mapDataStore.add(key, update, now);
         onStore(record);
-        updateSizeEstimator(-calculateRecordHeapCost(record));
-        updateRecord(record, update, now);
-        updateSizeEstimator(calculateRecordHeapCost(record));
+        updateRecord(key, record, update, now);
         saveIndex(record, current);
         return true;
     }
@@ -897,15 +818,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         Object oldValue = null;
         if (record == null) {
             value = mapServiceContext.interceptPut(name, null, value);
-            record = createRecord(key, value, ttl, now);
-            records.put(key, record);
-            updateSizeEstimator(calculateRecordHeapCost(record));
+            record = createRecord(value, ttl, now);
+            storage.put(key, record);
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            updateRecord(record, value, now);
-            updateSizeEstimator(calculateRecordHeapCost(record));
+            updateRecord(key, record, value, now);
             updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
         saveIndex(record, oldValue);
@@ -930,26 +848,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         Object oldValue = null;
         if (record == null) {
             value = mapServiceContext.interceptPut(name, null, value);
-            record = createRecord(key, value, ttl, now);
-            records.put(key, record);
-            updateSizeEstimator(calculateRecordHeapCost(record));
+            record = createRecord(value, ttl, now);
+            storage.put(key, record);
         } else {
             oldValue = record.getValue();
-            value = mapServiceContext.interceptPut(name, record.getValue(), value);
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            updateRecord(record, value, now);
-            updateSizeEstimator(calculateRecordHeapCost(record));
+            value = mapServiceContext.interceptPut(name, oldValue, value);
+            updateRecord(key, record, value, now);
             updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
         saveIndex(record, oldValue);
-
         return oldValue;
-    }
-
-    @Override
-    public boolean tryPut(Data key, Object value, long ttl) {
-        putInternal(key, value, ttl, false);
-        return true;
     }
 
     @Override
@@ -969,9 +877,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         if (record == null) {
             oldValue = mapDataStore.load(key);
             if (oldValue != null) {
-                record = createRecord(key, oldValue, now);
-                records.put(key, record);
-                updateSizeEstimator(calculateRecordHeapCost(record));
+                record = createRecord(oldValue, DEFAULT_TTL, now);
+                storage.put(key, record);
             }
         } else {
             accessRecord(record, now);
@@ -981,9 +888,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             value = mapServiceContext.interceptPut(name, null, value);
             value = mapDataStore.add(key, value, now);
             onStore(record);
-            record = createRecord(key, value, ttl, now);
-            records.put(key, record);
-            updateSizeEstimator(calculateRecordHeapCost(record));
+            record = createRecord(value, ttl, now);
+            storage.put(key, record);
             updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
         saveIndex(record, oldValue);
@@ -996,7 +902,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return mapDataStore;
     }
 
-    private Object removeRecord(Data key, Record record, long now) {
+    protected Object removeRecord(Data key, Record record, long now) {
         Object oldValue = record.getValue();
         oldValue = mapServiceContext.interceptRemove(name, oldValue);
         if (oldValue != null) {
@@ -1004,9 +910,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             mapDataStore.remove(key, now);
             onStore(record);
         }
-        // reduce size
-        updateSizeEstimator(-calculateRecordHeapCost(record));
-        deleteRecord(key);
+        storage.removeRecord(record);
         return oldValue;
     }
 
@@ -1017,22 +921,19 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return getRecordOrNull(key, now, false);
     }
 
-    private Record getRecordOrNull(Data key, long now, boolean backup) {
-        Record record = records.get(key);
+    protected Record getRecordOrNull(Data key, long now, boolean backup) {
+        Record record = storage.get(key);
         if (record == null) {
             return null;
         }
-        return getOrNullIfExpired(record, now, backup);
-    }
-
-    private void deleteRecord(Data key) {
-        Record record = records.remove(key);
-        if (record != null) {
-            record.invalidate();
+        record = getOrNullIfExpired(record, now, backup);
+        if (record != null && record.getValue() == null) {
+            record = null;
         }
+        return record;
     }
 
-    private void onStore(Record record) {
+    protected void onStore(Record record) {
         if (record == null || mapDataStore == EMPTY_MAP_DATA_STORE) {
             return;
         }

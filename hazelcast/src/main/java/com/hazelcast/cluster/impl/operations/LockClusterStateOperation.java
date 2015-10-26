@@ -19,10 +19,13 @@ package com.hazelcast.cluster.impl.operations;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.cluster.impl.ClusterStateManager;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.EmptyStatement;
@@ -79,6 +82,14 @@ public class LockClusterStateOperation extends AbstractOperation implements Allo
         } else {
             super.logError(e);
         }
+    }
+
+    @Override
+    public ExceptionAction onInvocationException(Throwable throwable) {
+        if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
+            return ExceptionAction.THROW_EXCEPTION;
+        }
+        return super.onInvocationException(throwable);
     }
 
     @Override

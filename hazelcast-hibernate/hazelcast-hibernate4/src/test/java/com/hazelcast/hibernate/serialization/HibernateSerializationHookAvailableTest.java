@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.SerializationServiceImpl;
+import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -49,7 +49,7 @@ public class HibernateSerializationHookAvailableTest {
             ORIGINAL = HazelcastInstanceProxy.class.getDeclaredField("original");
             ORIGINAL.setAccessible(true);
 
-            TYPE_MAP = SerializationServiceImpl.class.getDeclaredField("typeMap");
+            TYPE_MAP = AbstractSerializationService.class.getDeclaredField("typeMap");
             TYPE_MAP.setAccessible(true);
         } catch (Exception e) {
             throw new RuntimeException(e);

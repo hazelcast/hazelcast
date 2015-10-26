@@ -149,7 +149,7 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
         String newSessionId = map.keySet().iterator().next();
         SessionState sessionState = (SessionState) map.get(newSessionId);
         assertEquals("SessionState {referenceCount=1, attributes=1\n" +
-                "\tkey[16]\n" +
+                "\tkey[9]\n" +
                 "}", sessionState.toString());
     }
 

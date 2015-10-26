@@ -2,8 +2,6 @@ package com.hazelcast.cache.merge;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheMergePolicy;
-import com.hazelcast.cache.impl.merge.policy.HigherHitsCacheMergePolicy;
-import com.hazelcast.cache.impl.merge.policy.LatestAccessCacheMergePolicy;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,6 +27,14 @@ public abstract class AbstractCacheMergePolicyTest {
     public void merge_mergingWins() {
         CacheEntryView existing = entryWithGivenPropertyAndValue(1, EXISTING);
         CacheEntryView merging = entryWithGivenPropertyAndValue(333, MERGING);
+
+        assertEquals(MERGING, policy.merge("cache", merging, existing));
+    }
+
+    @Test
+    public void merge_mergingWins_sinceExistingIsNotExist() {
+        CacheEntryView existing = null;
+        CacheEntryView merging = entryWithGivenPropertyAndValue(1, MERGING);
 
         assertEquals(MERGING, policy.merge("cache", merging, existing));
     }

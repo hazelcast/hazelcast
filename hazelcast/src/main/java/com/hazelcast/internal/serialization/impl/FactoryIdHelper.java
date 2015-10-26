@@ -109,8 +109,6 @@ public final class FactoryIdHelper {
     public static final String MAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.map";
     public static final int MAP_PORTABLE_FACTORY_ID = -10;
 
-    public static final String ENTERPRISE_MAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.enterprise.map";
-
     public static final String QUEUE_PORTABLE_FACTORY = "hazelcast.serialization.portable.queue";
     public static final int QUEUE_PORTABLE_FACTORY_ID = -11;
 
@@ -155,6 +153,9 @@ public final class FactoryIdHelper {
 
     public static final String RINGBUFFER_PORTABLE_FACTORY = "hazelcast.serialization.portable.ringbuffer";
     public static final int RINGBUFFER_PORTABLE_FACTORY_ID = -29;
+
+    public static final String ENTERPRISE_MAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.enterprise.map";
+    public static final int ENTERPRISE_MAP_PORTABLE_FACTORY_ID = -30;
 
     // factory id 0 is reserved for Cluster objects (Data, Address, Member etc)...
 

@@ -47,14 +47,15 @@ public class AuthenticationCustomCredentialsMessageTask
 
     @Override
     protected ClientAuthenticationCustomCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        ClientAuthenticationCustomCodec.RequestParameters parameters =
-                ClientAuthenticationCustomCodec.decodeRequest(clientMessage);
+        ClientAuthenticationCustomCodec.RequestParameters parameters = ClientAuthenticationCustomCodec
+                .decodeRequest(clientMessage);
         String uuid = parameters.uuid;
         String ownerUuid = parameters.ownerUuid;
         if (uuid != null && uuid.length() > 0) {
             principal = new ClientPrincipal(uuid, ownerUuid);
         }
         credentials = serializationService.toObject(parameters.credentials);
+        clientSerializationVersion = parameters.serializationVersion;
         return parameters;
     }
 
@@ -63,10 +64,9 @@ public class AuthenticationCustomCredentialsMessageTask
         return (ClientMessage) response;
     }
 
-
     @Override
-    protected ClientMessage encodeAuth(Address thisAddress, String uuid, String ownerUuid) {
-        return ClientAuthenticationCustomCodec.encodeResponse(thisAddress, uuid, ownerUuid);
+    protected ClientMessage encodeAuth(byte status, Address thisAddress, String uuid, String ownerUuid, byte version) {
+        return ClientAuthenticationCustomCodec.encodeResponse(status, thisAddress, uuid, ownerUuid, version);
     }
 
     @Override

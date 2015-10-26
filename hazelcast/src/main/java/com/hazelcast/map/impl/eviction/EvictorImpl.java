@@ -95,7 +95,6 @@ public class EvictorImpl implements Evictor {
     }
 
     protected boolean tryEvict(Data key, Record record, RecordStore recordStore, boolean backup, long now) {
-        String mapName = recordStore.getName();
         Object value = record.getValue();
 
         if (recordStore.isLocked(key)) {
@@ -105,7 +104,6 @@ public class EvictorImpl implements Evictor {
         recordStore.evict(key, backup);
 
         if (!backup) {
-            mapServiceContext.interceptAfterRemove(mapName, value);
             boolean expired = recordStore.isExpired(record, now, false);
             recordStore.doPostEvictionOperations(key, value, expired);
         }

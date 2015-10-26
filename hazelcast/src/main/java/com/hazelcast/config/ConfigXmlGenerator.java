@@ -385,6 +385,8 @@ public class ConfigXmlGenerator {
                     .append("</merge-policy>");
             xml.append("<read-backup-data>").append(m.isReadBackupData())
                     .append("</read-backup-data>");
+            xml.append("<hot-restart-enabled>").append(m.isHotRestartEnabled())
+                    .append("</hot-restart-enabled>");
             xml.append("<statistics-enabled>").append(m.isStatisticsEnabled())
                     .append("</statistics-enabled>");
 
@@ -393,6 +395,8 @@ public class ConfigXmlGenerator {
             wanReplicationConfigXmlGenerator(xml, m.getWanReplicationRef());
 
             mapIndexConfigXmlGenerator(xml, m);
+
+            mapAttributeConfigXmlGenerator(xml, m);
 
             mapEntryListenerConfigXmlGenerator(xml, m);
 
@@ -530,6 +534,18 @@ public class ConfigXmlGenerator {
                 xml.append("</index>");
             }
             xml.append("</indexes>");
+        }
+    }
+
+    private void mapAttributeConfigXmlGenerator(StringBuilder xml, MapConfig m) {
+        if (!m.getMapAttributeConfigs().isEmpty()) {
+            xml.append("<attributes>");
+            for (MapAttributeConfig attributeCfg : m.getMapAttributeConfigs()) {
+                xml.append("<attribute extractor=\"").append(attributeCfg.getExtractor()).append("\">");
+                xml.append(attributeCfg.getName());
+                xml.append("</attribute>");
+            }
+            xml.append("</attributes>");
         }
     }
 

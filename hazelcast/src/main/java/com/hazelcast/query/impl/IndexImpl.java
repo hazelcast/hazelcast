@@ -25,66 +25,36 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.QueryException;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.query.impl.TypeConverters.IDENTITY_CONVERTER;
+import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
 
-/**
- * Implementation for {@link com.hazelcast.query.impl.Index}
- */
 public class IndexImpl implements Index {
 
-    /**
-     * Creates instance from NullObject is a inner class.
-     */
     public static final NullObject NULL = new NullObject();
 
-    // indexKey -- indexValue
     private final IndexStore indexStore;
-    private final String attribute;
+    private final String attributeName;
     private final boolean ordered;
 
     private volatile TypeConverter converter;
 
     private final SerializationService ss;
+    private final Extractors extractors;
 
-    public IndexImpl(String attribute, boolean ordered, SerializationService ss) {
-        this.attribute = attribute;
+    public IndexImpl(String attributeName, boolean ordered, SerializationService ss, Extractors extractors) {
+        this.attributeName = attributeName;
         this.ordered = ordered;
         this.ss = ss;
         this.indexStore = ordered ? new SortedIndexStore() : new UnsortedIndexStore();
+        this.extractors = extractors;
     }
 
     @Override
-    public TypeConverter getConverter() {
-        return converter;
-    }
-
-    @Override
-    public void removeEntryIndex(Data key, Object value) {
-        Comparable attributeValue = QueryEntryUtils.extractAttribute(this.attribute, key, value, ss);
-        attributeValue = sanitizeValue(attributeValue);
-
-        if (attributeValue != null) {
-            indexStore.removeIndex(attributeValue, key);
-        }
-    }
-
-    @Override
-    public void clear() {
-        indexStore.clear();
-        // Clear converter
-        converter = null;
-    }
-
-    ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue) {
-        return indexStore.getRecordMap(indexValue);
-    }
-
-    @Override
-    public void saveEntryIndex(QueryableEntry e, Object oldRecordValue) throws QueryException {
+    public void saveEntryIndex(QueryableEntry entry, Object oldRecordValue) throws QueryException {
         /*
          * At first, check if converter is not initialized, initialize it before saving an entry index
          * Because, if entity index is saved before,
@@ -92,95 +62,97 @@ public class IndexImpl implements Index {
          * another thread can query over indexes without knowing the converter and
          * this causes to class cast exceptions.
          */
-        if (converter == null) {
-            // Initialize attribute type by using entry index
-            AttributeType attributeType = e.getAttributeType(attribute);
-            converter = attributeType == null ? IDENTITY_CONVERTER : attributeType.getConverter();
+        if (converter == null || converter == NULL_CONVERTER) {
+            converter = entry.getConverter(attributeName);
         }
 
-        Comparable oldValue = null;
-        if (oldRecordValue != null) {
-            oldValue = QueryEntryUtils.extractAttribute(attribute, e.getKeyData(), oldRecordValue, ss);
-            oldValue = sanitizeValue(oldValue);
-        }
-
-        Comparable newValue = e.getAttribute(attribute);
-        newValue = sanitizeValue(newValue);
-
-        if (oldValue == null) {
-            // new
-            indexStore.newIndex(newValue, e);
+        Object newAttributeValue = extractAttributeValue(entry.getKeyData(), entry.getValue());
+        if (oldRecordValue == null) {
+            indexStore.newIndex(newAttributeValue, entry);
         } else {
-            // update
-            indexStore.updateIndex(oldValue, newValue, e);
+            Object oldAttributeValue = extractAttributeValue(entry.getKeyData(), oldRecordValue);
+            indexStore.updateIndex(oldAttributeValue, newAttributeValue, entry);
         }
     }
 
-    private static Comparable sanitizeValue(Comparable value) {
-        if (value == null) {
-            return NULL;
-        }
-        if (value.getClass().isEnum()) {
-            return TypeConverters.ENUM_CONVERTER.convert(value);
-        }
-        return value;
+    @Override
+    public void removeEntryIndex(Data key, Object value) {
+        Object attributeValue = extractAttributeValue(key, value);
+        indexStore.removeIndex(attributeValue, key);
+    }
+
+    private Object extractAttributeValue(Data key, Object value) {
+        return QueryableEntry.extractAttributeValue(extractors, ss, attributeName, key, value);
     }
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable[] values) {
         if (values.length == 1) {
-            if (converter != null) {
-                return indexStore.getRecords(convert(values[0]));
-            } else {
-                return new SingleResultSet(null);
-            }
+            return getRecords(values[0]);
         } else {
-            MultiResultSet results = new MultiResultSet();
             if (converter != null) {
                 Set<Comparable> convertedValues = new HashSet<Comparable>(values.length);
                 for (Comparable value : values) {
                     convertedValues.add(convert(value));
                 }
-                indexStore.getRecords(results, convertedValues);
+                return indexStore.getRecords(convertedValues);
             }
-            return results;
+            return Collections.EMPTY_SET;
         }
     }
 
     @Override
-    public Set<QueryableEntry> getRecords(Comparable value) {
-        if (converter != null) {
-            return indexStore.getRecords(convert(value));
-        } else {
+    public Set<QueryableEntry> getRecords(Comparable attributeValue) {
+        if (converter == null) {
             return new SingleResultSet(null);
         }
+        return indexStore.getRecords(convert(attributeValue));
     }
 
     @Override
-    public Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
-        MultiResultSet results = new MultiResultSet();
-        if (converter != null) {
-            indexStore.getSubRecordsBetween(results, convert(from), convert(to));
+    public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedAttributeValue) {
+        if (converter == null) {
+            return Collections.EMPTY_SET;
         }
-        return results;
+        return indexStore.getSubRecords(comparisonType, convert(searchedAttributeValue));
     }
 
     @Override
-    public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
-        MultiResultSet results = new MultiResultSet();
-        if (converter != null) {
-            indexStore.getSubRecords(results, comparisonType, convert(searchedValue));
+    public Set<QueryableEntry> getSubRecordsBetween(Comparable fromAttributeValue, Comparable toAttributeValue) {
+        if (converter == null) {
+            return Collections.EMPTY_SET;
         }
-        return results;
+        return indexStore.getSubRecordsBetween(convert(fromAttributeValue), convert(toAttributeValue));
     }
 
-    private Comparable convert(Comparable value) {
-        return converter.convert(value);
+    /**
+     * Note: the fact that the given attributeValue is of type Comparable doesn't mean that this value is of the same
+     * type as the one that's stored in the index, thus the conversion is needed.
+     *
+     * @param attributeValue to be converted from given type to the type of the attribute that's stored in the index
+     * @return converted value that may be compared with the value that's stored in the index
+     */
+    private Comparable convert(Comparable attributeValue) {
+        return converter.convert(attributeValue);
+    }
+
+    /**
+     * Provides comparable null object.
+     */
+    @Override
+    public TypeConverter getConverter() {
+        return converter;
+    }
+
+    @Override
+    public void clear() {
+        indexStore.clear();
+        converter = null;
     }
 
     @Override
     public String getAttributeName() {
-        return attribute;
+        return attributeName;
     }
 
     @Override
@@ -188,9 +160,10 @@ public class IndexImpl implements Index {
         return ordered;
     }
 
-    /**
-     * Provides comparable null object.
-     */
+    ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue) {
+        return indexStore.getRecordMap(indexValue);
+    }
+
     public static final class NullObject implements Comparable, DataSerializable {
         @Override
         public int compareTo(Object o) {

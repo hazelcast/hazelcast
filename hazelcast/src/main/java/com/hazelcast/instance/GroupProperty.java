@@ -185,8 +185,8 @@ public enum GroupProperty implements HazelcastProperty {
 
     CONNECT_ALL_WAIT_SECONDS("hazelcast.connect.all.wait.seconds", 120, SECONDS),
 
-    MEMCACHE_ENABLED("hazelcast.memcache.enabled", true),
-    REST_ENABLED("hazelcast.rest.enabled", true),
+    MEMCACHE_ENABLED("hazelcast.memcache.enabled", false),
+    REST_ENABLED("hazelcast.rest.enabled", false),
 
     MAP_LOAD_CHUNK_SIZE("hazelcast.map.load.chunk.size", 1000),
 
@@ -257,6 +257,8 @@ public enum GroupProperty implements HazelcastProperty {
 
     CLIENT_HEARTBEAT_TIMEOUT_SECONDS("hazelcast.client.max.no.heartbeat.seconds", 300, SECONDS),
     MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS("hazelcast.migration.min.delay.on.member.removed.seconds", 5, SECONDS),
+
+    CLUSTER_SHUTDOWN_TIMEOUT_SECONDS("hazelcast.cluster.shutdown.timeout.seconds", 900, SECONDS),
 
     ICMP_ENABLED("hazelcast.icmp.enabled", false),
     ICMP_TIMEOUT("hazelcast.icmp.timeout", 1000, MILLISECONDS),
@@ -353,13 +355,6 @@ public enum GroupProperty implements HazelcastProperty {
     SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS("hazelcast.slow.invocation.detector.threshold.millis", -1, MILLISECONDS),
 
     LOCK_MAX_LEASE_TIME_SECONDS("hazelcast.lock.max.lease.time.seconds", Long.MAX_VALUE, SECONDS),
-
-    // OLD ELASTIC MEMORY PROPS
-    ELASTIC_MEMORY_ENABLED("hazelcast.elastic.memory.enabled", false),
-    ELASTIC_MEMORY_TOTAL_SIZE("hazelcast.elastic.memory.total.size", "128M"),
-    ELASTIC_MEMORY_CHUNK_SIZE("hazelcast.elastic.memory.chunk.size", "1K"),
-    ELASTIC_MEMORY_SHARED_STORAGE("hazelcast.elastic.memory.shared.storage", false),
-    ELASTIC_MEMORY_UNSAFE_ENABLED("hazelcast.elastic.memory.unsafe.enabled", false),
 
     ENTERPRISE_LICENSE_KEY("hazelcast.enterprise.license.key"),
 
@@ -562,7 +557,13 @@ public enum GroupProperty implements HazelcastProperty {
      * eventually be removed when the experimental marker is removed.</p>
      * <p>Discovery SPI is <b>disabled</b> by default</p>
      */
-    DISCOVERY_SPI_ENABLED("hazelcast.discovery.enabled", false);
+    DISCOVERY_SPI_ENABLED("hazelcast.discovery.enabled", false),
+
+    /**
+     * Hazelcast serialization version. This is single byte value between 1 and Max supported serialization version.
+     * @see BuildInfo#getSerializationVersion()
+     */
+    SERIALIZATION_VERSION("hazelcast.serialization.version", BuildInfoProvider.getBuildInfo().getSerializationVersion());
 
     private final String name;
     private final String defaultValue;
@@ -578,6 +579,10 @@ public enum GroupProperty implements HazelcastProperty {
     }
 
     GroupProperty(String name, Integer defaultValue) {
+        this(name, String.valueOf(defaultValue));
+    }
+
+    GroupProperty(String name, Byte defaultValue) {
         this(name, String.valueOf(defaultValue));
     }
 

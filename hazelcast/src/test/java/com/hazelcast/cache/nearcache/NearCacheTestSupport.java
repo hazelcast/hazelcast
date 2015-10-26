@@ -244,7 +244,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         assertEquals(size1, managedNearCacheRecordStore.latestSize);
 
         for (int i = 0; i < 2 * DEFAULT_RECORD_COUNT; i++) {
-            nearCache.invalidate(i);
+            nearCache.remove(i);
             assertEquals((Integer) i, managedNearCacheRecordStore.latestKeyOnRemove);
             assertEquals(i < DEFAULT_RECORD_COUNT, managedNearCacheRecordStore.latestResultOnRemove);
         }

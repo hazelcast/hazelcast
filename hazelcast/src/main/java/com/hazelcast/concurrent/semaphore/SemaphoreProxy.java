@@ -166,9 +166,6 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("ISemaphore{");
-        sb.append("name='").append(name).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "ISemaphore{name='" + name + '\'' + '}';
     }
 }

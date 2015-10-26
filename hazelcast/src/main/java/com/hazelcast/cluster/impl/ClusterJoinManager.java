@@ -223,7 +223,7 @@ public class ClusterJoinManager {
                 return;
             }
 
-            if (!prepareJoinIfNodeIsMaster(target)) {
+            if (!validateJoinRequest(target)) {
                 return;
             }
 
@@ -285,10 +285,10 @@ public class ClusterJoinManager {
         }
     }
 
-    private boolean prepareJoinIfNodeIsMaster(Address target) {
+    private boolean validateJoinRequest(Address target) {
         if (node.isMaster()) {
             try {
-                node.getNodeExtension().beforeJoin();
+                node.getNodeExtension().validateJoinRequest();
             } catch (Exception e) {
                 logger.warning(e.getMessage());
                 nodeEngine.getOperationService().send(new BeforeJoinCheckFailureOperation(e.getMessage()), target);

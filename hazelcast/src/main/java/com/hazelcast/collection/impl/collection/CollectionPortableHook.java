@@ -40,13 +40,11 @@ import com.hazelcast.collection.impl.txnlist.client.TxnListSizeRequest;
 import com.hazelcast.collection.impl.txnset.client.TxnSetAddRequest;
 import com.hazelcast.collection.impl.txnset.client.TxnSetRemoveRequest;
 import com.hazelcast.collection.impl.txnset.client.TxnSetSizeRequest;
+import com.hazelcast.internal.serialization.PortableHook;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.internal.serialization.PortableHook;
-import com.hazelcast.internal.serialization.impl.ArrayPortableFactory;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
@@ -54,9 +52,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.COLLECTI
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.COLLECTION_PORTABLE_FACTORY_ID;
 
 public class CollectionPortableHook implements PortableHook {
-
     public static final int F_ID = FactoryIdHelper.getFactoryId(COLLECTION_PORTABLE_FACTORY, COLLECTION_PORTABLE_FACTORY_ID);
-
     public static final int COLLECTION_SIZE = 1;
     public static final int COLLECTION_CONTAINS = 2;
     public static final int COLLECTION_ADD = 3;
@@ -73,11 +69,9 @@ public class CollectionPortableHook implements PortableHook {
     public static final int LIST_REMOVE = 14;
     public static final int LIST_INDEX_OF = 15;
     public static final int LIST_SUB = 16;
-
     public static final int TXN_LIST_ADD = 17;
     public static final int TXN_LIST_REMOVE = 18;
     public static final int TXN_LIST_SIZE = 19;
-
     public static final int TXN_SET_ADD = 20;
     public static final int TXN_SET_REMOVE = 21;
     public static final int TXN_SET_SIZE = 22;
@@ -89,137 +83,66 @@ public class CollectionPortableHook implements PortableHook {
         return F_ID;
     }
 
-    @Override
     public PortableFactory createFactory() {
-        ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[COLLECTION_IS_EMPTY + 1];
-
-        constructors[COLLECTION_SIZE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new CollectionSizeRequest();
+        return new PortableFactory() {
+            @Override
+            public Portable create(int classId) {
+                switch (classId) {
+                    case COLLECTION_SIZE:
+                        return new CollectionSizeRequest();
+                    case COLLECTION_CONTAINS:
+                        return new CollectionContainsRequest();
+                    case COLLECTION_ADD:
+                        return new CollectionAddRequest();
+                    case COLLECTION_REMOVE:
+                        return new CollectionRemoveRequest();
+                    case COLLECTION_ADD_ALL:
+                        return new CollectionAddAllRequest();
+                    case COLLECTION_COMPARE_AND_REMOVE:
+                        return new CollectionCompareAndRemoveRequest();
+                    case COLLECTION_CLEAR:
+                        return new CollectionClearRequest();
+                    case COLLECTION_GET_ALL:
+                        return new CollectionGetAllRequest();
+                    case COLLECTION_ADD_LISTENER:
+                        return new CollectionAddListenerRequest();
+                    case LIST_ADD_ALL:
+                        return new ListAddAllRequest();
+                    case LIST_GET:
+                        return new ListGetRequest();
+                    case LIST_SET:
+                        return new ListSetRequest();
+                    case LIST_ADD:
+                        return new ListAddRequest();
+                    case LIST_REMOVE:
+                        return new ListRemoveRequest();
+                    case LIST_INDEX_OF:
+                        return new ListIndexOfRequest();
+                    case LIST_SUB:
+                        return new ListSubRequest();
+                    case TXN_LIST_ADD:
+                        return new TxnListAddRequest();
+                    case TXN_LIST_REMOVE:
+                        return new TxnListRemoveRequest();
+                    case TXN_LIST_SIZE:
+                        return new TxnListSizeRequest();
+                    case TXN_SET_ADD:
+                        return new TxnSetAddRequest();
+                    case TXN_SET_REMOVE:
+                        return new TxnSetRemoveRequest();
+                    case TXN_SET_SIZE:
+                        return new TxnSetSizeRequest();
+                    case COLLECTION_REMOVE_LISTENER:
+                        return new CollectionRemoveListenerRequest();
+                    case COLLECTION_IS_EMPTY:
+                        return new CollectionIsEmptyRequest();
+                    default:
+                        return null;
+                }
             }
         };
-        constructors[COLLECTION_CONTAINS] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new CollectionContainsRequest();
-            }
-        };
-        constructors[COLLECTION_ADD] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new CollectionAddRequest();
-            }
-        };
-        constructors[COLLECTION_REMOVE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new CollectionRemoveRequest();
-            }
-        };
-        constructors[COLLECTION_ADD_ALL] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new CollectionAddAllRequest();
-            }
-        };
-        constructors[COLLECTION_COMPARE_AND_REMOVE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new CollectionCompareAndRemoveRequest();
-            }
-        };
-        constructors[COLLECTION_CLEAR] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new CollectionClearRequest();
-            }
-        };
-        constructors[COLLECTION_GET_ALL] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new CollectionGetAllRequest();
-            }
-        };
-        constructors[COLLECTION_ADD_LISTENER] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new CollectionAddListenerRequest();
-            }
-        };
-
-        constructors[LIST_ADD_ALL] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new ListAddAllRequest();
-            }
-        };
-        constructors[LIST_GET] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new ListGetRequest();
-            }
-        };
-        constructors[LIST_SET] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new ListSetRequest();
-            }
-        };
-        constructors[LIST_ADD] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new ListAddRequest();
-            }
-        };
-        constructors[LIST_REMOVE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new ListRemoveRequest();
-            }
-        };
-        constructors[LIST_INDEX_OF] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new ListIndexOfRequest();
-            }
-        };
-        constructors[LIST_SUB] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new ListSubRequest();
-            }
-        };
-
-        constructors[TXN_LIST_ADD] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnListAddRequest();
-            }
-        };
-        constructors[TXN_LIST_REMOVE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnListRemoveRequest();
-            }
-        };
-        constructors[TXN_LIST_SIZE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnListSizeRequest();
-            }
-        };
-        constructors[TXN_SET_ADD] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnSetAddRequest();
-            }
-        };
-        constructors[TXN_SET_REMOVE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnSetRemoveRequest();
-            }
-        };
-        constructors[TXN_SET_SIZE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnSetSizeRequest();
-            }
-        };
-        constructors[COLLECTION_REMOVE_LISTENER] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new CollectionRemoveListenerRequest();
-            }
-        };
-        constructors[COLLECTION_IS_EMPTY] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new CollectionIsEmptyRequest();
-            }
-        };
-
-        return new ArrayPortableFactory(constructors);
     }
 
-    @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }

@@ -125,6 +125,8 @@ public class MapConfig {
 
     private List<MapIndexConfig> mapIndexConfigs;
 
+    private List<MapAttributeConfig> mapAttributeConfigs;
+
     private List<QueryCacheConfig> queryCacheConfigs;
 
     private boolean statisticsEnabled = true;
@@ -132,6 +134,8 @@ public class MapConfig {
     private PartitioningStrategyConfig partitioningStrategyConfig;
 
     private String quorumName;
+
+    private boolean hotRestartEnabled;
 
     private MapConfigReadOnly readOnly;
 
@@ -165,10 +169,12 @@ public class MapConfig {
         this.partitionLostListenerConfigs =
                 new ArrayList<MapPartitionLostListenerConfig>(config.getPartitionLostListenerConfigs());
         this.mapIndexConfigs = new ArrayList<MapIndexConfig>(config.getMapIndexConfigs());
+        this.mapAttributeConfigs = new ArrayList<MapAttributeConfig>(config.getMapAttributeConfigs());
         this.queryCacheConfigs = new ArrayList<QueryCacheConfig>(config.getQueryCacheConfigs());
         this.partitioningStrategyConfig = config.partitioningStrategyConfig != null
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
         this.quorumName = config.quorumName;
+        this.hotRestartEnabled = config.hotRestartEnabled;
     }
     //CHECKSTYLE:ON
 
@@ -177,6 +183,14 @@ public class MapConfig {
             readOnly = new MapConfigReadOnly(this);
         }
         return readOnly;
+    }
+
+    public boolean isHotRestartEnabled() {
+        return hotRestartEnabled;
+    }
+
+    public void setHotRestartEnabled(boolean hotRestartEnabled) {
+        this.hotRestartEnabled = hotRestartEnabled;
     }
 
     /**
@@ -583,6 +597,23 @@ public class MapConfig {
         return this;
     }
 
+    public MapConfig addMapAttributeConfig(MapAttributeConfig mapAttributeConfig) {
+        getMapAttributeConfigs().add(mapAttributeConfig);
+        return this;
+    }
+
+    public List<MapAttributeConfig> getMapAttributeConfigs() {
+        if (mapAttributeConfigs == null) {
+            mapAttributeConfigs = new ArrayList<MapAttributeConfig>();
+        }
+        return mapAttributeConfigs;
+    }
+
+    public MapConfig setMapAttributeConfigs(List<MapAttributeConfig> mapAttributeConfigs) {
+        this.mapAttributeConfigs = mapAttributeConfigs;
+        return this;
+    }
+
     /**
      * Adds a new {@code queryCacheConfig} to this {@code MapConfig}.
      *
@@ -666,6 +697,7 @@ public class MapConfig {
                 || (Math.min(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == 0
                 && Math.max(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == Integer.MAX_VALUE))
                 && this.timeToLiveSeconds == other.timeToLiveSeconds
+                && this.hotRestartEnabled == other.hotRestartEnabled
                 && this.readBackupData == other.readBackupData;
     }
 
@@ -741,28 +773,28 @@ public class MapConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("MapConfig");
-        sb.append("{name='").append(name).append('\'');
-        sb.append(", inMemoryFormat=").append(inMemoryFormat).append('\'');
-        sb.append(", backupCount=").append(backupCount);
-        sb.append(", asyncBackupCount=").append(asyncBackupCount);
-        sb.append(", timeToLiveSeconds=").append(timeToLiveSeconds);
-        sb.append(", maxIdleSeconds=").append(maxIdleSeconds);
-        sb.append(", evictionPolicy='").append(evictionPolicy).append('\'');
-        sb.append(", evictionPercentage=").append(evictionPercentage);
-        sb.append(", minEvictionCheckMillis=").append(minEvictionCheckMillis);
-        sb.append(", maxSizeConfig=").append(maxSizeConfig);
-        sb.append(", readBackupData=").append(readBackupData);
-        sb.append(", nearCacheConfig=").append(nearCacheConfig);
-        sb.append(", mapStoreConfig=").append(mapStoreConfig);
-        sb.append(", mergePolicyConfig='").append(mergePolicy).append('\'');
-        sb.append(", wanReplicationRef=").append(wanReplicationRef);
-        sb.append(", entryListenerConfigs=").append(entryListenerConfigs);
-        sb.append(", mapIndexConfigs=").append(mapIndexConfigs);
-        sb.append(", quorumName=").append(quorumName);
-        sb.append(", queryCacheConfigs=").append(queryCacheConfigs);
-        sb.append('}');
-        return sb.toString();
+        return "MapConfig{"
+                + "name='" + name + '\''
+                + "', inMemoryFormat=" + inMemoryFormat + '\''
+                + ", backupCount=" + backupCount
+                + ", asyncBackupCount=" + asyncBackupCount
+                + ", timeToLiveSeconds=" + timeToLiveSeconds
+                + ", maxIdleSeconds=" + maxIdleSeconds
+                + ", evictionPolicy='" + evictionPolicy + '\''
+                + ", evictionPercentage=" + evictionPercentage
+                + ", minEvictionCheckMillis=" + minEvictionCheckMillis
+                + ", maxSizeConfig=" + maxSizeConfig
+                + ", readBackupData=" + readBackupData
+                + ", hotRestartEnabled=" + hotRestartEnabled
+                + ", nearCacheConfig=" + nearCacheConfig
+                + ", mapStoreConfig=" + mapStoreConfig
+                + ", mergePolicyConfig='" + mergePolicy + '\''
+                + ", wanReplicationRef=" + wanReplicationRef
+                + ", entryListenerConfigs=" + entryListenerConfigs
+                + ", mapIndexConfigs=" + mapIndexConfigs
+                + ", mapAttributeConfigs=" + mapAttributeConfigs
+                + ", quorumName=" + quorumName
+                + ", queryCacheConfigs=" + queryCacheConfigs
+                + '}';
     }
 }

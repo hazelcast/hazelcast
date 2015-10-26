@@ -223,13 +223,11 @@ abstract class AbstractCacheProxy<K, V>
         int partitionCount = partitionService.getPartitionCount();
 
         try {
-            List<Future> futures = new ArrayList<Future>(partitionCount);
-
             // First we fill entry set per partition
             List<Map.Entry<Data, Data>>[] entriesPerPartition = groupDataToPartitions(map, partitionCount);
 
             // Then we invoke the operations and sync on completion of these operations
-            putToAllPartitionsAndWaitForCompletion(entriesPerPartition, futures, expiryPolicy);
+            putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -261,9 +259,9 @@ abstract class AbstractCacheProxy<K, V>
     }
 
     private void putToAllPartitionsAndWaitForCompletion(List<Map.Entry<Data, Data>>[] entriesPerPartition,
-                                                        List<Future> futures, ExpiryPolicy expiryPolicy)
+                                                        ExpiryPolicy expiryPolicy)
             throws ExecutionException, InterruptedException {
-
+        List<Future> futures = new ArrayList<Future>(entriesPerPartition.length);
         for (int partitionId = 0; partitionId < entriesPerPartition.length; partitionId++) {
             List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
             if (entries != null) {
@@ -274,8 +272,33 @@ abstract class AbstractCacheProxy<K, V>
             }
         }
 
+        Throwable error = null;
         for (Future future : futures) {
-            future.get();
+            try {
+                future.get();
+            } catch (Throwable t) {
+                logger.finest("Error occurred while putting entries as batch!", t);
+                if (error == null) {
+                    error = t;
+                }
+            }
+        }
+        if (error != null) {
+            /*
+             * There maybe multiple exceptions but we throw only the first one.
+             * There are some ideas to throw all exceptions to caller but all of them have drawbacks:
+             *      - `Thread::addSuppressed` can be used to add other exceptions to the first one
+             *        but it is available since JDK 7.
+             *      - `Thread::initCause` can be used but this is wrong as semantic
+             *        since the other exceptions are not cause of the first one.
+             *      - We may wrap all exceptions in our custom exception (such as `MultipleCacheException`)
+             *        but in this case caller may wait different exception type and this idea causes problem.
+             *        For example see this TCK test:
+             *              `org.jsr107.tck.integration.CacheWriterTest::shouldWriteThoughUsingPutAll_partialSuccess`
+             *        In this test exception is thrown at `CacheWriter` and caller side expects this exception.
+             * So as a result, we only throw the first exception and others are suppressed by only logging.
+             */
+            ExceptionUtil.rethrow(error);
         }
     }
 

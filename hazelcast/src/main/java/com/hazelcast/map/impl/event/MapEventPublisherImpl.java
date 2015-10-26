@@ -31,6 +31,7 @@ import com.hazelcast.map.impl.wan.MapReplicationUpdate;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.CachedQueryEntry;
+import com.hazelcast.query.impl.Extractors;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
@@ -150,7 +151,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         for (EventRegistration registration : registrations) {
             EventFilter filter = registration.getFilter();
 
-            if (!doFilter(filter, syntheticEvent, dataKey, dataOldValue, dataValue, eventType)) {
+            if (!doFilter(filter, syntheticEvent, dataKey, dataOldValue, dataValue, eventType, mapName)) {
                 continue;
             }
 
@@ -187,7 +188,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
     //CHECKSTYLE:OFF
     protected boolean doFilter(EventFilter filter, boolean syntheticEvent, Data dataKey,
-                               Data dataOldValue, Data dataValue, EntryEventType eventType) {
+                               Data dataOldValue, Data dataValue, EntryEventType eventType, String mapNameOrNull) {
 
         if (filter instanceof MapPartitionLostEventFilter) {
             return false;
@@ -217,7 +218,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         }
 
         if (filter instanceof QueryEventFilter) {
-            return processQueryEventFilter(filter, eventType, dataKey, dataOldValue, dataValue);
+            return processQueryEventFilter(filter, eventType, dataKey, dataOldValue, dataValue, mapNameOrNull);
         }
 
         if (filter instanceof EntryEventFilter) {
@@ -302,7 +303,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     }
 
     private boolean processQueryEventFilter(EventFilter filter, EntryEventType eventType,
-                                            Data dataKey, Data dataOldValue, Data dataValue) {
+                                            Data dataKey, Data dataOldValue, Data dataValue, String mapNameOrNull) {
         Data testValue;
         if (eventType == REMOVED || eventType == EVICTED || eventType == EXPIRED) {
             testValue = dataOldValue;
@@ -310,9 +311,17 @@ public class MapEventPublisherImpl implements MapEventPublisher {
             testValue = dataValue;
         }
 
+        Extractors extractors = getExtractorsForMapName(mapNameOrNull);
         QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
-        QueryableEntry entry = new CachedQueryEntry(serializationService, dataKey, testValue);
+        QueryableEntry entry = new CachedQueryEntry(serializationService, dataKey, testValue, extractors);
         return queryEventFilter.eval(entry);
+    }
+
+    private Extractors getExtractorsForMapName(String mapName) {
+        if (mapName == null) {
+            return Extractors.empty();
+        }
+        return mapServiceContext.getExtractors(mapName);
     }
 
     protected void publishWanReplicationEventInternal(String mapName, ReplicationEventObject event) {

@@ -56,6 +56,7 @@
                 <address>10.3.5.1:5701</address>
                 <address>10.3.5.2:5701</address>
             </end-points>
+            <acknowledge-type>ACK_ON_TRANSMIT</acknowledge-type>
         </target-cluster>
     </wan-replication>
     <network>
@@ -273,6 +274,10 @@
 
         <wan-replication-ref name="my-wan-cluster">
             <merge-policy>hz.PASS_THROUGH</merge-policy>
+            <filters>
+                <filter-impl>com.example.WanTestFilter1</filter-impl>
+                <filter-impl>com.example.WanTestFilter2</filter-impl>
+            </filters>
         </wan-replication-ref>
 
         <indexes>

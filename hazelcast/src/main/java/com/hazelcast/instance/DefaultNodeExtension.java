@@ -20,12 +20,13 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.MessageTaskFactoryImpl;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.storage.DataRef;
-import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.memory.DefaultMemoryStats;
@@ -33,15 +34,13 @@ import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.tcp.DefaultSocketChannelWrapperFactory;
-import com.hazelcast.nio.tcp.MemberWriteHandler;
 import com.hazelcast.nio.tcp.MemberReadHandler;
-import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
+import com.hazelcast.nio.tcp.MemberWriteHandler;
 import com.hazelcast.nio.tcp.ReadHandler;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.NodeEngine;
@@ -51,25 +50,31 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationService;
 import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 
+import java.util.Collections;
+import java.util.Map;
+
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
 
 public class DefaultNodeExtension implements NodeExtension {
 
-    protected volatile Node node;
-    protected volatile ILogger logger;
-    protected volatile ILogger systemLogger;
+    protected final Node node;
+    protected final ILogger logger;
+    protected final ILogger systemLogger;
 
     private final MemoryStats memoryStats = new DefaultMemoryStats();
 
-    @Override
-    public void beforeStart(Node node) {
+    public DefaultNodeExtension(Node node) {
         this.node = node;
         logger = node.getLogger(NodeExtension.class);
         systemLogger = node.getLogger("com.hazelcast.system");
     }
 
     @Override
-    public void printNodeInfo(Node node) {
+    public void beforeStart() {
+    }
+
+    @Override
+    public void printNodeInfo() {
         BuildInfo buildInfo = node.getBuildInfo();
 
         String build = buildInfo.getBuild();
@@ -80,21 +85,21 @@ public class DefaultNodeExtension implements NodeExtension {
         systemLogger.info("Hazelcast " + buildInfo.getVersion()
                 + " (" + build + ") starting at " + node.getThisAddress());
         systemLogger.info("Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.");
+        systemLogger.info("Configured Hazelcast Serialization version:" + buildInfo.getSerializationVersion());
     }
 
     @Override
-    public void afterStart(Node node) {
+    public void beforeJoin() {
+    }
+
+    @Override
+    public void afterStart() {
     }
 
     @Override
     public SecurityContext getSecurityContext() {
         logger.warning("Security features are only available on Hazelcast Enterprise!");
         return null;
-    }
-
-    @Override
-    public Storage<DataRef> getNativeDataStorage() {
-        throw new UnsupportedOperationException("Native memory feature is only available on Hazelcast Enterprise!");
     }
 
     public SerializationService createSerializationService() {
@@ -110,11 +115,14 @@ public class DefaultNodeExtension implements NodeExtension {
             SerializationConfig serializationConfig = config.getSerializationConfig() != null
                     ? config.getSerializationConfig() : new SerializationConfig();
 
+            byte version = (byte) node.groupProperties.getInteger(GroupProperty.SERIALIZATION_VERSION);
+
             ss = builder.setClassLoader(configClassLoader)
                     .setConfig(serializationConfig)
                     .setManagedContext(hazelcastInstance.managedContext)
                     .setPartitioningStrategy(partitioningStrategy)
                     .setHazelcastInstance(hazelcastInstance)
+                    .setVersion(version)
                     .build();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -143,10 +151,15 @@ public class DefaultNodeExtension implements NodeExtension {
         throw new IllegalArgumentException("Unknown service class: " + clazz);
     }
 
-    <T> T createMapService() {
+    private <T> T createMapService() {
         ConstructorFunction<NodeEngine, MapService> constructor = getDefaultMapServiceConstructor();
         NodeEngineImpl nodeEngine = node.getNodeEngine();
         return (T) constructor.createNew(nodeEngine);
+    }
+
+    @Override
+    public Map<String, Object> createExtensionServices() {
+        return Collections.emptyMap();
     }
 
     @Override
@@ -172,7 +185,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public MessageTaskFactory createMessageTaskFactory(Node node) {
+    public MessageTaskFactory createMessageTaskFactory() {
         return new MessageTaskFactoryImpl(node);
     }
 
@@ -190,12 +203,19 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void destroy() {
+    public void beforeShutdown() {
+    }
+
+    @Override
+    public void shutdown() {
         logger.info("Destroying node NodeExtension.");
     }
 
     @Override
-    public void beforeJoin() {
+    public void validateJoinRequest() {
     }
 
+    @Override
+    public void onClusterStateChange(ClusterState newState) {
+    }
 }

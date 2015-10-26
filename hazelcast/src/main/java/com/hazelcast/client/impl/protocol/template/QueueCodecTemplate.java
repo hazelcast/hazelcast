@@ -206,11 +206,12 @@ public interface QueueCodecTemplate {
      *
      * @param name Name of the Queue
      * @param includeValue <tt>true</tt> if the updated item should be passed to the item listener, <tt>false</tt> otherwise.
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return  The registration id
      */
     @Request(id = 17, retryable = true, response = ResponseMessageConst.STRING,
              event = {EventMessageConst.EVENT_ITEM})
-    Object addListener(String name, boolean includeValue);
+    Object addListener(String name, boolean includeValue, boolean localOnly);
 
     /**
      * Removes the specified item listener.Returns silently if the specified listener was not added before.
