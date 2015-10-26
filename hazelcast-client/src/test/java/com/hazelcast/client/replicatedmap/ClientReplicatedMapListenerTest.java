@@ -27,8 +27,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import java.util.concurrent.atomic.AtomicLong;
-
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;

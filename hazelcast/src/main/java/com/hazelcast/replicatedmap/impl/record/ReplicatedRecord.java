@@ -101,6 +101,10 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         return updateTime;
     }
 
+    public void setUpdateTime(long updateTime) {
+        this.updateTime = updateTime;
+    }
+
     public long getHits() {
         return hits;
     }
@@ -113,8 +117,16 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         return lastAccessTime;
     }
 
+    public void setLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
+    }
+
     public long getCreationTime() {
         return creationTime;
+    }
+
+    public void setCreationTime(long creationTime) {
+        this.creationTime = creationTime;
     }
 
     private void access() {
