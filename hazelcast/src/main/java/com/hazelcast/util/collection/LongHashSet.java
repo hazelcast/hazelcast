@@ -17,7 +17,6 @@
 
 package com.hazelcast.util.collection;
 
-import com.hazelcast.util.QuickMath;
 import com.hazelcast.util.function.Predicate;
 
 import java.lang.reflect.Array;
@@ -26,24 +25,32 @@ import java.util.Collection;
 import java.util.Set;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.util.QuickMath.nextPowerOfTwo;
 
 /**
- * Simple fixed-size long hashset for validating tags.
+ * Simple fixed-size long hashset.
  */
 public final class LongHashSet implements Set<Long> {
+    /** Maximum supported capacity */
+    @SuppressWarnings("checkstyle:magicnumber")
+    public static final int MAX_CAPACITY = 1 << 29;
     private final long[] values;
     private final LongIterator iterator;
+    private final int capacity;
     private final int mask;
     private final long missingValue;
 
     private int size;
 
-    public LongHashSet(final int proposedCapacity, final long missingValue) {
+    public LongHashSet(final int capacity, final long missingValue) {
+        checkTrue(capacity <= MAX_CAPACITY, "Maximum capacity is 2^29");
+        this.capacity = capacity;
         size = 0;
         this.missingValue = missingValue;
-        final int capacity = QuickMath.nextPowerOfTwo(proposedCapacity);
-        mask = capacity - 1;
-        values = new long[capacity];
+        final int arraySize = nextPowerOfTwo(2 * capacity);
+        mask = arraySize - 1;
+        values = new long[arraySize];
         Arrays.fill(values, missingValue);
 
         // NB: references values in the constructor, so must be assigned after values
@@ -71,6 +78,9 @@ public final class LongHashSet implements Set<Long> {
      * @return true if the collection has changed, false otherwise
      */
     public boolean add(final long value) {
+        if (size == capacity) {
+            throw new IllegalStateException("This LongHashSet of capacity " + capacity + " is full");
+        }
         int index = Hashing.longHash(value, mask);
 
         while (values[index] != missingValue) {
@@ -117,8 +127,7 @@ public final class LongHashSet implements Set<Long> {
     }
 
     private int next(int index) {
-        index = ++index & mask;
-        return index;
+        return (index + 1) & mask;
     }
 
     private void compactChain(final int deleteIndex) {
@@ -185,30 +194,6 @@ public final class LongHashSet implements Set<Long> {
             values[i] = missingValue;
         }
         size = 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @SuppressWarnings("unchecked")
-    public <T> T[] toArray(T[] into) {
-        checkNotNull(into);
-        final Class<?> aryType = into.getClass().getComponentType();
-        if (!aryType.isAssignableFrom(Long.class)) {
-            throw new ArrayStoreException("Cannot store Longs in array of type " + aryType);
-        }
-        final long[] values = this.values;
-        final Object[] ret = into.length >= this.size ? into : (T[]) Array.newInstance(aryType, this.size);
-        for (int from = 0, to = 0; from < values.length; from++) {
-            final long val = values[from];
-            if (val != missingValue) {
-                ret[to++] = val;
-            }
-        }
-        if (ret.length > values.length) {
-            ret[values.length] = null;
-        }
-        return (T[]) ret;
     }
 
     /**
@@ -350,6 +335,9 @@ public final class LongHashSet implements Set<Long> {
         b.append('{');
         String separator = "";
         for (long i : values) {
+            if (i == missingValue) {
+                continue;
+            }
             b.append(i).append(separator);
             separator = ",";
         }
@@ -361,11 +349,38 @@ public final class LongHashSet implements Set<Long> {
      */
     public Object[] toArray() {
         final long[] values = this.values;
-        final Object[] array = new Object[values.length];
-        for (int i = 0; i < values.length; i++) {
-            array[i] = values[i];
+        final Object[] array = new Object[this.size];
+        int i = 0;
+        for (long value : values) {
+            if (value != missingValue) {
+                array[i++] = value;
+            }
         }
         return array;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T[] toArray(T[] into) {
+        checkNotNull(into);
+        final Class<?> aryType = into.getClass().getComponentType();
+        if (!aryType.isAssignableFrom(Long.class)) {
+            throw new ArrayStoreException("Cannot store Longs in array of type " + aryType);
+        }
+        final long[] values = this.values;
+        final Object[] ret = into.length >= this.size ? into : (T[]) Array.newInstance(aryType, this.size);
+        int i = 0;
+        for (long value : values) {
+            if (value != missingValue) {
+                ret[i++] = value;
+            }
+        }
+        if (ret.length > this.size) {
+            ret[values.length] = null;
+        }
+        return (T[]) ret;
     }
 
     /**
