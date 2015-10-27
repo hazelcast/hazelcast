@@ -353,12 +353,12 @@ public class SqlPredicateTest {
         assertEquals("(active=true AND name=)", sql("active AND name=''"));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidSqlPredicate1() {
         new SqlPredicate("invalid sql");
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testInvalidSqlPredicate2() {
         new SqlPredicate("");
     }
@@ -389,9 +389,5 @@ public class SqlPredicateTest {
 
     private Employee createValue(String name) {
         return new Employee(name, 34, true, 10D);
-    }
-
-    private Employee createValue(int age) {
-        return new Employee("abc-123-xvz", age, true, 10D);
     }
 }
