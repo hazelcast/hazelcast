@@ -20,11 +20,11 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,8 +39,18 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
 
-    private HazelcastInstance instance = createHazelcastInstance();
-    private InternalPartitionService partitionService = getPartitionService(instance);
+    private HazelcastInstance instance;
+    private InternalPartitionServiceImpl partitionService;
+    private Address thisAddress;
+    private int partitionCount;
+
+    @Before
+    public void setup() {
+        instance = createHazelcastInstance();
+        partitionService = (InternalPartitionServiceImpl) getPartitionService(instance);
+        thisAddress = getNode(instance).getThisAddress();
+        partitionCount = partitionService.getPartitionCount();
+    }
 
     @Test(expected = HazelcastInstanceNotActiveException.class)
     public void test_getPartitionOwnerOrWait_throwsException_afterNodeShutdown() throws Exception {
@@ -76,16 +86,12 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void test_setInitialState() {
-        Address thisAddress = getNode(instance).getThisAddress();
-        int partitionCount = partitionService.getPartitionCount();
         Address[][] addresses = new Address[partitionCount][MAX_REPLICA_COUNT];
         for (int i = 0; i < partitionCount; i++) {
             addresses[i][0] = thisAddress;
         }
 
-        InternalPartitionServiceImpl partitionServiceImpl = (InternalPartitionServiceImpl) partitionService;
-        partitionServiceImpl.setInitialState(addresses);
-
+        partitionService.setInitialState(addresses);
         for (int i = 0; i < partitionCount; i++) {
             assertTrue(partitionService.isPartitionOwner(i));
         }
@@ -93,33 +99,26 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalStateException.class)
     public void test_setInitialState_multipleTimes() {
-        Address thisAddress = getNode(instance).getThisAddress();
-        int partitionCount = partitionService.getPartitionCount();
         Address[][] addresses = new Address[partitionCount][MAX_REPLICA_COUNT];
         for (int i = 0; i < partitionCount; i++) {
             addresses[i][0] = thisAddress;
         }
 
-        InternalPartitionServiceImpl partitionServiceImpl = (InternalPartitionServiceImpl) partitionService;
-        partitionServiceImpl.setInitialState(addresses);
-
-        partitionServiceImpl.setInitialState(addresses);
+        partitionService.setInitialState(addresses);
+        partitionService.setInitialState(addresses);
     }
 
     @Test
     public void test_setInitialState_listenerShouldNOTBeCalled() {
-        Address thisAddress = getNode(instance).getThisAddress();
-        int partitionCount = partitionService.getPartitionCount();
         Address[][] addresses = new Address[partitionCount][MAX_REPLICA_COUNT];
         for (int i = 0; i < partitionCount; i++) {
             addresses[i][0] = thisAddress;
         }
 
-        InternalPartitionServiceImpl partitionServiceImpl = (InternalPartitionServiceImpl) partitionService;
         TestPartitionListener listener = new TestPartitionListener();
-        partitionServiceImpl.addPartitionListener(listener);
+        partitionService.addPartitionListener(listener);
 
-        partitionServiceImpl.setInitialState(addresses);
+        partitionService.setInitialState(addresses);
         assertEquals(0, listener.eventCount);
     }
 
