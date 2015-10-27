@@ -96,7 +96,7 @@ public class ClusterStateManager {
         clusterServiceLock.lock();
         try {
             final ClusterState currentState = getState();
-            if (currentState != ClusterState.ACTIVE) {
+            if (currentState != ClusterState.ACTIVE && currentState != initialState) {
                 logger.warning("Initial state is already set! " + "Current state: " + currentState + ", Given state: "
                         + initialState);
                 return;
