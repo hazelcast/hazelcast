@@ -121,11 +121,12 @@ public abstract class AbstractSerializationService
         BufferObjectDataOutput out = pool.takeOutputBuffer();
         try {
             SerializerAdapter serializer = serializerFor(obj);
-            out.writeInt(serializer.getTypeId(), ByteOrder.BIG_ENDIAN);
-            serializer.write(out, obj);
-
             int partitionHash = calculatePartitionHash(obj, strategy);
             out.writeInt(partitionHash, ByteOrder.BIG_ENDIAN);
+
+            out.writeInt(serializer.getTypeId(), ByteOrder.BIG_ENDIAN);
+
+            serializer.write(out, obj);
             return out.toByteArray();
         } catch (Throwable e) {
             throw handleException(e);

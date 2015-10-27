@@ -31,11 +31,11 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class HeapData implements Data {
     // type and partition_hash are always written with BIG_ENDIAN byte-order
-    public static final int TYPE_OFFSET = 0;
-    public static final int DATA_OFFSET = 4;
+    public static final int PARTITION_HASH_OFFSET = 0;
+    public static final int TYPE_OFFSET = 4;
+    public static final int DATA_OFFSET = 8;
 
-    //first 4 byte is type id + last 4 byte is partition hash code
-    public static final int HEAP_DATA_OVERHEAD = DATA_OFFSET + INT_SIZE_IN_BYTES;
+    public static final int HEAP_DATA_OVERHEAD = DATA_OFFSET;
 
     // array (12: array header, 4: length)
     private static final int ARRAY_HEADER_SIZE_IN_BYTES = 16;
@@ -46,7 +46,7 @@ public class HeapData implements Data {
     }
 
     public HeapData(byte[] payload) {
-        if (payload != null && payload.length > 0 && payload.length < (HEAP_DATA_OVERHEAD)) {
+        if (payload != null && payload.length > 0 && payload.length < HEAP_DATA_OVERHEAD) {
             throw new IllegalArgumentException(
                     "Data should be either empty or should contain more than " + HeapData.HEAP_DATA_OVERHEAD + " bytes! -> "
                             + Arrays.toString(payload));
@@ -67,15 +67,14 @@ public class HeapData implements Data {
     @Override
     public int getPartitionHash() {
         if (hasPartitionHash()) {
-            return Bits.readIntB(payload, payload.length - INT_SIZE_IN_BYTES);
+            return Bits.readIntB(payload, PARTITION_HASH_OFFSET);
         }
         return hashCode();
     }
 
     @Override
     public boolean hasPartitionHash() {
-        return payload != null && payload.length > HEAP_DATA_OVERHEAD
-                && Bits.readInt(payload, payload.length - INT_SIZE_IN_BYTES, true) != 0;
+        return payload != null && payload.length >= HEAP_DATA_OVERHEAD && Bits.readIntB(payload, PARTITION_HASH_OFFSET) != 0;
     }
 
     @Override

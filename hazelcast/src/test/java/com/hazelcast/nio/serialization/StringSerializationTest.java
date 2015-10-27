@@ -35,8 +35,10 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.ringbuffer.impl.client.HeadSequenceRequest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -113,7 +115,7 @@ public class StringSerializationTest {
         String allstr = new String(allChars);
         byte[] expected = allstr.getBytes(Charset.forName("utf8"));
         byte[] bytes = serializationService.toBytes(allstr);
-        byte[] actual = Arrays.copyOfRange(bytes, 8, bytes.length - 4);
+        byte[] actual = Arrays.copyOfRange(bytes, HeapData.DATA_OFFSET + Bits.INT_SIZE_IN_BYTES, bytes.length );
         assertArrayEquals(expected, actual);
     }
 
@@ -188,11 +190,11 @@ public class StringSerializationTest {
 
     private byte[] toDataByte(byte[] input, int length) {
         //the first 4 byte of type id, 4 byte string length and last 4 byte of partition hashCode
-        ByteBuffer bf = ByteBuffer.allocate(input.length + 8 + 4);
+        ByteBuffer bf = ByteBuffer.allocate(input.length + 12);
+        bf.putInt(0);
         bf.putInt(SerializationConstants.CONSTANT_TYPE_STRING);
         bf.putInt(length);
         bf.put(input);
-        bf.putInt(0);
         return bf.array();
     }
 }
