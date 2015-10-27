@@ -31,8 +31,7 @@ public final class ArrayDataSerializableFactory implements DataSerializableFacto
             constructors = new ConstructorFunction[len];
             System.arraycopy(ctorArray, 0, constructors, 0, len);
         } else {
-            len = 0;
-            constructors = new ConstructorFunction[len];
+            throw new IllegalArgumentException("ConstructorFunction array cannot be null");
         }
     }
 

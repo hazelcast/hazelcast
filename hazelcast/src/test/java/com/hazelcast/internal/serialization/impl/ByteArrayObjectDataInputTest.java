@@ -4,6 +4,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -14,6 +15,7 @@ import org.junit.runner.RunWith;
 
 import java.io.EOFException;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
@@ -32,23 +34,32 @@ import static org.mockito.Mockito.verify;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ByteArrayObjectDataInputTest {
+public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
 
-    private SerializationService mockSerializationService;
+    final static byte[] INIT_DATA = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
-    private ByteArrayObjectDataInput in;
-
-    private final static byte[] INIT_DATA = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    protected SerializationService mockSerializationService;
+    protected ByteArrayObjectDataInput in;
+    protected ByteOrder byteOrder;
 
     @Before
     public void before() throws Exception {
         mockSerializationService = mock(SerializationService.class);
-        in = new ByteArrayObjectDataInput(INIT_DATA, mockSerializationService, ByteOrder.BIG_ENDIAN);
+        initDataInput();
     }
 
     @After
     public void after() throws Exception {
         in.close();
+    }
+
+    protected void initDataInput() {
+        byteOrder = BIG_ENDIAN;
+        in = createDataInput(byteOrder);
+    }
+
+    protected ByteArrayObjectDataInput createDataInput(ByteOrder bo) {
+        return new ByteArrayObjectDataInput(INIT_DATA, mockSerializationService, bo);
     }
 
     @Test
@@ -57,6 +68,14 @@ public class ByteArrayObjectDataInputTest {
         assertArrayEquals(INIT_DATA, in.data);
         assertEquals(INIT_DATA.length, in.size);
         assertEquals(2, in.pos);
+    }
+
+    @Test
+    public void testInit_null() throws Exception {
+        in.init(null, 0);
+        assertNull(in.data);
+        assertEquals(0, in.size);
+        assertEquals(0, in.pos);
     }
 
     @Test
@@ -70,14 +89,21 @@ public class ByteArrayObjectDataInputTest {
 
     @Test
     public void testRead() throws Exception {
-        int read = in.read();
-        assertEquals(0, read);
+        for (int i = 0; i < in.size; i++) {
+            int readValidPos = in.read();
+            assertEquals(INIT_DATA[i], readValidPos);
+
+        }
+        //try to read an invalid position should return -1
+        assertEquals(-1, in.read());
     }
 
     @Test
     public void testReadPosition() throws Exception {
         int read = in.read(1);
+        int readEnd = in.read(INIT_DATA.length);
         assertEquals(1, read);
+        assertEquals(-1, readEnd);
     }
 
     @Test
@@ -99,6 +125,11 @@ public class ByteArrayObjectDataInputTest {
     @Test(expected = IndexOutOfBoundsException.class)
     public void testReadForBOffLen_negativeOffset() throws Exception {
         in.read(INIT_DATA, -10, 1);
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testReadForBOffLen_Len_LT_Bytes() throws Exception {
+        in.read(INIT_DATA, 0, INIT_DATA.length + 1);
     }
 
     @Test
@@ -161,19 +192,21 @@ public class ByteArrayObjectDataInputTest {
     @Test
     public void testReadChar() throws Exception {
         char c = in.readChar();
-        assertEquals(1, c);
+        char expected = Bits.readChar(INIT_DATA, 0, byteOrder == BIG_ENDIAN);
+        assertEquals(expected, c);
     }
 
     @Test
     public void testReadCharPosition() throws Exception {
         char c = in.readChar(0);
-        assertEquals(1, c);
+        char expected = Bits.readChar(INIT_DATA, 0, byteOrder == BIG_ENDIAN);
+        assertEquals(expected, c);
     }
 
     @Test
     public void testReadDouble() throws Exception {
         double readDouble = in.readDouble();
-        long longB = Bits.readLongB(INIT_DATA, 0);
+        long longB = Bits.readLong(INIT_DATA, 0, byteOrder == BIG_ENDIAN);
         double aDouble = Double.longBitsToDouble(longB);
         assertEquals(aDouble, readDouble, 0);
     }
@@ -181,7 +214,7 @@ public class ByteArrayObjectDataInputTest {
     @Test
     public void testReadDoublePosition() throws Exception {
         double readDouble = in.readDouble(2);
-        long longB = Bits.readLongB(INIT_DATA, 2);
+        long longB = Bits.readLong(INIT_DATA, 2, byteOrder == BIG_ENDIAN);
         double aDouble = Double.longBitsToDouble(longB);
         assertEquals(aDouble, readDouble, 0);
     }
@@ -205,7 +238,7 @@ public class ByteArrayObjectDataInputTest {
     @Test
     public void testReadFloat() throws Exception {
         double readFloat = in.readFloat();
-        int intB = Bits.readIntB(INIT_DATA, 0);
+        int intB = Bits.readInt(INIT_DATA, 0, byteOrder == BIG_ENDIAN);
         double aFloat = Float.intBitsToFloat(intB);
         assertEquals(aFloat, readFloat, 0);
     }
@@ -213,7 +246,7 @@ public class ByteArrayObjectDataInputTest {
     @Test
     public void testReadFloatPosition() throws Exception {
         double readFloat = in.readFloat(2);
-        int intB = Bits.readIntB(INIT_DATA, 2);
+        int intB = Bits.readInt(INIT_DATA, 2, byteOrder == BIG_ENDIAN);
         double aFloat = Float.intBitsToFloat(intB);
         assertEquals(aFloat, readFloat, 0);
     }
@@ -267,14 +300,14 @@ public class ByteArrayObjectDataInputTest {
     @Test
     public void testReadInt() throws Exception {
         int readInt = in.readInt();
-        int theInt = Bits.readIntB(INIT_DATA, 0);
+        int theInt = Bits.readInt(INIT_DATA, 0, byteOrder == BIG_ENDIAN);
         assertEquals(theInt, readInt);
     }
 
     @Test
     public void testReadIntPosition() throws Exception {
         int readInt = in.readInt(2);
-        int theInt = Bits.readIntB(INIT_DATA, 2);
+        int theInt = Bits.readInt(INIT_DATA, 2, byteOrder == BIG_ENDIAN);
         assertEquals(theInt, readInt);
     }
 
@@ -287,9 +320,12 @@ public class ByteArrayObjectDataInputTest {
 
     @Test
     public void testReadIntForPositionByteOrder() throws Exception {
-        int readInt = in.readInt(3, LITTLE_ENDIAN);
-        int theInt = Bits.readIntL(INIT_DATA, 3);
-        assertEquals(theInt, readInt);
+        int readInt1 = in.readInt(1, BIG_ENDIAN);
+        int readInt2 = in.readInt(5, LITTLE_ENDIAN);
+        int theInt1 = Bits.readInt(INIT_DATA, 1, true);
+        int theInt2 = Bits.readInt(INIT_DATA, 5, false);
+        assertEquals(theInt1, readInt1);
+        assertEquals(theInt2, readInt2);
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -300,14 +336,14 @@ public class ByteArrayObjectDataInputTest {
     @Test
     public void testReadLong() throws Exception {
         long readLong = in.readLong();
-        long longB = Bits.readLongB(INIT_DATA, 0);
-        assertEquals(longB, readLong);
+        long expected = Bits.readLong(INIT_DATA, 0, byteOrder == BIG_ENDIAN);
+        assertEquals(expected, readLong);
     }
 
     @Test
     public void testReadLongPosition() throws Exception {
         long readLong = in.readLong(2);
-        long longB = Bits.readLongB(INIT_DATA, 2);
+        long longB = Bits.readLong(INIT_DATA, 2, byteOrder == BIG_ENDIAN);
         assertEquals(longB, readLong);
     }
 
@@ -320,22 +356,25 @@ public class ByteArrayObjectDataInputTest {
 
     @Test
     public void testReadLongForPositionByteOrder() throws Exception {
-        long readLong = in.readLong(2, LITTLE_ENDIAN);
-        long longB = Bits.readLongL(INIT_DATA, 2);
-        assertEquals(longB, readLong);
+        long readLong1 = in.readLong(0, LITTLE_ENDIAN);
+        long readLong2 = in.readLong(2, BIG_ENDIAN);
+        long longB1 = Bits.readLong(INIT_DATA, 0, false);
+        long longB2 = Bits.readLong(INIT_DATA, 2, true);
+        assertEquals(longB1, readLong1);
+        assertEquals(longB2, readLong2);
     }
 
     @Test
     public void testReadShort() throws Exception {
         short read = in.readShort();
-        short val = Bits.readShortB(INIT_DATA, 0);
+        short val = Bits.readShort(INIT_DATA, 0, byteOrder == BIG_ENDIAN);
         assertEquals(val, read);
     }
 
     @Test
     public void testReadShortPosition() throws Exception {
         short read = in.readShort(1);
-        short val = Bits.readShortB(INIT_DATA, 1);
+        short val = Bits.readShort(INIT_DATA, 1, byteOrder == BIG_ENDIAN);
         assertEquals(val, read);
     }
 
@@ -348,15 +387,19 @@ public class ByteArrayObjectDataInputTest {
 
     @Test
     public void testReadShortForPositionByteOrder() throws Exception {
-        short read = in.readShort(1, LITTLE_ENDIAN);
-        short val = Bits.readShortL(INIT_DATA, 1);
-        assertEquals(val, read);
+        short read1 = in.readShort(1, LITTLE_ENDIAN);
+        short read2 = in.readShort(3, BIG_ENDIAN);
+        short val1 = Bits.readShort(INIT_DATA, 1, false);
+        short val2 = Bits.readShort(INIT_DATA, 3, true);
+        assertEquals(val1, read1);
+        assertEquals(val2, read2);
     }
 
     @Test
     public void testReadByteArray() throws Exception {
-        byte[] bytes1 = {0, 0, 0, 0, 0, 0, 0, 1, 8, 9, -1, -1, -1, -1};
-        in.init(bytes1,0);
+        byte[] bytesBE = {0, 0, 0, 0, 0, 0, 0, 1, 1, 9, -1, -1, -1, -1};
+        byte[] bytesLE = {0, 0, 0, 0, 1, 0, 0, 0, (byte) 1, 9, -1, -1, -1, -1};
+        in.init((byteOrder == BIG_ENDIAN ? bytesBE : bytesLE), 0);
 
         in.position(10);
         byte[] theNullArray = in.readByteArray();
@@ -367,13 +410,14 @@ public class ByteArrayObjectDataInputTest {
 
         assertNull(theNullArray);
         assertArrayEquals(new byte[0], theZeroLenghtArray);
-        assertArrayEquals(new byte[]{8}, bytes);
+        assertArrayEquals(new byte[]{1}, bytes);
     }
 
     @Test
     public void testReadBooleanArray() throws Exception {
-        byte[] bytes1 = {0, 0, 0, 0, 0, 0, 0, 1, 8, 9, -1, -1, -1, -1};
-        in.init(bytes1,0);
+        byte[] bytesBE = {0, 0, 0, 0, 0, 0, 0, 1, 1, 9, -1, -1, -1, -1};
+        byte[] bytesLE = {0, 0, 0, 0, 1, 0, 0, 0, 1, 9, -1, -1, -1, -1};
+        in.init((byteOrder == BIG_ENDIAN ? bytesBE : bytesLE), 0);
 
         in.position(10);
         boolean[] theNullArray = in.readBooleanArray();
@@ -384,13 +428,14 @@ public class ByteArrayObjectDataInputTest {
 
         assertNull(theNullArray);
         assertArrayEquals(new boolean[0], theZeroLenghtArray);
-        assertArrayEquals(new boolean[]{true}, booleanArray);
+        assertTrue(Arrays.equals(new boolean[]{true}, booleanArray));
     }
 
     @Test
     public void testReadCharArray() throws Exception {
-        byte[] bytes1 = {0, 0, 0, 0, 0, 0, 0, 1, 0, 1,  -1, -1, -1, -1};
-        in.init(bytes1,0);
+        byte[] bytesBE = {0, 0, 0, 0, 0, 0, 0, 1, 0, 1, -1, -1, -1, -1};
+        byte[] bytesLE = {0, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, -1, -1, -1};
+        in.init((byteOrder == BIG_ENDIAN ? bytesBE : bytesLE), 0);
 
         in.position(10);
         char[] theNullArray = in.readCharArray();
@@ -406,8 +451,9 @@ public class ByteArrayObjectDataInputTest {
 
     @Test
     public void testReadIntArray() throws Exception {
-        byte[] bytes1 = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1,  -1, -1, -1, -1};
-        in.init(bytes1,0);
+        byte[] bytesBE = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, -1, -1, -1, -1};
+        byte[] bytesLE = {0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, -1, -1, -1, -1};
+        in.init((byteOrder == BIG_ENDIAN ? bytesBE : bytesLE), 0);
 
         in.position(12);
         int[] theNullArray = in.readIntArray();
@@ -423,10 +469,11 @@ public class ByteArrayObjectDataInputTest {
 
     @Test
     public void testReadLongArray() throws Exception {
-        byte[] bytes1 = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, -1, -1, -1, -1};
-        in.init(bytes1,0);
+        byte[] bytesBE = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, -1, -1, -1, -1};
+        byte[] bytesLE = {0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, -1};
+        in.init((byteOrder == BIG_ENDIAN ? bytesBE : bytesLE), 0);
 
-        in.position(bytes1.length-4);
+        in.position(bytesLE.length - 4);
         long[] theNullArray = in.readLongArray();
         in.position(0);
         long[] theZeroLenghtArray = in.readLongArray();
@@ -440,26 +487,48 @@ public class ByteArrayObjectDataInputTest {
 
     @Test
     public void testReadDoubleArray() throws Exception {
-        byte[] bytes1 = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, -1, -1, -1, -1};
-        in.init(bytes1,0);
+        byte[] bytesBE = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, -1, -1, -1, -1};
+        byte[] bytesLE = {0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, -1};
+        in.init((byteOrder == BIG_ENDIAN ? bytesBE : bytesLE), 0);
+
+        in.position(bytesLE.length - 4);
+        double[] theNullArray = in.readDoubleArray();
+        in.position(0);
         double[] theZeroLenghtArray = in.readDoubleArray();
+        in.position(4);
+        double[] doubles = in.readDoubleArray();
+
+        assertNull(theNullArray);
         assertArrayEquals(new double[0], theZeroLenghtArray, 0);
+        assertArrayEquals(new double[]{Double.longBitsToDouble(1)}, doubles, 0);
+
     }
 
     @Test
     public void testReadFloatArray() throws Exception {
-        byte[] bytes1 = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, -1, -1, -1, -1};
-        in.init(bytes1,0);
+        byte[] bytesBE = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, -1, -1, -1, -1};
+        byte[] bytesLE = {0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, -1, -1, -1, -1};
+        in.init((byteOrder == BIG_ENDIAN ? bytesBE : bytesLE), 0);
+
+        in.position(bytesLE.length - 4);
+        float[] theNullArray = in.readFloatArray();
+        in.position(0);
         float[] theZeroLenghtArray = in.readFloatArray();
+        in.position(4);
+        float[] floats = in.readFloatArray();
+
+        assertNull(theNullArray);
         assertArrayEquals(new float[0], theZeroLenghtArray, 0);
+        assertArrayEquals(new float[]{Float.intBitsToFloat(1)}, floats, 0);
     }
 
     @Test
     public void testReadShortArray() throws Exception {
-        byte[] bytes1 = {0, 0, 0, 0, 0, 0, 0, 1, 0, 1,  -1, -1, -1, -1};
-        in.init(bytes1,0);
+        byte[] bytesBE = {0, 0, 0, 0, 0, 0, 0, 1, 0, 1, -1, -1, -1, -1};
+        byte[] bytesLE = {0, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, -1, -1, -1};
+        in.init((byteOrder == BIG_ENDIAN ? bytesBE : bytesLE), 0);
 
-        in.position(10);
+        in.position(bytesLE.length - 4);
         short[] theNullArray = in.readShortArray();
         in.position(0);
         short[] theZeroLenghtArray = in.readShortArray();
@@ -473,29 +542,41 @@ public class ByteArrayObjectDataInputTest {
 
     @Test
     public void testReadUTFArray() throws Exception {
-        byte[] bytes1 = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, -1, -1, -1, -1};
-        in.init(bytes1,0);
+        byte[] bytesBE = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 32, 9, -1, -1, -1, -1};
+        byte[] bytesLE = {0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 32, 9, -1, -1, -1, -1};
+        in.init((byteOrder == BIG_ENDIAN ? bytesBE : bytesLE), 0);
+
+        in.position(bytesLE.length - 4);
+        String[] theNullArray = in.readUTFArray();
+        in.position(0);
         String[] theZeroLenghtArray = in.readUTFArray();
+        in.position(4);
+        String[] bytes = in.readUTFArray();
+
+        assertNull(theNullArray);
         assertArrayEquals(new String[0], theZeroLenghtArray);
+        assertArrayEquals(new String[]{" "}, bytes);
     }
 
     @Test
     public void testReadUnsignedByte() throws Exception {
-        byte[] bytes1 = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, -1, -1, -1, -1};
-        in.init(bytes1,bytes1.length-4);
+        byte[] bytesBE = {-1, -1, -1, -1};
+        byte[] bytesLE = {-1, -1, -1, -1};
+        in.init((byteOrder == BIG_ENDIAN ? bytesBE : bytesLE), 0);
+
         int unsigned = in.readUnsignedByte();
-        assertEquals(0xFF, unsigned);
+        int expexted = 0xff;
+        assertEquals(expexted, unsigned);
     }
 
     @Test
     public void testReadUnsignedShort() throws Exception {
         byte[] bytes1 = {0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 1, -1, -1, -1, -1};
-        in.init(bytes1,bytes1.length-4);
+        in.init(bytes1, bytes1.length - 4);
         int unsigned = in.readUnsignedShort();
         assertEquals(0xFFFF, unsigned);
     }
 
-    @Test
     public void testReadUTF() throws Exception {
         //EXTENDED TEST ELSEWHERE: StringSerializationTest
     }
@@ -508,10 +589,11 @@ public class ByteArrayObjectDataInputTest {
 
     @Test
     public void testReadData() throws Exception {
-        byte[] bytes1 = {0, 0, 0, 0, 0, 0, 0, 8,  -1, -1, -1, -1, 0, 0, 0, 0, 0, 1, -1, -1, -1, -1};
-        in.init(bytes1,0);
+        byte[] bytesBE = {0, 0, 0, 0, 0, 0, 0, 8, -1, -1, -1, -1, 0, 0, 0, 0, 0, 1, -1, -1, -1, -1};
+        byte[] bytesLE = {0, 0, 0, 0, 8, 0, 0, 0, -1, -1, -1, -1, 0, 0, 0, 0, 0, 1, -1, -1, -1, -1};
+        in.init((byteOrder == BIG_ENDIAN ? bytesBE : bytesLE), 0);
 
-        in.position(bytes1.length-4);
+        in.position(bytesLE.length - 4);
         Data nullData = in.readData();
         in.position(0);
         Data theZeroLenghtArray = in.readData();
@@ -521,7 +603,7 @@ public class ByteArrayObjectDataInputTest {
         assertNull(nullData);
         assertEquals(0, theZeroLenghtArray.getType());
         assertArrayEquals(new byte[0], theZeroLenghtArray.toByteArray());
-        assertArrayEquals(new byte[]{ -1, -1, -1, -1, 0, 0, 0, 0}, data.toByteArray());
+        assertArrayEquals(new byte[]{-1, -1, -1, -1, 0, 0, 0, 0}, data.toByteArray());
     }
 
     @Test
@@ -537,11 +619,17 @@ public class ByteArrayObjectDataInputTest {
 
     @Test
     public void testSkipBytes() throws Exception {
-        long s1 = in.skipBytes(-1);
-        long s3 = in.skipBytes(1);
+        int s1 = in.skipBytes(-1);
+        int s2 = in.skipBytes(1);
+
+        in.position(0);
+        int maxSkipBytes = in.available();
+        int s3 = in.skipBytes(INIT_DATA.length);
 
         assertEquals(0, s1);
-        assertEquals(1, s3);
+        assertEquals(1, s2);
+        //skipBytes skips at most available bytes
+        assertEquals(maxSkipBytes, s3);
     }
 
     @Test
@@ -551,17 +639,17 @@ public class ByteArrayObjectDataInputTest {
 
     @Test
     public void testPositionNewPos() throws Exception {
-        in.position(INIT_DATA.length -1);
-        assertEquals(INIT_DATA.length -1, in.position());
+        in.position(INIT_DATA.length - 1);
+        assertEquals(INIT_DATA.length - 1, in.position());
     }
 
     @Test
     public void testPositionNewPos_mark() throws Exception {
-        in.position(INIT_DATA.length -1);
+        in.position(INIT_DATA.length - 1);
         in.mark(0);
         int firstMarked = in.mark;
         in.position(1);
-        assertEquals(INIT_DATA.length -1, firstMarked);
+        assertEquals(INIT_DATA.length - 1, firstMarked);
         assertEquals(1, in.position());
         assertEquals(-1, in.mark);
     }
@@ -627,10 +715,10 @@ public class ByteArrayObjectDataInputTest {
 
     @Test
     public void testGetByteOrder() throws Exception {
-        ByteArrayObjectDataInput input = new ByteArrayObjectDataInput(INIT_DATA, mockSerializationService,
-                ByteOrder.LITTLE_ENDIAN);
-        assertEquals(BIG_ENDIAN, in.getByteOrder());
+        ByteArrayObjectDataInput input = createDataInput(LITTLE_ENDIAN);
+
         assertEquals(LITTLE_ENDIAN, input.getByteOrder());
+        assertEquals(byteOrder, in.getByteOrder());
     }
 
     @Test

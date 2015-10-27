@@ -42,7 +42,7 @@ class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
 
     @Override
     public int read() throws IOException {
-        return (pos < size) ? UnsafeHelper.UNSAFE.getByte(data, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos++) : -1;
+        return (pos < size) ? UnsafeHelper.UNSAFE.getByte(data, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos++) & 0xFF : -1;
     }
 
     @Override
