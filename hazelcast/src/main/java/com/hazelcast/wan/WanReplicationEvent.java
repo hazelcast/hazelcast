@@ -16,6 +16,7 @@
 
 package com.hazelcast.wan;
 
+import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -30,7 +31,10 @@ public class WanReplicationEvent
 
     private String serviceName;
     private ReplicationEventObject eventObject;
-    private int backupCount;
+    /**
+     * Acknowledge type doesn't need to be serialized as it's not transferred between nodes.
+     */
+    private transient WanAcknowledgeType acknowledgeType;
 
     public WanReplicationEvent() {
     }
@@ -76,6 +80,14 @@ public class WanReplicationEvent
         this.eventObject = eventObject;
     }
 
+    public WanAcknowledgeType getAcknowledgeType() {
+        return acknowledgeType;
+    }
+
+    public void setAcknowledgeType(WanAcknowledgeType acknowledgeType) {
+        this.acknowledgeType = acknowledgeType;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
@@ -88,13 +100,5 @@ public class WanReplicationEvent
             throws IOException {
         serviceName = in.readUTF();
         eventObject = in.readObject();
-    }
-
-    public int getBackupCount() {
-        return backupCount;
-    }
-
-    public void setBackupCount(int backupCount) {
-        this.backupCount = backupCount;
     }
 }
