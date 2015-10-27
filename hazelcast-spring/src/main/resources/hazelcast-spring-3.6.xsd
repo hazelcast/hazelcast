@@ -642,6 +642,14 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+                                <xs:attribute name="hot-restart-enabled" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            This boolean parameter enables hot-restart feature when set as true.
+                                            Only available on Hazelcast Enterprise.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="multimap" minOccurs="0" maxOccurs="unbounded">
@@ -972,7 +980,18 @@
                         </xs:element>
                         <xs:element name="services" type="services" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="quorum" type="quorum" minOccurs="0" maxOccurs="1"/>
-
+                        <xs:element name="lite-member" minOccurs="0" maxOccurs="1">
+                            <xs:complexType>
+                                <xs:attribute name="enabled" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            True to set the node as a lite member, false otherwise.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1" />
                     </xs:sequence>
                 </xs:extension>
             </xs:complexContent>
@@ -2415,4 +2434,17 @@
     <xs:simpleType name="wan-ack-type">
         <xs:union memberTypes="wan-ack-type-format-enum non-space-string"/>
     </xs:simpleType>
+
+    <xs:complexType name="hot-restart">
+        <xs:sequence>
+            <xs:element name="home-dir" type="xs:string" minOccurs="0" maxOccurs="1" default="hot-restart"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    True to enable hot-restart, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
 </xs:schema>

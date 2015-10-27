@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.text.MessageFormat.format;
 
 /**
@@ -995,12 +996,25 @@ public class Config {
         return this;
     }
 
+    /**
+     * Returns hot restart configuration for this member
+     *
+     * @return hot restart configuration
+     */
     public HotRestartConfig getHotRestartConfig() {
         return hotRestartConfig;
     }
 
-    public void setHotRestartConfig(HotRestartConfig hrConfig) {
+    /**
+     * Sets hot restart configuration.
+     *
+     * @param hrConfig hot restart configuration
+     * @return Config
+     */
+    public Config setHotRestartConfig(HotRestartConfig hrConfig) {
+        checkNotNull(hrConfig, "Hot restart config cannot be null!");
         this.hotRestartConfig = hrConfig;
+        return this;
     }
 
     public ManagedContext getManagedContext() {

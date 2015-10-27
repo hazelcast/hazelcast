@@ -18,13 +18,47 @@ package com.hazelcast.config;
 
 import java.io.File;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * Configures the Hot Restart stores.
+ * <p/>
+ * Hot restart stores are used to hold copy of in-memory data in
+ * disk to be able to restart very fast without needing to load
+ * data from a central storage.
+ * <p/>
+ * HotRestartConfig configures whether hot restart is enabled,
+ * where disk data will be stored, should data be persisted
+ * sync or async etc.
  */
 public class HotRestartConfig {
+
+    /**
+     * Default hot-restart home directory
+     */
     public static final String HOT_RESTART_HOME_DEFAULT = "hot-restart";
 
+    private boolean enabled;
     private File homeDir = new File(HOT_RESTART_HOME_DEFAULT);
+
+    /**
+     * Returns whether hot restart enabled on this member.
+     *
+     * @return true if hot restart enabled, false otherwise
+     */
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    /**
+     * Sets whether hot restart is enabled on this member.
+     *
+     * @return HotRestartConfig
+     */
+    public HotRestartConfig setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        return this;
+    }
 
     /**
      * Home directory for all Hot Restart stores.
@@ -33,7 +67,15 @@ public class HotRestartConfig {
         return homeDir;
     }
 
-    public void setHomeDir(File homeDir) {
+    /**
+     * Sets home directory for all Hot Restart stores.
+     *
+     * @param homeDir home directory
+     * @return HotRestartConfig
+     */
+    public HotRestartConfig setHomeDir(File homeDir) {
+        checkNotNull(homeDir, "Home directory cannot be null!");
         this.homeDir = homeDir;
+        return this;
     }
 }

@@ -125,6 +125,10 @@ public class ConfigXmlGenerator {
 
         reliableTopicXmlGenerator(xml, config);
 
+        liteMemberXmlGenerator(xml, config);
+
+        hotRestartXmlGenerator(xml, config);
+
         xml.append("</hazelcast>");
 
         return format(xml.toString(), INDENT);
@@ -416,32 +420,13 @@ public class ConfigXmlGenerator {
             xml.append("<management-enabled>").append(c.isManagementEnabled()).append("</management-enabled>");
             xml.append("<backup-count>").append(c.getBackupCount()).append("</backup-count>");
             xml.append("<async-backup-count>").append(c.getAsyncBackupCount()).append("</async-backup-count>");
+            xml.append("<hot-restart-enabled>").append(c.isHotRestartEnabled()) .append("</hot-restart-enabled>");
             xml.append("<read-through>").append(c.isReadThrough()).append("</read-through>");
             xml.append("<write-through>").append(c.isWriteThrough()).append("</write-through>");
             xml.append("<cache-loader-factory class-name=\"").append(c.getCacheLoaderFactory()).append("\"/>");
             xml.append("<cache-writer-factory class-name=\"").append(c.getCacheWriterFactory()).append("\"/>");
             ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig = c.getExpiryPolicyFactoryConfig();
-            if (expiryPolicyFactoryConfig != null) {
-                if (StringUtil.isNullOrEmpty(expiryPolicyFactoryConfig.getClassName())) {
-                    xml.append("<expiry-policy-factory class-name=\"")
-                            .append(expiryPolicyFactoryConfig.getClassName()).append("\"/>");
-                } else {
-                    TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig =
-                            expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
-                    if (timedExpiryPolicyFactoryConfig != null
-                            && timedExpiryPolicyFactoryConfig.getExpiryPolicyType() != null
-                            && timedExpiryPolicyFactoryConfig.getDurationConfig() != null) {
-                        ExpiryPolicyType expiryPolicyType = timedExpiryPolicyFactoryConfig.getExpiryPolicyType();
-                        DurationConfig durationConfig = timedExpiryPolicyFactoryConfig.getDurationConfig();
-                        xml.append("<expiry-policy-factory>");
-                        xml.append("<timed-expiry-policy-factory")
-                                .append(" expiry-policy-type=\"").append(expiryPolicyType.name()).append("\"/>")
-                                .append(" duration-amount=\"").append(durationConfig.getDurationAmount()).append("\"/>")
-                                .append(" time-unit=\"").append(durationConfig.getTimeUnit().name()).append("\"/>");
-                        xml.append("</expiry-policy-factory>");
-                    }
-                }
-            }
+            cacheExpiryPolicyFactoryConfigXmlGenerator(xml, expiryPolicyFactoryConfig);
             xml.append("<cache-entry-listeners>");
             for (CacheSimpleEntryListenerConfig el : c.getCacheEntryListeners()) {
                 xml.append("<cache-entry-listener")
@@ -464,6 +449,31 @@ public class ConfigXmlGenerator {
                 xml.append("<merge-policy>").append(c.getMergePolicy()).append("</merge-policy>");
             }
             xml.append("</cache>");
+        }
+    }
+
+    private void cacheExpiryPolicyFactoryConfigXmlGenerator(StringBuilder xml,
+            ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig) {
+        if (expiryPolicyFactoryConfig != null) {
+            if (StringUtil.isNullOrEmpty(expiryPolicyFactoryConfig.getClassName())) {
+                xml.append("<expiry-policy-factory class-name=\"")
+                        .append(expiryPolicyFactoryConfig.getClassName()).append("\"/>");
+            } else {
+                TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig =
+                        expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
+                if (timedExpiryPolicyFactoryConfig != null
+                        && timedExpiryPolicyFactoryConfig.getExpiryPolicyType() != null
+                        && timedExpiryPolicyFactoryConfig.getDurationConfig() != null) {
+                    ExpiryPolicyType expiryPolicyType = timedExpiryPolicyFactoryConfig.getExpiryPolicyType();
+                    DurationConfig durationConfig = timedExpiryPolicyFactoryConfig.getDurationConfig();
+                    xml.append("<expiry-policy-factory>");
+                    xml.append("<timed-expiry-policy-factory")
+                            .append(" expiry-policy-type=\"").append(expiryPolicyType.name()).append("\"/>")
+                            .append(" duration-amount=\"").append(durationConfig.getDurationAmount()).append("\"/>")
+                            .append(" time-unit=\"").append(durationConfig.getTimeUnit().name()).append("\"/>");
+                    xml.append("</expiry-policy-factory>");
+                }
+            }
         }
     }
 
@@ -696,6 +706,21 @@ public class ConfigXmlGenerator {
             xml.append("<iteration-count>").append(sec.getIterationCount()).append("</iteration-count>");
             xml.append("</symmetric-encryption>");
         }
+    }
+
+    private void hotRestartXmlGenerator(StringBuilder xml, Config config) {
+        HotRestartConfig hotRestartConfig = config.getHotRestartConfig();
+        if (hotRestartConfig == null) {
+            xml.append("<hot-restart enabled=\"false\" />");
+            return;
+        }
+        xml.append("<hot-restart enabled=\"").append(hotRestartConfig.isEnabled()).append("\">");
+        xml.append("<home-dir>").append(hotRestartConfig.getHomeDir().getAbsolutePath()).append("</home-dir>");
+        xml.append("</hot-restart>");
+    }
+
+    private void liteMemberXmlGenerator(StringBuilder xml, Config config) {
+        xml.append("<lite-member enabled=\"").append(config.isLiteMember()).append("\"/>");
     }
 
     private String format(final String input, int indent) {

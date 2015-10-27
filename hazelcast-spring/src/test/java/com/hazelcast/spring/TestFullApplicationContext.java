@@ -25,6 +25,7 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -98,6 +99,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.nio.ByteOrder;
 import java.util.Collection;
@@ -213,6 +215,7 @@ public class TestFullApplicationContext {
         assertEquals(1, config.getCacheConfigs().size());
         CacheSimpleConfig cacheConfig = config.getCacheConfig("testCache");
         assertEquals("testCache", cacheConfig.getName());
+        assertTrue(cacheConfig.isHotRestartEnabled());
 
         WanReplicationRef wanRef = cacheConfig.getWanReplicationRef();
         assertEquals("testWan", wanRef.getName());
@@ -753,6 +756,14 @@ public class TestFullApplicationContext {
         MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
 
         assertEquals(MaxSizeConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE, maxSizeConfig.getMaxSizePolicy());
+    }
+
+    @Test
+    public void testHotRestart() {
+        File dir = new File("/mnt/hot-restart/");
+        HotRestartConfig hotRestartConfig = config.getHotRestartConfig();
+        assertTrue(hotRestartConfig.isEnabled());
+        assertEquals(dir.getAbsolutePath(), hotRestartConfig.getHomeDir().getAbsolutePath());
     }
 
 }

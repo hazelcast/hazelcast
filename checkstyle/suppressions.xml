@@ -98,6 +98,7 @@
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/config/AbstractXmlConfigHelper"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/config/AbstractXmlConfigHelper"/>
     <suppress checks="FanOutComplexity" files="com/hazelcast/config/ConfigXmlGenerator"/>
+    <suppress checks="ClassFanOutComplexity" files="com/hazelcast/config/Config"/>
 
     <!-- Couldn't change structure because of API -->
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/config/MapConfig"/>

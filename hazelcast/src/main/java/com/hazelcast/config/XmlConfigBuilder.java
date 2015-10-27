@@ -350,6 +350,10 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
 
     private void handleHotRestart(Node hrRoot) {
         final HotRestartConfig hrConfig = new HotRestartConfig();
+        Node attrEnabled = hrRoot.getAttributes().getNamedItem("enabled");
+        final boolean enabled = getBooleanValue(getTextContent(attrEnabled));
+        hrConfig.setEnabled(enabled);
+
         for (Node n : childElements(hrRoot)) {
             final String name = cleanNodeName(n);
             if ("home-dir".equals(name)) {
@@ -1145,6 +1149,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 cachePartitionLostListenerHandle(n, cacheConfig);
             } else if ("merge-policy".equals(nodeName)) {
                 cacheConfig.setMergePolicy(value);
+            } else if ("hot-restart-enabled".equals(nodeName)) {
+                cacheConfig.setHotRestartEnabled(getBooleanValue(value));
             }
         }
         this.config.addCacheConfig(cacheConfig);

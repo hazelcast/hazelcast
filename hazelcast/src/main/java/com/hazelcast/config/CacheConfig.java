@@ -90,7 +90,7 @@ public class CacheConfig<K, V>
             this.asyncBackupCount = config.asyncBackupCount;
             this.backupCount = config.backupCount;
             this.inMemoryFormat = config.inMemoryFormat;
-            this.isHotRestart = config.isHotRestart;
+            this.hotRestartEnabled = config.hotRestartEnabled;
             // Eviction config cannot be null
             if (config.evictionConfig != null) {
                 this.evictionConfig = new CacheEvictionConfig(config.evictionConfig);
@@ -157,6 +157,7 @@ public class CacheConfig<K, V>
         }
         this.quorumName = simpleConfig.getQuorumName();
         this.mergePolicy = simpleConfig.getMergePolicy();
+        this.hotRestartEnabled = simpleConfig.isHotRestartEnabled();
     }
 
     private void initExpiryPolicyFactoryConfig(CacheSimpleConfig simpleConfig) throws Exception {
@@ -505,7 +506,7 @@ public class CacheConfig<K, V>
         out.writeBoolean(isStoreByValue);
         out.writeBoolean(isManagementEnabled);
         out.writeBoolean(isStatisticsEnabled);
-        out.writeBoolean(isHotRestart);
+        out.writeBoolean(hotRestartEnabled);
 
         out.writeUTF(quorumName);
 
@@ -548,7 +549,7 @@ public class CacheConfig<K, V>
         isStoreByValue = in.readBoolean();
         isManagementEnabled = in.readBoolean();
         isStatisticsEnabled = in.readBoolean();
-        isHotRestart = in.readBoolean();
+        hotRestartEnabled = in.readBoolean();
 
         quorumName = in.readUTF();
 
@@ -605,7 +606,7 @@ public class CacheConfig<K, V>
                 + ", managerPrefix='" + managerPrefix + '\''
                 + ", inMemoryFormat=" + inMemoryFormat
                 + ", backupCount=" + backupCount
-                + ", hotRestart=" + isHotRestart()
+                + ", hotRestart=" + isHotRestartEnabled()
                 + '}';
     }
 

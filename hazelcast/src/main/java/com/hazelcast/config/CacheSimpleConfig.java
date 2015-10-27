@@ -99,6 +99,9 @@ public class CacheSimpleConfig {
 
     private String mergePolicy = BuiltInCacheMergePolicies.getDefault().getImplementationClassName();
 
+    private boolean hotRestartEnabled;
+
+    @SuppressWarnings("checkstyle:executablestatementcount")
     public CacheSimpleConfig(CacheSimpleConfig cacheSimpleConfig) {
         this.name = cacheSimpleConfig.name;
         this.keyType = cacheSimpleConfig.keyType;
@@ -123,6 +126,7 @@ public class CacheSimpleConfig {
                 new ArrayList<CachePartitionLostListenerConfig>(cacheSimpleConfig.getPartitionLostListenerConfigs());
         this.quorumName = cacheSimpleConfig.quorumName;
         this.mergePolicy = cacheSimpleConfig.mergePolicy;
+        this.hotRestartEnabled = cacheSimpleConfig.hotRestartEnabled;
     }
 
     public CacheSimpleConfig() {
@@ -548,6 +552,24 @@ public class CacheSimpleConfig {
     public CacheSimpleConfig setQuorumName(String quorumName) {
         this.quorumName = quorumName;
         return this;
+    }
+
+    /**
+     * Sets whether hot restart is enabled on this cache.
+     * @return this
+     */
+    public CacheSimpleConfig setHotRestartEnabled(boolean hotRestart) {
+        this.hotRestartEnabled = hotRestart;
+        return this;
+    }
+
+    /**
+     * Returns whether hot restart enabled on this cache.
+     *
+     * @return true if hot restart enabled, false otherwise
+     */
+    public boolean isHotRestartEnabled() {
+        return hotRestartEnabled;
     }
 
     /**
