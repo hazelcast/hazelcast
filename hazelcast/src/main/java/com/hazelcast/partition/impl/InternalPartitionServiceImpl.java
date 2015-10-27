@@ -394,7 +394,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return false;
         }
 
-        logger.info("Initializing cluster partition table first arrangement...");
+        logger.info("Initializing cluster partition table arrangement...");
         Address[][] newState = psg.initialize(memberGroups, partitionCount);
         if (newState.length != partitionCount) {
             throw new HazelcastException("Invalid partition count! "
@@ -412,7 +412,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return false;
         }
 
-        setInitialState(newState);
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            InternalPartitionImpl partition = partitions[partitionId];
+            Address[] replicas = newState[partitionId];
+            partition.setReplicaAddresses(replicas);
+        }
+        initialized = true;
         return true;
     }
 
@@ -422,11 +427,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             if (initialized) {
                 throw new IllegalStateException("Partition table is already initialized!");
             }
-            logger.finest("Setting cluster partition table ...");
+            logger.info("Setting cluster partition table ...");
             for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
                 InternalPartitionImpl partition = partitions[partitionId];
                 Address[] replicas = newState[partitionId];
-                partition.setReplicaAddresses(replicas);
+                partition.setInitialReplicaAddresses(replicas);
             }
             initialized = true;
         } finally {
