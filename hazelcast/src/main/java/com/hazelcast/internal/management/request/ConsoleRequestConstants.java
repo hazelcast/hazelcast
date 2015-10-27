@@ -37,6 +37,9 @@ public final class ConsoleRequestConstants {
     public static final int REQUEST_TYPE_MEMBER_SHUTDOWN = 18;
     public static final int REQUEST_TYPE_SYSTEM_WARNINGS = 20;
     public static final int REQUEST_TYPE_WAN_PUBLISHER = 33;
+    public static final int REQUEST_TYPE_GET_CLUSTER_STATE = 34;
+    public static final int REQUEST_TYPE_CHANGE_CLUSTER_STATE = 35;
+    public static final int REQUEST_TYPE_CLUSTER_SHUTDOWN = 36;
 
     private ConsoleRequestConstants() {
     }

@@ -32,12 +32,14 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
+import com.hazelcast.internal.management.request.ChangeClusterStateRequest;
 import com.hazelcast.internal.management.request.ChangeWanStateRequest;
 import com.hazelcast.internal.management.request.AsyncConsoleRequest;
 import com.hazelcast.internal.management.request.ClusterPropsRequest;
 import com.hazelcast.internal.management.request.ConsoleCommandRequest;
 import com.hazelcast.internal.management.request.ConsoleRequest;
 import com.hazelcast.internal.management.request.ExecuteScriptRequest;
+import com.hazelcast.internal.management.request.GetClusterStateRequest;
 import com.hazelcast.internal.management.request.GetLogsRequest;
 import com.hazelcast.internal.management.request.GetMapEntryRequest;
 import com.hazelcast.internal.management.request.GetMemberSystemPropertiesRequest;
@@ -45,6 +47,7 @@ import com.hazelcast.internal.management.request.GetSystemWarningsRequest;
 import com.hazelcast.internal.management.request.MapConfigRequest;
 import com.hazelcast.internal.management.request.MemberConfigRequest;
 import com.hazelcast.internal.management.request.RunGcRequest;
+import com.hazelcast.internal.management.request.ShutdownClusterRequest;
 import com.hazelcast.internal.management.request.ShutdownMemberRequest;
 import com.hazelcast.internal.management.request.ThreadDumpRequest;
 import com.hazelcast.logging.ILogger;
@@ -443,6 +446,9 @@ public class ManagementCenterService {
             register(new GetMemberSystemPropertiesRequest());
             register(new GetMapEntryRequest());
             register(new ShutdownMemberRequest());
+            register(new GetClusterStateRequest());
+            register(new ChangeClusterStateRequest());
+            register(new ShutdownClusterRequest());
             register(new GetSystemWarningsRequest());
         }
 
