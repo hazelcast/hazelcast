@@ -51,6 +51,7 @@ import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
@@ -253,7 +254,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     public String addEntryListener(EntryListener<K, V> listener, final boolean includeValue) {
         isNotNull(listener, "listener");
-        EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
+        EventHandler<ClientMessage> handler = createHandler(listener);
         return registerListener(createEntryListenerCodec(includeValue), handler);
     }
 
@@ -287,7 +288,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     public String addEntryListener(EntryListener<K, V> listener, K key, final boolean includeValue) {
         final Data keyData = toData(key);
-        EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
+        EventHandler<ClientMessage> handler = createHandler(listener);
         return registerListener(createEntryListenerToKeyCodec(includeValue, keyData), handler);
     }
 
@@ -437,9 +438,9 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    private EventHandler<ClientMessage> createHandler(final Object listener, final boolean includeValue) {
+    private EventHandler<ClientMessage> createHandler(final Object listener) {
         final ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        return new ClientMultiMapEventHandler(listenerAdaptor, includeValue);
+        return new ClientMultiMapEventHandler(listenerAdaptor);
     }
 
     @Override
@@ -451,11 +452,9 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             implements EventHandler<ClientMessage> {
 
         private final ListenerAdapter listenerAdapter;
-        private final boolean includeValue;
 
-        public ClientMultiMapEventHandler(ListenerAdapter listenerAdapter, boolean includeValue) {
+        public ClientMultiMapEventHandler(ListenerAdapter listenerAdapter) {
             this.listenerAdapter = listenerAdapter;
-            this.includeValue = includeValue;
         }
 
         @Override
@@ -496,16 +495,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         private EntryEvent<K, V> createEntryEvent(Data keyData, Data valueData, Data oldValueData,
                                                   Data mergingValueData, int eventType, Member member) {
-            V value = null;
-            V oldValue = null;
-            V mergingValue = null;
-            if (includeValue) {
-                value = toObject(valueData);
-                oldValue = toObject(oldValueData);
-                mergingValue = toObject(mergingValueData);
-            }
-            K key = toObject(keyData);
-            return new EntryEvent<K, V>(name, member, eventType, key, oldValue, value, mergingValue);
+            return new DataAwareEntryEvent(member, eventType, name, keyData, valueData,
+                    oldValueData, mergingValueData, getContext().getSerializationService());
         }
 
         @Override

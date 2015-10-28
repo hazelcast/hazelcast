@@ -34,6 +34,7 @@ import com.hazelcast.client.impl.protocol.codec.SetSizeCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
+import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
@@ -168,7 +169,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
     }
 
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
-        EventHandler<ClientMessage> eventHandler = new ItemEventHandler(includeValue, listener);
+        EventHandler<ClientMessage> eventHandler = new ItemEventHandler(listener);
         return registerListener(createItemListenerCodec(includeValue), eventHandler);
     }
 
@@ -217,11 +218,9 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
     private class ItemEventHandler extends ListAddListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
-        private final boolean includeValue;
         private final ItemListener<E> listener;
 
-        public ItemEventHandler(boolean includeValue, ItemListener<E> listener) {
-            this.includeValue = includeValue;
+        public ItemEventHandler(ItemListener<E> listener) {
             this.listener = listener;
         }
 
@@ -230,9 +229,9 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
             SerializationService serializationService = getContext().getSerializationService();
             ClientClusterService clusterService = getContext().getClusterService();
 
-            E item = includeValue ? (E) serializationService.toObject(dataItem) : null;
             Member member = clusterService.getMember(uuid);
-            ItemEvent<E> itemEvent = new ItemEvent<E>(name, ItemEventType.getByType(eventType), item, member);
+            ItemEvent<E> itemEvent = new DataAwareItemEvent(name, ItemEventType.getByType(eventType),
+                    dataItem, member, serializationService);
             if (eventType == ItemEventType.ADDED.getType()) {
                 listener.itemAdded(itemEvent);
             } else {

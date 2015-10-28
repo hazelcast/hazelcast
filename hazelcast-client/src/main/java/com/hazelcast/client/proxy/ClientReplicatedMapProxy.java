@@ -48,6 +48,7 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -475,13 +476,10 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         @Override
         public void handle(Data keyData, Data valueData, Data oldValueData, Data mergingValue,
                            int eventTypeId, String uuid, int numberOfAffectedEntries) {
-            V value = toObject(valueData);
-            V oldValue = toObject(oldValueData);
-            K key = toObject(keyData);
             Member member = getContext().getClusterService().getMember(uuid);
             EntryEventType eventType = EntryEventType.getByType(eventTypeId);
-            EntryEvent<K, V> entryEvent = new EntryEvent<K, V>(name, member, eventTypeId, key,
-                    oldValue, value);
+            EntryEvent<K, V> entryEvent = new DataAwareEntryEvent(member, eventTypeId, name, keyData,
+                    valueData, oldValueData, null, getContext().getSerializationService());
             switch (eventType) {
                 case ADDED:
                     listener.entryAdded(entryEvent);

@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
@@ -27,6 +28,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Job;
@@ -60,8 +62,8 @@ import com.hazelcast.multimap.impl.client.ValuesRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableEntryEvent;
-import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.Preconditions;
+import com.hazelcast.util.ThreadUtil;
 
 import java.util.AbstractMap;
 import java.util.Collection;
@@ -72,8 +74,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollection;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.isNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * @author ali 5/19/13
@@ -215,7 +217,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
         isNotNull(listener, "listener");
         AddEntryListenerRequest request = new AddEntryListenerRequest(name, null, includeValue);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        EventHandler<PortableEntryEvent> handler = createHandler(listener);
         return registerListener(request, handler);
     }
 
@@ -227,7 +229,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         final Data keyData = toData(key);
         AddEntryListenerRequest request = new AddEntryListenerRequest(name, keyData, includeValue);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        EventHandler<PortableEntryEvent> handler = createHandler(listener);
         return registerListener(request, handler);
     }
 
@@ -361,7 +363,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    private EventHandler<PortableEntryEvent> createHandler(final EntryListener<K, V> listener, final boolean includeValue) {
+    private EventHandler<PortableEntryEvent> createHandler(final EntryListener<K, V> listener) {
         return new EventHandler<PortableEntryEvent>() {
             public void handle(PortableEntryEvent event) {
                 Member member = getContext().getClusterService().getMember(event.getUuid());
@@ -385,15 +387,13 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             }
 
             private EntryEvent<K, V> createEntryEvent(PortableEntryEvent event, Member member) {
-                V value = null;
-                V oldValue = null;
-                if (includeValue) {
-                    value = toObject(event.getValue());
-                    oldValue = toObject(event.getOldValue());
-                }
-                K key = toObject(event.getKey());
-                return new EntryEvent<K, V>(name, member,
-                        event.getEventType().getType(), key, oldValue, value);
+                EntryEventType eventType = event.getEventType();
+                Data keyData = event.getKey();
+                Data valueData = event.getValue();
+                Data oldValueData = event.getOldValue();
+                Data mergingValueData = event.getMergingValue();
+                return new DataAwareEntryEvent(member, eventType.getType(), name, keyData, valueData,
+                        oldValueData, mergingValueData, getContext().getSerializationService());
             }
 
             @Override
