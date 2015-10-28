@@ -31,6 +31,7 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -237,9 +238,25 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleSpringAware();
                     } else if ("quorum".equals(nodeName)) {
                         handleQuorum(node);
+                    } else if ("hot-restart".equals(nodeName)) {
+                        handleHotRestart(node);
                     }
                 }
             }
+        }
+
+        private void handleHotRestart(Node node) {
+            BeanDefinitionBuilder hotRestartConfigBuilder = createBeanBuilder(HotRestartConfig.class);
+            fillAttributeValues(node, hotRestartConfigBuilder);
+
+            for (Node child : childElements(node)) {
+                String name = cleanNodeName(child);
+                if ("home-dir".equals(name)) {
+                    String value = getTextContent(child);
+                    hotRestartConfigBuilder.addPropertyValue("homeDir", value);
+                }
+            }
+            configBuilder.addPropertyValue("hotRestartConfig", hotRestartConfigBuilder.getBeanDefinition());
         }
 
         private void handleQuorum(final org.w3c.dom.Node node) {

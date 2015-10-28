@@ -60,6 +60,7 @@
                 <xs:element ref="member-attributes" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="quorum" type="quorum" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="lite-member" type="lite-member" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -511,6 +512,14 @@
                             The entry which has been accessed more recently wins.
                             <br/>Default policy is 'com.hazelcast.cache.merge.PassThroughCacheMergePolicy'
                         </p>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="hot-restart-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        True if hot-restart is enabled, false otherwise
+                        Only available on Hazelcast Enterprise.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2698,6 +2707,20 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
+    <xs:complexType name="hot-restart">
+        <xs:all>
+            <xs:element name="home-dir" type="xs:string" minOccurs="0" maxOccurs="1" default="hot-restart"/>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    True to enable hot-restart, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="wan-replication-ref-filters">
         <xs:sequence>
             <xs:element name="filter-impl" type="xs:string" maxOccurs="unbounded"/>

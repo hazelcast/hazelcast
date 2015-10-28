@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.text.MessageFormat.format;
 
 /**
@@ -115,6 +116,8 @@ public class Config {
     private MemberAttributeConfig memberAttributeConfig = new MemberAttributeConfig();
 
     private NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig();
+
+    private HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
     private String licenseKey;
 
@@ -990,6 +993,27 @@ public class Config {
 
     public Config setPartitionGroupConfig(PartitionGroupConfig partitionGroupConfig) {
         this.partitionGroupConfig = partitionGroupConfig;
+        return this;
+    }
+
+    /**
+     * Returns hot restart configuration for this member
+     *
+     * @return hot restart configuration
+     */
+    public HotRestartConfig getHotRestartConfig() {
+        return hotRestartConfig;
+    }
+
+    /**
+     * Sets hot restart configuration.
+     *
+     * @param hrConfig hot restart configuration
+     * @return Config
+     */
+    public Config setHotRestartConfig(HotRestartConfig hrConfig) {
+        checkNotNull(hrConfig, "Hot restart config cannot be null!");
+        this.hotRestartConfig = hrConfig;
         return this;
     }
 

@@ -60,6 +60,7 @@ import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.GROUP;
+import static com.hazelcast.config.XmlElements.HOT_RESTART;
 import static com.hazelcast.config.XmlElements.IMPORT;
 import static com.hazelcast.config.XmlElements.INSTANCE_NAME;
 import static com.hazelcast.config.XmlElements.JOB_TRACKER;
@@ -331,19 +332,35 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleQuorum(node);
         } else if (LITE_MEMBER.isEqual(nodeName)) {
             handleLiteMember(node);
+        } else if (HOT_RESTART.isEqual(nodeName)) {
+            handleHotRestart(node);
         } else {
             return true;
         }
         return false;
     }
 
-    @SuppressWarnings("checkstyle:innerassignment")
     private void handleInstanceName(Node node) {
         final String instanceName = getTextContent(node);
         if (instanceName.isEmpty()) {
             throw new InvalidConfigurationException("Instance name in XML configuration is empty");
         }
         config.setInstanceName(instanceName);
+    }
+
+    private void handleHotRestart(Node hrRoot) {
+        final HotRestartConfig hrConfig = new HotRestartConfig();
+        Node attrEnabled = hrRoot.getAttributes().getNamedItem("enabled");
+        final boolean enabled = getBooleanValue(getTextContent(attrEnabled));
+        hrConfig.setEnabled(enabled);
+
+        for (Node n : childElements(hrRoot)) {
+            final String name = cleanNodeName(n);
+            if ("home-dir".equals(name)) {
+                hrConfig.setHomeDir(new File(getTextContent(n)).getAbsoluteFile());
+            }
+        }
+        config.setHotRestartConfig(hrConfig);
     }
 
     private void handleLiteMember(Node node) {
@@ -1132,6 +1149,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 cachePartitionLostListenerHandle(n, cacheConfig);
             } else if ("merge-policy".equals(nodeName)) {
                 cacheConfig.setMergePolicy(value);
+            } else if ("hot-restart-enabled".equals(nodeName)) {
+                cacheConfig.setHotRestartEnabled(getBooleanValue(value));
             }
         }
         this.config.addCacheConfig(cacheConfig);

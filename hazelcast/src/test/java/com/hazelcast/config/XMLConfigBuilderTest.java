@@ -17,16 +17,12 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.helpers.DummyMapStore;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,7 +36,6 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -50,7 +45,6 @@ import java.text.MessageFormat;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.hazelcast.config.AbstractXmlConfigHelper.cleanNodeName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -1100,5 +1094,20 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
         Config config = new InMemoryXmlConfig(xml);
         assertEquals(name, config.getInstanceName());
+    }
+
+    @Test
+    public void testHotRestart() {
+        String dir = "/mnt/hot-restart-root/";
+        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                "<hot-restart enabled=\"true\">"
+                + "<home-dir>" + dir + "</home-dir>"
+                + "</hot-restart>\n" +
+                "</hazelcast>";
+
+        Config config = new InMemoryXmlConfig(xml);
+        HotRestartConfig hotRestartConfig = config.getHotRestartConfig();
+        assertTrue(hotRestartConfig.isEnabled());
+        assertEquals(new File(dir).getAbsolutePath(), hotRestartConfig.getHomeDir().getAbsolutePath());
     }
 }
