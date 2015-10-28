@@ -27,21 +27,18 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * reminder:
+ * when FalsePredicate is going to implement IdentifiedDataSerializable, make sure no new instance
+ * is created, but the INSTANCE is returned. No need to create new objects.
+ */
 public class FalsePredicate implements DataSerializable, Predicate, IndexAwarePredicate {
     /**
      * An instance of the FalsePredicate.
      */
     public static final FalsePredicate INSTANCE = new FalsePredicate();
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-    }
-
-    @Override
+     @Override
     public boolean apply(Map.Entry mapEntry) {
         return false;
     }
@@ -59,5 +56,13 @@ public class FalsePredicate implements DataSerializable, Predicate, IndexAwarePr
     @Override
     public boolean isIndexed(QueryContext queryContext) {
         return true;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
     }
 }
