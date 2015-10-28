@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastException;
  */
 public class ValidationException extends HazelcastException {
     public ValidationException() {
+        this((String) null);
     }
 
     public ValidationException(String message) {
@@ -35,6 +36,6 @@ public class ValidationException extends HazelcastException {
     }
 
     public ValidationException(Throwable cause) {
-        super(cause);
+        this(cause.getMessage(), cause);
     }
 }
