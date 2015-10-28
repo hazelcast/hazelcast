@@ -52,6 +52,7 @@ import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
@@ -478,16 +479,9 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         private EntryEvent<K, V> createEntryEvent(Data keyData, Data valueData, Data oldValueData,
                                                   Data mergingValueData, int eventType, Member member) {
-            V value = null;
-            V oldValue = null;
-            V mergingValue = null;
-            if (includeValue) {
-                value = toObject(valueData);
-                oldValue = toObject(oldValueData);
-                mergingValue = toObject(mergingValueData);
-            }
-            K key = toObject(keyData);
-            return new EntryEvent<K, V>(name, member, eventType, key, oldValue, value, mergingValue);
+            return new DataAwareEntryEvent(member,
+                    eventType, name, keyData, valueData, oldValueData, mergingValueData,
+                    getContext().getSerializationService());
         }
 
         @Override

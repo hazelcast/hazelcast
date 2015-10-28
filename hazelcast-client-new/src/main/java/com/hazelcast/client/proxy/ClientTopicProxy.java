@@ -32,6 +32,7 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.topic.impl.DataAwareMessage;
 
 public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
@@ -112,12 +113,11 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
         @Override
         public void handle(Data item, long publishTime, String uuid) {
-            final SerializationService serializationService = getContext().getSerializationService();
-            final ClientClusterService clusterService = getContext().getClusterService();
+            SerializationService serializationService = getContext().getSerializationService();
+            ClientClusterService clusterService = getContext().getClusterService();
 
-            E messageObject = serializationService.toObject(item);
             Member member = clusterService.getMember(uuid);
-            Message<E> message = new Message<E>(name, messageObject, publishTime, member);
+            Message<E> message = new DataAwareMessage(name, item, publishTime, member, serializationService);
             listener.onMessage(message);
         }
 

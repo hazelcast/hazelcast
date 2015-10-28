@@ -39,6 +39,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
+import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapKeySet;
@@ -1208,17 +1209,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         }
 
         private EntryEvent<K, V> createEntryEvent(PortableEntryEvent event, Member member) {
-            V value = null;
-            V oldValue = null;
-            V mergingValue = null;
-            if (includeValue) {
-                value = toObject(event.getValue());
-                oldValue = toObject(event.getOldValue());
-                mergingValue = toObject(event.getMergingValue());
-            }
-            K key = toObject(event.getKey());
-            return new EntryEvent<K, V>(name, member,
-                    event.getEventType().getType(), key, oldValue, value, mergingValue);
+            Data value = event.getValue();
+            Data oldValue = event.getOldValue();
+            Data mergingValue = event.getMergingValue();
+            Data key = event.getKey();
+            return new DataAwareEntryEvent(member,
+                    event.getEventType().getType(), name, key, value, oldValue, mergingValue,
+                    getContext().getSerializationService());
         }
 
         @Override
