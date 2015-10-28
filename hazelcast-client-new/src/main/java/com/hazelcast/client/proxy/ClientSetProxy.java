@@ -36,6 +36,7 @@ import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
+import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
@@ -218,9 +219,9 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
             SerializationService serializationService = getContext().getSerializationService();
             ClientClusterService clusterService = getContext().getClusterService();
 
-            E item = includeValue ? (E) serializationService.toObject(dataItem) : null;
             Member member = clusterService.getMember(uuid);
-            ItemEvent<E> itemEvent = new ItemEvent<E>(name, ItemEventType.getByType(eventType), item, member);
+            ItemEvent<E> itemEvent = new DataAwareItemEvent(name, ItemEventType.getByType(eventType), dataItem, member
+                    , serializationService);
             if (eventType == ItemEventType.ADDED.getType()) {
                 listener.itemAdded(itemEvent);
             } else {

@@ -27,6 +27,7 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.topic.impl.DataAwareMessage;
 import com.hazelcast.topic.impl.client.AddMessageListenerRequest;
 import com.hazelcast.topic.impl.client.PortableMessage;
 import com.hazelcast.topic.impl.client.PublishRequest;
@@ -64,9 +65,9 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
                 SerializationService serializationService = getContext().getSerializationService();
                 ClientClusterService clusterService = getContext().getClusterService();
 
-                E messageObject = serializationService.toObject(event.getMessage());
                 Member member = clusterService.getMember(event.getUuid());
-                Message<E> message = new Message<E>(name, messageObject, event.getPublishTime(), member);
+                Message<E> message = new DataAwareMessage(name, event.getMessage(), event.getPublishTime(), member
+                        , serializationService);
                 listener.onMessage(message);
             }
 
@@ -101,7 +102,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
     }
 
     @Override
-    protected  <T> T invoke(ClientRequest req) {
+    protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKey());
     }
 

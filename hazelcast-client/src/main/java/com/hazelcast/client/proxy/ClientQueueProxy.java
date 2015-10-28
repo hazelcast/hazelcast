@@ -19,14 +19,8 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemEventType;
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.core.Member;
-import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.collection.common.DataAwareItemEvent;
+import com.hazelcast.collection.impl.queue.QueueIterator;
 import com.hazelcast.collection.impl.queue.client.AddAllRequest;
 import com.hazelcast.collection.impl.queue.client.AddListenerRequest;
 import com.hazelcast.collection.impl.queue.client.ClearRequest;
@@ -42,9 +36,17 @@ import com.hazelcast.collection.impl.queue.client.RemainingCapacityRequest;
 import com.hazelcast.collection.impl.queue.client.RemoveListenerRequest;
 import com.hazelcast.collection.impl.queue.client.RemoveRequest;
 import com.hazelcast.collection.impl.queue.client.SizeRequest;
-import com.hazelcast.collection.impl.queue.QueueIterator;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableItemEvent;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -68,10 +70,12 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
         final AddListenerRequest request = new AddListenerRequest(name, includeValue);
         EventHandler<PortableItemEvent> eventHandler = new EventHandler<PortableItemEvent>() {
             public void handle(PortableItemEvent portableItemEvent) {
-                E item = includeValue ? (E) getContext().getSerializationService().toObject(portableItemEvent.getItem()) : null;
+                Data item = portableItemEvent.getItem();
                 Member member = getContext().getClusterService().getMember(portableItemEvent.getUuid());
-                ItemEvent<E> itemEvent = new ItemEvent<E>(name, portableItemEvent.getEventType(), item, member);
-                if (portableItemEvent.getEventType() == ItemEventType.ADDED) {
+                ItemEventType eventType = portableItemEvent.getEventType();
+                ItemEvent<E> itemEvent = new DataAwareItemEvent(name, eventType, item, member
+                        , getContext().getSerializationService());
+                if (eventType == ItemEventType.ADDED) {
                     listener.itemAdded(itemEvent);
                 } else {
                     listener.itemRemoved(itemEvent);
