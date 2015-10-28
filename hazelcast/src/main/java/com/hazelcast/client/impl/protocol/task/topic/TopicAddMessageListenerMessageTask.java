@@ -27,7 +27,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.TopicPermission;
-import com.hazelcast.topic.impl.DataAwareMessage;
+import com.hazelcast.topic.impl.LazyDeserializingMessage;
 import com.hazelcast.topic.impl.TopicService;
 
 import java.security.Permission;
@@ -95,13 +95,13 @@ public class TopicAddMessageListenerMessageTask
             return;
         }
 
-        if (!(message instanceof DataAwareMessage)) {
-            throw new IllegalArgumentException("Expecting: DataAwareMessage, Found: "
+        if (!(message instanceof LazyDeserializingMessage)) {
+            throw new IllegalArgumentException("Expecting: LazyDeserializingMessage, Found: "
                     + message.getClass().getSimpleName());
         }
 
-        DataAwareMessage dataAwareMessage = (DataAwareMessage) message;
-        Data messageData = dataAwareMessage.getMessageData();
+        LazyDeserializingMessage deserializingMessage = (LazyDeserializingMessage) message;
+        Data messageData = deserializingMessage.getMessageData();
         String publisherUuid = message.getPublishingMember().getUuid();
         ClientMessage eventMessage = TopicAddMessageListenerCodec.encodeTopicEvent(messageData,
                 message.getPublishTime(), publisherUuid);

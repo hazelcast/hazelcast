@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.collection.common.DataAwareItemEvent;
+import com.hazelcast.collection.common.LazyDeserializingItemEvent;
 import com.hazelcast.collection.impl.queue.operations.QueueReplicationOperation;
 import com.hazelcast.collection.impl.txnqueue.TransactionalQueueProxy;
 import com.hazelcast.collection.impl.txnqueue.operations.QueueTransactionRollbackOperation;
@@ -211,7 +211,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public void dispatchEvent(QueueEvent event, ItemListener listener) {
         final MemberImpl member = nodeEngine.getClusterService().getMember(event.caller);
-        ItemEvent itemEvent = new DataAwareItemEvent(event.name, event.eventType, event.data,
+        ItemEvent itemEvent = new LazyDeserializingItemEvent(event.name, event.eventType, event.data,
                 member, nodeEngine.getSerializationService());
         if (member == null) {
             if (logger.isLoggable(Level.INFO)) {

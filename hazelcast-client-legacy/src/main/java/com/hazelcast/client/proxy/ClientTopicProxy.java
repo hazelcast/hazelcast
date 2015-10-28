@@ -27,7 +27,7 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.topic.impl.DataAwareMessage;
+import com.hazelcast.topic.impl.LazyDeserializingMessage;
 import com.hazelcast.topic.impl.client.AddMessageListenerRequest;
 import com.hazelcast.topic.impl.client.PortableMessage;
 import com.hazelcast.topic.impl.client.PublishRequest;
@@ -67,7 +67,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
                 Data item = event.getMessage();
                 Member member = clusterService.getMember(event.getUuid());
-                Message message = new DataAwareMessage(name, item, event.getPublishTime(), member, serializationService);
+                Message message = new LazyDeserializingMessage(name, item, event.getPublishTime(), member, serializationService);
                 listener.onMessage(message);
             }
 

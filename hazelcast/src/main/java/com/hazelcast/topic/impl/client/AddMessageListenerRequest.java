@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.TopicPermission;
-import com.hazelcast.topic.impl.DataAwareMessage;
+import com.hazelcast.topic.impl.LazyDeserializingMessage;
 import com.hazelcast.topic.impl.TopicPortableHook;
 import com.hazelcast.topic.impl.TopicService;
 
@@ -103,13 +103,13 @@ public class AddMessageListenerRequest extends BaseClientAddListenerRequest {
                 return;
             }
 
-            if (!(message instanceof DataAwareMessage)) {
-                throw new IllegalArgumentException("Expecting: DataAwareMessage, Found: "
+            if (!(message instanceof LazyDeserializingMessage)) {
+                throw new IllegalArgumentException("Expecting: LazyDeserializingMessage, Found: "
                         + message.getClass().getSimpleName());
             }
 
-            DataAwareMessage dataAwareMessage = (DataAwareMessage) message;
-            Data messageData = dataAwareMessage.getMessageData();
+            LazyDeserializingMessage deserializingMessage = (LazyDeserializingMessage) message;
+            Data messageData = deserializingMessage.getMessageData();
             String publisherUuid = message.getPublishingMember().getUuid();
             PortableMessage portableMessage = new PortableMessage(messageData, message.getPublishTime(), publisherUuid);
             endpoint.sendEvent(partitionKey, portableMessage, callId);

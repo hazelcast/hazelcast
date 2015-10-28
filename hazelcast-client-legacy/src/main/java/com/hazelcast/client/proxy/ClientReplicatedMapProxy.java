@@ -29,7 +29,7 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.map.impl.LazyDeserializingEntryEvent;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -347,7 +347,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             Data oldValueData = event.getOldValue();
             Member member = getContext().getClusterService().getMember(event.getUuid());
             int type = eventType.getType();
-            EntryEvent<K, V> entryEvent = new DataAwareEntryEvent(member, type, getName(), keyData, valueData,
+            EntryEvent<K, V> entryEvent = new LazyDeserializingEntryEvent(member, type, getName(), keyData, valueData,
                     oldValueData, null, getContext().getSerializationService());
 
             switch (event.getEventType()) {

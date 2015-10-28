@@ -19,7 +19,7 @@ package com.hazelcast.collection.impl.collection.client;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
-import com.hazelcast.collection.common.DataAwareItemEvent;
+import com.hazelcast.collection.common.LazyDeserializingItemEvent;
 import com.hazelcast.collection.impl.collection.CollectionEventFilter;
 import com.hazelcast.collection.impl.collection.CollectionPortableHook;
 import com.hazelcast.collection.impl.list.ListService;
@@ -92,13 +92,13 @@ public class CollectionAddListenerRequest extends BaseClientAddListenerRequest {
 
             private void send(ItemEvent event) {
                 if (endpoint.isAlive()) {
-                    if (!(event instanceof DataAwareItemEvent)) {
-                        throw new IllegalArgumentException("Expecting: DataAwareItemEvent, Found: "
+                    if (!(event instanceof LazyDeserializingItemEvent)) {
+                        throw new IllegalArgumentException("Expecting: LazyDeserializingItemEvent, Found: "
                                 + event.getClass().getSimpleName());
                     }
 
-                    DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
-                    Data item = dataAwareItemEvent.getItemData();
+                    LazyDeserializingItemEvent itemEvent = (LazyDeserializingItemEvent) event;
+                    Data item = itemEvent.getItemData();
                     PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(),
                             event.getMember().getUuid());
                     endpoint.sendEvent(partitionKey, portableItemEvent, getCallId());

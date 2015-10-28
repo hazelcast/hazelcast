@@ -19,7 +19,7 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.collection.common.DataAwareItemEvent;
+import com.hazelcast.collection.common.LazyDeserializingItemEvent;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEvent;
@@ -74,7 +74,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
                 Member member = getContext().getClusterService().getMember(portableItemEvent.getUuid());
                 Data item = portableItemEvent.getItem();
                 ItemEvent<E> itemEvent =
-                        new DataAwareItemEvent(name, portableItemEvent.getEventType(), item, member, ss);
+                        new LazyDeserializingItemEvent(name, portableItemEvent.getEventType(), item, member, ss);
                 if (portableItemEvent.getEventType() == ItemEventType.ADDED) {
                     listener.itemAdded(itemEvent);
                 } else {

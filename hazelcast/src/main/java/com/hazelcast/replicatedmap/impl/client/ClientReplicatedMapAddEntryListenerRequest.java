@@ -24,7 +24,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
-import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.map.impl.LazyDeserializingEntryEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -93,14 +93,14 @@ public class ClientReplicatedMapAddEntryListenerRequest extends BaseClientAddLis
                 return;
             }
 
-            if (!(event instanceof DataAwareEntryEvent)) {
-                throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
+            if (!(event instanceof LazyDeserializingEntryEvent)) {
+                throw new IllegalArgumentException("Expecting: LazyDeserializingEntryEvent, Found: "
                         + event.getClass().getSimpleName());
             }
-            DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-            Data key = dataAwareEntryEvent.getKeyData();
-            Data value = dataAwareEntryEvent.getNewValueData();
-            Data oldValue = dataAwareEntryEvent.getOldValueData();
+            LazyDeserializingEntryEvent entryEvent = (LazyDeserializingEntryEvent) event;
+            Data key = entryEvent.getKeyData();
+            Data value = entryEvent.getNewValueData();
+            Data oldValue = entryEvent.getOldValueData();
             EntryEventType eventType = event.getEventType();
             String uuid = event.getMember().getUuid();
             Portable portableEntryEvent = new ReplicatedMapPortableEntryEvent(key, value, oldValue, eventType, uuid);

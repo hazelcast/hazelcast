@@ -20,7 +20,7 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ListAddListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.collection.common.DataAwareItemEvent;
+import com.hazelcast.collection.common.LazyDeserializingItemEvent;
 import com.hazelcast.collection.impl.collection.CollectionEventFilter;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.ItemEvent;
@@ -75,13 +75,13 @@ public class ListAddListenerMessageTask
 
             private void send(ItemEvent event) {
                 if (endpoint.isAlive()) {
-                    if (!(event instanceof DataAwareItemEvent)) {
+                    if (!(event instanceof LazyDeserializingItemEvent)) {
                         throw new IllegalArgumentException(
-                                "Expecting: DataAwareItemEvent, Found: " + event.getClass().getSimpleName());
+                                "Expecting: LazyDeserializingItemEvent, Found: " + event.getClass().getSimpleName());
                     }
 
-                    DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
-                    Data item = dataAwareItemEvent.getItemData();
+                    LazyDeserializingItemEvent itemEvent = (LazyDeserializingItemEvent) event;
+                    Data item = itemEvent.getItemData();
                     ClientMessage clientMessage = ListAddListenerCodec
                             .encodeItemEvent(item, event.getMember().getUuid(), event.getEventType().getType());
                     sendClientMessage(partitionKey, clientMessage);

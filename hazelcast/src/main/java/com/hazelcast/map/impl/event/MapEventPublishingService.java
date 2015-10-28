@@ -22,7 +22,7 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.map.impl.LazyDeserializingEntryEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -101,7 +101,7 @@ public class MapEventPublishingService implements EventPublishingService<EventDa
 
     private void dispatchEntryEventData(EntryEventData entryEventData, ListenerAdapter listener) {
         Member member = getMember(entryEventData);
-        EntryEvent event = createDataAwareEntryEvent(entryEventData, member);
+        EntryEvent event = createLazyDeserializingEntryEvent(entryEventData, member);
         callListener(listener, event);
     }
 
@@ -113,8 +113,8 @@ public class MapEventPublishingService implements EventPublishingService<EventDa
         return member;
     }
 
-    private DataAwareEntryEvent createDataAwareEntryEvent(EntryEventData entryEventData, Member member) {
-        return new DataAwareEntryEvent(member, entryEventData.getEventType(), entryEventData.getMapName(),
+    private LazyDeserializingEntryEvent createLazyDeserializingEntryEvent(EntryEventData entryEventData, Member member) {
+        return new LazyDeserializingEntryEvent(member, entryEventData.getEventType(), entryEventData.getMapName(),
                 entryEventData.getDataKey(), entryEventData.getDataNewValue(), entryEventData.getDataOldValue(),
                 entryEventData.getDataMergingValue(), nodeEngine.getSerializationService());
     }

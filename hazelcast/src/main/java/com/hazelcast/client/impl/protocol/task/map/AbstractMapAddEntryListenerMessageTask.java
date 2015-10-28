@@ -23,7 +23,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.map.impl.LazyDeserializingEntryEvent;
 import com.hazelcast.map.impl.MapListenerAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -85,15 +85,15 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         @Override
         public void onEntryEvent(EntryEvent<Object, Object> event) {
             if (endpoint.isAlive()) {
-                if (!(event instanceof DataAwareEntryEvent)) {
+                if (!(event instanceof LazyDeserializingEntryEvent)) {
                     throw new IllegalArgumentException(
-                            "Expecting: DataAwareEntryEvent, Found: " + event.getClass().getSimpleName());
+                            "Expecting: LazyDeserializingEntryEvent, Found: " + event.getClass().getSimpleName());
                 }
-                DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                Data keyData = dataAwareEntryEvent.getKeyData();
-                Data newValueData = dataAwareEntryEvent.getNewValueData();
-                Data oldValueData = dataAwareEntryEvent.getOldValueData();
-                Data meringValueData = dataAwareEntryEvent.getMergingValueData();
+                LazyDeserializingEntryEvent entryEvent = (LazyDeserializingEntryEvent) event;
+                Data keyData = entryEvent.getKeyData();
+                Data newValueData = entryEvent.getNewValueData();
+                Data oldValueData = entryEvent.getOldValueData();
+                Data meringValueData = entryEvent.getMergingValueData();
                 sendClientMessage(keyData, encodeEvent(keyData
                         , newValueData, oldValueData, meringValueData, event.getEventType().getType(),
                         event.getMember().getUuid(), 1));

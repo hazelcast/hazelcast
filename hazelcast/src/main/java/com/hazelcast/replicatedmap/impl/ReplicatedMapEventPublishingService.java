@@ -24,7 +24,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.map.impl.LazyDeserializingEntryEvent;
 import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.map.impl.event.MapEventData;
@@ -76,7 +76,7 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
         if ((event instanceof EntryEventData)) {
             EntryEventData entryEventData = (EntryEventData) event;
             Member member = getMember(entryEventData);
-            EntryEvent entryEvent = createDataAwareEntryEvent(entryEventData, member);
+            EntryEvent entryEvent = createLazyDeserializingEntryEvent(entryEventData, member);
             EntryListener entryListener = (EntryListener) listener;
             switch (entryEvent.getEventType()) {
                 case ADDED:
@@ -167,8 +167,8 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
         return member;
     }
 
-    private DataAwareEntryEvent createDataAwareEntryEvent(EntryEventData entryEventData, Member member) {
-        return new DataAwareEntryEvent(member, entryEventData.getEventType(), entryEventData.getMapName(),
+    private LazyDeserializingEntryEvent createLazyDeserializingEntryEvent(EntryEventData entryEventData, Member member) {
+        return new LazyDeserializingEntryEvent(member, entryEventData.getEventType(), entryEventData.getMapName(),
                 entryEventData.getDataKey(), entryEventData.getDataNewValue(), entryEventData.getDataOldValue(),
                 entryEventData.getDataMergingValue(), nodeEngine.getSerializationService());
     }

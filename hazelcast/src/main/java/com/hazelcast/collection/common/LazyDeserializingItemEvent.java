@@ -29,15 +29,15 @@ import java.io.ObjectOutputStream;
 /**
  * An {@link ItemEvent} that is able to store a {@link Data}.
  */
-public class DataAwareItemEvent extends ItemEvent {
+public class LazyDeserializingItemEvent extends ItemEvent {
 
     private static final long serialVersionUID = 1;
 
     private final transient Data dataItem;
     private final transient SerializationService serializationService;
 
-    public DataAwareItemEvent(String name, ItemEventType itemEventType, Data dataItem, Member member,
-                              SerializationService serializationService) {
+    public LazyDeserializingItemEvent(String name, ItemEventType itemEventType, Data dataItem, Member member,
+                                      SerializationService serializationService) {
         super(name, itemEventType, null, member);
         this.dataItem = dataItem;
         this.serializationService = serializationService;

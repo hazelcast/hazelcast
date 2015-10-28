@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 
-public class DataAwareEntryEvent extends EntryEvent {
+public class LazyDeserializingEntryEvent extends EntryEvent {
 
     private static final long serialVersionUID = 1;
 
@@ -39,11 +39,11 @@ public class DataAwareEntryEvent extends EntryEvent {
 
     private final transient SerializationService serializationService;
 
-    public DataAwareEntryEvent(Member from, int eventType,
-                               String source, Data dataKey,
-                               Data dataNewValue, Data dataOldValue,
-                               Data dataMergingValue,
-                               SerializationService serializationService) {
+    public LazyDeserializingEntryEvent(Member from, int eventType,
+                                       String source, Data dataKey,
+                                       Data dataNewValue, Data dataOldValue,
+                                       Data dataMergingValue,
+                                       SerializationService serializationService) {
         super(source, from, eventType, null, null);
         this.dataKey = dataKey;
         this.dataNewValue = dataNewValue;

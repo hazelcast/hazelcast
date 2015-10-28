@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.map.impl.LazyDeserializingEntryEvent;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.MapListenerAdapter;
@@ -73,15 +73,15 @@ public abstract class AbstractMapAddEntryListenerRequest extends BaseClientAddLi
             @Override
             public void onEntryEvent(EntryEvent<Object, Object> event) {
                 if (endpoint.isAlive()) {
-                    if (!(event instanceof DataAwareEntryEvent)) {
-                        throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
+                    if (!(event instanceof LazyDeserializingEntryEvent)) {
+                        throw new IllegalArgumentException("Expecting: LazyDeserializingEntryEvent, Found: "
                                 + event.getClass().getSimpleName());
                     }
-                    DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                    Data key = dataAwareEntryEvent.getKeyData();
-                    Data value = dataAwareEntryEvent.getNewValueData();
-                    Data oldValue = dataAwareEntryEvent.getOldValueData();
-                    Data mergingValue = dataAwareEntryEvent.getMergingValueData();
+                    LazyDeserializingEntryEvent entryEvent = (LazyDeserializingEntryEvent) event;
+                    Data key = entryEvent.getKeyData();
+                    Data value = entryEvent.getNewValueData();
+                    Data oldValue = entryEvent.getOldValueData();
+                    Data mergingValue = entryEvent.getMergingValueData();
                     PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, mergingValue,
                             event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(key, portableEntryEvent, getCallId());

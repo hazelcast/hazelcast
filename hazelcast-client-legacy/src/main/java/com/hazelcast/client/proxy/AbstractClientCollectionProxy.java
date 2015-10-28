@@ -19,7 +19,7 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.collection.common.DataAwareItemEvent;
+import com.hazelcast.collection.common.LazyDeserializingItemEvent;
 import com.hazelcast.collection.impl.collection.client.CollectionAddAllRequest;
 import com.hazelcast.collection.impl.collection.client.CollectionAddListenerRequest;
 import com.hazelcast.collection.impl.collection.client.CollectionAddRequest;
@@ -166,7 +166,7 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
                 ItemEventType eventType = portableItemEvent.getEventType();
                 SerializationService serializationService = getContext().getSerializationService();
                 ItemEvent<E> itemEvent =
-                        new DataAwareItemEvent(getName(), eventType, item, member, serializationService);
+                        new LazyDeserializingItemEvent(getName(), eventType, item, member, serializationService);
                 if (eventType == ItemEventType.ADDED) {
                     listener.itemAdded(itemEvent);
                 } else {

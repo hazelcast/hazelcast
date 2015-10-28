@@ -24,7 +24,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.map.impl.LazyDeserializingEntryEvent;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
@@ -82,14 +82,14 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
         @Override
         public void onEntryEvent(EntryEvent event) {
             if (endpoint.isAlive()) {
-                if (!(event instanceof DataAwareEntryEvent)) {
-                    throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
+                if (!(event instanceof LazyDeserializingEntryEvent)) {
+                    throw new IllegalArgumentException("Expecting: LazyDeserializingEntryEvent, Found: "
                             + event.getClass().getSimpleName());
                 }
-                DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                Data key = dataAwareEntryEvent.getKeyData();
-                Data value = dataAwareEntryEvent.getNewValueData();
-                Data oldValue = dataAwareEntryEvent.getOldValueData();
+                LazyDeserializingEntryEvent entryEvent = (LazyDeserializingEntryEvent) event;
+                Data key = entryEvent.getKeyData();
+                Data value = entryEvent.getNewValueData();
+                Data oldValue = entryEvent.getOldValueData();
 
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();

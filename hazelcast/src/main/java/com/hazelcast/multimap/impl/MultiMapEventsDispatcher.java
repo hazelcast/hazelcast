@@ -24,7 +24,7 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.map.impl.LazyDeserializingEntryEvent;
 import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.map.impl.event.MapEventData;
@@ -80,7 +80,7 @@ class MultiMapEventsDispatcher {
         final EntryEventData entryEventData = (EntryEventData) eventData;
         final Member member = getMemberOrNull(eventData);
 
-        final EntryEvent event = createDataAwareEntryEvent(entryEventData, member);
+        final EntryEvent event = createLazyDeserializingEntryEvent(entryEventData, member);
         dispatch0(event, listener);
         incrementEventStats(event);
     }
@@ -95,8 +95,8 @@ class MultiMapEventsDispatcher {
         return member;
     }
 
-    private DataAwareEntryEvent createDataAwareEntryEvent(EntryEventData entryEventData, Member member) {
-        return new DataAwareEntryEvent(member, entryEventData.getEventType(), entryEventData.getMapName(),
+    private LazyDeserializingEntryEvent createLazyDeserializingEntryEvent(EntryEventData entryEventData, Member member) {
+        return new LazyDeserializingEntryEvent(member, entryEventData.getEventType(), entryEventData.getMapName(),
                 entryEventData.getDataKey(), entryEventData.getDataNewValue(),
                 entryEventData.getDataOldValue(), entryEventData.getDataMergingValue(),
                 multiMapService.getSerializationService());

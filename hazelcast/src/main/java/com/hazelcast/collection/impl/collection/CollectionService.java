@@ -25,7 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.collection.common.DataAwareItemEvent;
+import com.hazelcast.collection.common.LazyDeserializingItemEvent;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -84,7 +84,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
     @Override
     public void dispatchEvent(CollectionEvent event, ItemListener listener) {
         final MemberImpl member = nodeEngine.getClusterService().getMember(event.getCaller());
-        ItemEvent itemEvent = new DataAwareItemEvent(event.getName(), event.getEventType(), event.getData(),
+        ItemEvent itemEvent = new LazyDeserializingItemEvent(event.getName(), event.getEventType(), event.getData(),
                 member, nodeEngine.getSerializationService());
         if (member == null) {
             if (logger.isLoggable(Level.INFO)) {

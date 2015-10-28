@@ -129,7 +129,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
             }
             return;
         }
-        Message message = new DataAwareMessage(topicEvent.name, topicEvent.data, topicEvent.publishTime, member
+        Message message = new LazyDeserializingMessage(topicEvent.name, topicEvent.data, topicEvent.publishTime, member
                 , nodeEngine.getSerializationService());
         incrementReceivedMessages(topicEvent.name);
         MessageListener messageListener = (MessageListener) listener;

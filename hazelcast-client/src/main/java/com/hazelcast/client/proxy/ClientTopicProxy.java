@@ -30,7 +30,7 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.topic.impl.DataAwareMessage;
+import com.hazelcast.topic.impl.LazyDeserializingMessage;
 
 public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements ITopic<E> {
 
@@ -81,7 +81,7 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
             ClientClusterService clusterService = getContext().getClusterService();
 
             Member member = clusterService.getMember(uuid);
-            Message message = new DataAwareMessage(name, item, publishTime, member, serializationService);
+            Message message = new LazyDeserializingMessage(name, item, publishTime, member, serializationService);
             listener.onMessage(message);
         }
 

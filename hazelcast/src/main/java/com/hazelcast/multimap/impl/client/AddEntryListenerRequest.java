@@ -22,7 +22,7 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.map.impl.LazyDeserializingEntryEvent;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -60,15 +60,15 @@ public class AddEntryListenerRequest extends BaseClientAddListenerRequest {
             @Override
             public void onEntryEvent(EntryEvent event) {
                 if (endpoint.isAlive()) {
-                    if (!(event instanceof DataAwareEntryEvent)) {
-                        throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
+                    if (!(event instanceof LazyDeserializingEntryEvent)) {
+                        throw new IllegalArgumentException("Expecting: LazyDeserializingEntryEvent, Found: "
                                 + event.getClass().getSimpleName());
                     }
-                    DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                    Data key = dataAwareEntryEvent.getKeyData();
-                    Data value = dataAwareEntryEvent.getNewValueData();
-                    Data oldValue = dataAwareEntryEvent.getOldValueData();
-                    Data mergingValue = dataAwareEntryEvent.getMergingValueData();
+                    LazyDeserializingEntryEvent entryEvent = (LazyDeserializingEntryEvent) event;
+                    Data key = entryEvent.getKeyData();
+                    Data value = entryEvent.getNewValueData();
+                    Data oldValue = entryEvent.getOldValueData();
+                    Data mergingValue = entryEvent.getMergingValueData();
                     final EntryEventType type = event.getEventType();
                     final String uuid = event.getMember().getUuid();
                     PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, mergingValue
