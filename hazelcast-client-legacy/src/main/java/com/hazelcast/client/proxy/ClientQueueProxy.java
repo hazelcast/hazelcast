@@ -19,12 +19,14 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.collection.impl.queue.client.AddAllRequest;
@@ -68,9 +70,11 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
         final AddListenerRequest request = new AddListenerRequest(name, includeValue);
         EventHandler<PortableItemEvent> eventHandler = new EventHandler<PortableItemEvent>() {
             public void handle(PortableItemEvent portableItemEvent) {
-                E item = includeValue ? (E) getContext().getSerializationService().toObject(portableItemEvent.getItem()) : null;
+                SerializationService ss = getContext().getSerializationService();
                 Member member = getContext().getClusterService().getMember(portableItemEvent.getUuid());
-                ItemEvent<E> itemEvent = new ItemEvent<E>(name, portableItemEvent.getEventType(), item, member);
+                Data item = portableItemEvent.getItem();
+                ItemEvent<E> itemEvent =
+                        new DataAwareItemEvent(name, portableItemEvent.getEventType(), item, member, ss);
                 if (portableItemEvent.getEventType() == ItemEventType.ADDED) {
                     listener.itemAdded(itemEvent);
                 } else {

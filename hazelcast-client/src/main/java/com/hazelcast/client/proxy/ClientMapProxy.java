@@ -100,6 +100,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
+import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.SimpleEntryView;
@@ -639,7 +640,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     private String addEntryListenerInternal(ListenerAdapter listenerAdaptor, final boolean includeValue) {
         final int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
-        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor, includeValue);
+        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor);
         return registerListener(createMapEntryListenerCodec(includeValue, listenerFlags), handler);
     }
 
@@ -722,7 +723,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     private String addEntryListenerInternal(ListenerAdapter listenerAdaptor, K key, final boolean includeValue) {
         final int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
         final Data keyData = toData(key);
-        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor, includeValue);
+        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor);
         return registerListener(createMapEntryListenerToKeyCodec(includeValue, listenerFlags, keyData), handler);
     }
 
@@ -768,7 +769,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         final int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
         final Data keyData = toData(key);
         final Data predicateData = toData(predicate);
-        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor, includeValue);
+        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor);
         ListenerMessageCodec codec =
                 createEntryListenerToKeyWithPredicateCodec(includeValue, listenerFlags, keyData, predicateData);
         return registerListener(codec, handler);
@@ -818,7 +819,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
                                             final boolean includeValue) {
         final int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
         final Data predicateData = toData(predicate);
-        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor, includeValue);
+        EventHandler<ClientMessage> handler = createHandler(listenerAdaptor);
         return registerListener(createEntryListenerWithPredicateCodec(includeValue, listenerFlags, predicateData), handler);
     }
 
@@ -1347,8 +1348,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    private EventHandler<ClientMessage> createHandler(final ListenerAdapter listenerAdapter, final boolean includeValue) {
-        return new ClientMapEventHandler(listenerAdapter, includeValue);
+    private EventHandler<ClientMessage> createHandler(final ListenerAdapter listenerAdapter) {
+        return new ClientMapEventHandler(listenerAdapter);
     }
 
     @Override
@@ -1360,11 +1361,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             implements EventHandler<ClientMessage> {
 
         private final ListenerAdapter listenerAdapter;
-        private final boolean includeValue;
 
-        public ClientMapEventHandler(ListenerAdapter listenerAdapter, boolean includeValue) {
+        public ClientMapEventHandler(ListenerAdapter listenerAdapter) {
             this.listenerAdapter = listenerAdapter;
-            this.includeValue = includeValue;
         }
 
         @Override
@@ -1406,16 +1405,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
         private EntryEvent<K, V> createEntryEvent(Data keyData, Data valueData, Data oldValueData,
                                                   Data mergingValueData, int eventType, Member member) {
-            V value = null;
-            V oldValue = null;
-            V mergingValue = null;
-            if (includeValue) {
-                value = toObject(valueData);
-                oldValue = toObject(oldValueData);
-                mergingValue = toObject(mergingValueData);
-            }
-            K key = toObject(keyData);
-            return new EntryEvent<K, V>(name, member, eventType, key, oldValue, value, mergingValue);
+            return new DataAwareEntryEvent(member, eventType, name, keyData, valueData,
+                    oldValueData, mergingValueData, getContext().getSerializationService());
         }
 
         @Override

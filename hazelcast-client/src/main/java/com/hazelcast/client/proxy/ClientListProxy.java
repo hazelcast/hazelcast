@@ -43,6 +43,7 @@ import com.hazelcast.client.impl.protocol.codec.ListSubCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
+import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
@@ -330,10 +331,9 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         public void handle(Data dataItem, String uuid, int eventType) {
             SerializationService serializationService = getContext().getSerializationService();
             ClientClusterService clusterService = getContext().getClusterService();
-
-            E item = includeValue ? (E) serializationService.toObject(dataItem) : null;
             Member member = clusterService.getMember(uuid);
-            ItemEvent<E> itemEvent = new ItemEvent<E>(name, ItemEventType.getByType(eventType), item, member);
+            ItemEvent<E> itemEvent = new DataAwareItemEvent(name, ItemEventType.getByType(eventType),
+                    dataItem, member, serializationService);
             if (eventType == ItemEventType.ADDED.getType()) {
                 listener.itemAdded(itemEvent);
             } else {

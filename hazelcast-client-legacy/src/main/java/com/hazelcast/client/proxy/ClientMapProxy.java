@@ -23,6 +23,7 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
@@ -37,6 +38,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
+import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapEntries;
@@ -627,7 +629,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
         MapAddEntryListenerRequest request
                 = new MapAddEntryListenerRequest(name, keyData, includeValue, predicate, listenerFlags);
-        EventHandler<PortableEntryEvent> handler = createHandler(listenerAdaptor, includeValue);
+        EventHandler<PortableEntryEvent> handler = createHandler(listenerAdaptor);
         return registerListener(request, handler);
     }
 
@@ -1056,8 +1058,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    private EventHandler<PortableEntryEvent> createHandler(final ListenerAdapter listenerAdapter, final boolean includeValue) {
-        return new ClientMapEventHandler(listenerAdapter, includeValue);
+    private EventHandler<PortableEntryEvent> createHandler(final ListenerAdapter listenerAdapter) {
+        return new ClientMapEventHandler(listenerAdapter);
     }
 
     @Override
@@ -1068,11 +1070,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     private class ClientMapEventHandler implements EventHandler<PortableEntryEvent> {
 
         private final ListenerAdapter listenerAdapter;
-        private final boolean includeValue;
 
-        public ClientMapEventHandler(ListenerAdapter listenerAdapter, boolean includeValue) {
+        public ClientMapEventHandler(ListenerAdapter listenerAdapter) {
             this.listenerAdapter = listenerAdapter;
-            this.includeValue = includeValue;
         }
 
         public void handle(PortableEntryEvent event) {
@@ -1108,17 +1108,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         }
 
         private EntryEvent<K, V> createEntryEvent(PortableEntryEvent event, Member member) {
-            V value = null;
-            V oldValue = null;
-            V mergingValue = null;
-            if (includeValue) {
-                value = toObject(event.getValue());
-                oldValue = toObject(event.getOldValue());
-                mergingValue = toObject(event.getMergingValue());
-            }
-            K key = toObject(event.getKey());
-            return new EntryEvent<K, V>(name, member,
-                    event.getEventType().getType(), key, oldValue, value, mergingValue);
+            EntryEventType eventType = event.getEventType();
+            Data keyData = event.getKey();
+            Data valueData = event.getValue();
+            Data oldValueData = event.getOldValue();
+            Data mergingValueData = event.getMergingValue();
+            return new DataAwareEntryEvent(member, eventType.getType(), name, keyData, valueData,
+                    oldValueData, mergingValueData, getContext().getSerializationService());
         }
 
         @Override

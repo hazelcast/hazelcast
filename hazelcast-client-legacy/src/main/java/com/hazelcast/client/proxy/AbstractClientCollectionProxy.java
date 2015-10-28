@@ -19,6 +19,7 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.collection.client.CollectionAddAllRequest;
 import com.hazelcast.collection.impl.collection.client.CollectionAddListenerRequest;
 import com.hazelcast.collection.impl.collection.client.CollectionAddRequest;
@@ -36,8 +37,8 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableItemEvent;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
@@ -160,10 +161,13 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
         request.setServiceName(getServiceName());
         EventHandler<PortableItemEvent> eventHandler = new EventHandler<PortableItemEvent>() {
             public void handle(PortableItemEvent portableItemEvent) {
-                E item = includeValue ? (E) getContext().getSerializationService().toObject(portableItemEvent.getItem()) : null;
+                Data item = portableItemEvent.getItem();
                 Member member = getContext().getClusterService().getMember(portableItemEvent.getUuid());
-                ItemEvent<E> itemEvent = new ItemEvent<E>(getName(), portableItemEvent.getEventType(), item, member);
-                if (portableItemEvent.getEventType() == ItemEventType.ADDED) {
+                ItemEventType eventType = portableItemEvent.getEventType();
+                SerializationService serializationService = getContext().getSerializationService();
+                ItemEvent<E> itemEvent =
+                        new DataAwareItemEvent(getName(), eventType, item, member, serializationService);
+                if (eventType == ItemEventType.ADDED) {
                     listener.itemAdded(itemEvent);
                 } else {
                     listener.itemRemoved(itemEvent);
