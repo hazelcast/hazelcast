@@ -420,7 +420,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="hot-restart-enabled" use="optional" type="xs:string">
+                                <xs:attribute name="hot-restart-enabled" use="optional" type="parameterized-boolean">
                                     <xs:annotation>
                                         <xs:documentation>
                                             This boolean parameter enables hot-restart feature when set as
@@ -642,7 +642,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="hot-restart-enabled" use="optional" type="xs:string">
+                                <xs:attribute name="hot-restart-enabled" use="optional" type="parameterized-boolean">
                                     <xs:annotation>
                                         <xs:documentation>
                                             This boolean parameter enables hot-restart feature when set as true.
@@ -2439,7 +2439,7 @@
         <xs:sequence>
             <xs:element name="home-dir" type="xs:string" minOccurs="0" maxOccurs="1" default="hot-restart"/>
         </xs:sequence>
-        <xs:attribute name="enabled" type="xs:string">
+        <xs:attribute name="enabled" type="parameterized-boolean">
             <xs:annotation>
                 <xs:documentation>
                     True to enable hot-restart, false otherwise.
