@@ -27,6 +27,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Job;
@@ -60,8 +61,8 @@ import com.hazelcast.multimap.impl.client.ValuesRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableEntryEvent;
-import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.Preconditions;
+import com.hazelcast.util.ThreadUtil;
 
 import java.util.AbstractMap;
 import java.util.Collection;
@@ -72,8 +73,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollection;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.isNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * @author ali 5/19/13
@@ -377,15 +378,13 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             }
 
             private EntryEvent<K, V> createEntryEvent(PortableEntryEvent event, Member member) {
-                V value = null;
-                V oldValue = null;
-                if (includeValue) {
-                    value = toObject(event.getValue());
-                    oldValue = toObject(event.getOldValue());
-                }
-                K key = toObject(event.getKey());
-                return new EntryEvent<K, V>(name, member,
-                        event.getEventType().getType(), key, oldValue, value);
+                Data value = event.getValue();
+                Data oldValue = event.getOldValue();
+                Data mergingValue = event.getMergingValue();
+                Data key = event.getKey();
+                return new DataAwareEntryEvent(member,
+                        event.getEventType().getType(), name, key, value, oldValue, mergingValue,
+                        getContext().getSerializationService());
             }
 
             @Override
