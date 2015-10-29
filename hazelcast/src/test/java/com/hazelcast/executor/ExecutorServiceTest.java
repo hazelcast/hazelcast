@@ -32,10 +32,13 @@ import com.hazelcast.core.PartitionAware;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.util.executor.NamedThreadPoolExecutor;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -73,6 +76,16 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     public static final int NODE_COUNT = 3;
 
     public static final int TASK_COUNT = 1000;
+
+    @Test
+    public void testIExecutorServiceGetsNamedThreadPoolExecutor()throws Exception{
+        HazelcastInstance hz = createHazelcastInstance();
+        ExecutionServiceImpl executionService = getExecutionService(hz);
+        hz.getExecutorService("foo").submit(new EmptyRunnable()).get();
+        ManagedExecutorService managedExecutorService = executionService.findExecutorService("foo");
+
+        assertInstanceOf(NamedThreadPoolExecutor.class, managedExecutorService);
+    }
 
     /* ############ andThen ############ */
 

@@ -80,7 +80,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
                 public ManagedExecutorService createNew(String name) {
                     final ExecutorConfig cfg = nodeEngine.getConfig().findExecutorConfig(name);
                     final int queueCapacity = cfg.getQueueCapacity() <= 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
-                    return createExecutor(name, cfg.getPoolSize(), queueCapacity, ExecutorType.CACHED);
+                    return createExecutor(name, cfg.getPoolSize(), queueCapacity, ExecutorType.CONCRETE);
                 }
             };
 
@@ -117,6 +117,11 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         // Register CompletableFuture task
         completableFutureTask = new CompletableFutureTask();
         scheduleWithFixedDelay(completableFutureTask, INITIAL_DELAY, PERIOD, TimeUnit.MILLISECONDS);
+    }
+
+    // for testing
+    public ManagedExecutorService findExecutorService(String name) {
+        return executors.get(name);
     }
 
     private void enableRemoveOnCancelIfAvailable() {

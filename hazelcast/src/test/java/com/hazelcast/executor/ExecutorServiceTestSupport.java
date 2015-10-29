@@ -24,7 +24,9 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.core.PartitionAware;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.io.Serializable;
@@ -56,8 +58,9 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         return key;
     }
 
-    InternalExecutionService getExecutionService(HazelcastInstance instance) {
-        return getNode(instance).getNodeEngine().getExecutionService();
+    ExecutionServiceImpl getExecutionService(HazelcastInstance instance) {
+        NodeEngineImpl nodeEngine = getNode(instance).getNodeEngine();
+        return (ExecutionServiceImpl) nodeEngine.getExecutionService();
     }
 
     static class CountDownLatchAwaitingCallable
