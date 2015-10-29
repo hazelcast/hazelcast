@@ -78,12 +78,13 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     private static final ILogger LOGGER = Logger.getLogger(XmlClientConfigBuilder.class);
 
-    private Properties properties = System.getProperties();
-
-    private ClientConfig clientConfig;
-    private Set<String> occurrenceSet = new HashSet<String>();
-    private InputStream in;
     private final QueryCacheConfigBuilderHelper queryCacheConfigBuilderHelper = new QueryCacheConfigBuilderHelper();
+
+    private final Set<String> occurrenceSet = new HashSet<String>();
+    private final InputStream in;
+
+    private Properties properties = System.getProperties();
+    private ClientConfig clientConfig;
 
     public XmlClientConfigBuilder(String resource) throws IOException {
         URL url = ConfigLoader.locateConfig(resource);
@@ -97,14 +98,14 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         if (file == null) {
             throw new NullPointerException("File is null!");
         }
-        in = new FileInputStream(file);
+        this.in = new FileInputStream(file);
     }
 
     public XmlClientConfigBuilder(URL url) throws IOException {
         if (url == null) {
             throw new NullPointerException("URL is null!");
         }
-        in = url.openStream();
+        this.in = url.openStream();
     }
 
     public XmlClientConfigBuilder(InputStream in) {
@@ -131,10 +132,10 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
         dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        final DocumentBuilder builder = dbf.newDocumentBuilder();
+        DocumentBuilder builder = dbf.newDocumentBuilder();
         try {
             return builder.parse(inputStream);
-        } catch (final Exception e) {
+        } catch (Exception e) {
             String msg = "Failed to parse Config Stream"
                     + LINE_SEPARATOR + "Exception: " + e.getMessage()
                     + LINE_SEPARATOR + "HazelcastClient startup interrupted.";
@@ -164,7 +165,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     public ClientConfig build(ClassLoader classLoader) {
-        final ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClassLoader(classLoader);
         try {
             parseAndBuildConfig(clientConfig);
@@ -182,7 +183,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         Element root = doc.getDocumentElement();
         try {
             root.getTextContent();
-        } catch (final Throwable e) {
+        } catch (Throwable e) {
             domLevel3 = false;
         }
         process(root);
@@ -190,9 +191,9 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         handleConfig(root);
     }
 
-    private void handleConfig(final Element docElement) throws Exception {
+    private void handleConfig(Element docElement) throws Exception {
         for (Node node : childElements(docElement)) {
-            final String nodeName = cleanNodeName(node);
+            String nodeName = cleanNodeName(node);
             if (occurrenceSet.contains(nodeName)) {
                 throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in XML configuration. ");
             }
@@ -236,15 +237,15 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleExecutorPoolSize(Node node) {
-        final int poolSize = Integer.parseInt(getTextContent(node));
+        int poolSize = Integer.parseInt(getTextContent(node));
         clientConfig.setExecutorPoolSize(poolSize);
     }
 
     private void handleNearCache(Node node) {
-        final String name = getAttribute(node, "name");
-        final NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        String name = getAttribute(node, "name");
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
         for (Node child : childElements(node)) {
-            final String nodeName = cleanNodeName(child);
+            String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
             if ("max-size".equals(nodeName)) {
                 nearCacheConfig.setMaxSize(Integer.parseInt(value));
@@ -270,12 +271,11 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         clientConfig.addNearCacheConfig(name, nearCacheConfig);
     }
 
-
-    private EvictionConfig getEvictionConfig(final Node node) {
-        final EvictionConfig evictionConfig = new EvictionConfig();
-        final Node size = node.getAttributes().getNamedItem("size");
-        final Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
-        final Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
+    private EvictionConfig getEvictionConfig(Node node) {
+        EvictionConfig evictionConfig = new EvictionConfig();
+        Node size = node.getAttributes().getNamedItem("size");
+        Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
+        Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
         if (size != null) {
             evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
         }
@@ -295,7 +295,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleLoadBalancer(Node node) {
-        final String type = getAttribute(node, "type");
+        String type = getAttribute(node, "type");
         if ("random".equals(type)) {
             clientConfig.setLoadBalancer(new RandomLB());
         } else if ("round-robin".equals(type)) {
@@ -304,9 +304,9 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleNetwork(Node node) {
-        final ClientNetworkConfig clientNetworkConfig = new ClientNetworkConfig();
+        ClientNetworkConfig clientNetworkConfig = new ClientNetworkConfig();
         for (Node child : childElements(node)) {
-            final String nodeName = cleanNodeName(child);
+            String nodeName = cleanNodeName(child);
             if ("cluster-members".equals(nodeName)) {
                 handleClusterMembers(child, clientNetworkConfig);
             } else if ("smart-routing".equals(nodeName)) {
@@ -335,7 +335,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleDiscoveryStrategies(Node node, ClientNetworkConfig clientNetworkConfig) {
-        final DiscoveryConfig discoveryConfig = clientNetworkConfig.getDiscoveryConfig();
+        DiscoveryConfig discoveryConfig = clientNetworkConfig.getDiscoveryConfig();
         for (Node child : childElements(node)) {
             String name = cleanNodeName(child);
             if ("discovery-strategy".equals(name)) {
@@ -347,23 +347,23 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleDiscoveryNodeFilter(Node node, DiscoveryConfig discoveryConfig) {
-        final NamedNodeMap atts = node.getAttributes();
+        NamedNodeMap atts = node.getAttributes();
 
-        final Node att = atts.getNamedItem("class");
+        Node att = atts.getNamedItem("class");
         if (att != null) {
             discoveryConfig.setNodeFilterClass(getTextContent(att).trim());
         }
     }
 
     private void handleDiscoveryStrategy(Node node, DiscoveryConfig discoveryConfig) {
-        final NamedNodeMap atts = node.getAttributes();
+        NamedNodeMap atts = node.getAttributes();
 
         boolean enabled = false;
         String clazz = null;
 
         for (int a = 0; a < atts.getLength(); a++) {
-            final Node att = atts.item(a);
-            final String value = getTextContent(att).trim();
+            Node att = atts.item(a);
+            String value = getTextContent(att).trim();
             if ("enabled".equalsIgnoreCase(att.getNodeName())) {
                 enabled = getBooleanValue(value);
             } else if ("class".equals(att.getNodeName())) {
@@ -387,9 +387,9 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleAWS(Node node, ClientNetworkConfig clientNetworkConfig) {
-        final ClientAwsConfig clientAwsConfig = handleAwsAttributes(node);
+        ClientAwsConfig clientAwsConfig = handleAwsAttributes(node);
         for (Node n : childElements(node)) {
-            final String value = getTextContent(n).trim();
+            String value = getTextContent(n).trim();
             if ("secret-key".equals(cleanNodeName(n))) {
                 clientAwsConfig.setSecretKey(value);
             } else if ("access-key".equals(cleanNodeName(n))) {
@@ -417,11 +417,11 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private ClientAwsConfig handleAwsAttributes(Node node) {
-        final NamedNodeMap atts = node.getAttributes();
-        final ClientAwsConfig clientAwsConfig = new ClientAwsConfig();
+        NamedNodeMap atts = node.getAttributes();
+        ClientAwsConfig clientAwsConfig = new ClientAwsConfig();
         for (int i = 0; i < atts.getLength(); i++) {
-            final Node att = atts.item(i);
-            final String value = getTextContent(att).trim();
+            Node att = atts.item(i);
+            String value = getTextContent(att).trim();
             if ("enabled".equalsIgnoreCase(att.getNodeName())) {
                 clientAwsConfig.setEnabled(getBooleanValue(value));
             } else if (att.getNodeName().equals("connection-timeout-seconds")) {
@@ -432,15 +432,15 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         return clientAwsConfig;
     }
 
-    private void handleSSLConfig(final Node node, ClientNetworkConfig clientNetworkConfig) {
+    private void handleSSLConfig(Node node, ClientNetworkConfig clientNetworkConfig) {
         SSLConfig sslConfig = new SSLConfig();
-        final NamedNodeMap atts = node.getAttributes();
-        final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
+        NamedNodeMap atts = node.getAttributes();
+        Node enabledNode = atts.getNamedItem("enabled");
+        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
         sslConfig.setEnabled(enabled);
 
         for (Node n : childElements(node)) {
-            final String nodeName = cleanNodeName(n);
+            String nodeName = cleanNodeName(n);
             if ("factory-class-name".equals(nodeName)) {
                 sslConfig.setFactoryClassName(getTextContent(n).trim());
             } else if ("properties".equals(nodeName)) {
@@ -453,7 +453,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     private void handleSocketOptions(Node node, ClientNetworkConfig clientNetworkConfig) {
         SocketOptions socketOptions = clientConfig.getSocketOptions();
         for (Node child : childElements(node)) {
-            final String nodeName = cleanNodeName(child);
+            String nodeName = cleanNodeName(child);
             if ("tcp-no-delay".equals(nodeName)) {
                 socketOptions.setTcpNoDelay(Boolean.parseBoolean(getTextContent(child)));
             } else if ("keep-alive".equals(nodeName)) {
@@ -488,8 +488,8 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     private void handleGroup(Node node) {
         for (Node n : childElements(node)) {
-            final String value = getTextContent(n).trim();
-            final String nodeName = cleanNodeName(n);
+            String value = getTextContent(n).trim();
+            String nodeName = cleanNodeName(n);
             if ("name".equals(nodeName)) {
                 clientConfig.getGroupConfig().setName(value);
             } else if ("password".equals(nodeName)) {
@@ -505,7 +505,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     private void handleProxyFactories(Node node) throws Exception {
         for (Node child : childElements(node)) {
-            final String nodeName = cleanNodeName(child);
+            String nodeName = cleanNodeName(child);
             if ("proxy-factory".equals(nodeName)) {
                 handleProxyFactory(child);
             }
@@ -513,14 +513,14 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleProxyFactory(Node node) throws Exception {
-        final String service = getAttribute(node, "service");
-        final String className = getAttribute(node, "class-name");
+        String service = getAttribute(node, "service");
+        String className = getAttribute(node, "class-name");
 
-        final ProxyFactoryConfig proxyFactoryConfig = new ProxyFactoryConfig(className, service);
+        ProxyFactoryConfig proxyFactoryConfig = new ProxyFactoryConfig(className, service);
         clientConfig.addProxyFactoryConfig(proxyFactoryConfig);
     }
 
-    private void handleSocketInterceptorConfig(final Node node, ClientNetworkConfig clientNetworkConfig) {
+    private void handleSocketInterceptorConfig(Node node, ClientNetworkConfig clientNetworkConfig) {
         SocketInterceptorConfig socketInterceptorConfig = parseSocketInterceptorConfig(node);
         clientNetworkConfig.setSocketInterceptorConfig(socketInterceptorConfig);
     }
@@ -528,7 +528,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     private void handleSecurity(Node node) throws Exception {
         ClientSecurityConfig clientSecurityConfig = new ClientSecurityConfig();
         for (Node child : childElements(node)) {
-            final String nodeName = cleanNodeName(child);
+            String nodeName = cleanNodeName(child);
             if ("credentials".equals(nodeName)) {
                 String className = getTextContent(child);
                 clientSecurityConfig.setCredentialsClassname(className);
@@ -536,5 +536,4 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         }
         clientConfig.setSecurityConfig(clientSecurityConfig);
     }
-
 }
