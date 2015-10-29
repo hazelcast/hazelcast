@@ -51,6 +51,9 @@ import java.util.Map;
  * </code>
  * </pre>
  * otherwise EntryProcessor does not guarantee that it will modify the entry.
+ *<p/>
+ * EntryProcessor instances can be shared between threads. If an EntryProcessor instance contains mutable state, proper
+ * concurrency control needs to be provided to coordinate access to mutable state. Another option is to rely on threadlocals.
  *
  * @param <K> Type of key of a {@link java.util.Map.Entry}
  * @param <V> Type of value of a {@link java.util.Map.Entry}
