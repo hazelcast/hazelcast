@@ -1,34 +1,276 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  - Licensed under the Apache License, Version 2.0 (the "License");
+  - you may not use this file except in compliance with the License.
+  - You may obtain a copy of the License at
+  -
+  - http://www.apache.org/licenses/LICENSE-2.0
+  -
+  - Unless required by applicable law or agreed to in writing, software
+  - distributed under the License is distributed on an "AS IS" BASIS,
+  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  - See the License for the specific language governing permissions and
+  - limitations under the License.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.noctarius.hazelcast</groupId>
-    <artifactId>hazelcast-kubernetes-discovery</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+  <groupId>com.noctarius.discovery</groupId>
+  <artifactId>hazelcast-kubernetes-discovery</artifactId>
+  <version>0.9.0-SNAPSHOT</version>
+  <name>Kubernetes Discovery Plugin for Hazelcast</name>
+  <description>Kubernetes Service Discovery for Hazelcast Discovery SPI</description>
+  <url>http://github.com/noctarius/hazelcast-kubernetes-discovery</url>
+  <inceptionYear>2015</inceptionYear>
+  <packaging>bundle</packaging>
 
-    <properties>
-        <hazelcast.version>3.6-EA</hazelcast.version>
-        <kubernetes.version>2.2.54</kubernetes.version>
-        <dnsjava.version>2.1.7</dnsjava.version>
-    </properties>
+  <properties>
+    <timestamp>${maven.build.timestamp}</timestamp>
+    <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
-            <version>${hazelcast.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-api</artifactId>
-            <version>${kubernetes.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>dnsjava</groupId>
-            <artifactId>dnsjava</artifactId>
-            <version>${dnsjava.version}</version>
-        </dependency>
-    </dependencies>
+    <hazelcast.version>3.6-EA</hazelcast.version>
+    <kubernetes.version>2.2.54</kubernetes.version>
+    <dnsjava.version>2.1.7</dnsjava.version>
+  </properties>
+
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>sonatype-nexus-snapshots</id>
+      <name>Sonatype Nexus Snapshots</name>
+      <url>http://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>sonatype-nexus-staging</id>
+      <name>Nexus Release Repository</name>
+      <url>http://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+
+  <scm>
+    <connection>scm:git:git://github.com/noctarius/hazelcast-kubernetes-discovery.git</connection>
+    <developerConnection>scm:git:git@github.com:noctarius/hazelcast-kubernetes-discovery.git</developerConnection>
+    <url>https://github.com/noctarius/hazelcast-kubernetes-discovery/</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <developers>
+    <developer>
+      <id>cengelbert</id>
+      <name>Christoph Engelbert (@noctarius2k)</name>
+      <email>noctarius@apache.org</email>
+      <timezone>+1</timezone>
+    </developer>
+  </developers>
+
+  <licenses>
+    <license>
+      <name>APACHE LICENSE 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+    </license>
+  </licenses>
+
+  <issueManagement>
+    <system>github</system>
+    <url>https://github.com/noctarius/hazelcast-kubernetes-discovery/issues</url>
+  </issueManagement>
+
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>https://noctarius.ci.cloudbees.com/job/hazelcast-kubernetes-discovery</url>
+  </ciManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.hazelcast</groupId>
+      <artifactId>hazelcast</artifactId>
+      <version>${hazelcast.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.fabric8</groupId>
+      <artifactId>kubernetes-api</artifactId>
+      <version>${kubernetes.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>dnsjava</groupId>
+      <artifactId>dnsjava</artifactId>
+      <version>${dnsjava.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>2.3.6</version>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <Export-Package>
+              com.noctarius.hazelcast.kubernetes.*
+            </Export-Package>
+            <Import-Package>
+              com.hazelcast.config,com.hazelcast.config.properties,
+              com.hazelcast.spi.discovery,com.hazelcast.core,
+              com.hazelcast.logging,com.hazelcast.nio,
+              io.fabric8.kubernetes.api.model,io.fabric8.kubernetes.client.*,
+              org.xbill.DNS
+            </Import-Package>
+          </instructions>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.0</version>
+        <configuration>
+          <source>1.6</source>
+          <target>1.6</target>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>0.9</version>
+        <executions>
+          <execution>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <excludes>
+            <exclude>README.adoc</exclude>
+            <exclude>LICENSE</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.9</version>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <show>public</show>
+              <sourceFileExcludes>
+                <exclude>com/noctarius/hazelcast/kubernetes/HazelcastKubernetesDiscoveryStrategyFactory.java</exclude>
+              </sourceFileExcludes>
+              <sourceFileIncludes>
+                <include>com/noctarius/hazelcast/kubernetes/*.java</include>
+              </sourceFileIncludes>
+              <detectJavaApiLink>true</detectJavaApiLink>
+              <links>
+                <link>http://docs.hazelcast.org/docs/3.6/javadoc/</link>
+              </links>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-scm-publish-plugin</artifactId>
+        <version>1.1</version>
+        <configuration>
+          <checkoutDirectory>${project.build.directory}/scmpublish</checkoutDirectory>
+          <checkinComment>Publishing javadoc for ${project.artifactId}:${project.version}</checkinComment>
+          <content>${project.build.directory}/apidocs</content>
+          <skipDeletedFiles>true</skipDeletedFiles>
+          <pubScmUrl>scm:git:git@github.com:noctarius/hazelcast-kubernetes-discovery.git</pubScmUrl>
+          <scmBranch>gh-pages</scmBranch>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <show>public</show>
+          <sourceFileExcludes>
+            <exclude>com/noctarius/hazelcast/kubernetes/HazelcastKubernetesDiscoveryStrategyFactory.java</exclude>
+          </sourceFileExcludes>
+          <sourceFileIncludes>
+            <include>com/noctarius/hazelcast/kubernetes/*.java</include>
+          </sourceFileIncludes>
+          <detectJavaApiLink>true</detectJavaApiLink>
+          <links>
+            <link>http://docs.hazelcast.org/docs/3.6/javadoc/</link>
+          </links>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
+
+  <profiles>
+    <profile>
+      <id>release-sign-artifacts</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.1</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+  <repositories>
+    <repository>
+      <id>sonatype-nexus-public</id>
+      <name>SonaType public snapshots and releases repository</name>
+      <url>https://oss.sonatype.org/content/groups/public</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 </project>

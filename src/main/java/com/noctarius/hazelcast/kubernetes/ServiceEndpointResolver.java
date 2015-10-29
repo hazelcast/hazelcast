@@ -43,16 +43,14 @@ final class ServiceEndpointResolver
 
     private final String serviceName;
     private final String namespace;
-    private final DiscoveryNode localNode;
 
     private final KubernetesClient client;
 
-    public ServiceEndpointResolver(DiscoveryNode localNode, ILogger logger, String serviceName, String namespace) {
+    public ServiceEndpointResolver(ILogger logger, String serviceName, String namespace) {
         super(logger);
 
         this.serviceName = serviceName;
         this.namespace = namespace;
-        this.localNode = localNode;
 
         String accountToken = getAccountToken();
         Config config = new ConfigBuilder().withOauthToken(accountToken).build();
@@ -81,33 +79,6 @@ final class ServiceEndpointResolver
 
         return discoveredNodes;
     }
-
-    /*@Override
-    void start() {
-        Address address = localNode.getPrivateAddress();
-
-        Endpoints endpoints = client.endpoints().inNamespace(namespace).withName(serviceName).get();
-
-        //client.endpoints().delete(endpoints);
-        //endpoints = null;
-        if (endpoints == null) {
-            endpoints = new EndpointsBuilder() //
-                    .withNewMetadata().withName(serviceName).withNamespace(namespace).endMetadata() //
-                    .addNewSubset()
-                        .addNewPort().withPort(address.getPort()).withProtocol("TCP").endPort()
-                        .addNewAddresse().withIp(address.getHost()).endAddresse()
-                    .endSubset().build();
-
-            client.endpoints().create(endpoints);
-        } else {
-            EndpointPort port = new EndpointPortBuilder().withPort(address.getPort()).withProtocol("TCP").build();
-            EndpointSubset subset = new EndpointSubsetBuilder() //
-                    .withPorts(port).addNewAddresse().withIp(address.getHost()).endAddresse().build();
-
-            endpoints = new EndpointsBuilder(endpoints).addToSubsets(subset).build();
-            client.endpoints().replace(endpoints);
-        }
-    }*/
 
     @Override
     void destroy() {

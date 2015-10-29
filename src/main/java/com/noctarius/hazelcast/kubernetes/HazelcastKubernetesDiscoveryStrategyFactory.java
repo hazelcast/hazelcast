@@ -28,6 +28,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Just the factory to create the Kubernetes Discovery Strategy
+ */
 public class HazelcastKubernetesDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
 
     private static final Collection<PropertyDefinition> PROPERTY_DEFINITIONS;
@@ -47,7 +50,8 @@ public class HazelcastKubernetesDiscoveryStrategyFactory implements DiscoveryStr
 
     public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
                                                   Map<String, Comparable> properties) {
-        return new HazelcastKubernetesDiscoveryStrategy(discoveryNode, logger, properties);
+
+        return new HazelcastKubernetesDiscoveryStrategy(logger, properties);
     }
 
     public Collection<PropertyDefinition> getConfigurationProperties() {

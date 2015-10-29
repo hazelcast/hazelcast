@@ -1,0 +1,146 @@
+= Hazelcast Discovery Plugin for Kubernetes
+Christoph Engelbert <https://github.com/noctarius[@noctarius2k]>
+// Settings:
+:compat-mode!:
+:idseparator: -
+// Aliases:
+:project-name: hazelcast-kubernetes-discovery README
+:project-handle: hazelcast-kubernetes-discovery-readme
+:toc:
+
+This link:https://hazelcast.org/[Hazelcast] Discovery Plugin provides the possibility to lookup IP addresses of other members
+by resolving those requests against a link:http://kubernetes.io/[Kubernetes] Service Discovery system.
+
+This plugin supports two different options of resolving against the discovery registry.
+
+ - A request to the REST API
+ - DNS Lookup against a given DNS service name
+
+== Hazelcast Discovery SPI
+
+Hazelcast, since 3.6, offers a, so called, Discovery SPI to integrate external discovery mechanisms into the system. For more
+information please rely on the official documentation, available
+link:http://docs.hazelcast.org/docs/3.6-EA/manual/html-single/index.html#discovery-spi[here].
+
+== Configuration Property Documentation
+
+The available configuration properties are documented inside the Javadoc of this plugin:
+link:http://noctarius.github.io/hazelcast-kubernetes-discovery/com/noctarius/hazelcast/kubernetes/KubernetesProperties.html#field_summary[Configuration Properties]
+
+== Configuration
+=== REST API Request
+
+To configure the Kubernetes Service Discovery REST API, you first need to add the plugin to the applications classpath. If using
+maven, Gradle, sbt or similar tools, this is as easy as adding it to the build configuration.
+
+[source,xml]
+----
+<project>
+  <!-- maven standards -->
+
+  <dependencies>
+    <!-- application dependencies -->
+
+    <dependency>
+      <groupId>com.noctarius.discovery</groupId>
+      <artifactId>hazelcast-kubernetes-discovery</artifactId>
+      <version>${hazelcast-kubernetes-version}</version>
+    </dependency>
+  </dependencies>
+</project>
+----
+
+This fragment will add the discovery plugin as well as necessary transitive dependencies into your application classpath. The
+second step is to configure the discovery plugin inside of your Hazelcast configuration.
+
+[source,xml]
+----
+<hazelcast>
+  <properties>
+    <!-- at the moment the discovery needs to be activated explicitly -->
+    <property name="hazelcast.discovery.enabled">true</property>
+  </properties>
+
+  <network>
+    <join>
+      <!-- deactivate normal discovery -->
+      <multicast enabled="false"/>
+      <tcp-ip enabled="false" />
+
+      <!-- activate the Kubernetes plugin -->
+      <discovery-strategies>
+        <discovery-strategy enabled="true"
+            class="com.noctarius.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategy">
+
+          <properties>
+            <!-- configure discovery service API lookup -->
+            <property name="service-name">MY-SERVICE-NAME</property>
+            <property name="namespace">MY-KUBERNETES-NAMESPACE</property>
+          </properties>
+        </discovery-strategy>
+      </discovery-strategies>
+    </join>
+  </network>
+</hazelcast>
+----
+
+=== DNS Lookup
+
+
+To configure the Kubernetes Hazelcast plugin to use DNS lookup, you first need to add the plugin to the applications classpath.
+If using maven, Gradle, sbt or similar tools, this is as easy as adding it to the build configuration.
+
+[source,xml]
+----
+<project>
+  <!-- maven standards -->
+
+  <dependencies>
+    <!-- application dependencies -->
+
+    <dependency>
+      <groupId>com.noctarius.discovery</groupId>
+      <artifactId>hazelcast-kubernetes-discovery</artifactId>
+      <version>${hazelcast-kubernetes-version}</version>
+    </dependency>
+  </dependencies>
+</project>
+----
+
+This fragment will add the discovery plugin as well as necessary transitive dependencies into your application classpath. The
+second step is to configure the discovery plugin inside of your Hazelcast configuration.
+
+The service-dns value here is defined as documented in the official
+link:https://github.com/kubernetes/kubernetes/tree/v1.0.6/cluster/addons/dns[Kubernetes DNS] documentation.
+
+[source,xml]
+----
+<hazelcast>
+  <properties>
+    <!-- at the moment the discovery needs to be activated explicitly -->
+    <property name="hazelcast.discovery.enabled">true</property>
+  </properties>
+
+  <network>
+    <join>
+      <!-- deactivate normal discovery -->
+      <multicast enabled="false"/>
+      <tcp-ip enabled="false" />
+
+      <!-- activate the Kubernetes plugin -->
+      <discovery-strategies>
+        <discovery-strategy enabled="true"
+            class="com.noctarius.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategy">
+
+          <properties>
+            <!-- configure discovery service API lookup -->
+            <property name="service-dns">MY-SERVICE-DNS-NAME</property>
+            <!-- legal values are IPV4, IPV6 or empty (which defaults to IPV4) -->
+            <property name="service-dns-ip-type">IPV4</property>
+          </properties>
+        </discovery-strategy>
+      </discovery-strategies>
+    </join>
+  </network>
+</hazelcast>
+----

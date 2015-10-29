@@ -29,32 +29,29 @@ import java.util.Map;
 
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.IpType;
 
-public final class HazelcastKubernetesDiscoveryStrategy implements DiscoveryStrategy {
-
+final class HazelcastKubernetesDiscoveryStrategy
+        implements DiscoveryStrategy {
 
     private static final String HAZELCAST_SERVICE_PORT = "hazelcast-service-port";
 
     private final EndpointResolver endpointResolver;
-    private final ILogger logger;
 
-    public HazelcastKubernetesDiscoveryStrategy(DiscoveryNode node, ILogger logger, Map<String, Comparable> properties) {
-        this.logger = logger;
-
+    HazelcastKubernetesDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
         String serviceDns = getOrNull(properties, KubernetesProperties.SERVICE_DNS);
         IpType serviceDnsIpType = getOrDefault(properties, KubernetesProperties.SERVICE_DNS_IP_TYPE, IpType.IPV4);
         String serviceName = getOrNull(properties, KubernetesProperties.SERVICE_NAME);
         String namespace = getOrNull(properties, KubernetesProperties.NAMESPACE);
 
         if (serviceDns != null && (serviceName == null || namespace == null)) {
-            throw new RuntimeException("For kubernetes discovery either 'service-dns' or " +
-                    "'service-name' and 'namespace' must be set");
+            throw new RuntimeException(
+                    "For kubernetes discovery either 'service-dns' or " + "'service-name' and 'namespace' must be set");
         }
 
         EndpointResolver endpointResolver;
         if (serviceDns != null) {
             endpointResolver = new DnsEndpointResolver(logger, serviceDns, serviceDnsIpType);
         } else {
-            endpointResolver = new ServiceEndpointResolver(node, logger, serviceName, namespace);
+            endpointResolver = new ServiceEndpointResolver(logger, serviceName, namespace);
         }
         this.endpointResolver = endpointResolver;
     }
@@ -75,8 +72,8 @@ public final class HazelcastKubernetesDiscoveryStrategy implements DiscoveryStra
         return getOrDefault(properties, property, null);
     }
 
-    private <T extends Comparable> T getOrDefault(Map<String, Comparable> properties,
-                                                  PropertyDefinition property, T defaultValue) {
+    private <T extends Comparable> T getOrDefault(Map<String, Comparable> properties, PropertyDefinition property,
+                                                  T defaultValue) {
 
         if (properties == null || property == null) {
             return defaultValue;
