@@ -8,6 +8,7 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -16,6 +17,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.InputStream;
+import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -63,4 +65,24 @@ public class JCloudsDiscoveryFactoryTest extends HazelcastTestSupport {
         assertEquals("myfile.json", providerConfig.getProperties().get("credentialPath"));
         assertEquals("myRole", providerConfig.getProperties().get("role-name"));
     }
+
+    @Test
+    public void discoveryStrategyFactoryTest() {
+        JCloudsDiscoveryStrategyFactory jCloudsDiscoveryStrategyFactory = new JCloudsDiscoveryStrategyFactory();
+        String xmlFileName = "test-jclouds-config.xml";
+        InputStream xmlResource = JCloudsDiscoveryFactoryTest.class.getClassLoader().getResourceAsStream(xmlFileName);
+        Config config = new XmlConfigBuilder(xmlResource).build();
+
+        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
+        DiscoveryConfig discoveryConfig = joinConfig.getDiscoveryConfig();
+        DiscoveryStrategyConfig providerConfig = discoveryConfig.getDiscoveryStrategyConfigs().iterator().next();
+
+        assertEquals(jCloudsDiscoveryStrategyFactory.getDiscoveryStrategyType(), JCloudsDiscoveryStrategy.class);
+        assertEquals(JCloudsDiscoveryStrategyFactory.class.getName(), providerConfig.getClassName());
+        assertEquals(jCloudsDiscoveryStrategyFactory.getConfigurationProperties().size(), providerConfig.getProperties().size());
+        assertTrue(jCloudsDiscoveryStrategyFactory.
+                newDiscoveryStrategy(null, null, new HashMap<String, Comparable>()) instanceof DiscoveryStrategy);
+        
+    }
+
 }
