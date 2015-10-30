@@ -31,8 +31,10 @@ import com.hazelcast.map.impl.event.MapEventData;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedQueryEventFilter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;
@@ -187,12 +189,25 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
         }
         EntryEventData eventData = new EntryEventData(name, name, caller, key, value, oldValue, eventType.getType());
         for (EventRegistration registration : registrations) {
-            EventFilter filter = registration.getFilter();
-            boolean publish = filter == null || filter.eval(key);
-            if (publish) {
-                eventService.publishEvent(SERVICE_NAME, registration, eventData, key.hashCode());
+            if (!shouldPublish(key, oldValue, value, eventType, registration.getFilter())) {
+                continue;
             }
+            eventService.publishEvent(SERVICE_NAME, registration, eventData, key.hashCode());
         }
+    }
+
+    private boolean shouldPublish(Data key, Data oldValue, Data value, EntryEventType eventType, EventFilter filter) {
+        QueryEntry queryEntry = null;
+        if (filter instanceof ReplicatedQueryEventFilter) {
+            Data testValue;
+            if (eventType == REMOVED) {
+                testValue = oldValue;
+            } else {
+                testValue = value;
+            }
+            queryEntry = new QueryEntry(nodeEngine.getSerializationService(), key, testValue, null);
+        }
+        return filter == null || filter.eval(queryEntry != null ? queryEntry : key);
     }
 
 
