@@ -17,7 +17,6 @@
 package com.hazelcast.query.impl.getters;
 
 
-import com.hazelcast.query.extractor.MultiResult;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -205,7 +204,7 @@ public class FieldGetterTest {
         FieldGetter nailNameGetter = new FieldGetter(limbGetter, limbNameField, null, null);
         MultiResult result = (MultiResult) nailNameGetter.getValue(body);
 
-        assertContainsInAnyOrder(result, "leg", "hand");
+        assertContainsInAnyOrder(result, "leg", "hand", null);
     }
 
 
@@ -257,7 +256,7 @@ public class FieldGetterTest {
         assertEquals(Limb[].class, returnType);
     }
 
-    private void assertContainsInAnyOrder(MultiResult multiResult, Object...items) {
+    private void assertContainsInAnyOrder(MultiResult multiResult, Object... items) {
         List<Object> results = multiResult.getResults();
         if (results.size() != items.length) {
             fail("MultiResult " + multiResult + " has size " + results.size() + ", but expected size is " + items.length);
@@ -295,6 +294,7 @@ public class FieldGetterTest {
 
     static class Nail {
         String colour;
+
         private Nail(String colour) {
             this.colour = colour;
         }

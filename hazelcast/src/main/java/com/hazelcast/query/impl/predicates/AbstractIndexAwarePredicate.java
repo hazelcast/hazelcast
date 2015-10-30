@@ -26,7 +26,7 @@ public abstract class AbstractIndexAwarePredicate extends AbstractPredicate impl
     }
 
     protected AbstractIndexAwarePredicate(String attributeName) {
-        this.attributeName = attributeName;
+        super(attributeName);
     }
 
     @Override

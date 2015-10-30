@@ -1,10 +1,12 @@
-package com.hazelcast.query.impl.extraction;
+package com.hazelcast.query.impl.extraction.predicates;
 
 import com.hazelcast.test.ObjectTestUtils;
 
 import java.io.Serializable;
 
-// PRD: CASE 1
+/**
+ * Data structure used in the tests of extraction in single-value attributes (not in collections)
+ */
 public class SingleValueDataStructure {
 
     public static class Person implements Serializable {
