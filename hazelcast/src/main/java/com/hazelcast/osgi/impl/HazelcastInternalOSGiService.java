@@ -16,6 +16,7 @@
 
 package com.hazelcast.osgi.impl;
 
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.osgi.HazelcastOSGiService;
 
 /**
@@ -25,6 +26,20 @@ import com.hazelcast.osgi.HazelcastOSGiService;
  */
 public interface HazelcastInternalOSGiService
         extends HazelcastOSGiService {
+
+    /**
+     * Default id for {@link HazelcastInternalOSGiService} instance
+     */
+    String DEFAULT_ID =
+            BuildInfoProvider.getBuildInfo().getVersion()
+            + "#"
+            + (BuildInfoProvider.getBuildInfo().isEnterprise() ? "EE" : "OSS");
+
+    /**
+     * Default group name to be used when grouping is not disabled with
+     * {@link HazelcastOSGiService#HAZELCAST_OSGI_GROUPING_DISABLED}.
+     */
+    String DEFAULT_GROUP_NAME = DEFAULT_ID;
 
     /**
      * Returns the state of the service about if it is active or not.
