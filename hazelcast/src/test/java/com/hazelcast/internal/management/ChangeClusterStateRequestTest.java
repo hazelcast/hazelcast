@@ -16,14 +16,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ChangeClusterStateRequestTest extends HazelcastTestSupport {
-
-    private final String INTERNAL_STATE_ERROR = "IN_TRANSITION is an internal state!";
-    private final String NO_ENUM_CONSTANT = "No enum constant com.hazelcast.cluster.ClusterState.MURAT";
-
+    
     private HazelcastInstance hz;
     private Cluster cluster;
     private ManagementCenterService managementCenterService;
@@ -55,7 +53,8 @@ public class ChangeClusterStateRequestTest extends HazelcastTestSupport {
         changeClusterStateRequest.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        assertEquals(INTERNAL_STATE_ERROR, changeClusterStateRequest.readResponse(result));
+        String resultString = (String) changeClusterStateRequest.readResponse(result);
+        assertTrue(resultString.startsWith("FAILURE"));
     }
 
     @Test
@@ -65,7 +64,8 @@ public class ChangeClusterStateRequestTest extends HazelcastTestSupport {
         changeClusterStateRequest.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        assertEquals(NO_ENUM_CONSTANT, changeClusterStateRequest.readResponse(result));
+        String resultString = (String) changeClusterStateRequest.readResponse(result);
+        assertTrue(resultString.startsWith("FAILURE"));
     }
 }
 
