@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -24,6 +25,7 @@ import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.StripedExecutor;
@@ -136,9 +138,9 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
         return uuid;
     }
 
-    public void handleClientMessage(ClientMessage clientMessage) {
+    public void handleClientMessage(ClientMessage clientMessage, Connection clientConnection) {
         try {
-            eventExecutor.execute(new ClientEventProcessor(clientMessage));
+            eventExecutor.execute(new ClientEventProcessor(clientMessage, (ClientConnection) clientConnection));
         } catch (RejectedExecutionException e) {
             logger.log(Level.WARNING, " event clientMessage could not be handled ", e);
         }
@@ -149,22 +151,28 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
     }
 
     private final class ClientEventProcessor implements StripedRunnable {
-        final ClientMessage clientMessage;
+        private final ClientMessage clientMessage;
+        private final ClientConnection clientConnection;
 
-        private ClientEventProcessor(ClientMessage clientMessage) {
+        private ClientEventProcessor(ClientMessage clientMessage, ClientConnection clientConnection) {
             this.clientMessage = clientMessage;
+            this.clientConnection = clientConnection;
         }
 
         @Override
         public void run() {
-            int correlationId = clientMessage.getCorrelationId();
-            final EventHandler eventHandler = invocationService.getEventHandler(correlationId);
-            if (eventHandler == null) {
-                logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
-                return;
-            }
+            try {
+                int correlationId = clientMessage.getCorrelationId();
+                final EventHandler eventHandler = invocationService.getEventHandler(correlationId);
+                if (eventHandler == null) {
+                    logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
+                    return;
+                }
 
-            eventHandler.handle(clientMessage);
+                eventHandler.handle(clientMessage);
+            } finally {
+                clientConnection.decrementPendingPacketCount();
+            }
         }
 
         @Override

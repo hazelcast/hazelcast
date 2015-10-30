@@ -266,7 +266,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
         private void waitForPacketsProcessed() {
             final long begin = System.currentTimeMillis();
-            int count = connection.getPacketCount();
+            int count = connection.getPendingPacketCount();
             while (count != 0) {
                 try {
                     Thread.sleep(WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED);
@@ -279,7 +279,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                     logger.warning("There are packets which are not processed " + count);
                     break;
                 }
-                count = connection.getPacketCount();
+                count = connection.getPendingPacketCount();
             }
         }
     }
@@ -338,7 +338,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             } catch (Exception e) {
                 logger.severe("Failed to process task: " + packet + " on responseThread :" + getName());
             } finally {
-                conn.decrementPacketCount();
+                conn.decrementPendingPacketCount();
             }
         }
 
