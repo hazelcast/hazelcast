@@ -48,7 +48,7 @@ public class ClientConnection implements Connection, Closeable {
     private final AtomicBoolean live = new AtomicBoolean(true);
     private final ILogger logger = Logger.getLogger(ClientConnection.class);
 
-    private final AtomicInteger packetCount = new AtomicInteger(0);
+    private final AtomicInteger pendingPacketCount = new AtomicInteger(0);
     private final ClientWriteHandler writeHandler;
     private final ClientReadHandler readHandler;
     private final SocketChannelWrapper socketChannelWrapper;
@@ -82,16 +82,16 @@ public class ClientConnection implements Connection, Closeable {
         socketChannelWrapper = null;
     }
 
-    public void incrementPacketCount() {
-        packetCount.incrementAndGet();
+    public void incrementPendingPacketCount() {
+        pendingPacketCount.incrementAndGet();
     }
 
-    public void decrementPacketCount() {
-        packetCount.decrementAndGet();
+    public void decrementPendingPacketCount() {
+        pendingPacketCount.decrementAndGet();
     }
 
-    public int getPacketCount() {
-        return packetCount.get();
+    public int getPendingPacketCount() {
+        return pendingPacketCount.get();
     }
 
     public SerializationService getSerializationService() {

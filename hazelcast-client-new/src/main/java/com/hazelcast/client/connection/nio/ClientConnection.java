@@ -82,15 +82,15 @@ public class ClientConnection implements Connection, Closeable {
         socketChannelWrapper = null;
     }
 
-    public void incrementPacketCount() {
+    public void incrementPendingPacketCount() {
         packetCount.incrementAndGet();
     }
 
-    public void decrementPacketCount() {
+    public void decrementPendingPacketCount() {
         packetCount.decrementAndGet();
     }
 
-    public int getPacketCount() {
+    public int getPendingPacketCount() {
         return packetCount.get();
     }
 

@@ -296,10 +296,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     public void handleClientMessage(ClientMessage message, Connection connection) {
         final ClientConnection conn = (ClientConnection) connection;
         ClientInvocationService invocationService = client.getInvocationService();
-        conn.incrementPacketCount();
+        conn.incrementPendingPacketCount();
         if (message.isFlagSet(ClientMessage.LISTENER_EVENT_FLAG)) {
             final ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
-            listenerService.handleClientMessage(message);
+            listenerService.handleClientMessage(message, connection);
         } else {
             invocationService.handleClientMessage(message, connection);
         }
