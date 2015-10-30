@@ -17,6 +17,10 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.ClientTestUtil;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
@@ -29,6 +33,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -40,6 +45,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
@@ -343,6 +350,29 @@ public class ClientServiceTest extends HazelcastTestSupport {
         } finally {
             ex.shutdown();
         }
+    }
+
+    @Test
+    public void testPendingEventPacketsWithEvents() throws InterruptedException, UnknownHostException {
+        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        IMap map = client.getMap(randomName());
+        map.addEntryListener(new EntryAdapter(), false);
+        for (int i = 0; i < 10; i++) {
+            map.put(randomString(), randomString());
+        }
+        HazelcastClientInstanceImpl clientInstanceImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
+        InetSocketAddress socketAddress = hazelcastInstance.getCluster().getLocalMember().getSocketAddress();
+        Address address = new Address(socketAddress.getAddress().getHostAddress(), socketAddress.getPort());
+        ClientConnectionManager connectionManager = clientInstanceImpl.getConnectionManager();
+        final ClientConnection connection = (ClientConnection) connectionManager.getConnection(address);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, connection.getPendingPacketCount());
+            }
+        });
     }
 
     private void assertClientConnected(ClientService... services) {

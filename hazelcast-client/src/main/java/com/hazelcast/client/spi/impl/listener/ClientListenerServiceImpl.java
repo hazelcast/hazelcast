@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi.impl.listener;
 
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientInvocationService;
@@ -26,6 +27,7 @@ import com.hazelcast.core.MembershipListener;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
 
@@ -64,9 +66,9 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
         eventHandlerMap.remove(callId);
     }
 
-    public void handleClientMessage(ClientMessage clientMessage) {
+    public void handleClientMessage(ClientMessage clientMessage, Connection connection) {
         try {
-            eventExecutor.execute(new ClientEventProcessor(clientMessage));
+            eventExecutor.execute(new ClientEventProcessor(clientMessage, (ClientConnection) connection));
         } catch (RejectedExecutionException e) {
             logger.log(Level.WARNING, " event clientMessage could not be handled ", e);
         }
@@ -82,21 +84,28 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
 
     private final class ClientEventProcessor implements StripedRunnable {
         final ClientMessage clientMessage;
+        final ClientConnection connection;
 
-        private ClientEventProcessor(ClientMessage clientMessage) {
+        private ClientEventProcessor(ClientMessage clientMessage, ClientConnection connection) {
             this.clientMessage = clientMessage;
+            this.connection = connection;
         }
 
         @Override
         public void run() {
-            int correlationId = clientMessage.getCorrelationId();
-            final EventHandler eventHandler = eventHandlerMap.get(correlationId);
-            if (eventHandler == null) {
-                logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
-                return;
+            try {
+                int correlationId = clientMessage.getCorrelationId();
+                final EventHandler eventHandler = eventHandlerMap.get(correlationId);
+                if (eventHandler == null) {
+                    logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
+                    return;
+                }
+
+                eventHandler.handle(clientMessage);
+            } finally {
+                connection.decrementPendingPacketCount();
             }
 
-            eventHandler.handle(clientMessage);
         }
 
         @Override
