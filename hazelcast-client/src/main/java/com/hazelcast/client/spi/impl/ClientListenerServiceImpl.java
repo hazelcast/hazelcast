@@ -164,7 +164,11 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
             final ClientResponse clientResponse = serializationService.toObject(packet.getData());
             final int callId = clientResponse.getCallId();
             final Data response = clientResponse.getResponse();
-            handleEvent(response, callId, conn);
+            try {
+                handleEvent(response, callId, conn);
+            } finally {
+                conn.decrementPendingPacketCount();
+            }
         }
 
         private void handleEvent(Data event, int callId, ClientConnection conn) {
