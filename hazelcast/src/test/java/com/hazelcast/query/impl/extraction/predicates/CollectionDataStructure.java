@@ -1,4 +1,4 @@
-package com.hazelcast.query.impl.extraction;
+package com.hazelcast.query.impl.extraction.predicates;
 
 import com.hazelcast.test.ObjectTestUtils;
 
@@ -7,8 +7,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-// PRD: CASE 2
-public class SingleCollectionDataStructure {
+/**
+ * Data structure used in the tests of extraction in multi-value attributes (in collections and arrays)
+ * Each multi-value attribute is present as both an array and as a collection, for example:
+ * limbs_list & limbs_array, so that both extraction in arrays and in collections may be tested.
+ */
+public class CollectionDataStructure {
 
     public static class Person implements Serializable {
         List<Limb> limbs_list = new ArrayList<Limb>();
