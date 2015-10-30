@@ -47,7 +47,7 @@ public class IAMRoleCredentialSupplierBuilder {
     }
 
     public IAMRoleCredentialSupplierBuilder withRoleName(String roleName) {
-        isNotNull(roleName,"iam-role");
+        isNotNull(roleName, "iam-role");
         this.roleName = roleName;
         return this;
     }
@@ -90,6 +90,6 @@ public class IAMRoleCredentialSupplierBuilder {
                 .accessKeyId(keyMaps.get("AccessKeyId"))
                 .secretAccessKey(keyMaps.get("SecretAccessKey"))
                 .sessionToken(keyMaps.get("Token")).build();
-        return  credentials;
+        return credentials;
     }
 }

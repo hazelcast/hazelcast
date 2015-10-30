@@ -60,6 +60,7 @@ public class IAMRoleCredentialSupplierBuilderTest extends HazelcastTestSupport {
         map.put("Token", "ExampleToken");
         when(iamRoleCredentialSupplierBuilder.getKeysFromIamRole()).thenReturn(map);
         when(iamRoleCredentialSupplierBuilder.build()).thenCallRealMethod();
+        iamRoleCredentialSupplierBuilder.withRoleName("example");
         SessionCredentials sessionCredentials = iamRoleCredentialSupplierBuilder.build();
         assertEquals("ExampleAccessKeyId", sessionCredentials.getAccessKeyId());
         assertEquals("ExampleSecretAccessKey", sessionCredentials.getSecretAccessKey());
