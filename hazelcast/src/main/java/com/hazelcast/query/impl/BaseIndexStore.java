@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.extractor.MultiResult;
+import com.hazelcast.query.impl.getters.MultiResult;
 
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;

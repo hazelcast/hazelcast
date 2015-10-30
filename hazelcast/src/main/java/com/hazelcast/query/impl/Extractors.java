@@ -59,7 +59,7 @@ public class Extractors {
         }
     }
 
-    public ValueExtractor getExtractor(String attribute) {
+    public <T> ValueExtractor<T> getExtractor(String attribute) {
         return extractors.get(attribute);
     }
 

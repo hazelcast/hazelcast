@@ -38,6 +38,7 @@ import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.query.SqlPredicate;
@@ -870,9 +871,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         EntryListener<String, Integer> l = new EntryAdapter<String, Integer>() {
         };
 
-        EntryObject e = new PredicateBuilder().getEntryObject();
-        Predicate<String, Integer> p = e.equal(1);
-
+        Predicate<String, Integer> p = Predicates.equal("dummy-attribute", 1);
         map.addEntryListener(l, p, null, false);
 
         for (Integer i = 0; i < 100; i++) {

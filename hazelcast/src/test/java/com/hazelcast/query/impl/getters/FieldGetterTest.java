@@ -17,7 +17,6 @@
 package com.hazelcast.query.impl.getters;
 
 
-import com.hazelcast.query.extractor.MultiResult;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;

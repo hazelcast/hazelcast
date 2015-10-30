@@ -285,6 +285,11 @@
             <index ordered="true">age</index>
         </indexes>
 
+        <attributes>
+            <attribute extractor="com.example.CurrencyExtractor">currency</attribute>
+            <attribute extractor="com.example.AgeExtractor">age</attribute>
+        </attributes>
+
         <entry-listeners>
             <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>

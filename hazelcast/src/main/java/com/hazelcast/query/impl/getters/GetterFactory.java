@@ -16,7 +16,6 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.query.extractor.MultiResult;
 import com.hazelcast.util.CollectionUtil;
 
 import java.lang.reflect.Field;
