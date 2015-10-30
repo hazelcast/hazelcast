@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.util.Preconditions.isNotNull;
+
 /**
  * Build SessionCredentials for JClouds Compute Service API
  * with IAM Role.
@@ -45,11 +47,12 @@ public class IAMRoleCredentialSupplierBuilder {
     }
 
     public IAMRoleCredentialSupplierBuilder withRoleName(String roleName) {
+        isNotNull(roleName,"iam-role");
         this.roleName = roleName;
         return this;
     }
 
-    private  Map<String, String> getKeysFromIamRole() {
+    protected Map<String, String> getKeysFromIamRole() {
         try {
             String query = "latest/meta-data/iam/security-credentials/" + roleName;
             URL url = new URL("http", IAM_ROLE_ENDPOINT, query);
@@ -62,7 +65,7 @@ public class IAMRoleCredentialSupplierBuilder {
         }
     }
 
-    private Map<String, String> parseIamRole(BufferedReader reader) throws IOException {
+    protected Map<String, String> parseIamRole(BufferedReader reader) throws IOException {
         Map map = new HashMap();
         Pattern keyPattern = Pattern.compile("\"(.*?)\" : ");
         Pattern valuePattern = Pattern.compile(" : \"(.*?)\",");

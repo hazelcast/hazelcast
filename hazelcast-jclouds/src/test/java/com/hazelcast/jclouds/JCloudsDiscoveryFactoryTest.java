@@ -1,4 +1,4 @@
-package com.hazelcast;
+package com.hazelcast.jclouds;
 
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
