@@ -93,10 +93,14 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
         @Override
         public void run() {
             ClientConnection conn = (ClientConnection) packet.getConn();
-            ClientResponse clientResponse = serializationService.toObject(packet);
-            int callId = clientResponse.getCallId();
-            Data response = clientResponse.getResponse();
-            handleEvent(response, callId, conn);
+            try {
+                ClientResponse clientResponse = serializationService.toObject(packet);
+                int callId = clientResponse.getCallId();
+                Data response = clientResponse.getResponse();
+                handleEvent(response, callId, conn);
+            } finally {
+                conn.decrementPendingPacketCount();
+            }
         }
 
         private void handleEvent(Data event, int callId, ClientConnection conn) {
