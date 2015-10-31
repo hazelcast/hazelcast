@@ -46,6 +46,10 @@ public class JCloudsDiscoveryStrategy implements DiscoveryStrategy {
         this.computeServiceBuilder = new ComputeServiceBuilder(properties);
     }
 
+    protected JCloudsDiscoveryStrategy(ComputeServiceBuilder computeServiceBuilder) {
+        this.computeServiceBuilder = computeServiceBuilder;
+    }
+
     @Override
     public void start() {
         this.computeServiceBuilder.build();
