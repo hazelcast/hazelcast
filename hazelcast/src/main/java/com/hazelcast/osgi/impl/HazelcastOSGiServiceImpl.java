@@ -21,7 +21,6 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.osgi.HazelcastOSGiInstance;
 import com.hazelcast.osgi.HazelcastOSGiService;
 import com.hazelcast.logging.ILogger;
@@ -49,11 +48,6 @@ class HazelcastOSGiServiceImpl
         implements HazelcastInternalOSGiService {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastOSGiService.class);
-
-    private static final String DEFAULT_ID =
-            BuildInfoProvider.getBuildInfo().getVersion()
-            + "#"
-            + (BuildInfoProvider.getBuildInfo().isEnterprise() ? "EE" : "OSS");
 
     private static final ServiceRegistration EMPTY_SERVICE_REGISTRATION
             = new ServiceRegistration() {
@@ -161,6 +155,7 @@ class HazelcastOSGiServiceImpl
                 instanceServiceRegistrationMap.remove(hazelcastOSGiInstance);
         if (serviceRegistration != null && serviceRegistration != EMPTY_SERVICE_REGISTRATION) {
             ownerBundleContext.ungetService(serviceRegistration.getReference());
+            serviceRegistration.unregister();
         }
     }
 
@@ -212,7 +207,7 @@ class HazelcastOSGiServiceImpl
     public void activate() {
         // No need to complex lock-free approaches since this is not called frequently. Simple is good.
         synchronized (serviceMutex) {
-            if (!isActive()) {
+            if (ownerBundle.getState() == Bundle.STARTING) {
                 try {
                     if (hazelcastInstance != null) {
                         try {
@@ -265,11 +260,12 @@ class HazelcastOSGiServiceImpl
     public void deactivate() {
         // No need to complex lock-free approaches since this is not called frequently. Simple is good.
         synchronized (serviceMutex) {
-            if (isActive()) {
+            if (ownerBundle.getState() == Bundle.STOPPING) {
                 try {
                     shutdownAllInternal();
                     try {
                         ownerBundleContext.ungetService(serviceRegistration.getReference());
+                        serviceRegistration.unregister();
                     } catch (Throwable t) {
                         LOGGER.finest("Error occurred while deregistering " + this, t);
                     }
