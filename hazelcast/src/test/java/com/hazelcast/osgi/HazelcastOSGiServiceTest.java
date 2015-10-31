@@ -202,12 +202,10 @@ public class HazelcastOSGiServiceTest {
         HazelcastInternalOSGiService service = getService();
 
         HazelcastOSGiInstance osgiInstance = service.newHazelcastInstance();
-        assertNotNull(osgiInstance);
         assertEquals(HazelcastInternalOSGiService.DEFAULT_GROUP_NAME,
                      osgiInstance.getConfig().getGroupConfig().getName());
 
         HazelcastInstance instance = osgiInstance.getDelegatedInstance();
-        assertNotNull(instance);
         assertEquals(HazelcastInternalOSGiService.DEFAULT_GROUP_NAME,
                      instance.getConfig().getGroupConfig().getName());
     }
@@ -222,12 +220,10 @@ public class HazelcastOSGiServiceTest {
         config.getGroupConfig().setName(GROUP_NAME);
 
         HazelcastOSGiInstance osgiInstance = service.newHazelcastInstance(config);
-        assertNotNull(osgiInstance);
         assertEquals(GROUP_NAME,
                      osgiInstance.getConfig().getGroupConfig().getName());
 
         HazelcastInstance instance = osgiInstance.getDelegatedInstance();
-        assertNotNull(instance);
         assertEquals(GROUP_NAME,
                      instance.getConfig().getGroupConfig().getName());
     }
@@ -247,11 +243,9 @@ public class HazelcastOSGiServiceTest {
             HazelcastInternalOSGiService service = getService(testBundleContext);
 
             HazelcastOSGiInstance osgiInstance = service.newHazelcastInstance();
-            assertNotNull(osgiInstance);
             assertEquals(GroupConfig.DEFAULT_GROUP_NAME, osgiInstance.getConfig().getGroupConfig().getName());
 
             HazelcastInstance instance = osgiInstance.getDelegatedInstance();
-            assertNotNull(instance);
             assertEquals(GroupConfig.DEFAULT_GROUP_NAME, instance.getConfig().getGroupConfig().getName());
         } finally {
             if (propValue != null) {
@@ -283,11 +277,9 @@ public class HazelcastOSGiServiceTest {
             config.getGroupConfig().setName(GROUP_NAME);
 
             HazelcastOSGiInstance osgiInstance = service.newHazelcastInstance(config);
-            assertNotNull(osgiInstance);
             assertEquals(GROUP_NAME, osgiInstance.getConfig().getGroupConfig().getName());
 
             HazelcastInstance instance = osgiInstance.getDelegatedInstance();
-            assertNotNull(instance);
             assertEquals(GROUP_NAME, instance.getConfig().getGroupConfig().getName());
         } finally {
             if (propValue != null) {
@@ -341,11 +333,9 @@ public class HazelcastOSGiServiceTest {
         Config config = new Config(INSTANCE_NAME);
 
         HazelcastOSGiInstance osgiInstance = service.newHazelcastInstance(config);
-        assertNotNull(osgiInstance);
         assertTrue(osgiInstance.getLifecycleService().isRunning());
 
         HazelcastInstance instance = osgiInstance.getDelegatedInstance();
-        assertNotNull(instance);
         assertTrue(instance.getLifecycleService().isRunning());
 
         service.shutdownHazelcastInstance(osgiInstance);
@@ -369,7 +359,6 @@ public class HazelcastOSGiServiceTest {
         for (HazelcastOSGiInstance osgiInstance : allOSGiInstances) {
             assertTrue(osgiInstance.getLifecycleService().isRunning());
             HazelcastInstance instance = osgiInstance.getDelegatedInstance();
-            assertNotNull(instance);
             assertTrue(instance.getLifecycleService().isRunning());
         }
 
@@ -378,7 +367,6 @@ public class HazelcastOSGiServiceTest {
         for (HazelcastOSGiInstance osgiInstance : osgiInstances) {
             assertFalse(osgiInstance.getLifecycleService().isRunning());
             HazelcastInstance instance = osgiInstance.getDelegatedInstance();
-            assertNotNull(instance);
             assertFalse(instance.getLifecycleService().isRunning());
         }
 
