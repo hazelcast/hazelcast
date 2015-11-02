@@ -70,7 +70,6 @@ public class IAMRoleCredentialSupplierBuilderTest extends HazelcastTestSupport {
     @Test(expected = InvalidConfigurationException.class)
     public void parseIamRole_withInvalidAwsConfiguration() {
         new IAMRoleCredentialSupplierBuilder().getKeysFromIamRole();
-
     }
 
 }

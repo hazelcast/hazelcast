@@ -29,7 +29,7 @@
             <tcp-ip enabled="false" />
             <aws enabled="false"/>
             <discovery-strategies>
-                <discovery-strategy enabled="true" class="com.hazelcast.jclouds.JCloudsDiscoveryStrategyFactory">
+                <discovery-strategy enabled="true" class="com.hazelcast.jclouds.JCloudsDiscoveryStrategy">
                     <properties>
                         <property name="provider">aws-ec2</property>
                         <property name="identity">test</property>

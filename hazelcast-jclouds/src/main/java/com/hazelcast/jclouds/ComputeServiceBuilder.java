@@ -50,6 +50,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * ComputeServiceBuilder is the responsible class for building jclouds compute service provider.
@@ -141,12 +142,11 @@ public class ComputeServiceBuilder {
      * @return the compute service
      */
     ComputeService build() {
-
         final String cloudProvider = getOrNull(JCloudsProperties.PROVIDER);
         final String identity = getOrNull(JCloudsProperties.IDENTITY);
         String credential = getOrNull(JCloudsProperties.CREDENTIAL);
         final String credentialPath = getOrNull(JCloudsProperties.CREDENTIAL_PATH);
-        checkNotNull(cloudProvider, "Cloud provider is not set");
+        isNotNull(cloudProvider, "Cloud Provider");
 
         if (credential != null && credentialPath != null) {
             throw new UnsupportedOperationException("Both credential and credentialPath are set. Use only one method.");
@@ -203,7 +203,6 @@ public class ComputeServiceBuilder {
     }
 
     private void buildNodeFilter() {
-
         nodesFilter = new Predicate<ComputeMetadata>() {
              @Override
              public boolean apply(ComputeMetadata nodeMetadata) {
@@ -242,6 +241,10 @@ public class ComputeServiceBuilder {
             if (roleName != null && (identity != null || credential != null)) {
                 throw new InvalidConfigurationException("IAM role is configured, identity "
                         + "or credential propery is not allowed.");
+            }
+            if (roleName != null && !cloudProvider.equals(AWS_EC2)) {
+                throw new InvalidConfigurationException("IAM role is only supported with aws-ec2, your cloud "
+                        + "provider is " + cloudProvider);
             }
             if (cloudProvider.equals(AWS_EC2) && roleName != null) {
                 Supplier<Credentials> credentialsSupplier = new Supplier<Credentials>() {
