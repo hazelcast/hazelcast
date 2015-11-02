@@ -34,7 +34,42 @@ public class CacheConfigReadOnlyTest {
     private CacheConfigReadOnly getCacheConfigReadOnly() {
         return new CacheConfig().getAsReadOnly();
     }
-    
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void addingCacheEntryListenerConfigurationOnReadOnlyCacheConfigShouldFail() {
+        getCacheConfigReadOnly().addCacheEntryListenerConfiguration(null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void removingCacheEntryListenerConfigurationOnReadOnlyCacheConfigShouldFail() {
+        getCacheConfigReadOnly().removeCacheEntryListenerConfiguration(null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void settingHotRestartEnabledOfReadOnlyCacheConfigShouldFail() {
+        getCacheConfigReadOnly().setHotRestartEnabled(false);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void settingPartitionLostListenerConfigsOnReadOnlyCacheConfigShouldFail() {
+        getCacheConfigReadOnly().setPartitionLostListenerConfigs(null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void settingExpiryPolicyFactoryOfReadOnlyCacheConfigShouldFail() {
+        getCacheConfigReadOnly().setExpiryPolicyFactory(null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void settingCacheLoaderFactoryOfReadOnlyCacheConfigShouldFail() {
+        getCacheConfigReadOnly().setCacheLoaderFactory(null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void settingCacheWriterFactoryOfReadOnlyCacheConfigShouldFail() {
+        getCacheConfigReadOnly().setCacheWriterFactory(null);
+    }
+
     @Test(expected = UnsupportedOperationException.class)
     public void settingNameOfReadOnlyCacheConfigShouldFail() {
         getCacheConfigReadOnly().setName("my-cache");
