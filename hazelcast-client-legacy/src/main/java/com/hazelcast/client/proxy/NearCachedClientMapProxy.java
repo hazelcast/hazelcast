@@ -357,6 +357,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
                 case UPDATED:
                 case MERGED:
                 case EVICTED:
+                case EXPIRED:
                     final Data key = event.getKey();
                     nearCache.remove(key);
                     break;
