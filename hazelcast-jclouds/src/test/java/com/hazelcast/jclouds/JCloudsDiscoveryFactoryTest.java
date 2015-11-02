@@ -78,7 +78,7 @@ public class JCloudsDiscoveryFactoryTest extends HazelcastTestSupport {
         DiscoveryStrategyConfig providerConfig = discoveryConfig.getDiscoveryStrategyConfigs().iterator().next();
 
         assertEquals(jCloudsDiscoveryStrategyFactory.getDiscoveryStrategyType(), JCloudsDiscoveryStrategy.class);
-        assertEquals(JCloudsDiscoveryStrategyFactory.class.getName(), providerConfig.getClassName());
+        assertEquals(JCloudsDiscoveryStrategy.class.getName(), providerConfig.getClassName());
         assertEquals(jCloudsDiscoveryStrategyFactory.getConfigurationProperties().size(), providerConfig.getProperties().size());
         assertTrue(jCloudsDiscoveryStrategyFactory.
                 newDiscoveryStrategy(null, null, new HashMap<String, Comparable>()) instanceof DiscoveryStrategy);

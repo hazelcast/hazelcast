@@ -18,7 +18,9 @@ package com.hazelcast.spi.discovery.impl;
 
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.properties.PropertyDefinition;
+import com.hazelcast.config.properties.ValidationException;
 import com.hazelcast.config.properties.ValueValidator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.TypeConverter;
@@ -147,7 +149,11 @@ public class DefaultDiscoveryService
             }
             return discoveryStrategies;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to configure discovery strategies", e);
+            if (e instanceof ValidationException) {
+                throw new InvalidConfigurationException("Invalid configutation ", e);
+            } else {
+                throw new RuntimeException("Failed to configure discovery strategies", e);
+            }
         }
     }
 
