@@ -20,15 +20,16 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -73,15 +74,14 @@ public class ClientMapNearCacheTest {
     private static final String NEAR_CACHE_NONE_WITH_MAX_SIZE = "NEAR_CACHE_NONE_WITH_MAX_SIZE";
 
     private static final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-    private static HazelcastInstance h1;
+    private static HazelcastInstance server;
     private static HazelcastInstance client;
+    private static ClientConfig clientConfig = new ClientConfig();
 
     @BeforeClass
     public static void setup() throws Exception {
-        h1 = hazelcastFactory.newHazelcastInstance();
+        server = hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastInstance();
-
-        ClientConfig clientConfig = new ClientConfig();
 
         NearCacheConfig basicConfigNoInvalidation = new NearCacheConfig();
         basicConfigNoInvalidation.setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -408,7 +408,7 @@ public class ClientMapNearCacheTest {
     @Test
     public void testNearCacheInvalidateOnChange() {
         final String mapName = randomMapName(NEAR_CACHE_WITH_INVALIDATION);
-        final IMap nodeMap = h1.getMap(mapName);
+        final IMap nodeMap = server.getMap(mapName);
         final IMap clientMap = client.getMap(mapName);
 
         final int size = 118;
@@ -482,7 +482,7 @@ public class ClientMapNearCacheTest {
         final int size = 147;
         populateNearCache(map, size);
 
-        h1.getMap(mapName).clear();
+        server.getMap(mapName).clear();
 
         //near cache should be empty
         assertTrueEventually(new AssertTask() {
@@ -512,39 +512,37 @@ public class ClientMapNearCacheTest {
 
 
     @Test
+    @Category(NightlyTest.class)
     public void testServerMapExpiration_doesNotInvalidateClientNearCache() throws Exception {
-        final String mapName = randomMapName(NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME);
-        final IMap clientMap = client.getMap(mapName);
-        final CountDownLatch addEventsToBeFired = new CountDownLatch(1);
-        final CountDownLatch waitEventsToBeFired = new CountDownLatch(1);
-        clientMap.addEntryListener(new EntryAdapter() {
-            @Override
-            public void entryAdded(EntryEvent event) {
-                addEventsToBeFired.countDown();
-            }
+        String mapName = randomMapName(NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME);
+        IMap serverMap = server.getMap(mapName);
+        serverMap.put(1, 1, 6, TimeUnit.SECONDS);
 
+        final CountDownLatch expiredEventLatch = new CountDownLatch(1);
+        serverMap.addEntryListener(new EntryExpiredListener() {
             @Override
-            public void entryEvicted(EntryEvent event) {
-                waitEventsToBeFired.countDown();
+            public void entryExpired(EntryEvent event) {
+                expiredEventLatch.countDown();
             }
         }, false);
 
-        clientMap.put(1, 1, 3, TimeUnit.SECONDS);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        final IMap clientMap = client.getMap(mapName);
 
-        assertOpenEventually(addEventsToBeFired);
-
-        // get entry in near cache.
+        // get operation puts entry into client near cache.
         clientMap.get(1);
 
-        assertOpenEventually(waitEventsToBeFired);
+        // wait expiration of entry in server-side.
+        assertOpenEventually(expiredEventLatch);
 
-        // give some extra time in case an event may be received.
+        // wait some extra seconds to ensure that client-side doesn't receive any EXPIRED event.
+        // normally,  we don't expect any event-arrival.
         sleepSeconds(2);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final LocalMapStats localMapStats = clientMap.getLocalMapStats();
+                LocalMapStats localMapStats = clientMap.getLocalMapStats();
                 NearCacheStats stats = localMapStats.getNearCacheStats();
                 assertEquals(1, stats.getOwnedEntryCount());
             }
