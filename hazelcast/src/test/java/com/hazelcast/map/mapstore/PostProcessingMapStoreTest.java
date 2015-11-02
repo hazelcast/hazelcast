@@ -3,10 +3,15 @@ package com.hazelcast.map.mapstore;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.PostProcessingMapStore;
+import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -18,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -60,6 +66,93 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         }
 
     }
+
+    @Test
+    public void testEntryListenerIncludesTheProcessedValue_onPut() {
+        IMap<Integer, SampleObject> map = createInstanceAndGetMap();
+        int count = 10;
+        final CountDownLatch latch = new CountDownLatch(count);
+        map.addEntryListener(new EntryAddedListener<Integer, SampleObject>() {
+            @Override
+            public void entryAdded(EntryEvent<Integer, SampleObject> event) {
+                assertEquals(event.getKey() + 1, event.getValue().version);
+                latch.countDown();
+            }
+        }, true);
+        for (int i = 0; i < count; i++) {
+            map.put(i, new SampleObject(i));
+        }
+        assertOpenEventually(latch);
+    }
+
+    @Test
+    public void testEntryListenerIncludesTheProcessedValue_onPutAll() {
+        IMap<Integer, SampleObject> map = createInstanceAndGetMap();
+        int count = 10;
+        final CountDownLatch latch = new CountDownLatch(count);
+        map.addEntryListener(new EntryAddedListener<Integer, SampleObject>() {
+            @Override
+            public void entryAdded(EntryEvent<Integer, SampleObject> event) {
+                assertEquals(event.getKey() + 1, event.getValue().version);
+                latch.countDown();
+            }
+        }, true);
+        Map<Integer, SampleObject> localMap = new HashMap<Integer, SampleObject>();
+        for (int i = 0; i < count; i++) {
+            localMap.put(i, new SampleObject(i));
+        }
+        map.putAll(localMap);
+        assertOpenEventually(latch);
+    }
+
+
+    @Test
+    public void testEntryListenerIncludesTheProcessedValue_onEntryProcessor() {
+        IMap<Integer, SampleObject> map = createInstanceAndGetMap();
+        int count = 10;
+        final CountDownLatch latch = new CountDownLatch(count);
+        map.addEntryListener(new EntryUpdatedListener<Integer, SampleObject>() {
+            @Override
+            public void entryUpdated(EntryEvent<Integer, SampleObject> event) {
+                // value is incremented three times :
+                // +1 -> post processing map store
+                // +1 -> entry processor
+                // +1 -> post processing map store
+                assertEquals(event.getKey() + 3, event.getValue().version);
+                latch.countDown();
+            }
+        }, true);
+        for (int i = 0; i < count; i++) {
+            map.put(i, new SampleObject(i));
+            map.executeOnKey(i, new EntryProcessor() {
+                @Override
+                public Object process(Map.Entry entry) {
+                    SampleObject value = (SampleObject) entry.getValue();
+                    value.version++;
+                    entry.setValue(value);
+                    return null;
+                }
+
+                @Override
+                public EntryBackupProcessor getBackupProcessor() {
+                    return null;
+                }
+            });
+        }
+        assertOpenEventually(latch);
+    }
+
+    private IMap<Integer, SampleObject> createInstanceAndGetMap() {
+        String name = randomString();
+        Config config = new Config();
+        MapConfig mapConfig = config.getMapConfig(name);
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true).setClassName(IncrementerPostProcessingMapStore.class.getName());
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        return instance.getMap(name);
+    }
+
 
     public static class IncrementerPostProcessingMapStore implements MapStore<Integer, SampleObject>, PostProcessingMapStore {
 
