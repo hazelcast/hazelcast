@@ -17,9 +17,12 @@
 package com.hazelcast.hibernate;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.region.HazelcastQueryResultsRegion;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 import org.hibernate.cfg.Environment;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.junit.Test;
@@ -60,6 +63,22 @@ public class RegionFactoryDefaultSlowTest
         sleep(defaultCleanupPeriod);
 
         assertEquals(numberOfEntities - evictedItemCount, queryRegion.getCache().size());
+    }
+
+    @Test
+    public void testUpdate() {
+        insertDummyEntities(1);
+        Session session = sf.openSession();
+        Transaction tx = session.beginTransaction();
+        DummyEntity ent = (DummyEntity) session.get(DummyEntity.class, 0L);
+        ent.setName("updatedName");
+        session.update(ent);
+        tx.commit();
+        session.close();
+
+        session = sf2.openSession();
+        DummyEntity entity = (DummyEntity) session.get(DummyEntity.class, 0L);
+        assertEquals("updatedName", entity.getName());
     }
 
 }

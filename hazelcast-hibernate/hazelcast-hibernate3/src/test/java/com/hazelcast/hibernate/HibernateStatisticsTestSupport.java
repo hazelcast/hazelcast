@@ -56,10 +56,20 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 
     protected abstract Properties getCacheProperties();
 
+    /**
+     * Inserts entities with increasing id starting from 0
+     * @param count Number of entities to be added
+     */
     protected void insertDummyEntities(int count) {
         insertDummyEntities(count, 0);
     }
 
+    /**
+     * Inserts entities with increasing id starting from 0.
+     * Each entity has child entities.
+     * @param count Number of entities
+     * @param childCount Number of child entities each entity has
+     */
     protected void insertDummyEntities(int count, int childCount) {
         Session session = sf.openSession();
         Transaction tx = session.beginTransaction();
