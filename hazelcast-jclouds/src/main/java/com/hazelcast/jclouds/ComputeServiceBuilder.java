@@ -80,6 +80,15 @@ public class ComputeServiceBuilder {
         this.properties = properties;
     }
 
+
+    /**
+     * Injects already built ComputeService
+     * @param computeService
+     */
+    public void setComputeService(ComputeService computeService) {
+        this.computeService = computeService;
+    }
+
     /**
      * Gets filtered nodes.
      *
@@ -182,7 +191,6 @@ public class ComputeServiceBuilder {
         }
         if (zones != null) {
             jcloudsProperties.setProperty(LocationConstants.PROPERTY_ZONES, zones);
-            jcloudsProperties.setProperty(LocationConstants.PROPERTY_REGIONS, regions);
         }
         return jcloudsProperties;
     }
