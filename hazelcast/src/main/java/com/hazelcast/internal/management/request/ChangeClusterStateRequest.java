@@ -31,7 +31,7 @@ import static com.hazelcast.util.JsonUtil.getString;
  */
 public class ChangeClusterStateRequest implements AsyncConsoleRequest {
 
-    private final static String FAILURE = "FAILURE: ";
+    private static final String FAILURE = "FAILURE: ";
 
     private String state;
 
