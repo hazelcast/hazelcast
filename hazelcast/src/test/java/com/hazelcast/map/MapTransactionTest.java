@@ -212,10 +212,11 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        final IMap map1 = h1.getMap("default");
+        final String mapName = randomMapName();
+        final IMap map = h1.getMap(mapName);
         final int size = 100;
-        final CountDownLatch latch = new CountDownLatch(size + 1);
-        final CountDownLatch latch2 = new CountDownLatch(1);
+        final CountDownLatch transactionCompletedLatch = new CountDownLatch(size + 1);
+        final CountDownLatch thresholdReached = new CountDownLatch(1);
 
         Runnable runnable = new Runnable() {
             public void run() {
@@ -224,17 +225,14 @@ public class MapTransactionTest extends HazelcastTestSupport {
                     final int threshold = new Random().nextInt(oneThird) + oneThird;
                     h1.executeTransaction(options, new TransactionalTask<Boolean>() {
                         public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                            final TransactionalMap<Object, Object> txMap = context.getMap("default");
+                            final TransactionalMap<Object, Object> txMap = context.getMap(mapName);
                             for (int i = 0; i < size; i++) {
                                 if (i == threshold) {
-                                    latch2.countDown();
+                                    thresholdReached.countDown();
                                 }
                                 txMap.put(i, i);
-                                try {
-                                    Thread.sleep(100);
-                                } catch (InterruptedException ignored) {
-                                }
-                                latch.countDown();
+                                sleepMillis(100);
+                                transactionCompletedLatch.countDown();
                             }
                             return true;
                         }
@@ -242,16 +240,15 @@ public class MapTransactionTest extends HazelcastTestSupport {
                     fail();
                 } catch (Exception ignored) {
                 }
-                latch.countDown();
+                transactionCompletedLatch.countDown();
             }
         };
         new Thread(runnable).start();
-        assertTrue(latch2.await(20, TimeUnit.SECONDS));
+        assertOpenEventually(thresholdReached);
         h2.shutdown();
-
-        assertTrue(latch.await(60, TimeUnit.SECONDS));
+        assertOpenEventually(transactionCompletedLatch);
         for (int i = 0; i < size; i++) {
-            assertNull(map1.get(i));
+            assertNull(map.get(i));
         }
     }
 
