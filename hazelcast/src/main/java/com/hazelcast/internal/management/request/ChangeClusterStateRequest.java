@@ -31,7 +31,7 @@ import static com.hazelcast.util.JsonUtil.getString;
  */
 public class ChangeClusterStateRequest implements AsyncConsoleRequest {
 
-    private final String failure = "FAILURE: ";
+    private final static String FAILURE = "FAILURE: ";
 
     private String state;
 
@@ -61,7 +61,7 @@ public class ChangeClusterStateRequest implements AsyncConsoleRequest {
         } catch (Exception e) {
             ILogger logger = mcs.getHazelcastInstance().node.nodeEngine.getLogger(getClass());
             logger.warning("Cluster state can not be changed: ", e);
-            resultString = failure + e.getMessage();
+            resultString = FAILURE + e.getMessage();
         }
         JsonObject result = new JsonObject().add("result", resultString);
         out.add("result", result);
