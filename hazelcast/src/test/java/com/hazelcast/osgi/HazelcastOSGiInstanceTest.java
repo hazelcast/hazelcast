@@ -43,6 +43,8 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -51,6 +53,85 @@ import static org.mockito.Mockito.when;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class HazelcastOSGiInstanceTest {
+
+    @Test
+    public void equalsReturnsTrueForSameOSGiInstances() {
+        HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
+        HazelcastOSGiInstance hazelcastOSGiInstance =
+                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+
+        assertTrue(hazelcastOSGiInstance.equals(hazelcastOSGiInstance));
+    }
+
+    @Test
+    public void equalsReturnsFalseForNullObject() {
+        HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
+        HazelcastOSGiInstance hazelcastOSGiInstance =
+                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+
+        assertFalse(hazelcastOSGiInstance.equals(null));
+    }
+
+    @Test
+    public void equalsReturnsFalseForDifferentTypedObject() {
+        HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
+        HazelcastOSGiInstance hazelcastOSGiInstance =
+                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance);
+
+        assertFalse(hazelcastOSGiInstance.equals(new Object()));
+    }
+
+    @Test
+    public void equalsReturnsFalseForDifferentOSGiInstancesWithDifferentDelegatedInstanceAndSameService() {
+        HazelcastInstance mockHazelcastInstance1 = mock(HazelcastInstance.class);
+        HazelcastInstance mockHazelcastInstance2 = mock(HazelcastInstance.class);
+        HazelcastOSGiService mockService = mock(HazelcastOSGiService.class);
+        HazelcastOSGiInstance hazelcastOSGiInstance1 =
+                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance1, mockService);
+        HazelcastOSGiInstance hazelcastOSGiInstance2 =
+                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance2, mockService);
+
+        assertFalse(hazelcastOSGiInstance1.equals(hazelcastOSGiInstance2));
+    }
+
+    @Test
+    public void equalsReturnsFalseForDifferentOSGiInstancesWithSameDelegatedInstanceAndDifferentService() {
+        HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
+        HazelcastOSGiService mockService1 = mock(HazelcastOSGiService.class);
+        HazelcastOSGiService mockService2 = mock(HazelcastOSGiService.class);
+        HazelcastOSGiInstance hazelcastOSGiInstance1 =
+                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance, mockService1);
+        HazelcastOSGiInstance hazelcastOSGiInstance2 =
+                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance, mockService2);
+
+        assertFalse(hazelcastOSGiInstance1.equals(hazelcastOSGiInstance2));
+    }
+
+    @Test
+    public void equalsReturnsFalseForDifferentOSGiInstancesWithDifferentDelegatedInstanceAndDifferentService() {
+        HazelcastInstance mockHazelcastInstance1 = mock(HazelcastInstance.class);
+        HazelcastInstance mockHazelcastInstance2 = mock(HazelcastInstance.class);
+        HazelcastOSGiService mockService1 = mock(HazelcastOSGiService.class);
+        HazelcastOSGiService mockService2 = mock(HazelcastOSGiService.class);
+        HazelcastOSGiInstance hazelcastOSGiInstance1 =
+                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance1, mockService1);
+        HazelcastOSGiInstance hazelcastOSGiInstance2 =
+                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance2, mockService1);
+
+        assertFalse(hazelcastOSGiInstance1.equals(hazelcastOSGiInstance2));
+    }
+
+    @Test
+    public void equalsReturnsTrueForDifferentOSGiInstancesWithSameDelegatedInstanceAndSameService() {
+        HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
+        HazelcastOSGiService mockService = mock(HazelcastOSGiService.class);
+        HazelcastOSGiInstance hazelcastOSGiInstance1 =
+                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance, mockService);
+        HazelcastOSGiInstance hazelcastOSGiInstance2 =
+                HazelcastOSGiTestUtil.createHazelcastOSGiInstance(mockHazelcastInstance, mockService);
+
+        assertTrue(hazelcastOSGiInstance1.equals(hazelcastOSGiInstance2));
+    }
 
     @Test
     public void getDelegatedInstanceCalledSuccessfullyOverOSGiInstance() {

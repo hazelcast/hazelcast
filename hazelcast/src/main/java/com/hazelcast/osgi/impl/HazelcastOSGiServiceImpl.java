@@ -29,11 +29,9 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.StringUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 
-import java.util.Collections;
-import java.util.Dictionary;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -48,22 +46,6 @@ class HazelcastOSGiServiceImpl
         implements HazelcastInternalOSGiService {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastOSGiService.class);
-
-    private static final ServiceRegistration EMPTY_SERVICE_REGISTRATION
-            = new ServiceRegistration() {
-                @Override
-                public ServiceReference getReference() {
-                    return null;
-                }
-
-                @Override
-                public void setProperties(Dictionary properties) {
-                }
-
-                @Override
-                public void unregister() {
-                }
-            };
 
     private final Object serviceMutex = new Object();
 
@@ -137,14 +119,11 @@ class HazelcastOSGiServiceImpl
         } else {
             hazelcastOSGiInstance = new HazelcastOSGiInstanceImpl(instance, this);
         }
-        ServiceRegistration serviceRegistration;
         if (!Boolean.getBoolean(HAZELCAST_OSGI_REGISTER_DISABLED)) {
-            serviceRegistration =
+            ServiceRegistration serviceRegistration =
                     ownerBundleContext.registerService(HazelcastInstance.class.getName(), hazelcastOSGiInstance, null);
-        } else {
-            serviceRegistration = EMPTY_SERVICE_REGISTRATION;
+            instanceServiceRegistrationMap.put(hazelcastOSGiInstance, serviceRegistration);
         }
-        instanceServiceRegistrationMap.put(hazelcastOSGiInstance, serviceRegistration);
         instanceMap.put(instance.getName(), hazelcastOSGiInstance);
         return hazelcastOSGiInstance;
     }
@@ -153,7 +132,7 @@ class HazelcastOSGiServiceImpl
         instanceMap.remove(hazelcastOSGiInstance.getName());
         ServiceRegistration serviceRegistration =
                 instanceServiceRegistrationMap.remove(hazelcastOSGiInstance);
-        if (serviceRegistration != null && serviceRegistration != EMPTY_SERVICE_REGISTRATION) {
+        if (serviceRegistration != null) {
             ownerBundleContext.ungetService(serviceRegistration.getReference());
             serviceRegistration.unregister();
         }
@@ -161,7 +140,7 @@ class HazelcastOSGiServiceImpl
 
     private void shutdownAllInternal() {
         try {
-            for (HazelcastOSGiInstance instance : instanceServiceRegistrationMap.keySet()) {
+            for (HazelcastOSGiInstance instance : instanceMap.values()) {
                 try {
                     deregisterInstance(instance);
                 } catch (Throwable t) {
@@ -175,8 +154,8 @@ class HazelcastOSGiServiceImpl
             }
         } finally {
             if (hazelcastInstance != null) {
-                // Default instance may not be registered due to set "HAZELCAST_OSGI_REGISTER_DISABLED" flag,
-                // So be sure that is it shutdown.
+                // Default instance may not be registered due to set `HAZELCAST_OSGI_REGISTER_DISABLED` flag,
+                // So be sure that it is shutdown.
                 try {
                     hazelcastInstance.shutdown();
                 } catch (Throwable t) {
@@ -328,7 +307,7 @@ class HazelcastOSGiServiceImpl
         // No need to synchronization since this is not a mutating operation on instances.
         // If at this time service is deactivated, this method just returns terminated instances.
 
-        return Collections.unmodifiableSet(instanceServiceRegistrationMap.keySet());
+        return new HashSet<HazelcastOSGiInstance>(instanceMap.values());
     }
 
     @Override

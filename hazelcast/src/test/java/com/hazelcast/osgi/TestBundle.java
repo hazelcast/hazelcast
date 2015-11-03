@@ -14,7 +14,7 @@ import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Map;
 
-class TestBundle implements Bundle {
+public class TestBundle implements Bundle {
 
     static final long TEST_BUNDLE_ID = 1L;
 
@@ -22,8 +22,12 @@ class TestBundle implements Bundle {
     private final Activator activator;
     private volatile int state;
 
-    TestBundle() {
-        this.testBundleContext = new TestBundleContext(this);
+    public TestBundle() {
+        this(null);
+    }
+
+    public TestBundle(RegisterDeregisterListener registerDeregisterListener) {
+        this.testBundleContext = new TestBundleContext(this, registerDeregisterListener);
         this.activator = new Activator();
         setState(RESOLVED);
     }
@@ -180,6 +184,14 @@ class TestBundle implements Bundle {
     @Override
     public Version getVersion() {
         throw new UnsupportedOperationException();
+    }
+
+    interface RegisterDeregisterListener {
+
+        void onRegister(String clazz, TestServiceReference serviceReference);
+
+        void onDeregister(String clazz, TestServiceReference serviceReference);
+
     }
 
 }
