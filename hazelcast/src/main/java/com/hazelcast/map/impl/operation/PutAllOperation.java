@@ -100,6 +100,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
         mapServiceContext.interceptAfterPut(name, dataValue);
         EntryEventType eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
         final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        dataValue = getPostProcessedValueIfAvailable(mapServiceContext, recordStore, dataKey, dataValue);
         mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         keysToInvalidate.add(dataKey);
 
@@ -108,7 +109,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
         if (record == null) {
             return;
         }
-        if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
+        if (shouldWanReplicate()) {
             final Data dataValueAsData = mapServiceContext.toData(dataValue);
             final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, dataValueAsData, record);
             mapEventPublisher.publishWanReplicationUpdate(name, entryView);
@@ -117,6 +118,19 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
         RecordInfo replicationInfo = Records.buildRecordInfo(recordStore.getRecord(dataKey));
         backupRecordInfos.add(replicationInfo);
         evict(false);
+    }
+
+    private Data getPostProcessedValueIfAvailable(MapServiceContext mapServiceContext, RecordStore recordStore,
+                                                  Data dataKey, Data dataValue) {
+        if (!recordStore.getMapDataStore().isPostProcessingMapStore()) {
+            return dataValue;
+        }
+        Record record = recordStore.getRecord(dataKey);
+        return mapServiceContext.toData(record.getValue());
+    }
+
+    private boolean shouldWanReplicate() {
+        return mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null;
     }
 
     protected final void invalidateNearCaches(Set<Data> keys) {
