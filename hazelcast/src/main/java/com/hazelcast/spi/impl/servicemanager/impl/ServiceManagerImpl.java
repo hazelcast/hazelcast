@@ -56,6 +56,8 @@ import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
+import com.hazelcast.wan.WanReplicationService;
+
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.Collections;
@@ -110,6 +112,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(TransactionManagerServiceImpl.SERVICE_NAME, nodeEngine.getTransactionManagerService());
         registerService(ClientEngineImpl.SERVICE_NAME, node.clientEngine);
         registerService(QuorumServiceImpl.SERVICE_NAME, nodeEngine.getQuorumService());
+        registerService(WanReplicationService.SERVICE_NAME, nodeEngine.getWanReplicationService());
     }
 
     private void registerExtensionServices() {
