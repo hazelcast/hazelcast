@@ -10,14 +10,13 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.DeleteMergePolicy;
 import com.hazelcast.map.listener.EntryMergedListener;
 import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
 import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -30,8 +29,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -468,6 +465,20 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertKeysIn(clusterB, "map", 0, entryCount);
         assertDataSizeEventually(clusterB, "map", entryCount);
         assertOpenEventually(mergeEventFiredCounter);
+    }
+
+    @Test
+    public void checkErasingMapMergePolicy() {
+        setupReplicateFrom(configA, configB, clusterB.length, "atob", DeleteMergePolicy.class.getName());
+        initClusterA();
+        initClusterB();
+
+        createDataIn(clusterB, "map", 0, 100);
+        createDataIn(clusterA, "map", 0, 100);
+        assertKeysNotIn(clusterB, "map", 0, 100);
+        IMap map = clusterB[0].getMap("map");
+        LocalMapStats mapStats = map.getLocalMapStats();
+        assertEquals(0, mapStats.getBackupEntryCount());
     }
 
     private void initCluster(HazelcastInstance[] cluster, Config config) {
