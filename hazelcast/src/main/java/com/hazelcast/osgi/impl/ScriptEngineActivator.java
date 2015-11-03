@@ -45,9 +45,9 @@ final class ScriptEngineActivator {
         ScriptEngineManagerContext.setScriptEngineManager(scriptEngineManager);
 
         if (LOGGER.isFinestEnabled()) {
-            StringBuilder msg = new StringBuilder("Available script engines are:");
+            StringBuilder msg = new StringBuilder("Available script engines are:\n");
             for (ScriptEngineFactory scriptEngineFactory : scriptEngineManager.getEngineFactories()) {
-                msg.append(scriptEngineFactory.getEngineName()).append('\n');
+                msg.append("\t- ").append(scriptEngineFactory.getEngineName()).append('\n');
             }
             LOGGER.finest(msg.toString());
         }

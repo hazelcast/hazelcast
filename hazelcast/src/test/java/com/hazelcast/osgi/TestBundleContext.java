@@ -28,9 +28,16 @@ class TestBundleContext implements BundleContext {
     private final TestBundle testBundle;
     private final Map<String, List<ServiceReference>> serviceReferenceMap =
             new HashMap<String, List<ServiceReference>>();
+    private final TestBundle.RegisterDeregisterListener registerDeregisterListener;
 
     TestBundleContext(TestBundle testBundle) {
         this.testBundle = testBundle;
+        this.registerDeregisterListener = null;
+    }
+
+    TestBundleContext(TestBundle testBundle, TestBundle.RegisterDeregisterListener registerDeregisterListener) {
+        this.testBundle = testBundle;
+        this.registerDeregisterListener = registerDeregisterListener;
     }
 
     @Override
@@ -77,6 +84,9 @@ class TestBundleContext implements BundleContext {
                 serviceReferenceMap.put(clazz, serviceReferences);
             }
             serviceReferences.add(serviceReference);
+            if (registerDeregisterListener != null) {
+                registerDeregisterListener.onRegister(clazz, serviceReference);
+            }
         }
     }
 
@@ -155,7 +165,12 @@ class TestBundleContext implements BundleContext {
                 boolean removed = false;
                 for (Map.Entry<String, List<ServiceReference>> entry : serviceReferenceMap.entrySet()) {
                     List<ServiceReference> serviceReferences = entry.getValue();
-                    removed = removed || serviceReferences.remove(reference);
+                    if (serviceReferences.remove(reference)) {
+                        removed = true;
+                        if (registerDeregisterListener != null) {
+                            registerDeregisterListener.onDeregister(entry.getKey(), (TestServiceReference) reference);
+                        }
+                    }
                 }
                 return removed;
             }

@@ -65,18 +65,17 @@ public class Activator
 
     private void activateJavaxScripting(BundleContext context)
             throws Exception {
-        if (!isJavaxScriptingAvailable()) {
+        if (isJavaxScriptingAvailable()) {
+            Class<?> clazz = context.getBundle().loadClass("com.hazelcast.osgi.impl.ScriptEngineActivator");
+            Method register = clazz.getDeclaredMethod("registerOsgiScriptEngineManager", BundleContext.class);
+            register.setAccessible(true);
+            register.invoke(clazz, context);
+        } else {
             LOGGER.warning("javax.scripting is not available, scripts from Management Center cannot be executed!");
-            return;
         }
-
-        Class<?> clazz = context.getBundle().loadClass("com.hazelcast.osgi.impl.ScriptEngineActivator");
-        Method register = clazz.getDeclaredMethod("registerOsgiScriptEngineManager", BundleContext.class);
-        register.setAccessible(true);
-        register.invoke(clazz, context);
     }
 
-    private boolean isJavaxScriptingAvailable() {
+    static boolean isJavaxScriptingAvailable() {
         try {
             Class.forName("javax.script.ScriptEngineManager");
             return true;
