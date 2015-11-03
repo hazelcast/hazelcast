@@ -41,15 +41,11 @@ final class ScriptEngineActivator {
      * @param context BundleContext to bind the ScriptEngineManager to
      */
     public static void registerOsgiScriptEngineManager(BundleContext context) {
-        ScriptEngineManager scriptEngineManager = new OSGiScriptEngineManager(context);
+        OSGiScriptEngineManager scriptEngineManager = new OSGiScriptEngineManager(context);
         ScriptEngineManagerContext.setScriptEngineManager(scriptEngineManager);
 
         if (LOGGER.isFinestEnabled()) {
-            StringBuilder msg = new StringBuilder("Available script engines are:\n");
-            for (ScriptEngineFactory scriptEngineFactory : scriptEngineManager.getEngineFactories()) {
-                msg.append("\t- ").append(scriptEngineFactory.getEngineName()).append('\n');
-            }
-            LOGGER.finest(msg.toString());
+            LOGGER.finest(scriptEngineManager.printScriptEngines());
         }
     }
 
