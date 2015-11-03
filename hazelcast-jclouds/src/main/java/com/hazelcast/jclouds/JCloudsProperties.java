@@ -94,7 +94,10 @@ public final class JCloudsProperties {
         return new SimplePropertyDefinition(key, true, typeConverter, valueValidator);
     }
 
-    private static class PortValueValidator implements ValueValidator<Integer> {
+    /**
+     * Validator for valid network ports
+     */
+    protected static class PortValueValidator implements ValueValidator<Integer> {
 
         public void validate(Integer value) throws ValidationException {
             if (value < MIN_PORT) {

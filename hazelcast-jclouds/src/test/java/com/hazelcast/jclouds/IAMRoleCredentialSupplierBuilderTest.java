@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -27,6 +28,14 @@ public class IAMRoleCredentialSupplierBuilderTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void whenIamRoleIsNull() {
         new IAMRoleCredentialSupplierBuilder().withRoleName(null);
+    }
+
+    @Test
+    public void whenIamRoleIsNotNull() {
+        IAMRoleCredentialSupplierBuilder builder =
+                new IAMRoleCredentialSupplierBuilder().withRoleName("role");
+        assertNull(builder.getCredentials());
+        assertEquals(builder.getRoleName(), "role");
     }
 
     @Test

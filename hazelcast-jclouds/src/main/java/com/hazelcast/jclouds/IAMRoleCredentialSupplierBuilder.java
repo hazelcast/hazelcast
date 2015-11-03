@@ -39,7 +39,6 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 public class IAMRoleCredentialSupplierBuilder {
 
     private static final String IAM_ROLE_ENDPOINT = "169.254.169.254";
-
     private String roleName;
     private SessionCredentials credentials;
 
@@ -50,6 +49,14 @@ public class IAMRoleCredentialSupplierBuilder {
         isNotNull(roleName, "iam-role");
         this.roleName = roleName;
         return this;
+    }
+
+    public String getRoleName() {
+        return roleName;
+    }
+
+    public SessionCredentials getCredentials() {
+        return credentials;
     }
 
     protected Map<String, String> getKeysFromIamRole() {
