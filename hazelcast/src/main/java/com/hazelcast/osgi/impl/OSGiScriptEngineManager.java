@@ -347,4 +347,12 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
         }
     }
 
+    public String printScriptEngines() {
+        StringBuilder msg = new StringBuilder("Available script engines are:\n");
+        for (ScriptEngineFactory scriptEngineFactory : getEngineFactories()) {
+            msg.append("\t- ").append(scriptEngineFactory.getEngineName()).append('\n');
+        }
+        return msg.toString();
+    }
+
 }
