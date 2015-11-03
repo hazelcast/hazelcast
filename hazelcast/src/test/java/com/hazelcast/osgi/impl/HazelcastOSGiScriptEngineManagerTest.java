@@ -25,6 +25,14 @@ public class HazelcastOSGiScriptEngineManagerTest extends HazelcastOSGiScripting
     }
 
     @Test
+    public void scriptEnginesPrintedSuccessfully() {
+        OSGiScriptEngineManager scriptEngineManager =
+            (OSGiScriptEngineManager) ScriptEngineManagerContext.getScriptEngineManager();
+
+        assertNotNull(scriptEngineManager.printScriptEngines());
+    }
+
+    @Test
     public void bindingsGetAndSetSuccessfully() {
         ScriptEngineManager scriptEngineManager = ScriptEngineManagerContext.getScriptEngineManager();
 
