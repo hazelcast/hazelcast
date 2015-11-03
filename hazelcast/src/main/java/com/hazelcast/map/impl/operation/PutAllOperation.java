@@ -100,7 +100,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         mapServiceContext.interceptAfterPut(name, dataValue);
         EntryEventType eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
         final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
-        dataValue = getPostProcessedValueIfAvailable(mapServiceContext, recordStore, dataKey, dataValue);
+        dataValue = getValueOrPostProcessedValue(mapServiceContext, recordStore, dataKey, dataValue);
         mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         keysToInvalidate.add(dataKey);
 
@@ -120,8 +120,8 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         evict();
     }
 
-    private Data getPostProcessedValueIfAvailable(MapServiceContext mapServiceContext, RecordStore recordStore,
-                                                  Data dataKey, Data dataValue) {
+    private Data getValueOrPostProcessedValue(MapServiceContext mapServiceContext, RecordStore recordStore,
+                                              Data dataKey, Data dataValue) {
         if (!recordStore.getMapDataStore().isPostProcessingMapStore()) {
             return dataValue;
         }
