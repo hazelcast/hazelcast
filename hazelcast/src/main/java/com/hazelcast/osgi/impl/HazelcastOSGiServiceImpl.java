@@ -138,33 +138,20 @@ class HazelcastOSGiServiceImpl
         }
     }
 
-    private void shutdownAllInternal() {
-        try {
-            for (HazelcastOSGiInstance instance : instanceMap.values()) {
-                try {
-                    deregisterInstance(instance);
-                } catch (Throwable t) {
-                    LOGGER.finest("Error occurred while deregistering " + instance, t);
-                }
-                try {
-                    instance.shutdown();
-                } catch (Throwable t) {
-                    LOGGER.finest("Error occurred while shutting down " + instance, t);
-                }
-            }
-        } finally {
-            if (hazelcastInstance != null) {
-                // Default instance may not be registered due to set `HAZELCAST_OSGI_REGISTER_DISABLED` flag,
-                // So be sure that it is shutdown.
-                try {
-                    hazelcastInstance.shutdown();
-                } catch (Throwable t) {
-                    LOGGER.finest("Error occurred while shutting down the default Hazelcast instance !", t);
-                } finally {
-                    hazelcastInstance = null;
-                }
-            }
+    private void shutdownDefaultHazelcastInstanceIfActive() {
+        if (hazelcastInstance != null) {
+            shutdownHazelcastInstanceInternalSafely(hazelcastInstance);
+            hazelcastInstance = null;
         }
+    }
+
+    private void shutdownAllInternal() {
+        for (HazelcastOSGiInstance instance : instanceMap.values()) {
+            shutdownHazelcastInstanceInternalSafely(instance);
+        }
+        // Default instance may not be registered due to set `HAZELCAST_OSGI_REGISTER_DISABLED` flag,
+        // So be sure that it is shutdown.
+        shutdownDefaultHazelcastInstanceIfActive();
     }
 
     @Override
@@ -189,47 +176,25 @@ class HazelcastOSGiServiceImpl
             if (ownerBundle.getState() == Bundle.STARTING) {
                 try {
                     if (hazelcastInstance != null) {
-                        try {
-                            LOGGER.warning("Default Hazelcast instance should be null while activating service !");
-                            hazelcastInstance.shutdown();
-                        } catch (Throwable t) {
-                            LOGGER.finest("Error occurred while shutting down the default Hazelcast instance !", t);
-                        } finally {
-                            hazelcastInstance = null;
-                        }
+                        LOGGER.warning("Default Hazelcast instance should be null while activating service !");
+                        shutdownDefaultHazelcastInstanceIfActive();
                     }
-                    try {
-                        if (Boolean.getBoolean(HAZELCAST_OSGI_START)) {
-                            hazelcastInstance =
-                                    new HazelcastOSGiInstanceImpl(createHazelcastInstance(null), this);
-                            LOGGER.info("Default Hazelcast instance has been created");
-                        }
-                        if (hazelcastInstance != null && !Boolean.getBoolean(HAZELCAST_OSGI_REGISTER_DISABLED)) {
-                            registerInstance(hazelcastInstance);
-                            LOGGER.info("Default Hazelcast instance has been registered as OSGI service");
-                        }
-                    } catch (Throwable t) {
-                        if (hazelcastInstance != null) {
-                            shutdownHazelcastInstance(hazelcastInstance);
-                            hazelcastInstance = null;
-                        }
-                        ExceptionUtil.rethrow(t);
+                    if (Boolean.getBoolean(HAZELCAST_OSGI_START)) {
+                        hazelcastInstance =
+                                new HazelcastOSGiInstanceImpl(createHazelcastInstance(null), this);
+                        LOGGER.info("Default Hazelcast instance has been created");
+                    }
+                    if (hazelcastInstance != null && !Boolean.getBoolean(HAZELCAST_OSGI_REGISTER_DISABLED)) {
+                        registerInstance(hazelcastInstance);
+                        LOGGER.info("Default Hazelcast instance has been registered as OSGI service");
                     }
                     serviceRegistration =
                             ownerBundleContext.registerService(HazelcastOSGiService.class.getName(), this, null);
                     LOGGER.info(this + " has been registered as OSGI service and activated now");
-                } catch (Throwable t1) {
-                    if (hazelcastInstance != null) {
-                        // If somehow default instance is activated, revert and deactivate it.
-                        try {
-                            hazelcastInstance.shutdown();
-                        }  catch (Throwable t2) {
-                            LOGGER.finest("Error occurred while shutting down the default Hazelcast instance !", t2);
-                        } finally {
-                            hazelcastInstance = null;
-                        }
-                    }
-                    ExceptionUtil.rethrow(t1);
+                } catch (Throwable t) {
+                    // If somehow default instance is activated, revert and deactivate it.
+                    shutdownDefaultHazelcastInstanceIfActive();
+                    ExceptionUtil.rethrow(t);
                 }
             }
         }
@@ -249,10 +214,6 @@ class HazelcastOSGiServiceImpl
                         LOGGER.finest("Error occurred while deregistering " + this, t);
                     }
                     LOGGER.info(this + " has been deregistered as OSGI service and deactivated");
-                } catch (Throwable t) {
-                    LOGGER.info(this + " will be forcefully deregistered as OSGI service "
-                            + "and will be forcefully deactivated");
-                    ExceptionUtil.rethrow(t);
                 } finally {
                     serviceRegistration = null;
                 }
@@ -316,16 +277,24 @@ class HazelcastOSGiServiceImpl
         synchronized (serviceMutex) {
             checkActive();
 
-            try {
-                deregisterInstance(instance);
-            } catch (Throwable t) {
-                LOGGER.finest("Error occurred while deregistering " + instance, t);
-            }
-            try {
-                instance.shutdown();
-            } catch (Throwable t) {
-                LOGGER.finest("Error occurred while shutting down " + instance, t);
-            }
+            shutdownHazelcastInstanceInternal(instance);
+        }
+    }
+
+    private void shutdownHazelcastInstanceInternal(HazelcastOSGiInstance instance) {
+        try {
+            deregisterInstance(instance);
+        } catch (Throwable t) {
+            LOGGER.finest("Error occurred while deregistering " + instance, t);
+        }
+        instance.shutdown();
+    }
+
+    private void shutdownHazelcastInstanceInternalSafely(HazelcastOSGiInstance instance) {
+        try {
+            shutdownHazelcastInstanceInternal(instance);
+        } catch (Throwable t) {
+            LOGGER.finest("Error occurred while shutting down " + instance, t);
         }
     }
 
