@@ -88,7 +88,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
         clientService.removeClientListener(null);
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testRemoveClientListener_whenListenerAlreadyRemoved() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
@@ -97,22 +97,22 @@ public class ClientServiceTest extends HazelcastTestSupport {
         String id = clientService.addClientListener(clientListener);
 
         // first time remove
-        clientService.removeClientListener(id);
+        assertTrue(clientService.removeClientListener(id));
 
         // second time remove
-        clientService.removeClientListener(id);
+        assertFalse(clientService.removeClientListener(id));
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testRemoveClientListener_whenNonExistingId() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
         ClientService clientService = instance.getClientService();
 
-        clientService.removeClientListener("foobar");
+        assertFalse(clientService.removeClientListener("foobar"));
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testNumberOfClients_afterUnAuthenticatedClient() {
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
@@ -127,7 +127,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
         assertEquals(0, instance.getClientService().getConnectedClients().size());
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testNumberOfClients_afterUnAuthenticatedClient_withTwoNode() {
         final HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
@@ -145,7 +145,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
     }
 
 
-    @Test
+    @Test(timeout = 120000)
     @Category(NightlyTest.class)
     public void testNumberOfClients_afterUnAuthenticatedClient_withTwoNode_twoClient() {
         final HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
@@ -169,7 +169,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
     }
 
 
-    @Test
+    @Test(timeout = 120000)
     public void testConnectedClients() {
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
@@ -189,7 +189,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
 
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testClientListener() throws InterruptedException {
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final ClientService clientService = instance.getClientService();
@@ -238,7 +238,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
         assertEquals(2, totalAdd.get());
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testConnectedClientsWithReAuth() throws InterruptedException {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setConnectionAttemptPeriod(1000 * 5);
@@ -274,7 +274,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
         });
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testClientListenerForBothNodes() {
         final HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
@@ -297,7 +297,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
         assertOpenEventually(clientListenerLatch, 5);
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testClientListenerDisconnected() throws InterruptedException {
         Config config = new Config();
         config.setProperty(GroupProperty.IO_THREAD_COUNT, "1");
@@ -352,7 +352,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testPendingEventPacketsWithEvents() throws InterruptedException, UnknownHostException {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
