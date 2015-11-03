@@ -22,6 +22,7 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -46,6 +47,7 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,6 +58,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -70,6 +73,9 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class XmlClientConfigBuilderTest {
+
+    public static final String HAZELCAST_CLIENT_START_TAG =
+            "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n";
 
     ClientConfig clientConfig;
 
@@ -97,7 +103,7 @@ public class XmlClientConfigBuilderTest {
     @Test
     public void loadingThroughSystemProperty_existingFile() throws IOException {
         String xml =
-                "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n" +
+                HAZELCAST_CLIENT_START_TAG +
                         "    <group>\n" +
                         "        <name>foobar</name>\n" +
                         "        <password>dev-pass</password>\n" +
@@ -309,6 +315,12 @@ public class XmlClientConfigBuilderTest {
         testXSDConfigXML("hazelcast-client-full.xml");
     }
 
+    @Test(expected = InvalidConfigurationException.class)
+    public void testMissingNamespace() {
+        String xml = "<hazelcast-client/>";
+        buildConfig(xml);
+    }
+
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-config-3.6.xsd");
@@ -321,5 +333,23 @@ public class XmlClientConfigBuilderTest {
         } catch (SAXException ex) {
             fail(xmlFileName + " is not valid because: " + ex.toString());
         }
+    }
+
+    static ClientConfig buildConfig(String xml, Properties properties) {
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);
+        configBuilder.setProperties(properties);
+        ClientConfig config = configBuilder.build();
+        return config;
+    }
+
+    static ClientConfig buildConfig(String xml, String key, String value) {
+        Properties properties = new Properties();
+        properties.setProperty(key, value);
+        return buildConfig(xml, properties);
+    }
+
+    static ClientConfig buildConfig(String xml) {
+        return buildConfig(xml, null);
     }
 }
