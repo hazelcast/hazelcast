@@ -213,4 +213,8 @@ public abstract class OperationThread extends HazelcastManagedThread {
         long timeoutMs = unit.toMillis(timeout);
         join(timeoutMs);
     }
+
+    public int getThreadId() {
+        return threadId;
+    }
 }
