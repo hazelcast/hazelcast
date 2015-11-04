@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.aws;
+package com.hazelcast.aws.impl;
 
-import com.hazelcast.aws.impl.DescribeInstances;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -25,18 +24,20 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class DescribeInstancesTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void test_whenAwsConfigIsNull() {
-        new DescribeInstances(null,"endpoint");
+        new DescribeInstances(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_whenAccessKeyNull() {
-        new DescribeInstances(new AwsConfig(),"endpoint");
+        new DescribeInstances(new AwsConfig());
     }
     
     @Test
@@ -44,6 +45,16 @@ public class DescribeInstancesTest {
         AwsConfig awsConfig = new AwsConfig();
         awsConfig.setAccessKey("accesskey");
         awsConfig.setSecretKey("secretkey");
-        new DescribeInstances(awsConfig,"endpoint");
+        new DescribeInstances(awsConfig);
+    }
+
+    @Test
+    public void test_endpointInNonUsEast1Region() {
+        AwsConfig awsConfig = new AwsConfig();
+        awsConfig.setAccessKey("accesskey");
+        awsConfig.setSecretKey("secretkey");
+        awsConfig.setRegion("us-west-1");
+
+        assertEquals("ec2.us-west-1.amazonaws.com", new DescribeInstances(awsConfig).endpoint);
     }
 }

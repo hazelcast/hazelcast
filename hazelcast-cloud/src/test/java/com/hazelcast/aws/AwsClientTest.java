@@ -24,8 +24,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class AwsClientTest {
@@ -47,13 +45,4 @@ public class AwsClientTest {
     public void testAwsClient_whenNoAwsConfig() {
         new AWSClient(null);
     }
-
-    @Test
-    public void testAwsClient_getEndPoint() {
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setIamRole("test");
-        AWSClient awsClient = new AWSClient(awsConfig);
-        assertEquals("ec2.us-east-1.amazonaws.com", awsClient.getEndpoint());
-    }
-
 }

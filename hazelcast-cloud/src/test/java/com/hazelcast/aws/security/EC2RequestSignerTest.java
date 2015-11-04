@@ -91,7 +91,7 @@ public class EC2RequestSignerTest {
                 setAccessKey(TEST_ACCESS_KEY).
                 setSecretKey(TEST_SECRET_KEY);
 
-        DescribeInstances di = new DescribeInstances(awsConfig, TEST_HOST);
+        DescribeInstances di = new DescribeInstances(awsConfig);
         // Override the attributes map. We need to change values. Not pretty, but
         // no real alternative, and in this case : testing only
 
@@ -122,7 +122,7 @@ public class EC2RequestSignerTest {
                 setAccessKey(TEST_ACCESS_KEY).
                 setSecretKey(TEST_SECRET_KEY);
 
-        DescribeInstances di = new DescribeInstances(awsConfig, TEST_HOST);
+        DescribeInstances di = new DescribeInstances(awsConfig);
 
         Field attributesField = di.getClass().getDeclaredField("attributes");
         attributesField.setAccessible(true);

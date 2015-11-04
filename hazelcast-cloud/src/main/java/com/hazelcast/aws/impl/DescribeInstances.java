@@ -44,10 +44,10 @@ public class DescribeInstances {
     String timeStamp = getFormattedTimestamp();
     private EC2RequestSigner rs;
     private AwsConfig awsConfig;
-    private String endpoint;
+    String endpoint;
     private Map<String, String> attributes = new HashMap<String, String>();
 
-    public DescribeInstances(AwsConfig awsConfig, String endpoint) {
+    public DescribeInstances(AwsConfig awsConfig) {
         if (awsConfig == null) {
             throw new IllegalArgumentException("AwsConfig is required!");
         }
@@ -55,7 +55,12 @@ public class DescribeInstances {
             throw new IllegalArgumentException("AWS access key or IAM Role is required!");
         }
         this.awsConfig = awsConfig;
-        this.endpoint = endpoint;
+
+        this.endpoint = awsConfig.getHostHeader();
+        if (awsConfig.getRegion() != null && awsConfig.getRegion().length() > 0) {
+            this.endpoint = "ec2." + awsConfig.getRegion() + ".amazonaws.com";
+        }
+
         if (awsConfig.getIamRole() != null) {
             getKeysFromIamRole();
         }

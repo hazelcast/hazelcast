@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
+
 import static com.hazelcast.util.Preconditions.checkHasText;
 
 /**
@@ -50,6 +52,7 @@ public class AwsConfig {
     private String tagValue;
     private String hostHeader = "ec2.amazonaws.com";
     private String iamRole;
+    private AWSCredentialsProvider awsCredentialsProvider;
     private int connectionTimeoutSeconds = CONNECTION_TIMEOUT;
 
     /**
@@ -272,6 +275,29 @@ public class AwsConfig {
      */
     public AwsConfig setIamRole(String iamRole) {
         this.iamRole = iamRole;
+        return this;
+    }
+
+    /**
+     * Gets the AWS credentials provider, which will be preferred over an explicit accessKey/secretKey or IAM role if
+     * provided.
+     *
+     * @return the credentials provider. null if nothing is returned.
+     * @see #setAwsCredentialsProvider(AWSCredentialsProvider)
+     */
+    public AWSCredentialsProvider getAwsCredentialsProvider() {
+        return awsCredentialsProvider;
+    }
+
+    /**
+     * Sets the AWS credentials provider.
+     *
+     * @param awsCredentialsProvider the provider.
+     * @return the updated AwsConfig
+     * @see #getAwsCredentialsProvider()
+     */
+    public AwsConfig setAwsCredentialsProvider(AWSCredentialsProvider awsCredentialsProvider) {
+        this.awsCredentialsProvider = awsCredentialsProvider;
         return this;
     }
 
