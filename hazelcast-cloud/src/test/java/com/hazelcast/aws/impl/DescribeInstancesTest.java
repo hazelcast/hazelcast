@@ -16,6 +16,9 @@
 
 package com.hazelcast.aws.impl;
 
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.BasicSessionCredentials;
+import com.amazonaws.internal.StaticCredentialsProvider;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -23,6 +26,8 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -46,6 +51,23 @@ public class DescribeInstancesTest {
         awsConfig.setAccessKey("accesskey");
         awsConfig.setSecretKey("secretkey");
         new DescribeInstances(awsConfig);
+    }
+
+    @Test
+    public void test_whenGivenCredentialsProvider() {
+        AwsConfig awsConfig = new AwsConfig();
+        awsConfig.setAwsCredentialsProvider(new StaticCredentialsProvider(
+                new BasicAWSCredentials("accesskey", "secretkey")));
+        new DescribeInstances(awsConfig);
+
+        assertEquals("accesskey", awsConfig.getAccessKey());
+        assertEquals("secretkey", awsConfig.getSecretKey());
+
+        awsConfig.setAwsCredentialsProvider(new StaticCredentialsProvider(
+                new BasicSessionCredentials("accesskey", "secretkey", "token")));
+        Map<String, String> attributes = new DescribeInstances(awsConfig).attributes;
+
+        assertEquals("token", attributes.get("X-Amz-Security-Token"));
     }
 
     @Test

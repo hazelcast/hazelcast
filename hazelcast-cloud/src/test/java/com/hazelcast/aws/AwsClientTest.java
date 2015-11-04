@@ -16,6 +16,8 @@
 
 package com.hazelcast.aws;
 
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.internal.StaticCredentialsProvider;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -44,5 +46,22 @@ public class AwsClientTest {
     @Test(expected = IllegalArgumentException.class)
     public void testAwsClient_whenNoAwsConfig() {
         new AWSClient(null);
+    }
+
+    @Test
+    public void testAwsClient_whenCredentialsProvider() {
+        AwsConfig awsConfig = new AwsConfig();
+        awsConfig.setAwsCredentialsProvider(new StaticCredentialsProvider(
+                new BasicAWSCredentials("accesskey", "secretkey")));
+
+        new AWSClient(awsConfig); // no exception
+    }
+
+    @Test
+    public void testAwsClient_whenIamRole() {
+        AwsConfig awsConfig = new AwsConfig();
+        awsConfig.setIamRole("role");
+
+        new AWSClient(awsConfig); // no exception
     }
 }

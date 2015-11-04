@@ -30,11 +30,13 @@ public class AWSClient {
         if (awsConfig == null) {
             throw new IllegalArgumentException("AwsConfig is required!");
         }
-        if (awsConfig.getAccessKey() == null && awsConfig.getIamRole() == null) {
-            throw new IllegalArgumentException("AWS access key or IAM Role is required!");
-        }
-        if (awsConfig.getSecretKey() == null && awsConfig.getIamRole() == null) {
-            throw new IllegalArgumentException("AWS secret key or Iam Role is required!");
+        if (awsConfig.getIamRole() == null && awsConfig.getAwsCredentialsProvider() == null) {
+            if (awsConfig.getAccessKey() == null) {
+                throw new IllegalArgumentException("AWS access key or IAM Role is required!");
+            }
+            if (awsConfig.getSecretKey() == null) {
+                throw new IllegalArgumentException("AWS secret key or Iam Role is required!");
+            }
         }
         this.awsConfig = awsConfig;
     }
