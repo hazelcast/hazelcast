@@ -509,6 +509,45 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
+    public void testRemovingSameEntryTwiceShouldTriggerEntryListenerOnlyOnce() {
+        String cacheName = randomString();
+
+        CacheConfig<Integer, String> config = createCacheConfig();
+        final CacheFromDifferentNodesTest.SimpleEntryListener<Integer, String> listener =
+                new CacheFromDifferentNodesTest.SimpleEntryListener<Integer, String>();
+        MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration =
+                new MutableCacheEntryListenerConfiguration<Integer, String>(
+                        FactoryBuilder.factoryOf(listener), null, true, true);
+
+        config.addCacheEntryListenerConfiguration(listenerConfiguration);
+
+        Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
+        assertNotNull(cache);
+
+        Integer key = 1;
+        String value = "value";
+        cache.put(key, value);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(1, listener.created.get());
+            }
+        });
+
+        cache.removeAll();
+        cache.removeAll();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(1, listener.removed.get());
+            }
+        });
+    }
+
+    @Test
     public void testCompletionEvent() {
         String cacheName = randomString();
 
