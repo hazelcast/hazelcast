@@ -716,6 +716,12 @@ public class ConfigXmlGenerator {
         }
         xml.append("<hot-restart enabled=\"").append(hotRestartConfig.isEnabled()).append("\">");
         xml.append("<home-dir>").append(hotRestartConfig.getHomeDir().getAbsolutePath()).append("</home-dir>");
+        xml.append("<validation-timeout-seconds>")
+                .append(hotRestartConfig.getValidationTimeoutSeconds())
+                .append("</validation-timeout-seconds>");
+        xml.append("<data-load-timeout-seconds>")
+                .append(hotRestartConfig.getDataLoadTimeoutSeconds())
+                .append("</data-load-timeout-seconds>");
         xml.append("</hot-restart>");
     }
 

@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import java.io.File;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
  * Configures the Hot Restart stores.
@@ -38,8 +39,20 @@ public class HotRestartConfig {
      */
     public static final String HOT_RESTART_HOME_DEFAULT = "hot-restart";
 
+    /**
+     * Default validation timeout
+     */
+    public static final int DEFAULT_VALIDATION_TIMEOUT = 2 * 60;
+
+    /**
+     * Default load timeout
+     */
+    public static final int DEFAULT_DATA_LOAD_TIMEOUT = 15 * 60;
+
     private boolean enabled;
     private File homeDir = new File(HOT_RESTART_HOME_DEFAULT);
+    private int validationTimeoutSeconds = DEFAULT_VALIDATION_TIMEOUT;
+    private int dataLoadTimeoutSeconds = DEFAULT_DATA_LOAD_TIMEOUT;
 
     /**
      * Returns whether hot restart enabled on this member.
@@ -76,6 +89,51 @@ public class HotRestartConfig {
     public HotRestartConfig setHomeDir(File homeDir) {
         checkNotNull(homeDir, "Home directory cannot be null!");
         this.homeDir = homeDir;
+        return this;
+    }
+
+    /**
+     * Returns configured validation timeout for hot-restart process.
+     *
+     * @return validation timeout in seconds
+     */
+    public int getValidationTimeoutSeconds() {
+        return validationTimeoutSeconds;
+    }
+
+    /**
+     * Sets validation timeout for hot-restart process, includes validating
+     * cluster members expected to join and partition table on all cluster.
+     *
+     * @param validationTimeoutSeconds validation timeout in seconds
+     * @return HotRestartConfig
+     */
+    public HotRestartConfig setValidationTimeoutSeconds(int validationTimeoutSeconds) {
+        checkPositive(validationTimeoutSeconds, "Validation timeout should be positive!");
+        this.validationTimeoutSeconds = validationTimeoutSeconds;
+        return this;
+    }
+
+    /**
+     * Returns configured data load timeout for hot-restart process.
+     *
+     * @return data load timeout in seconds
+     */
+    public int getDataLoadTimeoutSeconds() {
+        return dataLoadTimeoutSeconds;
+    }
+
+    /**
+     * Sets data load timeout for hot-restart process,
+     * all members in the cluster should complete restoring their local data
+     * before this timeout.
+     *
+     * @param dataLoadTimeoutSeconds data load timeout in seconds
+     * @return HotRestartConfig
+     */
+    public HotRestartConfig setDataLoadTimeoutSeconds(int dataLoadTimeoutSeconds) {
+        checkPositive(dataLoadTimeoutSeconds, "Load timeout should be positive!");
+        this.dataLoadTimeoutSeconds = dataLoadTimeoutSeconds;
         return this;
     }
 }

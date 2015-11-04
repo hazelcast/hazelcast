@@ -176,4 +176,11 @@ public interface NodeExtension {
      * @param newState new state
      */
     void onClusterStateChange(ClusterState newState);
+
+    /**
+     * Registers given register if it's a known type.
+     * @param listener listener instance
+     * @return true if listener is registered, false otherwise
+     */
+    boolean registerListener(Object listener);
 }
