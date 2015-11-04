@@ -84,6 +84,20 @@ public class DiscoveryStrategyConfigTest {
         assertEquals(properties, discoveryStrategyConfig.getProperties());
     }
 
+    @Test
+    public void test_DiscoveryStrategyFactory_properties_add_remove() {
+        DiscoveryStrategyFactory discoveryStrategyFactory = new TestDiscoveryStrategyFactory();
+        DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(discoveryStrategyFactory);
+        assertEquals(0, discoveryStrategyConfig.getProperties().size());
+
+        discoveryStrategyConfig.addProperty("test", "value");
+        assertEquals(1, discoveryStrategyConfig.getProperties().size());
+        assertEquals("value", discoveryStrategyConfig.getProperties().get("test"));
+
+        discoveryStrategyConfig.removeProperty("test");
+        assertEquals(0, discoveryStrategyConfig.getProperties().size());
+    }
+
     private static class TestDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
 
         @Override
