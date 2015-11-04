@@ -764,6 +764,8 @@ public class TestFullApplicationContext {
         HotRestartConfig hotRestartConfig = config.getHotRestartConfig();
         assertTrue(hotRestartConfig.isEnabled());
         assertEquals(dir.getAbsolutePath(), hotRestartConfig.getHomeDir().getAbsolutePath());
+        assertEquals(1111, hotRestartConfig.getValidationTimeoutSeconds());
+        assertEquals(2222, hotRestartConfig.getDataLoadTimeoutSeconds());
     }
 
 }

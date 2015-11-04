@@ -354,10 +354,17 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         final boolean enabled = getBooleanValue(getTextContent(attrEnabled));
         hrConfig.setEnabled(enabled);
 
+        final String validationTimeoutName = "validation-timeout-seconds";
+        final String dataLoadTimeoutName = "data-load-timeout-seconds";
+
         for (Node n : childElements(hrRoot)) {
             final String name = cleanNodeName(n);
             if ("home-dir".equals(name)) {
                 hrConfig.setHomeDir(new File(getTextContent(n)).getAbsoluteFile());
+            } else if (validationTimeoutName.equals(name)) {
+                hrConfig.setValidationTimeoutSeconds(getIntegerValue(validationTimeoutName, getTextContent(n)));
+            } else if (dataLoadTimeoutName.equals(name)) {
+                hrConfig.setDataLoadTimeoutSeconds(getIntegerValue(dataLoadTimeoutName, getTextContent(n)));
             }
         }
         config.setHotRestartConfig(hrConfig);

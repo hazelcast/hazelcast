@@ -1099,9 +1099,13 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testHotRestart() {
         String dir = "/mnt/hot-restart-root/";
+        int validationTimeout = 13131;
+        int dataLoadTimeout = 45454;
         String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
                 "<hot-restart enabled=\"true\">"
                 + "<home-dir>" + dir + "</home-dir>"
+                + "<validation-timeout-seconds>" + validationTimeout + "</validation-timeout-seconds>"
+                + "<data-load-timeout-seconds>" + dataLoadTimeout + "</data-load-timeout-seconds>"
                 + "</hot-restart>\n" +
                 "</hazelcast>";
 
@@ -1109,5 +1113,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         HotRestartConfig hotRestartConfig = config.getHotRestartConfig();
         assertTrue(hotRestartConfig.isEnabled());
         assertEquals(new File(dir).getAbsolutePath(), hotRestartConfig.getHomeDir().getAbsolutePath());
+        assertEquals(validationTimeout, hotRestartConfig.getValidationTimeoutSeconds());
+        assertEquals(dataLoadTimeout, hotRestartConfig.getDataLoadTimeoutSeconds());
     }
 }

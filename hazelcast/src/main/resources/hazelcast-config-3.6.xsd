@@ -2710,7 +2710,30 @@
 
     <xs:complexType name="hot-restart">
         <xs:all>
-            <xs:element name="home-dir" type="xs:string" minOccurs="0" maxOccurs="1" default="hot-restart"/>
+            <xs:element name="home-dir" type="xs:string" minOccurs="0" maxOccurs="1" default="hot-restart">
+                <xs:annotation>
+                    <xs:documentation>
+                        Home directory for all hot-restart data
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="validation-timeout-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Validation timeout for hot-restart process, includes validating
+                        cluster members expected to join and partition table on all cluster.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="data-load-timeout-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Data load timeout for hot-restart process,
+                        all members in the cluster should complete restoring their local data
+                        before this timeout.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" use="required">
             <xs:annotation>
