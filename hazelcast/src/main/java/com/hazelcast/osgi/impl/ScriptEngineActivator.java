@@ -16,13 +16,10 @@
 
 package com.hazelcast.osgi.impl;
 
+import com.hazelcast.internal.management.ScriptEngineManagerContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.management.ScriptEngineManagerContext;
 import org.osgi.framework.BundleContext;
-
-import javax.script.ScriptEngineFactory;
-import javax.script.ScriptEngineManager;
 
 /**
  * This class is used to activate scriptengine managers only if the JSR 223 is available
