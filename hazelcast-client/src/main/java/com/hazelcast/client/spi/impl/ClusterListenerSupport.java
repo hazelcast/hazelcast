@@ -133,7 +133,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 ownerUuid = principal.getOwnerUuid();
             }
             ClientMessage clientMessage;
-            if (credentials instanceof UsernamePasswordCredentials) {
+            if (credentials.getClass().equals(UsernamePasswordCredentials.class)) {
                 UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
                 clientMessage = ClientAuthenticationCodec.encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid,
                         true, ClientTypes.JAVA, serializationVersion);
