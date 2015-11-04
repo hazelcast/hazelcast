@@ -136,12 +136,12 @@ public class CacheLoadAllOperation
 
     @Override
     public final int getSyncBackupCount() {
-        return cache != null ? cache.getConfig().getBackupCount() : 0;
+        return cache.getConfig().getBackupCount();
     }
 
     @Override
     public final int getAsyncBackupCount() {
-        return cache != null ? cache.getConfig().getAsyncBackupCount() : 0;
+        return cache.getConfig().getAsyncBackupCount();
     }
 
     @Override
