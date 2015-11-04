@@ -335,6 +335,13 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         if (initialized) {
             return;
         }
+
+        ClusterState clusterState = node.getClusterService().getClusterState();
+        if (clusterState != ClusterState.ACTIVE) {
+            logger.warning("Partitions can't be assigned since cluster-state= " + clusterState);
+            return;
+        }
+
         if (lock.tryLock()) {
             try {
                 if (!initialized && !node.isMaster() && node.getMasterAddress() != null && node.joined()) {

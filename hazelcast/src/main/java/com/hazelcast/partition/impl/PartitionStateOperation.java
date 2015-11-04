@@ -17,12 +17,14 @@
 package com.hazelcast.partition.impl;
 
 import com.hazelcast.cluster.impl.operations.JoinOperation;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.partition.PartitionRuntimeState;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
@@ -46,6 +48,11 @@ public final class PartitionStateOperation extends AbstractOperation
 
     @Override
     public void run() {
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        if (nodeEngine.getNode().getState() == NodeState.PASSIVE) {
+            getLogger().warning("Partition table received before startup is completed. Caller: " + getCallerAddress());
+            return;
+        }
         partitionState.setEndpoint(getCallerAddress());
         InternalPartitionServiceImpl partitionService = getService();
         partitionService.processPartitionRuntimeState(partitionState);
