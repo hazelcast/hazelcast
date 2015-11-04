@@ -94,5 +94,4 @@ public abstract class ValueExtractor<T> {
      */
     public abstract void extract(T target, ValueCollector collector);
 
-
 }

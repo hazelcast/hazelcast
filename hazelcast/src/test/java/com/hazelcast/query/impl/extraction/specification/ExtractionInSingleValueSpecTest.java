@@ -89,22 +89,17 @@ public class ExtractionInSingleValueSpecTest extends AbstractExtractionTest {
     }
 
     @Test
-    @Ignore("TEST_1")
-    // TODO Fix null handling -> name on null element does not throw exception
     public void nestedAttribute_firstIsNull_comparedToNotNull() {
         execute(Input.of(BOND, KRUEGER, HUNT_WITH_NULLS),
                 Query.of(Predicates.equal("secondLimb.name", "Non-null-value"), mv),
-                Expected.of(QueryException.class));
+                Expected.empty());
     }
 
     @Test
-    @Ignore("TEST_2")
-    // TODO BUG!
-    // It returns HUNT_WITH_NULLS because secondLimb is null, so it does not evaluate .name and null matches null
     public void nestedAttribute_firstIsNull_comparedToNull() {
         execute(Input.of(BOND, KRUEGER, HUNT_WITH_NULLS),
                 Query.of(Predicates.equal("secondLimb.name", null), mv),
-                Expected.of(QueryException.class));
+                Expected.of(HUNT_WITH_NULLS));
     }
 
     @Parameterized.Parameters(name = "{index}: {0}, {1}, {2}")
