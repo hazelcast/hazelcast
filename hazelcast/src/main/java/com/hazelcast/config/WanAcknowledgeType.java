@@ -24,11 +24,42 @@ public enum WanAcknowledgeType {
     /**
      * ACK when operation is invoked successfully on target cluster
      */
-    ACK_ON_TRANSMIT,
+    ACK_ON_TRANSMIT(0),
 
     /**
      * Wait till the operation is complete on target cluster
      */
-    ACK_ON_OPERATION_COMPLETE
+    ACK_ON_OPERATION_COMPLETE(1);
 
+    private final int id;
+
+    WanAcknowledgeType(int id) {
+        this.id = id;
+    }
+
+    /**
+     * Gets the id for the given {@link WanAcknowledgeType}.
+     *
+     * This reason this id is used instead of an the ordinal value is that the ordinal value is more prone to changes due to
+     * reordering.
+     *
+     * @return the id.
+     */
+    public int getId() {
+        return id;
+    }
+
+    /**
+     * Returns the {@link WanAcknowledgeType} for the given id.
+     *
+     * @return the {@link WanAcknowledgeType} found or null if not found
+     */
+    public static WanAcknowledgeType getById(final int id) {
+        for (WanAcknowledgeType type : values()) {
+            if (type.id == id) {
+                return type;
+            }
+        }
+        return null;
+    }
 }
