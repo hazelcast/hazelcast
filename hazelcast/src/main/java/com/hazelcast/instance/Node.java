@@ -254,6 +254,11 @@ public class Node {
                 nodeEngine.getEventService().registerLocalListener(serviceName, serviceName, listener);
                 known = true;
             }
+
+            if (nodeExtension.registerListener(listener)) {
+                known = true;
+            }
+
             if (listener != null && !known) {
                 final String error = "Unknown listener type: " + listener.getClass();
                 Throwable t = new IllegalArgumentException(error);
