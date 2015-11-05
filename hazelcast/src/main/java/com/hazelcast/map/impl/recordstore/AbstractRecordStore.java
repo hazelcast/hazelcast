@@ -52,7 +52,6 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
  */
 abstract class AbstractRecordStore implements RecordStore<Record> {
 
-    protected final Storage<Data, Record> storage;
     protected final RecordFactory recordFactory;
     protected final String name;
     protected final MapContainer mapContainer;
@@ -66,6 +65,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final int partitionId;
     protected final InMemoryFormat inMemoryFormat;
 
+    protected Storage<Data, Record> storage;
+
     protected AbstractRecordStore(MapContainer mapContainer, int partitionId) {
         this.mapContainer = mapContainer;
         this.partitionId = partitionId;
@@ -74,10 +75,14 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.name = mapContainer.getName();
         this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
-        this.storage = createStorage(recordFactory, inMemoryFormat);
         this.mapStoreContext = mapContainer.getMapStoreContext();
         MapStoreManager mapStoreManager = mapStoreContext.getMapStoreManager();
         this.mapDataStore = mapStoreManager.getMapDataStore(partitionId);
+    }
+
+    @Override
+    public void init() {
+        this.storage = createStorage(recordFactory, inMemoryFormat);
     }
 
     @Override
@@ -212,7 +217,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         storage.dispose();
     }
 
-    public Storage<Data, Record> getStorage() {
+    public Storage<Data, ? extends Record> getStorage() {
         return storage;
     }
 }
