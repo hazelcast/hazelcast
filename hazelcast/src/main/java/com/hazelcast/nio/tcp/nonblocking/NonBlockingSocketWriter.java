@@ -335,6 +335,9 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         }
 
         fillOutputBuffer();
+        if (shutdown) {
+            return;
+        }
 
         if (dirtyOutputBuffer()) {
             writeOutputBufferToSocket();
