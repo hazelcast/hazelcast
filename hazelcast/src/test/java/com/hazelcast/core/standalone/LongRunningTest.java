@@ -296,7 +296,7 @@ public class LongRunningTest {
     }
 
     static {
-        System.setProperty("hazelcast.version.check.enabled", "false");
+        System.setProperty("hazelcast.phone.home.enabled", "false");
         System.setProperty("hazelcast.socket.bind.any", "false");
         System.setProperty("hazelcast.partition.migration.interval", "0");
     }

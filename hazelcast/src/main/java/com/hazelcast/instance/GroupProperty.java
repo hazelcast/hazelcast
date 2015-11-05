@@ -181,7 +181,10 @@ public enum GroupProperty implements HazelcastProperty {
 
     PREFER_IPv4_STACK("hazelcast.prefer.ipv4.stack", true),
 
+    @Deprecated
     VERSION_CHECK_ENABLED("hazelcast.version.check.enabled", true),
+
+    PHONE_HOME_ENABLED("hazelcast.phone.home.enabled", true),
 
     CONNECT_ALL_WAIT_SECONDS("hazelcast.connect.all.wait.seconds", 120, SECONDS),
 

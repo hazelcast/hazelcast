@@ -35,7 +35,7 @@ public class SimpleMapTestFromClient {
         GroupProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("0");
         System.setProperty("java.net.preferIPv4Stack", "true");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
-        GroupProperty.VERSION_CHECK_ENABLED.setSystemProperty("false");
+        GroupProperty.PHONE_HOME_ENABLED.setSystemProperty("false");
         GroupProperty.SOCKET_BIND_ANY.setSystemProperty("false");
 
         Random rand = new Random();

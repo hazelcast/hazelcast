@@ -183,7 +183,7 @@ public class IndexSplitBrainTest extends HazelcastTestSupport {
 
     protected void setCommonProperties(Config config) {
         config.setProperty(GroupProperty.LOGGING_TYPE, "log4j");
-        config.setProperty(GroupProperty.VERSION_CHECK_ENABLED, "false");
+        config.setProperty(GroupProperty.PHONE_HOME_ENABLED, "false");
         config.setProperty("hazelcast.mancenter.enabled", "false");
         config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "1");
         config.setProperty(GroupProperty.CONNECT_ALL_WAIT_SECONDS, "5");
