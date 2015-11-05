@@ -34,8 +34,8 @@ import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -127,18 +127,14 @@ abstract class AbstractClientCacheProxy<K, V>
             return delegatingFuture;
         } else {
             try {
-                Object value = delegatingFuture.get();
+                Object value = toObject(delegatingFuture.get());
                 if (nearCache != null) {
-                    storeInNearCache(keyData, (Data) delegatingFuture.getResponse(), null);
+                    storeInNearCache(keyData, (Data) delegatingFuture.getResponse(), (V) value);
                 }
                 if (statisticsEnabled) {
                     handleStatisticsOnGet(start, value);
                 }
-                if (!(value instanceof Data)) {
-                    return value;
-                } else {
-                    return serializationService.toObject(value);
-                }
+                return value;
             } catch (Throwable e) {
                 throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
             }
