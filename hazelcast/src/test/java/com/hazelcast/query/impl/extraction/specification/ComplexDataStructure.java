@@ -1,4 +1,4 @@
-package com.hazelcast.query.impl.extraction;
+package com.hazelcast.query.impl.extraction.specification;
 
 import com.hazelcast.test.ObjectTestUtils;
 
@@ -7,12 +7,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class ComplexCaseDataStructure {
+/**
+ * Data structure used in the tests of extraction in multi-value attributes (in collections and arrays)
+ * Each multi-value attribute is present as both an array and as a collection, for example:
+ * limbs_list & limbs_array, so that both extraction in arrays and in collections may be tested.
+ */
+public class ComplexDataStructure {
 
     public static class Person implements Serializable {
         String name;
         List<Limb> limbs_list = new ArrayList<Limb>();
         Limb[] limbs_array = null;
+        Limb firstLimb = null;
+        Limb secondLimb = null;
 
         @Override
         public boolean equals(Object o) {
@@ -107,9 +114,14 @@ public class ComplexCaseDataStructure {
         Person person = new Person();
         person.name = name;
         person.limbs_list.addAll(Arrays.asList(limbs));
+        if (limbs.length > 0) {
+            person.firstLimb = limbs[0];
+        }
+        if (limbs.length > 1) {
+            person.secondLimb = limbs[1];
+        }
         person.limbs_array = limbs;
         return person;
     }
-
 
 }
