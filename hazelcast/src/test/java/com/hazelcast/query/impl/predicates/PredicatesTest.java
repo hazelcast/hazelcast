@@ -76,6 +76,8 @@ import static org.mockito.Mockito.when;
 @Category(QuickTest.class)
 public class PredicatesTest extends HazelcastTestSupport {
 
+    private static final String DUMMY = "DUMMY_ATTRIBUTE_IGNORED";
+
     final SerializationService ss = new DefaultSerializationServiceBuilder().build();
 
     @Test
@@ -118,65 +120,65 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test
     public void testEqual() {
-        assertPredicateTrue(equal(null, "value"), "value");
-        assertPredicateFalse(equal(null, "value1"), "value");
-        assertPredicateTrue(equal(null, TRUE), true);
-        assertPredicateTrue(equal(null, true), TRUE);
-        assertPredicateFalse(equal(null, true), FALSE);
-        assertPredicateFalse(equal(null, new BigDecimal("1.23E3")), new BigDecimal("1.23E2"));
-        assertPredicateTrue(equal(null, new BigDecimal("1.23E3")), new BigDecimal("1.23E3"));
-        assertPredicateFalse(equal(null, 15.22), 15.23);
-        assertPredicateTrue(equal(null, 15.22), 15.22);
-        assertPredicateFalse(equal(null, 16), 15);
+        assertPredicateTrue(equal(DUMMY, "value"), "value");
+        assertPredicateFalse(equal(DUMMY, "value1"), "value");
+        assertPredicateTrue(equal(DUMMY, TRUE), true);
+        assertPredicateTrue(equal(DUMMY, true), TRUE);
+        assertPredicateFalse(equal(DUMMY, true), FALSE);
+        assertPredicateFalse(equal(DUMMY, new BigDecimal("1.23E3")), new BigDecimal("1.23E2"));
+        assertPredicateTrue(equal(DUMMY, new BigDecimal("1.23E3")), new BigDecimal("1.23E3"));
+        assertPredicateFalse(equal(DUMMY, 15.22), 15.23);
+        assertPredicateTrue(equal(DUMMY, 15.22), 15.22);
+        assertPredicateFalse(equal(DUMMY, 16), 15);
     }
 
 
     @Test
     public void testAnd() {
-        final Predicate and1 = and(greaterThan(null, 4), lessThan(null, 6));
+        final Predicate and1 = and(greaterThan(DUMMY, 4), lessThan(DUMMY, 6));
         assertPredicateTrue(and1, 5);
-        final Predicate and2 = and(greaterThan(null, 5), lessThan(null, 6));
+        final Predicate and2 = and(greaterThan(DUMMY, 5), lessThan(DUMMY, 6));
         assertPredicateFalse(and2, 4);
-        final Predicate and3 = and(greaterThan(null, 4), lessThan(null, 6), equal(null, 5));
+        final Predicate and3 = and(greaterThan(DUMMY, 4), lessThan(DUMMY, 6), equal(DUMMY, 5));
         assertPredicateTrue(and3, 5);
-        final Predicate and4 = Predicates.and(greaterThan(null, 3), lessThan(null, 6), equal(null, 4));
+        final Predicate and4 = Predicates.and(greaterThan(DUMMY, 3), lessThan(DUMMY, 6), equal(DUMMY, 4));
         assertPredicateFalse(and4, 5);
     }
 
     @Test
     public void testOr() {
-        final Predicate or1 = or(equal(null, 3), equal(null, 4), equal(null, 5));
+        final Predicate or1 = or(equal(DUMMY, 3), equal(DUMMY, 4), equal(DUMMY, 5));
         assertPredicateTrue(or1, 4);
         assertPredicateFalse(or1, 6);
     }
 
     @Test
     public void testGreaterEqual() {
-        assertPredicateTrue(greaterEqual(null, 5), 5);
+        assertPredicateTrue(greaterEqual(DUMMY, 5), 5);
     }
 
     @Test
     public void testLessThan() {
-        assertPredicateTrue(lessThan(null, 7), 6);
-        assertPredicateFalse(lessThan(null, 3), 4);
-        assertPredicateFalse(lessThan(null, 4), 4);
-        assertPredicateTrue(lessThan(null, "tc"), "bz");
-        assertPredicateFalse(lessThan(null, "gx"), "h0");
+        assertPredicateTrue(lessThan(DUMMY, 7), 6);
+        assertPredicateFalse(lessThan(DUMMY, 3), 4);
+        assertPredicateFalse(lessThan(DUMMY, 4), 4);
+        assertPredicateTrue(lessThan(DUMMY, "tc"), "bz");
+        assertPredicateFalse(lessThan(DUMMY, "gx"), "h0");
     }
 
     @Test
     public void testGreaterThan() {
-        assertPredicateTrue(greaterThan(null, 5), 6);
-        assertPredicateFalse(greaterThan(null, 5), 4);
-        assertPredicateFalse(greaterThan(null, 5), 5);
-        assertPredicateTrue(greaterThan(null, "aa"), "xa");
-        assertPredicateFalse(greaterThan(null, "da"), "cz");
-        assertPredicateTrue(greaterThan(null, new BigDecimal("1.23E2")), new BigDecimal("1.23E3"));
+        assertPredicateTrue(greaterThan(DUMMY, 5), 6);
+        assertPredicateFalse(greaterThan(DUMMY, 5), 4);
+        assertPredicateFalse(greaterThan(DUMMY, 5), 5);
+        assertPredicateTrue(greaterThan(DUMMY, "aa"), "xa");
+        assertPredicateFalse(greaterThan(DUMMY, "da"), "cz");
+        assertPredicateTrue(greaterThan(DUMMY, new BigDecimal("1.23E2")), new BigDecimal("1.23E3"));
     }
 
     @Test
     public void testLessEqual() {
-        assertPredicateTrue(lessEqual(null, 4), 4);
+        assertPredicateTrue(lessEqual(DUMMY, 4), 4);
     }
 
     @Test
@@ -198,55 +200,55 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test
     public void testBetween() {
-        assertPredicateTrue(between(null, 4, 6), 5);
-        assertPredicateTrue(between(null, 5, 6), 5);
-        assertPredicateTrue(between(null, "abc", "xyz"), "prs");
-        assertPredicateFalse(between(null, "klmn", "xyz"), "efgh");
-        assertPredicateFalse(between(null, 6, 7), 5);
+        assertPredicateTrue(between(DUMMY, 4, 6), 5);
+        assertPredicateTrue(between(DUMMY, 5, 6), 5);
+        assertPredicateTrue(between(DUMMY, "abc", "xyz"), "prs");
+        assertPredicateFalse(between(DUMMY, "klmn", "xyz"), "efgh");
+        assertPredicateFalse(between(DUMMY, 6, 7), 5);
     }
 
     @Test
     public void testIn() {
-        assertPredicateTrue(in(null, 4, 7, 8, 5), 5);
-        assertPredicateTrue(in(null, 5, 7, 8), 5);
-        assertPredicateFalse(in(null, 6, 7, 8), 5);
-        assertPredicateFalse(in(null, 6, 7, 8), 9);
+        assertPredicateTrue(in(DUMMY, 4, 7, 8, 5), 5);
+        assertPredicateTrue(in(DUMMY, 5, 7, 8), 5);
+        assertPredicateFalse(in(DUMMY, 6, 7, 8), 5);
+        assertPredicateFalse(in(DUMMY, 6, 7, 8), 9);
     }
 
     @Test
     public void testLike() {
-        assertPredicateTrue(like(null, "J%"), "Java");
-        assertPredicateTrue(like(null, "Ja%"), "Java");
-        assertPredicateTrue(like(null, "J_v_"), "Java");
-        assertPredicateTrue(like(null, "_av_"), "Java");
-        assertPredicateTrue(like(null, "_a__"), "Java");
-        assertPredicateTrue(like(null, "J%v_"), "Java");
-        assertPredicateTrue(like(null, "J%_"), "Java");
-        assertPredicateFalse(like(null, "java"), "Java");
-        assertPredicateFalse(like(null, "j%"), "Java");
-        assertPredicateFalse(like(null, "J_a"), "Java");
-        assertPredicateFalse(like(null, "J_ava"), "Java");
-        assertPredicateFalse(like(null, "J_a_a"), "Java");
-        assertPredicateFalse(like(null, "J_av__"), "Java");
-        assertPredicateFalse(like(null, "J_Va"), "Java");
-        assertPredicateTrue(like(null, "Java World"), "Java World");
-        assertPredicateTrue(like(null, "Java%ld"), "Java World");
-        assertPredicateTrue(like(null, "%World"), "Java World");
-        assertPredicateTrue(like(null, "Java_World"), "Java World");
+        assertPredicateTrue(like(DUMMY, "J%"), "Java");
+        assertPredicateTrue(like(DUMMY, "Ja%"), "Java");
+        assertPredicateTrue(like(DUMMY, "J_v_"), "Java");
+        assertPredicateTrue(like(DUMMY, "_av_"), "Java");
+        assertPredicateTrue(like(DUMMY, "_a__"), "Java");
+        assertPredicateTrue(like(DUMMY, "J%v_"), "Java");
+        assertPredicateTrue(like(DUMMY, "J%_"), "Java");
+        assertPredicateFalse(like(DUMMY, "java"), "Java");
+        assertPredicateFalse(like(DUMMY, "j%"), "Java");
+        assertPredicateFalse(like(DUMMY, "J_a"), "Java");
+        assertPredicateFalse(like(DUMMY, "J_ava"), "Java");
+        assertPredicateFalse(like(DUMMY, "J_a_a"), "Java");
+        assertPredicateFalse(like(DUMMY, "J_av__"), "Java");
+        assertPredicateFalse(like(DUMMY, "J_Va"), "Java");
+        assertPredicateTrue(like(DUMMY, "Java World"), "Java World");
+        assertPredicateTrue(like(DUMMY, "Java%ld"), "Java World");
+        assertPredicateTrue(like(DUMMY, "%World"), "Java World");
+        assertPredicateTrue(like(DUMMY, "Java_World"), "Java World");
 
-        assertPredicateTrue(like(null, "J.-*.*\\%"), "J.-*.*%");
-        assertPredicateTrue(like(null, "J\\_"), "J_");
-        assertPredicateTrue(like(null, "J%"), "Java");
+        assertPredicateTrue(like(DUMMY, "J.-*.*\\%"), "J.-*.*%");
+        assertPredicateTrue(like(DUMMY, "J\\_"), "J_");
+        assertPredicateTrue(like(DUMMY, "J%"), "Java");
 
     }
 
     @Test
     public void testILike() {
-        assertPredicateFalse(like(null, "JavaWorld"), "Java World");
-        assertPredicateTrue(ilike(null, "Java_World"), "java World");
-        assertPredicateTrue(ilike(null, "java%ld"), "Java World");
-        assertPredicateTrue(ilike(null, "%world"), "Java World");
-        assertPredicateFalse(ilike(null, "Java_World"), "gava World");
+        assertPredicateFalse(like(DUMMY, "JavaWorld"), "Java World");
+        assertPredicateTrue(ilike(DUMMY, "Java_World"), "java World");
+        assertPredicateTrue(ilike(DUMMY, "java%ld"), "Java World");
+        assertPredicateTrue(ilike(DUMMY, "%world"), "Java World");
+        assertPredicateFalse(ilike(DUMMY, "Java_World"), "gava World");
     }
 
     @Test
@@ -269,32 +271,32 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testBetweenNull() {
-        Predicates.between("", null, null);
+        Predicates.between(DUMMY, null, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testLessThanNull() {
-        Predicates.lessThan("", null);
+        Predicates.lessThan(DUMMY, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testLessEqualNull() {
-        Predicates.lessEqual("", null);
+        Predicates.lessEqual(DUMMY, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testGreaterThanNull() {
-        Predicates.greaterThan("", null);
+        Predicates.greaterThan(DUMMY, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testGreaterEqualNull() {
-        Predicates.greaterEqual("", null);
+        Predicates.greaterEqual(DUMMY, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testInNullWithNullArray() {
-        Predicates.in("", null);
+        Predicates.in(DUMMY, null);
     }
 
     @Test

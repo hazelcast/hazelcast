@@ -16,12 +16,13 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.query.extractor.MultiResult;
 import com.hazelcast.util.CollectionUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
+
+import static com.hazelcast.query.impl.getters.AbstractMultiValueGetter.validateModifier;
 
 public final class GetterFactory {
 
@@ -34,6 +35,7 @@ public final class GetterFactory {
         Class<?> fieldType = field.getType();
         Class<?> returnType = null;
         if (isExtractingFromCollection(fieldType, modifierSuffix)) {
+            validateModifier(modifierSuffix);
             Object currentObject = getCurrentObject(object, parentGetter);
             if (currentObject == null) {
                 return NullGetter.NULL_GETTER;
@@ -41,6 +43,12 @@ public final class GetterFactory {
             Collection collection = (Collection) field.get(currentObject);
             returnType = getCollectionType(collection);
             if (returnType == null) {
+                return NullGetter.NULL_GETTER;
+            }
+        } else if (isExtractingFromArray(fieldType, modifierSuffix)) {
+            validateModifier(modifierSuffix);
+            Object currentObject = getCurrentObject(object, parentGetter);
+            if (currentObject == null) {
                 return NullGetter.NULL_GETTER;
             }
         }
@@ -52,6 +60,7 @@ public final class GetterFactory {
         Class<?> methodReturnType = method.getReturnType();
         Class<?> returnType = null;
         if (isExtractingFromCollection(methodReturnType, modifierSuffix)) {
+            validateModifier(modifierSuffix);
             Object currentObject = getCurrentObject(object, parentGetter);
             if (currentObject == null) {
                 return NullGetter.NULL_GETTER;
@@ -59,6 +68,12 @@ public final class GetterFactory {
             Collection collection = (Collection) method.invoke(currentObject);
             returnType = getCollectionType(collection);
             if (returnType == null) {
+                return NullGetter.NULL_GETTER;
+            }
+        } else if (isExtractingFromArray(methodReturnType, modifierSuffix)) {
+            validateModifier(modifierSuffix);
+            Object currentObject = getCurrentObject(object, parentGetter);
+            if (currentObject == null) {
                 return NullGetter.NULL_GETTER;
             }
         }
@@ -101,6 +116,10 @@ public final class GetterFactory {
 
     private static boolean isExtractingFromCollection(Class<?> type, String modifierSuffix) {
         return modifierSuffix != null && Collection.class.isAssignableFrom(type);
+    }
+
+    private static boolean isExtractingFromArray(Class<?> type, String modifierSuffix) {
+        return modifierSuffix != null && type.isArray();
     }
 
     private static Object getCurrentObject(Object obj, Getter parent) throws Exception {

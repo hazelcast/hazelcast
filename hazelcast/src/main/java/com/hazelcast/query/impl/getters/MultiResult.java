@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query.extractor;
+package com.hazelcast.query.impl.getters;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,12 +66,16 @@ import java.util.List;
  *
  * @param <T> type of the underlying result store in the MultiResult
  */
-public final class MultiResult<T> {
+public class MultiResult<T> {
 
     private List<T> results;
 
     public MultiResult() {
         this.results = new ArrayList<T>();
+    }
+
+    public MultiResult(List<T> results) {
+        this.results = new ArrayList<T>(results);
     }
 
     /**

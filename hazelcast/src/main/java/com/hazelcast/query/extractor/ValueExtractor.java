@@ -42,42 +42,56 @@ package com.hazelcast.query.extractor;
  * Please, bear in mind that an extractor may not be added after the map has been instantiated.
  * All extractor have to be defined upfront in the map's initial configuration.
  * <p/>
- * Reflection-based extraction is the default mechanism - ValueExtractors are an alternative way of getting values
- * from objects.
+ * Reflection-based extraction is the default mechanism - ValueExtractors are an alternative way of extracting
+ * attribute values from object.
  *
  * @param <T> type of the target object to extract the value from
- * @param <R> type of the result object - the extracted value
- * @see com.hazelcast.query.extractor.MultiResult
  */
-public abstract class ValueExtractor<T, R> {
+public abstract class ValueExtractor<T> {
 
     /**
      * Extracts a value from the given target object.
-     * <p/>
-     * May return:
+     * The method does not return any value, the extracted value is collected by the ValueCollector instead.<p/>
+     * The extractor may extract:
      * <ul>
-     * <li>a single 'single-value' result (not a collection)</li>
-     * <li>a single 'multi-value' result (a collection)</li>
-     * <li>multiple 'single-value' or 'multi-value' results encompassed in a MultiResult</li>
+     * <li>one 'single-value' result (not a collection)</li>
+     * <li>one 'multi-value' result (a collection)</li>
+     * <li>multiple 'single-value' or 'multi-value' results</li>
      * </ul>
      * <p/>
-     * MultiResult is an aggregate of results that is returned if the extractor returns multiple results
-     * due to a reduce operation executed on a hierarchy of values.
+     * In order to return multiple results from a single extraction just invoke the ValueCollector#collect method
+     * multiple times, so that the collector collects all results. MultiResult is an aggregate of results that is
+     * returned if the extractor returns multiple results due to a reducing / grouping operation executed on a hierarchy
+     * of values.
+     * <p/>
+     * It sounds counter-intuitive, but a single extraction may return multiple values when arrays or collections are
+     * involved.
+     * <p/>
+     * Let's have a look at the following data structure:
+     * <code>
+     * class Swap {
+     * Leg legs[2];
+     * }
+     * <p/>
+     * class Leg {
+     * String currency;
+     * }
+     * </code>
+     * <p/>
+     * Let's assume that we want to extract currencies of all legs from a single Swap object. Each Swap has two Legs
+     * so there are two currencies too. In order to return both values from the extraction operation just collect them
+     * separately using the ValueCollector. Collecting multiple values in such a way allows us to operate on multiple
+     * "reduced" values as if they were single-values.
+     * <p/>
+     * Let's have look at the following query 'swapCurrency = EUR', assuming that we registered a custom extractor to
+     * extract currencies from a swap under the name swapCurrency.
+     * It will return up to two currencies, but the default evaluation semantics is that it is enough if a single
+     * value evaluates the condition to true to return the Swap from the query.
      *
-     * @param target object to extract the value from
-     * @return extracted value
-     * @see com.hazelcast.query.extractor.MultiResult
+     * @param target    object to extract the value from
+     * @param collector collector of the extracted value(s)
+     * @see ValueCollector
      */
-    public abstract R extract(T target);
-
-    /**
-     * Factory method for the MultiResult
-     *
-     * @return a new instance of the MultiResult class
-     * @see com.hazelcast.query.extractor.MultiResult
-     */
-    protected MultiResult<R> createMultiResult() {
-        return new MultiResult<R>();
-    }
+    public abstract void extract(T target, ValueCollector collector);
 
 }
