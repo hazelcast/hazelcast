@@ -56,7 +56,6 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
@@ -516,17 +515,6 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         future.get();
     }
 
-    private static ClusterServiceImpl spyClusterService(HazelcastInstance hz) throws Exception {
-        Node node = getNode(hz);
-        ClusterServiceImpl originalClusterService = node.clusterService;
-        ClusterServiceImpl spiedClusterService = spy(originalClusterService);
-
-        Field clusterServiceField = Node.class.getField("clusterService");
-        clusterServiceField.setAccessible(true);
-        clusterServiceField.set(node, spiedClusterService);
-        return spiedClusterService;
-    }
-
     private static TransactionManagerServiceImpl spyTransactionManagerService(HazelcastInstance hz) throws Exception {
         NodeEngineImpl nodeEngine = getNode(hz).nodeEngine;
         TransactionManagerServiceImpl transactionManagerService
@@ -544,52 +532,6 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
             assertEquals("Instance " + instance.getCluster().getLocalMember(),
                     expectedState, instance.getCluster().getClusterState());
         }
-    }
-
-    private static class AddingMemberListAnswer extends MemberListAnswer {
-
-        Collection<MemberImpl> onAnswer(Collection<MemberImpl> members) throws Exception {
-            if (addFakeMember()) {
-                members = new ArrayList<MemberImpl>(members);
-                members.add(new MemberImpl(new Address("127.0.0.1", 6000), false));
-            }
-            return members;
-        }
-
-        private boolean addFakeMember() {
-            return cluster.getClusterState() == ClusterState.IN_TRANSITION;
-        }
-
-    }
-
-    private static class RemovingMemberListAnswer extends MemberListAnswer {
-
-        Collection<MemberImpl> onAnswer(Collection<MemberImpl> members) throws Exception {
-            if (removeMember()) {
-                LinkedList<MemberImpl> list = new LinkedList<MemberImpl>(members);
-                list.removeFirst();
-                members = list;
-            }
-            return members;
-        }
-
-        private boolean removeMember() {
-            return cluster.getClusterState() == ClusterState.IN_TRANSITION;
-        }
-    }
-
-    private static abstract class MemberListAnswer implements Answer<Collection<MemberImpl>> {
-        Cluster cluster;
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public Collection<MemberImpl> answer(InvocationOnMock invocation) throws Throwable {
-            Collection<MemberImpl> members = (Collection<MemberImpl>) invocation.callRealMethod();
-            members = onAnswer(members);
-            return members;
-        }
-
-        abstract Collection<MemberImpl> onAnswer(Collection<MemberImpl> members) throws Exception;
     }
 
     private static abstract class TransactionAnswer implements Answer<Transaction> {
