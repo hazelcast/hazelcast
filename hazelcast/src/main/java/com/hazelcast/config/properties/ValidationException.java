@@ -23,9 +23,6 @@ import com.hazelcast.core.HazelcastException;
  * implementations whenever the validation has not succeed for any reason.
  */
 public class ValidationException extends HazelcastException {
-    public ValidationException() {
-        this((String) null);
-    }
 
     public ValidationException(String message) {
         super(message);
