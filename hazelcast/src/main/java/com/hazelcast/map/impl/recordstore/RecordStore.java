@@ -325,4 +325,9 @@ public interface RecordStore<R extends Record> {
      * Starts mapLoader
      */
     void startLoading();
+
+    /**
+     * Initialize the recordStore after creation
+     */
+    void init();
 }

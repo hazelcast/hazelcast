@@ -95,7 +95,9 @@ public class PartitionContainer {
         keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getMaxSizeConfig()));
         keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
-        return serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
+        RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
+        recordStore.init();
+        return recordStore;
     }
 
     public ConcurrentMap<String, RecordStore> getMaps() {
