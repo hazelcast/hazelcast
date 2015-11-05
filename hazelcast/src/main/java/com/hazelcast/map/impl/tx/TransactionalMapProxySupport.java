@@ -38,7 +38,6 @@ import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -161,8 +160,13 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     }
 
     public Data putIfAbsentInternal(Data key, Data value) {
+        boolean unlockImmediately = !valueMap.containsKey(key);
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue.value != null) {
+            if (unlockImmediately) {
+                unlock(key, versionedValue);
+                return versionedValue.value;
+            }
             addUnlockTransactionRecord(key, versionedValue.version);
             return versionedValue.value;
         }
@@ -173,8 +177,13 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     }
 
     public Data replaceInternal(Data key, Data value) {
+        boolean unlockImmediately = !valueMap.containsKey(key);
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue.value == null) {
+            if (unlockImmediately) {
+                unlock(key, versionedValue);
+                return null;
+            }
             addUnlockTransactionRecord(key, versionedValue.version);
             return null;
         }
@@ -184,8 +193,13 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     }
 
     public boolean replaceIfSameInternal(Data key, Object oldValue, Data newValue) {
+        boolean unlockImmediately = !valueMap.containsKey(key);
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (!isEquals(oldValue, versionedValue.value)) {
+            if (unlockImmediately) {
+                unlock(key, versionedValue);
+                return false;
+            }
             addUnlockTransactionRecord(key, versionedValue.version);
             return false;
         }
@@ -196,7 +210,6 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     public Data removeInternal(Data key) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-
         tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key),
                 operationProvider.createTxnDeleteOperation(name, key, versionedValue.version),
                 versionedValue.version, tx.getOwnerUuid()));
@@ -204,8 +217,13 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     }
 
     public boolean removeIfSameInternal(Data key, Object value) {
+        boolean unlockImmediately = !valueMap.containsKey(key);
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (!isEquals(versionedValue.value, value)) {
+            if (unlockImmediately) {
+                unlock(key, versionedValue);
+                return false;
+            }
             addUnlockTransactionRecord(key, versionedValue.version);
             return false;
         }
@@ -213,6 +231,23 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
                 operationProvider.createTxnDeleteOperation(name, key, versionedValue.version),
                 versionedValue.version, tx.getOwnerUuid()));
         return true;
+    }
+
+
+    private void unlock(Data key, VersionedValue versionedValue) {
+        try {
+            NodeEngine nodeEngine = getNodeEngine();
+            TxnUnlockOperation unlockOperation = new TxnUnlockOperation(name, key, versionedValue.version);
+            unlockOperation.setThreadId(ThreadUtil.getThreadId());
+            unlockOperation.setOwnerUuid(tx.getOwnerUuid());
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+            Future<VersionedValue> future = nodeEngine.getOperationService()
+                    .invokeOnPartition(MapService.SERVICE_NAME, unlockOperation, partitionId);
+            future.get();
+            valueMap.remove(key);
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
     }
 
     private void addUnlockTransactionRecord(Data key, long version) {
