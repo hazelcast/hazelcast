@@ -25,7 +25,6 @@ import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.util.Preconditions;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -45,7 +44,7 @@ public abstract class AbstractPredicate implements Predicate, DataSerializable {
     }
 
     protected AbstractPredicate(String attributeName) {
-        this.attributeName = Preconditions.checkHasText(attributeName, "attributeName must not be null");
+        this.attributeName = attributeName;
     }
 
     @Override
