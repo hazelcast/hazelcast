@@ -26,16 +26,12 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
-import javax.cache.configuration.Factory;
-import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CompletionListener;
-import java.io.Closeable;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -62,7 +58,6 @@ abstract class AbstractClientCacheProxyBase<K, V> {
     protected final String nameWithPrefix;
 
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
-    private CacheLoader<K, V> cacheLoader;
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
@@ -72,16 +67,6 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;
         this.clientContext = clientContext;
-        init();
-    }
-
-    private void init() {
-        if (cacheConfig.getCacheLoaderFactory() != null) {
-            final Factory<CacheLoader<K, V>> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
-            cacheLoader = cacheLoaderFactory.create();
-        } else {
-            cacheLoader = null;
-        }
     }
 
     protected void ensureOpen() {
@@ -102,7 +87,6 @@ abstract class AbstractClientCacheProxyBase<K, V> {
             }
         }
         loadAllTasks.clear();
-        closeCacheLoader();
         closeListeners();
     }
 
@@ -140,7 +124,6 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         if (!isClosed.compareAndSet(true, false)) {
             return;
         }
-        init();
     }
 
     protected abstract void closeListeners();
@@ -166,18 +149,6 @@ abstract class AbstractClientCacheProxyBase<K, V> {
             return toObject(result);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
-        }
-    }
-
-    protected void validateCacheLoader(CompletionListener completionListener) {
-        if (cacheLoader == null && completionListener != null) {
-            completionListener.onCompletion();
-        }
-    }
-
-    protected void closeCacheLoader() {
-        if (cacheLoader instanceof Closeable) {
-            IOUtil.closeResource((Closeable) cacheLoader);
         }
     }
 

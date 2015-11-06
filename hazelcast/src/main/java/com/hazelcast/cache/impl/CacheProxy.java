@@ -115,7 +115,6 @@ public class CacheProxy<K, V>
         for (K key : keys) {
             CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
         }
-        validateCacheLoader(completionListener);
         HashSet<Data> keysData = new HashSet<Data>(keys.size());
         for (K key : keys) {
             keysData.add(serializationService.toData(key));
