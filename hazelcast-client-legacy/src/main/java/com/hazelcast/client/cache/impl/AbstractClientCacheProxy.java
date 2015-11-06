@@ -89,7 +89,7 @@ abstract class AbstractClientCacheProxy<K, V>
             return cached;
         }
         CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy,
-                                                      cacheConfig.getInMemoryFormat());
+                cacheConfig.getInMemoryFormat());
         ClientInvocationFuture future;
         try {
             final int partitionId = clientContext.getPartitionService().getPartitionId(key);
@@ -117,10 +117,10 @@ abstract class AbstractClientCacheProxy<K, V>
         } else {
             try {
                 Object value = future.get();
-                if (nearCache != null) {
-                    storeInNearCache(keyData, toData(value), null);
-                }
                 Object result = toObject(value);
+                if (nearCache != null) {
+                    storeInNearCache(keyData, toData(value), (V) result);
+                }
                 if (statisticsEnabled) {
                     handleStatisticsOnGet(start, result);
                 }
@@ -283,7 +283,7 @@ abstract class AbstractClientCacheProxy<K, V>
         final ICompletableFuture<Object> f = putAsyncInternal(key, value, expiryPolicy, false, true, false);
         try {
             f.get();
-            if (statisticsEnabled)  {
+            if (statisticsEnabled) {
                 handleStatisticsOnPut(false, start, null);
             }
         } catch (Throwable e) {
@@ -297,7 +297,7 @@ abstract class AbstractClientCacheProxy<K, V>
         final ICompletableFuture<V> f = putAsyncInternal(key, value, expiryPolicy, true, true, false);
         try {
             V oldValue = f.get();
-            if (statisticsEnabled)  {
+            if (statisticsEnabled) {
                 handleStatisticsOnPut(true, start, oldValue);
             }
             return oldValue;
@@ -377,7 +377,7 @@ abstract class AbstractClientCacheProxy<K, V>
             if (entries != null) {
                 // TODO If there is a single entry, we could make use of a put operation since that is a bit cheaper
                 CachePutAllRequest request = new CachePutAllRequest(nameWithPrefix, cacheConfig.getInMemoryFormat(),
-                                                                    entries, expiryPolicy, partitionId);
+                        entries, expiryPolicy, partitionId);
                 Future f = invoke(request, partitionId, true);
                 futureEntriesTuples.add(new FutureEntriesTuple(f, entries));
             }
