@@ -56,7 +56,7 @@ public class GroupProperties extends HazelcastProperties {
     public static final String PROP_PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT
             = GroupProperty.PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT.getName();
     @Deprecated
-    public static final String PROP_VERSION_CHECK_ENABLED = GroupProperty.VERSION_CHECK_ENABLED.getName();
+    public static final String PROP_PHONE_HOME_ENABLED = GroupProperty.PHONE_HOME_ENABLED.getName();
     @Deprecated
     public static final String PROP_PREFER_IPv4_STACK = GroupProperty.PREFER_IPv4_STACK.getName();
     @Deprecated

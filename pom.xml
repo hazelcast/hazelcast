@@ -252,7 +252,7 @@
                     <!-- the argLine variable is needed for JaCoco -->
                     <argLine>
                         -Xms128m -Xmx1G -XX:MaxPermSize=128M
-                        -Dhazelcast.version.check.enabled=false
+                        -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
                         -Dhazelcast.test.use.network=false
@@ -303,7 +303,7 @@
                                     <!-- the argLine variable is needed for JaCoco -->
                                     <argLine>
                                         -Xms128m -Xmx1G -XX:MaxPermSize=128M
-                                        -Dhazelcast.version.check.enabled=false
+                                        -Dhazelcast.phone.home.enabled=false
                                         -Dhazelcast.mancenter.enabled=false
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
@@ -338,7 +338,7 @@
                                     <!-- the argLine variable is needed for JaCoco -->
                                     <argLine>
                                         -Xms128m -Xmx1G -XX:MaxPermSize=128M
-                                        -Dhazelcast.version.check.enabled=false
+                                        -Dhazelcast.phone.home.enabled=false
                                         -Dhazelcast.mancenter.enabled=false
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
@@ -373,7 +373,7 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
                                 -Xms128m -Xmx1G -XX:MaxPermSize=128M
-                                -Dhazelcast.version.check.enabled=false
+                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
                             </argLine>
@@ -426,7 +426,7 @@
                             <testFailureIgnore>true</testFailureIgnore>
                             <argLine>
                                 -Xms128m -Xmx1G -XX:MaxPermSize=128M
-                                -Dhazelcast.version.check.enabled=false
+                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
@@ -460,7 +460,7 @@
             <properties>
                 <argLine>
                     -Xms128m -Xmx1G -XX:MaxPermSize=128M
-                    -Dhazelcast.version.check.enabled=false
+                    -Dhazelcast.phone.home.enabled=false
                     -Dhazelcast.mancenter.enabled=false
                     -Dhazelcast.logging.type=none
                     -Dhazelcast.test.use.network=false
@@ -581,7 +581,7 @@
                             <testFailureIgnore>true</testFailureIgnore>
                             <argLine>
                                 -Xms128m -Xmx1G -XX:MaxPermSize=128M
-                                -Dhazelcast.version.check.enabled=false
+                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
@@ -616,7 +616,7 @@
                             <argLine>
                                 ${jacoco.agent.argLine}
                                 -Xms129m -Xmx1G -XX:MaxPermSize=129M
-                                -Dhazelcast.version.check.enabled=false
+                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
@@ -834,7 +834,7 @@
                             <parallel>none</parallel>
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
-                                -Dhazelcast.version.check.enabled=false
+                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
@@ -865,7 +865,7 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <parallel>none</parallel>
                             <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
-                                -Dhazelcast.version.check.enabled=false
+                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
@@ -900,7 +900,7 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
                                 -Xms128m -Xmx1G
-                                -Dhazelcast.version.check.enabled=false
+                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
                             </argLine>

@@ -21,6 +21,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.IOUtil;
 
@@ -39,9 +40,9 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 
 /**
- * Checks version of hazelcast with central server.
+ * Pings phone home server with cluster info daily.
  */
-public final class VersionCheck {
+public final class PhoneHome {
 
     private static final int TIMEOUT = 1000;
     private static final int A_INTERVAL = 5;
@@ -54,18 +55,24 @@ public final class VersionCheck {
     private static final int H_INTERVAL = 300;
     private static final int J_INTERVAL = 600;
 
-    private static final String BASE_VERSION_CHECK_URL = "http://versioncheck.hazelcast.com/version.jsp";
+    private static final String BASE_PHONE_HOME_URL = "http://phonehome.hazelcast.com/ping";
 
-    public VersionCheck() {
+    public PhoneHome() {
     }
 
     public void check(final Node hazelcastNode, final String version, final boolean isEnterprise) {
         if (!hazelcastNode.getGroupProperties().getBoolean(GroupProperty.VERSION_CHECK_ENABLED)) {
+            ILogger logger = hazelcastNode.getLogger(PhoneHome.class);
+            logger.warning(GroupProperty.VERSION_CHECK_ENABLED.getName() + " property is deprecated. Please use "
+                            + GroupProperty.PHONE_HOME_ENABLED.getName() + " instead to disable phone home.");
+            return;
+        }
+        if (!hazelcastNode.getGroupProperties().getBoolean(GroupProperty.PHONE_HOME_ENABLED)) {
             return;
         }
         hazelcastNode.nodeEngine.getExecutionService().scheduleAtFixedRate(new Runnable() {
             public void run() {
-                doCheck(hazelcastNode, version, isEnterprise);
+                phoneHome(hazelcastNode, version, isEnterprise);
             }
         }, 0, 1, TimeUnit.DAYS);
     }
@@ -100,7 +107,7 @@ public final class VersionCheck {
 
     }
 
-    public Map<String, String> doCheck(Node hazelcastNode, String version, boolean isEnterprise) {
+    public Map<String, String> phoneHome(Node hazelcastNode, String version, boolean isEnterprise) {
 
         String downloadId = "source";
         InputStream is = null;
@@ -130,7 +137,7 @@ public final class VersionCheck {
 
         Long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
 
-        VersionCheckParameterCreator parameterCreator = new VersionCheckParameterCreator();
+        PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator();
         parameterCreator.addParam("version", version);
         parameterCreator.addParam("m", hazelcastNode.getLocalMember().getUuid());
         parameterCreator.addParam("e", Boolean.toString(isEnterprise));
@@ -145,7 +152,7 @@ public final class VersionCheck {
         parameterCreator.addParam("cjv", Integer.toString(clusterClientStats.get(ClientType.JAVA)));
         parameterCreator.addParam("cuptm", Long.toString(clusterUpTime));
         parameterCreator.addParam("nuptm", Long.toString(runtimeMxBean.getUptime()));
-        String urlStr = BASE_VERSION_CHECK_URL + parameterCreator.build();
+        String urlStr = BASE_PHONE_HOME_URL + parameterCreator.build();
         fetchWebService(urlStr);
 
         return parameterCreator.getParameters();
@@ -167,13 +174,13 @@ public final class VersionCheck {
         }
     }
 
-    private static class VersionCheckParameterCreator {
+    private static class PhoneHomeParameterCreator {
 
         private final StringBuilder builder;
         private final Map<String, String> parameters = new HashMap<String, String>();
         private boolean hasParameterBefore;
 
-        public VersionCheckParameterCreator() {
+        public PhoneHomeParameterCreator() {
             builder = new StringBuilder();
             builder.append("?");
         }
@@ -182,7 +189,7 @@ public final class VersionCheck {
             return parameters;
         }
 
-        public VersionCheckParameterCreator addParam(String key, String value) {
+        public PhoneHomeParameterCreator addParam(String key, String value) {
             if (hasParameterBefore) {
                 builder.append("&");
             } else {

@@ -53,7 +53,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         if (System.getProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK) == null) {
             System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
         }
-        System.setProperty("hazelcast.version.check.enabled", "false");
+        System.setProperty("hazelcast.phone.home.enabled", "false");
         System.setProperty("hazelcast.mancenter.enabled", "false");
         System.setProperty("hazelcast.wait.seconds.before.join", "1");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");

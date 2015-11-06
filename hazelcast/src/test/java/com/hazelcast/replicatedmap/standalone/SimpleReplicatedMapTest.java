@@ -52,7 +52,7 @@ public class SimpleReplicatedMapTest {
     private final boolean load;
 
     static {
-        System.setProperty("hazelcast.version.check.enabled", "false");
+        System.setProperty("hazelcast.phone.home.enabled", "false");
         System.setProperty("java.net.preferIPv4Stack", "true");
     }
 

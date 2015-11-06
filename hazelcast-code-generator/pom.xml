@@ -41,7 +41,7 @@
                     <!-- the argLine variable is needed for JaCoco-->
                     <argLine>
                         -Xms128m -Xmx1G -XX:MaxPermSize=128M
-                        -Dhazelcast.version.check.enabled=false
+                        -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
                         -Dhazelcast.test.use.network=false
@@ -83,7 +83,7 @@
                                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                                     <argLine>
                                         -Xms128m -Xmx1G -XX:MaxPermSize=128M
-                                        -Dhazelcast.version.check.enabled=false
+                                        -Dhazelcast.phone.home.enabled=false
                                         -Dhazelcast.mancenter.enabled=false
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
@@ -114,7 +114,7 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
                                 -Xms128m -Xmx1G
-                                -Dhazelcast.version.check.enabled=false
+                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
                             </argLine>

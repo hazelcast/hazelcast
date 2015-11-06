@@ -28,7 +28,7 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
     static {
         System.setProperty("java.net.preferIPv4Stack", "true");
         GroupProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("1");
-        GroupProperty.VERSION_CHECK_ENABLED.setSystemProperty("false");
+        GroupProperty.PHONE_HOME_ENABLED.setSystemProperty("false");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
     }
 

@@ -65,7 +65,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.VersionCheck;
+import com.hazelcast.util.PhoneHome;
 
 import java.lang.reflect.Constructor;
 import java.nio.channels.ServerSocketChannel;
@@ -135,7 +135,7 @@ public class Node {
 
     private final BuildInfo buildInfo;
 
-    private final VersionCheck versionCheck = new VersionCheck();
+    private final PhoneHome phoneHome = new PhoneHome();
 
     private final HazelcastThreadGroup hazelcastThreadGroup;
 
@@ -345,7 +345,7 @@ public class Node {
             logger.warning("ManagementCenterService could not be constructed!", e);
         }
         nodeExtension.afterStart();
-        versionCheck.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
+        phoneHome.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
     }
 
     public void shutdown(final boolean terminate) {
@@ -390,7 +390,7 @@ public class Node {
         }
 
         nodeExtension.beforeShutdown();
-        versionCheck.shutdown();
+        phoneHome.shutdown();
         if (managementCenterService != null) {
             managementCenterService.shutdown();
         }

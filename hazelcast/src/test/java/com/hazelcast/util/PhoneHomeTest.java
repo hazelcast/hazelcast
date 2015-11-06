@@ -15,14 +15,13 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class VersionCheckTest extends HazelcastTestSupport {
-
+public class PhoneHomeTest extends HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
     private HazelcastInstance hz1;
@@ -39,11 +38,11 @@ public class VersionCheckTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testVersionCheckParameters() throws Exception {
+    public void testPhoneHomeParameters() throws Exception {
 
         Node node1 = TestUtil.getNode(hz1);
-        VersionCheck check = new VersionCheck();
-        Map<String, String> parameters = check.doCheck(node1, "test_version", false);
+        PhoneHome phoneHome = new PhoneHome();
+        Map<String, String> parameters = phoneHome.phoneHome(node1, "test_version", false);
 
         assertEquals(parameters.get("version"), "test_version");
         assertEquals(parameters.get("m"), node1.getLocalMember().getUuid() );
@@ -64,16 +63,16 @@ public class VersionCheckTest extends HazelcastTestSupport {
     @Test
     public void testConvertToLetter() throws Exception {
 
-        VersionCheck check = new VersionCheck();
-        assertEquals("A", check.convertToLetter(4));
-        assertEquals("B", check.convertToLetter(9));
-        assertEquals("C", check.convertToLetter(19));
-        assertEquals("D", check.convertToLetter(39));
-        assertEquals("E", check.convertToLetter(59));
-        assertEquals("F", check.convertToLetter(99));
-        assertEquals("G", check.convertToLetter(149));
-        assertEquals("H", check.convertToLetter(299));
-        assertEquals("J", check.convertToLetter(599));
-        assertEquals("I", check.convertToLetter(1000));
+        PhoneHome phoneHome = new PhoneHome();
+        assertEquals("A", phoneHome.convertToLetter(4));
+        assertEquals("B", phoneHome.convertToLetter(9));
+        assertEquals("C", phoneHome.convertToLetter(19));
+        assertEquals("D", phoneHome.convertToLetter(39));
+        assertEquals("E", phoneHome.convertToLetter(59));
+        assertEquals("F", phoneHome.convertToLetter(99));
+        assertEquals("G", phoneHome.convertToLetter(149));
+        assertEquals("H", phoneHome.convertToLetter(299));
+        assertEquals("J", phoneHome.convertToLetter(599));
+        assertEquals("I", phoneHome.convertToLetter(1000));
     }
 }
