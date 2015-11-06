@@ -425,7 +425,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                         new CacheEventDataImpl(name, cacheEventContext.getEventType(), cacheEventContext.getDataKey(),
                                                cacheEventContext.getDataValue(), cacheEventContext.getDataOldValue(),
                                                cacheEventContext.isOldValueAvailable());
-                Set<CacheEventData> cacheEventDataSet = batchEvent.get(cacheEventContext.getEventType());
+                Set<CacheEventData> cacheEventDataSet = batchEvent.remove(cacheEventContext.getEventType());
                 if (cacheEventDataSet == null) {
                     cacheEventDataSet = new HashSet<CacheEventData>();
                     batchEvent.put(cacheEventContext.getEventType(), cacheEventDataSet);
@@ -439,9 +439,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected void publishBatchedEvents(String cacheName, CacheEventType cacheEventType, int orderKey) {
         if (isEventsEnabled()) {
-            final Set<CacheEventData> cacheEventDatas = batchEvent.get(cacheEventType);
-            CacheEventSet ces = new CacheEventSet(cacheEventType, cacheEventDatas);
-            cacheService.publishEvent(cacheName, ces, orderKey);
+            final Set<CacheEventData> cacheEventDatas = batchEvent.remove(cacheEventType);
+            if (cacheEventDatas != null) {
+                CacheEventSet ces = new CacheEventSet(cacheEventType, cacheEventDatas);
+                cacheService.publishEvent(cacheName, ces, orderKey);
+            }
         }
     }
 
