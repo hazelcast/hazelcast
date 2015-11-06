@@ -4,7 +4,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.query.extractor.MultiResult;
+import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.extraction.AbstractExtractionTest;
 
@@ -65,39 +65,35 @@ public class CollectionAllPredicatesExtractorTest extends CollectionAllPredicate
         };
     }
 
-    public static class IndexOneLimbPowerExtractor extends ValueExtractor {
+    public static class IndexOneLimbPowerExtractor extends ValueExtractor<Person> {
         @Override
-        public Object extract(Object target) {
-            return ((Person) target).limbs_list.get(1).power;
+        public void extract(Person target, ValueCollector collector) {
+            collector.addObject(target.limbs_list.get(1).power);
         }
     }
 
-    public static class IndexOneLimbNameExtractor extends ValueExtractor {
+    public static class IndexOneLimbNameExtractor extends ValueExtractor<Person> {
         @Override
-        public Object extract(Object target) {
-            return ((Person) target).limbs_list.get(1).name;
+        public void extract(Person target, ValueCollector collector) {
+            collector.addObject(target.limbs_list.get(1).name);
         }
     }
 
-    public static class ReducedLimbPowerExtractor extends ValueExtractor {
+    public static class ReducedLimbPowerExtractor extends ValueExtractor<Person> {
         @Override
-        public Object extract(Object target) {
-            MultiResult multiResult = new MultiResult();
-            for (Limb limb : ((Person) target).limbs_list) {
-                multiResult.add(limb.power);
+        public void extract(Person target, ValueCollector collector) {
+            for (Limb limb : target.limbs_list) {
+                collector.addObject(limb.power);
             }
-            return multiResult;
         }
     }
 
-    public static class ReducedLimbNameExtractor extends ValueExtractor {
+    public static class ReducedLimbNameExtractor extends ValueExtractor<Person> {
         @Override
-        public Object extract(Object target) {
-            MultiResult multiResult = new MultiResult();
-            for (Limb limb : ((Person) target).limbs_list) {
-                multiResult.add(limb.name);
+        public void extract(Person target, ValueCollector collector) {
+            for (Limb limb : target.limbs_list) {
+                collector.addObject(limb.name);
             }
-            return multiResult;
         }
     }
 

@@ -21,8 +21,8 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.query.extractor.MultiResult;
 import com.hazelcast.query.extractor.ValueExtractor;
+import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.getters.ReflectionHelper;
 
 import java.util.Map;
@@ -144,9 +144,12 @@ public abstract class QueryableEntry implements Map.Entry {
         }
 
         Object targetObject = serializationService.toObject(target);
-        ValueExtractor extractor = extractors.getExtractor(attributeName);
+        ValueExtractor<Object> extractor = extractors.getExtractor(attributeName);
         if (extractor != null) {
-            return extractor.extract(targetObject);
+            // This part will be improved in 3.7 to avoid extra allocation
+            DefaultValueCollector collector = new DefaultValueCollector();
+            extractor.extract(targetObject, collector);
+            return collector.getResult();
         } else {
             return extractViaReflection(attributeName, targetObject);
         }
