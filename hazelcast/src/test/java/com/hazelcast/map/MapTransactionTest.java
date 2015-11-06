@@ -870,7 +870,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         EntryListener<String, Integer> l = new EntryAdapter<String, Integer>() {
         };
 
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject e = new PredicateBuilder().getEntryObject().get("test");
         Predicate<String, Integer> p = e.equal(1);
 
         map.addEntryListener(l, p, null, false);
