@@ -1116,4 +1116,22 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(validationTimeout, hotRestartConfig.getValidationTimeoutSeconds());
         assertEquals(dataLoadTimeout, hotRestartConfig.getDataLoadTimeoutSeconds());
     }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testMissingNamespace() {
+        String xml = "<hazelcast/>";
+        buildConfig(xml);
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testInvalidNamespace() {
+        String xml = "<hazelcast xmlns=\"http://foo.bar\"/>";
+        buildConfig(xml);
+    }
+
+    @Test
+    public void testValidNamespace() {
+        String xml = HAZELCAST_START_TAG + "</hazelcast>";
+        buildConfig(xml);
+    }
 }
