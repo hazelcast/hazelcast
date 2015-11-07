@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.eviction;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
 import com.hazelcast.map.impl.MapContainer;
@@ -66,7 +67,7 @@ public class MaxSizeChecker {
         boolean result;
         switch (maxSizePolicy) {
             case PER_NODE:
-                result = isEvictablePerNode(mapContainer);
+                result = isEvictablePerNode(mapContainer, partitionId);
                 break;
             case PER_PARTITION:
                 result = isEvictablePerPartition(mapContainer, partitionId);
@@ -90,25 +91,30 @@ public class MaxSizeChecker {
     }
 
 
-    private boolean isEvictablePerNode(MapContainer mapContainer) {
-        long nodeTotalSize = 0;
-
-        final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-        final double maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
-        final String mapName = mapContainer.getName();
-        final MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
-        final List<Integer> partitionIds = findPartitionIds();
-        for (int partitionId : partitionIds) {
-            final PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
-            if (container == null) {
-                continue;
-            }
-            nodeTotalSize += getRecordStoreSize(mapName, container);
-            if (nodeTotalSize >= maxSize) {
-                return true;
-            }
+    private boolean isEvictablePerNode(MapContainer mapContainer, int partitionId) {
+        PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
+        RecordStore recordStore = container.getExistingRecordStore(mapContainer.getName());
+        if (recordStore == null) {
+            return false;
         }
-        return false;
+        double maxExpectedRecordStoreSize = calculatePerNodeMaxRecordStoreSize(recordStore);
+        return recordStore.size() > maxExpectedRecordStoreSize;
+    }
+
+    /**
+     * Calculates and returns the expected maximum size of an evicted record-store
+     * when {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy#PER_NODE PER_NODE} max-size-policy is used.
+     */
+    public double calculatePerNodeMaxRecordStoreSize(RecordStore recordStore) {
+        MapConfig mapConfig = recordStore.getMapContainer().getMapConfig();
+        MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
+        int configuredMaxSize = maxSizeConfig.getSize();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        int memberCount = nodeEngine.getClusterService().getSize();
+
+        return (1D * configuredMaxSize * memberCount / partitionCount);
+
     }
 
     private boolean isEvictablePerPartition(final MapContainer mapContainer, int partitionId) {

@@ -240,7 +240,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (size < 1) {
             return 0;
         }
-        final int evictableSize = getEvictionOperator().evictableSize(size, mapContainer.getMapConfig());
+        final int evictableSize = getEvictionOperator().evictableSize(this);
         if (evictableSize < 1) {
             return 0;
         }

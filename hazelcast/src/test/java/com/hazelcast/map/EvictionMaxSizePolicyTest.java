@@ -16,12 +16,14 @@ import com.hazelcast.map.impl.SizeEstimator;
 import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.MemoryInfoAccessor;
 import org.junit.Test;
@@ -32,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -52,6 +55,28 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     public void testPerNodePolicy_withManyNodes() {
         int nodeCount = 2;
         testPerNodePolicy(nodeCount);
+    }
+
+    @Test
+    public void testOwnerAndBackupEntryCountsAreEqualAfterEviction_whenPerNodeMaxSizePolicyIsUsed() throws Exception {
+        String mapName = randomMapName();
+        Config config = createConfig(PER_NODE, 300, mapName);
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance node1 = instanceFactory.newHazelcastInstance(config);
+        HazelcastInstance node2 = instanceFactory.newHazelcastInstance(config);
+
+        IMap map1 = node1.getMap(mapName);
+
+        for (int i = 0; i < 2222; i++) {
+            map1.put(i, i);
+        }
+
+        IMap map2 = node2.getMap(mapName);
+        LocalMapStats localMapStats1 = map1.getLocalMapStats();
+        LocalMapStats localMapStats2 = map2.getLocalMapStats();
+
+        assertEquals(localMapStats1.getOwnedEntryCount(), localMapStats2.getBackupEntryCount());
+        assertEquals(localMapStats2.getOwnedEntryCount(), localMapStats1.getBackupEntryCount());
     }
 
     @Test
@@ -168,9 +193,9 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     }
 
     private void testPerNodePolicy(int nodeCount) {
-        final int perNodeMaxSize = 100;
+        final int perNodeMaxSize = 1000;
         final String mapName = randomMapName();
-        final Config config = createConfig(MaxSizeConfig.MaxSizePolicy.PER_NODE, perNodeMaxSize, mapName);
+        final Config config = createConfig(PER_NODE, perNodeMaxSize, mapName);
         final Collection<IMap> maps = createMaps(mapName, config, nodeCount);
         populateMaps(maps, 1000);
 

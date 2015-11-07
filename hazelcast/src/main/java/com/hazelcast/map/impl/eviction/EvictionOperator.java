@@ -178,7 +178,9 @@ public final class EvictionOperator {
     }
 
 
-    public int evictableSize(int currentPartitionSize, MapConfig mapConfig) {
+    public int evictableSize(RecordStore recordStore) {
+        int currentPartitionSize = recordStore.size();
+        MapConfig mapConfig = recordStore.getMapContainer().getMapConfig();
         final int maxSize = mapConfig.getMaxSizeConfig().getSize();
         int evictableSize;
         final MaxSizeConfig.MaxSizePolicy maxSizePolicy = mapConfig.getMaxSizeConfig().getMaxSizePolicy();
@@ -192,14 +194,11 @@ public final class EvictionOperator {
                 evictableSize = Math.max(diffFromTargetSize, prunedSize);
                 break;
             case PER_NODE:
-                int memberCount = mapServiceContext.getNodeEngine().getClusterService().getMembers().size();
-                int maxPartitionSize = (maxSize
-                        * memberCount / mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount());
-                targetSizePerPartition = Double.valueOf(maxPartitionSize
-                        * ((ONE_HUNDRED_PERCENT - evictionPercentage) / (1D * ONE_HUNDRED_PERCENT))).intValue();
-                diffFromTargetSize = currentPartitionSize - targetSizePerPartition;
-                prunedSize = currentPartitionSize * evictionPercentage / ONE_HUNDRED_PERCENT + 1;
-                evictableSize = Math.max(diffFromTargetSize, prunedSize);
+                double maxExpectedRecordStoreSize = maxSizeChecker.calculatePerNodeMaxRecordStoreSize(recordStore);
+                int expectedSizeAfterEviction = (int) (maxExpectedRecordStoreSize
+                        * (ONE_HUNDRED_PERCENT - evictionPercentage) / ONE_HUNDRED_PERCENT);
+                expectedSizeAfterEviction = Math.max(expectedSizeAfterEviction, 1);
+                evictableSize = currentPartitionSize - expectedSizeAfterEviction;
                 break;
             case USED_HEAP_PERCENTAGE:
             case USED_HEAP_SIZE:
