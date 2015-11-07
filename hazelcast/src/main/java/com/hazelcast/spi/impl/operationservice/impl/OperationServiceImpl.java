@@ -183,6 +183,10 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         metricsRegistry.scanAndRegister(this, "operation");
     }
 
+    public void start() {
+        ((ClassicOperationExecutor) operationExecutor).start();
+    }
+
     private SlowOperationDetector initSlowOperationDetector() {
         return new SlowOperationDetector(node.loggingService,
                 operationExecutor.getGenericOperationRunners(),

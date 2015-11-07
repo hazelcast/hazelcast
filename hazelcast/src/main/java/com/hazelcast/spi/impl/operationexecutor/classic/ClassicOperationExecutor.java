@@ -106,6 +106,15 @@ public final class ClassicOperationExecutor implements OperationExecutor {
                 + partitionOperationThreads.length + " partition operation threads.");
     }
 
+    public void start() {
+        for (Thread t : partitionOperationThreads) {
+            t.start();
+        }
+        for (Thread t : genericOperationThreads) {
+            t.start();
+        }
+    }
+
     private OperationRunner[] initPartitionOperationRunners(GroupProperties properties, OperationRunnerFactory handlerFactory) {
         OperationRunner[] operationRunners = new OperationRunner[properties.getInteger(GroupProperty.PARTITION_COUNT)];
         for (int partitionId = 0; partitionId < operationRunners.length; partitionId++) {
@@ -146,7 +155,6 @@ public final class ClassicOperationExecutor implements OperationExecutor {
                     threadGroup, nodeExtension, partitionOperationRunners);
 
             threads[threadId] = operationThread;
-            operationThread.start();
 
             metricsRegistry.scanAndRegister(operationThread, "operation." + operationThread.getName());
         }
@@ -176,10 +184,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
                     logger, threadGroup, nodeExtension, operationRunner);
 
             threads[threadId] = operationThread;
-            operationThread.start();
-
             operationRunner.setCurrentThread(operationThread);
-
             metricsRegistry.scanAndRegister(operationThread, "operation." + operationThread.getName());
         }
 
