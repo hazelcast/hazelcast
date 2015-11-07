@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.eviction;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -31,6 +32,8 @@ import com.hazelcast.util.RuntimeMemoryInfoAccessor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 
 /**
  * Checks whether a specific threshold is exceeded or not
@@ -67,7 +70,7 @@ public class EvictionCheckerImpl implements EvictionChecker {
         boolean result;
         switch (maxSizePolicy) {
             case PER_NODE:
-                result = checkPerNodeEviction(mapName, maxSizeConfig);
+                result = checkPerNodeEviction(recordStore);
                 break;
             case PER_PARTITION:
                 result = checkPerPartitionEviction(mapName, maxSizeConfig, partitionId);
@@ -90,23 +93,25 @@ public class EvictionCheckerImpl implements EvictionChecker {
         return result;
     }
 
+    protected boolean checkPerNodeEviction(RecordStore recordStore) {
+        double maxExpectedRecordStoreSize = calculatePerNodeMaxRecordStoreSize(recordStore);
+        return recordStore.size() > maxExpectedRecordStoreSize;
+    }
 
-    protected boolean checkPerNodeEviction(String mapName, MaxSizeConfig maxSizeConfig) {
-        long nodeTotalSize = 0;
+    /**
+     * Calculates and returns the expected maximum size of an evicted record-store
+     * when {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy#PER_NODE PER_NODE} max-size-policy is used.
+     */
+    public double calculatePerNodeMaxRecordStoreSize(RecordStore recordStore) {
+        MapConfig mapConfig = recordStore.getMapContainer().getMapConfig();
+        MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
+        int configuredMaxSize = maxSizeConfig.getSize();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        int memberCount = nodeEngine.getClusterService().getSize(DATA_MEMBER_SELECTOR);
 
-        final double maxSize = maxSizeConfig.getSize();
-        final List<Integer> partitionIds = findPartitionIds();
-        for (int partitionId : partitionIds) {
-            final PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
-            if (container == null) {
-                continue;
-            }
-            nodeTotalSize += getRecordStoreSize(mapName, container);
-            if (nodeTotalSize >= maxSize) {
-                return true;
-            }
-        }
-        return false;
+        return (1D * configuredMaxSize * memberCount / partitionCount);
+
     }
 
     protected boolean checkPerPartitionEviction(String mapName, MaxSizeConfig maxSizeConfig, int partitionId) {
@@ -217,7 +222,6 @@ public class EvictionCheckerImpl implements EvictionChecker {
         }
         return partitionIds == null ? Collections.<Integer>emptyList() : partitionIds;
     }
-
 
     protected boolean isOwnerOrBackup(int partitionId) {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();

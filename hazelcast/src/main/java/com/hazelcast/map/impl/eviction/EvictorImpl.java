@@ -30,8 +30,6 @@ import com.hazelcast.util.Clock;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-
 /**
  * Eviction helper methods.
  */
@@ -154,41 +152,34 @@ public class EvictorImpl implements Evictor {
     public int findRemovalSize(RecordStore recordStore) {
         MapConfig mapConfig = recordStore.getMapContainer().getMapConfig();
         int maxSize = mapConfig.getMaxSizeConfig().getSize();
-        int currentPartitionSize = recordStore.size();
+        int currentRecordStoreSize = recordStore.size();
 
-        int removalSize;
-        final MaxSizeConfig.MaxSizePolicy maxSizePolicy = mapConfig.getMaxSizeConfig().getMaxSizePolicy();
-        final int evictionPercentage = mapConfig.getEvictionPercentage();
+        MaxSizeConfig.MaxSizePolicy maxSizePolicy = mapConfig.getMaxSizeConfig().getMaxSizePolicy();
+        int evictionPercentage = mapConfig.getEvictionPercentage();
+
         switch (maxSizePolicy) {
             case PER_PARTITION:
-                int targetSizePerPartition = Double.valueOf(maxSize
+                double maxExpectedRecordStoreSize = Double.valueOf(maxSize
                         * ((ONE_HUNDRED_PERCENT - evictionPercentage) / (1D * ONE_HUNDRED_PERCENT))).intValue();
-                int diffFromTargetSize = currentPartitionSize - targetSizePerPartition;
-                int prunedSize = currentPartitionSize * evictionPercentage / ONE_HUNDRED_PERCENT + 1;
-                removalSize = Math.max(diffFromTargetSize, prunedSize);
-                break;
+                double diffFromTargetSize = currentRecordStoreSize - maxExpectedRecordStoreSize;
+                int prunedSize = currentRecordStoreSize * evictionPercentage / ONE_HUNDRED_PERCENT + 1;
+                return Math.max((int) diffFromTargetSize, prunedSize);
             case PER_NODE:
-                int memberCount = mapServiceContext.getNodeEngine().getClusterService()
-                        .getSize(DATA_MEMBER_SELECTOR);
-                int maxPartitionSize = (maxSize
-                        * memberCount / mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount());
-                targetSizePerPartition = Double.valueOf(maxPartitionSize
-                        * ((ONE_HUNDRED_PERCENT - evictionPercentage) / (1D * ONE_HUNDRED_PERCENT))).intValue();
-                diffFromTargetSize = currentPartitionSize - targetSizePerPartition;
-                prunedSize = currentPartitionSize * evictionPercentage / ONE_HUNDRED_PERCENT + 1;
-                removalSize = Math.max(diffFromTargetSize, prunedSize);
-                break;
+                maxExpectedRecordStoreSize
+                        = ((EvictionCheckerImpl) evictionChecker).calculatePerNodeMaxRecordStoreSize(recordStore);
+                int expectedSizeAfterEviction = (int) (maxExpectedRecordStoreSize
+                        * (ONE_HUNDRED_PERCENT - evictionPercentage) / ONE_HUNDRED_PERCENT);
+                expectedSizeAfterEviction = Math.max(expectedSizeAfterEviction, 1);
+                return currentRecordStoreSize - expectedSizeAfterEviction;
             case USED_HEAP_PERCENTAGE:
             case USED_HEAP_SIZE:
             case FREE_HEAP_PERCENTAGE:
             case FREE_HEAP_SIZE:
                 // if we have an evictable size, be sure to evict at least one entry in worst case.
-                removalSize = Math.max(currentPartitionSize * evictionPercentage / ONE_HUNDRED_PERCENT, 1);
-                break;
+                return Math.max(currentRecordStoreSize * evictionPercentage / ONE_HUNDRED_PERCENT, 1);
             default:
                 throw new IllegalArgumentException("Max size policy is not defined [" + maxSizePolicy + "]");
         }
-        return removalSize;
     }
 
     protected long getEvictionCriteriaValue(Record record, EvictionPolicy evictionPolicy) {
