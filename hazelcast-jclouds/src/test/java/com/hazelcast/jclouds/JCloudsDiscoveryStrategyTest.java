@@ -26,6 +26,7 @@ import static org.mockito.Mockito.verify;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class JCloudsDiscoveryStrategyTest extends HazelcastTestSupport {
+
     private static final int STARTING_PORT = 5701;
     private static final int NUMBER_OF_NODES = 10;
     private static final int NUMBER_OF_RUNNING_NODES = 7;
@@ -37,15 +38,15 @@ public class JCloudsDiscoveryStrategyTest extends HazelcastTestSupport {
     public void setup()
             throws UnknownHostException {
         for (int i = 0; i < NUMBER_OF_NODES; i++) {
-            HashSet<String> privateAdressses = new HashSet<String>();
-            privateAdressses.add("127.0.0." + (i+1));
+            HashSet<String> privateAdresses = new HashSet<String>();
+            privateAdresses.add("127.0.0." + (i+1));
             NodeMetadata.Status status = NodeMetadata.Status.PENDING;
             if (i < NUMBER_OF_RUNNING_NODES) {
                 status = NodeMetadata.Status.RUNNING;
-                addressesOfRunningInstances.add(new Address(privateAdressses.iterator().next(),0));
+                addressesOfRunningInstances.add(new Address(privateAdresses.iterator().next(),0));
             }
             nodes.add(new NodeMetadataImpl("", "", "dummyId"+i, null, null, new HashMap<String, String>(), new HashSet<String>(), null, null, null, null, status, "",
-                    STARTING_PORT + i, privateAdressses, privateAdressses, null, "dummyHostName" + i));
+                    STARTING_PORT + i, privateAdresses, privateAdresses, null, "dummyHostName" + i));
         }
     }
 

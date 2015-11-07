@@ -33,6 +33,7 @@ import org.jclouds.compute.domain.ComputeMetadata;
 import org.jclouds.compute.domain.NodeMetadata;
 import org.jclouds.domain.Credentials;
 import org.jclouds.domain.Location;
+import org.jclouds.domain.LocationScope;
 import org.jclouds.googlecloud.GoogleCredentialsFromJson;
 import org.jclouds.location.reference.LocationConstants;
 
@@ -80,6 +81,21 @@ public class ComputeServiceBuilder {
         this.properties = properties;
     }
 
+    public Map<String, Comparable> getProperties() {
+        return properties;
+    }
+
+    public Set<String> getRegionsSet() {
+        return regionsSet;
+    }
+
+    public Set<String> getZonesSet() {
+        return zonesSet;
+    }
+
+    public List<AbstractMap.SimpleImmutableEntry> getTagPairs() {
+        return tagPairs;
+    }
 
     /**
      * Injects already built ComputeService
@@ -102,7 +118,7 @@ public class ComputeServiceBuilder {
             if (group != null && !group.equals(metadata.getGroup())) {
                 continue;
             }
-            if (checkRegionZoneConfig(metadata)) {
+            if (!isNodeInsideZones(metadata) || !isNodeInsideRegions(metadata)) {
                 continue;
             }
             ((HashSet<NodeMetadata>) filteredResult).add(metadata);
@@ -114,27 +130,31 @@ public class ComputeServiceBuilder {
         return getOrDefault(JCloudsProperties.HZ_PORT, NetworkConfig.DEFAULT_PORT);
     }
 
-    private boolean checkRegionZoneConfig(NodeMetadata metadata) {
+    public boolean isNodeInsideZones(NodeMetadata metadata) {
         Location location = metadata.getLocation();
         while (location != null) {
             String id = location.getId();
-            switch (location.getScope()) {
-                case ZONE:
-                    if (id != null && regionsSet.contains(id)) {
-                        return true;
-                    }
-                    break;
-                case REGION:
-                    if (id != null && !zonesSet.contains(id)) {
-                        return true;
-                    }
-                    break;
-                default:
-                    break;
+            if (location.getScope().equals(LocationScope.ZONE)) {
+                if (id != null && !zonesSet.isEmpty() && !zonesSet.contains(id)) {
+                    return false;
+                }
             }
             location = location.getParent();
         }
-        return false;
+        return true;
+    }
+    public boolean isNodeInsideRegions(NodeMetadata metadata) {
+        Location location = metadata.getLocation();
+        while (location != null) {
+            String id = location.getId();
+            if (location.getScope().equals(LocationScope.REGION)) {
+                if (id != null && !regionsSet.isEmpty() && !regionsSet.contains(id)) {
+                    return false;
+                }
+            }
+            location = location.getParent();
+        }
+        return true;
     }
 
     /**
@@ -182,20 +202,30 @@ public class ComputeServiceBuilder {
         return computeService;
     }
 
-    private Properties buildRegionZonesConfig() {
+
+    public Properties buildRegionZonesConfig() {
         final String regions = getOrNull(JCloudsProperties.REGIONS);
         final String zones = getOrNull(JCloudsProperties.ZONES);
+
         Properties jcloudsProperties = newOverrideProperties();
         if (regions != null) {
+            List<String> regionList = Arrays.asList(regions.split(","));
+            for (String region : regionList) {
+                regionsSet.add(region);
+            }
             jcloudsProperties.setProperty(LocationConstants.PROPERTY_REGIONS, regions);
         }
         if (zones != null) {
+            List<String> zoneList = Arrays.asList(zones.split(","));
+            for (String zone : zoneList) {
+                zonesSet.add(zone);
+            }
             jcloudsProperties.setProperty(LocationConstants.PROPERTY_ZONES, zones);
         }
         return jcloudsProperties;
     }
 
-    private void buildTagConfig() {
+    public void buildTagConfig() {
         final String tagKeys = getOrNull(JCloudsProperties.TAG_KEYS);
         final String tagValues = getOrNull(JCloudsProperties.TAG_VALUES);
         if (tagKeys != null && tagValues != null) {
@@ -210,25 +240,29 @@ public class ComputeServiceBuilder {
         }
     }
 
-    private void buildNodeFilter() {
+    public Predicate<ComputeMetadata> buildNodeFilter() {
         nodesFilter = new Predicate<ComputeMetadata>() {
              @Override
              public boolean apply(ComputeMetadata nodeMetadata) {
                 if (nodeMetadata == null) {
                     return false;
                 }
+                if (tagPairs.size() > nodeMetadata.getUserMetadata().size()) {
+                    return false;
+                }
                 for (AbstractMap.SimpleImmutableEntry entry: tagPairs) {
-                    if (!nodeMetadata.getUserMetadata().get(entry.getKey()).
-                            equals(entry.getValue())) {
+                    String value = nodeMetadata.getUserMetadata().get(entry.getKey());
+                    if (value == null || !value.equals(entry.getValue())) {
                         return false;
                     }
                 }
                 return true;
             }
         };
+        return nodesFilter;
     }
 
-    private String getCredentialFromFile(String provider, String credentialPath) throws IllegalArgumentException {
+    public String getCredentialFromFile(String provider, String credentialPath) throws IllegalArgumentException {
         try {
             String fileContents = Files.toString(new File(credentialPath), Charsets.UTF_8);
 
@@ -243,7 +277,7 @@ public class ComputeServiceBuilder {
         }
     }
 
-    private ContextBuilder newContextBuilder(final String cloudProvider, final String identity,
+    public ContextBuilder newContextBuilder(final String cloudProvider, final String identity,
                                              final String credential, final String roleName) {
         try {
             if (roleName != null && (identity != null || credential != null)) {
