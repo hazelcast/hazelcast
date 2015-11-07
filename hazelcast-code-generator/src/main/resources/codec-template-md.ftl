@@ -306,6 +306,8 @@ Header only event message, no message body exist.
             <#return "array of key-value byte array pair">
         <#case "java.util.Set<java.util.Map.Entry<"+ util.DATA_FULL_NAME + "," + util.DATA_FULL_NAME + ">>">
             <#return "array of key-value byte array pair">
+        <#case "java.util.List<java.util.Map.Entry<"+ util.DATA_FULL_NAME + "," + util.DATA_FULL_NAME + ">>">
+            <#return "array of key-value byte array pair">
         <#case "com.hazelcast.map.impl.SimpleEntryView<" + util.DATA_FULL_NAME +"," + util.DATA_FULL_NAME +">">
             <#return "array of Entry View">
         <#case "com.hazelcast.nio.Address">
