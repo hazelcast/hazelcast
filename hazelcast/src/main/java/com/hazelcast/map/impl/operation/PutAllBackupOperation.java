@@ -20,16 +20,18 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.event.MapEventPublisher;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.Records;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -54,6 +56,7 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
 
     @Override
     public void run() {
+        long now = Clock.currentTimeMillis();
         int partitionId = getPartitionId();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapEventPublisher eventPublisher = mapServiceContext.getMapEventPublisher();
@@ -69,6 +72,8 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
                 final EntryView entryView = EntryViews.createSimpleEntryView(entry.getKey(), dataValueAsData, record);
                 eventPublisher.publishWanReplicationUpdateBackup(name, entryView);
             }
+
+            recordStore.evictEntries(now);
         }
     }
 
