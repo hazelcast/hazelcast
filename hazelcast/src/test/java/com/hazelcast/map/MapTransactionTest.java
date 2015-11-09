@@ -609,28 +609,6 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnRemove_whenRemoveFails() throws InterruptedException {
-        final String TEST_MAP = "testMap";
-        final String key = "k";
-        final String value = "v";
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(getConfig());
-
-        IMap<String, Object> map = hazelcastInstance.getMap(TEST_MAP);
-        map.put(key, value);
-
-        hazelcastInstance.executeTransaction(new TransactionalTask<Object>() {
-            @Override
-            public Object execute(TransactionalTaskContext transactionContext) throws TransactionException {
-                TransactionalMap<String, Object> map = transactionContext.getMap(TEST_MAP);
-                map.remove(key, value + "other");
-                return null;
-            }
-        });
-        assertFalse("Key remains locked!", map.isLocked(key));
-    }
-
-    @Test
     public void testTxnDelete() throws TransactionException {
         Config config = getConfig();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -697,27 +675,6 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnPutIfAbsent_whenPutFails() throws InterruptedException {
-        final String TEST_MAP = "testMap";
-        final String key = "k";
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(getConfig());
-
-        IMap<String, Object> map = hazelcastInstance.getMap(TEST_MAP);
-        map.put(key, "v");
-
-        hazelcastInstance.executeTransaction(new TransactionalTask<Object>() {
-            @Override
-            public Object execute(TransactionalTaskContext transactionContext) throws TransactionException {
-                TransactionalMap<String, Object> map = transactionContext.getMap(TEST_MAP);
-                map.putIfAbsent(key, "t");
-                return null;
-            }
-        });
-        assertFalse("Key remains locked!", map.isLocked(key));
-    }
-
-    @Test
     public void testTxnReplace() throws TransactionException {
         Config config = getConfig();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -744,26 +701,6 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertEquals("value3", map2.get("1"));
     }
 
-    @Test
-    public void testTxnReplace_whenReplaceFails() throws InterruptedException {
-        final String TEST_MAP = "testMap";
-        final String key = "k";
-        final String value = "v";
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(getConfig());
-
-        IMap<String, Object> map = hazelcastInstance.getMap(TEST_MAP);
-
-        hazelcastInstance.executeTransaction(new TransactionalTask<Object>() {
-            @Override
-            public Object execute(TransactionalTaskContext transactionContext) throws TransactionException {
-                TransactionalMap<String, Object> map = transactionContext.getMap(TEST_MAP);
-                map.replace(key, value);
-                return null;
-            }
-        });
-        assertFalse("Key remains locked!", map.isLocked(key));
-    }
 
     @Test
     public void testTxnReplaceIfSame() throws TransactionException {
@@ -816,27 +753,6 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertTrue(b);
     }
 
-    @Test
-    public void testTxnReplaceIfSame_whenReplaceFails() throws InterruptedException {
-        final String TEST_MAP = "testMap";
-        final String key = "k";
-        final String value = "v";
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(getConfig());
-
-        IMap<String, Object> map = hazelcastInstance.getMap(TEST_MAP);
-        map.put(key, value);
-
-        hazelcastInstance.executeTransaction(new TransactionalTask<Object>() {
-            @Override
-            public Object execute(TransactionalTaskContext transactionContext) throws TransactionException {
-                TransactionalMap<String, Object> map = transactionContext.getMap(TEST_MAP);
-                map.replace(key, value + "other", value);
-                return null;
-            }
-        });
-        assertFalse("Key remains locked!", map.isLocked(key));
-    }
 
     @Test
     public void testTxnReplace2() throws TransactionException {
