@@ -75,7 +75,8 @@ public abstract class AbstractJob<KeyIn, ValueIn>
     }
 
     @Override
-    public <KeyOut, ValueOut> MappingJob<KeyIn, KeyOut, ValueOut> mapper(Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper) {
+    public <KeyOut, ValueOut> MappingJob<KeyIn, KeyOut, ValueOut> mapper(
+            Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper) {
         isNotNull(mapper, "mapper");
         if (this.mapper != null) {
             throw new IllegalStateException("mapper already set");
@@ -198,13 +199,15 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
-        public MappingJob<EntryKey, Key, Value> topologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
+        public MappingJob<EntryKey, Key, Value> topologyChangedStrategy(
+                TopologyChangedStrategy topologyChangedStrategy) {
             AbstractJob.this.topologyChangedStrategy = topologyChangedStrategy;
             return this;
         }
 
         @Override
-        public <ValueOut> ReducingJob<EntryKey, Key, ValueOut> combiner(CombinerFactory<? super Key, ? super Value, ? extends ValueOut> combinerFactory) {
+        public <ValueOut> ReducingJob<EntryKey, Key, ValueOut> combiner(
+                CombinerFactory<? super Key, ? super Value, ? extends ValueOut> combinerFactory) {
             isNotNull(combinerFactory, "combinerFactory");
             if (AbstractJob.this.combinerFactory != null) {
                 throw new IllegalStateException("combinerFactory already set");
@@ -230,7 +233,8 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
-        public <ValueOut> JobCompletableFuture<ValueOut> submit(Collator<Map.Entry<Key, List<Value>>, ValueOut> collator) {
+        public <ValueOut> JobCompletableFuture<ValueOut> submit(
+                Collator<Map.Entry<Key, List<Value>>, ValueOut> collator) {
             return AbstractJob.this.submit(collator);
         }
     }
@@ -281,7 +285,8 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
-        public ReducingJob<EntryKey, Key, Value> topologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
+        public ReducingJob<EntryKey, Key, Value> topologyChangedStrategy(
+                TopologyChangedStrategy topologyChangedStrategy) {
             AbstractJob.this.topologyChangedStrategy = topologyChangedStrategy;
             return this;
         }
@@ -292,7 +297,8 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
-        public <ValueOut> JobCompletableFuture<ValueOut> submit(Collator<Map.Entry<Key, List<Value>>, ValueOut> collator) {
+        public <ValueOut> JobCompletableFuture<ValueOut> submit(
+                Collator<Map.Entry<Key, List<Value>>, ValueOut> collator) {
             return AbstractJob.this.submit(collator);
         }
     }

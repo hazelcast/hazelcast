@@ -86,24 +86,26 @@ public interface MappingJob<EntryKey, KeyIn, ValueIn> {
     MappingJob<EntryKey, KeyIn, ValueIn> topologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy);
 
     /**
-     * Defines the {@link CombinerFactory} for this task. This method is not idempotent and is callable only one time. Further
-     * calls result in an {@link IllegalStateException} thrown telling you to not change the internal state.
+     * Defines the {@link CombinerFactory} for this task. This method is not idempotent and is callable only one time.
+     * Further calls result in an {@link IllegalStateException} thrown telling you to not change the internal state.
      *
      * @param combinerFactory CombinerFactory to build Combiner
      * @param <ValueOut>      type of the combined value
      * @return instance of this Job with generics changed on usage
      */
-    <ValueOut> ReducingJob<EntryKey, KeyIn, ValueOut> combiner(CombinerFactory<? super KeyIn, ? super ValueIn, ? extends ValueOut> combinerFactory);
+    <ValueOut> ReducingJob<EntryKey, KeyIn, ValueOut> combiner(
+            CombinerFactory<? super KeyIn, ? super ValueIn, ? extends ValueOut> combinerFactory);
 
     /**
-     * Defines the {@link ReducerFactory} for this task. This method is not idempotent and is callable only one time. Further
-     * calls result in an {@link IllegalStateException} thrown telling you to not change the internal state.
+     * Defines the {@link ReducerFactory} for this task. This method is not idempotent and is callable only one time.
+     * Further calls result in an {@link IllegalStateException} thrown telling you to not change the internal state.
      *
      * @param reducerFactory ReducerFactory to build Reducers
      * @param <ValueOut>     type of the reduced value
      * @return instance of this Job with generics changed on usage
      */
-    <ValueOut> ReducingSubmittableJob<EntryKey, KeyIn, ValueOut> reducer(ReducerFactory<? super KeyIn, ? super ValueIn, ? extends ValueOut> reducerFactory);
+    <ValueOut> ReducingSubmittableJob<EntryKey, KeyIn, ValueOut> reducer(
+            ReducerFactory<? super KeyIn, ? super ValueIn, ? extends ValueOut> reducerFactory);
 
     /**
      * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes.
