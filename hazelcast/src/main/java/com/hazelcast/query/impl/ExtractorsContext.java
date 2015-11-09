@@ -69,10 +69,13 @@ public class ExtractorsContext {
     public static String extractArgumentsFromLastSquareBracket(String attributeNameWithArguments) {
         int start = attributeNameWithArguments.lastIndexOf("[");
         int end = attributeNameWithArguments.lastIndexOf("]");
-        if (start > 0 && start < attributeNameWithArguments.length() && start > end) {
+        if (start > 0 && start < attributeNameWithArguments.length() && start < end) {
             return attributeNameWithArguments.substring(start + 1, end);
         }
-        return null;
+        if(start < 0 && end < 0) {
+            return null;
+        }
+        throw new IllegalArgumentException("Wrong argument input passed to extractor " + attributeNameWithArguments);
     }
 
     public static String extractArgumentNameWithoutLastSquareBracketArguments(String attributeNameWithArguments) {
