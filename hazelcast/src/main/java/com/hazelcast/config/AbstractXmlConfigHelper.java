@@ -27,7 +27,6 @@ import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.util.StringUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -167,13 +166,6 @@ public abstract class AbstractXmlConfigHelper {
 
         // include hazelcast schema
         schemas.add(new StreamSource(getClass().getClassLoader().getResourceAsStream(hazelcastSchemaLocation)));
-        Element root = doc.getDocumentElement();
-
-        // set schema settings, so user don't have to set hazelcast xsd namespace,uri
-        root.setAttribute("xmlns", xmlns);
-        String xsi = "http://www.w3.org/2001/XMLSchema-instance";
-        root.setAttribute("xmlns:xsi", xsi);
-        root.setAttribute("xsi:schemaLocation", hazelcastSchemaLocation);
 
         // document to inputstream conversion
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

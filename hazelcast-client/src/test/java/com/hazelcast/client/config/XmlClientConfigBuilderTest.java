@@ -322,6 +322,18 @@ public class XmlClientConfigBuilderTest {
         buildConfig(xml);
     }
 
+    @Test(expected = InvalidConfigurationException.class)
+    public void testInvalidNamespace() {
+        String xml = "<hazelcast-client xmlns=\"http://foo.bar\"/>";
+        buildConfig(xml);
+    }
+
+    @Test
+    public void testValidNamespace() {
+        String xml = HAZELCAST_CLIENT_START_TAG + "</hazelcast-client>";
+        buildConfig(xml);
+    }
+
     static ClientConfig buildConfig(String xml, Properties properties) {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);
