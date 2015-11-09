@@ -339,9 +339,7 @@ public class ComputeServiceBuilderTest extends HazelcastTestSupport {
         ComputeServiceBuilder builder = new ComputeServiceBuilder(new HashMap<String, Comparable>());
         URL resourceUrl = getClass().
                 getResource("/key.properties");
-        Path resourcePath = Paths.get(resourceUrl.toURI());
         assertEquals("cloudkey", builder.getCredentialFromFile("gogrid",
-                resourcePath.toAbsolutePath().toString()));
+                resourceUrl.toURI().getPath()));
     }
-
 }
