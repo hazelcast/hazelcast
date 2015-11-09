@@ -58,7 +58,7 @@ public class XmlConfigImportVariableReplacementTest {
                 "   <hazelcast>" +
                 "   </hazelcast>" +
                 "</hazelcast>";
-        expectInvalid("Invalid content was found starting with element 'hazelcast'.");
+        expectInvalid("Invalid content was found starting with element");
         buildConfig(xml, null);
     }
 
