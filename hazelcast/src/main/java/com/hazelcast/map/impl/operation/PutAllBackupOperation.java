@@ -24,8 +24,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -57,6 +59,7 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
             final Map.Entry<Data, Data> entry = entries.get(i);
             final Record record = recordStore.putBackup(entry.getKey(), entry.getValue());
             Records.applyRecordInfo(record, recordInfo);
+            evict(true);
         }
     }
 
@@ -98,5 +101,10 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
             recordInfo.readData(in);
             recordInfos.add(recordInfo);
         }
+    }
+
+    protected void evict(boolean backup) {
+        final long now = Clock.currentTimeMillis();
+        recordStore.evictEntries(now, backup);
     }
 }
