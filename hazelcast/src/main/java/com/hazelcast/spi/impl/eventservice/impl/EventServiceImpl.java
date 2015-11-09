@@ -137,7 +137,7 @@ public class EventServiceImpl implements InternalEventService {
 
     @Override
     public EventRegistration registerLocalListener(String serviceName, String topic, Object listener) {
-        return registerListenerInternal(serviceName, topic, new EmptyFilter(), listener, true);
+        return registerListenerInternal(serviceName, topic, TrueEventFilter.INSTANCE, listener, true);
     }
 
     @Override
@@ -147,7 +147,7 @@ public class EventServiceImpl implements InternalEventService {
 
     @Override
     public EventRegistration registerListener(String serviceName, String topic, Object listener) {
-        return registerListenerInternal(serviceName, topic, new EmptyFilter(), listener, false);
+        return registerListenerInternal(serviceName, topic, TrueEventFilter.INSTANCE, listener, false);
     }
 
     @Override

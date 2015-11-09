@@ -20,6 +20,9 @@ import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.SyntheticEventFilter;
 import com.hazelcast.spi.EventFilter;
 
+import static com.hazelcast.map.impl.MapListenerFlagOperator.ALL_LISTENER_FLAGS;
+
+
 /**
  * Request for adding {@link com.hazelcast.core.EntryListener} for near cache operations.
  */
@@ -29,7 +32,7 @@ public class MapAddNearCacheEntryListenerRequest extends MapAddEntryListenerRequ
     }
 
     public MapAddNearCacheEntryListenerRequest(String name, boolean includeValue) {
-        super(name, includeValue);
+        super(name, includeValue, ALL_LISTENER_FLAGS);
     }
 
     @Override

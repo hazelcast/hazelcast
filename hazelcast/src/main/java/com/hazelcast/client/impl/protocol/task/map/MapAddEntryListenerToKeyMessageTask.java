@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.EntryEventFilter;
+import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
@@ -56,7 +57,8 @@ public class MapAddEntryListenerToKeyMessageTask
 
     @Override
     protected EventFilter getEventFilter() {
-        return new EntryEventFilter(parameters.includeValue, parameters.key);
+        EntryEventFilter eventFilter = new EntryEventFilter(parameters.includeValue, parameters.key);
+        return new EventListenerFilter(parameters.listenerFlags, eventFilter);
     }
 
     @Override

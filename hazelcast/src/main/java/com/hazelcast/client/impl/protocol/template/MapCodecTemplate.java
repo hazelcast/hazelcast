@@ -102,19 +102,19 @@ public interface MapCodecTemplate {
     void removeInterceptor(String name, String id);
 
     @Request(id = 25, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    void addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate, boolean includeValue);
+    void addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate, boolean includeValue, int listenerFlags);
 
     @Request(id = 26, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    void addEntryListenerWithPredicate(String name, Data predicate, boolean includeValue);
+    void addEntryListenerWithPredicate(String name, Data predicate, boolean includeValue, int listenerFlags);
 
     @Request(id = 27, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    void addEntryListenerToKey(String name, Data key, boolean includeValue);
+    void addEntryListenerToKey(String name, Data key, boolean includeValue, int listenerFlags);
 
     @Request(id = 28, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    void addEntryListener(String name, boolean includeValue);
+    void addEntryListener(String name, boolean includeValue, int listenerFlags);
 
     @Request(id = 29, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    void addNearCacheEntryListener(String name, boolean includeValue);
+    void addNearCacheEntryListener(String name, boolean includeValue, int listenerFlags);
 
     @Request(id = 30, retryable = true, response = ResponseMessageConst.BOOLEAN)
     void removeEntryListener(String name, String registrationId);

@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
+
 import java.io.IOException;
 
 public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerRequest {
@@ -33,16 +34,12 @@ public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerReque
         super();
     }
 
-    public MapAddEntryListenerRequest(String name, boolean includeValue) {
-        super(name, includeValue);
+    public MapAddEntryListenerRequest(String name, boolean includeValue, int listenerFlags) {
+        super(name, includeValue, listenerFlags);
     }
 
-    public MapAddEntryListenerRequest(String name, Data key, boolean includeValue) {
-        super(name, key, includeValue);
-    }
-
-    public MapAddEntryListenerRequest(String name, Data key, boolean includeValue, Predicate predicate) {
-        super(name, key, includeValue);
+    public MapAddEntryListenerRequest(String name, Data key, boolean includeValue, Predicate predicate, int listenerFlags) {
+        super(name, key, includeValue, listenerFlags);
         this.predicate = predicate;
     }
 
@@ -60,6 +57,7 @@ public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerReque
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("name", name);
         writer.writeBoolean("i", includeValue);
+        writer.writeInt("lf", listenerFlags);
 
         final boolean hasKey = key != null;
         writer.writeBoolean("key", hasKey);
@@ -84,6 +82,7 @@ public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerReque
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("name");
         includeValue = reader.readBoolean("i");
+        listenerFlags = reader.readInt("lf");
 
         boolean hasKey = reader.readBoolean("key");
         if (reader.readBoolean("pre")) {

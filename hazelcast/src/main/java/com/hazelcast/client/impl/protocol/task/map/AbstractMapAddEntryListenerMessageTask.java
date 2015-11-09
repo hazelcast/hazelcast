@@ -49,8 +49,9 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
 
         MapListenerAdapter<Object, Object> listener = new MapListener();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final String name = getDistributedObjectName();
-        final String registrationId = mapServiceContext.addEventListener(listener, getEventFilter(), name);
+        String name = getDistributedObjectName();
+        EventFilter eventFilter = getEventFilter();
+        String registrationId = mapServiceContext.addEventListener(listener, eventFilter, name);
         endpoint.addListenerDestroyAction(MapService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }

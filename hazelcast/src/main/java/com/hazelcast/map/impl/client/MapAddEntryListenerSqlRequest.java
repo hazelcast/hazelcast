@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
+
 import java.io.IOException;
 
 public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRequest {
@@ -35,16 +36,16 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
         super();
     }
 
-    public MapAddEntryListenerSqlRequest(String name, boolean includeValue) {
-        super(name, includeValue);
+    public MapAddEntryListenerSqlRequest(String name, boolean includeValue, int listenerFlags) {
+        super(name, includeValue, listenerFlags);
     }
 
-    public MapAddEntryListenerSqlRequest(String name, Data key, boolean includeValue) {
-        super(name, key, includeValue);
+    public MapAddEntryListenerSqlRequest(String name, Data key, boolean includeValue, int listenerFlags) {
+        super(name, key, includeValue, listenerFlags);
     }
 
-    public MapAddEntryListenerSqlRequest(String name, Data key, boolean includeValue, String predicate) {
-        super(name, key, includeValue);
+    public MapAddEntryListenerSqlRequest(String name, Data key, boolean includeValue, String predicate, int listenerFlags) {
+        super(name, key, includeValue, listenerFlags);
         this.predicate = predicate;
     }
 
@@ -64,7 +65,11 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
     @Override
     public void write(PortableWriter writer) throws IOException {
         final boolean hasKey = key != null;
+        writer.writeUTF("name", name);
+        writer.writeBoolean("i", includeValue);
         writer.writeBoolean("key", hasKey);
+        writer.writeInt("lf", listenerFlags);
+
         if (predicate == null) {
             writer.writeBoolean("pre", false);
             if (hasKey) {
@@ -80,6 +85,7 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
             }
         }
 
+
     }
 
     @Override
@@ -87,6 +93,8 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
         name = reader.readUTF("name");
         includeValue = reader.readBoolean("i");
         boolean hasKey = reader.readBoolean("key");
+        listenerFlags = reader.readInt("lf");
+
         if (reader.readBoolean("pre")) {
             predicate = reader.readUTF("p");
             final ObjectDataInput in = reader.getRawDataInput();
@@ -97,6 +105,7 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
             final ObjectDataInput in = reader.getRawDataInput();
             key = in.readData();
         }
+
     }
 
 }

@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyWithPredicateCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.QueryEventFilter;
+import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -34,8 +35,9 @@ public class MapAddEntryListenerToKeyWithPredicateMessageTask
 
     @Override
     protected EventFilter getEventFilter() {
-        final Predicate predicate = serializationService.toObject(parameters.predicate);
-        return new QueryEventFilter(parameters.includeValue, parameters.key, predicate);
+        Predicate predicate = serializationService.toObject(parameters.predicate);
+        QueryEventFilter eventFilter = new QueryEventFilter(parameters.includeValue, parameters.key, predicate);
+        return new EventListenerFilter(parameters.listenerFlags, eventFilter);
     }
 
     @Override
