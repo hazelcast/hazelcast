@@ -463,7 +463,7 @@ public class EvictionTest extends HazelcastTestSupport {
             map.get(i);
         }
         // expecting these entries to be evicted.
-        for (int i = size / 2; i < size; i++) {
+        for (int i = size / 2; i < size + 1; i++) {
             map.put(i, i);
         }
         assertOpenEventually(latch, 120);
@@ -505,7 +505,7 @@ public class EvictionTest extends HazelcastTestSupport {
             map.get(i);
         }
         // expecting these entries to be evicted.
-        for (int i = size / 2; i < size; i++) {
+        for (int i = size / 2; i < size + 1; i++) {
             map.put(i, i);
         }
         assertOpenEventually(latch, 120);
