@@ -486,7 +486,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             try {
                 migrationQueue.clear();
                 if (initialized) {
-                    migrationQueue.add(new RepartitioningTask());
+                    final ClusterState clusterState = nodeEngine.getClusterService().getClusterState();
+                    if (clusterState == ClusterState.ACTIVE) {
+                        migrationQueue.add(new RepartitioningTask());
+                    }
 
                     // send initial partition table to newly joined node.
                     Collection<MemberImpl> members = getCurrentMembersAndMembersRemovedWhileNotClusterNotActive();
@@ -631,7 +634,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return;
         }
 
-        if (!isMigrationAllowed()) {
+        if (!isReplicaSyncAllowed()) {
             // migration is disabled because of a member leave, wait till enabled!
             return;
         }
