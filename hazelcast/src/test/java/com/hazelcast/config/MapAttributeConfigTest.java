@@ -53,6 +53,25 @@ public class MapAttributeConfigTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
+    public void openingSquareBracketInName() {
+        new MapAttributeConfig(QueryConstants.KEY_ATTRIBUTE_NAME.value(), "co[m");
+    }
+
+    public void closingSquareBracketInName() {
+        new MapAttributeConfig(QueryConstants.KEY_ATTRIBUTE_NAME.value(), "co]m");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void emptySquareBracketInName() {
+        new MapAttributeConfig(QueryConstants.KEY_ATTRIBUTE_NAME.value(), "com[]");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void bothSquareBracketInName() {
+        new MapAttributeConfig(QueryConstants.KEY_ATTRIBUTE_NAME.value(), "com[007]");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
     public void nullExtractor() {
         new MapAttributeConfig("iq", null);
     }

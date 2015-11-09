@@ -31,7 +31,7 @@ import com.hazelcast.map.impl.wan.MapReplicationUpdate;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.CachedQueryEntry;
-import com.hazelcast.query.impl.Extractors;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;

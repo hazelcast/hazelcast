@@ -35,7 +35,7 @@ import com.hazelcast.query.SampleObjects.ObjectWithSqlDate;
 import com.hazelcast.query.SampleObjects.ObjectWithSqlTimestamp;
 import com.hazelcast.query.SampleObjects.ObjectWithUUID;
 import com.hazelcast.query.impl.DateHelperTest;
-import com.hazelcast.query.impl.Extractors;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;

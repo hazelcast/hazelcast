@@ -1,4 +1,4 @@
-package com.hazelcast.query.impl.extraction.predicates;
+package com.hazelcast.query.impl.extractor.predicates;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
@@ -6,10 +6,10 @@ import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
-import com.hazelcast.query.impl.extraction.AbstractExtractionTest;
+import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
 
-import static com.hazelcast.query.impl.extraction.predicates.CollectionDataStructure.Limb;
-import static com.hazelcast.query.impl.extraction.predicates.CollectionDataStructure.Person;
+import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.Limb;
+import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.Person;
 
 /**
  * Tests whether all predicates work with the extraction in collections.
@@ -41,56 +41,56 @@ public class CollectionAllPredicatesExtractorTest extends CollectionAllPredicate
                 MapAttributeConfig reducedNameAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
                 reducedNameAttribute.setName(AbstractExtractionTest.parametrize("limb_[any].name", mv));
                 reducedNameAttribute.setExtractor(
-                        "com.hazelcast.query.impl.extraction.predicates.CollectionAllPredicatesExtractorTest$ReducedLimbNameExtractor");
+                        "com.hazelcast.query.impl.extractor.predicates.CollectionAllPredicatesExtractorTest$ReducedLimbNameExtractor");
                 mapConfig.addMapAttributeConfig(reducedNameAttribute);
 
                 MapAttributeConfig indexOneNameAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
                 indexOneNameAttribute.setName(AbstractExtractionTest.parametrize("limb_[1].name", mv));
                 indexOneNameAttribute.setExtractor(
-                        "com.hazelcast.query.impl.extraction.predicates.CollectionAllPredicatesExtractorTest$IndexOneLimbNameExtractor");
+                        "com.hazelcast.query.impl.extractor.predicates.CollectionAllPredicatesExtractorTest$IndexOneLimbNameExtractor");
                 mapConfig.addMapAttributeConfig(indexOneNameAttribute);
 
                 MapAttributeConfig reducedPowerAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
                 reducedPowerAttribute.setName(AbstractExtractionTest.parametrize("limb_[any].power", mv));
                 reducedPowerAttribute.setExtractor(
-                        "com.hazelcast.query.impl.extraction.predicates.CollectionAllPredicatesExtractorTest$ReducedLimbPowerExtractor");
+                        "com.hazelcast.query.impl.extractor.predicates.CollectionAllPredicatesExtractorTest$ReducedLimbPowerExtractor");
                 mapConfig.addMapAttributeConfig(reducedPowerAttribute);
 
                 MapAttributeConfig indexOnePowerAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
                 indexOnePowerAttribute.setName(AbstractExtractionTest.parametrize("limb_[1].power", mv));
                 indexOnePowerAttribute.setExtractor(
-                        "com.hazelcast.query.impl.extraction.predicates.CollectionAllPredicatesExtractorTest$IndexOneLimbPowerExtractor");
+                        "com.hazelcast.query.impl.extractor.predicates.CollectionAllPredicatesExtractorTest$IndexOneLimbPowerExtractor");
                 mapConfig.addMapAttributeConfig(indexOnePowerAttribute);
             }
         };
     }
 
-    public static class IndexOneLimbPowerExtractor extends ValueExtractor<Person> {
+    public static class IndexOneLimbPowerExtractor extends ValueExtractor<Person, Object> {
         @Override
-        public void extract(Person target, ValueCollector collector) {
+        public void extract(Person target, Object arguments, ValueCollector collector) {
             collector.addObject(target.limbs_list.get(1).power);
         }
     }
 
-    public static class IndexOneLimbNameExtractor extends ValueExtractor<Person> {
+    public static class IndexOneLimbNameExtractor extends ValueExtractor<Person, Object> {
         @Override
-        public void extract(Person target, ValueCollector collector) {
+        public void extract(Person target, Object arguments, ValueCollector collector) {
             collector.addObject(target.limbs_list.get(1).name);
         }
     }
 
-    public static class ReducedLimbPowerExtractor extends ValueExtractor<Person> {
+    public static class ReducedLimbPowerExtractor extends ValueExtractor<Person, Object> {
         @Override
-        public void extract(Person target, ValueCollector collector) {
+        public void extract(Person target, Object arguments, ValueCollector collector) {
             for (Limb limb : target.limbs_list) {
                 collector.addObject(limb.power);
             }
         }
     }
 
-    public static class ReducedLimbNameExtractor extends ValueExtractor<Person> {
+    public static class ReducedLimbNameExtractor extends ValueExtractor<Person, Object> {
         @Override
-        public void extract(Person target, ValueCollector collector) {
+        public void extract(Person target, Object arguments, ValueCollector collector) {
             for (Limb limb : target.limbs_list) {
                 collector.addObject(limb.name);
             }
