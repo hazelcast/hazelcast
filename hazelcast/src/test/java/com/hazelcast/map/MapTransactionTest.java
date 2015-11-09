@@ -871,7 +871,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
         EntryListener<String, Integer> l = new EntryAdapter<String, Integer>() {
         };
 
-        Predicate<String, Integer> p = Predicates.equal("dummy-attribute", 1);
+        EntryObject e = new PredicateBuilder().getEntryObject();
+        Predicate<String, Integer> p = e.equal(1);
         map.addEntryListener(l, p, null, false);
 
         for (Integer i = 0; i < 100; i++) {

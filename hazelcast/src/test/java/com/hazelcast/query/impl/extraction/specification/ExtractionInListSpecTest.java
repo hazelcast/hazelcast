@@ -2,11 +2,9 @@ package com.hazelcast.query.impl.extraction.specification;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.extraction.AbstractExtractionTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,7 +30,7 @@ import static java.util.Arrays.asList;
  * Specification test that verifies the behavior of corner-cases extraction in collections ONLY.
  * <p/>
  * Extraction mechanism: IN-BUILT REFLECTION EXTRACTION
- * <p>
+ * <p/>
  * This test is parametrised on two axes (see the parametrisationData() method):
  * - in memory format
  * - indexing
@@ -51,9 +49,11 @@ public class ExtractionInListSpecTest extends AbstractExtractionTest {
             limb("rechte-hand", tattoos(), finger("Ringfinger"), finger("Daumen"))
     );
 
-    private static final Person HUNT_WITH_NULL_LIMBS = person("Hunt",
+    private static final Person HUNT_NULL_TATTOOS = person("Hunt",
             limb("left", null, new Finger[]{})
     );
+
+    private static final Person HUNT_NULL_LIMB = person("Hunt");
 
     public ExtractionInListSpecTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
         super(inMemoryFormat, index, multivalue);
@@ -62,27 +62,73 @@ public class ExtractionInListSpecTest extends AbstractExtractionTest {
     @Test
     public void size_property() {
         execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.equal("limbs_.size", 2), mv),
+                Expected.of(BOND, KRUEGER));
+    }
+
+    @Test
+    public void size_property_atLeaf() {
+        execute(Input.of(BOND, KRUEGER),
                 Query.of(Predicates.equal("limbs_[0].tattoos_.size", 1), mv),
                 Expected.of(KRUEGER));
     }
 
     @Test
-    @Ignore
-    // TODO Fix null handling -> size on null collection does not throw exception
     public void null_collection_size() {
-        execute(Input.of(HUNT_WITH_NULL_LIMBS),
+        execute(Input.of(HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("limbs_[0].fingers_.size", 1), mv),
-                Expected.of(QueryException.class));
+                Expected.empty());
     }
 
     @Test
-    @Ignore
-    // TODO Fix null handling -> size on null collection does not throw exception
-    public void null_collection_size_reduced() {
-        execute(Input.of(HUNT_WITH_NULL_LIMBS),
-                Query.of(Predicates.equal("limbs_[any].fingers_.size", 1), mv),
-                Expected.of(QueryException.class));
+    public void null_collection_size_compared_to_null() {
+        execute(Input.of(HUNT_NULL_LIMB),
+                Query.of(Predicates.equal("limbs_[0].fingers_.size", null), mv),
+                Expected.of(HUNT_NULL_LIMB));
     }
+
+    @Test
+    public void null_collection_size_reduced() {
+        execute(Input.of(HUNT_NULL_LIMB),
+                Query.of(Predicates.equal("limbs_[any].fingers_.size", 1), mv),
+                Expected.empty());
+    }
+
+    @Test
+    public void null_collection_size_reduced_compared_to_null() {
+        execute(Input.of(HUNT_NULL_LIMB),
+                Query.of(Predicates.equal("limbs_[any].fingers_.size", null), mv),
+                Expected.of(HUNT_NULL_LIMB));
+    }
+
+    @Test
+    public void null_collection_size_atLeaf() {
+        execute(Input.of(HUNT_NULL_TATTOOS),
+                Query.of(Predicates.equal("limbs_[0].tattoos_.size", 1), mv),
+                Expected.empty());
+    }
+
+    @Test
+    public void null_collection_size_atLeaf_compared_to_null() {
+        execute(Input.of(HUNT_NULL_TATTOOS),
+                Query.of(Predicates.equal("limbs_[0].tattoos_.size", null), mv),
+                Expected.of(HUNT_NULL_TATTOOS));
+    }
+
+    @Test
+    public void null_collection_size_atLeaf_reduced() {
+        execute(Input.of(HUNT_NULL_TATTOOS),
+                Query.of(Predicates.equal("limbs_[any].tattoos_.size", 1), mv),
+                Expected.empty());
+    }
+
+    @Test
+    public void null_collection_size_atLeaf_reduced_compared_to_null() {
+        execute(Input.of(HUNT_NULL_TATTOOS),
+                Query.of(Predicates.equal("limbs_[any].tattoos_.size", null), mv),
+                Expected.of(HUNT_NULL_TATTOOS));
+    }
+
 
     @Parameterized.Parameters(name = "{index}: {0}, {1}, {2}")
     public static Collection<Object[]> data() {

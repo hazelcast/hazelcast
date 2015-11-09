@@ -204,9 +204,8 @@ public class MethodGetterTest {
         MethodGetter nailNameGetter = new MethodGetter(limbGetter, getLimbNameMethod, null, null);
         MultiResult result = (MultiResult) nailNameGetter.getValue(body);
 
-        assertContainsInAnyOrder(result, "leg", "hand");
+        assertContainsInAnyOrder(result, "leg", "hand", null);
     }
-
 
     @Test
     public void getValue_whenNoModifierOnArray_thenReturnTheArray() throws Exception {

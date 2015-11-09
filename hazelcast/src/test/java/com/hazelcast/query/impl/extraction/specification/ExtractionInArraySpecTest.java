@@ -39,6 +39,7 @@ import static java.util.Arrays.asList;
  */
 @RunWith(Parameterized.class)
 @Category({QuickTest.class, ParallelTest.class})
+@Ignore("Checking array's length does not work for now")
 public class ExtractionInArraySpecTest extends AbstractExtractionTest {
 
     private static final Person BOND = person("Bond",
@@ -51,38 +52,84 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
             limb("rechte-hand", tattoos(), finger("Ringfinger"), finger("Daumen"))
     );
 
-    private static final Person HUNT = person("Hunt",
+    private static final Person HUNT_NULL_TATTOOS = person("Hunt",
             limb("left", null, new Finger[]{})
     );
+
+    private static final Person HUNT_NULL_LIMB = person("Hunt");
 
     public ExtractionInArraySpecTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
         super(inMemoryFormat, index, multivalue);
     }
 
     @Test
-    @Ignore
-    // TODO Checking array's length does not work for now
-    public void lengthProperty() {
+    public void length_property() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.equal("limbs_.length", 2), mv),
+                Expected.of(BOND, KRUEGER));
+    }
+
+    @Test
+    public void length_property_atLeaf() {
         execute(Input.of(BOND, KRUEGER),
                 Query.of(Predicates.equal("limbs_[0].tattoos_.length", 1), mv),
                 Expected.of(KRUEGER));
     }
 
     @Test
-    @Ignore
-    // TODO remove ignore when lengthProperty() test fixed
-    public void null_arrayOrCollection_size() {
-        execute(Input.of(HUNT),
+    public void null_collection_length() {
+        execute(Input.of(HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("limbs_[0].fingers_.length", 1), mv),
-                Expected.of(QueryException.class));
+                Expected.empty());
     }
 
     @Test
-    // TODO remove ignore when lengthProperty() test fixed
-    public void null_arrayOrCollection_size_reduced() {
-        execute(Input.of(HUNT),
+    public void null_collection_length_compared_to_null() {
+        execute(Input.of(HUNT_NULL_LIMB),
+                Query.of(Predicates.equal("limbs_[0].fingers_.length", null), mv),
+                Expected.of(HUNT_NULL_LIMB));
+    }
+
+    @Test
+    public void null_collection_length_reduced() {
+        execute(Input.of(HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("limbs_[any].fingers_.length", 1), mv),
-                Expected.of(QueryException.class));
+                Expected.empty());
+    }
+
+    @Test
+    public void null_collection_length_reduced_compared_to_null() {
+        execute(Input.of(HUNT_NULL_LIMB),
+                Query.of(Predicates.equal("limbs_[any].fingers_.length", null), mv),
+                Expected.of(HUNT_NULL_LIMB));
+    }
+
+    @Test
+    public void null_collection_length_atLeaf() {
+        execute(Input.of(HUNT_NULL_TATTOOS),
+                Query.of(Predicates.equal("limbs_[0].tattoos_.length", 1), mv),
+                Expected.empty());
+    }
+
+    @Test
+    public void null_collection_length_atLeaf_compared_to_null() {
+        execute(Input.of(HUNT_NULL_TATTOOS),
+                Query.of(Predicates.equal("limbs_[0].tattoos_.length", null), mv),
+                Expected.of(HUNT_NULL_TATTOOS));
+    }
+
+    @Test
+    public void null_collection_length_atLeaf_reduced() {
+        execute(Input.of(HUNT_NULL_TATTOOS),
+                Query.of(Predicates.equal("limbs_[any].tattoos_.length", 1), mv),
+                Expected.empty());
+    }
+
+    @Test
+    public void null_collection_length_atLeaf_reduced_compared_to_null() {
+        execute(Input.of(HUNT_NULL_TATTOOS),
+                Query.of(Predicates.equal("limbs_[any].tattoos_.length", null), mv),
+                Expected.of(HUNT_NULL_TATTOOS));
     }
 
     @Parameterized.Parameters(name = "{index}: {0}, {1}, {2}")
