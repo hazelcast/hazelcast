@@ -8,9 +8,9 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.map.DeleteMergePolicy;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.DeleteMergePolicy;
 import com.hazelcast.map.listener.EntryMergedListener;
 import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
 import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
@@ -20,7 +20,7 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.wan.impl.WanNoDelayReplication;
 import org.junit.After;
 import org.junit.Before;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertTrue;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
+@Category(SlowTest.class)
 public class WanReplicationTest extends HazelcastTestSupport {
 
     private int ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE = 3 * 60;
