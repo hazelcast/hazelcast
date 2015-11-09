@@ -1507,22 +1507,6 @@ public class MapReduceTest
             return keyValueSource.getAllKeys0();
         }
 
-        public static <K1, V1> KeyValueSource<K1, V1> fromMap(IMap<K1, V1> map) {
-            return KeyValueSource.fromMap(map);
-        }
-
-        public static <K1, V1> KeyValueSource<K1, V1> fromMultiMap(MultiMap<K1, V1> multiMap) {
-            return KeyValueSource.fromMultiMap(multiMap);
-        }
-
-        public static <V1> KeyValueSource<String, V1> fromList(IList<V1> list) {
-            return KeyValueSource.fromList(list);
-        }
-
-        public static <V1> KeyValueSource<String, V1> fromSet(ISet<V1> set) {
-            return KeyValueSource.fromSet(set);
-        }
-
         @Override
         public void close()
                 throws IOException {
