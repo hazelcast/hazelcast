@@ -4,6 +4,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.query.extractor.Arguments;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.extraction.AbstractExtractionTest;
@@ -51,16 +52,16 @@ public class SingleValueAllPredicatesExtractorTest extends SingleValueAllPredica
         };
     }
 
-    public static class IqExtractor extends ValueExtractor<Person> {
+    public static class IqExtractor extends ValueExtractor<Person, Object> {
         @Override
-        public void extract(Person target, ValueCollector collector) {
+        public void extract(Person target, Arguments arguments, ValueCollector collector) {
             collector.addObject(target.brain.iq);
         }
     }
 
-    public static class NameExtractor extends ValueExtractor<Person> {
+    public static class NameExtractor extends ValueExtractor<Person, Object> {
         @Override
-        public void extract(Person target, ValueCollector collector) {
+        public void extract(Person target, Arguments arguments, ValueCollector collector) {
             collector.addObject(target.brain.name);
         }
     }

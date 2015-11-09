@@ -46,8 +46,9 @@ package com.hazelcast.query.extractor;
  * attribute values from object.
  *
  * @param <T> type of the target object to extract the value from
+ * @param <K> type of the extraction arguments passed to the extract() method
  */
-public abstract class ValueExtractor<T> {
+public abstract class ValueExtractor<T, K> {
 
     /**
      * Extracts a value from the given target object.
@@ -92,6 +93,6 @@ public abstract class ValueExtractor<T> {
      * @param collector collector of the extracted value(s)
      * @see ValueCollector
      */
-    public abstract void extract(T target, ValueCollector collector);
+    public abstract void extract(T target, Arguments<K> arguments, ValueCollector collector);
 
 }

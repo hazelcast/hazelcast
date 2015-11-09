@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.extractor.Arguments;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.getters.ReflectionHelper;
@@ -33,7 +34,7 @@ import static com.hazelcast.query.impl.TypeConverters.IDENTITY_CONVERTER;
 import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
 
 /**
- * This interface contains methods related to Queryable Entry which means searched an indexed by sql query or predicate .
+ * This interface contains methods related to Queryable Entry which means searched an indexed by sql query or predicate.
  */
 public abstract class QueryableEntry implements Map.Entry {
 
@@ -144,11 +145,12 @@ public abstract class QueryableEntry implements Map.Entry {
         }
 
         Object targetObject = serializationService.toObject(target);
-        ValueExtractor<Object> extractor = extractors.getExtractor(attributeName);
+        ValueExtractor<Object, Object> extractor = extractors.getExtractor(attributeName);
+        Arguments<Object> arguments = extractors.getArguments(attributeName);
         if (extractor != null) {
             // This part will be improved in 3.7 to avoid extra allocation
             DefaultValueCollector collector = new DefaultValueCollector();
-            extractor.extract(targetObject, collector);
+            extractor.extract(targetObject, arguments, collector);
             return collector.getResult();
         } else {
             return extractViaReflection(attributeName, targetObject);
@@ -209,19 +211,19 @@ public abstract class QueryableEntry implements Map.Entry {
     }
 
 
-    private AttributeType extractAttributeType(Object extractedObject) {
-        if (extractedObject instanceof MultiResult) {
-            return extractAttributeTypeFromMultiResult((MultiResult) extractedObject);
+    private AttributeType extractAttributeType(Object attributeValue) {
+        if (attributeValue instanceof MultiResult) {
+            return extractAttributeTypeFromMultiResult((MultiResult) attributeValue);
         } else {
-            return extractAttributeTypeFromSingleResult(extractedObject);
+            return extractAttributeTypeFromSingleResult(attributeValue);
         }
     }
 
-    private AttributeType extractAttributeTypeFromSingleResult(Object extractedObject) {
-        if (extractedObject == null) {
+    private AttributeType extractAttributeTypeFromSingleResult(Object extractedSingleResult) {
+        if (extractedSingleResult == null) {
             return null;
         } else {
-            return ReflectionHelper.getAttributeType(extractedObject.getClass());
+            return ReflectionHelper.getAttributeType(extractedSingleResult.getClass());
         }
     }
 

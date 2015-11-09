@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.query.extractor.Arguments;
 import com.hazelcast.query.extractor.ValueExtractor;
 
 import java.util.Collections;
@@ -28,10 +29,15 @@ public class Extractors {
 
     private static final Extractors EMPTY = new Extractors(Collections.<MapAttributeConfig>emptyList());
 
+    // Maps the extractorAttributeName WITHOUT the arguments to a ValueExtractor instance
+    // The name does not contain the argument since it's not allowed to register an extractor under an attribute name
+    // that contains an argument in square brackets.
     private final Map<String, ValueExtractor> extractors;
+    private final ExtractorsContext context;
 
     public Extractors(List<MapAttributeConfig> mapAttributeConfigs) {
         extractors = new HashMap<String, ValueExtractor>();
+        context = new ExtractorsContext();
         for (MapAttributeConfig config : mapAttributeConfigs) {
             if (extractors.containsKey(config.getName())) {
                 throw new IllegalArgumentException("Could not add " + config
@@ -59,8 +65,12 @@ public class Extractors {
         }
     }
 
-    public <T> ValueExtractor<T> getExtractor(String attribute) {
-        return extractors.get(attribute);
+    public <T, K> ValueExtractor<T, K> getExtractor(String attributeNameWithArguments) {
+        return extractors.get(context.getAttributeNameWithoutArguments(attributeNameWithArguments));
+    }
+
+    public <T> Arguments<T> getArguments(String attributeNameWithArguments) {
+        return context.getArguments(attributeNameWithArguments);
     }
 
     public static Extractors empty() {

@@ -91,6 +91,7 @@ public class MapAttributeConfig {
 
     private static String checkName(String name) {
         checkHasText(name, "Map attribute name must contain text");
+        checkNoSquareBracketsInName(name);
         checkNoDotInName(name);
         checkNotQueryConstant(name);
         return name;
@@ -99,6 +100,12 @@ public class MapAttributeConfig {
     private static void checkNoDotInName(String name) {
         if (name.contains(".")) {
             throw new IllegalArgumentException("Map attribute name must not contain . (dot) char");
+        }
+    }
+
+    private static void checkNoSquareBracketsInName(String name) {
+        if (name.contains("[") || name.contains("]")) {
+            throw new IllegalArgumentException("Map attribute name must not contain [] (square brackets) chars");
         }
     }
 
