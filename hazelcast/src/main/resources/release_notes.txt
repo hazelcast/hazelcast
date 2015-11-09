@@ -79,6 +79,11 @@ a `SAXParse` exception is thrown. [5528]
 
 This section lists issues solved for  Hazelcast 3.6  release.
 
+- There is no need to use `CacheLoader` inside the client/server side cache proxies.
+- There are broken XML configuration tests in the Hazelcast client package. 
+- There is a memory leak since the method `publishBathcedEvents` does not remove the events from `batchEvent`. 
+- Lite member element should be added to the Hazelcast Spring configuration. 
+- `EntryListener` shows the unprocessed value in combination with `PostProcessingMapStore`. 
 - The method `map.size()` waits indefinitely after the shutdown of a node. [6538]
 - `HazelcastCachingProvider` does not use the specified instance (by the object) when `instance-name` is not specified. [6454]
 - `onExecutionFailure` should be called before returning from `run`, if backup is not valid. [6420]
