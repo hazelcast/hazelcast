@@ -72,7 +72,7 @@ public class ExtractorsContext {
         if (start > 0 && start < attributeNameWithArguments.length() && start < end) {
             return attributeNameWithArguments.substring(start + 1, end);
         }
-        if(start < 0 && end < 0) {
+        if (start < 0 && end < 0) {
             return null;
         }
         throw new IllegalArgumentException("Wrong argument input passed to extractor " + attributeNameWithArguments);

@@ -65,10 +65,12 @@ public class Extractors {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public <T, K> ValueExtractor<T, K> getExtractor(String attributeNameWithArguments) {
         return extractors.get(context.getAttributeNameWithoutArguments(attributeNameWithArguments));
     }
 
+    @SuppressWarnings("unchecked")
     public <T> Arguments<T> getArguments(String attributeNameWithArguments) {
         return context.getArguments(attributeNameWithArguments);
     }
