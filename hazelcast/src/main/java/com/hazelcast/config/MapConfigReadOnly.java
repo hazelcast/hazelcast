@@ -107,7 +107,7 @@ public class MapConfigReadOnly extends MapConfig {
         return Collections.unmodifiableList(readOnlyOnes);
     }
 
-    public void setHotRestartEnabled(boolean hotRestartEnabled) {
+    public MapConfig setHotRestartEnabled(boolean hotRestartEnabled) {
         throw new UnsupportedOperationException("This config is read-only map: " + getName());
     }
 

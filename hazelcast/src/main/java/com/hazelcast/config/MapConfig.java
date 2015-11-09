@@ -189,8 +189,9 @@ public class MapConfig {
         return hotRestartEnabled;
     }
 
-    public void setHotRestartEnabled(boolean hotRestartEnabled) {
+    public MapConfig setHotRestartEnabled(boolean hotRestartEnabled) {
         this.hotRestartEnabled = hotRestartEnabled;
+        return this;
     }
 
     /**
