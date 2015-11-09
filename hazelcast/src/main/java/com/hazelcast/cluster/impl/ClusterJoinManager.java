@@ -36,6 +36,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.partition.PartitionRuntimeState;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -440,8 +441,9 @@ public class ClusterJoinManager {
                 Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
                 boolean isPostJoinOperation = postJoinOps != null && postJoinOps.length > 0;
                 PostJoinOperation postJoinOp = isPostJoinOperation ? new PostJoinOperation(postJoinOps) : null;
-                Operation operation = new FinalizeJoinOperation(createMemberInfoList(clusterService.getMemberImpls()), postJoinOp,
-                        clusterClock.getClusterTime(), clusterStateManager.getState(), false);
+                Operation operation = new FinalizeJoinOperation(createMemberInfoList(clusterService.getMemberImpls()),
+                        postJoinOp, clusterClock.getClusterTime(), clusterStateManager.getState(),
+                        node.partitionService.createPartitionState(), false);
                 nodeEngine.getOperationService().send(operation, target);
             } else {
                 sendMasterAnswer(target);
@@ -492,10 +494,12 @@ public class ClusterJoinManager {
 
                 int count = members.size() - 1 + setJoins.size();
                 List<Future> calls = new ArrayList<Future>(count);
+                PartitionRuntimeState partitionState = node.partitionService.createPartitionState();
                 for (MemberInfo member : setJoins) {
                     long startTime = clusterClock.getClusterStartTime();
                     Operation joinOperation = new FinalizeJoinOperation(memberInfos, postJoinOp, time,
-                            clusterService.getClusterId(), startTime, clusterStateManager.getState());
+                            clusterService.getClusterId(), startTime,
+                            clusterStateManager.getState(), partitionState);
                     calls.add(invokeClusterOperation(joinOperation, member.getAddress()));
                 }
                 for (MemberImpl member : members) {

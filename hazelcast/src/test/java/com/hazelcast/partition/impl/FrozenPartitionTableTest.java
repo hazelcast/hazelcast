@@ -10,7 +10,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,7 +41,6 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
         testPartitionTableIsFrozenDuring(ClusterState.PASSIVE);
     }
 
-    @Repeat(100)
     @Test
     public void partitionTable_isFrozen_whenMemberReJoins_duringClusterStateIsFrozen() {
         Config config = new Config();

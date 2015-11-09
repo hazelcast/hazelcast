@@ -492,8 +492,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     }
 
                     // send initial partition table to newly joined node.
-                    Collection<MemberImpl> members = getCurrentMembersAndMembersRemovedWhileNotClusterNotActive();
-                    PartitionStateOperation op = new PartitionStateOperation(createPartitionState(members));
+                    PartitionStateOperation op = new PartitionStateOperation(createPartitionState());
                     nodeEngine.getOperationService().send(op, member.getAddress());
                 }
             } finally {
@@ -608,7 +607,15 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
+    public PartitionRuntimeState createPartitionState() {
+        return createPartitionState(getCurrentMembersAndMembersRemovedWhileNotClusterNotActive());
+    }
+
     private PartitionRuntimeState createPartitionState(Collection<MemberImpl> members) {
+        if (!initialized) {
+            return null;
+        }
+
         lock.lock();
         try {
             List<MemberInfo> memberInfos = new ArrayList<MemberInfo>(members.size());
@@ -707,7 +714,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return calls;
     }
 
-    void processPartitionRuntimeState(PartitionRuntimeState partitionState) {
+    public void processPartitionRuntimeState(PartitionRuntimeState partitionState) {
         lock.lock();
         try {
             final Address sender = partitionState.getEndpoint();
