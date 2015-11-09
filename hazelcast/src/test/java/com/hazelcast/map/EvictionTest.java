@@ -478,7 +478,7 @@ public class EvictionTest extends HazelcastTestSupport {
             map.get(i);
         }
         // expecting these entries to be evicted.
-        for (int i = size / 2; i < size; i++) {
+        for (int i = size / 2; i < size + 1; i++) {
             map.put(i, i);
         }
         assertOpenEventually(latch, 120);
@@ -492,7 +492,6 @@ public class EvictionTest extends HazelcastTestSupport {
     @Test
     public void testEvictionLFU() {
         final String mapName = "testEvictionLFU_" + randomString();
-        final int instanceCount = 1;
         final int size = 10000;
 
         Config cfg = getConfig();
@@ -505,11 +504,10 @@ public class EvictionTest extends HazelcastTestSupport {
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
-        final HazelcastInstance[] instances = factory.newInstances(cfg);
+        HazelcastInstance node = createHazelcastInstance(cfg);
+        IMap<Object, Object> map = node.getMap(mapName);
         final int atLeastShouldEvict = size / 40;
         final CountDownLatch latch = new CountDownLatch(atLeastShouldEvict);
-        IMap<Object, Object> map = instances[0].getMap(mapName);
         map.addLocalEntryListener(new EntryAdapter<Object, Object>() {
             @Override
             public void entryEvicted(EntryEvent<Object, Object> event) {
@@ -522,7 +520,7 @@ public class EvictionTest extends HazelcastTestSupport {
             map.get(i);
         }
         // expecting these entries to be evicted.
-        for (int i = size / 2; i < size; i++) {
+        for (int i = size / 2; i < size + 1; i++) {
             map.put(i, i);
         }
         assertOpenEventually(latch, 120);
