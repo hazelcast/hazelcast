@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
@@ -35,10 +34,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.executor.CompletableFutureTask;
 
 import javax.cache.CacheException;
-import javax.cache.configuration.Factory;
-import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CompletionListener;
-import java.io.Closeable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -76,7 +72,6 @@ abstract class AbstractCacheProxyBase<K, V> {
 
     private final NodeEngine nodeEngine;
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
-    private CacheLoader<K, V> cacheLoader;
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
@@ -92,16 +87,6 @@ abstract class AbstractCacheProxyBase<K, V> {
         this.serializationService = nodeEngine.getSerializationService();
         this.operationProvider =
                 cacheService.getCacheOperationProvider(nameWithPrefix, cacheConfig.getInMemoryFormat());
-        init();
-    }
-
-    private void init() {
-        if (cacheConfig.getCacheLoaderFactory() != null) {
-            final Factory<CacheLoader<K, V>> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
-            cacheLoader = cacheLoaderFactory.create();
-        } else {
-            cacheLoader = null;
-        }
     }
 
     protected void ensureOpen() {
@@ -127,7 +112,6 @@ abstract class AbstractCacheProxyBase<K, V> {
         }
         loadAllTasks.clear();
 
-        closeCacheLoader();
         closeListeners();
         if (caughtException != null) {
             throw new CacheException("Problem while waiting for loadAll tasks to complete", caughtException);
@@ -167,7 +151,6 @@ abstract class AbstractCacheProxyBase<K, V> {
         if (!isClosed.compareAndSet(true, false)) {
             return;
         }
-        init();
     }
 
     protected abstract void closeListeners();
@@ -189,18 +172,6 @@ abstract class AbstractCacheProxyBase<K, V> {
             throw new HazelcastInstanceNotActiveException();
         }
         return nodeEngine;
-    }
-
-    protected void validateCacheLoader(CompletionListener completionListener) {
-        if (cacheLoader == null && completionListener != null) {
-            completionListener.onCompletion();
-        }
-    }
-
-    protected void closeCacheLoader() {
-        if (cacheLoader instanceof Closeable) {
-            IOUtil.closeResource((Closeable) cacheLoader);
-        }
     }
 
     protected void submitLoadAllTask(LoadAllTask loadAllTask) {

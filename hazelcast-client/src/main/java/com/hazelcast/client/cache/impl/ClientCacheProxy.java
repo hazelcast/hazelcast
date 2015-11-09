@@ -116,7 +116,6 @@ public class ClientCacheProxy<K, V>
         for (K key : keys) {
             CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
         }
-        validateCacheLoader(completionListener);
         HashSet<Data> keysData = new HashSet<Data>();
         for (K key : keys) {
             keysData.add(toData(key));

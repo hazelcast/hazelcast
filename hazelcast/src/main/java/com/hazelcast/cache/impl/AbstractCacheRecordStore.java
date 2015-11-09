@@ -26,6 +26,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
@@ -122,10 +123,16 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
         if (cacheConfig.getCacheLoaderFactory() != null) {
             final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
+            if (cacheLoaderFactory instanceof HazelcastInstanceAware) {
+                ((HazelcastInstanceAware) cacheLoaderFactory).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+            }
             cacheLoader = cacheLoaderFactory.create();
         }
         if (cacheConfig.getCacheWriterFactory() != null) {
             final Factory<CacheWriter> cacheWriterFactory = cacheConfig.getCacheWriterFactory();
+            if (cacheWriterFactory instanceof HazelcastInstanceAware) {
+                ((HazelcastInstanceAware) cacheWriterFactory).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+            }
             cacheWriter = cacheWriterFactory.create();
         }
         if (cacheConfig.isStatisticsEnabled()) {
