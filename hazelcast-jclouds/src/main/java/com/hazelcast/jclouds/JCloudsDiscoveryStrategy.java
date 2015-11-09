@@ -18,6 +18,8 @@ package com.hazelcast.jclouds;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
@@ -35,8 +37,8 @@ import java.util.Map;
  */
 public class JCloudsDiscoveryStrategy implements DiscoveryStrategy {
 
+    private static final ILogger LOGGER = Logger.getLogger(JCloudsDiscoveryStrategy.class);
     private final ComputeServiceBuilder computeServiceBuilder;
-
     /**
      * Instantiates a new JCloudsDiscoveryStrategy
      *
@@ -65,6 +67,15 @@ public class JCloudsDiscoveryStrategy implements DiscoveryStrategy {
                     continue;
                 }
                 discoveryNodes.add(buildDiscoveredNode(metadata));
+            }
+            if (discoveryNodes.isEmpty()) {
+                LOGGER.warning("No running nodes discovered in configured cloud provider.");
+            } else {
+                StringBuilder sb = new StringBuilder("Discovered the following nodes with public IPS:\n");
+                for (DiscoveryNode node : discoveryNodes) {
+                    sb.append("    ").append(node.getPublicAddress().toString()).append("\n");
+                }
+                LOGGER.finest(sb.toString());
             }
         } catch (Exception e) {
             throw new HazelcastException("Failed to get registered addresses", e);

@@ -41,6 +41,7 @@ public class IAMRoleCredentialSupplierBuilder {
     private static final String IAM_ROLE_ENDPOINT = "169.254.169.254";
     private String roleName;
     private SessionCredentials credentials;
+    private String query = "latest/meta-data/iam/security-credentials/";
 
     public IAMRoleCredentialSupplierBuilder() {
     }
@@ -48,6 +49,7 @@ public class IAMRoleCredentialSupplierBuilder {
     public IAMRoleCredentialSupplierBuilder withRoleName(String roleName) {
         isNotNull(roleName, "iam-role");
         this.roleName = roleName;
+        query = query + roleName;
         return this;
     }
 
@@ -61,12 +63,9 @@ public class IAMRoleCredentialSupplierBuilder {
 
     protected Map<String, String> getKeysFromIamRole() {
         try {
-            String query = "latest/meta-data/iam/security-credentials/" + roleName;
             URL url = new URL("http", IAM_ROLE_ENDPOINT, query);
-            InputStreamReader is = new InputStreamReader(url.openStream(), "UTF-8");
-            BufferedReader reader = new BufferedReader(is);
-            Map<String, String> map = parseIamRole(reader);
-            return map;
+            BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
+            return parseIamRole(reader);
         } catch (IOException io) {
             throw new InvalidConfigurationException("Invalid Aws Configuration");
         }

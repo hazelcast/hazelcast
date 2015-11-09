@@ -14,6 +14,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
+import java.util.HashMap;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
@@ -135,5 +136,11 @@ public class ComputeServiceBuilderInvalidConfigTest extends HazelcastTestSupport
         String configXML = configTemplate.replace("${PROPERTIES_PLACE_HOLDER}", propertiesUnderTest);
         Config config = new XmlConfigBuilder(new ByteArrayInputStream(stringToBytes(configXML))).build();
         Hazelcast.newHazelcastInstance(config);
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void test_getCredentialFromFile_when_IOException() throws Exception {
+        ComputeServiceBuilder builder = new ComputeServiceBuilder(new HashMap<String, Comparable>());
+        builder.getCredentialFromFile("google-compute-engine", "blahblah.json");
     }
 }
