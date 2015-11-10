@@ -103,18 +103,17 @@ public class ClientMapTest {
         client = hazelcastFactory.newHazelcastClient(null);
     }
 
-
-    public IMap createMap() {
+    public <K, V> IMap<K, V> createMap() {
         return client.getMap(randomString());
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testIssue537() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(2);
         final CountDownLatch nullLatch = new CountDownLatch(2);
-        final IMap map = createMap();
 
-        final EntryListener listener = new EntryAdapter() {
+        EntryListener listener = new EntryAdapter() {
             public void entryAdded(EntryEvent event) {
                 latch.countDown();
             }
@@ -131,17 +130,16 @@ public class ClientMapTest {
                 latch.countDown();
             }
         };
-        final String id = map.addEntryListener(listener, true);
+
+        IMap<String, GenericEvent> map = createMap();
+        String id = map.addEntryListener(listener, true);
 
         map.put("key1", new GenericEvent("value1"), 2, TimeUnit.SECONDS);
-
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-        assertTrue(nullLatch.await(1, TimeUnit.SECONDS));
+        assertTrue("latch.await() took longer than 10 seconds", latch.await(10, TimeUnit.SECONDS));
+        assertTrue("nullLatch.await() tool longer than 1 second", nullLatch.await(1, TimeUnit.SECONDS));
 
         map.removeEntryListener(id);
-
         map.put("key2", new GenericEvent("value2"));
-
         assertEquals(1, map.size());
     }
 
@@ -238,7 +236,7 @@ public class ClientMapTest {
             assertEquals(map.get(i), i);
         }
     }
-    
+
     @Test
     public void testAsyncGet() throws Exception {
         final IMap map = createMap();
