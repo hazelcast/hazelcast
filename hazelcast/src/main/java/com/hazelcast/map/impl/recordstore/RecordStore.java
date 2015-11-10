@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
@@ -26,7 +27,6 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -330,4 +330,9 @@ public interface RecordStore<R extends Record> {
      * Initialize the recordStore after creation
      */
     void init();
+
+    /**
+     * Register a callback for when key loading is complete
+     **/
+    void onKeyLoad(ExecutionCallback<Boolean> callback);
 }

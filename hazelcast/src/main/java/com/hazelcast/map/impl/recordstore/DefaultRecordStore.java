@@ -20,6 +20,7 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapContainer;
@@ -39,7 +40,6 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
-
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -129,6 +129,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public void destroy() {
         clearPartition();
         storage.destroy();
+    }
+
+    @Override
+    public void onKeyLoad(ExecutionCallback<Boolean> callback) {
+        keyLoader.onKeyLoad(callback);
     }
 
     @Override
