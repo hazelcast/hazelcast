@@ -2,6 +2,10 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -38,5 +42,55 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
         clientConfig.getNetworkConfig().setConnectionAttemptPeriod(1);
         hazelcastFactory.newHazelcastClient(clientConfig);
 
+    }
+
+    @Test
+    public void testAuthenticationWithCustomCredentials() {
+        final String username = "dev";
+        final String password = "pass";
+
+        PortableFactory credentialsFactory = new PortableFactory() {
+            @Override
+            public Portable create(int classId) {
+                return new CustomCredentials() {
+                    @Override
+                    public String getUsername() {
+                        return username;
+                    }
+                    @Override
+                    public String getPassword() {
+                        return password;
+                    }
+                };
+            }
+        };
+
+        // with this config, the server will authenticate any credential of type CustomCredentials
+        Config config = new Config();
+        config.getGroupConfig()
+                .setName(username)
+                .setPassword(password);
+        config.getSerializationConfig()
+                .addPortableFactory(1, credentialsFactory);
+        hazelcastFactory.newHazelcastInstance(config);
+
+        ClientConfig clientConfig = new ClientConfig();
+
+        // make sure there are no credentials sent over the wire
+        clientConfig.getSecurityConfig().setCredentials(new CustomCredentials());
+        hazelcastFactory.newHazelcastClient(clientConfig);
+    }
+
+    private class CustomCredentials extends UsernamePasswordCredentials {
+
+        @Override
+        public int getFactoryId() {
+            return 1;
+        }
+
+        @Override
+        public int getClassId() {
+            return 1;
+        }
     }
 }
