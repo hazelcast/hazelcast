@@ -83,6 +83,15 @@ resolver [#2431].
 
 3. Fixes
 
+**3.5.4 Fixes**
+
+The following are the issues solved for Hazelcast 3.5.4 release.
+
+- Fixed wrong calculation of eviction removal size when `PER_NODE` `max-size` policy is used. [#6674]
+- Lazy deserialization is required while events are being processed. [#6582]
+- Thread Dumps freeze in the Management Center. It shows the same thread dumps for all connected members, same traces and same thread IDs. And they are shown on the same line numbers. [#6536]
+- In Hazelcast 3.4.*, the methods `migrationStarted`/`migrationCompleted` were only called once when a partition migration was done. But in 3.5, these methods are called twice for each partition. [#6396]
+
 
 **3.5.3 Fixes**
 
