@@ -104,7 +104,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
             InvocationTargetException {
         // re-add nulls from parent extraction without extracting further down the path
         if (parentObject == null) {
-            collector.add(parentObject);
+            collector.add(null);
         } else {
             Object currentObject = extractFrom(parentObject);
             if (shouldReduce()) {
