@@ -19,6 +19,7 @@ package com.hazelcast.cluster.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
@@ -43,7 +44,8 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class BasicClusterStateTest extends HazelcastTestSupport {
+public class BasicClusterStateTest
+        extends HazelcastTestSupport {
 
     @Test
     public void clusterState_isActive_whenInstancesStarted() {
@@ -318,8 +320,8 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void changeClusterState_transaction_mustBe_TWO_PHASE() {
         HazelcastInstance hz = createHazelcastInstance();
-        hz.getCluster().changeClusterState(ClusterState.FROZEN,
-                new TransactionOptions().setTransactionType(TransactionType.LOCAL));
+        hz.getCluster()
+          .changeClusterState(ClusterState.FROZEN, new TransactionOptions().setTransactionType(TransactionType.LOCAL));
     }
 
     @Test
@@ -332,6 +334,41 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         Map map = hz.getMap(randomMapName());
         changeClusterStateEventually(hz, ClusterState.PASSIVE);
         map.get(1);
+    }
+
+    @Test(timeout = 60000)
+    public void test_noMigration_whenNodeLeaves_onClusterState_FROZEN() {
+        testNoMigrationWhenNodeLeaves(ClusterState.FROZEN);
+    }
+
+    @Test(timeout = 60000)
+    public void test_noMigration_whenNodeLeaves_onClusterState_PASSIVE() {
+        testNoMigrationWhenNodeLeaves(ClusterState.PASSIVE);
+    }
+
+    private void testNoMigrationWhenNodeLeaves(final ClusterState clusterState) {
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        final HazelcastInstance master = factory.newHazelcastInstance();
+        HazelcastInstance other = factory.newHazelcastInstance();
+
+        final IMap<Object, Object> map = master.getMap(randomMapName());
+        for (int i = 0; i < 10000; i++) {
+            map.put(i, i);
+        }
+
+        changeClusterStateEventually(master, clusterState);
+
+        final Address otherAddress = getAddress(other);
+
+        other.shutdown();
+        assertClusterSizeEventually(1, master);
+
+        other = factory.newHazelcastInstance(otherAddress);
+
+        assertClusterSizeEventually(2, master);
+        assertClusterSizeEventually(2, other);
+
+        other.shutdown();
     }
 
     private static void assertClusterState(ClusterState expectedState, HazelcastInstance... instances) {

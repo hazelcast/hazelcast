@@ -97,6 +97,11 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
+    public boolean isStartCompleted() {
+        return node.joined();
+    }
+
+    @Override
     public SecurityContext getSecurityContext() {
         logger.warning("Security features are only available on Hazelcast Enterprise!");
         return null;

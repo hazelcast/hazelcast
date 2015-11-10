@@ -4,6 +4,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -28,7 +29,7 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class FrozenPartitionTableTest  extends HazelcastTestSupport {
+public class FrozenPartitionTableTest extends HazelcastTestSupport {
 
     @Test
     public void partitionTable_isFrozen_whenNodesLeave_duringClusterStateIsFrozen() {
@@ -63,7 +64,14 @@ public class FrozenPartitionTableTest  extends HazelcastTestSupport {
         assertClusterSizeEventually(3, hz3);
 
         for (HazelcastInstance instance : Arrays.asList(hz1, hz2, hz3)) {
-            assertPartitionTablesSame(partitionTable, getPartitionTable(instance));
+            final HazelcastInstance hz = instance;
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run()
+                        throws Exception {
+                    assertPartitionTablesSame(partitionTable, getPartitionTable(hz));
+                }
+            });
         }
     }
 

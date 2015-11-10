@@ -486,11 +486,13 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             try {
                 migrationQueue.clear();
                 if (initialized) {
-                    migrationQueue.add(new RepartitioningTask());
+                    final ClusterState clusterState = nodeEngine.getClusterService().getClusterState();
+                    if (clusterState == ClusterState.ACTIVE) {
+                        migrationQueue.add(new RepartitioningTask());
+                    }
 
                     // send initial partition table to newly joined node.
-                    Collection<MemberImpl> members = getCurrentMembersAndMembersRemovedWhileNotClusterNotActive();
-                    PartitionStateOperation op = new PartitionStateOperation(createPartitionState(members));
+                    PartitionStateOperation op = new PartitionStateOperation(createPartitionState());
                     nodeEngine.getOperationService().send(op, member.getAddress());
                 }
             } finally {
@@ -605,7 +607,15 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
+    public PartitionRuntimeState createPartitionState() {
+        return createPartitionState(getCurrentMembersAndMembersRemovedWhileNotClusterNotActive());
+    }
+
     private PartitionRuntimeState createPartitionState(Collection<MemberImpl> members) {
+        if (!initialized) {
+            return null;
+        }
+
         lock.lock();
         try {
             List<MemberInfo> memberInfos = new ArrayList<MemberInfo>(members.size());
@@ -631,7 +641,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return;
         }
 
-        if (!isMigrationAllowed()) {
+        if (!isReplicaSyncAllowed()) {
             // migration is disabled because of a member leave, wait till enabled!
             return;
         }
@@ -704,7 +714,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return calls;
     }
 
-    void processPartitionRuntimeState(PartitionRuntimeState partitionState) {
+    public void processPartitionRuntimeState(PartitionRuntimeState partitionState) {
         lock.lock();
         try {
             final Address sender = partitionState.getEndpoint();

@@ -57,6 +57,12 @@ public interface NodeExtension {
     void afterStart();
 
     /**
+     * Returns true if the instance has started
+     * @return true if the instance has started
+     */
+    boolean isStartCompleted();
+
+    /**
      * Creates a <tt>SerializationService</tt> instance to be used by this <tt>Node</tt>.
      *
      * @return a <tt>SerializationService</tt> instance
