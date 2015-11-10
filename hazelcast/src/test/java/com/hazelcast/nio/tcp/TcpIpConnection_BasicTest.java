@@ -20,8 +20,11 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class TcpIpConnection_BasicTest extends TcpIpConnection_AbstractTest {
 
+    // sleep time for lastWrite and lastRead tests
+    private static final int LAST_READ_WRITE_SLEEP_SECONDS = 5;
+
     // if we make this MARGIN_OF_ERROR_MS very small, there is a high chance of spurious failures
-    private static final int MARGIN_OF_ERROR_MS = 1000;
+    private static final int MARGIN_OF_ERROR_MS = 3000;
 
     private List<Packet> packetsB;
 
@@ -85,7 +88,7 @@ public abstract class TcpIpConnection_BasicTest extends TcpIpConnection_Abstract
 
         // we need to sleep some so that the lastWriteTime of the connection gets nice and old.
         // we need this so we can determine the lastWriteTime got updated
-        sleepSeconds(5);
+        sleepSeconds(LAST_READ_WRITE_SLEEP_SECONDS);
 
         Packet packet = new Packet(serializationService.toBytes("foo"));
 
@@ -129,7 +132,7 @@ public abstract class TcpIpConnection_BasicTest extends TcpIpConnection_Abstract
 
         // we need to sleep some so that the lastReadTime of the connection gets nice and old.
         // we need this so we can determine the lastReadTime got updated
-        sleepSeconds(3);
+        sleepSeconds(LAST_READ_WRITE_SLEEP_SECONDS);
 
         Packet packet = new Packet(serializationService.toBytes("foo"));
 
