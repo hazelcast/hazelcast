@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -36,79 +37,70 @@ import static org.junit.Assert.assertEquals;
 public class ReplicatedMapLoadingTest extends ReplicatedMapBaseTest {
 
     @Test
-    public void testAsyncFillup() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory();
+    public void testAsyncFillUp() throws Exception {
         Config config = new Config();
         String mapName = randomMapName();
         ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(mapName);
         replicatedMapConfig.setAsyncFillup(true);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
-        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap(mapName);
-        fillMap(map1, 0, 1000);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
-        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap(mapName);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1000, map1.size());
-                assertEquals(1000, map2.size());
-            }
-        });
-        fillMap(map2, 1000, 2000);
-        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(config);
-        final ReplicatedMap<Integer, Integer> map3 = instance3.getReplicatedMap(mapName);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(2000, map1.size());
-                assertEquals(2000, map2.size());
-                assertEquals(2000, map3.size());
-            }
-        });
-        fillMap(map3, 2000, 3000);
-        HazelcastInstance instance4 = nodeFactory.newHazelcastInstance(config);
-        final ReplicatedMap<Integer, Integer> map4 = instance4.getReplicatedMap(mapName);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(3000, map1.size());
-                assertEquals(3000, map2.size());
-                assertEquals(3000, map3.size());
-                assertEquals(3000, map4.size());
-            }
-        });
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory();
+        fillMapsAndAssertMapSizeEventually(nodeFactory, config, mapName);
     }
 
     @Test
-    public void testSyncFillup() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory();
-        String mapName = randomMapName();
+    public void testSyncFillUp() throws Exception {
         Config config = new Config();
+        String mapName = randomMapName();
         ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(mapName);
         replicatedMapConfig.setAsyncFillup(false);
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory();
+        fillMapsAndAssertMapSizeEventually(nodeFactory, config, mapName);
+    }
+
+    private void fillMapsAndAssertMapSizeEventually(TestHazelcastInstanceFactory nodeFactory, Config config, String mapName) {
+        final int first = 1000;
+        final int second = 2000;
+        final int third = 3000;
+
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap(mapName);
-        int first = 1000;
-        int second = 2000;
-        int third = 3000;
+
         fillMap(map1, 0, first);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap(mapName);
-        assertEquals(first, map1.size());
-        assertEquals(first, map2.size());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertMapSize("map1", first, map1);
+                assertMapSize("map2", first, map2);
+            }
+        });
+
         fillMap(map2, first, second);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(config);
         final ReplicatedMap<Integer, Integer> map3 = instance3.getReplicatedMap(mapName);
-        assertEquals(second, map1.size());
-        assertEquals(second, map2.size());
-        assertEquals(second, map3.size());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertMapSize("map1", second, map1);
+                assertMapSize("map2", second, map2);
+                assertMapSize("map3", second, map3);
+            }
+        });
+
         fillMap(map3, second, third);
         HazelcastInstance instance4 = nodeFactory.newHazelcastInstance(config);
         final ReplicatedMap<Integer, Integer> map4 = instance4.getReplicatedMap(mapName);
-        assertEquals(third, map1.size());
-        assertEquals(third, map2.size());
-        assertEquals(third, map3.size());
-        assertEquals(third, map4.size());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertMapSize("map1", third, map1);
+                assertMapSize("map2", third, map2);
+                assertMapSize("map3", third, map3);
+                assertMapSize("map4", third, map4);
+            }
+        });
     }
 
     private void fillMap(ReplicatedMap<Integer, Integer> map, int start, int end) {
@@ -117,5 +109,7 @@ public class ReplicatedMapLoadingTest extends ReplicatedMapBaseTest {
         }
     }
 
-
+    private void assertMapSize(String mapName, int expectedMapSize, ReplicatedMap<Integer, Integer> map) {
+        assertEquals(format("%s should contain %d elements", mapName, expectedMapSize), expectedMapSize, map.size());
+    }
 }
