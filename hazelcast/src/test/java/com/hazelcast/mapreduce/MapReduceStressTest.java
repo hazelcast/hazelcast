@@ -36,6 +36,7 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
+import static com.hazelcast.mapreduce.MapReduceTest.integerKvSource;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -125,7 +126,7 @@ public class MapReduceStressTest
         @Override
         public void run() {
             JobTracker jobTracker = hazelcastInstance.getJobTracker(HazelcastTestSupport.randomString());
-            Job<Integer, Integer> job = jobTracker.newJob(KeyValueSource.fromMap(map));
+            Job<Integer, Integer> job = jobTracker.newJob(integerKvSource(map));
             JobCompletableFuture<Map<String, BigInteger>> future = job.chunkSize(0).mapper(new GroupingTestMapper())
                                                                       .combiner(new ObjectCombinerFactory())
                                                                       .reducer(new ObjectReducerFactory()).submit();

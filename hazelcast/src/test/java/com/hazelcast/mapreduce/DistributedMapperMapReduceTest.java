@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 
+import static com.hazelcast.mapreduce.MapReduceTest.integerKvSource;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -58,7 +59,7 @@ public class DistributedMapperMapReduceTest
         }
 
         JobTracker tracker = h1.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
                                                              .reducer(new TestReducerFactory()).submit();
 
@@ -93,7 +94,7 @@ public class DistributedMapperMapReduceTest
         }
 
         JobTracker tracker = h1.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Map<String, Long>> future = job.mapper(new GroupingTestMapper())
                                                           .combiner(new TestIntermediateCombinerFactory())
                                                           .reducer(new TestIntermediateReducerFactory()).submit();
@@ -129,7 +130,7 @@ public class DistributedMapperMapReduceTest
         }
 
         JobTracker tracker = h1.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
                                                 .reducer(new TestReducerFactory()).submit(new TestCollator());
 
@@ -167,7 +168,7 @@ public class DistributedMapperMapReduceTest
         semaphore.acquire();
 
         JobTracker tracker = h1.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
                                                              .reducer(new TestReducerFactory()).submit();
 
@@ -219,7 +220,7 @@ public class DistributedMapperMapReduceTest
         semaphore.acquire();
 
         JobTracker tracker = h1.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
                                                 .reducer(new TestReducerFactory()).submit(new TestCollator());
 

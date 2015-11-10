@@ -19,6 +19,7 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.mapreduce.MapReduceTest.integerKvSource;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -246,7 +247,7 @@ public class MapReduceLiteMemberTest
         final String mapName = randomMapName();
         JobTracker tracker = instance.getJobTracker(mapName);
         final IMap<Integer, Integer> m1 = instance.getMap(mapName);
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         return job.mapper(new MapReduceTest.TestMapper()).submit();
     }
 
@@ -258,7 +259,7 @@ public class MapReduceLiteMemberTest
         }
 
         JobTracker tracker = instance.getJobTracker(mapName);
-        return tracker.newJob(KeyValueSource.fromMap(m1));
+        return tracker.newJob(integerKvSource(m1));
     }
 
 }

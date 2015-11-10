@@ -65,7 +65,7 @@ public class MapReduceManagedContextTest
         }
 
         JobTracker tracker = h1.getJobTracker("default");
-        KeyValueSource<String, Integer> source = KeyValueSource.fromMap(m1);
+        KeyValueSource<String, Integer> source = KeyValueSource.<String, Integer>fromMap(m1);
         KeyValueSource<String, Integer> wrapper = new InjectedKeyValueSource<String, Integer>(source);
         Job<String, Integer> job = tracker.newJob(wrapper);
 
