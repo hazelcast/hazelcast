@@ -16,12 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook;
 import com.hazelcast.util.Clock;
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 /**
@@ -30,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
  * @param <K> key type
  * @param <V> value type
  */
-public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
+public class ReplicatedRecord<K, V> {
 
     private static final AtomicLongFieldUpdater<ReplicatedRecord> HITS = AtomicLongFieldUpdater
             .newUpdater(ReplicatedRecord.class, "hits");
@@ -46,16 +41,11 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
     private long ttlMillis;
     private volatile long updateTime = Clock.currentTimeMillis();
     private volatile long creationTime = Clock.currentTimeMillis();
-    private int partitionId;
 
-    public ReplicatedRecord() {
-    }
-
-    public ReplicatedRecord(K key, V value, long ttlMillis, int partitionId) {
+    public ReplicatedRecord(K key, V value, long ttlMillis) {
         this.key = key;
         this.value = value;
         this.ttlMillis = ttlMillis;
-        this.partitionId = partitionId;
     }
 
     public K getKey() {
@@ -134,41 +124,6 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         lastAccessTime = Clock.currentTimeMillis();
     }
 
-    public int getPartitionId() {
-        return partitionId;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return ReplicatedMapDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return ReplicatedMapDataSerializerHook.RECORD;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(key);
-        out.writeObject(value);
-        out.writeLong(ttlMillis);
-        out.writeLong(updateTime);
-        out.writeLong(creationTime);
-        out.writeLong(hits);
-        out.writeInt(partitionId);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        key = in.readObject();
-        value = in.readObject();
-        ttlMillis = in.readLong();
-        updateTime = in.readLong();
-        creationTime = in.readLong();
-        HITS.set(this, in.readLong());
-        partitionId = in.readInt();
-    }
 
     //CHECKSTYLE:OFF
     // Deactivated due to complexity of the equals method

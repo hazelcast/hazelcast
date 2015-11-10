@@ -24,18 +24,13 @@ import java.util.Map;
 /**
  * This class is used to transfer a predicate as an remote operation and filter values matching the predicate
  */
-public class ReplicatedQueryEventFilter
-        extends ReplicatedEntryEventFilter {
+public class ReplicatedQueryEventFilter extends ReplicatedEntryEventFilter {
 
     private Predicate predicate;
 
     public ReplicatedQueryEventFilter(Data key, Predicate predicate) {
         super(key);
         this.predicate = predicate;
-    }
-
-    public Object getPredicate() {
-        return predicate;
     }
 
     public boolean eval(Object arg) {

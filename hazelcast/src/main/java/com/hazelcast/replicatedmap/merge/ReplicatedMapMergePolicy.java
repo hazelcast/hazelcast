@@ -16,8 +16,8 @@
 
 package com.hazelcast.replicatedmap.merge;
 
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
+import java.io.Serializable;
 
 /**
  * A policy for merging replicated maps after a split-brain was detected and the different network partitions need
@@ -28,7 +28,7 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
  * @see com.hazelcast.replicatedmap.merge.LatestUpdateMapMergePolicy
  * @see com.hazelcast.replicatedmap.merge.PassThroughMergePolicy
  */
-public interface ReplicatedMapMergePolicy extends DataSerializable {
+public interface ReplicatedMapMergePolicy extends Serializable {
 
     /**
      * Returns the value of the entry after the merge

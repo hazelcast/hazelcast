@@ -79,8 +79,7 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractOperation {
     }
 
     private ReplicatedRecord<K, V> buildReplicatedRecord(K key, V value, long ttlMillis) {
-        int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
-        return new ReplicatedRecord<K, V>(key, value, ttlMillis, partitionId);
+        return new ReplicatedRecord<K, V>(key, value, ttlMillis);
     }
 
     @Override

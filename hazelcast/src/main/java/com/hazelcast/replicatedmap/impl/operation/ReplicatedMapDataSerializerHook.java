@@ -22,7 +22,6 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.REPLICATED_MAP_DS_FACTORY;
@@ -37,9 +36,8 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(REPLICATED_MAP_DS_FACTORY, REPLICATED_MAP_DS_FACTORY_ID);
 
-    public static final int RECORD = 1;
-    public static final int OP_CLEAR = 2;
-    public static final int ENTRY_VIEW = 3;
+    public static final int OP_CLEAR = 1;
+    public static final int ENTRY_VIEW = 2;
 
     private static final int LEN = ENTRY_VIEW + 1;
 
@@ -51,11 +49,6 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
     @Override
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
-        constructors[RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReplicatedRecord();
-            }
-        };
         constructors[OP_CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {

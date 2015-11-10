@@ -51,13 +51,13 @@ public class LazyIteratorTest
         TEST_DATA_SIMPLE = new InternalReplicatedMapStorage<String, Integer>();
         for (int i = 0; i < 100; i++) {
             String key = "key-" + i;
-            TEST_DATA_SIMPLE.put(key, new ReplicatedRecord<String, Integer>(key, i, -1, 0));
+            TEST_DATA_SIMPLE.put(key, new ReplicatedRecord<String, Integer>(key, i, -1));
         }
         TEST_DATA_TOMBS = new InternalReplicatedMapStorage<String, Integer>();
         for (int i = 0; i < 100; i++) {
             String key = "key-" + i;
             Integer value = i % 2 == 0 ? i : null;
-            ReplicatedRecord<String, Integer> record = new ReplicatedRecord<String, Integer>(key, value, -1, 0);
+            ReplicatedRecord<String, Integer> record = new ReplicatedRecord<String, Integer>(key, value, -1);
             TEST_DATA_TOMBS.put(key, record);
         }
     }
