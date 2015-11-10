@@ -74,7 +74,7 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
 
     private Connection getConnection(Address target) throws IOException {
         ensureOwnerConnectionAvailable();
-        return connectionManager.getOrConnect(target, authenticator);
+        return connectionManager.getOrTriggerConnect(target, authenticator);
     }
 
     private void ensureOwnerConnectionAvailable() throws IOException {

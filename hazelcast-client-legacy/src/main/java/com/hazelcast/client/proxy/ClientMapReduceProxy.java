@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.client.InvocationClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -80,9 +81,10 @@ public class ClientMapReduceProxy
     private <T> T invoke(InvocationClientRequest request, String jobId) throws Exception {
         ClientTrackableJob trackableJob = trackableJobs.get(jobId);
         if (trackableJob != null) {
-            Address runningMember = trackableJob.jobOwner;
+            ClientConnection sendConnection = trackableJob.clientInvocation.getSendConnection();
+            Address runningMember = sendConnection.getEndPoint();
             final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, runningMember);
-            final ICompletableFuture<T> future = clientInvocation.invoke();
+            ICompletableFuture<T> future = clientInvocation.invoke();
             return future.get();
         }
         return null;
@@ -137,8 +139,7 @@ public class ClientMapReduceProxy
                     }
                 });
 
-                Address runningMember = clientInvocation.getSendConnection().getRemoteEndpoint();
-                trackableJobs.putIfAbsent(jobId, new ClientTrackableJob<T>(jobId, runningMember, completableFuture));
+                trackableJobs.putIfAbsent(jobId, new ClientTrackableJob<T>(jobId, clientInvocation, completableFuture));
                 return completableFuture;
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -184,13 +185,13 @@ public class ClientMapReduceProxy
             implements TrackableJob<V> {
 
         private final String jobId;
-        private final Address jobOwner;
+        private final ClientInvocation clientInvocation;
         private final AbstractCompletableFuture<V> completableFuture;
 
-        private ClientTrackableJob(String jobId, Address jobOwner,
+        private ClientTrackableJob(String jobId, ClientInvocation clientInvocation,
                                    AbstractCompletableFuture<V> completableFuture) {
             this.jobId = jobId;
-            this.jobOwner = jobOwner;
+            this.clientInvocation = clientInvocation;
             this.completableFuture = completableFuture;
         }
 

@@ -39,7 +39,6 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_INTERVAL;
 import static com.hazelcast.client.config.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
@@ -55,14 +54,13 @@ public class ClientInvocation implements Runnable {
     private final ClientExecutionService executionService;
     private final ClientRequest request;
     private final EventHandler handler;
-    private final long retryCountLimit;
 
     private final ClientInvocationFuture clientInvocationFuture;
     private final int heartBeatInterval;
-    private final AtomicInteger reSendCount = new AtomicInteger();
     private final Address address;
     private final int partitionId;
     private final Connection connection;
+    private long retryTimeoutPointInMillis;
     private volatile ClientConnection sendConnection;
 
     private ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
@@ -78,11 +76,11 @@ public class ClientInvocation implements Runnable {
         this.connection = connection;
 
         ClientProperties clientProperties = client.getClientProperties();
-        int waitTime = clientProperties.getSeconds(INVOCATION_TIMEOUT_SECONDS);
-        long retryTimeoutInSeconds = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
+        long waitTime = clientProperties.getMillis(INVOCATION_TIMEOUT_SECONDS);
+        long waitTimeResolved = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
+        retryTimeoutPointInMillis = System.currentTimeMillis() + waitTimeResolved;
 
         this.clientInvocationFuture = new ClientInvocationFuture(this, client, request);
-        this.retryCountLimit = retryTimeoutInSeconds / RETRY_WAIT_TIME_IN_SECONDS;
 
         int interval = clientProperties.getInteger(HEARTBEAT_INTERVAL);
         this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
@@ -211,7 +209,7 @@ public class ClientInvocation implements Runnable {
         if (isBindToSingleConnection()) {
             return false;
         }
-        if (reSendCount.incrementAndGet() > retryCountLimit) {
+        if (System.currentTimeMillis() > retryTimeoutPointInMillis) {
             return false;
         }
 
@@ -272,12 +270,15 @@ public class ClientInvocation implements Runnable {
         this.sendConnection = connection;
     }
 
-    public ClientConnection getSendConnection() {
+    public ClientConnection getSendConnectionOrWait() throws InterruptedException {
+        while (sendConnection == null && !clientInvocationFuture.isDone()) {
+            Thread.sleep(TimeUnit.SECONDS.toMillis(RETRY_WAIT_TIME_IN_SECONDS));
+        }
         return sendConnection;
     }
 
-    public boolean isInvoked() {
-        return sendConnection != null;
+    public ClientConnection getSendConnection() {
+        return sendConnection;
     }
 
     public static boolean isRetryable(Throwable t) {

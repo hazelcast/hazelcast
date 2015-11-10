@@ -24,23 +24,36 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.Collection;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -138,6 +151,80 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         @Override
         public void connectionRemoved(Connection connection) {
             count.incrementAndGet();
+        }
+    }
+
+    @Test
+    public void testAsyncConnectionCreationInAsyncMethods() throws ExecutionException, InterruptedException {
+        hazelcastFactory.newHazelcastInstance();
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        ClientConfig config = new ClientConfig();
+        WaitingCredentials credentials = new WaitingCredentials("dev", "dev-pass", countDownLatch);
+        config.setCredentials(credentials);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
+        final IExecutorService executorService = client.getExecutorService(randomString());
+
+        credentials.waitFlag.set(true);
+
+        final HazelcastInstance secondInstance = hazelcastFactory.newHazelcastInstance();
+        final AtomicReference<Future> atomicReference = new AtomicReference<Future>();
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Member secondMember = secondInstance.getCluster().getLocalMember();
+                Future future = executorService.submitToMember(new DummySerializableCallable(), secondMember);
+                atomicReference.set(future);
+            }
+        });
+        thread.start();
+        try {
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertNotNull(atomicReference.get());
+                }
+            }, 30);
+        } finally {
+            thread.interrupt();
+            thread.join();
+            countDownLatch.countDown();
+        }
+
+    }
+
+
+    static class WaitingCredentials extends UsernamePasswordCredentials {
+
+        private final CountDownLatch countDownLatch;
+        AtomicBoolean waitFlag = new AtomicBoolean();
+
+        public WaitingCredentials(String username, String password, CountDownLatch countDownLatch) {
+            super(username, password);
+            this.countDownLatch = countDownLatch;
+        }
+
+        @Override
+        public String getUsername() {
+            return super.getUsername();
+        }
+
+        @Override
+        public String getPassword() {
+            if (waitFlag.get()) {
+                try {
+                    countDownLatch.await();
+                } catch (InterruptedException e) {
+                    EmptyStatement.ignore(e);
+                }
+            }
+            return super.getPassword();
+        }
+    }
+
+    static class DummySerializableCallable implements Callable, Serializable {
+        @Override
+        public Object call() throws Exception {
+            return null;
         }
     }
 }
