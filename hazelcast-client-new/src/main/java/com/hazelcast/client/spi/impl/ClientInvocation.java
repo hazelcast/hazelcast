@@ -37,13 +37,12 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
 
 /**
  * ClientInvocation handles routing of a request from client
- * <p>
+ * <p/>
  * 1) Where should request be send
  * 2) Should it be retried
  * 3) How many times it is retried
@@ -59,14 +58,13 @@ public class ClientInvocation implements Runnable {
     private final ClientInvocationService invocationService;
     private final ClientExecutionService executionService;
     private final ClientMessage clientMessage;
-    private final long retryCountLimit;
 
     private final int heartBeatInterval;
-    private final AtomicInteger reSendCount = new AtomicInteger();
     private final Address address;
     private final int partitionId;
     private final Connection connection;
     private volatile ClientConnection sendConnection;
+    private long retryTimeoutPointInMillis;
     private boolean bypassHeartbeatCheck;
 
 
@@ -87,8 +85,7 @@ public class ClientInvocation implements Runnable {
                 : Integer.parseInt(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS_DEFAULT);
 
         clientInvocationFuture = new ClientInvocationFuture(this, client, clientMessage);
-
-        this.retryCountLimit = retryTimeoutInSeconds / RETRY_WAIT_TIME_IN_SECONDS;
+        this.retryTimeoutPointInMillis = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(retryTimeoutInSeconds);
 
         int interval = clientProperties.getHeartbeatInterval().getInteger();
         this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
@@ -242,7 +239,7 @@ public class ClientInvocation implements Runnable {
     }
 
     protected boolean shouldRetry() {
-        return reSendCount.incrementAndGet() < retryCountLimit;
+        return System.currentTimeMillis() < retryTimeoutPointInMillis;
     }
 
     private boolean isBindToSingleConnection() {
@@ -276,11 +273,14 @@ public class ClientInvocation implements Runnable {
         this.sendConnection = connection;
     }
 
-    public ClientConnection getSendConnection() {
+    public ClientConnection getSendConnectionOrWait() throws InterruptedException {
+        while (sendConnection == null && !clientInvocationFuture.isDone()) {
+            Thread.sleep(TimeUnit.SECONDS.toMillis(RETRY_WAIT_TIME_IN_SECONDS));
+        }
         return sendConnection;
     }
 
-    public boolean isInvoked() {
-        return sendConnection != null;
+    public ClientConnection getSendConnection() {
+        return sendConnection;
     }
 }

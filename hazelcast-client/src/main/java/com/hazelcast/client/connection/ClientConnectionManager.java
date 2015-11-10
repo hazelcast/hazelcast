@@ -62,6 +62,14 @@ public interface ClientConnectionManager {
     Connection getOrConnect(Address address, Authenticator authenticator) throws IOException;
 
     /**
+     * @param address       to be connected
+     * @param authenticator Authenticator implementation to send appropriate Authentication Request after connection
+     * @return associated connection if available, triggers new connection creation otherwise
+     * @throws IOException if connection is not available at the time of call
+     */
+    Connection getOrTriggerConnect(Address address, Authenticator authenticator) throws IOException;
+
+    /**
      * Destroys the connection
      * Clears related resources of given connection.
      * ConnectionListener.connectionRemoved is called on registered listeners.

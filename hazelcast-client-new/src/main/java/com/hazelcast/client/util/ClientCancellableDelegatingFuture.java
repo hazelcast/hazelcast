@@ -18,13 +18,8 @@ package com.hazelcast.client.util;
 
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.util.EmptyStatement;
-
-import java.util.concurrent.TimeUnit;
+import com.hazelcast.core.ICompletableFuture;
 
 /**
  * An Abstract DelegatingFuture that can cancel a Runnable/Callable that is executed by an
@@ -35,11 +30,9 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class ClientCancellableDelegatingFuture<V> extends ClientDelegatingFuture<V> {
 
-    private static final int INVOCATION_WAIT_TIMEOUT_SECONDS = 5;
     protected final ClientContext context;
     protected final String uuid;
     protected volatile boolean cancelled;
-    private final ILogger logger = Logger.getLogger(ClientCancellableDelegatingFuture.class);
 
     public ClientCancellableDelegatingFuture(ClientInvocationFuture future, ClientContext context,
                                              String uuid, V defaultValue,
@@ -52,23 +45,10 @@ public abstract class ClientCancellableDelegatingFuture<V> extends ClientDelegat
 
     public abstract boolean cancel(boolean mayInterruptIfRunning);
 
-    protected void waitForRequestToBeSend() {
-        ClientInvocationFuture clientCallFuture = getFuture();
-        ClientInvocation invocation = clientCallFuture.getInvocation();
-
-        int timeoutSeconds = INVOCATION_WAIT_TIMEOUT_SECONDS;
-        while (!invocation.isInvoked()) {
-            if (timeoutSeconds-- == 0) {
-                logger.warning("Cancel is failed because runnable/callable never send to remote !");
-                break;
-            }
-            try {
-                Thread.sleep(TimeUnit.SECONDS.toMillis(1));
-            } catch (InterruptedException ignored) {
-                EmptyStatement.ignore(ignored);
-            }
-        }
-
+    protected void waitForRequestToBeSend() throws InterruptedException {
+        ICompletableFuture future = getFuture();
+        ClientInvocationFuture clientCallFuture = (ClientInvocationFuture) future;
+        clientCallFuture.getInvocation().getSendConnectionOrWait();
     }
 
     @Override
