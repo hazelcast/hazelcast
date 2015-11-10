@@ -70,6 +70,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     HazelcastInstance[] instances;
 
+    //comment
     @Before
     public void init() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
