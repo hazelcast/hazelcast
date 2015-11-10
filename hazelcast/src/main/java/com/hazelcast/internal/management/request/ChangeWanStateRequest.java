@@ -17,13 +17,10 @@
 package com.hazelcast.internal.management.request;
 
 import com.eclipsesource.json.JsonObject;
-import com.hazelcast.core.Member;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ChangeWanStateOperation;
-import com.hazelcast.nio.Address;
 
 import java.io.IOException;
-import java.util.Set;
 
 import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getString;
@@ -33,7 +30,11 @@ import static com.hazelcast.util.JsonUtil.getString;
  */
 public class ChangeWanStateRequest implements ConsoleRequest {
 
-    private String memberAddress;
+    /**
+     * Result message when {@link ChangeWanStateOperation} is invoked successfully
+     */
+    public static final String SUCCESS = "success";
+
     private String schemeName;
     private String publisherName;
     private boolean start;
@@ -41,8 +42,7 @@ public class ChangeWanStateRequest implements ConsoleRequest {
     public ChangeWanStateRequest() {
     }
 
-    public ChangeWanStateRequest(String member, String schemeName, String publisherName, boolean start) {
-        this.memberAddress = member;
+    public ChangeWanStateRequest(String schemeName, String publisherName, boolean start) {
         this.schemeName = schemeName;
         this.publisherName = publisherName;
         this.start = start;
@@ -55,32 +55,26 @@ public class ChangeWanStateRequest implements ConsoleRequest {
 
     @Override
     public Object readResponse(JsonObject in) throws IOException {
-        return "success";
+        return getString(in, "result", "FAILURE");
     }
 
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
-        final JsonObject result = new JsonObject();
-        result.add("start", start);
         ChangeWanStateOperation changeWanStateOperation =
                 new ChangeWanStateOperation(schemeName, publisherName, start);
-
-        String[] hostAndPort = memberAddress.split(":");
-        Address address = new Address(hostAndPort[0], Integer.parseInt(hostAndPort[1]));
-
-        final Set<Member> members = mcs.getHazelcastInstance().getCluster().getMembers();
-        for (Member member : members) {
-            if (member.getAddress().equals(address)) {
-                mcs.callOnMember(member, changeWanStateOperation);
-                break;
-            }
+        Object operationResult = mcs.callOnThis(changeWanStateOperation);
+        JsonObject result = new JsonObject();
+        if (operationResult == null) {
+            result.add("result", SUCCESS);
+        } else {
+            result.add("result", operationResult.toString());
         }
+        out.add("result", result);
     }
 
     @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
-        root.add("member", memberAddress);
         root.add("schemeName", schemeName);
         root.add("publisherName", publisherName);
         root.add("start", start);
@@ -89,7 +83,6 @@ public class ChangeWanStateRequest implements ConsoleRequest {
 
     @Override
     public void fromJson(JsonObject json) {
-        memberAddress = getString(json, "member");
         schemeName = getString(json, "schemeName");
         publisherName = getString(json, "publisherName");
         start = getBoolean(json, "start");
