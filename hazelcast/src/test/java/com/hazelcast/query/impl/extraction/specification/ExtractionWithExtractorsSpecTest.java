@@ -149,10 +149,11 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
         };
     }
 
-    public static class LimbTattoosCountExtractor extends ValueExtractor<Person, Object> {
+    public static class LimbTattoosCountExtractor extends ValueExtractor<Person, String> {
         @Override
-        public void extract(Person target, Arguments arguments, ValueCollector collector) {
-            collector.addObject(target.limbs_list.get(Integer.parseInt((String) arguments.get())).tattoos_list.size());
+        public void extract(Person target, Arguments<String> arguments, ValueCollector collector) {
+            Integer parsedId = Integer.parseInt(arguments.get());
+            collector.addObject(target.limbs_list.get(parsedId).tattoos_list.size());
         }
     }
 
