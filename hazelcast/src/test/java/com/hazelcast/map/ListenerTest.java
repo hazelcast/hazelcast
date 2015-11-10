@@ -24,6 +24,7 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.impl.event.MapPartitionEventData;
@@ -617,8 +618,77 @@ public class ListenerTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void hazelcastAwareEntryListener_whenConfiguredViaClassName_thenInjectHazelcastInstance() throws InterruptedException {
+        EntryListenerConfig listenerConfig = new EntryListenerConfig("com.hazelcast.map.ListenerTest$PingPongListener", false, true);
+        hazelcastAwareEntryListener_injectHazelcastInstance(listenerConfig);
+    }
+
+    @Test
+    public void hazelcastAwareEntryListener_whenConfiguredByProvidingInstance_thenInjectHazelcastInstance() throws InterruptedException {
+        EntryListenerConfig listenerConfig = new EntryListenerConfig(new PingPongListener(), false, true);
+        hazelcastAwareEntryListener_injectHazelcastInstance(listenerConfig);
+    }
+
+    private void hazelcastAwareEntryListener_injectHazelcastInstance(EntryListenerConfig listenerConfig) {
+        String pingMapName = randomMapName();
+        Config config = new Config();
+        config.getMapConfig(pingMapName).getEntryListenerConfigs().add(listenerConfig);
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        IMap<Integer, String> pingMap = instance.getMap(pingMapName);
+
+        String pongMapName = randomMapName();
+        pingMap.put(0, pongMapName);
+
+        IMap<Integer, String> outputMap = instance.getMap(pongMapName);
+        assertSizeEventually(1, outputMap);
+    }
+
+
+    @Test
     public void test_mapPartitionEventData_toString() {
         assertNotNull(new MapPartitionEventData().toString());
+    }
+
+    public static class PingPongListener implements EntryListener<Integer, String>, HazelcastInstanceAware {
+        private HazelcastInstance instance;
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance instance) {
+            this.instance = instance;
+        }
+
+        @Override
+        public void entryAdded(EntryEvent<Integer, String> event) {
+            String outputMapName = event.getValue();
+            IMap<Integer, String> outputMap = instance.getMap(outputMapName);
+            outputMap.putAsync(0, "pong");
+        }
+
+        @Override
+        public void entryEvicted(EntryEvent<Integer, String> event) {
+
+        }
+
+        @Override
+        public void entryRemoved(EntryEvent<Integer, String> event) {
+
+        }
+
+        @Override
+        public void entryUpdated(EntryEvent<Integer, String> event) {
+
+        }
+
+        @Override
+        public void mapCleared(MapEvent event) {
+
+        }
+
+        @Override
+        public void mapEvicted(MapEvent event) {
+
+        }
     }
 
     public class CounterEntryListener implements EntryListener<Object, Object> {
