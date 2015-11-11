@@ -108,7 +108,7 @@ public class ReadManyRequest extends RingbufferRequest {
 
     @Override
     public String getMethodName() {
-        return "readManyAsync";
+        return "readMany";
     }
 
     @Override

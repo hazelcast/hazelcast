@@ -42,7 +42,6 @@ import com.hazelcast.client.impl.protocol.codec.MapExecuteWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapFlushCodec;
 import com.hazelcast.client.impl.protocol.codec.MapForceUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetAllCodec;
-import com.hazelcast.client.impl.protocol.codec.MapGetAsyncCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetEntryViewCodec;
 import com.hazelcast.client.impl.protocol.codec.MapIsEmptyCodec;
@@ -54,11 +53,9 @@ import com.hazelcast.client.impl.protocol.codec.MapLoadAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapLoadGivenKeysCodec;
 import com.hazelcast.client.impl.protocol.codec.MapLockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
-import com.hazelcast.client.impl.protocol.codec.MapPutAsyncCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutTransientCodec;
-import com.hazelcast.client.impl.protocol.codec.MapRemoveAsyncCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveIfSameCodec;
@@ -157,21 +154,21 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     private static final ClientMessageDecoder getAsyncResponseDecoder = new ClientMessageDecoder() {
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) MapGetAsyncCodec.decodeResponse(clientMessage).response;
+            return (T) MapGetCodec.decodeResponse(clientMessage).response;
         }
     };
 
     private static final ClientMessageDecoder putAsyncResponseDecoder = new ClientMessageDecoder() {
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) MapPutAsyncCodec.decodeResponse(clientMessage).response;
+            return (T) MapPutCodec.decodeResponse(clientMessage).response;
         }
     };
 
     private static final ClientMessageDecoder removeAsyncResponseDecoder = new ClientMessageDecoder() {
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) MapRemoveAsyncCodec.decodeResponse(clientMessage).response;
+            return (T) MapRemoveCodec.decodeResponse(clientMessage).response;
         }
     };
 
@@ -301,7 +298,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
         SerializationService serializationService = getContext().getSerializationService();
 
-        ClientMessage request = MapGetAsyncCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage request = MapGetCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
         try {
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
             return new ClientDelegatingFuture<V>(future, serializationService, getAsyncResponseDecoder);
@@ -333,7 +330,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     }
 
     protected Future<V> putAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
-        ClientMessage request = MapPutAsyncCodec.encodeRequest(name, keyData,
+        ClientMessage request = MapPutCodec.encodeRequest(name, keyData,
                 valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
         try {
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
@@ -352,7 +349,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     }
 
     protected Future<V> removeAsyncInternal(Data keyData) {
-        ClientMessage request = MapRemoveAsyncCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage request = MapRemoveCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
         try {
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
             return new ClientDelegatingFuture<V>(future, getContext().getSerializationService(),

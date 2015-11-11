@@ -133,9 +133,6 @@ public class MapPutRequest extends MapKeyBasedClientRequest implements Portable,
 
     @Override
     public String getMethodName() {
-        if (async) {
-            return "putAsync";
-        }
         return "put";
     }
 

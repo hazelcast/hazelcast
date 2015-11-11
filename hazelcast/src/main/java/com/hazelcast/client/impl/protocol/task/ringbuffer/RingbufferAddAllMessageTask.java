@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.ringbuffer;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.RingbufferAddAllAsyncCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferAddAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -36,10 +36,10 @@ import java.util.List;
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_OFFER}
  */
-public class RingbufferAddAllAsyncMessageTask
-        extends AbstractPartitionMessageTask<RingbufferAddAllAsyncCodec.RequestParameters> {
+public class RingbufferAddAllMessageTask
+        extends AbstractPartitionMessageTask<RingbufferAddAllCodec.RequestParameters> {
 
-    public RingbufferAddAllAsyncMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public RingbufferAddAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -56,12 +56,12 @@ public class RingbufferAddAllAsyncMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return RingbufferAddAllAsyncCodec.encodeResponse((Long) response);
+        return RingbufferAddAllCodec.encodeResponse((Long) response);
     }
 
     @Override
-    protected RingbufferAddAllAsyncCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return RingbufferAddAllAsyncCodec.decodeRequest(clientMessage);
+    protected RingbufferAddAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return RingbufferAddAllCodec.decodeRequest(clientMessage);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class RingbufferAddAllAsyncMessageTask
 
     @Override
     public String getMethodName() {
-        return "addAllAsync";
+        return "addAll";
     }
 
     @Override

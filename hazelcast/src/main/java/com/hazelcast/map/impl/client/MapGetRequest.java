@@ -126,9 +126,6 @@ public class MapGetRequest extends MapKeyBasedClientRequest implements Portable,
 
     @Override
     public String getMethodName() {
-        if (async) {
-            return "getAsync";
-        }
         return "get";
     }
 

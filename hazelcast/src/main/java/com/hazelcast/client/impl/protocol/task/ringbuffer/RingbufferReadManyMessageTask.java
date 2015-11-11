@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.ringbuffer;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.RingbufferReadManyAsyncCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferReadManyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.instance.Node;
@@ -38,10 +38,10 @@ import java.util.List;
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_OFFER}
  */
-public class RingbufferReadManyAsyncMessageTask
-        extends AbstractPartitionMessageTask<RingbufferReadManyAsyncCodec.RequestParameters> {
+public class RingbufferReadManyMessageTask
+        extends AbstractPartitionMessageTask<RingbufferReadManyCodec.RequestParameters> {
 
-    public RingbufferReadManyAsyncMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public RingbufferReadManyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -65,17 +65,17 @@ public class RingbufferReadManyAsyncMessageTask
             items.add(resultSet.getDataItems()[k]);
         }
 
-        return RingbufferReadManyAsyncCodec.encodeResponse(resultSet.readCount(), items);
+        return RingbufferReadManyCodec.encodeResponse(resultSet.readCount(), items);
     }
 
     @Override
-    protected RingbufferReadManyAsyncCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return RingbufferReadManyAsyncCodec.decodeRequest(clientMessage);
+    protected RingbufferReadManyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return RingbufferReadManyCodec.decodeRequest(clientMessage);
     }
 
     @Override
     public String getMethodName() {
-        return "readManyAsync";
+        return "readMany";
     }
 
     @Override
