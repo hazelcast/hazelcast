@@ -962,25 +962,53 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             return emptyMap();
         }
 
-        List<Data> keyList = new ArrayList<Data>(keys.size());
+        Map<Integer, List<Data>> partitionToKeyData = new HashMap<Integer, List<Data>>();
+        ClientPartitionService partitionService = getContext().getPartitionService();
+
         for (Object key : keys) {
-            keyList.add(toData(key));
+            Data keyData = toData(key);
+            int partitionId = partitionService.getPartitionId(keyData);
+            List<Data> keyList = partitionToKeyData.get(partitionId);
+            if (keyList == null) {
+                keyList = new ArrayList<Data>();
+                partitionToKeyData.put(partitionId, keyList);
+            }
+            keyList.add(keyData);
         }
 
         Map<K, V> result = new HashMap<K, V>();
-        MapGetAllCodec.ResponseParameters resultParameters = getAllInternal(keyList, result);
-        for (Entry<Data, Data> entry : resultParameters.entrySet) {
-            V value = toObject(entry.getValue());
-            K key = toObject(entry.getKey());
-            result.put(key, value);
-        }
+        getAllInternal(partitionToKeyData, result);
         return result;
     }
 
-    protected MapGetAllCodec.ResponseParameters getAllInternal(List<Data> keyList, Map<K, V> result) {
-        ClientMessage request = MapGetAllCodec.encodeRequest(name, keyList);
-        ClientMessage response = invoke(request);
-        return MapGetAllCodec.decodeResponse(response);
+    protected List<MapGetAllCodec.ResponseParameters> getAllInternal(Map<Integer, List<Data>> partitionToKeyData, Map<K, V> result) {
+        List<Future<ClientMessage>> futures = new ArrayList<Future<ClientMessage>>(partitionToKeyData.size());
+        List<MapGetAllCodec.ResponseParameters> responses = new ArrayList<MapGetAllCodec.ResponseParameters>(partitionToKeyData.size());
+        
+        for (final Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
+            int partitionId = entry.getKey();
+            List<Data> keyList = entry.getValue();
+            ClientMessage request = MapGetAllCodec.encodeRequest(name, keyList);
+            futures.add(new ClientInvocation(getClient(), request, partitionId).invoke());
+        }
+
+        for (Future<ClientMessage> future : futures) {
+            try {
+                ClientMessage response = future.get();
+                MapGetAllCodec.ResponseParameters resultParameters = MapGetAllCodec.decodeResponse(response);
+        
+                for (Entry<Data, Data> entry : resultParameters.entrySet) {
+                    final V value = toObject(entry.getValue());
+                    final K key = toObject(entry.getKey());
+                    result.put(key, value);
+                }
+
+                responses.add(resultParameters);
+            } catch (Exception e) {
+                ExceptionUtil.rethrow(e);
+            }
+        }
+        return responses;
     }
 
     @Override

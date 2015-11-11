@@ -715,26 +715,51 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             return Collections.emptyMap();
         }
 
-        List<Data> keySet = new ArrayList<Data>(keys.size());
+        Map<Integer, List<Data>> partitionToKeyData = new HashMap<Integer, List<Data>>();
+        ClientPartitionService partitionService = getContext().getPartitionService();
+
         for (Object key : keys) {
-            keySet.add(toData(key));
+            Data keyData = toData(key);
+            int partitionId = partitionService.getPartitionId(keyData);
+            List<Data> keyList = partitionToKeyData.get(partitionId);
+            if (keyList == null) {
+                keyList = new ArrayList<Data>();
+                partitionToKeyData.put(partitionId, keyList);
+            }
+            keyList.add(keyData);
         }
 
         Map<K, V> result = new HashMap<K, V>();
-        getAllInternal(keySet, result);
+        getAllInternal(partitionToKeyData, result);
         return result;
     }
 
     // This method is overriden.
-    protected MapEntries getAllInternal(List<Data> keySet, Map<K, V> result) {
-        MapGetAllRequest request = new MapGetAllRequest(name, keySet);
-        MapEntries entries = invoke(request);
-        for (Entry<Data, Data> entry : entries.entries()) {
-            V value = toObject(entry.getValue());
-            K key = toObject(entry.getKey());
-            result.put(key, value);
+    protected List<MapEntries> getAllInternal(Map<Integer, List<Data>> partitionToKeyData, Map<K, V> result) {
+        List<Future<Data>> futures = new ArrayList<Future<Data>>(partitionToKeyData.size());
+        List<MapEntries> responses = new ArrayList<MapEntries>(partitionToKeyData.size());
+        
+        for (final Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
+            int partitionId = entry.getKey();
+            List<Data> keyList = entry.getValue();
+            MapGetAllRequest request = new MapGetAllRequest(name, keyList, partitionId);
+            futures.add(new ClientInvocation(getClient(), request, partitionId).invoke());
         }
-        return entries;
+
+        for (Future<Data> future : futures) {
+            try {                
+                MapEntries entries = toObject(future.get());        
+                for (Entry<Data, Data> entry : entries.entries()) {
+                    final V value = toObject(entry.getValue());
+                    final K key = toObject(entry.getKey());
+                    result.put(key, value);
+                }                
+                responses.add(entries);
+            } catch (Exception e) {
+                ExceptionUtil.rethrow(e);
+            }
+        }
+        return responses;
     }
 
     @Override

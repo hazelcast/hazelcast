@@ -52,6 +52,8 @@ import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.ALL_LISTENER_FLAGS;
 import static java.util.Collections.emptyMap;
 
+import java.util.ArrayList;
+
 /**
  * A Client-side {@code IMap} implementation which is fronted by a near-cache.
  *
@@ -60,7 +62,7 @@ import static java.util.Collections.emptyMap;
  */
 public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
-    protected NearCache nearCache;
+    protected NearCache<Data, Object> nearCache;
     protected volatile String invalidationListenerId;
 
     public NearCachedClientMapProxy(String serviceName, String name) {
@@ -238,22 +240,35 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected MapGetAllCodec.ResponseParameters getAllInternal(List<Data> keyList, Map<K, V> result) {
-        Iterator<Data> iterator = keyList.iterator();
-        while (iterator.hasNext()) {
-            Data key = iterator.next();
-            Object cached = nearCache.get(key);
-            if (cached != null && NULL_OBJECT != cached) {
-                result.put((K) toObject(key), (V) cached);
-                iterator.remove();
+    protected List<MapGetAllCodec.ResponseParameters> getAllInternal(Map<Integer, List<Data>> pIdToKeyData, Map<K, V> result) {
+        List<Integer> partitionsWithCachedEntries = new ArrayList<Integer>(pIdToKeyData.size());
+        for (Entry<Integer, List<Data>> partitionKeyEntry : pIdToKeyData.entrySet()) {
+            List<Data> keyList = partitionKeyEntry.getValue();
+            Iterator<Data> iterator = keyList.iterator();
+            while (iterator.hasNext()) {
+                Data key = iterator.next();
+                Object cached = nearCache.get(key);
+                if (cached != null && NULL_OBJECT != cached) {
+                    result.put((K) toObject(key), (V) cached);
+                    iterator.remove();
+                }
+            }
+            if (keyList.isEmpty()) {
+                partitionsWithCachedEntries.add(partitionKeyEntry.getKey());
             }
         }
 
-        MapGetAllCodec.ResponseParameters resultParameters = super.getAllInternal(keyList, result);
-        for (Entry<Data, Data> entry : resultParameters.entrySet) {
-            nearCache.put(entry.getKey(), entry.getValue());
+        for (Integer partitionId : partitionsWithCachedEntries) {
+            pIdToKeyData.remove(partitionId);
         }
-        return resultParameters;
+
+        List<MapGetAllCodec.ResponseParameters> responses = super.getAllInternal(pIdToKeyData, result);
+        for (MapGetAllCodec.ResponseParameters resultParameters : responses) {
+            for (Entry<Data, Data> entry : resultParameters.entrySet) {
+                nearCache.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return responses;
     }
 
     @Override
