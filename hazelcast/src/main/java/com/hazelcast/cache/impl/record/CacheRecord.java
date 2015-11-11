@@ -78,4 +78,25 @@ public interface CacheRecord<V> extends Expirable, Evictable {
      */
     void resetAccessHit();
 
+    /**
+     * Tells whether this record is a tombstone or not.
+     *
+     * @return true if this record is tombstone, false otherwise
+     */
+    boolean isTombstone();
+
+    /**
+     * Returns tombstone sequence associated with this record.
+     * Return value is undefined if this is record is not a tombstone.
+     *
+     * @return tombstone sequence
+     */
+    long getTombstoneSequence();
+
+    /**
+     * Sets tombstone sequence associated with this record.
+     *
+     * @param seq tombstone sequence
+     */
+    void setTombstoneSequence(long seq);
 }

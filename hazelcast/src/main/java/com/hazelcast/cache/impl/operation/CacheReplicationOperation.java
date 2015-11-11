@@ -128,13 +128,12 @@ public class CacheReplicationOperation extends AbstractOperation {
             for (Map.Entry<Data, CacheRecord> e : cacheMap.entrySet()) {
                 final Data key = e.getKey();
                 final CacheRecord record = e.getValue();
-                final long expirationTime = record.getExpirationTime();
 
-                // If entry is already expired we skip it
-                if (expirationTime > now) {
-                    out.writeData(key);
-                    out.writeObject(record);
+                if (record.isExpiredAt(now) || record.isTombstone()) {
+                    continue;
                 }
+                out.writeData(key);
+                out.writeObject(record);
             }
             // Empty data will terminate the iteration for read in case
             // expired entries were found while serializing, since the
