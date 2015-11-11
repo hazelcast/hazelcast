@@ -51,6 +51,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
+import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -92,6 +93,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final AddressTranslator addressTranslator;
     private final ConcurrentMap<Address, ClientConnection> connections
             = new ConcurrentHashMap<Address, ClientConnection>();
+    private final Set<Address> connectionsInProgress =
+            Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
     private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
     private final Set<ConnectionHeartbeatListener> heartbeatListeners =
@@ -192,26 +195,53 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     public ClientConnection getOrConnect(Address target, Authenticator authenticator) throws IOException {
-        Address address = addressTranslator.translate(target);
+        Address remoteAddress = addressTranslator.translate(target);
 
-        if (address == null) {
+        if (remoteAddress == null) {
             throw new IOException("Address is required!");
         }
 
         ClientConnection connection = connections.get(target);
+        Object lock = getLock(target);
+
         if (connection == null) {
-            final Object lock = getLock(target);
             synchronized (lock) {
                 connection = connections.get(target);
                 if (connection == null) {
-                    connection = createSocketConnection(address);
-                    authenticate(authenticator, connection);
-                    connections.put(connection.getRemoteEndpoint(), connection);
-                    fireConnectionAddedEvent(connection);
+                    connection = initializeConnection(remoteAddress, authenticator);
                 }
             }
         }
         return connection;
+    }
+
+    private ClientConnection initializeConnection(Address address, Authenticator authenticator) throws IOException {
+        ClientConnection connection = createSocketConnection(address);
+        authenticate(authenticator, connection);
+        connections.put(connection.getRemoteEndpoint(), connection);
+        fireConnectionAddedEvent(connection);
+        return connection;
+    }
+
+    public ClientConnection getOrTriggerConnect(Address target, Authenticator authenticator) throws IOException {
+        Address remoteAddress = addressTranslator.translate(target);
+
+        if (remoteAddress == null) {
+            throw new IOException("Address is required!");
+        }
+
+        ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
+        ClientConnection connection = connections.get(target);
+
+        if (connection != null) {
+            return connection;
+        }
+
+        if (connectionsInProgress.add(target)) {
+            executionService.executeInternal(new InitConnectionTask(target, remoteAddress, authenticator));
+        }
+
+        throw new IOException("No available connection to address " + target);
     }
 
     private void authenticate(Authenticator authenticator, ClientConnection connection) throws IOException {
@@ -368,5 +398,37 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     @Override
     public void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener) {
         heartbeatListeners.add(connectionHeartbeatListener);
+    }
+
+    private class InitConnectionTask implements Runnable {
+
+        private final Address target;
+        private final Address remoteAddress;
+        private final Authenticator authenticator;
+
+        InitConnectionTask(Address target, Address remoteAddress, Authenticator authenticator) {
+            this.target = target;
+            this.remoteAddress = remoteAddress;
+            this.authenticator = authenticator;
+        }
+
+        @Override
+        public void run() {
+            final Object lock = getLock(target);
+            synchronized (lock) {
+                ClientConnection connection = connections.get(target);
+                if (connection != null) {
+                    return;
+                }
+                try {
+                    initializeConnection(remoteAddress, authenticator);
+                } catch (IOException e) {
+                    LOGGER.finest(e);
+                } finally {
+                    connectionsInProgress.remove(target);
+                }
+
+            }
+        }
     }
 }

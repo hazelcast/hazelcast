@@ -46,10 +46,14 @@ public class ClientPartitionCancellableDelegatingFuture<T> extends ClientCancell
             return false;
         }
 
-        waitForRequestToBeSend();
-        ClientInvocationFuture f = invokeCancelRequest(mayInterruptIfRunning);
+        boolean cancelSuccessful = false;
         try {
-            boolean cancelSuccessful = ExecutorServiceCancelOnPartitionCodec.decodeResponse(f.get()).response;
+            cancelSuccessful = invokeCancelRequest(mayInterruptIfRunning);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        try {
             if (cancelSuccessful) {
                 setError(new CancellationException());
                 cancelled = true;
@@ -63,7 +67,9 @@ public class ClientPartitionCancellableDelegatingFuture<T> extends ClientCancell
         }
     }
 
-    private ClientInvocationFuture invokeCancelRequest(boolean mayInterruptIfRunning) {
+    private boolean invokeCancelRequest(boolean mayInterruptIfRunning) throws InterruptedException {
+        waitForRequestToBeSend();
+
         ClientInvocation clientInvocation;
         final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         ClientMessage request =
@@ -71,7 +77,8 @@ public class ClientPartitionCancellableDelegatingFuture<T> extends ClientCancell
         clientInvocation = new ClientInvocation(client, request, partitionId);
 
         try {
-            return clientInvocation.invoke();
+            ClientInvocationFuture f = clientInvocation.invoke();
+            return ExecutorServiceCancelOnPartitionCodec.decodeResponse(f.get()).response;
         } catch (Exception e) {
             throw rethrow(e);
         }
