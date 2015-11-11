@@ -2026,8 +2026,15 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
             sendMigrationEvent(migrationInfo, MigrationStatus.FAILED);
 
-            // migration failed, re-execute RepartitioningTask when all other migration tasks are done
+            // Migration failed.
+            // Pause migration process for a small amount of time, if a migration attempt is failed.
+            // Otherwise, migration failures can do a busy spin until migration problem is resolved.
+            // Migration can fail either a node's just joined and not completed start yet or it's just left the cluster.
+            pauseMigration();
+            // Re-execute RepartitioningTask when all other migration tasks are done,
+            // an imbalance may occur because of this failure.
             migrationQueue.add(new RepartitioningTask());
+            resumeMigrationEventually();
         }
 
         private void migrationOperationSucceeded() {
