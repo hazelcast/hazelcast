@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
@@ -95,8 +96,8 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     @Override
     public void fromJson(JsonObject json) {
         connected = getBoolean(json, "isConnected", false);
-        totalPublishLatency = getInt(json, "totalPublishLatencies", -1);
-        totalPublishedEventCount = getInt(json, "totalPublishedEventCount", -1);
+        totalPublishLatency = getLong(json, "totalPublishLatencies", -1);
+        totalPublishedEventCount = getLong(json, "totalPublishedEventCount", -1);
         outboundQueueSize = getInt(json, "outboundQueueSize", -1);
         paused = getBoolean(json, "paused");
     }
