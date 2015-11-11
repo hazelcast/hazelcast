@@ -480,6 +480,7 @@
     <suppress checks="MethodCountCheck" files="com/hazelcast/client/proxy/NearCachedClientMapProxy"/>
     <suppress checks="ClassFanOutComplexityCheck" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>
     <suppress checks="ClassFanOutComplexityCheck" files="com/hazelcast/map/impl/MapServiceContextImpl"/>
+    <suppress checks="ClassFanOutComplexityCheck" files="com/hazelcast/map/impl/operation/DefaultMapOperationProvider"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>
     <suppress checks="ClassDataAbstractionCoupling"
               files="com/hazelcast/map/impl/operation/DefaultMapOperationProvider"/>

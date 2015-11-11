@@ -16,8 +16,10 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.OperationFactory;
@@ -43,9 +45,9 @@ public interface MapOperationProvider {
 
     MapOperation createRemoveOperation(String name, Data key);
 
-    MapOperation createTryRemoveOperation(String name, Data dataKey, long timeout);
+    MapOperation createRemoveOperation(String name, Data key, boolean disableWanReplicationEvent);
 
-    MapOperation createWanOriginatedDeleteOperation(String name, Data key);
+    MapOperation createTryRemoveOperation(String name, Data dataKey, long timeout);
 
     MapOperation createReplaceOperation(String name, Data dataKey, Data value);
 
@@ -78,6 +80,10 @@ public interface MapOperationProvider {
     MapOperation createTxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String ownerUuid);
 
     MapOperation createTxnSetOperation(String name, Data dataKey, Data value, long version, long ttl);
+
+    MapOperation createMergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
+                                      MapMergePolicy policy, boolean disableWanReplicationEvent);
+
 
     OperationFactory createPartitionWideEntryOperationFactory(String name, EntryProcessor entryProcessor);
 

@@ -29,8 +29,19 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
 
     protected transient Data dataOldValue;
 
-    public BaseRemoveOperation(String name, Data dataKey) {
+    /**
+     * Used by wan-replication-service to disable wan-replication event publishing
+     * otherwise in active-active scenarios infinite loop of event forwarding can be seen.
+     */
+    protected transient boolean disableWanReplicationEvent;
+
+    public BaseRemoveOperation(String name, Data dataKey, boolean disableWanReplicationEvent) {
         super(name, dataKey);
+        this.disableWanReplicationEvent = disableWanReplicationEvent;
+    }
+
+    public BaseRemoveOperation(String name, Data dataKey) {
+        this(name, dataKey, false);
     }
 
     public BaseRemoveOperation() {
@@ -43,7 +54,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.REMOVED, dataKey, dataOldValue, null);
         invalidateNearCaches();
-        if (mapContainer.isWanReplicationEnabled()) {
+        if (mapContainer.isWanReplicationEnabled() && !disableWanReplicationEvent) {
             // todo should evict operation replicated??
             mapEventPublisher.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
         }
@@ -57,7 +68,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
 
     @Override
     public Operation getBackupOperation() {
-        return new RemoveBackupOperation(name, dataKey);
+        return new RemoveBackupOperation(name, dataKey, false, disableWanReplicationEvent);
     }
 
     @Override

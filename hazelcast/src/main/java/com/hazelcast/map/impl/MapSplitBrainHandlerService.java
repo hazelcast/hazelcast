@@ -20,7 +20,8 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.operation.MergeOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.MapMergePolicy;
@@ -126,6 +127,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
             };
 
             for (MapContainer mapContainer : recordMap.keySet()) {
+                String mapName = mapContainer.getName();
                 Collection<Record> recordList = recordMap.get(mapContainer);
                 String mergePolicyName = mapContainer.getMapConfig().getMergePolicy();
 
@@ -133,12 +135,14 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                 // todo below can be optimized a many records can be send in single invocation
                 final MapMergePolicy finalMergePolicy
                         = mapServiceContext.getMergePolicyProvider().getMergePolicy(mergePolicyName);
+                MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
                 for (Record record : recordList) {
                     recordCount++;
                     EntryView entryView = EntryViews.createSimpleEntryView(record.getKey(),
                             mapServiceContext.toData(record.getValue()), record);
-                    MergeOperation operation = new MergeOperation(mapContainer.getName(),
-                            record.getKey(), entryView, finalMergePolicy);
+
+                    MapOperation operation = operationProvider.createMergeOperation(mapName,
+                            record.getKey(), entryView, finalMergePolicy, false);
                     try {
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
                         ICompletableFuture f = nodeEngine.getOperationService()
