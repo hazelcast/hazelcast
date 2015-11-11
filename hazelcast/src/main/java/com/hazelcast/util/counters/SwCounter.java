@@ -100,15 +100,17 @@ public abstract class SwCounter implements Counter {
         }
 
         @Override
-        public void inc() {
+        public long inc() {
             long newLocalValue = localValue += 1;
             UNSAFE.putOrderedLong(this, OFFSET, newLocalValue);
+            return newLocalValue;
         }
 
         @Override
-        public void inc(long amount) {
+        public long inc(long amount) {
             long newLocalValue = localValue += amount;
             UNSAFE.putOrderedLong(this, OFFSET, newLocalValue);
+            return newLocalValue;
         }
 
         @Override
@@ -139,13 +141,17 @@ public abstract class SwCounter implements Counter {
         }
 
         @Override
-        public void inc() {
-            COUNTER.lazySet(this, value + 1);
+        public long inc() {
+            final long newValue = value + 1;
+            COUNTER.lazySet(this, newValue);
+            return newValue;
         }
 
         @Override
-        public void inc(long amount) {
-            COUNTER.lazySet(this, value + amount);
+        public long inc(long amount) {
+            final long newValue = value + amount;
+            COUNTER.lazySet(this, newValue);
+            return newValue;
         }
 
         @Override

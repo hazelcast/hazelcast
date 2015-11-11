@@ -27,17 +27,14 @@ public class SwCounterTest {
 
     @Test
     public void inc() {
-        counter.inc();
-        assertEquals(1, counter.get());
+        assertEquals(1, counter.inc());
     }
 
     @Test
     public void inc_withAmount() {
-        counter.inc(10);
-        assertEquals(10, counter.get());
-
-        counter.inc(0);
-        assertEquals(10, counter.get());
+        assertEquals(10, counter.inc(10));
+        assertEquals(10, counter.inc(0));
+        assertEquals(0, counter.inc(-10));
     }
 
     @Test

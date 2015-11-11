@@ -35,8 +35,9 @@ public interface Counter {
 
     /**
      * Increments the counter by one.
+     * @return the new counter state
      */
-    void inc();
+    long inc();
 
     /**
      * Increments (or decrements) the counter by the given amount.
@@ -44,6 +45,7 @@ public interface Counter {
      * If the amount is negative, the counter is decremented.
      *
      * @param amount the amount to increase or decrease the counter with.
+     * @return the new counter state
      */
-    void inc(long amount);
+    long inc(long amount);
 }
