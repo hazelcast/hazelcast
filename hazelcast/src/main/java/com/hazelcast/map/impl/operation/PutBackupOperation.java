@@ -41,7 +41,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     private boolean unlockKey;
     private RecordInfo recordInfo;
     private boolean putTransient;
-    private boolean wanOriginated;
+    private boolean disableWanReplicationEvent;
 
     public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo) {
         this(name, dataKey, dataValue, recordInfo, false, false);
@@ -58,12 +58,12 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
 
     public PutBackupOperation(String name, Data dataKey, Data dataValue,
                               RecordInfo recordInfo, boolean unlockKey, boolean putTransient,
-                              boolean wanOriginated) {
+                              boolean disableWanReplicationEvent) {
         super(name, dataKey, dataValue);
         this.unlockKey = unlockKey;
         this.recordInfo = recordInfo;
         this.putTransient = putTransient;
-        this.wanOriginated = wanOriginated;
+        this.disableWanReplicationEvent = disableWanReplicationEvent;
     }
 
     public PutBackupOperation() {
@@ -88,7 +88,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
         }
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
-        if (!wanOriginated) {
+        if (!disableWanReplicationEvent) {
             publishWANReplicationEventBackup(mapServiceContext, mapEventPublisher);
         }
 
@@ -136,7 +136,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
             out.writeBoolean(false);
         }
         out.writeBoolean(putTransient);
-        out.writeBoolean(wanOriginated);
+        out.writeBoolean(disableWanReplicationEvent);
     }
 
     @Override
@@ -149,6 +149,6 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
             recordInfo.readData(in);
         }
         putTransient = in.readBoolean();
-        wanOriginated = in.readBoolean();
+        disableWanReplicationEvent = in.readBoolean();
     }
 }

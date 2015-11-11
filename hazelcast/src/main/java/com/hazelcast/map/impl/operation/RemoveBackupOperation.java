@@ -34,7 +34,7 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
         IdentifiedDataSerializable {
 
     protected boolean unlockKey;
-    protected boolean wanOriginated;
+    protected boolean disableWanReplicationEvent;
 
     public RemoveBackupOperation() {
     }
@@ -48,10 +48,10 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
         this.unlockKey = unlockKey;
     }
 
-    public RemoveBackupOperation(String name, Data dataKey, boolean unlockKey, boolean wanOriginated) {
+    public RemoveBackupOperation(String name, Data dataKey, boolean unlockKey, boolean disableWanReplicationEvent) {
         super(name, dataKey);
         this.unlockKey = unlockKey;
-        this.wanOriginated = wanOriginated;
+        this.disableWanReplicationEvent = disableWanReplicationEvent;
     }
 
     @Override
@@ -69,7 +69,7 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
     @Override
     public void afterRun() throws Exception {
         evict();
-        if (!wanOriginated
+        if (!disableWanReplicationEvent
                 && mapContainer.isWanReplicationEnabled()) {
             mapService.getMapServiceContext()
                     .getMapEventPublisher().publishWanReplicationRemoveBackup(name, dataKey, Clock.currentTimeMillis());
@@ -95,14 +95,14 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(unlockKey);
-        out.writeBoolean(wanOriginated);
+        out.writeBoolean(disableWanReplicationEvent);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         unlockKey = in.readBoolean();
-        wanOriginated = in.readBoolean();
+        disableWanReplicationEvent = in.readBoolean();
     }
 
 }
