@@ -48,10 +48,14 @@ public class ClientAddressCancellableDelegatingFuture<V> extends ClientCancellab
             return false;
         }
 
-        waitForRequestToBeSend();
-        ClientInvocationFuture f = invokeCancelRequest(mayInterruptIfRunning);
+        boolean cancelSuccessful = false;
         try {
-            boolean cancelSuccessful = ExecutorServiceCancelOnAddressCodec.decodeResponse(f.get()).response;
+            cancelSuccessful = invokeCancelRequest(mayInterruptIfRunning);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        try {
             if (cancelSuccessful) {
                 setError(new CancellationException());
                 cancelled = true;
@@ -65,14 +69,17 @@ public class ClientAddressCancellableDelegatingFuture<V> extends ClientCancellab
         }
     }
 
-    private ClientInvocationFuture invokeCancelRequest(boolean mayInterruptIfRunning) {
+    private boolean invokeCancelRequest(boolean mayInterruptIfRunning) throws InterruptedException {
+        waitForRequestToBeSend();
+
         ClientInvocation clientInvocation;
         final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         ClientMessage request = ExecutorServiceCancelOnAddressCodec.encodeRequest(uuid, target.getHost(),
                 target.getPort(), mayInterruptIfRunning);
         clientInvocation = new ClientInvocation(client, request, target);
         try {
-            return clientInvocation.invoke();
+            ClientInvocationFuture f = clientInvocation.invoke();
+            return ExecutorServiceCancelOnAddressCodec.decodeResponse(f.get()).response;
         } catch (Exception e) {
             throw rethrow(e);
         }
