@@ -17,19 +17,23 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ITopic;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.CountDownLatch;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -45,7 +49,7 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
     @Test
     public void destroyedNotReceivedOnClient() throws Exception {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         final CountDownLatch createdLatch = new CountDownLatch(1);
         final CountDownLatch destroyedLatch = new CountDownLatch(1);
         client.addDistributedObjectListener(new DistributedObjectListener() {
@@ -64,6 +68,13 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         assertOpenEventually(createdLatch, 10);
         topic.destroy();
         assertOpenEventually(destroyedLatch, 10);
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Collection<DistributedObject> distributedObjects = client.getDistributedObjects();
+                assertTrue(distributedObjects.isEmpty());
+            }
+        }, 5);
     }
 
 }

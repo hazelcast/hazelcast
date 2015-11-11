@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+
 /**
  * DistributedObjectEvent is fired when a {@link DistributedObject}
  * is created or destroyed cluster-wide.
@@ -25,11 +27,13 @@ package com.hazelcast.core;
  */
 public class DistributedObjectEvent {
 
+    protected DistributedObject distributedObject;
+
     private EventType eventType;
 
     private String serviceName;
 
-    private DistributedObject distributedObject;
+    private String objectName;
 
     /**
      * Constructs a DistributedObject Event.
@@ -38,9 +42,11 @@ public class DistributedObjectEvent {
      * @param serviceName       The service name of the DistributedObject.
      * @param distributedObject The DistributedObject for the event.
      */
-    public DistributedObjectEvent(EventType eventType, String serviceName, DistributedObject distributedObject) {
+    public DistributedObjectEvent(EventType eventType, String serviceName, String objectName,
+                                  DistributedObject distributedObject) {
         this.eventType = eventType;
         this.serviceName = serviceName;
+        this.objectName = objectName;
         this.distributedObject = distributedObject;
     }
 
@@ -68,15 +74,19 @@ public class DistributedObjectEvent {
      * @return the identifier of DistributedObject
      */
     public Object getObjectId() {
-        return distributedObject.getId();
+        return objectName;
     }
 
     /**
      * Returns the DistributedObject instance.
      *
      * @return the DistributedObject instance
+     * @throws DistributedObjectDestroyedException if distributed object is destroyed.
      */
     public DistributedObject getDistributedObject() {
+        if (EventType.DESTROYED.equals(eventType)) {
+            throw new DistributedObjectDestroyedException(objectName + " destroyed!");
+        }
         return distributedObject;
     }
 

@@ -43,6 +43,7 @@ import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
 import com.hazelcast.client.proxy.txn.xa.XAResourceProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.LazyDistributedObjectEvent;
 import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -232,7 +233,7 @@ public final class ProxyManager {
 
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
         ClientMessage request = ClientAddDistributedObjectListenerCodec.encodeRequest();
-        final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener);
+        final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
         return client.getListenerService().startListening(request, null, eventHandler, new ClientMessageDecoder() {
             @Override
             public <T> T decodeClientMessage(ClientMessage clientMessage) {
@@ -245,9 +246,11 @@ public final class ProxyManager {
             implements EventHandler<ClientMessage> {
 
         private final DistributedObjectListener listener;
+        private final ProxyManager proxyManager;
 
-        private DistributedObjectEventHandler(DistributedObjectListener listener) {
+        private DistributedObjectEventHandler(DistributedObjectListener listener, ProxyManager proxyManager) {
             this.listener = listener;
+            this.proxyManager = proxyManager;
         }
 
         @Override
@@ -255,13 +258,9 @@ public final class ProxyManager {
             final ObjectNamespace ns = new DefaultObjectNamespace(serviceName, name);
             ClientProxyFuture future = proxies.get(ns);
             ClientProxy proxy = future == null ? null : future.get();
-            if (proxy == null) {
-                proxy = getOrCreateProxy(serviceName, name);
-            }
-
             DistributedObjectEvent.EventType eventType = DistributedObjectEvent.EventType.valueOf(eventTypeName);
-            DistributedObjectEvent event = new DistributedObjectEvent(eventType,
-                    serviceName, proxy);
+            LazyDistributedObjectEvent event = new LazyDistributedObjectEvent(eventType, serviceName, name,
+                    proxy, proxyManager);
             if (DistributedObjectEvent.EventType.CREATED.equals(eventType)) {
                 listener.distributedObjectCreated(event);
             } else if (DistributedObjectEvent.EventType.DESTROYED.equals(eventType)) {
