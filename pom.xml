@@ -298,7 +298,7 @@
                                 <configuration combine.self="override">
                                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                                     <!-- 1C means 1 process per cpu core -->
-                                    <forkCount>4C</forkCount>
+                                    <forkCount>1C</forkCount>
                                     <reuseForks>true</reuseForks>
                                     <!-- the argLine variable is needed for JaCoco -->
                                     <argLine>
