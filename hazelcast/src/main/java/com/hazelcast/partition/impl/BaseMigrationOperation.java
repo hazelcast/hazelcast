@@ -18,14 +18,15 @@ package com.hazelcast.partition.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.instance.Node;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
@@ -50,10 +51,15 @@ public abstract class BaseMigrationOperation extends AbstractOperation
     }
 
     private void verifyClusterState() {
-        final NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         ClusterState clusterState = nodeEngine.getClusterService().getClusterState();
         if (clusterState != ClusterState.ACTIVE) {
             throw new IllegalStateException("Cluster state is not active! " + clusterState);
+        }
+        final Node node = nodeEngine.getNode();
+        if (!node.getNodeExtension().isStartCompleted()) {
+            throw new IllegalStateException("Partition table received before startup is completed. "
+                    + "Caller: " + getCallerAddress());
         }
     }
 
