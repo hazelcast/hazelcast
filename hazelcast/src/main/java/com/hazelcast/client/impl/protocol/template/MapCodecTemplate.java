@@ -515,11 +515,9 @@ public interface MapCodecTemplate {
     /**
      * Returns the entries for the given keys. If any keys are not present in the Map, it will call loadAll The returned
      * map is NOT backed by the original map, so changes to the original map are NOT reflected in the returned map, and vice-versa.
-     *
-     * Performance consideration: The API implementation using this request may need to send multiple of these request messages
-     * for filling a request for a key set. Hence, it shall be better performance if the request is grouped in terms of the
-     * partition id and the keys belonging to a certain partition id is sent in a single request to the member. This shall
-     * decrease the number of requests towards the members significantly, hence it will improve the overall performance.
+     * Please note that all the keys in the request should belong to the partition id to which this request is being sent, all keys
+     * matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
+     * of these request messages for filling a request for a key set if the keys belong to different partitions.
      *
      * @param name name of map
      * @param keys keys to get
@@ -637,11 +635,10 @@ public interface MapCodecTemplate {
      * equivalent to that of calling put(Object,Object) put(k, v) on this map once for each mapping from key k to value
      * v in the specified map.The behavior of this operation is undefined if the specified map is modified while the
      * operation is in progress.
-     *
-     * Performance consideration: The API implementation using this request may need to send multiple of these request messages
-     * for filling a request for a key set. Hence, it shall be better performance if the request is grouped in terms of the
-     * partition id and the keys belonging to a certain partition id is sent in a single request to the member. This shall
-     * decrease the number of requests towards the members significantly, hence it will improve the overall performance.
+     * Please note that all the keys in the request should belong to the partition id to which this request is being sent, all keys
+     * matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
+     * of these request messages for filling a request for a key set if the keys belong to different partitions.
+
      *
      * @param name    name of map
      * @param entries mappings to be stored in this map
