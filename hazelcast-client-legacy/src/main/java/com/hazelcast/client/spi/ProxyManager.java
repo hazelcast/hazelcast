@@ -25,8 +25,8 @@ import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.ClientCreateRequest;
 import com.hazelcast.client.impl.client.AddDistributedObjectListenerRequest;
+import com.hazelcast.client.impl.client.ClientCreateRequest;
 import com.hazelcast.client.impl.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
@@ -45,6 +45,7 @@ import com.hazelcast.client.proxy.ClientSemaphoreProxy;
 import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.listener.LazyDistributedObjectEvent;
 import com.hazelcast.client.txn.proxy.xa.XAResourceProxy;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -81,7 +82,6 @@ import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
@@ -337,35 +337,50 @@ public final class ProxyManager {
     }
 
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
-        final AddDistributedObjectListenerRequest request = new AddDistributedObjectListenerRequest();
-        final EventHandler<PortableDistributedObjectEvent> eventHandler = new EventHandler<PortableDistributedObjectEvent>() {
-            public void handle(PortableDistributedObjectEvent e) {
-                final ObjectNamespace ns = new DefaultObjectNamespace(e.getServiceName(), e.getName());
-                ClientProxyFuture future = proxies.get(ns);
-                ClientProxy proxy = future == null ? null : future.get();
-                if (proxy == null) {
-                    proxy = getOrCreateProxy(e.getServiceName(), e.getName());
-                }
-
-                DistributedObjectEvent event = new DistributedObjectEvent(e.getEventType(), e.getServiceName(), proxy);
-                if (DistributedObjectEvent.EventType.CREATED.equals(e.getEventType())) {
-                    listener.distributedObjectCreated(event);
-                } else if (DistributedObjectEvent.EventType.DESTROYED.equals(e.getEventType())) {
-                    listener.distributedObjectDestroyed(event);
-                }
-            }
-
-            @Override
-            public void beforeListenerRegister() {
-            }
-
-            @Override
-            public void onListenerRegister() {
-
-            }
-        };
+        AddDistributedObjectListenerRequest request = new AddDistributedObjectListenerRequest();
+        EventHandler<PortableDistributedObjectEvent> eventHandler = new DistributedObjectEventHandler(listener, this);
         return client.getListenerService().registerListener(request, eventHandler);
     }
+
+
+    private final class DistributedObjectEventHandler implements EventHandler<PortableDistributedObjectEvent> {
+
+        private final DistributedObjectListener listener;
+        private ProxyManager proxyManager;
+
+        private DistributedObjectEventHandler(DistributedObjectListener listener, ProxyManager proxyManager) {
+            this.listener = listener;
+            this.proxyManager = proxyManager;
+        }
+
+        @Override
+        public void handle(PortableDistributedObjectEvent e) {
+            String name = e.getName();
+            String serviceName = e.getServiceName();
+            DistributedObjectEvent.EventType eventType = e.getEventType();
+            ObjectNamespace ns = new DefaultObjectNamespace(serviceName, name);
+            ClientProxyFuture future = proxies.get(ns);
+            ClientProxy proxy = future == null ? null : future.get();
+            LazyDistributedObjectEvent event = new LazyDistributedObjectEvent(eventType, serviceName, name, proxy,
+                    proxyManager);
+            if (DistributedObjectEvent.EventType.CREATED.equals(eventType)) {
+                listener.distributedObjectCreated(event);
+            } else if (DistributedObjectEvent.EventType.DESTROYED.equals(eventType)) {
+                listener.distributedObjectDestroyed(event);
+            }
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+
+        }
+
+        @Override
+        public void onListenerRegister() {
+
+        }
+    }
+
 
     public boolean removeDistributedObjectListener(String id) {
         final RemoveDistributedObjectListenerRequest request = new RemoveDistributedObjectListenerRequest(id);

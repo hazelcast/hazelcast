@@ -28,19 +28,21 @@ final class ProxyEventProcessor implements StripedRunnable {
     private final Collection<DistributedObjectListener> listeners;
     private final DistributedObjectEvent.EventType type;
     private final String serviceName;
+    private final String objectName;
     private final DistributedObject object;
 
     ProxyEventProcessor(Collection<DistributedObjectListener> listeners, DistributedObjectEvent.EventType eventType,
-                        String serviceName, DistributedObject object) {
+                        String serviceName, String objectName, DistributedObject object) {
         this.listeners = listeners;
         this.type = eventType;
         this.serviceName = serviceName;
+        this.objectName = objectName;
         this.object = object;
     }
 
     @Override
     public void run() {
-        DistributedObjectEvent event = new DistributedObjectEvent(type, serviceName, object);
+        DistributedObjectEvent event = new DistributedObjectEvent(type, serviceName, objectName, object);
         for (DistributedObjectListener listener : listeners) {
             switch (type) {
                 case CREATED:

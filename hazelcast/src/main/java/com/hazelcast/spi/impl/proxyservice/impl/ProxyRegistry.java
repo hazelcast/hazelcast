@@ -26,7 +26,6 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -205,7 +204,8 @@ public final class ProxyRegistry {
         }
 
         InternalEventService eventService = proxyService.nodeEngine.getEventService();
-        ProxyEventProcessor callback = new ProxyEventProcessor(proxyService.listeners.values(), CREATED, serviceName, proxy);
+        ProxyEventProcessor callback = new ProxyEventProcessor(proxyService.listeners.values(), CREATED, serviceName,
+                name, proxy);
         eventService.executeEventCallback(callback);
         if (publishEvent) {
             publish(new DistributedObjectEventPacket(CREATED, serviceName, name));
@@ -235,7 +235,8 @@ public final class ProxyRegistry {
             return;
         }
         InternalEventService eventService = proxyService.nodeEngine.getEventService();
-        ProxyEventProcessor callback = new ProxyEventProcessor(proxyService.listeners.values(), DESTROYED, serviceName, proxy);
+        ProxyEventProcessor callback = new ProxyEventProcessor(proxyService.listeners.values(), DESTROYED, serviceName,
+                name, proxy);
         eventService.executeEventCallback(callback);
         if (publishEvent) {
             publish(new DistributedObjectEventPacket(DESTROYED, serviceName, name));
