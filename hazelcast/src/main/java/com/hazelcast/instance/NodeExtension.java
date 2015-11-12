@@ -58,7 +58,6 @@ public interface NodeExtension {
 
     /**
      * Returns true if the instance has started
-     * @return true if the instance has started
      */
     boolean isStartCompleted();
 

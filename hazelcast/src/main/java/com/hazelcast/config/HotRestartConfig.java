@@ -33,10 +33,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * sync or async etc.
  */
 public class HotRestartConfig {
-
-    /**
-     * Default hot-restart home directory
-     */
+    /** Default directory name for the Hot Restart store's home */
     public static final String HOT_RESTART_HOME_DEFAULT = "hot-restart";
 
     /**

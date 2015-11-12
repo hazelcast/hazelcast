@@ -47,6 +47,7 @@ import static java.text.MessageFormat.format;
  * Config instances can be shared between threads, but should not be modified after they are used to
  * create HazelcastInstances.
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class Config {
 
     private static final ILogger LOGGER = Logger.getLogger(Config.class);

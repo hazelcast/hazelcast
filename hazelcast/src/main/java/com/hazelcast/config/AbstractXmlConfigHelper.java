@@ -58,6 +58,7 @@ import java.util.Properties;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static java.lang.Boolean.parseBoolean;
 
 /**
  * Contains Hazelcast Xml Configuration helper methods and variables.
@@ -288,10 +289,7 @@ public abstract class AbstractXmlConfigHelper {
     }
 
     protected static boolean getBooleanValue(final String value) {
-        String lowerCaseValue = StringUtil.lowerCaseInternal(value);
-        return "true".equals(lowerCaseValue)
-                || "yes".equals(lowerCaseValue)
-                || "on".equals(lowerCaseValue);
+        return parseBoolean(StringUtil.lowerCaseInternal(value));
     }
 
     protected static int getIntegerValue(final String parameterName, final String value) {
