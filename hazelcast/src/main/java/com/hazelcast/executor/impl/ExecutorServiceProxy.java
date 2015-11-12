@@ -388,7 +388,8 @@ public class ExecutorServiceProxy
 
         NodeEngine nodeEngine = getNodeEngine();
         Data taskData = nodeEngine.toData(task);
-        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, null, taskData);
+        String uuid = newUnsecureUuidString();
+        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, taskData);
         OperationService operationService = nodeEngine.getOperationService();
         Address address = ((MemberImpl) member).getAddress();
         operationService
