@@ -387,7 +387,8 @@ public class ExecutorServiceProxy
 
         NodeEngine nodeEngine = getNodeEngine();
         Data taskData = nodeEngine.toData(task);
-        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, null, taskData);
+        String uuid = buildRandomUuidString();
+        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, taskData);
         OperationService operationService = nodeEngine.getOperationService();
         Address address = ((MemberImpl) member).getAddress();
         operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)

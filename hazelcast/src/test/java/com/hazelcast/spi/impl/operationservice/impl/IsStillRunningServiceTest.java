@@ -3,6 +3,9 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.Address;
@@ -19,14 +22,16 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -308,6 +313,61 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
             assertTrue(e.getCause() instanceof OperationTimeoutException);
         }
 
+    }
+
+    @Test
+    public void testExecutionShouldNotTimeoutIfTraceable_WithMultiCallback() throws Exception {
+        Config config = new Config();
+        long timeoutMs = 3000;
+        config.setProperty("hazelcast.operation.call.timeout.millis", String.valueOf(timeoutMs));
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+
+        CountDownLatch latch = new CountDownLatch(1);
+        Callback callback = new Callback(latch);
+
+        IExecutorService executorService = instance1.getExecutorService(randomName());
+        executorService.submitToAllMembers(new SleepingTask(), callback);
+        assertOpenEventually(latch);
+        for (Object result : callback.values.values()) {
+            if (!result.equals("Success")) {
+                fail("Non-success result: " + result);
+            }
+        }
+    }
+
+    private static class SleepingTask implements Callable<String>, Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public String call() throws Exception {
+            Thread.sleep(15000);
+            return "Success";
+        }
+
+    }
+
+    private static class Callback implements MultiExecutionCallback {
+
+        private final CountDownLatch latch;
+
+        private Map<Member, Object> values;
+
+        public Callback(CountDownLatch latch) {
+            this.latch = latch;
+        }
+
+        @Override
+        public void onResponse(Member member, Object value) {
+        }
+
+        @Override
+        public void onComplete(Map<Member, Object> values) {
+            this.values = values;
+            latch.countDown();
+        }
     }
 
     public static class DummyOperation extends AbstractOperation {
