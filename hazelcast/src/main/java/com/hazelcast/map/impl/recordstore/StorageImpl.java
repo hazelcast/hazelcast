@@ -115,9 +115,9 @@ class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public Object removeRecord(R record) {
+    public void removeRecord(R record) {
         if (record == null) {
-            return null;
+            return;
         }
 
         Data key = record.getKey();
@@ -125,10 +125,7 @@ class StorageImpl<R extends Record> implements Storage<Data, R> {
 
         updateSizeEstimator(-calculateHeapCost(record));
         updateSizeEstimator(-calculateHeapCost(key));
-
-        Object oldValue = record.getValue();
         record.invalidate();
-        return oldValue;
     }
 
     protected void updateSizeEstimator(long recordSize) {

@@ -35,7 +35,7 @@ public interface Storage<K, R> {
 
     R get(K key);
 
-    Object removeRecord(R record);
+    void removeRecord(R record);
 
     boolean containsKey(K key);
 
