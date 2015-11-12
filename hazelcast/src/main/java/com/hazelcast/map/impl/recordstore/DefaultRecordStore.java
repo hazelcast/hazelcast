@@ -40,7 +40,7 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
-import java.util.AbstractMap;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -359,20 +359,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             tempMap.put(key, value);
         }
         return tempMap.entrySet();
-    }
-
-    @Override
-    public Map.Entry<Data, Object> getMapEntry(Data key, long now) {
-        checkIfLoaded();
-
-        Record record = getRecordOrNull(key, now, false);
-        if (record == null) {
-            record = loadRecordOrNull(key, false);
-        } else {
-            accessRecord(record);
-        }
-        final Object value = record != null ? record.getValue() : null;
-        return new AbstractMap.SimpleImmutableEntry<Data, Object>(key, value);
     }
 
     protected Record loadRecordOrNull(Data key, boolean backup) {

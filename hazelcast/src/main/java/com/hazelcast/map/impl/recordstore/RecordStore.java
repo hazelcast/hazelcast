@@ -220,8 +220,6 @@ public interface RecordStore<R extends Record> {
 
     Set<Map.Entry<Data, Data>> entrySetData();
 
-    Map.Entry<Data, Object> getMapEntry(Data dataKey, long now);
-
     void flush();
 
     void clearPartition();

@@ -48,7 +48,7 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOpe
             if (keyNotOwnedByThisPartition(dataKey)) {
                 continue;
             }
-            final Object oldValue = getValueFor(dataKey, now);
+            final Object oldValue = recordStore.get(dataKey, true);
 
             final Map.Entry entry = createMapEntry(dataKey, oldValue);
 

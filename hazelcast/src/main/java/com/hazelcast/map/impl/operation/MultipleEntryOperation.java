@@ -59,7 +59,7 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
             if (keyNotOwnedByThisPartition(dataKey)) {
                 continue;
             }
-            final Object oldValue = getValueFor(dataKey, now);
+            final Object oldValue = recordStore.get(dataKey, false);
 
             final Map.Entry entry = createMapEntry(dataKey, oldValue);
 
