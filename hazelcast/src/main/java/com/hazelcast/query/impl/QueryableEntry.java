@@ -21,8 +21,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.query.extractor.Arguments;
-import com.hazelcast.query.extractor.ValueExtractor;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.query.impl.getters.ReflectionHelper;
 

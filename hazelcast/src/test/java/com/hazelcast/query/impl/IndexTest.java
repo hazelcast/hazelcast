@@ -35,6 +35,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.query.QueryConstants;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.getters.ReflectionHelper;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
