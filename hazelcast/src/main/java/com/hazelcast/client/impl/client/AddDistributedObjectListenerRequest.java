@@ -76,7 +76,7 @@ public class AddDistributedObjectListenerRequest extends BaseClientAddListenerRe
         }
 
         PortableDistributedObjectEvent portableEvent = new PortableDistributedObjectEvent(
-                event.getEventType(), event.getDistributedObject().getName(), event.getServiceName());
+                event.getEventType(), (String) event.getObjectName(), event.getServiceName());
         endpoint.sendEvent(null, portableEvent, getCallId());
     }
 
