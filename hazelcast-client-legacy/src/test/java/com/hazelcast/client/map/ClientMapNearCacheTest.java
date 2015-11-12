@@ -24,12 +24,9 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.listener.EntryExpiredListener;
-import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -47,6 +44,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
+import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -74,14 +72,16 @@ public class ClientMapNearCacheTest {
     private static final String NEAR_CACHE_NONE_WITH_MAX_SIZE = "NEAR_CACHE_NONE_WITH_MAX_SIZE";
 
     private static final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     private static HazelcastInstance server;
     private static HazelcastInstance client;
-    private static ClientConfig clientConfig = new ClientConfig();
 
     @BeforeClass
     public static void setup() throws Exception {
         server = hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
 
         NearCacheConfig basicConfigNoInvalidation = new NearCacheConfig();
         basicConfigNoInvalidation.setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -106,7 +106,6 @@ public class ClientMapNearCacheTest {
         idleConfig.setInvalidateOnChange(false);
         idleConfig.setMaxIdleSeconds(MAX_IDLE_SECONDS);
         clientConfig.addNearCacheConfig(idleConfig);
-
 
         NearCacheConfig longIdleConfig = new NearCacheConfig();
         idleConfig.setName(NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME + "*");
@@ -133,7 +132,6 @@ public class ClientMapNearCacheTest {
         lruMaxSizeConfig.setEvictionPolicy("LRU");
         clientConfig.addNearCacheConfig(lruMaxSizeConfig);
 
-
         NearCacheConfig randomMaxSizeConfig = new NearCacheConfig();
         randomMaxSizeConfig.setName(NEAR_CACHE_RANDOM_WITH_MAX_SIZE + "*");
         randomMaxSizeConfig.setInvalidateOnChange(true);
@@ -158,52 +156,50 @@ public class ClientMapNearCacheTest {
 
     @Test
     public void testGetAllChecksNearCacheFirst() throws Exception {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
-        final HashSet keys = new HashSet();
+        IMap<Integer, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
+        HashSet<Integer> keys = new HashSet<Integer>();
 
-        final int size = 1003;
+        int size = 1003;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
             keys.add(i);
         }
-        //populate near cache
+        // populate near cache
         for (int i = 0; i < size; i++) {
             map.get(i);
         }
-        //getAll generates the near cache hits
+        // getAll() generates the near cache hits
         map.getAll(keys);
 
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertEquals(size, stats.getOwnedEntryCount());
         assertEquals(size, stats.getHits());
-
     }
 
     @Test
     public void testGetAllPopulatesNearCache() throws Exception {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
-        final HashSet keys = new HashSet();
+        IMap<Integer, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
+        HashSet<Integer> keys = new HashSet<Integer>();
 
-        final int size = 1214;
+        int size = 1214;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
             keys.add(i);
         }
-        //getAll populates near cache
+        // getAll() populates near cache
         map.getAll(keys);
 
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-        assertEquals(size, stats.getOwnedEntryCount());
+        assertThatOwnedEntryCountEquals(map, size);
     }
 
     @Test
     public void testGetAsync() throws Exception {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
+        IMap<Integer, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
 
         int size = 1009;
         populateNearCache(map, size);
 
-        //generate near cache hits with async call
+        // generate near cache hits with async call
         for (int i = 0; i < size; i++) {
             Future async = map.getAsync(i);
             async.get();
@@ -215,28 +211,28 @@ public class ClientMapNearCacheTest {
 
     @Test
     public void testGetAsyncPopulatesNearCache() throws Exception {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
+        IMap<Integer, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
 
         int size = 1239;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
-        //populate near cache
+        // populate near cache
         for (int i = 0; i < size; i++) {
             Future async = map.getAsync(i);
             async.get();
         }
-        //generate near cache hits
+        // generate near cache hits
         for (int i = 0; i < size; i++) {
             map.get(i);
         }
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-        assertEquals(size, stats.getOwnedEntryCount());
+
+        assertThatOwnedEntryCountEquals(map, size);
     }
 
     @Test
     public void testRemovedKeyValueNotInNearCache() throws Exception {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
+        IMap<Integer, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
 
         int size = 1247;
         populateNearCache(map, size);
@@ -249,13 +245,14 @@ public class ClientMapNearCacheTest {
 
     @Test
     public void testNearCachePopulatedAndHitsGenerated() throws Exception {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
+        IMap<Integer, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
 
-        final int size = 1278;
+        int size = 1278;
+        populateNearCache(map, size);
+
         for (int i = 0; i < size; i++) {
-            map.put(i, i);
-            map.get(i);  //populate near cache
-            map.get(i);  //generate near cache hits
+            // generate near cache hits
+            map.get(i);
         }
 
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
@@ -265,14 +262,16 @@ public class ClientMapNearCacheTest {
     }
 
     @Test
-    public void testNearCachePopulatedAndHitsGenerated2() throws Exception {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
+    public void testNearCachePopulatedAndHitsGenerated_withInterleavedCacheHitGeneration() throws Exception {
+        IMap<Integer, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
 
-        final int size = 1278;
-        populateNearCache(map, size);
-
+        int size = 1278;
         for (int i = 0; i < size; i++) {
-            map.get(i);  //generate near cache hits
+            map.put(i, i);
+            // populate near cache
+            map.get(i);
+            // generate near cache hits
+            map.get(i);
         }
 
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
@@ -283,54 +282,58 @@ public class ClientMapNearCacheTest {
 
     @Test
     public void testIssue2009() throws Exception {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
+        IMap<Integer, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
+
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertNotNull(stats);
     }
 
     @Test
     public void testGetNearCacheStatsBeforePopulation() {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
-        final int size = 101;
+        IMap<Integer, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
+
+        int size = 101;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
-        final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertNotNull(stats);
     }
 
     @Test
     public void testNearCacheMisses() {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
+        IMap<String, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
 
-        final int size = 1321;
-        for (int i = 0; i < size; i++) {
-            map.get("NotThere" + i);
+        int expectedCacheMisses = 1321;
+        for (int i = 0; i < expectedCacheMisses; i++) {
+            map.get("NOT_THERE" + i);
         }
+
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-        assertEquals(size, stats.getMisses());
-        assertEquals(size, stats.getOwnedEntryCount());
+        assertEquals(expectedCacheMisses, stats.getMisses());
+        assertEquals(expectedCacheMisses, stats.getOwnedEntryCount());
     }
 
     @Test
     public void testNearCacheMisses_whenRepeatedOnSameKey() {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
+        IMap<String, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
 
-        final int size = 17;
-        for (int i = 0; i < size; i++) {
+        int expectedCacheMisses = 17;
+        for (int i = 0; i < expectedCacheMisses; i++) {
             map.get("NOT_THERE");
         }
 
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertEquals(1, stats.getOwnedEntryCount());
-        assertEquals(size, stats.getMisses());
+        assertEquals(expectedCacheMisses, stats.getMisses());
     }
 
     @Test
     public void testMapRemove_WithNearCache() {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
+        IMap<Integer, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
 
-        final int size = 1113;
+        int size = 1113;
         populateNearCache(map, size);
 
         for (int i = 0; i < size; i++) {
@@ -338,56 +341,32 @@ public class ClientMapNearCacheTest {
         }
 
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-        assertEquals(size, stats.getMisses());
         assertEquals(0, stats.getOwnedEntryCount());
+        assertEquals(size, stats.getMisses());
     }
 
     @Test
     public void testNearCacheMaxSize() {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_MAX_SIZE));
+        final IMap<Integer, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_MAX_SIZE));
 
         populateNearCache(map, MAX_CACHE_SIZE + 1);
 
-        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+        assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-                assertTrue(MAX_CACHE_SIZE > stats.getOwnedEntryCount());
-            }
-        });
-    }
-
-    @Test
-    public void testNearCacheTTLCleanup() {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_TTL));
-
-        final int size = 100;
-        populateNearCache(map, size);
-
-        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-        assertEquals(size, stats.getOwnedEntryCount());
-
-        sleepSeconds(MAX_TTL_SECONDS + 1);
-        // map.put() and map.get() triggers near cache eviction/expiration process
-        map.put(0, 0);
-
-        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
-            public void run() throws Exception {
-                NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-                long ownedEntryCount = stats.getOwnedEntryCount();
-                assertTrue(ownedEntryCount < size);
+                assertThatOwnedEntryCountIsSmallerThan(map, MAX_CACHE_SIZE);
             }
         });
     }
 
     @Test
     public void testNearCacheIdleRecordsEvicted() {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_IDLE));
+        IMap<Integer, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_IDLE));
 
-        final int size = 147;
+        int size = 147;
         populateNearCache(map, size);
 
-        //generate near cache hits
+        // generate near cache hits
         for (int i = 0; i < size; i++) {
             map.get(i);
         }
@@ -402,81 +381,78 @@ public class ClientMapNearCacheTest {
         }
         stats = map.getLocalMapStats().getNearCacheStats();
 
-        assertEquals("as the hits are not equal, the entries were not cleared from near cash after MaxIdleSeconds", hitsBeforeIdleExpire, stats.getHits(), size);
+        assertEquals("as the hits are not equal, the entries were not cleared from near cash after MAX_IDLE_SECONDS",
+                hitsBeforeIdleExpire, stats.getHits(), size);
     }
 
     @Test
     public void testNearCacheInvalidateOnChange() {
-        final String mapName = randomMapName(NEAR_CACHE_WITH_INVALIDATION);
-        final IMap nodeMap = server.getMap(mapName);
-        final IMap clientMap = client.getMap(mapName);
+        String mapName = randomMapName(NEAR_CACHE_WITH_INVALIDATION);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        final IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
-        final int size = 118;
+        int size = 118;
         for (int i = 0; i < size; i++) {
-            nodeMap.put(i, i);
+            serverMap.put(i, i);
         }
-        //populate near cache
+        // populate near cache
         for (int i = 0; i < size; i++) {
             clientMap.get(i);
         }
 
-        NearCacheStats stats = clientMap.getLocalMapStats().getNearCacheStats();
-        long OwnedEntryCountBeforeInvalidate = stats.getOwnedEntryCount();
+        assertThatOwnedEntryCountEquals(clientMap, size);
 
-        //invalidate near cache from cluster
+        // invalidate near cache from server side
         for (int i = 0; i < size; i++) {
-            nodeMap.put(i, i);
+            serverMap.put(i, i);
         }
-
-        assertEquals(size, OwnedEntryCountBeforeInvalidate);
 
         assertTrueEventually(new AssertTask() {
             public void run() throws Exception {
-                NearCacheStats stats = clientMap.getLocalMapStats().getNearCacheStats();
-                assertEquals(0, stats.getOwnedEntryCount());
+                assertThatOwnedEntryCountEquals(clientMap, 0);
             }
         });
     }
 
     @Test(expected = NullPointerException.class)
     public void testNearCacheContainsNullKey() {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
+        IMap<Integer, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
         map.containsKey(null);
     }
 
     @Test
     public void testNearCacheContainsKey() {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
-        final Object key = "key";
+        IMap<String, String> map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
+        String key = "key";
 
         map.put(key, "value");
         map.get(key);
 
-        assertTrue(map.containsKey(key));
+        assertTrue(format("map doesn't contain expected key %s (map size: %d)", key, map.size()), map.containsKey(key));
     }
 
     @Test
     public void testNearCacheContainsKey_whenKeyAbsent() {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
+        IMap<String, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
 
-        assertFalse(map.containsKey("NOT_THERE"));
+        assertFalse(format("map contains unexpected key NOT_THERE (map size: %d)", map.size()), map.containsKey("NOT_THERE"));
     }
 
     @Test
     public void testNearCacheContainsKey_afterRemove() {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
-        final Object key = "key";
+        IMap<String, String> map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
+        String key = "key";
 
         map.put(key, "value");
         map.get(key);
         map.remove(key);
 
-        assertFalse(map.containsKey(key));
+        assertFalse(format("map contains unexpected key %s (map size: %d)", key, map.size()), map.containsKey(key));
     }
 
     @Test
     public void testNearCache_clearFromRemote() {
-        final String mapName = randomMapName(NEAR_CACHE_WITH_INVALIDATION);
+        String mapName = randomMapName(NEAR_CACHE_WITH_INVALIDATION);
         final IMap<Integer, Integer> map = client.getMap(mapName);
 
         final int size = 147;
@@ -484,7 +460,7 @@ public class ClientMapNearCacheTest {
 
         server.getMap(mapName).clear();
 
-        //near cache should be empty
+        // near cache should be empty
         assertTrueEventually(new AssertTask() {
             public void run() throws Exception {
                 for (int i = 0; i < size; i++) {
@@ -496,168 +472,206 @@ public class ClientMapNearCacheTest {
 
     @Test
     public void testNearCache_clearFromClient() {
-        final String mapName = randomMapName(NEAR_CACHE_WITH_INVALIDATION);
-        final IMap<Integer, Integer> map = client.getMap(mapName);
+        String mapName = randomMapName(NEAR_CACHE_WITH_INVALIDATION);
+        IMap<Integer, Integer> map = client.getMap(mapName);
 
-        final int size = 147;
+        int size = 147;
         populateNearCache(map, size);
 
         map.clear();
 
-        //near cache should be empty
+        // near cache should be empty
         for (int i = 0; i < size; i++) {
             assertNull(map.get(i));
         }
     }
 
-
-    @Test
-    @Category(NightlyTest.class)
-    public void testServerMapExpiration_doesNotInvalidateClientNearCache() throws Exception {
-        String mapName = randomMapName(NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME);
-        IMap serverMap = server.getMap(mapName);
-        serverMap.put(1, 1, 6, TimeUnit.SECONDS);
-
-        final CountDownLatch expiredEventLatch = new CountDownLatch(1);
-        serverMap.addEntryListener(new EntryExpiredListener() {
-            @Override
-            public void entryExpired(EntryEvent event) {
-                expiredEventLatch.countDown();
-            }
-        }, false);
-
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-        final IMap clientMap = client.getMap(mapName);
-
-        // get operation puts entry into client near cache.
-        clientMap.get(1);
-
-        // wait expiration of entry in server-side.
-        assertOpenEventually(expiredEventLatch);
-
-        // wait some extra seconds to ensure that client-side doesn't receive any EXPIRED event.
-        // normally,  we don't expect any event-arrival.
-        sleepSeconds(2);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                LocalMapStats localMapStats = clientMap.getLocalMapStats();
-                NearCacheStats stats = localMapStats.getNearCacheStats();
-                assertEquals(1, stats.getOwnedEntryCount());
-            }
-        });
-    }
-
     @Test
     public void testNearCacheInvalidationWithLFU() throws Exception {
-        final String mapName = randomMapName(NEAR_CACHE_LFU_WITH_MAX_SIZE);
-        final IMap map = client.getMap(mapName);
+        String mapName = randomMapName(NEAR_CACHE_LFU_WITH_MAX_SIZE);
+        final IMap<Integer, Integer> map = client.getMap(mapName);
 
         int mapSize = MAX_CACHE_SIZE * 2;
-
         populateNearCache(map, mapSize);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-                long ownedEntryCount = stats.getOwnedEntryCount();
                 triggerEviction(map);
-                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
+                assertThatOwnedEntryCountIsSmallerThan(map, MAX_CACHE_SIZE);
             }
         });
     }
 
     @Test
     public void testNearCacheInvalidation_WithLFU_whenMaxSizeExceeded() throws Exception {
-        final String mapName = randomMapName(NEAR_CACHE_LFU_WITH_MAX_SIZE);
-        final IMap map = client.getMap(mapName);
+        String mapName = randomMapName(NEAR_CACHE_LFU_WITH_MAX_SIZE);
+        final IMap<Integer, Integer> map = client.getMap(mapName);
 
         int mapSize = MAX_CACHE_SIZE * 2;
-
         populateNearCache(map, mapSize);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-                long ownedEntryCount = stats.getOwnedEntryCount();
                 triggerEviction(map);
-                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
+                assertThatOwnedEntryCountIsSmallerThan(map, MAX_CACHE_SIZE);
             }
         });
     }
 
     @Test
     public void testNearCacheInvalidation_WithLRU_whenMaxSizeExceeded() throws Exception {
-        final String mapName = randomMapName(NEAR_CACHE_LRU_WITH_MAX_SIZE);
-        final IMap map = client.getMap(mapName);
+        String mapName = randomMapName(NEAR_CACHE_LRU_WITH_MAX_SIZE);
+        final IMap<Integer, Integer> map = client.getMap(mapName);
 
         int mapSize = MAX_CACHE_SIZE * 2;
-
         populateNearCache(map, mapSize);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-                long ownedEntryCount = stats.getOwnedEntryCount();
                 triggerEviction(map);
-                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
+                assertThatOwnedEntryCountIsSmallerThan(map, MAX_CACHE_SIZE);
             }
         });
     }
 
     @Test
     public void testNearCacheInvalidation_WithRandom_whenMaxSizeExceeded() throws Exception {
-        final String mapName = randomMapName(NEAR_CACHE_RANDOM_WITH_MAX_SIZE);
-        final IMap map = client.getMap(mapName);
+        String mapName = randomMapName(NEAR_CACHE_RANDOM_WITH_MAX_SIZE);
+        final IMap<Integer, Integer> map = client.getMap(mapName);
 
         int mapSize = MAX_CACHE_SIZE * 2;
-
         populateNearCache(map, mapSize);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-                long ownedEntryCount = stats.getOwnedEntryCount();
                 triggerEviction(map);
-                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
+                assertThatOwnedEntryCountIsSmallerThan(map, MAX_CACHE_SIZE);
             }
         });
     }
 
     @Test
     public void testNearCacheInvalidation_WithNone_whenMaxSizeExceeded() throws Exception {
-        final String mapName = randomMapName(NEAR_CACHE_NONE_WITH_MAX_SIZE);
-        final IMap map = client.getMap(mapName);
+        String mapName = randomMapName(NEAR_CACHE_NONE_WITH_MAX_SIZE);
+        final IMap<Integer, Integer> map = client.getMap(mapName);
 
-        final int mapSize = MAX_CACHE_SIZE * 2;
-
+        int mapSize = MAX_CACHE_SIZE * 2;
         populateNearCache(map, mapSize);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-                assertEquals(MAX_CACHE_SIZE, stats.getOwnedEntryCount());
+                assertThatOwnedEntryCountEquals(map, MAX_CACHE_SIZE);
             }
         });
     }
 
-    private void triggerEviction(IMap map) {
-        populateNearCache(map, 1);
+    @Test
+    public void testNearCacheTTLCleanup_triggeredViaPut() {
+        final IMap<Integer, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_TTL));
+
+        final int size = 100;
+        populateNearCache(map, size);
+
+        assertThatOwnedEntryCountEquals(map, size);
+
+        sleepSeconds(MAX_TTL_SECONDS + 1);
+
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                // map.put() triggers near cache eviction/expiration process, but we need to call this on every assert,
+                // since the near cache has a cooldown for TTL cleanups, which may not be over after populateNearCache()
+                map.put(0, 0);
+
+                assertThatOwnedEntryCountIsSmallerThan(map, size);
+            }
+        });
     }
 
-    private void populateNearCache(IMap map, int size) {
+    @Test
+    public void testNearCacheTTLCleanup_triggeredViaGet() {
+        final IMap<Integer, Integer> map = client.getMap(randomMapName(NEAR_CACHE_WITH_TTL));
+
+        final int size = 100;
+        populateNearCache(map, size);
+
+        assertThatOwnedEntryCountEquals(map, size);
+
+        sleepSeconds(MAX_TTL_SECONDS + 1);
+
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                // map.get() triggers near cache eviction/expiration process, but we need to call this on every assert,
+                // since the near cache has a cooldown for TTL cleanups, which may not be over after populateNearCache()
+                map.get(0);
+
+                assertThatOwnedEntryCountIsSmallerThan(map, size);
+            }
+        });
+    }
+
+    @Test
+    public void testServerMapExpiration_doesNotInvalidateClientNearCache() throws Exception {
+        String mapName = randomMapName(NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        IMap<Integer, Integer> clientMap = client.getMap(mapName);
+
+        final CountDownLatch expiredEventLatch = new CountDownLatch(2);
+        EntryExpiredListener listener = new EntryExpiredListener() {
+            @Override
+            public void entryExpired(EntryEvent event) {
+                expiredEventLatch.countDown();
+            }
+        };
+
+        serverMap.addEntryListener(listener, false);
+        clientMap.addEntryListener(listener, false);
+
+        // put entry with TTL into server map
+        serverMap.put(1, 23, 3, TimeUnit.SECONDS);
+
+        // get() operation puts entry into client near cache
+        clientMap.get(1);
+        assertThatOwnedEntryCountEquals(clientMap, 1);
+
+        // wait for expiration of entry on server side
+        assertOpenEventually(expiredEventLatch);
+
+        // assert that the entry is still in the client near cache
+        assertThatOwnedEntryCountEquals(clientMap, 1);
+    }
+
+    private void populateNearCache(IMap<Integer, Integer> map, int size) {
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
-        //populate near cache
+        // populate near cache
         for (int i = 0; i < size; i++) {
             map.get(i);
         }
+    }
+
+    private void assertThatOwnedEntryCountEquals(IMap<Integer, Integer> clientMap, long expected) {
+        long ownedEntryCount = getOwnedEntryCount(clientMap);
+        assertEquals(expected, ownedEntryCount);
+    }
+
+    private void assertThatOwnedEntryCountIsSmallerThan(IMap<Integer, Integer> clientMap, long expected) {
+        long ownedEntryCount = getOwnedEntryCount(clientMap);
+        assertTrue(format("ownedEntryCount should be smaller than %d, but was %d", expected, ownedEntryCount),
+                ownedEntryCount < expected);
+    }
+
+    private long getOwnedEntryCount(IMap<Integer, Integer> map) {
+        NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        return stats.getOwnedEntryCount();
+    }
+
+    private void triggerEviction(IMap<Integer, Integer> map) {
+        populateNearCache(map, 1);
     }
 }
