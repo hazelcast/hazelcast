@@ -37,12 +37,12 @@ public class Extractors {
     // that contains an argument in square brackets.
     private final Map<String, ValueExtractor> extractors;
     //TODO: Eviction
-    private final Map<String, ExtractorWrapper> extractorWrapperMap;
+    private final Map<String, Getter> getterMap;
     private final ExtractorsContext context;
 
     public Extractors(List<MapAttributeConfig> mapAttributeConfigs) {
         extractors = new HashMap<String, ValueExtractor>();
-        extractorWrapperMap = new ConcurrentHashMap<String, ExtractorWrapper>();
+        getterMap = new ConcurrentHashMap<String, Getter>();
         context = new ExtractorsContext();
         for (MapAttributeConfig config : mapAttributeConfigs) {
             if (extractors.containsKey(config.getName())) {
@@ -72,21 +72,21 @@ public class Extractors {
     }
 
     public Object extract(Object targetObject, String attributeName) {
-        ExtractorWrapper extractorWrapper = extractorWrapperMap.get(attributeName);
+        Getter extractorWrapper = getterMap.get(attributeName);
         if (extractorWrapper != null) {
             return extractorWrapper.extract(targetObject);
         }
-        //TODO: This is inefficient. Most attributes probably do not have custom extractor defined yet we are always
-        //      Doing a lookup.
-        //      Somehow we should unified cache for custom extractors and reflection-based extractors
+
         String attributeNameWithoutArguments = context.getAttributeNameWithoutArguments(attributeName);
         ValueExtractor valueExtractor = extractors.get(attributeNameWithoutArguments);
         if (valueExtractor == null) {
-            return extractViaReflection(attributeName, targetObject);
+            ReflectionGetter reflectionGetter = new ReflectionGetter(attributeName);
+            getterMap.put(attributeName, reflectionGetter);
+            return reflectionGetter.extract(targetObject);
         }
-        Arguments arguments1 = context.getArguments(attributeName);
-        ExtractorWrapper wrapper = new ExtractorWrapper(valueExtractor, arguments1);
-        extractorWrapperMap.put(attributeName, wrapper);
+        Arguments arguments = context.getArguments(attributeName);
+        ExtractorGetter wrapper = new ExtractorGetter(valueExtractor, arguments);
+        getterMap.put(attributeName, wrapper);
         return wrapper.extract(targetObject);
     }
 
@@ -116,16 +116,33 @@ public class Extractors {
     }
 
     //TODO: Silly name
-    private final static class ExtractorWrapper<T, K> {
+    private interface Getter<T> {
+        Object extract(T targetObject);
+    }
+
+    private final static class ReflectionGetter<T> implements Getter<T> {
+        private final String attributeName;
+
+        private ReflectionGetter(String attributeName) {
+            this.attributeName = attributeName;
+        }
+
+        @Override
+        public Object extract(T targetObject) {
+            return extractViaReflection(attributeName, targetObject);
+        }
+    }
+
+    private final static class ExtractorGetter<T, K> implements Getter<T>{
         private final ValueExtractor<T, K> extractor;
         private final Arguments<K> arguments;
 
-        private ExtractorWrapper(ValueExtractor<T, K> extractor, Arguments<K> arguments) {
+        private ExtractorGetter(ValueExtractor<T, K> extractor, Arguments<K> arguments) {
             this.extractor = extractor;
             this.arguments = arguments;
         }
 
-        private Object extract(T targetObject) {
+        public Object extract(T targetObject) {
             // This part will be improved in 3.7 to avoid extra allocation
             DefaultValueCollector collector = new DefaultValueCollector();
             extractor.extract(targetObject, arguments, collector);
