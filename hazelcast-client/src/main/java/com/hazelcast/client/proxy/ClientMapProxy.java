@@ -985,8 +985,10 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         for (final Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
             int partitionId = entry.getKey();
             List<Data> keyList = entry.getValue();
-            ClientMessage request = MapGetAllCodec.encodeRequest(name, keyList);
-            futures.add(new ClientInvocation(getClient(), request, partitionId).invoke());
+            if (!keyList.isEmpty()) {
+                ClientMessage request = MapGetAllCodec.encodeRequest(name, keyList);
+                futures.add(new ClientInvocation(getClient(), request, partitionId).invoke());
+            }
         }
 
         for (Future<ClientMessage> future : futures) {

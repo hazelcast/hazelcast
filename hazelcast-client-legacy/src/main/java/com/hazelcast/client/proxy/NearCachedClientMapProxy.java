@@ -239,7 +239,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected List<MapEntries> getAllInternal(Map<Integer, List<Data>> partitionToKeyData, Map<K, V> result) {
-        List<Integer> partitionsWithCachedEntries = new ArrayList<Integer>(partitionToKeyData.size());
         for (Entry<Integer, List<Data>> partitionKeyEntry : partitionToKeyData.entrySet()) {
             List<Data> keyList = partitionKeyEntry.getValue();
             Iterator<Data> iterator = keyList.iterator();
@@ -251,13 +250,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
                     iterator.remove();
                 }
             }
-            if (keyList.isEmpty()) {
-                partitionsWithCachedEntries.add(partitionKeyEntry.getKey());
-            }
-        }
-
-        for (Integer partitionId : partitionsWithCachedEntries) {
-            partitionToKeyData.remove(partitionId);
         }
 
         List<MapEntries> responses = super.getAllInternal(partitionToKeyData, result);
