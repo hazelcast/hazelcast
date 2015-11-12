@@ -72,7 +72,7 @@ public class DistributedObjectListenerRequest extends CallableClientRequest impl
     private void send(DistributedObjectEvent event) {
         if (endpoint.isAlive()) {
             PortableDistributedObjectEvent portableEvent = new PortableDistributedObjectEvent(
-                    event.getEventType(), event.getDistributedObject().getName(), event.getServiceName());
+                    event.getEventType(), (String) event.getObjectId(), event.getServiceName());
             endpoint.sendEvent(null, portableEvent, getCallId());
         }
     }
