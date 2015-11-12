@@ -134,6 +134,7 @@ public class NodeEngineImpl implements NodeEngine {
     public void start() {
         serviceManager.start();
         proxyService.init();
+        operationService.start();
     }
 
     @Override

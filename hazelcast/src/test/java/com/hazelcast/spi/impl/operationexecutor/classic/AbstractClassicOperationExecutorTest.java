@@ -86,6 +86,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
         executor = new ClassicOperationExecutor(
                 groupProperties, loggingService, thisAddress, handlerFactory,
                 threadGroup, nodeExtension, metricsRegistry);
+        executor.start();
         return executor;
     }
 
