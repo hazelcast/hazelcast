@@ -22,6 +22,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
@@ -209,6 +210,7 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
         }, 2);
     }
 
+    @Category(SlowTest.class)
     @Test
     public void testTimeoutInvocationIfRemoteInvocationIsCompleted() throws Exception {
         int callTimeoutMillis = 500;
