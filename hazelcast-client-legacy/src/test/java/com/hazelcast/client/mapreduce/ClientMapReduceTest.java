@@ -78,7 +78,7 @@ public class ClientMapReduceTest
         }
 
         JobTracker tracker = client.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new ExceptionThrowingMapper()).submit();
 
         try {
@@ -111,7 +111,7 @@ public class ClientMapReduceTest
         }
 
         JobTracker tracker = client.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new TimeConsumingMapper()).submit();
 
         future.cancel(true);
@@ -145,7 +145,7 @@ public class ClientMapReduceTest
         }
 
         JobTracker tracker = client.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new TestMapper()).submit();
 
         Map<String, List<Integer>> result = future.get();
@@ -175,7 +175,7 @@ public class ClientMapReduceTest
         }
 
         JobTracker tracker = client.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper()).reducer(new TestReducerFactory())
                 .submit();
 
@@ -212,7 +212,7 @@ public class ClientMapReduceTest
         }
 
         JobTracker tracker = client.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).submit(new GroupingTestCollator());
 
         int result = future.get();
@@ -243,7 +243,7 @@ public class ClientMapReduceTest
         }
 
         JobTracker tracker = client.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Integer> future = job.onKeys(50).mapper(new TestMapper()).submit(new GroupingTestCollator());
 
         int result = future.get();
@@ -270,7 +270,7 @@ public class ClientMapReduceTest
         }
 
         JobTracker tracker = client.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Integer> future = job.keyPredicate(new TestKeyPredicate()).mapper(new TestMapper())
                 .submit(new GroupingTestCollator());
 
@@ -298,7 +298,7 @@ public class ClientMapReduceTest
         }
 
         JobTracker tracker = client.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).reducer(new TestReducerFactory())
                 .submit(new TestCollator());
 
@@ -338,7 +338,7 @@ public class ClientMapReduceTest
         semaphore.acquire();
 
         JobTracker tracker = client.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new TestMapper()).submit();
 
         future.andThen(new ExecutionCallback<Map<String, List<Integer>>>() {
@@ -385,7 +385,7 @@ public class ClientMapReduceTest
         semaphore.acquire();
 
         JobTracker tracker = client.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Map<String, List<Integer>>> future = job.onKeys(50).mapper(new TestMapper()).submit();
 
         future.andThen(new ExecutionCallback<Map<String, List<Integer>>>() {
@@ -432,7 +432,7 @@ public class ClientMapReduceTest
         semaphore.acquire();
 
         JobTracker tracker = client.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper()).reducer(new TestReducerFactory())
                 .submit();
 
@@ -486,7 +486,7 @@ public class ClientMapReduceTest
         semaphore.acquire();
 
         JobTracker tracker = client.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper())//
                 .submit(new GroupingTestCollator());
 
@@ -539,7 +539,7 @@ public class ClientMapReduceTest
         semaphore.acquire();
 
         JobTracker tracker = client.getJobTracker("default");
-        Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).reducer(new TestReducerFactory())
                 .submit(new TestCollator());
 
@@ -567,6 +567,10 @@ public class ClientMapReduceTest
         for (int i = 0; i < 4; i++) {
             assertEquals(expectedResult, result[0]);
         }
+    }
+
+    static KeyValueSource<Integer, Integer> integerKvSource(IMap<Integer, Integer> m) {
+        return KeyValueSource.fromMap(m);
     }
 
     public static class ExceptionThrowingMapper
