@@ -64,7 +64,8 @@ public final class MemberCodec {
     public static int calculateDataSize(Member member) {
         int dataSize = AddressCodec.calculateDataSize(member.getAddress());
         dataSize += ParameterUtil.calculateDataSize(member.getUuid());
-        dataSize += Bits.INT_SIZE_IN_BYTES;
+        dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;  // isLiteMember field
+        dataSize += Bits.INT_SIZE_IN_BYTES;      // number of attributes field
         Map<String, Object> attributes = member.getAttributes();
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
             dataSize += ParameterUtil.calculateDataSize(entry.getKey());
