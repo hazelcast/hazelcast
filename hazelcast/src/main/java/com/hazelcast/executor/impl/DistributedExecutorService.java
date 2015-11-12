@@ -136,6 +136,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     public void destroyDistributedObject(String name) {
         shutdownExecutors.remove(name);
         executionService.shutdownExecutor(name);
+        statsMap.remove(name);
     }
 
     LocalExecutorStatsImpl getLocalExecutorStats(String name) {
