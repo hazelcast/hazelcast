@@ -262,8 +262,8 @@ public class DefaultSerializationServiceBuilder
             case 1:
                 SerializationServiceV1 serializationServiceV1 = new SerializationServiceV1(inputOutputFactory, version,
                         portableVersion, classLoader, dataSerializableFactories, portableFactories, managedContext,
-                        partitioningStrategy, initialOutputBufferSize, new BufferPoolFactoryImpl());
-                serializationServiceV1.registerJavaTypeSerializers(enableCompression, enableSharedObject);
+                        partitioningStrategy, initialOutputBufferSize, new BufferPoolFactoryImpl(), enableCompression,
+                        enableSharedObject);
                 serializationServiceV1.registerClassDefinitions(classDefinitions, checkClassDefErrors);
                 return serializationServiceV1;
 

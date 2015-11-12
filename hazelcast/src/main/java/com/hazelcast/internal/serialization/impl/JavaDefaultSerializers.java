@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -35,14 +34,13 @@ import java.util.Date;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import static com.hazelcast.nio.IOUtil.newObjectInputStream;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_BIG_DECIMAL;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_BIG_INTEGER;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_CLASS;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_DATE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_ENUM;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE;
+import static com.hazelcast.nio.IOUtil.newObjectInputStream;
 
 
 public final class JavaDefaultSerializers {
@@ -131,60 +129,6 @@ public final class JavaDefaultSerializers {
         @Override
         public void write(final ObjectDataOutput out, final Class obj) throws IOException {
             out.writeUTF(obj.getName());
-        }
-    }
-
-    public static final class ExternalizableSerializer extends SingletonSerializer<Externalizable> {
-
-        private final boolean gzipEnabled;
-
-        public ExternalizableSerializer(boolean gzipEnabled) {
-            this.gzipEnabled = gzipEnabled;
-        }
-
-        @Override
-        public int getTypeId() {
-            return JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
-        }
-
-        @Override
-        public Externalizable read(final ObjectDataInput in) throws IOException {
-            final String className = in.readUTF();
-            try {
-                final Externalizable ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
-                final ObjectInputStream objectInputStream;
-                final InputStream inputStream = (InputStream) in;
-                if (gzipEnabled) {
-                    objectInputStream = newObjectInputStream(in.getClassLoader(), new GZIPInputStream(inputStream));
-                } else {
-                    objectInputStream = newObjectInputStream(in.getClassLoader(), inputStream);
-                }
-                ds.readExternal(objectInputStream);
-                return ds;
-            } catch (final Exception e) {
-                throw new HazelcastSerializationException("Problem while reading Externalizable class : "
-                        + className + ", exception: " + e);
-            }
-        }
-
-        @Override
-        public void write(final ObjectDataOutput out, final Externalizable obj) throws IOException {
-            out.writeUTF(obj.getClass().getName());
-            final ObjectOutputStream objectOutputStream;
-            final OutputStream outputStream = (OutputStream) out;
-            GZIPOutputStream gzip = null;
-            if (gzipEnabled) {
-                gzip = new GZIPOutputStream(outputStream);
-                objectOutputStream = new ObjectOutputStream(gzip);
-            } else {
-                objectOutputStream = new ObjectOutputStream(outputStream);
-            }
-            obj.writeExternal(objectOutputStream);
-            // Force flush if not yet written due to internal behavior if pos < 1024
-            objectOutputStream.flush();
-            if (gzipEnabled) {
-                gzip.finish();
-            }
         }
     }
 

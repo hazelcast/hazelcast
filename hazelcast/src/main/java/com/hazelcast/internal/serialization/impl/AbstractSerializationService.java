@@ -24,6 +24,8 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLocal;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
@@ -34,6 +36,8 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.Serializer;
 
+import java.io.Externalizable;
+import java.io.Serializable;
 import java.nio.ByteOrder;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
@@ -42,18 +46,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.internal.serialization.impl.SerializationUtil.CONSTANT_SERIALIZERS_SIZE;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_SERIALIZERS_LENGTH;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.EMPTY_PARTITIONING_STRATEGY;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createSerializerAdapter;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.getInterfaces;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.handleException;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.indexForDefaultType;
-import static com.hazelcast.internal.serialization.impl.SerializationUtil.isDefaultSerializerOverride;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.isNullData;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public abstract class AbstractSerializationService
-        implements SerializationService {
+public abstract class AbstractSerializationService implements SerializationService {
 
     protected final ManagedContext managedContext;
     protected final InputOutputFactory inputOutputFactory;
@@ -62,11 +64,12 @@ public abstract class AbstractSerializationService
 
     protected SerializerAdapter dataSerializerAdapter;
     protected SerializerAdapter portableSerializerAdapter;
-    private final SerializerAdapter nullSerializerAdapter;
+    protected final SerializerAdapter nullSerializerAdapter;
+    protected SerializerAdapter javaSerializerAdapter;
 
     private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap = new IdentityHashMap<Class, SerializerAdapter>(
-            CONSTANT_SERIALIZERS_SIZE);
-    private final SerializerAdapter[] constantTypeIds = new SerializerAdapter[CONSTANT_SERIALIZERS_SIZE];
+            CONSTANT_SERIALIZERS_LENGTH);
+    private final SerializerAdapter[] constantTypeIds = new SerializerAdapter[CONSTANT_SERIALIZERS_LENGTH];
     private final ConcurrentMap<Class, SerializerAdapter> typeMap = new ConcurrentHashMap<Class, SerializerAdapter>();
     private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<Integer, SerializerAdapter>();
     private final AtomicReference<SerializerAdapter> global = new AtomicReference<SerializerAdapter>();
@@ -76,9 +79,11 @@ public abstract class AbstractSerializationService
     private volatile boolean active = true;
     private final byte version;
 
+    private ILogger logger = Logger.getLogger(SerializationService.class);
+
     AbstractSerializationService(InputOutputFactory inputOutputFactory, byte version, ClassLoader classLoader,
-                                 ManagedContext managedContext, PartitioningStrategy globalPartitionStrategy,
-                                 int initialOutputBufferSize, BufferPoolFactory bufferPoolFactory) {
+            ManagedContext managedContext, PartitioningStrategy globalPartitionStrategy, int initialOutputBufferSize,
+            BufferPoolFactory bufferPoolFactory) {
         this.inputOutputFactory = inputOutputFactory;
         this.version = version;
         this.classLoader = classLoader;
@@ -311,7 +316,7 @@ public abstract class AbstractSerializationService
         safeRegister(type, createSerializerAdapter(serializer, this));
     }
 
-    private void safeRegister(final Class type, final SerializerAdapter serializer) {
+    protected final void safeRegister(final Class type, final SerializerAdapter serializer) {
         if (constantTypesMap.containsKey(type)) {
             throw new IllegalArgumentException("[" + type + "] serializer cannot be overridden!");
         }
@@ -345,12 +350,9 @@ public abstract class AbstractSerializationService
     }
 
     protected final SerializerAdapter serializerFor(final int typeId) {
-        if (typeId == SerializationConstants.CONSTANT_TYPE_NULL) {
-            return nullSerializerAdapter;
-        }
-        if (typeId < 0) {
+        if (typeId <= 0) {
             final int index = indexForDefaultType(typeId);
-            if (index < CONSTANT_SERIALIZERS_SIZE) {
+            if (index < CONSTANT_SERIALIZERS_LENGTH) {
                 return constantTypeIds[index];
             }
         }
@@ -358,24 +360,40 @@ public abstract class AbstractSerializationService
     }
 
     protected final SerializerAdapter serializerFor(Object object) {
+        /*
+            Searches for a serializer for the provided object
+            Serializers will be  searched in this order;
+
+            1-NULL serializer
+            2-Default serializers, like primitives, arrays, String and some Java types
+            3-Custom registered types by user
+            4-Global serializer if registered by user
+            5-JDK serialization ( Serializable and Externalizable )
+         */
+
+        //1-NULL serializer
         if (object == null) {
             return nullSerializerAdapter;
         }
         Class type = object.getClass();
         SerializerAdapter serializer;
-        if (isDefaultSerializerOverride()) {
+
+        //2-Default serializers, Dataserializable, Portable, primitives, arrays, String and some helper Java types(BigInteger etc)
+        serializer = lookupDefaultSerializer(type);
+
+        //3-Custom registered types by user
+        if (serializer == null) {
             serializer = lookupCustomSerializer(type);
-            if (serializer == null) {
-                serializer = lookupDefaultSerializer(type);
-            }
-        } else {
-            serializer = lookupDefaultSerializer(type);
-            if (serializer == null) {
-                serializer = lookupCustomSerializer(type);
-            }
         }
+
+        //4-Global serializer if registered by user
         if (serializer == null) {
             serializer = lookupGlobalSerializer(type);
+        }
+
+        //5-JDK serialization ( Serializable and Externalizable )
+        if (serializer == null) {
+            serializer = lookupJavaSerializer(type);
         }
 
         if (serializer == null) {
@@ -390,14 +408,11 @@ public abstract class AbstractSerializationService
     private SerializerAdapter lookupDefaultSerializer(Class type) {
         if (DataSerializable.class.isAssignableFrom(type)) {
             return dataSerializerAdapter;
-        } else if (Portable.class.isAssignableFrom(type)) {
+        }
+        if (Portable.class.isAssignableFrom(type)) {
             return portableSerializerAdapter;
         }
-        SerializerAdapter constantAdapter = constantTypesMap.get(type);
-        if (constantAdapter != null) {
-            return constantAdapter;
-        }
-        return null;
+        return constantTypesMap.get(type);
     }
 
     private SerializerAdapter lookupCustomSerializer(Class type) {
@@ -418,6 +433,9 @@ public abstract class AbstractSerializationService
             typeSuperclass = typeSuperclass.getSuperclass();
         }
         if (serializer == null) {
+            //remove ignore Interfaces:
+            interfaces.remove(Serializable.class);
+            interfaces.remove(Externalizable.class);
             // look for interfaces
             for (Class typeInterface : interfaces) {
                 serializer = registerFromSuperType(type, typeInterface);
@@ -435,5 +453,17 @@ public abstract class AbstractSerializationService
             safeRegister(type, serializer);
         }
         return serializer;
+    }
+
+    private SerializerAdapter lookupJavaSerializer(Class type) {
+        if (Serializable.class.isAssignableFrom(type)) {
+            if (!Throwable.class.isAssignableFrom(type)) {
+                logger.warning("WARNING!!! Serialization service will use Java Serialization for : " + type.getName()
+                        + " . Please consider using a faster serialization option!!!");
+            }
+            safeRegister(type, javaSerializerAdapter);
+            return javaSerializerAdapter;
+        }
+        return null;
     }
 }

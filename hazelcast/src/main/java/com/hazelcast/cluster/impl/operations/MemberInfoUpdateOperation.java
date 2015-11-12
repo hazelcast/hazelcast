@@ -17,18 +17,20 @@
 package com.hazelcast.cluster.impl.operations;
 
 import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class MemberInfoUpdateOperation extends AbstractClusterOperation implements JoinOperation {
+public class MemberInfoUpdateOperation extends AbstractClusterOperation implements JoinOperation, IdentifiedDataSerializable {
 
     protected Collection<MemberInfo> memberInfos;
     protected long masterTime = Clock.currentTimeMillis();
@@ -103,5 +105,15 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
             sb.append(address).append(' ');
         }
     }
+
+    public int getFactoryId() {
+        return ClusterDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
+    }
+
 }
 

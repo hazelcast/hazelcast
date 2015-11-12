@@ -19,13 +19,11 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.SerializationUtil;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,26 +33,14 @@ import java.beans.XMLEncoder;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.lang.Boolean.parseBoolean;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class CustomSerializationTest {
-
-    @After
-    public void cleanup()
-            throws Exception {
-        System.clearProperty(SerializationUtil.PROP_DEFAULT_SERIALIZER_OVERRIDE);
-        resetConfigField();
-    }
 
     @Test
     public void testSerializer() throws Exception {
@@ -76,43 +62,6 @@ public class CustomSerializationTest {
         testSerializer(ByteOrder.nativeOrder(), true);
     }
 
-    @Test
-    public void testSerializerOverridenHierarchyWhenEnabled() throws Exception {
-        System.setProperty(SerializationUtil.PROP_DEFAULT_SERIALIZER_OVERRIDE, "true");
-        resetConfigField();
-        SerializationConfig config = new SerializationConfig();
-        FooXmlSerializer serializer = new FooXmlSerializer();
-        SerializerConfig sc = new SerializerConfig()
-                .setImplementation(serializer)
-                .setTypeClass(FooDataSerializable.class);
-        config.addSerializerConfig(sc);
-        SerializationService ss = new DefaultSerializationServiceBuilder().setConfig(config).build();
-        FooDataSerializable foo = new FooDataSerializable("foo");
-        ss.toData(foo);
-
-        assertTrue(SerializationUtil.isDefaultSerializerOverride());
-        assertEquals(0, foo.serializationCount.get());
-        assertEquals(1, serializer.serializationCount.get());
-    }
-
-    @Test
-    public void testSerializerOverridenHierarchyWhenDisabled() throws Exception {
-        System.clearProperty(SerializationUtil.PROP_DEFAULT_SERIALIZER_OVERRIDE);
-        resetConfigField();
-        SerializationConfig config = new SerializationConfig();
-        FooXmlSerializer serializer = new FooXmlSerializer();
-        SerializerConfig sc = new SerializerConfig()
-                .setImplementation(serializer)
-                .setTypeClass(FooDataSerializable.class);
-        config.addSerializerConfig(sc);
-        SerializationService ss = new DefaultSerializationServiceBuilder().setConfig(config).build();
-        FooDataSerializable foo = new FooDataSerializable("foo");
-        ss.toData(foo);
-        assertFalse(SerializationUtil.isDefaultSerializerOverride());
-        assertEquals(1, foo.serializationCount.get());
-        assertEquals(0, serializer.serializationCount.get());
-    }
-
     private void testSerializer(ByteOrder order, boolean allowUnsafe) throws Exception {
         SerializationConfig config = new SerializationConfig();
         config.setAllowUnsafe(allowUnsafe).setByteOrder(order).setUseNativeByteOrder(false);
@@ -126,21 +75,6 @@ public class CustomSerializationTest {
         Foo newFoo = ss.toObject(d);
         assertEquals(newFoo, foo);
     }
-
-    public static void resetConfigField()
-            throws NoSuchFieldException, IllegalAccessException {
-        boolean bool = parseBoolean(System.getProperty(SerializationUtil.PROP_DEFAULT_SERIALIZER_OVERRIDE, "false"));
-        Field field = SerializationUtil.class.getDeclaredField("defaultSerializerOverride");
-
-        // remove final modifier from field
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
-        field.setAccessible(true);
-        field.setBoolean(null, bool);
-    }
-
 
     public static class Foo {
 

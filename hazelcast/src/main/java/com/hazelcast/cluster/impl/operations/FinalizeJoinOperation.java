@@ -18,6 +18,7 @@ package com.hazelcast.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
@@ -185,6 +186,11 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         super.toString(sb);
 
         sb.append(", postJoinOp=").append(postJoinOp);
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.FINALIZE_JOIN;
     }
 }
 
