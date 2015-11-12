@@ -145,35 +145,13 @@ public abstract class QueryableEntry implements Map.Entry {
         }
 
         Object targetObject = serializationService.toObject(target);
-        ValueExtractor<Object, Object> extractor = extractors.getExtractor(attributeName);
-        Arguments<Object> arguments = extractors.getArguments(attributeName);
-        if (extractor != null) {
-            // This part will be improved in 3.7 to avoid extra allocation
-            DefaultValueCollector collector = new DefaultValueCollector();
-            extractor.extract(targetObject, arguments, collector);
-            return collector.getResult();
-        } else {
-            return extractViaReflection(attributeName, targetObject);
-        }
+        return extractors.extract(targetObject, attributeName);
     }
 
     private static Comparable extractViaPortable(SerializationService serializationService,
                                                  String attributeName, Data data) {
         try {
             return PortableExtractor.extractValue(serializationService, data, attributeName);
-        } catch (QueryException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new QueryException(e);
-        }
-    }
-
-    // This method is very inefficient because:
-    // lot of time is spend on retrieving field/method and it isn't cached
-    // the actual invocation on the Field, Method is also is quite expensive.
-    private static Object extractViaReflection(String attributeName, Object obj) {
-        try {
-            return ReflectionHelper.extractValue(obj, attributeName);
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {

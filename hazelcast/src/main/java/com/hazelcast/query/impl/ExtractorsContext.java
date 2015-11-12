@@ -30,6 +30,7 @@ public class ExtractorsContext {
     private final DefaultArgumentsParser defaultArgumentsParser;
 
     // extractorAttributeName WITH the arguments -> extractorAttributeName WITHOUT the arguments
+    // TODO: I don't think this is worth it. put/get is probably more expensive than calculating it again.
     private final Map<String, String> withToWithoutArgumentsAttributeNames;
 
     // extractorAttributeName (with the arguments) -> Arguments
