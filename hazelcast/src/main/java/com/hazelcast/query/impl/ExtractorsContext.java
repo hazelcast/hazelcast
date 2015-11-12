@@ -29,29 +29,16 @@ public class ExtractorsContext {
     // We are using the default argument parser if not overridden by the map config
     private final DefaultArgumentsParser defaultArgumentsParser;
 
-    // extractorAttributeName WITH the arguments -> extractorAttributeName WITHOUT the arguments
-    // TODO: I don't think this is worth it. put/get is probably more expensive than calculating it again.
-    private final Map<String, String> withToWithoutArgumentsAttributeNames;
-
     // extractorAttributeName (with the arguments) -> Arguments
     private final Map<String, Arguments> arguments;
 
     public ExtractorsContext() {
-        withToWithoutArgumentsAttributeNames = new ConcurrentHashMap<String, String>();
         arguments = new ConcurrentHashMap<String, Arguments>();
         defaultArgumentsParser = new DefaultArgumentsParser();
     }
 
     public String getAttributeNameWithoutArguments(String attributeNameWithArguments) {
-        String result = withToWithoutArgumentsAttributeNames.get(attributeNameWithArguments);
-        // this is not fully thread safe - may lead to extra allocations - but it's consistent and fast
-        if (result == null) {
-            result = extractArgumentNameWithoutLastSquareBracketArguments(attributeNameWithArguments);
-            withToWithoutArgumentsAttributeNames.put(attributeNameWithArguments, result);
-            // evict on put only - so only once a new query is executed
-            evictAttributeNames();
-        }
-        return result;
+        return extractArgumentNameWithoutLastSquareBracketArguments(attributeNameWithArguments);
     }
 
     public Arguments getArguments(String attributeNameWithArguments) {
@@ -85,12 +72,6 @@ public class ExtractorsContext {
             return attributeNameWithArguments.substring(0, lastOpeningSquareBracket);
         }
         return attributeNameWithArguments;
-    }
-
-    public void evictAttributeNames() {
-        if (withToWithoutArgumentsAttributeNames.size() > MAX_SIZE) {
-            withToWithoutArgumentsAttributeNames.clear();
-        }
     }
 
     public void evictArguments() {
