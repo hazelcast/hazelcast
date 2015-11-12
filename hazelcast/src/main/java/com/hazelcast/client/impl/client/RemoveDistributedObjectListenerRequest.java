@@ -29,10 +29,6 @@ public class RemoveDistributedObjectListenerRequest extends BaseClientRemoveList
     public RemoveDistributedObjectListenerRequest() {
     }
 
-    public RemoveDistributedObjectListenerRequest(String registrationId) {
-        super(null, registrationId);
-    }
-
     @Override
     protected boolean deRegisterListener() {
         ProxyService proxyService = getService();

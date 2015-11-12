@@ -31,9 +31,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -94,7 +94,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
         final List<MembershipEvent> events = detectMembershipEvents(prevMembers);
         if (events.size() != 0) {
-            applyMemberListChanges();
+            LOGGER.info(membersString());
         }
         fireMembershipEvent(events);
         initialListFetchedLatch.countDown();
@@ -102,11 +102,8 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     @Override
     public void handle(String uuid, String key, int opType, String value) {
-        Map<Address, Member> memberMap = clusterService.getMembersRef();
-        if (memberMap == null) {
-            return;
-        }
-        for (Member target : memberMap.values()) {
+        Collection<Member> members = clusterService.getMemberList();
+        for (Member target : members) {
             if (target.getUuid().equals(uuid)) {
                 final MemberAttributeOperationType operationType = MemberAttributeOperationType.getValue(opType);
                 ((AbstractMember) target).updateAttribute(operationType, key, value);
@@ -165,25 +162,19 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     private void memberRemoved(Member member) {
         members.remove(member);
-        applyMemberListChanges();
+        LOGGER.info(membersString());
         final Connection connection = connectionManager.getConnection(member.getAddress());
         if (connection != null) {
             connectionManager.destroyConnection(connection);
         }
         MembershipEvent event = new MembershipEvent(client.getCluster(), member, ClientInitialMembershipEvent.MEMBER_REMOVED,
                 Collections.unmodifiableSet(new LinkedHashSet<Member>(members)));
-        clusterService.fireMembershipEvent(event);
-    }
-
-    private void applyMemberListChanges() {
-        updateMembersRef();
-        LOGGER.info(clusterService.membersString());
+        clusterService.handleMembershipEvent(event);
     }
 
     private void fireMembershipEvent(List<MembershipEvent> events) {
-
         for (MembershipEvent event : events) {
-            clusterService.fireMembershipEvent(event);
+            clusterService.handleMembershipEvent(event);
         }
     }
 
@@ -211,18 +202,22 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     private void memberAdded(Member member) {
         members.add(member);
-        applyMemberListChanges();
-        MembershipEvent event = new MembershipEvent(client.getCluster(), member, ClientInitialMembershipEvent.MEMBER_ADDED,
+        LOGGER.info(membersString());
+        MembershipEvent event = new MembershipEvent(client.getCluster(), member,
+                ClientInitialMembershipEvent.MEMBER_ADDED,
                 Collections.unmodifiableSet(new LinkedHashSet<Member>(members)));
-        clusterService.fireMembershipEvent(event);
+        clusterService.handleMembershipEvent(event);
     }
 
-    private void updateMembersRef() {
-        final Map<Address, Member> map = new LinkedHashMap<Address, Member>(members.size());
+    private String membersString() {
+        StringBuilder sb = new StringBuilder("\n\nMembers [");
+        sb.append(members.size());
+        sb.append("] {");
         for (Member member : members) {
-            map.put(member.getAddress(), member);
+            sb.append("\n\t").append(member);
         }
-        clusterService.setMembersRef(Collections.unmodifiableMap(map));
+        sb.append("\n}\n");
+        return sb.toString();
     }
 
 }

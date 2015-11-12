@@ -23,7 +23,6 @@ import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
-import com.hazelcast.core.MembershipListener;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -31,20 +30,21 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
 
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 
-public abstract class ClientListenerServiceImpl implements ClientListenerService, MembershipListener {
+public abstract class ClientListenerServiceImpl implements ClientListenerService {
 
     protected final HazelcastClientInstanceImpl client;
     protected final ClientExecutionServiceImpl executionService;
     protected final SerializationService serializationService;
     protected final ClientInvocationService invocationService;
+    protected final ILogger logger = Logger.getLogger(ClientListenerService.class);
     private final ConcurrentMap<Integer, EventHandler> eventHandlerMap
             = new ConcurrentHashMap<Integer, EventHandler>();
-    private final ILogger logger = Logger.getLogger(ClientInvocationService.class);
 
     private final StripedExecutor eventExecutor;
 
@@ -53,7 +53,6 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.invocationService = client.getInvocationService();
         this.serializationService = client.getSerializationService();
-        client.getClientClusterService().addMembershipListener(this);
         this.eventExecutor = new StripedExecutor(logger, client.getName() + ".event",
                 client.getThreadGroup(), eventThreadCount, eventQueueCapacity);
     }
@@ -64,6 +63,10 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
 
     protected void removeEventHandler(int callId) {
         eventHandlerMap.remove(callId);
+    }
+
+    protected EventHandler getEventHandler(int callId) {
+        return eventHandlerMap.get(callId);
     }
 
     public void handleClientMessage(ClientMessage clientMessage, Connection connection) {
@@ -97,7 +100,8 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
                 int correlationId = clientMessage.getCorrelationId();
                 final EventHandler eventHandler = eventHandlerMap.get(correlationId);
                 if (eventHandler == null) {
-                    logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
+                    logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage
+                            + ", connection: " + connection);
                     return;
                 }
 
@@ -113,4 +117,8 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
             return clientMessage.getPartitionId();
         }
     }
+
+    //For Testing
+    public abstract Collection<ClientEventRegistration> getActiveRegistrations(String uuid);
+
 }

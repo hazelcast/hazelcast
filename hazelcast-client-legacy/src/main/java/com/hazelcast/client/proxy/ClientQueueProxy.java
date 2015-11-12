@@ -16,19 +16,12 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.collection.common.DataAwareItemEvent;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemEventType;
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.core.Member;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.collection.impl.queue.QueueIterator;
 import com.hazelcast.collection.impl.queue.client.AddAllRequest;
 import com.hazelcast.collection.impl.queue.client.AddListenerRequest;
 import com.hazelcast.collection.impl.queue.client.ClearRequest;
@@ -41,12 +34,21 @@ import com.hazelcast.collection.impl.queue.client.OfferRequest;
 import com.hazelcast.collection.impl.queue.client.PeekRequest;
 import com.hazelcast.collection.impl.queue.client.PollRequest;
 import com.hazelcast.collection.impl.queue.client.RemainingCapacityRequest;
-import com.hazelcast.collection.impl.queue.client.RemoveListenerRequest;
 import com.hazelcast.collection.impl.queue.client.RemoveRequest;
 import com.hazelcast.collection.impl.queue.client.SizeRequest;
-import com.hazelcast.collection.impl.queue.QueueIterator;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.replicatedmap.impl.client.ClientReplicatedMapRemoveEntryListenerRequest;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableItemEvent;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -67,7 +69,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     }
 
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
-        final AddListenerRequest request = new AddListenerRequest(name, includeValue);
+        final AddListenerRequest addRequest = new AddListenerRequest(name, includeValue);
         EventHandler<PortableItemEvent> eventHandler = new EventHandler<PortableItemEvent>() {
             public void handle(PortableItemEvent portableItemEvent) {
                 SerializationService ss = getContext().getSerializationService();
@@ -91,12 +93,13 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
 
             }
         };
-        return registerListener(request, eventHandler);
+        BaseClientRemoveListenerRequest removeRequest =
+                new ClientReplicatedMapRemoveEntryListenerRequest(getName());
+        return registerListener(addRequest, removeRequest, eventHandler);
     }
 
     public boolean removeItemListener(String registrationId) {
-        final RemoveListenerRequest request = new RemoveListenerRequest(name, registrationId);
-        return deregisterListener(request, registrationId);
+        return deregisterListener(registrationId);
     }
 
     public LocalQueueStats getLocalQueueStats() {

@@ -44,12 +44,13 @@ public abstract class ClientProxy implements DistributedObject {
         this.objectName = objectName;
     }
 
-    protected final String registerListener(BaseClientAddListenerRequest registrationRequest, EventHandler handler) {
-        return context.getListenerService().registerListener(registrationRequest, handler);
+    protected final String registerListener(BaseClientAddListenerRequest addRequest,
+                                            BaseClientRemoveListenerRequest removeRequest, EventHandler handler) {
+        return context.getListenerService().registerListener(addRequest, removeRequest, handler);
     }
 
-    protected final boolean deregisterListener(BaseClientRemoveListenerRequest request, String registrationId) {
-        return context.getListenerService().deregisterListener(request, registrationId);
+    protected final boolean deregisterListener(String registrationId) {
+        return context.getListenerService().deregisterListener(registrationId);
     }
 
     protected final ClientContext getContext() {

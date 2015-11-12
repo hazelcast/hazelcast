@@ -20,103 +20,112 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.InitialMembershipEvent;
+import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.nio.Address;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
-public class ClientSmartListenerService extends ClientListenerServiceImpl {
+public class ClientSmartListenerService extends ClientListenerServiceImpl implements InitialMembershipListener {
 
-    private static final ConstructorFunction<ClientRegistrationKey, Set<ClientEventRegistration>> CONSTRUCTOR_FUNCTION
-            = new ConstructorFunction<ClientRegistrationKey, Set<ClientEventRegistration>>() {
-        @Override
-        public Set<ClientEventRegistration> createNew(ClientRegistrationKey arg) {
-            return Collections.newSetFromMap(new ConcurrentHashMap<ClientEventRegistration, Boolean>());
-        }
-    };
-    private final ConcurrentMap<ClientRegistrationKey, Set<ClientEventRegistration>> registrations
-            = new ConcurrentHashMap<ClientRegistrationKey, Set<ClientEventRegistration>>();
-    private final Object regMutex = new Object();
+    private final Set<Member> members = new HashSet<Member>();
+    private final Map<ClientRegistrationKey, Map<Address, ClientEventRegistration>> registrations
+            = new ConcurrentHashMap<ClientRegistrationKey, Map<Address, ClientEventRegistration>>();
+    private final Object listenerRegLock = new Object();
 
-    public ClientSmartListenerService(HazelcastClientInstanceImpl client, int eventThreadCount, int eventQueueCapacity) {
+    public ClientSmartListenerService(HazelcastClientInstanceImpl client,
+                                      int eventThreadCount, int eventQueueCapacity) {
         super(client, eventThreadCount, eventQueueCapacity);
+        client.getClientClusterService().addMembershipListener(this);
     }
 
     @Override
     public String registerListener(ListenerMessageCodec codec, EventHandler handler) {
-        ClientMessage request = codec.encodeAddRequest(true);
-
-        Collection<Member> members = client.getClientClusterService().getMemberList();
-
         String userRegistrationId = UuidUtil.newUnsecureUuidString();
-        ClientRegistrationKey registrationKey = new ClientRegistrationKey(userRegistrationId, request, handler, codec);
-        for (Member member : members) {
-            invoke(registrationKey, member.getAddress());
+        synchronized (listenerRegLock) {
+
+            ClientRegistrationKey registrationKey = new ClientRegistrationKey(userRegistrationId, handler, codec);
+            registrations.put(registrationKey, new ConcurrentHashMap<Address, ClientEventRegistration>());
+            try {
+                for (Member member : this.members) {
+                    invoke(registrationKey, member.getAddress());
+                }
+            } catch (Exception e) {
+                deregisterListener(userRegistrationId);
+                throw new HazelcastException("Listener can not be added", e);
+            }
+            return userRegistrationId;
         }
-        return userRegistrationId;
     }
 
-    private void invoke(ClientRegistrationKey registrationKey, Address address) {
-        ClientMessage request = registrationKey.getRequest();
+    private void invoke(ClientRegistrationKey registrationKey, Address address) throws Exception {
+        ListenerMessageCodec codec = registrationKey.getCodec();
+        ClientMessage request = codec.encodeAddRequest(true);
         EventHandler handler = registrationKey.getHandler();
         handler.beforeListenerRegister();
+
         ClientInvocation invocation = new ClientInvocation(client, request, address);
         invocation.setEventHandler(handler);
-        ListenerMessageCodec codec = registrationKey.getCodec();
-        try {
-            ClientInvocationFuture future = invocation.invoke();
-            String serverRegistrationId = codec.decodeAddResponse(future.get());
-            handler.onListenerRegister();
-            int correlationId = request.getCorrelationId();
-            ClientEventRegistration registration
-                    = new ClientEventRegistration(serverRegistrationId, correlationId, address, codec);
-            registerListener(registrationKey, registration);
-        } catch (Exception e) {
-            //if invocation cannot be done that means connection is broken and there is no need to add listener
-            EmptyStatement.ignore(e);
-        }
-    }
+        String serverRegistrationId = codec.decodeAddResponse(invocation.invoke().get());
 
-    private void registerListener(ClientRegistrationKey registrationKey, ClientEventRegistration registration) {
-        Set<ClientEventRegistration> regSet =
-                ConcurrencyUtil.getOrPutSynchronized(registrations, registrationKey, regMutex, CONSTRUCTOR_FUNCTION);
-        regSet.add(registration);
-    }
+        handler.onListenerRegister();
+        int correlationId = request.getCorrelationId();
+        ClientEventRegistration registration
+                = new ClientEventRegistration(serverRegistrationId, correlationId, address, codec);
 
+        Map<Address, ClientEventRegistration> registrationMap = registrations.get(registrationKey);
+        registrationMap.put(address, registration);
+
+    }
 
     @Override
     public boolean deregisterListener(String userRegistrationId) {
-        Set<ClientEventRegistration> regSet = registrations.remove(new ClientRegistrationKey(userRegistrationId));
-        if (regSet == null) {
-            return false;
-        }
-        for (ClientEventRegistration registration : regSet) {
-            try {
-                removeEventHandler(registration.getCallId());
-                ListenerMessageCodec listenerMessageCodec = registration.getCodec();
-                ClientMessage request = listenerMessageCodec.encodeRemoveRequest(registration.getServerRegistrationId());
-                Future future = new ClientInvocation(client, request, registration.getSubscriber()).invoke();
-                future.get();
-            } catch (Exception e) {
-                //if invocation cannot be done that means connection is broken and listener is already removed
-                EmptyStatement.ignore(e);
+        synchronized (listenerRegLock) {
+            ClientRegistrationKey key = new ClientRegistrationKey(userRegistrationId);
+            Map<Address, ClientEventRegistration> registrationMap = registrations.get(key);
+
+            if (registrationMap == null) {
+                return false;
             }
+
+
+            boolean successful = true;
+            for (ClientEventRegistration registration : registrationMap.values()) {
+                Address subscriber = registration.getSubscriber();
+                try {
+                    ListenerMessageCodec listenerMessageCodec = registration.getCodec();
+                    String serverRegistrationId = registration.getServerRegistrationId();
+                    ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
+                    Future future = new ClientInvocation(client, request, subscriber).invoke();
+                    future.get();
+                    removeEventHandler(registration.getCallId());
+                    registrationMap.remove(subscriber);
+                } catch (Exception e) {
+                    successful = false;
+                    logger.warning("Deregistration of listener with id " + userRegistrationId
+                            + " has failed to address " + subscriber, e);
+                }
+            }
+
+            if (successful) {
+                registrations.remove(key);
+            }
+            return successful;
         }
-        return true;
+
     }
 
     @Override
@@ -124,8 +133,16 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl {
         executionService.executeInternal(new Runnable() {
             @Override
             public void run() {
-                for (ClientRegistrationKey registrationKey : registrations.keySet()) {
-                    invoke(registrationKey, membershipEvent.getMember().getAddress());
+                synchronized (listenerRegLock) {
+                    Member member = membershipEvent.getMember();
+                    members.add(member);
+                    for (ClientRegistrationKey registrationKey : registrations.keySet()) {
+                        try {
+                            invoke(registrationKey, member.getAddress());
+                        } catch (Exception e) {
+                            logger.warning("Listener " + registrationKey + " can not added to new member " + member);
+                        }
+                    }
                 }
             }
         });
@@ -133,24 +150,55 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl {
 
     @Override
     public void memberRemoved(MembershipEvent membershipEvent) {
-        for (Set<ClientEventRegistration> eventRegistrations : registrations.values()) {
-            removeRegistration(membershipEvent.getMember().getAddress(), eventRegistrations.iterator());
+        synchronized (listenerRegLock) {
+            Member member = membershipEvent.getMember();
+            members.remove(member);
+            for (Map<Address, ClientEventRegistration> registrationMap : registrations.values()) {
+                ClientEventRegistration registration = registrationMap.remove(member.getAddress());
+                removeEventHandler(registration.getCallId());
+            }
+
         }
     }
 
     @Override
     public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-        //ignore
+        //nothing to do
     }
 
-    private void removeRegistration(Address address, Iterator<ClientEventRegistration> iterator) {
-        while (iterator.hasNext()) {
-            ClientEventRegistration registration = iterator.next();
-            if (registration.getSubscriber().equals(address)) {
-                iterator.remove();
-                removeEventHandler(registration.getCallId());
-                return;
+    @Override
+    public void init(InitialMembershipEvent event) {
+        synchronized (listenerRegLock) {
+            members.addAll(event.getMembers());
+            for (Member member : members) {
+                for (ClientRegistrationKey registrationKey : registrations.keySet()) {
+                    try {
+                        invoke(registrationKey, member.getAddress());
+                    } catch (Exception e) {
+                        logger.warning("Listener " + registrationKey + " can not added to new member " + member);
+                    }
+                }
             }
         }
     }
+
+    //For Testing
+    public Collection<ClientEventRegistration> getActiveRegistrations(String uuid) {
+        synchronized (listenerRegLock) {
+            Map<Address, ClientEventRegistration> registrationMap = registrations.get(new ClientRegistrationKey(uuid));
+            if (registrationMap == null) {
+                return Collections.EMPTY_LIST;
+            }
+            LinkedList<ClientEventRegistration> activeRegistrations = new LinkedList<ClientEventRegistration>();
+            for (ClientEventRegistration registration : registrationMap.values()) {
+                for (Member member : members) {
+                    if (member.getAddress().equals(registration.getSubscriber())) {
+                        activeRegistrations.add(registration);
+                    }
+                }
+            }
+            return activeRegistrations;
+        }
+    }
+
 }

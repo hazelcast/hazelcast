@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.cache.impl.client.CacheRemovePartitionLostListenerRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientProxy;
@@ -31,7 +32,6 @@ import com.hazelcast.topic.impl.DataAwareMessage;
 import com.hazelcast.topic.impl.client.AddMessageListenerRequest;
 import com.hazelcast.topic.impl.client.PortableMessage;
 import com.hazelcast.topic.impl.client.PublishRequest;
-import com.hazelcast.topic.impl.client.RemoveMessageListenerRequest;
 
 public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
@@ -57,7 +57,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
             throw new NullPointerException("listener can't be null");
         }
 
-        AddMessageListenerRequest request = new AddMessageListenerRequest(name);
+        AddMessageListenerRequest addRequest = new AddMessageListenerRequest(name);
 
         EventHandler<PortableMessage> handler = new EventHandler<PortableMessage>() {
             @Override
@@ -80,13 +80,13 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
             }
         };
-        return registerListener(request, handler);
+        CacheRemovePartitionLostListenerRequest removeRequest = new CacheRemovePartitionLostListenerRequest(name);
+        return registerListener(addRequest, removeRequest, handler);
     }
 
     @Override
     public boolean removeMessageListener(String registrationId) {
-        final RemoveMessageListenerRequest request = new RemoveMessageListenerRequest(name, registrationId);
-        return deregisterListener(request, registrationId);
+        return deregisterListener(registrationId);
     }
 
     @Override

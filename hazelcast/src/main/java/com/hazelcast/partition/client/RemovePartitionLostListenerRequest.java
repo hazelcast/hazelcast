@@ -28,10 +28,6 @@ public class RemovePartitionLostListenerRequest
     public RemovePartitionLostListenerRequest() {
     }
 
-    public RemovePartitionLostListenerRequest(String registrationId) {
-        super(null, registrationId);
-    }
-
     @Override
     protected boolean deRegisterListener() {
         final InternalPartitionService service = getService();

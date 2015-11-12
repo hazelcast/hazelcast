@@ -29,8 +29,8 @@ public class RemoveEntryListenerRequest extends BaseClientRemoveListenerRequest 
     public RemoveEntryListenerRequest() {
     }
 
-    public RemoveEntryListenerRequest(String name, String registrationId) {
-        super(name, registrationId);
+    public RemoveEntryListenerRequest(String name) {
+        super(name);
     }
 
     @Override

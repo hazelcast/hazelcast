@@ -82,15 +82,15 @@ public final class PartitionServiceProxy implements PartitionService {
 
     @Override
     public String addPartitionLostListener(PartitionLostListener partitionLostListener) {
-        AddPartitionLostListenerRequest request = new AddPartitionLostListenerRequest();
+        AddPartitionLostListenerRequest addRequest = new AddPartitionLostListenerRequest();
         EventHandler<PortablePartitionLostEvent> handler = new ClientPartitionLostEventHandler(partitionLostListener);
-        return listenerService.registerListener(request, handler);
+        RemovePartitionLostListenerRequest removeRequest = new RemovePartitionLostListenerRequest();
+        return listenerService.registerListener(addRequest, removeRequest, handler);
     }
 
     @Override
     public boolean removePartitionLostListener(String registrationId) {
-        final RemovePartitionLostListenerRequest request = new RemovePartitionLostListenerRequest(registrationId);
-        return listenerService.deregisterListener(request, registrationId);
+        return listenerService.deregisterListener(registrationId);
     }
 
     @Override

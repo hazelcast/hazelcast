@@ -27,8 +27,8 @@ public class CacheRemovePartitionLostListenerRequest extends BaseClientRemoveLis
     public CacheRemovePartitionLostListenerRequest() {
     }
 
-    public CacheRemovePartitionLostListenerRequest(String name, String registrationId) {
-        super(name, registrationId);
+    public CacheRemovePartitionLostListenerRequest(String name) {
+        super(name);
     }
 
     protected boolean deRegisterListener() {

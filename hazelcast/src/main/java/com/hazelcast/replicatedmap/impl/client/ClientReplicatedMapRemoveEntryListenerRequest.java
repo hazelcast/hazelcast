@@ -32,8 +32,8 @@ public class ClientReplicatedMapRemoveEntryListenerRequest extends BaseClientRem
     public ClientReplicatedMapRemoveEntryListenerRequest() {
     }
 
-    public ClientReplicatedMapRemoveEntryListenerRequest(String mapName, String registrationId) {
-        super(mapName, registrationId);
+    public ClientReplicatedMapRemoveEntryListenerRequest(String mapName) {
+        super(mapName);
     }
 
     protected boolean deRegisterListener() {

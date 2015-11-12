@@ -16,25 +16,30 @@
 
 package com.hazelcast.client.spi.impl.listener;
 
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.spi.EventHandler;
 
 public class ClientRegistrationKey {
 
     private final String userRegistrationId;
-    private final ClientRequest request;
+    private final BaseClientAddListenerRequest addRequest;
+    private final BaseClientRemoveListenerRequest removeRequest;
     private final EventHandler handler;
 
 
-    public ClientRegistrationKey(String userRegistrationId, ClientRequest request, EventHandler handler) {
+    public ClientRegistrationKey(String userRegistrationId, BaseClientAddListenerRequest addRequest,
+                                 BaseClientRemoveListenerRequest removeRequest, EventHandler handler) {
         this.userRegistrationId = userRegistrationId;
-        this.request = request;
+        this.addRequest = addRequest;
+        this.removeRequest = removeRequest;
         this.handler = handler;
     }
 
     public ClientRegistrationKey(String userRegistrationId) {
         this.userRegistrationId = userRegistrationId;
-        this.request = null;
+        this.addRequest = null;
+        this.removeRequest = null;
         this.handler = null;
     }
 
@@ -43,8 +48,12 @@ public class ClientRegistrationKey {
      *
      * @return request
      */
-    public ClientRequest getRequest() {
-        return request;
+    public BaseClientAddListenerRequest getAddRequest() {
+        return addRequest;
+    }
+
+    public BaseClientRemoveListenerRequest getRemoveRequest() {
+        return removeRequest;
     }
 
     /**
@@ -74,5 +83,10 @@ public class ClientRegistrationKey {
     @Override
     public int hashCode() {
         return userRegistrationId != null ? userRegistrationId.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return "ClientRegistrationKey{ userRegistrationId='" + userRegistrationId + '\'' + '}';
     }
 }

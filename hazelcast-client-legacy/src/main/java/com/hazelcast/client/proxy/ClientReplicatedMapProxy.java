@@ -197,43 +197,49 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Override
     public boolean removeEntryListener(String id) {
-        final ClientReplicatedMapRemoveEntryListenerRequest request =
-                new ClientReplicatedMapRemoveEntryListenerRequest(getName(), id);
-        return deregisterListener(request, id);
+        return deregisterListener(id);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener) {
-        ClientReplicatedMapAddEntryListenerRequest request =
+        ClientReplicatedMapAddEntryListenerRequest addRequest =
                 new ClientReplicatedMapAddEntryListenerRequest(getName(), null, null);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
-        return registerListener(request, handler);
+        ClientReplicatedMapRemoveEntryListenerRequest removeRequest =
+                new ClientReplicatedMapRemoveEntryListenerRequest(getName());
+        return registerListener(addRequest, removeRequest, handler);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, K key) {
         Data dataKey = toData(key);
-        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName()
-                , null, dataKey);
+        ClientReplicatedMapAddEntryListenerRequest addRequest =
+                new ClientReplicatedMapAddEntryListenerRequest(getName(), null, dataKey);
+        ClientReplicatedMapRemoveEntryListenerRequest removeRequest =
+                new ClientReplicatedMapRemoveEntryListenerRequest(getName());
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
-        return registerListener(request, handler);
+        return registerListener(addRequest, removeRequest, handler);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate) {
-        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName()
+        ClientReplicatedMapAddEntryListenerRequest addRequest = new ClientReplicatedMapAddEntryListenerRequest(getName()
                 , predicate, null);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
-        return registerListener(request, handler);
+        ClientReplicatedMapRemoveEntryListenerRequest removeRequest =
+                new ClientReplicatedMapRemoveEntryListenerRequest(getName());
+        return registerListener(addRequest, removeRequest, handler);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key) {
         Data dataKey = toData(key);
-        ClientReplicatedMapAddEntryListenerRequest request =
+        ClientReplicatedMapAddEntryListenerRequest addRequest =
                 new ClientReplicatedMapAddEntryListenerRequest(getName(), predicate, dataKey);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
-        return registerListener(request, handler);
+        ClientReplicatedMapRemoveEntryListenerRequest removeRequest =
+                new ClientReplicatedMapRemoveEntryListenerRequest(getName());
+        return registerListener(addRequest, removeRequest, handler);
     }
 
     @Override
@@ -310,10 +316,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     private void addNearCacheInvalidateListener() {
         try {
-            ClientReplicatedMapAddNearCacheListenerRequest request =
+            ClientReplicatedMapAddNearCacheListenerRequest addRequest =
                     new ClientReplicatedMapAddNearCacheListenerRequest(getName());
+            BaseClientRemoveListenerRequest removeRequest =
+                    new ClientReplicatedMapRemoveEntryListenerRequest(getName());
             EventHandler handler = new ReplicatedMapNearCacheEventHandler();
-            invalidationListenerId = registerListener(request, handler);
+            invalidationListenerId = registerListener(addRequest, removeRequest, handler);
         } catch (Exception e) {
             Logger.getLogger(ClientHeapNearCache.class).severe(
                     "-----------------\n Near Cache is not initialized!!! \n-----------------", e);
@@ -322,9 +330,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     private void removeNearCacheInvalidationListener() {
         if (nearCache != null && invalidationListenerId != null) {
-            BaseClientRemoveListenerRequest request =
-                    new ClientReplicatedMapRemoveEntryListenerRequest(getName(), invalidationListenerId);
-            deregisterListener(request, invalidationListenerId);
+            deregisterListener(invalidationListenerId);
         }
     }
 

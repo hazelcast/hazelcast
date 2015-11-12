@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
@@ -28,7 +29,6 @@ import com.hazelcast.collection.impl.collection.client.CollectionCompareAndRemov
 import com.hazelcast.collection.impl.collection.client.CollectionContainsRequest;
 import com.hazelcast.collection.impl.collection.client.CollectionGetAllRequest;
 import com.hazelcast.collection.impl.collection.client.CollectionIsEmptyRequest;
-import com.hazelcast.collection.impl.collection.client.CollectionRemoveListenerRequest;
 import com.hazelcast.collection.impl.collection.client.CollectionRemoveRequest;
 import com.hazelcast.collection.impl.collection.client.CollectionRequest;
 import com.hazelcast.collection.impl.collection.client.CollectionSizeRequest;
@@ -39,6 +39,7 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.replicatedmap.impl.client.ClientReplicatedMapRemoveEntryListenerRequest;
 import com.hazelcast.spi.impl.PortableItemEvent;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
@@ -157,8 +158,8 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
     }
 
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
-        CollectionAddListenerRequest request = new CollectionAddListenerRequest(getName(), includeValue);
-        request.setServiceName(getServiceName());
+        CollectionAddListenerRequest addRequest = new CollectionAddListenerRequest(getName(), includeValue);
+        addRequest.setServiceName(getServiceName());
         EventHandler<PortableItemEvent> eventHandler = new EventHandler<PortableItemEvent>() {
             public void handle(PortableItemEvent portableItemEvent) {
                 Data item = portableItemEvent.getItem();
@@ -183,13 +184,13 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
 
             }
         };
-        return registerListener(request, eventHandler);
+        BaseClientRemoveListenerRequest removeRequest =
+                new ClientReplicatedMapRemoveEntryListenerRequest(getName());
+        return registerListener(addRequest, removeRequest, eventHandler);
     }
 
     public boolean removeItemListener(String registrationId) {
-        final CollectionRemoveListenerRequest request = new CollectionRemoveListenerRequest(getName(),
-                registrationId, getServiceName());
-        return deregisterListener(request, registrationId);
+        return deregisterListener(registrationId);
     }
 
     protected <T> T invoke(ClientRequest req) {

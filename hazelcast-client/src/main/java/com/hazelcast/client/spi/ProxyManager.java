@@ -326,13 +326,13 @@ public final class ProxyManager {
     }
 
     public Address findNextAddressToSendCreateRequest() {
-        final int clusterSize = client.getClientClusterService().getSize();
+        int clusterSize = client.getClientClusterService().getSize();
         Member liteMember = null;
 
         final LoadBalancer loadBalancer = client.getLoadBalancer();
         for (int i = 0; i < clusterSize; i++) {
-            final Member member = loadBalancer.next();
-            if (!member.isLiteMember()) {
+            Member member = loadBalancer.next();
+            if (member != null && !member.isLiteMember()) {
                 return member.getAddress();
             } else if (liteMember == null) {
                 liteMember = member;

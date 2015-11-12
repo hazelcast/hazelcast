@@ -32,8 +32,8 @@ public class CacheRemoveInvalidationListenerRequest
     public CacheRemoveInvalidationListenerRequest() {
     }
 
-    public CacheRemoveInvalidationListenerRequest(String name, String registrationId) {
-        super(name, registrationId);
+    public CacheRemoveInvalidationListenerRequest(String name) {
+        super(name);
     }
 
     @Override

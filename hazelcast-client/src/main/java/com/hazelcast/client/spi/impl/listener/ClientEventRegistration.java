@@ -48,7 +48,7 @@ public class ClientEventRegistration {
      *
      * @return server registration Id
      */
-    String getServerRegistrationId() {
+    public String getServerRegistrationId() {
         return serverRegistrationId;
     }
 
@@ -59,7 +59,7 @@ public class ClientEventRegistration {
      *
      * @return subscriber
      */
-    Address getSubscriber() {
+    public Address getSubscriber() {
         return subscriber;
     }
 
