@@ -210,7 +210,6 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
         }, 2);
     }
 
-    @Category(SlowTest.class)
     @Test
     public void testTimeoutInvocationIfRemoteInvocationIsCompleted() throws Exception {
         int callTimeoutMillis = 500;
@@ -317,6 +316,7 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
 
     }
 
+    @Category(SlowTest.class)
     @Test
     public void testExecutionShouldNotTimeoutIfTraceable_WithMultiCallback() throws Exception {
         Config config = new Config();
