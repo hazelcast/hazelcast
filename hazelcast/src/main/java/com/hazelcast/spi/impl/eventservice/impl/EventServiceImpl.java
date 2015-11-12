@@ -43,7 +43,6 @@ import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedExecutor;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -386,7 +385,7 @@ public class EventServiceImpl implements InternalEventService {
 
             if (!nodeEngine.getNode().getConnectionManager().transmit(packet, subscriber)) {
                 if (nodeEngine.isRunning()) {
-                    logFailure("IO Queue overloaded! Failed to send event packet to: %s", subscriber);
+                    logFailure("Failed to send event packet to: %s , connection might not alive.", subscriber);
                 }
             }
         }
