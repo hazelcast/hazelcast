@@ -368,7 +368,7 @@ public class EventServiceImpl implements InternalEventService {
             packet.setHeader(Packet.HEADER_EVENT);
             if (!nodeEngine.getPacketTransceiver().transmit(packet, subscriber)) {
                 if (nodeEngine.isActive()) {
-                    logFailure("IO Queue overloaded! Failed to send event packet to: %s", subscriber);
+                    logFailure("Failed to send event packet to: %s , connection might not alive.", subscriber);
                 }
             }
         }
