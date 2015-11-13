@@ -21,16 +21,11 @@ import com.hazelcast.query.extractor.Arguments;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.DefaultArgumentsParser;
 import com.hazelcast.query.impl.DefaultValueCollector;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 
-import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
@@ -38,19 +33,22 @@ import static com.hazelcast.query.impl.getters.ExtractorHelper.instantiateExtrac
 
 public class Extractors {
 
-    private static final int MAX_CACHE_SIZE = 10000;
+    private static final int MAX_CLASSES_IN_CACHE = 1000;
+    private static final int MAX_GETTERS_PER_CLASS_IN_CACHE = 100;
+    private static final float CACHE_LOAD_FACTOR = 0.7f;
     private static final Extractors EMPTY = new Extractors(Collections.<MapAttributeConfig>emptyList());
 
     // Maps the extractorAttributeName WITHOUT the arguments to a ValueExtractor instance
     // The name does not contain the argument since it's not allowed to register an extractor under an attribute name
     // that contains an argument in square brackets.
     private final Map<String, ValueExtractor> extractors;
-    private final GetterCache getterCache;
+    private final EvictableGetterCache getterCache;
     private final DefaultArgumentsParser argumentsParser;
 
     public Extractors(List<MapAttributeConfig> mapAttributeConfigs) {
         this.extractors = instantiateExtractors(mapAttributeConfigs);
-        this.getterCache = new GetterCache();
+        this.getterCache = new EvictableGetterCache(MAX_CLASSES_IN_CACHE, MAX_GETTERS_PER_CLASS_IN_CACHE,
+                CACHE_LOAD_FACTOR);
         this.argumentsParser = new DefaultArgumentsParser();
     }
 
@@ -68,22 +66,23 @@ public class Extractors {
 
     private Getter getGetter(Object targetObject, String attributeName) {
         Getter getter = getterCache.getGetter(targetObject.getClass(), attributeName);
-        if (getter != null) {
-            return getter;
+        if (getter == null) {
+            getter = instantiateGetter(targetObject, attributeName);
         }
+        if (getter.isCacheable()) {
+            getterCache.putGetter(targetObject.getClass(), attributeName, getter);
+        }
+        return getter;
+    }
+
+    private Getter instantiateGetter(Object targetObject, String attributeName) {
         String attributeNameWithoutArguments = extractAttributeNameNameWithoutArguments(attributeName);
         ValueExtractor valueExtractor = extractors.get(attributeNameWithoutArguments);
         if (valueExtractor != null) {
             Arguments arguments = argumentsParser.parse(extractArgumentsFromAttributeName(attributeName));
-            ExtractorGetter extractorGetter = new ExtractorGetter(valueExtractor, arguments);
-            getterCache.putGetter(targetObject.getClass(), attributeName, extractorGetter);
-            return extractorGetter;
+            return new ExtractorGetter(valueExtractor, arguments);
         } else {
-            Getter reflectionGetter = ReflectionHelper.createGetter(targetObject, attributeName);
-            if (reflectionGetter.isCacheable()) {
-                getterCache.putGetter(targetObject.getClass(), attributeName, reflectionGetter);
-            }
-            return reflectionGetter;
+            return ReflectionHelper.createGetter(targetObject, attributeName);
         }
     }
 
@@ -118,41 +117,6 @@ public class Extractors {
         @Override
         boolean isCacheable() {
             return true;
-        }
-    }
-
-    private static final class GetterCache {
-        private final ConcurrentMap<Class, ConcurrentMap<String, Getter>> getterCache
-                = new ConcurrentHashMap<Class, ConcurrentMap<String, Getter>>(1000);
-
-        private final ConstructorFunction<Class, ConcurrentMap<String, Getter>> getterCacheConstructor
-                = new ConstructorFunction<Class, ConcurrentMap<String, Getter>>() {
-            @Override
-            public ConcurrentMap<String, Getter> createNew(Class arg) {
-                return new ConcurrentHashMap<String, Getter>();
-            }
-        };
-
-        @Nullable
-        private Getter getGetter(Class clazz, String attribute) {
-            ConcurrentMap<String, Getter> cache = getterCache.get(clazz);
-            if (cache == null) {
-                return null;
-            }
-            return cache.get(attribute);
-        }
-
-        private Getter putGetter(Class clazz, String attribute, Getter getter) {
-            ConcurrentMap<String, Getter> cache = ConcurrencyUtil.getOrPutIfAbsent(getterCache, clazz, getterCacheConstructor);
-            Getter foundGetter = cache.putIfAbsent(attribute, getter);
-            evictIfMaxSizeReached();
-            return foundGetter == null ? getter : foundGetter;
-        }
-
-        public void evictIfMaxSizeReached() {
-            if (getterCache.size() > MAX_CACHE_SIZE) {
-                getterCache.clear();
-            }
         }
     }
 
