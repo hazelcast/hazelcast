@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.net.URLDecoder;
 
 import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_START_TAG;
 import static org.junit.Assert.assertEquals;
@@ -48,7 +49,7 @@ public class XMLConfigWithSystemPropertyTest {
     public void testConfigurationWithFile() throws Exception{
         URL url = getClass().getClassLoader().getResource("hazelcast-default.xml");
         assertNotNull(url);
-        System.setProperty("hazelcast.config", url.getFile());
+        System.setProperty("hazelcast.config", URLDecoder.decode(url.getPath(), "UTF-8"));
         Config config = new XmlConfigBuilder().build();
         assertEquals(url, config.getConfigurationUrl());
     }
