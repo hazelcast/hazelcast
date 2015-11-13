@@ -615,7 +615,7 @@ public class ClientMapNearCacheTest {
     }
 
     @Test
-    public void testServerMapExpiration_doesNotInvalidateClientNearCache() throws Exception {
+    public void testServerMapExpiration_doesNotInvalidateClientNearCache() {
         String mapName = randomMapName(NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME);
         IMap<Integer, Integer> serverMap = server.getMap(mapName);
         IMap<Integer, Integer> clientMap = client.getMap(mapName);
@@ -633,15 +633,18 @@ public class ClientMapNearCacheTest {
 
         // put entry with TTL into server map
         serverMap.put(1, 23, 3, TimeUnit.SECONDS);
+        assertNotNull(serverMap.get(1));
 
         // get() operation puts entry into client near cache
-        clientMap.get(1);
+        assertNotNull(clientMap.get(1));
         assertThatOwnedEntryCountEquals(clientMap, 1);
 
-        // wait for expiration of entry on server side
+        // assert that the entry is not available on the server after expiration
         assertOpenEventually(expiredEventLatch);
+        assertNull(serverMap.get(1));
 
-        // assert that the entry is still in the client near cache
+        // assert that the entry is still available on the client and in the client near cache
+        assertNotNull(clientMap.get(1));
         assertThatOwnedEntryCountEquals(clientMap, 1);
     }
 
