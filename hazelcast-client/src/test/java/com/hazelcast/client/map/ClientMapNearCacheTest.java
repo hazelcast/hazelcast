@@ -71,6 +71,7 @@ public class ClientMapNearCacheTest {
     private static final String NEAR_CACHE_RANDOM_WITH_MAX_SIZE = "NEAR_CACHE_RANDOM_WITH_MAX_SIZE";
     private static final String NEAR_CACHE_NONE_WITH_MAX_SIZE = "NEAR_CACHE_NONE_WITH_MAX_SIZE";
 
+    private static final ClientConfig clientConfig = new ClientConfig();
     private static final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     private static HazelcastInstance server;
@@ -80,8 +81,6 @@ public class ClientMapNearCacheTest {
     public static void setup() throws Exception {
         server = hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastInstance();
-
-        ClientConfig clientConfig = new ClientConfig();
 
         NearCacheConfig basicConfigNoInvalidation = new NearCacheConfig();
         basicConfigNoInvalidation.setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -618,22 +617,23 @@ public class ClientMapNearCacheTest {
     public void testServerMapExpiration_doesNotInvalidateClientNearCache() {
         String mapName = randomMapName(NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME);
         IMap<Integer, Integer> serverMap = server.getMap(mapName);
-        IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
-        final CountDownLatch expiredEventLatch = new CountDownLatch(2);
+        final CountDownLatch expiredEventLatch = new CountDownLatch(1);
         EntryExpiredListener listener = new EntryExpiredListener() {
             @Override
             public void entryExpired(EntryEvent event) {
                 expiredEventLatch.countDown();
             }
         };
-
         serverMap.addEntryListener(listener, false);
-        clientMap.addEntryListener(listener, false);
 
         // put entry with TTL into server map
         serverMap.put(1, 23, 3, TimeUnit.SECONDS);
         assertNotNull(serverMap.get(1));
+
+        // create a new client after the put() operation to be sure we miss the near cache invalidation event
+        HazelcastInstance newClient = hazelcastFactory.newHazelcastClient(clientConfig);
+        IMap<Integer, Integer> clientMap = newClient.getMap(mapName);
 
         // get() operation puts entry into client near cache
         assertNotNull(clientMap.get(1));
