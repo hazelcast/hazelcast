@@ -63,6 +63,8 @@ public interface MapOperationProvider {
 
     MapOperation createEvictOperation(String name, Data dataKey, boolean asyncBackup);
 
+    MapOperation createEvictAllOperation(String name);
+
     MapOperation createContainsKeyOperation(String name, Data dataKey);
 
     MapOperation createGetEntryViewOperation(String name, Data dataKey);
