@@ -18,10 +18,14 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
 /**
  * CachedDataRecordWithStats.
  */
 class CachedDataRecordWithStats extends DataRecordWithStats {
+    private static final AtomicReferenceFieldUpdater<CachedDataRecordWithStats, Object> CACHED_VALUE =
+            AtomicReferenceFieldUpdater.newUpdater(CachedDataRecordWithStats.class, Object.class, "cachedValue");
 
     private transient volatile Object cachedValue;
 
@@ -35,18 +39,18 @@ class CachedDataRecordWithStats extends DataRecordWithStats {
 
     @Override
     public void setValue(Data o) {
-        cachedValue = null;
         super.setValue(o);
+        cachedValue = null;
     }
 
     @Override
-    public Object getCachedValue() {
+    public Object getCachedValueUnsafe() {
         return cachedValue;
     }
 
     @Override
-    public void setCachedValue(Object cachedValue) {
-        this.cachedValue = cachedValue;
+    public boolean casCachedValue(Object expectedValue, Object newValue) {
+        return CACHED_VALUE.compareAndSet(this, expectedValue, newValue);
     }
 
     @Override

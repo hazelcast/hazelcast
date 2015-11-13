@@ -51,26 +51,150 @@ public final class Records {
         return info;
     }
 
-    public static Object getValueOrCachedValue(Record record, SerializationService serializationService) {
-        Object value = record.getCachedValue();
-        if (value == NOT_CACHED) {
-            value = record.getValue();
-        } else if (value == null) {
-            value = record.getValue();
-            if (shouldCache(record, value)) {
-                value = serializationService.toObject(value);
-                record.setCachedValue(value);
+    /**
+     * Get current cached value from the record.
+     * This method protects you against accidental exposure of cached value mutex into rest of the code.
+     *
+     * Use it instead of raw {@link Record#getCachedValueUnsafe()} See
+     * {@link #getValueOrCachedValue(Record, SerializationService)}
+     * for details.
+     *
+     * @param record
+     * @return
+     */
+    public static Object getCachedValue(Record record) {
+        for (;;) {
+            Object cachedValue = record.getCachedValueUnsafe();
+            if (!(cachedValue instanceof Thread)) {
+                return cachedValue;
+            }
+
+            cachedValue = ThreadWrapper.unwrapOrNull(cachedValue);
+            if (cachedValue != null) {
+                return cachedValue;
             }
         }
-        return value;
     }
 
-    private static boolean shouldCache(Record record, Object value) {
-        boolean isCachableRecordType = record instanceof CachedDataRecordWithStats || record instanceof CachedDataRecord;
-        if (!isCachableRecordType) {
-            return false;
+    /**
+     * Return cached value where appropriate, otherwise return the actual value.
+     * Value caching makes sense when:
+     * <ul>
+     *     <li>Portable serialization is not used</li>
+     *     <li>OBJECT InMemoryFormat is not used</li>
+     * </ul>
+     *
+     * If Record does not contain cached value and is found appropriate (see above) then new cache value is created
+     * by de-serializing the {@link Record#getValue()}
+     *
+     * The newly de-deserialized value may not be stored into the Record cache when the record has been modified
+     * while the method was running.
+     *
+     * WARNING: This method may temporarily set an arbitrary object into the Record cache - this object acts as mutex.
+     * The mutex should never be returned to the outside world. Use {@link #getCachedValue(Record)} instead of raw
+     * {@link Record#getCachedValueUnsafe()} to protect from accidental mutex exposure to the user-code.
+     *
+     * @param record
+     * @param serializationService
+     * @return
+     */
+    public static Object getValueOrCachedValue(Record record, SerializationService serializationService) {
+        Object cachedValue = record.getCachedValueUnsafe();
+        if (cachedValue == NOT_CACHED) {
+            //record does not support caching at all
+            return record.getValue();
         }
+        for (;;) {
+            if (cachedValue == null) {
+                Object valueBeforeCas = record.getValue();
+                if (!shouldCache(valueBeforeCas)) {
+                    //it's either a null or value which we do not want to cache. let's just return it.
+                    return valueBeforeCas;
+                }
+                Object fromCache = tryStoreIntoCache(record, valueBeforeCas, serializationService);
+                if (fromCache != null) {
+                    return fromCache;
+                }
+            } else if (cachedValue instanceof Thread) {
+                //the cachedValue is either locked by another thread or it contains a wrapped thread
+                cachedValue = ThreadWrapper.unwrapOrNull(cachedValue);
+                if (cachedValue != null) {
+                    //exceptional case: the cachedValue is not locked, it just contains an instance of Thread.
+                    //this can happen when user put an instance of Thread into a map
+                    //(=it should never happen, but never say never...)
+                    return cachedValue;
+                }
+                //it looks like some other thread actually locked the cachedValue. let's give it another try (iteration)
+            } else {
+                //it's not the 'in-progress' marker/lock && it's not a null -> it has to be the actual cachedValue
+                return cachedValue;
+            }
+            Thread.yield();
+            cachedValue = record.getCachedValueUnsafe();
+        }
+    }
+
+    private static Object tryStoreIntoCache(Record record, Object valueBeforeCas, SerializationService serializationService) {
+        Thread currentThread = Thread.currentThread();
+        if (!record.casCachedValue(null, currentThread)) {
+            return null;
+        }
+
+        //we managed to lock the record for ourselves
+        Object valueAfterCas = record.getValue();
+        Object object = serializationService.toObject(valueBeforeCas);
+        if (valueAfterCas == valueBeforeCas) {
+            //this check is needed to make sure a partition thread had not changed the value
+            //right before we won the CAS
+            Object wrappedObject = ThreadWrapper.wrapIfNeeded(object);
+            record.casCachedValue(currentThread, wrappedObject);
+            //we can return the object no matter of the CAS outcome. if we lose the CAS it means
+            //the value had been mutated concurrently and partition thread removed our lock.
+        } else {
+            //the value has changed -> we can return the object to the caller as it was valid at some point in time
+            //we are just not storing it into the cache as apparently it's not valid anymore.
+
+            //we have to CAS the lock out as it could had been already removed by the partition thread
+            record.casCachedValue(currentThread, null);
+
+        }
+        return object;
+    }
+
+    static boolean shouldCache(Object value) {
         return value instanceof Data && !((Data) value).isPortable();
+    }
+
+
+    /**
+     * currentThread inside cachedValue acts as "deserialization in-progress" marker
+     * if the actual deserialized value is instance of Thread then we need to wrap it
+     * otherwise it might be mistaken for the "deserialization in-progress" marker.
+     *
+     */
+    private static final class ThreadWrapper extends Thread {
+        private final Thread wrappedValue;
+
+        private ThreadWrapper(Thread wrappedValue) {
+            this.wrappedValue = wrappedValue;
+        }
+
+        static Object unwrapOrNull(Object o) {
+            if (o instanceof ThreadWrapper) {
+                return ((ThreadWrapper) o).wrappedValue;
+            }
+            return null;
+        }
+
+        static Object wrapIfNeeded(Object object) {
+            if (object instanceof Thread) {
+                //exceptional case: deserialized value is an instance of Thread
+                //we need to wrap it as we use currentThread to mark the cacheValue is 'deserilization in-progress'
+                //this is the only case where we allocate a new object.
+                return new ThreadWrapper((Thread) object);
+            }
+            return object;
+        }
     }
 
 }

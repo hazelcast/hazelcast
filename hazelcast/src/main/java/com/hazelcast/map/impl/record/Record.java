@@ -56,9 +56,26 @@ public interface Record<V> {
 
     long getEvictionCriteriaNumber();
 
-    Object getCachedValue();
+    /**
+     * Get current cache value or null.
+     *
+     * Warning: Do not use this method directly as it might expose arbitrary objects acting as a lock.
+     * Use {@link Records#getCachedValue(Record)} instead.
+     *
+     * @return current cached value or null or cached record mutex.
+     */
+    Object getCachedValueUnsafe();
 
-    void setCachedValue(Object cachedValue);
+    /**
+     * Atomically sets the cached value to the given new value
+     * if the current cached value {@code ==} the expected value.
+     *
+     * @param expectedValue the expected cached value
+     * @param newValue the new cached value
+     * @return {@code true} if successful. False return indicates that
+     * the actual cached value was not equal to the expected cached value.
+     */
+    boolean casCachedValue(Object expectedValue, Object newValue);
 
     long getTtl();
 
