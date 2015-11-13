@@ -38,7 +38,6 @@ import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.query.SqlPredicate;
@@ -55,10 +54,6 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Random;
@@ -66,12 +61,20 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.anyObject;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -1329,4 +1332,97 @@ public class MapTransactionTest extends HazelcastTestSupport {
             }
         });
     }
+
+
+    @Test
+    public void testGetForUpdate_LoadsKeyFromMapLoader_whenKeyDoesNotExistsInDb() {
+        final String mapName = randomMapName();
+        final MapStoreAdapter mock = mock(MapStoreAdapter.class);
+        when(mock.load(anyObject())).thenReturn(null);
+        Config config = new Config();
+        MapStoreConfig storeConfig = new MapStoreConfig();
+        storeConfig.setEnabled(true).setImplementation(mock);
+        config.getMapConfig(mapName).setMapStoreConfig(storeConfig);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        instance.executeTransaction(new TransactionalTask<Object>() {
+            @Override
+            public Object execute(TransactionalTaskContext context) throws TransactionException {
+                TransactionalMap<Object, Object> map = context.getMap(mapName);
+                Object value = map.getForUpdate(1);
+                assertNull("value should be null", value);
+                verify(mock, times(1)).load(anyObject());
+                return null;
+            }
+        });
+    }
+
+
+    @Test
+    public void testGetForUpdate_LoadsKeyFromMapLoader_whenKeyExistsInDb() {
+        final String mapName = randomMapName();
+        final String valueFromDB = randomString();
+        final MapStoreAdapter mock = mock(MapStoreAdapter.class);
+        when(mock.load(anyObject())).thenReturn(valueFromDB);
+        Config config = new Config();
+        MapStoreConfig storeConfig = new MapStoreConfig();
+        storeConfig.setEnabled(true).setImplementation(mock);
+        config.getMapConfig(mapName).setMapStoreConfig(storeConfig);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        instance.executeTransaction(new TransactionalTask<Object>() {
+            @Override
+            public Object execute(TransactionalTaskContext context) throws TransactionException {
+                TransactionalMap<Object, Object> map = context.getMap(mapName);
+                Object value = map.getForUpdate(1);
+                assertEquals(valueFromDB, value);
+                verify(mock, times(1)).load(anyObject());
+                return null;
+            }
+        });
+    }
+
+    @Test
+    public void testGet_LoadsKeyFromMapLoader_whenKeyExistsInDb() {
+        final String mapName = randomMapName();
+        final String valueFromDB = randomString();
+        final MapStoreAdapter mock = mock(MapStoreAdapter.class);
+        when(mock.load(anyObject())).thenReturn(valueFromDB);
+        Config config = new Config();
+        MapStoreConfig storeConfig = new MapStoreConfig();
+        storeConfig.setEnabled(true).setImplementation(mock);
+        config.getMapConfig(mapName).setMapStoreConfig(storeConfig);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        instance.executeTransaction(new TransactionalTask<Object>() {
+            @Override
+            public Object execute(TransactionalTaskContext context) throws TransactionException {
+                TransactionalMap<Object, Object> map = context.getMap(mapName);
+                Object value = map.get(1);
+                assertEquals(valueFromDB, value);
+                verify(mock, times(1)).load(anyObject());
+                return null;
+            }
+        });
+    }
+
+    @Test
+    public void testGet_LoadsKeyFromMapLoader_whenKeyDoesNotExistsInDb() {
+        final String mapName = randomMapName();
+        final MapStoreAdapter mock = mock(MapStoreAdapter.class);
+        when(mock.load(anyObject())).thenReturn(null);
+        Config config = new Config();
+        MapStoreConfig storeConfig = new MapStoreConfig();
+        storeConfig.setEnabled(true).setImplementation(mock);
+        config.getMapConfig(mapName).setMapStoreConfig(storeConfig);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        instance.executeTransaction(new TransactionalTask<Object>() {
+            @Override
+            public Object execute(TransactionalTaskContext context) throws TransactionException {
+                TransactionalMap<Object, Object> map = context.getMap(mapName);
+                Object value = map.get(1);
+                assertNull("value should be null", value);
+                verify(mock, times(1)).load(anyObject());
+                return null;
+            }
+        });
+    }
+
 }

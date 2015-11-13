@@ -121,7 +121,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     }
 
     public Object getForUpdateInternal(Data key) {
-        VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
+        VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis(), true);
         addUnlockTransactionRecord(key, versionedValue.version);
         return versionedValue.value;
     }
@@ -255,13 +255,25 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation, version, tx.getOwnerUuid()));
     }
 
+    /**
+     * Locks the key on the partition owner and returns the value with the version. Does not invokes maploader if
+     * the key is missing in memory
+     * @param key serialized key
+     * @param timeout timeout in millis
+     * @return VersionedValue wrapper for value/version pair.
+     */
     private VersionedValue lockAndGet(Data key, long timeout) {
+        return lockAndGet(key, timeout, false);
+    }
+
+    private VersionedValue lockAndGet(Data key, long timeout, boolean shouldLoad) {
         VersionedValue versionedValue = valueMap.get(key);
         if (versionedValue != null) {
             return versionedValue;
         }
         NodeEngine nodeEngine = getNodeEngine();
-        MapOperation operation = operationProvider.createTxnLockAndGetOperation(name, key, timeout, timeout, tx.getOwnerUuid());
+        MapOperation operation = operationProvider.createTxnLockAndGetOperation(name, key, timeout, timeout,
+                tx.getOwnerUuid(), shouldLoad);
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
@@ -277,6 +289,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
+
     }
 
     protected List<Map.Entry<Data, Data>> getEntries() {

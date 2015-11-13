@@ -361,7 +361,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return tempMap.entrySet();
     }
 
-    protected Record loadRecordOrNull(Data key, boolean backup) {
+    @Override
+    public Record loadRecordOrNull(Data key, boolean backup) {
         Record record = null;
         final Object value = mapDataStore.load(key);
         if (value != null) {
