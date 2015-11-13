@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.getters;
 
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.query.extractor.ValueExtractor;
 
@@ -24,12 +25,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class ExtractorHelper {
+final class ExtractorHelper {
 
     private ExtractorHelper() {
     }
 
-    public static Map<String, ValueExtractor> instantiateExtractors(List<MapAttributeConfig> mapAttributeConfigs) {
+    static Map<String, ValueExtractor> instantiateExtractors(List<MapAttributeConfig> mapAttributeConfigs) {
         Map<String, ValueExtractor> extractors = new HashMap<String, ValueExtractor>();
         for (MapAttributeConfig config : mapAttributeConfigs) {
             if (extractors.containsKey(config.getName())) {
@@ -41,7 +42,7 @@ public final class ExtractorHelper {
         return extractors;
     }
 
-    private static ValueExtractor instantiateExtractor(MapAttributeConfig config) {
+    static ValueExtractor instantiateExtractor(MapAttributeConfig config) {
         try {
             Class<?> clazz = Class.forName(config.getExtractor());
             Object extractor = clazz.newInstance();
@@ -51,16 +52,16 @@ public final class ExtractorHelper {
                 throw new IllegalArgumentException("Extractor does not extend ValueExtractor class " + config);
             }
         } catch (IllegalAccessException ex) {
-            throw new RuntimeException("Could not initialize extractor " + config, ex);
+            throw new InvalidConfigurationException("Could not initialize extractor " + config, ex);
         } catch (InstantiationException ex) {
-            throw new RuntimeException("Could not initialize extractor " + config, ex);
+            throw new InvalidConfigurationException("Could not initialize extractor " + config, ex);
         } catch (ClassNotFoundException ex) {
-            throw new RuntimeException("Could not initialize extractor " + config, ex);
+            throw new InvalidConfigurationException("Could not initialize extractor " + config, ex);
         }
     }
 
     @Nullable
-    public static String extractArgumentsFromAttributeName(String attributeNameWithArguments) {
+    static String extractArgumentsFromAttributeName(String attributeNameWithArguments) {
         int start = attributeNameWithArguments.lastIndexOf("[");
         int end = attributeNameWithArguments.lastIndexOf("]");
         if (start > 0 && start < attributeNameWithArguments.length() && start < end) {
@@ -72,14 +73,16 @@ public final class ExtractorHelper {
         throw new IllegalArgumentException("Wrong argument input passed to extractor " + attributeNameWithArguments);
     }
 
-    public static String extractAttributeNameNameWithoutArguments(String attributeNameWithArguments) {
-        int lastOpeningSquareBracket = attributeNameWithArguments.lastIndexOf("[");
-        if (lastOpeningSquareBracket > 0) {
-            return attributeNameWithArguments.substring(0, lastOpeningSquareBracket);
-        } else if (attributeNameWithArguments.contains("]")) {
-            throw new IllegalArgumentException("Wrong argument input passed to extractor " + attributeNameWithArguments);
+    static String extractAttributeNameNameWithoutArguments(String attributeNameWithArguments) {
+        int start = attributeNameWithArguments.lastIndexOf("[");
+        int end = attributeNameWithArguments.lastIndexOf("]");
+        if (start > 0 && start < attributeNameWithArguments.length() && start < end) {
+            return attributeNameWithArguments.substring(0, start);
         }
-        return attributeNameWithArguments;
+        if (start < 0 && end < 0) {
+            return attributeNameWithArguments;
+        }
+        throw new IllegalArgumentException("Wrong argument input passed to extractor " + attributeNameWithArguments);
     }
 
 }

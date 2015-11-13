@@ -20,6 +20,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.SampleableConcurrentHashMap;
 
 import javax.annotation.Nullable;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
@@ -29,10 +30,12 @@ class EvictableGetterCache {
     private final SampleableConcurrentHashMap<Class, SampleableConcurrentHashMap<String, Getter>> getterCache;
     private final ConstructorFunction<Class, SampleableConcurrentHashMap<String, Getter>> getterCacheConstructor;
 
+    private final int maxClassCount;
     private final int afterEvictionClassCount;
+    private final int maxGetterPerClassCount;
     private final int afterEvictionGetterPerClassCount;
 
-    EvictableGetterCache(int maxClassCount, final int maxGetterPerClassCount, float loadFactor) {
+    EvictableGetterCache(int maxClassCount, final int maxGetterPerClassCount, float evictPercentage) {
         getterCache = new SampleableConcurrentHashMap<Class, SampleableConcurrentHashMap<String, Getter>>(maxClassCount);
         getterCacheConstructor = new ConstructorFunction<Class, SampleableConcurrentHashMap<String, Getter>>() {
             @Override
@@ -40,39 +43,53 @@ class EvictableGetterCache {
                 return new SampleableConcurrentHashMap<String, Getter>(maxGetterPerClassCount);
             }
         };
-        afterEvictionClassCount = (int) (maxClassCount * loadFactor);
-        afterEvictionGetterPerClassCount = (int) (maxGetterPerClassCount * loadFactor);
+
+        this.maxClassCount = maxClassCount;
+        this.afterEvictionClassCount = (int) (maxClassCount * (1 - evictPercentage));
+        this.maxGetterPerClassCount = maxGetterPerClassCount;
+        this.afterEvictionGetterPerClassCount = (int) (maxGetterPerClassCount * (1 - evictPercentage));
     }
 
     @Nullable
-    Getter getGetter(Class clazz, String attribute) {
+    Getter getGetter(Class clazz, String attributeName) {
         ConcurrentMap<String, Getter> cache = getterCache.get(clazz);
         if (cache == null) {
             return null;
         }
-        return cache.get(attribute);
+        return cache.get(attributeName);
     }
 
-    Getter putGetter(Class clazz, String attribute, Getter getter) {
+    Getter putGetter(Class clazz, String attributeName, Getter getter) {
         SampleableConcurrentHashMap<String, Getter> cache = getOrPutIfAbsent(getterCache, clazz, getterCacheConstructor);
-        Getter foundGetter = cache.putIfAbsent(attribute, getter);
+        Getter foundGetter = cache.putIfAbsent(attributeName, getter);
         evictOnPut(cache);
         return foundGetter == null ? getter : foundGetter;
     }
 
     private void evictOnPut(SampleableConcurrentHashMap<String, Getter> getterPerClassCache) {
-        evict(getterPerClassCache, afterEvictionGetterPerClassCount);
-        evict(getterCache, afterEvictionClassCount);
+        evictMap(getterPerClassCache, maxGetterPerClassCount, afterEvictionGetterPerClassCount);
+        evictMap(getterCache, maxClassCount, afterEvictionClassCount);
     }
 
-    private void evict(SampleableConcurrentHashMap<?, ?> map, int expectedSize) {
-        int evictCount = map.size() - expectedSize;
-        if (evictCount > 0) {
-            Iterable<SampleableConcurrentHashMap.SamplingEntry> it = map.getRandomSamples(evictCount);
-            for (SampleableConcurrentHashMap.SamplingEntry entry : it) {
+    /**
+     * It works on best effort basis. If multi-threaded calls involved it may evict all elements, but it's unlikely.
+     */
+    private void evictMap(SampleableConcurrentHashMap<?, ?> map, int triggeringEvictionSize, int afterEvictionSize) {
+        int mapSize = map.size();
+        if (mapSize - triggeringEvictionSize >= 0) {
+            for (Map.Entry entry : map.getRandomSamples(mapSize - afterEvictionSize)) {
                 map.remove(entry.getKey());
             }
         }
+    }
+
+    int getClassCacheSize() {
+        return getterCache.size();
+    }
+
+    int getGetterPerClassCacheSize(Class clazz) {
+        SampleableConcurrentHashMap cacheForClass = getterCache.get(clazz);
+        return cacheForClass != null ? cacheForClass.size() : -1;
     }
 
 }

@@ -35,7 +35,7 @@ public class Extractors {
 
     private static final int MAX_CLASSES_IN_CACHE = 1000;
     private static final int MAX_GETTERS_PER_CLASS_IN_CACHE = 100;
-    private static final float CACHE_LOAD_FACTOR = 0.7f;
+    private static final float EVICTION_PERCENTAGE = 0.2f;
     private static final Extractors EMPTY = new Extractors(Collections.<MapAttributeConfig>emptyList());
 
     // Maps the extractorAttributeName WITHOUT the arguments to a ValueExtractor instance
@@ -48,7 +48,7 @@ public class Extractors {
     public Extractors(List<MapAttributeConfig> mapAttributeConfigs) {
         this.extractors = instantiateExtractors(mapAttributeConfigs);
         this.getterCache = new EvictableGetterCache(MAX_CLASSES_IN_CACHE, MAX_GETTERS_PER_CLASS_IN_CACHE,
-                CACHE_LOAD_FACTOR);
+                EVICTION_PERCENTAGE);
         this.argumentsParser = new DefaultArgumentsParser();
     }
 
