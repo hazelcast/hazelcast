@@ -17,6 +17,8 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.proxy.NearCachedClientMapProxy;
+import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
@@ -25,6 +27,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -71,7 +74,6 @@ public class ClientMapNearCacheTest {
     private static final String NEAR_CACHE_RANDOM_WITH_MAX_SIZE = "NEAR_CACHE_RANDOM_WITH_MAX_SIZE";
     private static final String NEAR_CACHE_NONE_WITH_MAX_SIZE = "NEAR_CACHE_NONE_WITH_MAX_SIZE";
 
-    private static final ClientConfig clientConfig = new ClientConfig();
     private static final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     private static HazelcastInstance server;
@@ -81,6 +83,8 @@ public class ClientMapNearCacheTest {
     public static void setup() throws Exception {
         server = hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
 
         NearCacheConfig basicConfigNoInvalidation = new NearCacheConfig();
         basicConfigNoInvalidation.setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -617,8 +621,10 @@ public class ClientMapNearCacheTest {
     public void testServerMapExpiration_doesNotInvalidateClientNearCache() {
         String mapName = randomMapName(NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME);
         IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
-        final CountDownLatch expiredEventLatch = new CountDownLatch(1);
+        // add EntryExpiredListener to catch expiration events
+        final CountDownLatch expiredEventLatch = new CountDownLatch(2);
         EntryExpiredListener listener = new EntryExpiredListener() {
             @Override
             public void entryExpired(EntryEvent event) {
@@ -626,14 +632,19 @@ public class ClientMapNearCacheTest {
             }
         };
         serverMap.addEntryListener(listener, false);
+        clientMap.addEntryListener(listener, false);
+
+        // add NearCacheEventListener to catch near cache invalidation event on client side
+        final CountDownLatch eventAddedLatch = new CountDownLatch(1);
+        addNearCacheInvalidateListener(clientMap, eventAddedLatch);
 
         // put entry with TTL into server map
         serverMap.put(1, 23, 6, TimeUnit.SECONDS);
         assertNotNull(serverMap.get(1));
 
-        // create a new client after the put() operation to be sure we miss the near cache invalidation event
-        HazelcastInstance newClient = hazelcastFactory.newHazelcastClient(clientConfig);
-        IMap<Integer, Integer> clientMap = newClient.getMap(mapName);
+        // wait until near cache invalidation is done after ADDED event
+        assertOpenEventually(eventAddedLatch);
+        assertThatOwnedEntryCountEquals(clientMap, 0);
 
         // get() operation puts entry into client near cache
         assertNotNull(clientMap.get(1));
@@ -676,5 +687,40 @@ public class ClientMapNearCacheTest {
 
     private void triggerEviction(IMap<Integer, Integer> map) {
         populateNearCache(map, 1);
+    }
+
+    private void addNearCacheInvalidateListener(IMap clientMap, CountDownLatch eventAddedLatch) {
+        NearCacheEventListener listener = new NearCacheEventListener(eventAddedLatch);
+
+        NearCachedClientMapProxy mapProxy = (NearCachedClientMapProxy) clientMap;
+        mapProxy.addNearCacheInvalidateListener(listener);
+    }
+
+    private static class NearCacheEventListener implements EventHandler<PortableEntryEvent> {
+
+        private final CountDownLatch eventAddedLatch;
+
+        private NearCacheEventListener(CountDownLatch eventAddedLatch) {
+            this.eventAddedLatch = eventAddedLatch;
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+        }
+
+        @Override
+        public void onListenerRegister() {
+        }
+
+        @Override
+        public void handle(PortableEntryEvent event) {
+            switch (event.getEventType()) {
+                case ADDED:
+                    eventAddedLatch.countDown();
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Unsupported EntryEventType: " + event.getEventType());
+            }
+        }
     }
 }

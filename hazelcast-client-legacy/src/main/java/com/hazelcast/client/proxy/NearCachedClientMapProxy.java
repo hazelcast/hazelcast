@@ -343,9 +343,13 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     protected void addNearCacheInvalidateListener() {
+        EventHandler handler = new InvalidationListener(this.nearCache);
+        addNearCacheInvalidateListener(handler);
+    }
+
+    public void addNearCacheInvalidateListener(EventHandler handler) {
         try {
             MapAddNearCacheEntryListenerRequest addRequest = new MapAddNearCacheEntryListenerRequest(name, false);
-            EventHandler handler = new InvalidationListener(this.nearCache);
             BaseClientRemoveListenerRequest removeRequest = new MapRemoveEntryListenerRequest(name);
 
             invalidationListenerId = registerListener(addRequest, removeRequest, handler);
@@ -354,7 +358,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
                     "-----------------\n Near Cache is not initialized!!! \n-----------------", e);
         }
     }
-
 
     protected static final class InvalidationListener implements EventHandler<PortableEntryEvent> {
 
