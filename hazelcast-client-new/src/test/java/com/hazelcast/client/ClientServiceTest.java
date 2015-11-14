@@ -32,6 +32,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
@@ -48,12 +49,14 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -416,4 +419,16 @@ public class ClientServiceTest extends HazelcastTestSupport {
             countDown();
         }
     }
+
+    @Test
+    public void testMemberListOrderConsistentWithServer() {
+        hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        Set<Member> membersFromClient = client.getCluster().getMembers();
+        Set<Member> membersFromServer = instance.getCluster().getMembers();
+        assertArrayEquals(membersFromClient.toArray(), membersFromServer.toArray());
+    }
+
 }
