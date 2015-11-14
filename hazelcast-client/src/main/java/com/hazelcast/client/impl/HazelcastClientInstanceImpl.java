@@ -161,7 +161,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
         clientProperties = new ClientProperties(config);
-        serializationService = clientExtension.createSerializationService((byte)-1);
+        serializationService = clientExtension.createSerializationService((byte) -1);
         proxyManager = new ProxyManager(this);
         executionService = initExecutionService();
         loadBalancer = initLoadBalancer(config);
@@ -455,7 +455,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             ClientGetDistributedObjectsCodec.ResponseParameters resultParameters =
                     ClientGetDistributedObjectsCodec.decodeResponse(response);
 
-            Collection<DistributedObjectInfo> infoCollection = resultParameters.infoCollection;
+            Collection<DistributedObjectInfo> infoCollection = resultParameters.infoList;
             for (DistributedObjectInfo distributedObjectInfo : infoCollection) {
                 getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
             }

@@ -35,8 +35,8 @@ import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.HashUtil;
 
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -132,8 +132,8 @@ public final class ClientPartitionServiceImpl
     }
 
     private boolean processPartitionResponse(ClientGetPartitionsCodec.ResponseParameters response) {
-        Map<Address, Set<Integer>> partitionResponse = response.partitions;
-        for (Map.Entry<Address, Set<Integer>> entry : partitionResponse.entrySet()) {
+        Map<Address, List<Integer>> partitionResponse = response.partitions;
+        for (Map.Entry<Address, List<Integer>> entry : partitionResponse.entrySet()) {
             Address address = entry.getKey();
             for (Integer partition : entry.getValue()) {
                 this.partitions.put(partition, address);

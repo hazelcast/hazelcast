@@ -28,8 +28,8 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class MapReduceForCustomMessageTask
         extends AbstractMapReduceTask<MapReduceForCustomCodec.RequestParameters> {
@@ -89,7 +89,7 @@ public class MapReduceForCustomMessageTask
     }
 
     protected ClientMessage encodeResponse(Object response) {
-        return MapReduceForCustomCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
+        return MapReduceForCustomCodec.encodeResponse((List<Map.Entry<Data, Data>>) response);
     }
 
     @Override

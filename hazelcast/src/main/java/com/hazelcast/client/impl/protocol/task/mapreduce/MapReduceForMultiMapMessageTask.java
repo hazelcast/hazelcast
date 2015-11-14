@@ -29,8 +29,8 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class MapReduceForMultiMapMessageTask
         extends AbstractMapReduceTask<MapReduceForMultiMapCodec.RequestParameters> {
@@ -90,7 +90,7 @@ public class MapReduceForMultiMapMessageTask
     }
 
     protected ClientMessage encodeResponse(Object response) {
-        return MapReduceForMultiMapCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
+        return MapReduceForMultiMapCodec.encodeResponse((List<Map.Entry<Data, Data>>) response);
     }
 
     @Override

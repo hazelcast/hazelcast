@@ -42,9 +42,10 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -165,13 +166,13 @@ public abstract class AbstractMapReduceTask<Parameters>
     @Override
     public void onResponse(Object response) {
         Map<Object, Object> m = (Map<Object, Object>) response;
-        Map<Data, Data> hashMap = new HashMap<Data, Data>();
+        List<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>();
         for (Map.Entry<Object, Object> entry : m.entrySet()) {
             Data key = serializationService.toData(entry.getKey());
             Data value = serializationService.toData(entry.getValue());
-            hashMap.put(key, value);
+            entries.add(new AbstractMap.SimpleEntry<Data, Data>(key, value));
         }
-        sendResponse(hashMap.entrySet());
+        sendResponse(entries);
     }
 
     @Override

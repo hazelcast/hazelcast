@@ -26,9 +26,9 @@ import com.hazelcast.partition.InternalPartitionService;
 
 import java.security.Permission;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class GetPartitionsMessageTask
         extends AbstractCallableMessageTask<ClientGetPartitionsCodec.RequestParameters> {
@@ -41,7 +41,7 @@ public class GetPartitionsMessageTask
         InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
         service.firstArrangement();
 
-        Map<Address, Set<Integer>> partitionsMap = new HashMap<Address, Set<Integer>>();
+        Map<Address, List<Integer>> partitionsMap = new HashMap<Address, List<Integer>>();
 
         for (InternalPartition partition : service.getPartitions()) {
             Address owner = partition.getOwnerOrNull();
@@ -49,9 +49,9 @@ public class GetPartitionsMessageTask
                 partitionsMap.clear();
                 return ClientGetPartitionsCodec.encodeResponse(partitionsMap);
             }
-            Set<Integer> indexes = partitionsMap.get(owner);
+            List<Integer> indexes = partitionsMap.get(owner);
             if (indexes == null) {
-                indexes = new HashSet<Integer>();
+                indexes = new LinkedList<Integer>();
                 partitionsMap.put(owner, indexes);
             }
             indexes.add(partition.getPartitionId());

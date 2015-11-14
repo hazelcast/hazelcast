@@ -498,7 +498,7 @@ public interface MapCodecTemplate {
      * @param replaceExistingValues when <code>true</code>, existing values in the Map will be replaced by those loaded from the MapLoader
      */
     @Request(id = 37, retryable = false, response = ResponseMessageConst.VOID)
-    void loadGivenKeys(String name, Set<Data> keys, boolean replaceExistingValues);
+    void loadGivenKeys(String name, List<Data> keys, boolean replaceExistingValues);
 
     /**
      * Returns a set clone of the keys contained in this map. The set is NOT backed by the map, so changes to the map
@@ -523,7 +523,7 @@ public interface MapCodecTemplate {
      * @param keys keys to get
      * @return values for the provided keys.
      */
-    @Request(id = 39, retryable = false, response = ResponseMessageConst.SET_ENTRY)
+    @Request(id = 39, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
     Object getAll(String name, List<Data> keys);
 
     /**
@@ -688,7 +688,7 @@ public interface MapCodecTemplate {
      * @param entryProcessor entry processor to be executed.
      * @return results of entry process on the entries
      */
-    @Request(id = 52, retryable = false, response = ResponseMessageConst.SET_ENTRY)
+    @Request(id = 52, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
     Object executeOnAllKeys(String name, Data entryProcessor);
 
     /**
@@ -700,7 +700,7 @@ public interface MapCodecTemplate {
      * @param predicate      specified query criteria.
      * @return results of entry process on the entries matching the query criteria
      */
-    @Request(id = 53, retryable = false, response = ResponseMessageConst.SET_ENTRY)
+    @Request(id = 53, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
     Object executeWithPredicate(String name, Data entryProcessor, Data predicate);
 
     /**
@@ -712,8 +712,8 @@ public interface MapCodecTemplate {
      * @param keys           The keys for the entries for which the entry processor shall be executed on.
      * @return results of entry process on the entries with the provided keys
      */
-    @Request(id = 54, retryable = false, response = ResponseMessageConst.SET_ENTRY)
-    Object executeOnKeys(String name, Data entryProcessor, Set<Data> keys);
+    @Request(id = 54, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
+    Object executeOnKeys(String name, Data entryProcessor, List<Data> keys);
 
     /**
      * Releases the lock for the specified key regardless of the lock owner.It always successfully unlocks the key,

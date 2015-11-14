@@ -31,10 +31,11 @@ import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperationFactory;
 
 import java.security.Permission;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class XACollectTransactionsMessageTask
         extends AbstractMultiTargetMessageTask<XATransactionCollectTransactionsCodec.RequestParameters> {
@@ -50,7 +51,7 @@ public class XACollectTransactionsMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return XATransactionCollectTransactionsCodec.encodeResponse((Set<Data>) response);
+        return XATransactionCollectTransactionsCodec.encodeResponse((List<Data>) response);
     }
 
     @Override
@@ -60,12 +61,12 @@ public class XACollectTransactionsMessageTask
 
     @Override
     protected Object reduce(Map<Address, Object> map) throws Throwable {
-        HashSet<Data> set = new HashSet<Data>();
+        List<Data> list = new ArrayList<Data>();
         for (Object o : map.values()) {
             SerializableList xidSet = (SerializableList) o;
-            set.addAll(xidSet.getCollection());
+            list.addAll(xidSet.getCollection());
         }
-        return set;
+        return list;
     }
 
     @Override

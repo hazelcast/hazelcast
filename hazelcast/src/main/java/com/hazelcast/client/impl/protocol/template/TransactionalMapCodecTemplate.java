@@ -209,7 +209,7 @@ public interface TransactionalMapCodecTemplate {
      * @return A set clone of the keys contained in this map.
      * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
-    @Request(id = 14, retryable = false, response = ResponseMessageConst.SET_DATA)
+    @Request(id = 14, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object keySet(String name, String txnId, long threadId);
 
     /**
@@ -225,7 +225,7 @@ public interface TransactionalMapCodecTemplate {
      * @return Result key set for the query.
      * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
-    @Request(id = 15, retryable = false, response = ResponseMessageConst.SET_DATA)
+    @Request(id = 15, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object keySetWithPredicate(String name, String txnId, long threadId, Data predicate);
 
     /**

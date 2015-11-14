@@ -17,6 +17,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.Set;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
@@ -25,6 +26,7 @@ import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -86,6 +88,13 @@ public class ClientClusterServiceMemberListTest {
                 assertEquals(2, clusterService.getSize(DATA_MEMBER_SELECTOR));
             }
         });
+    }
+
+    @Test
+    public void testMemberListOrderConsistentWithServer() {
+        Set<Member> membersFromClient = client.getCluster().getMembers();
+        Set<Member> membersFromServer = dataInstance.getCluster().getMembers();
+        assertArrayEquals(membersFromClient.toArray(), membersFromServer.toArray());
     }
 
     private void verifyMembers(Collection<Member> membersToCheck, Collection<HazelcastInstance> membersToExpect) {

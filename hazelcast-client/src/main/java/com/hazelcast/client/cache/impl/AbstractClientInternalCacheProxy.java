@@ -66,7 +66,6 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -806,7 +805,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
 
         @Override
-        public void handle(int type, Set<CacheEventData> keys, int completionId) {
+        public void handle(int type, Collection<CacheEventData> keys, int completionId) {
             adaptor.handle(type, keys, completionId);
         }
 
@@ -819,7 +818,6 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         public void onListenerRegister() {
 
         }
-
     }
 
     protected ICompletableFuture createCompletedFuture(Object value) {
@@ -850,7 +848,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
 
         @Override
-        public void handle(String name, List<Data> keys, List<String> sourceUuids) {
+        public void handle(String name, Collection<Data> keys, Collection<String> sourceUuids) {
             if (sourceUuids != null && !sourceUuids.isEmpty()) {
                 Iterator<Data> keysIt = keys.iterator();
                 Iterator<String> sourceUuidsIt = sourceUuids.iterator();

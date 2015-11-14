@@ -62,7 +62,7 @@ public interface ClientMessageTemplate {
      * @return Returns the registration id for the listener.
      */
     @Request(id = 4, retryable = false, response = ResponseMessageConst.STRING,
-            event = {EventMessageConst.EVENT_MEMBER, EventMessageConst.EVENT_MEMBERSET, EventMessageConst.EVENT_MEMBERATTRIBUTECHANGE})
+            event = {EventMessageConst.EVENT_MEMBER, EventMessageConst.EVENT_MEMBERLIST, EventMessageConst.EVENT_MEMBERATTRIBUTECHANGE})
     Object addMembershipListener(boolean localOnly);
 
     /**
@@ -147,7 +147,7 @@ public interface ClientMessageTemplate {
     /**
      * @return An array of distributed object info in the cluster.
      */
-    @Request(id = 12, retryable = false, response = ResponseMessageConst.SET_DISTRIBUTED_OBJECT)
+    @Request(id = 12, retryable = false, response = ResponseMessageConst.LIST_DISTRIBUTED_OBJECT)
     Object getDistributedObjects();
 
     /**

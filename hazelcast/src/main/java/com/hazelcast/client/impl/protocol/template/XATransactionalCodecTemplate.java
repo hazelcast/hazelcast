@@ -37,7 +37,7 @@ public interface XATransactionalCodecTemplate {
      *
      * @return Array of Xids.
      */
-    @Request(id = 2, retryable = false, response = ResponseMessageConst.SET_DATA)
+    @Request(id = 2, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object collectTransactions();
 
     /**

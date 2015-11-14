@@ -31,7 +31,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
-import java.util.Set;
+import java.util.Collection;
 
 public class AddMembershipListenerMessageTask
         extends AbstractCallableMessageTask<ClientAddMembershipListenerCodec.RequestParameters> {
@@ -95,8 +95,8 @@ public class AddMembershipListenerMessageTask
         @Override
         public void init(InitialMembershipEvent membershipEvent) {
             ClusterService service = getService(ClusterServiceImpl.SERVICE_NAME);
-            Set members = (Set) service.getMemberImpls();
-            ClientMessage eventMessage = ClientAddMembershipListenerCodec.encodeMemberSetEvent(members);
+            Collection members = service.getMemberImpls();
+            ClientMessage eventMessage = ClientAddMembershipListenerCodec.encodeMemberListEvent(members);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 

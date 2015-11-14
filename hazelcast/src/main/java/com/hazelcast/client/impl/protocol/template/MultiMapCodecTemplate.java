@@ -66,7 +66,7 @@ public interface MultiMapCodecTemplate {
      * @param name Name of the MultiMap
      * @return The set of keys in the multimap. The returned set might be modifiable but it has no effect on the multimap.
      */
-    @Request(id = 4, retryable = true, response = ResponseMessageConst.SET_DATA)
+    @Request(id = 4, retryable = true, response = ResponseMessageConst.LIST_DATA)
     Object keySet(String name);
 
     /**
@@ -86,7 +86,7 @@ public interface MultiMapCodecTemplate {
      * @param name Name of the MultiMap
      * @return The set of key-value pairs in the multimap. The returned set might be modifiable but it has no effect on the multimap.
      */
-    @Request(id = 6, retryable = true, response = ResponseMessageConst.SET_ENTRY)
+    @Request(id = 6, retryable = true, response = ResponseMessageConst.LIST_ENTRY)
     Object entrySet(String name);
 
     /**

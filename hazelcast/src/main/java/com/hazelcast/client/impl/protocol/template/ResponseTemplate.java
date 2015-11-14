@@ -28,7 +28,6 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Client Protocol Responses
@@ -83,24 +82,10 @@ public interface ResponseTemplate {
 
     /**
      *
-     * @param set The operation result as an array of serialized byte-array.
-     */
-    @Response(ResponseMessageConst.SET_DATA)
-    void SetData(Set<Data> set);
-
-    /**
-     *
-     * @param entrySet The operation result as an array of serialized key-value byte-arrays.
-     */
-    @Response(ResponseMessageConst.SET_ENTRY)
-    void SetEntry(Set<Map.Entry<Data, Data>> entrySet);
-
-    /**
-     *
-     * @param entrySet The operation result as an array of serialized key-value byte-arrays.
+     * @param entries The operation result as an array of serialized key-value byte-arrays.
      */
     @Response(ResponseMessageConst.LIST_ENTRY)
-    void ListEntry(List<Map.Entry<Data, Data>> entrySet);
+    void ListEntry(List<Map.Entry<Data, Data>> entries);
 
     /**
      *
@@ -119,18 +104,16 @@ public interface ResponseTemplate {
                           byte serializationVersion);
 
     /**
-     *
-     * @param partitions An array of member server address to partitions mapping.
+     * @param partitions mappings from member address to list of partition id 's that member owns
      */
     @Response(ResponseMessageConst.PARTITIONS)
-    void Partitions(Map<Address, Set<Integer>> partitions);
+    void Partitions(Map<Address, List<Integer>> partitions);
 
     /**
-     *
-     * @param infoCollection An array of DistributedObjectInfo (service name and object name).
+     * @param infoList An list of DistributedObjectInfo (service name and object name).
      */
-    @Response(ResponseMessageConst.SET_DISTRIBUTED_OBJECT)
-    void SetDistributedObject(Set<DistributedObjectInfo> infoCollection);
+    @Response(ResponseMessageConst.LIST_DISTRIBUTED_OBJECT)
+    void ListDistributedObject(List<DistributedObjectInfo> infoList);
 
     /**
      *

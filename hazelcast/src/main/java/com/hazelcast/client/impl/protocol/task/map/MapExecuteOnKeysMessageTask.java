@@ -32,10 +32,11 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,23 +50,24 @@ public class MapExecuteOnKeysMessageTask
     @Override
     protected OperationFactory createOperationFactory() {
         EntryProcessor entryProcessor = serializationService.toObject(parameters.entryProcessor);
-        return new MultipleEntryOperationFactory(parameters.name, parameters.keys, entryProcessor);
+        Set<Data> keys = new HashSet<Data>(parameters.keys);
+        return new MultipleEntryOperationFactory(parameters.name, keys, entryProcessor);
     }
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        Map<Data, Data> dataMap = new HashMap<Data, Data>();
+        List<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>();
 
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Object o : map.values()) {
             if (o != null) {
                 MapEntries mapEntries = (MapEntries) mapService.getMapServiceContext().toObject(o);
                 for (Map.Entry<Data, Data> entry : mapEntries) {
-                    dataMap.put(entry.getKey(), entry.getValue());
+                    entries.add(entry);
                 }
             }
         }
-        return dataMap.entrySet();
+        return entries;
     }
 
     @Override
@@ -89,7 +91,7 @@ public class MapExecuteOnKeysMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapExecuteOnKeysCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
+        return MapExecuteOnKeysCodec.encodeResponse((List<Map.Entry<Data, Data>>) response);
     }
 
 
