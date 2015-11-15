@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.CachedQueryEntry;
@@ -24,18 +25,18 @@ import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 
 public final class QueryEntryFactory {
+    private final CacheDeserializedValues cacheDeserializedValues;
 
-    private final boolean useCache;
-
-    public QueryEntryFactory(boolean optimizeQueries) {
-        useCache = optimizeQueries;
+    public QueryEntryFactory(CacheDeserializedValues cacheDeserializedValues) {
+        this.cacheDeserializedValues = cacheDeserializedValues;
     }
 
     public QueryableEntry newEntry(SerializationService serializationService, Data key, Object value, Extractors extractors) {
-        if (useCache) {
-            return new CachedQueryEntry(serializationService, key, value, extractors);
-        } else {
-            return new QueryEntry(serializationService, key, value, extractors);
+        switch (cacheDeserializedValues) {
+            case NEVER:
+                return new QueryEntry(serializationService, key, value, extractors);
+            default:
+                return new CachedQueryEntry(serializationService, key, value, extractors);
         }
     }
 }
