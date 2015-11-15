@@ -18,12 +18,8 @@ package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.operation.ContainsKeyOperation;
-import com.hazelcast.map.impl.operation.GetOperation;
-import com.hazelcast.map.impl.operation.MapEntrySetOperation;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.record.RecordFactory;
@@ -31,16 +27,14 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
-import java.util.ArrayList;
+
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -83,7 +77,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     }
 
     public boolean containsKeyInternal(Data key) {
-        ContainsKeyOperation operation = new ContainsKeyOperation(name, key);
+        MapOperation operation = operationProvider.createContainsKeyOperation(name, key);
         operation.setThreadId(ThreadUtil.getThreadId());
         NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
@@ -107,7 +101,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
                 return cached;
             }
         }
-        GetOperation operation = new GetOperation(name, key);
+        MapOperation operation = operationProvider.createGetOperation(name, key);
         operation.setThreadId(ThreadUtil.getThreadId());
         NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
@@ -274,24 +268,6 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             }
             valueMap.put(key, versionedValue);
             return versionedValue;
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
-    }
-
-    protected List<Map.Entry<Data, Data>> getEntries() {
-        NodeEngine nodeEngine = getNodeEngine();
-        try {
-            Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(
-                    SERVICE_NAME,
-                    new BinaryOperationFactory(new MapEntrySetOperation(name), nodeEngine)
-            );
-            List<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>();
-            for (Object result : results.values()) {
-                MapEntries mapEntries = ((MapEntries) getService().getMapServiceContext().toObject(result));
-                entries.addAll(mapEntries.entries());
-            }
-            return entries;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

@@ -119,6 +119,11 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
+    public MapOperation createEvictAllOperation(String name) {
+        return new EvictAllOperation(name);
+    }
+
+    @Override
     public MapOperation createContainsKeyOperation(String name, Data dataKey) {
         return new ContainsKeyOperation(name, dataKey);
     }

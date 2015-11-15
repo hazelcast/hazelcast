@@ -628,7 +628,7 @@ public class ClientMapNearCacheTest {
         serverMap.addEntryListener(listener, false);
 
         // put entry with TTL into server map
-        serverMap.put(1, 23, 3, TimeUnit.SECONDS);
+        serverMap.put(1, 23, 6, TimeUnit.SECONDS);
         assertNotNull(serverMap.get(1));
 
         // create a new client after the put() operation to be sure we miss the near cache invalidation event

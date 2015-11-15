@@ -86,6 +86,7 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.IterableUtil;
 import com.hazelcast.util.ThreadUtil;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -342,7 +343,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected void evictAllInternal() {
         try {
-            Operation operation = new EvictAllOperation(name);
+            Operation operation = operationProvider.createEvictAllOperation(name);
             Map<Integer, Object> resultMap = operationService.invokeOnAllPartitions(SERVICE_NAME,
                     new BinaryOperationFactory(operation, getNodeEngine()));
 
