@@ -861,10 +861,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         long now = Clock.currentTimeMillis();
         Object value = null;
         R record = records.get(key);
-        processExpiredEntry(key, record, now);
+        final boolean isExpired = processExpiredEntry(key, record, now);
 
         try {
-            if (recordNotExistOrExpiredOrTombstone(record, now)) {
+            if (recordNotExistOrExpiredOrTombstone(record, isExpired)) {
                 if (isStatisticsEnabled()) {
                     statistics.increaseCacheMisses(1);
                 }
@@ -1032,10 +1032,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
         boolean replaced = false;
         R record = records.get(key);
-        boolean isExpired = record != null && record.isExpiredAt(now);
+        final boolean isExpired = record != null && record.isExpiredAt(now);
 
         try {
-            if (recordNotExistOrExpiredOrTombstone(record, now)) {
+            if (recordNotExistOrExpiredOrTombstone(record, isExpired)) {
                 if (isEventsEnabled()) {
                     publishEvent(createCacheCompleteEvent(toEventData(key), completionId));
                 }
@@ -1104,11 +1104,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
         boolean replaced = false;
         R record = records.get(key);
-        boolean isExpired = record != null && record.isExpiredAt(now);
+        final boolean isExpired = record != null && record.isExpiredAt(now);
 
         try {
             Object obj = toValue(record);
-            if (recordNotExistOrExpiredOrTombstone(record, now)) {
+            if (recordNotExistOrExpiredOrTombstone(record, isExpired)) {
                 obj = null;
                 if (isEventsEnabled()) {
                     publishEvent(createCacheCompleteEvent(toEventData(key), completionId));
@@ -1360,10 +1360,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
         R record = records.get(key);
-        processExpiredEntry(key, record, now);
-
+        final boolean isExpired = processExpiredEntry(key, record, now);
+        if (isExpired) {
+            record = null;
+        }
         if (isStatisticsEnabled()) {
-            if (recordNotExistOrExpiredOrTombstone(record, now)) {
+            if (recordNotExistOrExpiredOrTombstone(record, isExpired)) {
                 statistics.increaseCacheMisses(1);
             } else {
                 statistics.increaseCacheHits(1);
@@ -1376,8 +1378,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return result;
     }
 
+    private boolean recordNotExistOrExpiredOrTombstone(R record, boolean isExpired) {
+        return record == null || isExpired || record.isTombstone();
+    }
+
     private boolean recordNotExistOrExpiredOrTombstone(R record, long now) {
-        return record == null || record.isTombstone() || record.isExpiredAt(now);
+        return record == null || record.isExpiredAt(now) || record.isTombstone();
     }
 
     @Override
