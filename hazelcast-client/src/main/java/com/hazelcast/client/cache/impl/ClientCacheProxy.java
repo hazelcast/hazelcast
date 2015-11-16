@@ -85,6 +85,10 @@ public class ClientCacheProxy<K, V>
         super(cacheConfig, clientContext, cacheManager);
     }
 
+    public NearCache getNearCache() {
+        return nearCache;
+    }
+
     @Override
     public V get(K key) {
         return get(key, null);

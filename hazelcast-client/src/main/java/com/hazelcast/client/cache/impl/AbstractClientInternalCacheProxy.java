@@ -472,9 +472,9 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    protected <T> ICompletableFuture<T> putAsyncInternal(final K key, final V value, final ExpiryPolicy expiryPolicy,
-                                                         final boolean isGet, final boolean withCompletionEvent,
-                                                         final boolean async) {
+    protected Object putInternal(final K key, final V value, final ExpiryPolicy expiryPolicy,
+                                 final boolean isGet, final boolean withCompletionEvent,
+                                 final boolean async) {
         final long start = System.nanoTime();
         ensureOpen();
         validateNotNull(key, value);
@@ -493,30 +493,49 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
 
         ClientDelegatingFuture delegatingFuture =
-                new ClientDelegatingFuture<T>(future, clientContext.getSerializationService(), putResponseDecoder);
-        if (nearCache != null || (async && statisticsEnabled)) {
-            delegatingFuture.andThen(new ExecutionCallback<Object>() {
-                @Override
-                public void onResponse(Object responseData) {
-                    if (nearCache != null) {
-                        if (cacheOnUpdate) {
-                            storeInNearCache(keyData, valueData, value);
-                        } else {
-                            invalidateNearCache(keyData);
+                new ClientDelegatingFuture(future, clientContext.getSerializationService(), putResponseDecoder);
+        if (!async) {
+            try {
+                Object response = delegatingFuture.get();
+                if (nearCache != null) {
+                    if (cacheOnUpdate) {
+                        storeInNearCache(keyData, valueData, value);
+                    } else {
+                        invalidateNearCache(keyData);
+                    }
+                }
+                if (statisticsEnabled) {
+                    handleStatisticsOnPut(isGet, start, response);
+                }
+                return response;
+            } catch (Throwable e) {
+                throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            }
+        } else {
+            if (nearCache != null || statisticsEnabled) {
+                delegatingFuture.andThen(new ExecutionCallback<Object>() {
+                    @Override
+                    public void onResponse(Object responseData) {
+                        if (nearCache != null) {
+                            if (cacheOnUpdate) {
+                                storeInNearCache(keyData, valueData, value);
+                            } else {
+                                invalidateNearCache(keyData);
+                            }
+                        }
+                        if (statisticsEnabled) {
+                            handleStatisticsOnPut(isGet, start, responseData);
                         }
                     }
-                    if (async && statisticsEnabled) {
-                        handleStatisticsOnPut(isGet, start, responseData);
+
+                    @Override
+                    public void onFailure(Throwable t) {
+
                     }
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-
-                }
-            });
+                });
+            }
+            return delegatingFuture;
         }
-        return delegatingFuture;
     }
 
     protected void handleStatisticsOnPut(boolean isGet, long start, Object response) {
