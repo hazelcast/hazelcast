@@ -83,9 +83,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             while (nextEntry != null) {
                 if (nextEntry.key() != null) {
                     final V value = nextEntry.value();
-                    final boolean isExpired = (value instanceof Expirable)
-                            && ((Expirable) value).isExpiredAt(now);
-                    if (!isExpired) {
+                    if (isValidForFetching(value, now)) {
                         keys.add((Data) nextEntry.key());
                         counter++;
                     }
@@ -94,6 +92,13 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             }
         }
         return nextTableIndex;
+    }
+
+    protected boolean isValidForFetching(V value, long now) {
+        if (value instanceof Expirable) {
+            return !((Expirable) value).isExpiredAt(now);
+        }
+        return true;
     }
 
     /**
@@ -214,7 +219,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
                             K key = currentEntry.key();
                             // Advance to next entry
                             currentEntry = currentEntry.next;
-                            if (value != null) {
+                            if (isValidForSampling(value)) {
                                 currentSample = createSamplingEntry(key, value);
                                 // If we reached end of entries, advance current bucket index
                                 if (currentEntry == null) {
@@ -265,4 +270,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
 
     }
 
+    protected boolean isValidForSampling(V value) {
+        return value != null;
+    }
 }

@@ -44,7 +44,7 @@ import java.util.NoSuchElementException;
  *     <li>when fetched keys are all used by calling {@link #next()}, more keys are fetched from the cluster.</li>
  * </ul>
  * This implementation iterates over partitions and for each partition it iterates over the internal map using the
- *     internal table index of the map {@link com.hazelcast.util.CacheConcurrentHashMap}.
+ *     internal table index of the map {@link com.hazelcast.util.SampleableConcurrentHashMap}.
  * </p>
  * <p>
  * <h2>Fetching data from cluster:</h2>

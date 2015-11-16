@@ -1,14 +1,13 @@
 package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.util.CacheConcurrentHashMap;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.SampleableConcurrentHashMap;
 import org.junit.Test;
 
 import javax.cache.Cache;
@@ -645,7 +644,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         int testSize = 3007;
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         for (int fetchSize = 1; fetchSize < 102; fetchSize++) {
-            CacheConcurrentHashMap<Data, String> map = new CacheConcurrentHashMap<Data, String>(1000);
+            SampleableConcurrentHashMap<Data, String> map = new SampleableConcurrentHashMap<Data, String>(1000);
             for (int i = 0; i < testSize; i++) {
                 Integer key = i;
                 Data data = serializationService.toData(key);
@@ -658,9 +657,8 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
             int remaining = testSize;
             while (remaining > 0 && nextTableIndex > 0) {
                 int size = (remaining > fetchSize ? fetchSize : remaining);
-                CacheKeyIteratorResult iteratorResult = map.fetchNext(nextTableIndex, size);
-                List<Data> keys = iteratorResult.getKeys();
-                nextTableIndex = iteratorResult.getTableIndex();
+                List<Data> keys = new ArrayList<Data>(size);
+                nextTableIndex = map.fetch(nextTableIndex, size, keys);
                 remaining -= keys.size();
                 total += keys.size();
             }
