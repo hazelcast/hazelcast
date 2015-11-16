@@ -62,7 +62,6 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
 
     @Override
     public void run() {
-        final long now = getNow();
         oldValue = recordStore.get(dataKey, true);
 
         Map.Entry entry = createMapEntry(dataKey, oldValue);
