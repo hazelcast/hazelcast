@@ -41,12 +41,12 @@ public class SingleValueAllPredicatesExtractorTest extends SingleValueAllPredica
 
                 MapAttributeConfig iqConfig = new AbstractExtractionTest.TestMapAttributeIndexConfig();
                 iqConfig.setName("brain.iq");
-                iqConfig.setExtractor("com.hazelcast.query.impl.extraction.predicates.SingleValueAllPredicatesExtractorTest$IqExtractor");
+                iqConfig.setExtractor("com.hazelcast.query.impl.extractor.predicates.SingleValueAllPredicatesExtractorTest$IqExtractor");
                 mapConfig.addMapAttributeConfig(iqConfig);
 
                 MapAttributeConfig nameConfig = new AbstractExtractionTest.TestMapAttributeIndexConfig();
                 nameConfig.setName("brain.name");
-                nameConfig.setExtractor("com.hazelcast.query.impl.extraction.predicates.SingleValueAllPredicatesExtractorTest$NameExtractor");
+                nameConfig.setExtractor("com.hazelcast.query.impl.extractor.predicates.SingleValueAllPredicatesExtractorTest$NameExtractor");
                 mapConfig.addMapAttributeConfig(nameConfig);
             }
         };

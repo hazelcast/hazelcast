@@ -15,8 +15,11 @@
  */
 
 /**
- * <p>Contains classes related to custom attribute extractors<br/>
- * TODO: Improve this
+ * Contains classes related to custom attributes and the extraction of their values.
+ * <br/>
+ * The values may be extracted with the usage of the {@link com.hazelcast.query.extractor.ValueExtractor} class.
+ * The extracted values may be then collected by the {@link com.hazelcast.query.extractor.ValueCollector}.
+ * The extraction logic may use custom {@link com.hazelcast.query.extractor.Arguments} if specified by the user.
  */
 
 package com.hazelcast.query.extractor;

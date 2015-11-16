@@ -143,7 +143,7 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
 
                 MapAttributeConfig tattoosCount = new AbstractExtractionTest.TestMapAttributeIndexConfig();
                 tattoosCount.setName("tattoosCount");
-                tattoosCount.setExtractor("com.hazelcast.query.impl.extraction.specification.ExtractionWithExtractorsSpecTest$LimbTattoosCountExtractor");
+                tattoosCount.setExtractor("com.hazelcast.query.impl.extractor.specification.ExtractionWithExtractorsSpecTest$LimbTattoosCountExtractor");
                 mapConfig.addMapAttributeConfig(tattoosCount);
             }
         };

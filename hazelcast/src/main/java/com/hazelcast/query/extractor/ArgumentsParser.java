@@ -17,17 +17,22 @@
 package com.hazelcast.query.extractor;
 
 /**
- * TODO
+ * Common superclass for all argument parsers.
  *
- * @param <T>
+ * @param <T> type of the argument object encompassed in the {@link Arguments} result.
  */
 public abstract class ArgumentsParser<T> {
 
     /**
-     * TODO
+     * ValueExtractor may use custom arguments if they are specified by the user in the query.
+     * The custom arguments may be passed within the square brackets located after the name of the attribute
+     * that uses a ValueExtractor, like: customAttribute[argumentString]
+     * <p/>
+     * This method takes the 'argumentString' object as an input and returns the Arguments object that encompasses
+     * parsed arguments as an output.
      *
-     * @param input
-     * @return
+     * @param input extraction arguments in the specified format
+     * @return Arguments object that encompasses parsed arguments
      */
     public abstract Arguments<T> parse(Object input);
 

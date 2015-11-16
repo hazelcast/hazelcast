@@ -17,16 +17,30 @@
 package com.hazelcast.query.extractor;
 
 /**
- * TODO
+ * Wrapper for the arguments passed to the {@link ValueExtractor#extract(Object, Arguments, ValueCollector)} method.
+ * <p/>
+ * ValueExtractor may use custom arguments if they are specified by the user in the query.
+ * The custom arguments may be passed within the square brackets located after the name of the attribute
+ * that uses a ValueExtractor, like: customAttribute[argumentString]
+ * <p/>
+ * Let's have a look at the following query: 'currency[incoming] == EUR'
+ * Let's assume that currency is an custom attribute that uses com.test.CurrencyExtractor for extraction.
+ * The string "incoming" is an argument that will be passed to the {@link ArgumentsParser} during the extraction.
+ * The parser will parse the string according to the parser's custom logic and it will return an Arguments object.
+ * The Arguments object may return a single object, array, collection, etc. It's up to the ValueExtractor implementor's
+ * to understand the semantics of the arguments.
+ * <p/>
+ * By default, if there's no custom {@link ArgumentsParser} registered, the default parser follows the pass-through
+ * semantics, which means that the string that's in the square-brackets is passes "as-is" to the Arguments class.
+ * <p/>
+ * <i>For now, it's not possible to register custom ArgumentsParsers. It will be possible in future releases.</i>
  *
- * @param <T>
+ * @param <T> type of the argument object encompassed by this class
  */
 public abstract class Arguments<T> {
 
     /**
-     * TODO
-     *
-     * @return
+     * @return the argument object encompassed by this class
      */
     public abstract T get();
 
