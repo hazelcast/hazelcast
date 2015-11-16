@@ -26,10 +26,19 @@ public class LRUEvictionPolicyEvaluator<A, E extends Evictable>
 
     @Override
     protected Evictable selectEvictableAsPolicy(Evictable current, Evictable candidate) {
-        if (candidate.getAccessTime() < current.getAccessTime()) {
+        long currentAccessTime = current.getAccessTime();
+        long candidateAccessTime = candidate.getAccessTime();
+        if (candidateAccessTime < currentAccessTime) {
             return candidate;
-        } else {
+        } else if (currentAccessTime < candidateAccessTime) {
             return current;
+        } else {
+            // If access times are same, we select the oldest entry to evict
+            if (candidate.getCreationTime() < current.getCreationTime()) {
+                return candidate;
+            } else {
+                return current;
+            }
         }
     }
 
