@@ -20,7 +20,6 @@ import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.query.extractor.Arguments;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.DefaultArgumentsParser;
-import com.hazelcast.query.impl.DefaultValueCollector;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collections;
@@ -31,16 +30,18 @@ import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsF
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.instantiateExtractors;
 
-public class Extractors {
+public final class Extractors {
 
     private static final int MAX_CLASSES_IN_CACHE = 1000;
     private static final int MAX_GETTERS_PER_CLASS_IN_CACHE = 100;
     private static final float EVICTION_PERCENTAGE = 0.2f;
     private static final Extractors EMPTY = new Extractors(Collections.<MapAttributeConfig>emptyList());
 
-    // Maps the extractorAttributeName WITHOUT the arguments to a ValueExtractor instance
-    // The name does not contain the argument since it's not allowed to register an extractor under an attribute name
-    // that contains an argument in square brackets.
+    /**
+     * Maps the extractorAttributeName WITHOUT the arguments to a ValueExtractor instance.
+     * The name does not contain the argument since it's not allowed to register an extractor under an attribute name
+     * that contains an argument in square brackets.
+     */
     private final Map<String, ValueExtractor> extractors;
     private final EvictableGetterCache getterCache;
     private final DefaultArgumentsParser argumentsParser;
@@ -64,7 +65,7 @@ public class Extractors {
         return null;
     }
 
-    private Getter getGetter(Object targetObject, String attributeName) {
+    Getter getGetter(Object targetObject, String attributeName) {
         Getter getter = getterCache.getGetter(targetObject.getClass(), attributeName);
         if (getter == null) {
             getter = instantiateGetter(targetObject, attributeName);
@@ -88,36 +89,6 @@ public class Extractors {
 
     public static Extractors empty() {
         return EMPTY;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static final class ExtractorGetter extends Getter {
-        private final ValueExtractor extractor;
-        private final Arguments arguments;
-
-        private ExtractorGetter(ValueExtractor extractor, Arguments arguments) {
-            super(null);
-            this.extractor = extractor;
-            this.arguments = arguments;
-        }
-
-        @Override
-        Object getValue(Object target) throws Exception {
-            // This part will be improved in 3.7 to avoid extra allocation
-            DefaultValueCollector collector = new DefaultValueCollector();
-            extractor.extract(target, arguments, collector);
-            return collector.getResult();
-        }
-
-        @Override
-        Class getReturnType() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        boolean isCacheable() {
-            return true;
-        }
     }
 
 }
