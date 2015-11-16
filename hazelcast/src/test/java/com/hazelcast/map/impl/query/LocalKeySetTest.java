@@ -25,32 +25,34 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class LocalKeySetTest extends HazelcastTestSupport {
-    private HazelcastInstance local;
+
     private IMap<String, String> map;
     private SerializationService serializationService;
-    private HazelcastInstance remote;
-    private String remoteKey1;
-    private String remoteKey2;
-    private String remoteKey3;
+
     private String localKey1;
     private String localKey2;
     private String localKey3;
 
+    private String remoteKey1;
+    private String remoteKey2;
+    private String remoteKey3;
+
     @Before
     public void setup() {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
-        local = cluster[0];
-        remote = cluster[1];
+        HazelcastInstance local = cluster[0];
+        HazelcastInstance remote = cluster[1];
+
         map = local.getMap(randomName());
         serializationService = getSerializationService(local);
-
-        remoteKey1 = generateKeyOwnedBy(remote);
-        remoteKey2 = generateKeyOwnedBy(remote);
-        remoteKey3 = generateKeyOwnedBy(remote);
 
         localKey1 = generateKeyOwnedBy(local);
         localKey2 = generateKeyOwnedBy(local);
         localKey3 = generateKeyOwnedBy(local);
+
+        remoteKey1 = generateKeyOwnedBy(remote);
+        remoteKey2 = generateKeyOwnedBy(remote);
+        remoteKey3 = generateKeyOwnedBy(remote);
     }
 
     @Test(expected = NullPointerException.class)

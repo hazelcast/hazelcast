@@ -25,9 +25,7 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
-    // instance and map used in the tests
-    private HazelcastInstance instance;
-    protected IMap map;
+    protected IMap<String, Object> map;
 
     // three parametrisation axes
     private InMemoryFormat inMemoryFormat;
@@ -49,7 +47,7 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
     }
 
     /**
-     * Method may be overriden in sub-classes to tweak the HZ instance for purposes of each test.
+     * Method may be overridden in sub-classes to tweak the HZ instance for purposes of each test.
      */
     protected Configurator getInstanceConfigurator() {
         return null;
@@ -98,7 +96,7 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
      * Initializes the instance and the map used in the tests
      */
     private void setupInstance(Config config) {
-        instance = createHazelcastInstance(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
         map = instance.getMap("map");
     }
 
@@ -162,5 +160,4 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
             }
         }
     }
-
 }

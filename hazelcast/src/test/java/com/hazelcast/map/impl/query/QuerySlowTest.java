@@ -33,23 +33,23 @@ public class QuerySlowTest extends HazelcastTestSupport {
 
     @Test(timeout = MINUTE)
     public void testIndexPerformanceUsingPredicate() {
-        HazelcastInstance h1 = createHazelcastInstance(newConfig());
-        IMap imap = h1.getMap("employees");
-        fillMap(imap);
+        HazelcastInstance instance = createHazelcastInstance(newConfig());
+        IMap<String, SampleObjects.Employee> map = instance.getMap("employees");
+        fillMap(map);
 
-        EntryObject e = new PredicateBuilder().getEntryObject();
-        Predicate predicate = e.is("active").and(e.get("age").equal(23));
-        long tookWithout = runQuery(imap, predicate);
-        imap.clear();
+        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        Predicate predicate = entryObject.is("active").and(entryObject.get("age").equal(23));
+        long tookWithout = runQuery(map, predicate);
+        map.clear();
 
-        imap = h1.getMap("employees2");
-        imap.addIndex("name", false);
-        imap.addIndex("active", false);
-        imap.addIndex("age", true);
+        map = instance.getMap("employees2");
+        map.addIndex("name", false);
+        map.addIndex("active", false);
+        map.addIndex("age", true);
 
-        fillMap(imap);
-        waitAllForSafeState(h1);
-        long tookWithIndex = runQuery(imap, predicate);
+        fillMap(map);
+        waitAllForSafeState(instance);
+        long tookWithIndex = runQuery(map, predicate);
 
         assertTrue("withIndex: " + tookWithIndex + ", without: " + tookWithout, tookWithIndex < (tookWithout / 2));
     }
@@ -62,62 +62,65 @@ public class QuerySlowTest extends HazelcastTestSupport {
         return conf;
     }
 
-    private long runQuery(IMap imap, Predicate predicate) {
+    private long runQuery(IMap<String, SampleObjects.Employee> imap, Predicate predicate) {
         long start = Clock.currentTimeMillis();
-        Set<Map.Entry> entries = imap.entrySet(predicate);
+        Set<Map.Entry<String, SampleObjects.Employee>> entries = imap.entrySet(predicate);
         long tookWithout = (Clock.currentTimeMillis() - start);
         assertEntriesMatch(entries);
         return tookWithout;
     }
 
-    private static void assertEntriesMatch(Set<Map.Entry> entries) {
+    private static void assertEntriesMatch(Set<Map.Entry<String, SampleObjects.Employee>> entries) {
         assertEquals(83, entries.size());
-        for (Map.Entry entry : entries) {
-            SampleObjects.Employee c = (SampleObjects.Employee) entry.getValue();
-            assertEquals(c.getAge(), 23);
-            assertTrue(c.isActive());
+        for (Map.Entry<String, SampleObjects.Employee> entry : entries) {
+            SampleObjects.Employee employee = entry.getValue();
+            assertEquals(employee.getAge(), 23);
+            assertTrue(employee.isActive());
         }
     }
 
-    private static void fillMap(IMap imap) {
+    private static void fillMap(IMap<String, SampleObjects.Employee> map) {
         for (int i = 0; i < 5000; i++) {
-            imap.put(String.valueOf(i), new SampleObjects.Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
+            map.put(String.valueOf(i), new SampleObjects.Employee("name" + i, i % 60, ((i & 1) == 1), i));
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     public void testIndexSQLPerformance() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
-        IMap imap = h1.getMap("employees");
-        fillMap(imap);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
+        IMap<String, SampleObjects.Employee> map = instance.getMap("employees");
+        fillMap(map);
+
         long start = Clock.currentTimeMillis();
-        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active=true and age=23"));
+        Set<Map.Entry<String, SampleObjects.Employee>> entries = map.entrySet(new SqlPredicate("active=true and age=23"));
         long tookWithout = (Clock.currentTimeMillis() - start);
         assertEntriesMatch(entries);
-        imap.clear();
-        imap = h1.getMap("employees2");
-        imap.addIndex("name", false);
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
-        fillMap(imap);
+        map.clear();
+        map = instance.getMap("employees2");
+        map.addIndex("name", false);
+        map.addIndex("age", true);
+        map.addIndex("active", false);
+        fillMap(map);
         start = Clock.currentTimeMillis();
-        entries = imap.entrySet(new SqlPredicate("active and age=23"));
+        entries = map.entrySet(new SqlPredicate("active and age=23"));
         long tookWithIndex = (Clock.currentTimeMillis() - start);
         assertEntriesMatch(entries);
         assertTrue(tookWithIndex < (tookWithout / 2));
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     public void testRangeIndexSQLPerformance() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
-        IMap imap = h1.getMap("employees");
-        fillMap(imap);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
+        IMap<String, SampleObjects.Employee> map = instance.getMap("employees");
+        fillMap(map);
+
         long start = Clock.currentTimeMillis();
-        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and salary between 4010.99 and 4032.01"));
+        Set<Map.Entry<String, SampleObjects.Employee>> entries = map.entrySet(
+                new SqlPredicate("active and salary between 4010.99 and 4032.01"));
         long tookWithout = (Clock.currentTimeMillis() - start);
         assertEquals(11, entries.size());
         for (Map.Entry entry : entries) {
@@ -125,16 +128,16 @@ public class QuerySlowTest extends HazelcastTestSupport {
             assertTrue(c.getAge() < 4033);
             assertTrue(c.isActive());
         }
-        imap.clear();
-        imap = h1.getMap("employees2");
-        imap.addIndex("name", false);
-        imap.addIndex("salary", false);
-        imap.addIndex("active", false);
-        fillMap(imap);
-        imap.put(String.valueOf(10), new SampleObjects.Employee("name" + 10, 10, true, 44010.99D));
-        imap.put(String.valueOf(11), new SampleObjects.Employee("name" + 11, 11, true, 44032.01D));
+        map.clear();
+        map = instance.getMap("employees2");
+        map.addIndex("name", false);
+        map.addIndex("salary", false);
+        map.addIndex("active", false);
+        fillMap(map);
+        map.put(String.valueOf(10), new SampleObjects.Employee("name" + 10, 10, true, 44010.99D));
+        map.put(String.valueOf(11), new SampleObjects.Employee("name" + 11, 11, true, 44032.01D));
         start = Clock.currentTimeMillis();
-        entries = imap.entrySet(new SqlPredicate("active and salary between 44010.99 and 44032.01"));
+        entries = map.entrySet(new SqlPredicate("active and salary between 44010.99 and 44032.01"));
         long tookWithIndex = (Clock.currentTimeMillis() - start);
         assertEquals(2, entries.size());
         boolean foundFirst = false;
@@ -153,9 +156,9 @@ public class QuerySlowTest extends HazelcastTestSupport {
         assertTrue(foundLast);
         assertTrue(tookWithIndex < (tookWithout / 2));
         for (int i = 0; i < 50000; i++) {
-            imap.put(String.valueOf(i), new SampleObjects.Employee("name" + i, i % 60, ((i & 1) == 1), 100.25D));
+            map.put(String.valueOf(i), new SampleObjects.Employee("name" + i, i % 60, ((i & 1) == 1), 100.25D));
         }
-        entries = imap.entrySet(new SqlPredicate("salary between 99.99 and 100.25"));
+        entries = map.entrySet(new SqlPredicate("salary between 99.99 and 100.25"));
         assertEquals(50000, entries.size());
         for (Map.Entry entry : entries) {
             SampleObjects.Employee c = (SampleObjects.Employee) entry.getValue();
@@ -163,33 +166,33 @@ public class QuerySlowTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=1000*60)
+    @Test(timeout = 1000 * 60)
     public void testIndexPerformance() {
-        Config cfg = new Config();
-        final MapConfig mapConfig = cfg.getMapConfig("employees2");
+        Config config = new Config();
+        MapConfig mapConfig = config.getMapConfig("employees2");
         mapConfig.addMapIndexConfig(new MapIndexConfig("name", false))
                 .addMapIndexConfig(new MapIndexConfig("age", true))
                 .addMapIndexConfig(new MapIndexConfig("active", false));
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
-        IMap imap = h1.getMap("employees");
-        fillMap(imap);
-        EntryObject e = new PredicateBuilder().getEntryObject();
-        Predicate predicate = e.is("active").and(e.get("age").equal(23));
-        long start;
-        Set<Map.Entry> entries;
-        long tookWithout = runQuery(imap, predicate);
-        imap.clear();
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        IMap<String, SampleObjects.Employee> map = instance.getMap("employees");
+        fillMap(map);
 
-        imap = h1.getMap("employees2");
-        fillMap(imap);
-        e = new PredicateBuilder().getEntryObject();
-        predicate = e.is("active").and(e.get("age").equal(23));
-        start = Clock.currentTimeMillis();
-        entries = imap.entrySet(predicate);
+        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        Predicate predicate = entryObject.is("active").and(entryObject.get("age").equal(23));
+        long tookWithout = runQuery(map, predicate);
+        map.clear();
+
+        map = instance.getMap("employees2");
+        fillMap(map);
+        entryObject = new PredicateBuilder().getEntryObject();
+        predicate = entryObject.is("active").and(entryObject.get("age").equal(23));
+
+        long start = Clock.currentTimeMillis();
+        Set<Map.Entry<String, SampleObjects.Employee>> entries = map.entrySet(predicate);
         long tookWithIndex = (Clock.currentTimeMillis() - start);
         assertEntriesMatch(entries);
-        assertTrue("tookWithIndex: " + tookWithIndex + ", tookWithoutIndex: " + tookWithout,  tookWithIndex < (tookWithout / 2));
+        assertTrue("tookWithIndex: " + tookWithIndex + ", tookWithoutIndex: " + tookWithout, tookWithIndex < (tookWithout / 2));
     }
 }

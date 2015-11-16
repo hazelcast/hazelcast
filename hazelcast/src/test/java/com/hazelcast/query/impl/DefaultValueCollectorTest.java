@@ -70,5 +70,4 @@ public class DefaultValueCollectorTest {
         assertTrue(result instanceof MultiResult);
         return ((MultiResult<T>) collector.getResult()).getResults();
     }
-
 }

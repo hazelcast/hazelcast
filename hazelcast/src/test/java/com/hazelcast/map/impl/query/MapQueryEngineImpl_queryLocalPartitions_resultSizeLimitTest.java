@@ -11,12 +11,12 @@ import com.hazelcast.query.impl.predicates.RuleBasedQueryOptimizer;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.IterationType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.util.IterationType.ENTRY;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -49,7 +49,7 @@ public class MapQueryEngineImpl_queryLocalPartitions_resultSizeLimitTest extends
 
     @Test
     public void checkResultLimit() throws Exception {
-        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE, IterationType.ENTRY);
+        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
 
         assertEquals(limit, result.getResultLimit());
     }
@@ -58,7 +58,7 @@ public class MapQueryEngineImpl_queryLocalPartitions_resultSizeLimitTest extends
     public void whenResultSizeLimitNotExceeded() throws Exception {
         fillMap(limit - 1);
 
-        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE, IterationType.ENTRY);
+        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
 
         assertEquals(limit - 1, result.getRows().size());
     }
@@ -67,7 +67,7 @@ public class MapQueryEngineImpl_queryLocalPartitions_resultSizeLimitTest extends
     public void whenResultSizeLimitEquals() throws Exception {
         fillMap(limit);
 
-        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE, IterationType.ENTRY);
+        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
 
         assertEquals(limit, result.getRows().size());
     }
@@ -76,7 +76,7 @@ public class MapQueryEngineImpl_queryLocalPartitions_resultSizeLimitTest extends
     public void whenResultSizeLimitExceeded() throws Exception {
         fillMap(limit + 1);
 
-        queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE, IterationType.ENTRY);
+        queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE, ENTRY);
     }
 
     private void fillMap(long count) {

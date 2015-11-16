@@ -26,8 +26,8 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SampleObjects.Employee;
+import com.hazelcast.query.SampleObjects.PortableEmployee;
 import com.hazelcast.query.SampleObjects.ValueType;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.AssertTask;
@@ -56,25 +56,25 @@ import static org.junit.Assert.assertTrue;
 public class QueryAdvancedTest extends HazelcastTestSupport {
 
     @Test(timeout = MINUTE)
+    @SuppressWarnings("deprecation")
     public void testQueryWithTTL() throws Exception {
-
-        Config cfg = getConfig();
+        Config config = getConfig();
         String mapName = "default";
-        cfg.getMapConfig(mapName).setTimeToLiveSeconds(5);
+        config.getMapConfig(mapName).setTimeToLiveSeconds(5);
 
-        HazelcastInstance h1 = createHazelcastInstance(cfg);
+        HazelcastInstance instance = createHazelcastInstance(config);
 
-        IMap imap = h1.getMap(mapName);
-        imap.addIndex("name", false);
-        imap.addIndex("age", false);
-        imap.addIndex("active", true);
+        IMap<String, Employee> map = instance.getMap(mapName);
+        map.addIndex("name", false);
+        map.addIndex("age", false);
+        map.addIndex("active", true);
 
         int passiveEmployees = 5;
         int activeEmployees = 5;
         int allEmployees = passiveEmployees + activeEmployees;
 
         final CountDownLatch latch = new CountDownLatch(allEmployees);
-        imap.addEntryListener(new EntryAdapter() {
+        map.addEntryListener(new EntryAdapter() {
             @Override
             public void entryEvicted(EntryEvent event) {
                 latch.countDown();
@@ -82,24 +82,24 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }, false);
 
         for (int i = 0; i < activeEmployees; i++) {
-            Employee employee = new Employee("activeEmployee" + i, 60, true, Double.valueOf(i));
-            imap.put("activeEmployee" + i, employee);
+            Employee employee = new Employee("activeEmployee" + i, 60, true, i);
+            map.put("activeEmployee" + i, employee);
         }
 
         for (int i = 0; i < passiveEmployees; i++) {
-            Employee employee = new Employee("passiveEmployee" + i, 60, false, Double.valueOf(i));
-            imap.put("passiveEmployee" + i, employee);
+            Employee employee = new Employee("passiveEmployee" + i, 60, false, i);
+            map.put("passiveEmployee" + i, employee);
         }
 
-        //check the query result before eviction
-        Collection values = imap.values(new SqlPredicate("active"));
+        // check the query result before eviction
+        Collection values = map.values(new SqlPredicate("active"));
         assertEquals(activeEmployees, values.size());
 
-        //wait until eviction is completed
+        // wait until eviction is completed
         assertOpenEventually(latch);
 
-        //check the query result after eviction
-        values = imap.values(new SqlPredicate("active"));
+        // check the query result after eviction
+        values = map.values(new SqlPredicate("active"));
         assertEquals(0, values.size());
     }
 
@@ -107,40 +107,46 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     public void testTwoNodesWithPartialIndexes() throws Exception {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        IMap imap = h1.getMap("employees");
-        imap.addIndex("name", false);
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        IMap<String, Employee> map = instance1.getMap("employees");
+        map.addIndex("name", false);
+        map.addIndex("age", true);
+        map.addIndex("active", false);
+
         for (int i = 0; i < 500; i++) {
             Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), (double) i);
-            imap.put(String.valueOf(i), employee);
+            map.put(String.valueOf(i), employee);
         }
-        assertEquals(2, h1.getCluster().getMembers().size());
-        assertEquals(2, h2.getCluster().getMembers().size());
-        imap = h2.getMap("employees");
-        imap.addIndex("name", false);
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
-        Collection<Employee> entries = imap.values(new SqlPredicate("name='name3' and city='city3' and age > 2"));
+        assertEquals(2, instance1.getCluster().getMembers().size());
+        assertEquals(2, instance2.getCluster().getMembers().size());
+
+        map = instance2.getMap("employees");
+        map.addIndex("name", false);
+        map.addIndex("age", true);
+        map.addIndex("active", false);
+
+        Collection<Employee> entries = map.values(new SqlPredicate("name='name3' and city='city3' and age > 2"));
         assertEquals(5, entries.size());
-        for (Employee e : entries) {
-            assertEquals("name3", e.getName());
-            assertEquals("city3", e.getCity());
+        for (Employee employee : entries) {
+            assertEquals("name3", employee.getName());
+            assertEquals("city3", employee.getCity());
         }
-        entries = imap.values(new SqlPredicate("name LIKE '%name3' and city like '%city3' and age > 2"));
+
+        entries = map.values(new SqlPredicate("name LIKE '%name3' and city like '%city3' and age > 2"));
         assertEquals(5, entries.size());
-        for (Employee e : entries) {
-            assertEquals("name3", e.getName());
-            assertEquals("city3", e.getCity());
-            assertTrue(e.getAge() > 2);
+        for (Employee employee : entries) {
+            assertEquals("name3", employee.getName());
+            assertEquals("city3", employee.getCity());
+            assertTrue(employee.getAge() > 2);
         }
-        entries = imap.values(new SqlPredicate("name LIKE '%name3%' and city like '%city30%'"));
+
+        entries = map.values(new SqlPredicate("name LIKE '%name3%' and city like '%city30%'"));
         assertEquals(5, entries.size());
-        for (Employee e : entries) {
-            assertTrue(e.getName().startsWith("name3"));
-            assertTrue(e.getCity().startsWith("city3"));
+        for (Employee employee : entries) {
+            assertTrue(employee.getName().startsWith("name3"));
+            assertTrue(employee.getCity().startsWith("city3"));
         }
     }
 
@@ -148,99 +154,106 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     public void testTwoNodesWithIndexes() throws Exception {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        IMap imap = h1.getMap("employees");
-        imap.addIndex("name", false);
-        imap.addIndex("city", false);
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        IMap<String, Employee> map = instance1.getMap("employees");
+        map.addIndex("name", false);
+        map.addIndex("city", false);
+        map.addIndex("age", true);
+        map.addIndex("active", false);
+
         for (int i = 0; i < 5000; i++) {
             Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), (double) i);
-            imap.put(String.valueOf(i), employee);
+            map.put(String.valueOf(i), employee);
         }
-        assertEquals(2, h1.getCluster().getMembers().size());
-        assertEquals(2, h2.getCluster().getMembers().size());
-        imap = h2.getMap("employees");
-        imap.addIndex("name", false);
-        imap.addIndex("city", false);
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
-        Collection<Employee> entries = imap.values(new SqlPredicate("name='name3' and city='city3' and age > 2"));
+        assertEquals(2, instance1.getCluster().getMembers().size());
+        assertEquals(2, instance2.getCluster().getMembers().size());
+
+        map = instance2.getMap("employees");
+        map.addIndex("name", false);
+        map.addIndex("city", false);
+        map.addIndex("age", true);
+        map.addIndex("active", false);
+
+        Collection<Employee> entries = map.values(new SqlPredicate("name='name3' and city='city3' and age > 2"));
         assertEquals(50, entries.size());
-        for (Employee e : entries) {
-            assertEquals("name3", e.getName());
-            assertEquals("city3", e.getCity());
+        for (Employee employee : entries) {
+            assertEquals("name3", employee.getName());
+            assertEquals("city3", employee.getCity());
         }
-        entries = imap.values(new SqlPredicate("name LIKE '%name3' and city like '%city3' and age > 2"));
+
+        entries = map.values(new SqlPredicate("name LIKE '%name3' and city like '%city3' and age > 2"));
         assertEquals(50, entries.size());
-        for (Employee e : entries) {
-            assertEquals("name3", e.getName());
-            assertEquals("city3", e.getCity());
-            assertTrue(e.getAge() > 2);
+        for (Employee employee : entries) {
+            assertEquals("name3", employee.getName());
+            assertEquals("city3", employee.getCity());
+            assertTrue(employee.getAge() > 2);
         }
-        entries = imap.values(new SqlPredicate("name LIKE '%name3%' and city like '%city30%'"));
+
+        entries = map.values(new SqlPredicate("name LIKE '%name3%' and city like '%city30%'"));
         assertEquals(50, entries.size());
-        for (Employee e : entries) {
-            assertTrue(e.getName().startsWith("name3"));
-            assertTrue(e.getCity().startsWith("city3"));
+        for (Employee employee : entries) {
+            assertTrue(employee.getName().startsWith("name3"));
+            assertTrue(employee.getCity().startsWith("city3"));
         }
     }
 
-
     @Test(timeout = MINUTE)
     public void testOneMemberWithoutIndex() {
-        HazelcastInstance h1 = createHazelcastInstance(getConfig());
-        IMap imap = h1.getMap("employees");
-        QueryBasicTest.doFunctionalQueryTest(imap);
+        HazelcastInstance instance = createHazelcastInstance(getConfig());
+        IMap<String, Employee> map = instance.getMap("employees");
+        QueryBasicTest.doFunctionalQueryTest(map);
     }
 
     @Test(timeout = MINUTE)
     public void testOneMemberWithIndex() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
-        IMap imap = instance.getMap("employees");
-        imap.addIndex("name", false);
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
-        QueryBasicTest.doFunctionalQueryTest(imap);
+        IMap<String, Employee> map = instance.getMap("employees");
+        map.addIndex("name", false);
+        map.addIndex("age", true);
+        map.addIndex("active", false);
+        QueryBasicTest.doFunctionalQueryTest(map);
     }
 
     @Test(timeout = MINUTE)
     public void testOneMemberSQLWithoutIndex() {
-        HazelcastInstance h1 = createHazelcastInstance(getConfig());
-        IMap imap = h1.getMap("employees");
-        QueryBasicTest.doFunctionalSQLQueryTest(imap);
-        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age>23"));
+        HazelcastInstance instance = createHazelcastInstance(getConfig());
+        IMap<String, Employee> map = instance.getMap("employees");
+        QueryBasicTest.doFunctionalSQLQueryTest(map);
+        Set<Map.Entry<String, Employee>> entries = map.entrySet(new SqlPredicate("active and age>23"));
         assertEquals(27, entries.size());
     }
 
     @Test(timeout = MINUTE)
     public void testOneMemberSQLWithIndex() {
-        HazelcastInstance h1 = createHazelcastInstance(getConfig());
-        IMap imap = h1.getMap("employees");
-        imap.addIndex("name", false);
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
-        QueryBasicTest.doFunctionalSQLQueryTest(imap);
+        HazelcastInstance instance = createHazelcastInstance(getConfig());
+        IMap<String, Employee> map = instance.getMap("employees");
+        map.addIndex("name", false);
+        map.addIndex("age", true);
+        map.addIndex("active", false);
+        QueryBasicTest.doFunctionalSQLQueryTest(map);
     }
 
     @Test(timeout = MINUTE)
     public void testTwoMembers() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        IMap imap = h1.getMap("employees");
-        QueryBasicTest.doFunctionalQueryTest(imap);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        nodeFactory.newHazelcastInstance(config);
+
+        IMap<String, Employee> map = instance.getMap("employees");
+        QueryBasicTest.doFunctionalQueryTest(map);
     }
 
     @Test(timeout = MINUTE)
     public void testTwoMembersWithIndexes() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        IMap imap = h1.getMap("employees");
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        nodeFactory.newHazelcastInstance(config);
+
+        IMap<String, Employee> imap = instance.getMap("employees");
         imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
@@ -251,22 +264,25 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     public void testTwoMembersWithIndexesAndShutdown() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        IMap imap = h1.getMap("employees");
-        imap.addIndex("name", false);
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
-        QueryBasicTest.doFunctionalQueryTest(imap);
-        assertEquals(101, imap.size());
-        h2.getLifecycleService().shutdown();
-        assertEquals(101, imap.size());
-        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age=23"));
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        IMap<String, Employee> map = instance1.getMap("employees");
+        map.addIndex("name", false);
+        map.addIndex("age", true);
+        map.addIndex("active", false);
+
+        QueryBasicTest.doFunctionalQueryTest(map);
+        assertEquals(101, map.size());
+        instance2.getLifecycleService().shutdown();
+        assertEquals(101, map.size());
+
+        Set<Map.Entry<String, Employee>> entries = map.entrySet(new SqlPredicate("active and age=23"));
         assertEquals(2, entries.size());
-        for (Map.Entry entry : entries) {
-            Employee c = (Employee) entry.getValue();
-            assertEquals(c.getAge(), 23);
-            assertTrue(c.isActive());
+        for (Map.Entry<String, Employee> entry : entries) {
+            Employee employee = entry.getValue();
+            assertEquals(employee.getAge(), 23);
+            assertTrue(employee.isActive());
         }
     }
 
@@ -274,23 +290,26 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     public void testTwoMembersWithIndexesAndShutdown2() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        IMap imap = h1.getMap("employees");
-        imap.addIndex("name", false);
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
-        QueryBasicTest.doFunctionalQueryTest(imap);
-        assertEquals(101, imap.size());
-        h1.getLifecycleService().shutdown();
-        imap = h2.getMap("employees");
-        assertEquals(101, imap.size());
-        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age=23"));
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        IMap<String, Employee> map = instance1.getMap("employees");
+        map.addIndex("name", false);
+        map.addIndex("age", true);
+        map.addIndex("active", false);
+
+        QueryBasicTest.doFunctionalQueryTest(map);
+        assertEquals(101, map.size());
+        instance1.getLifecycleService().shutdown();
+
+        map = instance2.getMap("employees");
+        assertEquals(101, map.size());
+        Set<Map.Entry<String, Employee>> entries = map.entrySet(new SqlPredicate("active and age=23"));
         assertEquals(2, entries.size());
-        for (Map.Entry entry : entries) {
-            Employee c = (Employee) entry.getValue();
-            assertEquals(c.getAge(), 23);
-            assertTrue(c.isActive());
+        for (Map.Entry<String, Employee> entry : entries) {
+            Employee employee = entry.getValue();
+            assertEquals(employee.getAge(), 23);
+            assertTrue(employee.isActive());
         }
     }
 
@@ -298,24 +317,28 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     public void testTwoMembersWithIndexesAndShutdown3() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        IMap imap = h1.getMap("employees");
-        imap.addIndex("name", false);
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
-        QueryBasicTest.doFunctionalQueryTest(imap);
-        assertEquals(101, imap.size());
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        assertEquals(101, imap.size());
-        h1.getLifecycleService().shutdown();
-        imap = h2.getMap("employees");
-        assertEquals(101, imap.size());
-        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age=23"));
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+
+        IMap<String, Employee> map = instance1.getMap("employees");
+        map.addIndex("name", false);
+        map.addIndex("age", true);
+        map.addIndex("active", false);
+        QueryBasicTest.doFunctionalQueryTest(map);
+
+        assertEquals(101, map.size());
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        assertEquals(101, map.size());
+
+        instance1.getLifecycleService().shutdown();
+        map = instance2.getMap("employees");
+        assertEquals(101, map.size());
+
+        Set<Map.Entry<String, Employee>> entries = map.entrySet(new SqlPredicate("active and age=23"));
         assertEquals(2, entries.size());
-        for (Map.Entry entry : entries) {
-            Employee c = (Employee) entry.getValue();
-            assertEquals(c.getAge(), 23);
-            assertTrue(c.isActive());
+        for (Map.Entry<String, Employee> entry : entries) {
+            Employee employee = entry.getValue();
+            assertEquals(employee.getAge(), 23);
+            assertTrue(employee.isActive());
         }
     }
 
@@ -323,56 +346,57 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     public void testSecondMemberAfterAddingIndexes() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        IMap imap = h1.getMap("employees");
-        imap.addIndex("name", false);
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        QueryBasicTest.doFunctionalQueryTest(imap);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        IMap<String, Employee> map = instance.getMap("employees");
+        map.addIndex("name", false);
+        map.addIndex("age", true);
+        map.addIndex("active", false);
+
+        nodeFactory.newHazelcastInstance(config);
+        QueryBasicTest.doFunctionalQueryTest(map);
     }
 
     @Test
     public void testMapWithIndexAfterShutDown() {
-        Config cfg = getConfig();
+        Config config = getConfig();
         String mapName = "default";
-        cfg.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig("typeName", false));
+        config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig("typeName", false));
 
-        HazelcastInstance[] instances = createHazelcastInstanceFactory(3).newInstances(cfg);
+        HazelcastInstance[] instances = createHazelcastInstanceFactory(3).newInstances(config);
 
-        final IMap map = instances[0].getMap(mapName);
-        final int SAMPLE_SIZE_1 = 100;
-        final int SAMPLE_SIZE_2 = 30;
-        int TOTAL_SIZE = SAMPLE_SIZE_1 + SAMPLE_SIZE_2;
+        final IMap<Integer, ValueType> map = instances[0].getMap(mapName);
+        final int sampleSize1 = 100;
+        final int sampleSize2 = 30;
+        int totalSize = sampleSize1 + sampleSize2;
 
-        for (int i = 0; i < SAMPLE_SIZE_1; i++) {
+        for (int i = 0; i < sampleSize1; i++) {
             map.put(i, new ValueType("type" + i));
         }
 
-        for (int i = SAMPLE_SIZE_1; i < TOTAL_SIZE; i++) {
+        for (int i = sampleSize1; i < totalSize; i++) {
             map.put(i, new ValueType("typex"));
         }
 
         Collection typexValues = map.values(new SqlPredicate("typeName = typex"));
-        assertEquals(SAMPLE_SIZE_2, typexValues.size());
+        assertEquals(sampleSize2, typexValues.size());
 
         instances[1].shutdown();
 
-        assertEquals(TOTAL_SIZE, map.size());
+        assertEquals(totalSize, map.size());
         assertTrueEventually(new AssertTask() {
             public void run() {
                 final Collection values = map.values(new SqlPredicate("typeName = typex"));
-                assertEquals(SAMPLE_SIZE_2, values.size());
+                assertEquals(sampleSize2, values.size());
             }
         });
 
         instances[2].shutdown();
 
-        assertEquals(TOTAL_SIZE, map.size());
+        assertEquals(totalSize, map.size());
         assertTrueEventually(new AssertTask() {
             public void run() {
                 final Collection values = map.values(new SqlPredicate("typeName = typex"));
-                assertEquals(SAMPLE_SIZE_2, values.size());
+                assertEquals(sampleSize2, values.size());
             }
         });
     }
@@ -380,16 +404,16 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     // issue 1404 "to be fixed by issue 1404"
     @Test(timeout = MINUTE)
     public void testQueryAfterInitialLoad() {
-        String name = "default";
-        Config cfg = getConfig();
         final int size = 100;
+        String name = "default";
+        Config config = getConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(new MapStoreAdapter() {
+        mapStoreConfig.setImplementation(new MapStoreAdapter<Integer, Employee>() {
             @Override
-            public Map loadAll(Collection keys) {
-                Map map = new HashMap();
-                for (Object key : keys) {
+            public Map<Integer, Employee> loadAll(Collection<Integer> keys) {
+                Map<Integer, Employee> map = new HashMap<Integer, Employee>();
+                for (Integer key : keys) {
                     Employee emp = new Employee();
                     emp.setActive(true);
                     map.put(key, emp);
@@ -398,18 +422,18 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
             }
 
             @Override
-            public Set loadAllKeys() {
-                Set set = new HashSet();
+            public Set<Integer> loadAllKeys() {
+                Set<Integer> set = new HashSet<Integer>();
                 for (int i = 0; i < size; i++) {
                     set.add(i);
                 }
                 return set;
             }
         });
-        cfg.getMapConfig(name).setMapStoreConfig(mapStoreConfig);
-        HazelcastInstance instance = createHazelcastInstance(cfg);
-        final IMap map = instance.getMap(name);
 
+        config.getMapConfig(name).setMapStoreConfig(mapStoreConfig);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        final IMap map = instance.getMap(name);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -421,36 +445,31 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
 
     @Test
     public void testUnknownPortableField_notCausesQueryException_withoutIndex() {
-        final String mapName = randomMapName();
-
-        final Config config = getConfig();
+        String mapName = randomMapName();
+        Config config = getConfig();
         config.getSerializationConfig().addPortableFactory(666, new PortableFactory() {
             public Portable create(int classId) {
-                return new SampleObjects.PortableEmployee();
+                return new PortableEmployee();
             }
         });
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
 
-        final IMap map = hazelcastInstance.getMap(mapName);
-
-
+        IMap<Integer, PortableEmployee> map = hazelcastInstance.getMap(mapName);
         for (int i = 0; i < 5; i++) {
-            map.put(i, new SampleObjects.PortableEmployee(i, "name_" + i));
+            map.put(i, new PortableEmployee(i, "name_" + i));
         }
 
         Collection values = map.values(new SqlPredicate("notExist = name_0 OR a > 1"));
-
         assertEquals(3, values.size());
     }
 
     @Test
     public void testUnknownPortableField_notCausesQueryException_withIndex() {
-        final String mapName = "default";
-
-        final Config config = getConfig();
+        String mapName = "default";
+        Config config = getConfig();
         config.getSerializationConfig().addPortableFactory(666, new PortableFactory() {
             public Portable create(int classId) {
-                return new SampleObjects.PortableEmployee();
+                return new PortableEmployee();
             }
         });
         config.getMapConfig(mapName)
@@ -459,15 +478,12 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
 
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
 
-        final IMap map = hazelcastInstance.getMap(mapName);
-
-
+        IMap<Integer, PortableEmployee> map = hazelcastInstance.getMap(mapName);
         for (int i = 0; i < 5; i++) {
-            map.put(i, new SampleObjects.PortableEmployee(i, "name_" + i));
+            map.put(i, new PortableEmployee(i, "name_" + i));
         }
 
         Collection values = map.values(new SqlPredicate("n = name_2 OR notExist = name_0"));
-
         assertEquals(1, values.size());
     }
 }

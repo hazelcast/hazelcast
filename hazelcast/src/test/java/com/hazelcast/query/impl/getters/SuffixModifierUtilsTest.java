@@ -39,7 +39,7 @@ public class SuffixModifierUtilsTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void removeModifierSuffix_whenMultipleOpeningTokensArePresnet_thenThrowIllegalArgumentException() {
+    public void removeModifierSuffix_whenMultipleOpeningTokensArePresent_thenThrowIllegalArgumentException() {
         String attribute = "foo[[";
         SuffixModifierUtils.removeModifierSuffix(attribute);
     }

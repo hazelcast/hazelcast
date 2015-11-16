@@ -23,9 +23,10 @@ import static org.junit.Assert.assertFalse;
 @Category({QuickTest.class, ParallelTest.class})
 public class AndResultSetTest extends HazelcastTestSupport {
 
-    //https://github.com/hazelcast/hazelcast/issues/1501
-    //tests that this method is not running into a stackoverflow.
+    // https://github.com/hazelcast/hazelcast/issues/1501
+    // tests that this method is not running into a stackoverflow
     @Test
+    @SuppressWarnings("unchecked")
     public void issue_1501() {
         Set<QueryableEntry> entries = generateEntries(100000);
         System.out.println(entries.size());
@@ -35,7 +36,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
         assertFalse(result);
     }
 
-    //todo: we need to have more methods for regular behavior.
+    // TODO: we need to have more methods for regular behavior
 
     class FalsePredicate implements Predicate {
         @Override

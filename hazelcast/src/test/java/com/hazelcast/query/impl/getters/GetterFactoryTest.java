@@ -67,7 +67,8 @@ public class GetterFactoryTest {
     }
 
     @Test
-    public void newFieldGetter_whenExtractingFromEmptyCollectionAndReducerSuffixInNotEmpty_thenReturnNullGetter() throws Exception {
+    public void newFieldGetter_whenExtractingFromEmptyCollectionAndReducerSuffixInNotEmpty_thenReturnNullGetter()
+            throws Exception {
         OuterObject object = new OuterObject("name");
         Getter getter = GetterFactory.newFieldGetter(object, null, innersField, "[any]");
 
@@ -75,7 +76,8 @@ public class GetterFactoryTest {
     }
 
     @Test
-    public void newFieldGetter_whenExtractingFromNonEmptyCollectionAndReducerSuffixInNotEmpty_thenInferTypeFromCollectionItem() throws Exception {
+    public void newFieldGetter_whenExtractingFromNonEmptyCollectionAndReducerSuffixInNotEmpty_thenInferTypeFromCollectionItem()
+            throws Exception {
         OuterObject object = new OuterObject("name", new InnerObject("inner"));
         Getter getter = GetterFactory.newFieldGetter(object, null, innersField, "[any]");
 
@@ -84,7 +86,8 @@ public class GetterFactoryTest {
     }
 
     @Test
-    public void newFieldGetter_whenExtractingFromSimpleFieldAndParentIsNonEmptyMultiResult_thenInferReturnType() throws Exception {
+    public void newFieldGetter_whenExtractingFromSimpleFieldAndParentIsNonEmptyMultiResult_thenInferReturnType()
+            throws Exception {
         OuterObject object = new OuterObject("name", new InnerObject("inner"));
 
         Getter parentGetter = GetterFactory.newFieldGetter(object, null, innersField, "[any]");
@@ -95,7 +98,8 @@ public class GetterFactoryTest {
     }
 
     @Test
-    public void newFieldGetter_whenExtractingFromEmptyCollectionFieldAndParentIsNonEmptyMultiResult_thenInferReturnType() throws Exception {
+    public void newFieldGetter_whenExtractingFromEmptyCollectionFieldAndParentIsNonEmptyMultiResult_thenInferReturnType()
+            throws Exception {
         OuterObject object = new OuterObject("name", new InnerObject("inner"));
 
         Getter parentGetter = GetterFactory.newFieldGetter(object, null, innersField, "[any]");
@@ -105,7 +109,8 @@ public class GetterFactoryTest {
     }
 
     @Test
-    public void newFieldGetter_whenExtractingFromNonEmptyCollectionFieldAndParentIsNonEmptyMultiResult_thenInferReturnType() throws Exception {
+    public void newFieldGetter_whenExtractingFromNonEmptyCollectionFieldAndParentIsNonEmptyMultiResult_thenInferReturnType()
+            throws Exception {
         OuterObject object = new OuterObject("name", new InnerObject("inner", 0, 1, 2, 3));
 
         Getter parentGetter = GetterFactory.newFieldGetter(object, null, innersField, "[any]");
@@ -114,7 +119,6 @@ public class GetterFactoryTest {
         Class returnType = innerObjectNameGetter.getReturnType();
         assertEquals(Integer.class, returnType);
     }
-
 
     public static class OuterObject {
         final String name;

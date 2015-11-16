@@ -28,17 +28,14 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.UUID;
 
-/**
- * @author mdogan 6/6/13
- */
 public final class SampleObjects {
 
     public static class PortableEmployee implements Portable {
+
         private int age;
         private String name;
 
         public PortableEmployee() {
-
         }
 
         public PortableEmployee(int age, String name) {
@@ -78,6 +75,7 @@ public final class SampleObjects {
     }
 
     public static class ValueType implements Serializable, Comparable<ValueType> {
+
         String typeName;
 
         public ValueType(String typeName) {
@@ -111,13 +109,16 @@ public final class SampleObjects {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             ValueType valueType = (ValueType) o;
 
             return !(typeName != null ? !typeName.equals(valueType.typeName) : valueType.typeName != null);
-
         }
 
         @Override
@@ -127,6 +128,7 @@ public final class SampleObjects {
     }
 
     public static class Value implements Serializable {
+
         String name;
         ValueType type;
         State state;
@@ -179,14 +181,24 @@ public final class SampleObjects {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             Value value = (Value) o;
 
-            if (index != value.index) return false;
-            if (name != null ? !name.equals(value.name) : value.name != null) return false;
-            if (type != null ? !type.equals(value.type) : value.type != null) return false;
+            if (index != value.index) {
+                return false;
+            }
+            if (name != null ? !name.equals(value.name) : value.name != null) {
+                return false;
+            }
+            if (type != null ? !type.equals(value.type) : value.type != null) {
+                return false;
+            }
 
             return true;
         }
@@ -201,22 +213,22 @@ public final class SampleObjects {
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder();
-            sb.append("Value");
-            sb.append("{name=").append(name);
-            sb.append(", index=").append(index);
-            sb.append(", type=").append(type);
-            sb.append('}');
-            return sb.toString();
+            return "Value{"
+                    + "name=" + name
+                    + ", index=" + index
+                    + ", type=" + type
+                    + '}';
         }
     }
 
-
-    public static enum State {
-        STATE1, STATE2
+    public enum State {
+        STATE1,
+        STATE2
     }
 
+    @SuppressWarnings("unused")
     public static class Employee implements Serializable {
+
         long id;
         String name;
         String city;
@@ -332,13 +344,25 @@ public final class SampleObjects {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             Employee employee = (Employee) o;
-            if (active != employee.active) return false;
-            if (age != employee.age) return false;
-            if (Double.compare(employee.salary, salary) != 0) return false;
-            if (name != null ? !name.equals(employee.name) : employee.name != null) return false;
+            if (active != employee.active) {
+                return false;
+            }
+            if (age != employee.age) {
+                return false;
+            }
+            if (Double.compare(employee.salary, salary) != 0) {
+                return false;
+            }
+            if (name != null ? !name.equals(employee.name) : employee.name != null) {
+                return false;
+            }
             return true;
         }
 
@@ -356,15 +380,13 @@ public final class SampleObjects {
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder();
-            sb.append("Employee");
-            sb.append("{name='").append(name).append('\'');
-            sb.append(", city=").append(city);
-            sb.append(", age=").append(age);
-            sb.append(", active=").append(active);
-            sb.append(", salary=").append(salary);
-            sb.append('}');
-            return sb.toString();
+            return "Employee{"
+                    + "name='" + name + '\''
+                    + ", city=" + city
+                    + ", age=" + age
+                    + ", active=" + active
+                    + ", salary=" + salary
+                    + '}';
         }
     }
 

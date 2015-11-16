@@ -165,7 +165,6 @@ public class IndexSplitBrainTest extends HazelcastTestSupport {
         public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
 
         }
-
     }
 
     protected NetworkConfig getLocalhostTcpIpNetworkConfig(int port) {

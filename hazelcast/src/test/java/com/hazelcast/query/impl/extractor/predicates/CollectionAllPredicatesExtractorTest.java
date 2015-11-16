@@ -26,16 +26,18 @@ import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStruct
  * <p/>
  * This test is parametrised. See CollectionAllPredicatesReflectionTest for more details.
  */
+@SuppressWarnings("unused")
 public class CollectionAllPredicatesExtractorTest extends CollectionAllPredicatesReflectionTest {
 
-    public CollectionAllPredicatesExtractorTest(InMemoryFormat inMemoryFormat, AbstractExtractionTest.Index index, AbstractExtractionTest.Multivalue multivalue) {
+    public CollectionAllPredicatesExtractorTest(InMemoryFormat inMemoryFormat, AbstractExtractionTest.Index index,
+                                                Multivalue multivalue) {
         super(inMemoryFormat, index, multivalue);
     }
 
     protected AbstractExtractionTest.Configurator getInstanceConfigurator() {
         return new AbstractExtractionTest.Configurator() {
             @Override
-            public void doWithConfig(Config config, AbstractExtractionTest.Multivalue mv) {
+            public void doWithConfig(Config config, Multivalue mv) {
                 MapConfig mapConfig = config.getMapConfig("map");
 
                 MapAttributeConfig reducedNameAttribute = new AbstractExtractionTest.TestMapAttributeIndexConfig();
@@ -96,6 +98,4 @@ public class CollectionAllPredicatesExtractorTest extends CollectionAllPredicate
             }
         }
     }
-
-
 }

@@ -25,15 +25,15 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class MapEntrySetTest extends HazelcastTestSupport {
 
-    private HazelcastInstance hz;
     private IMap<String, String> map;
     private SerializationService serializationService;
 
     @Before
     public void setup() {
-        hz = createHazelcastInstance();
-        map = hz.getMap(randomName());
-        serializationService = getSerializationService(hz);
+        HazelcastInstance instance = createHazelcastInstance();
+
+        map = instance.getMap(randomName());
+        serializationService = getSerializationService(instance);
     }
 
     @Test(expected = NullPointerException.class)
@@ -76,7 +76,7 @@ public class MapEntrySetTest extends HazelcastTestSupport {
     }
 
     private void assertResultContains(Set<Map.Entry<String, String>> result, String key, String value) {
-        assertTrue(result.contains(new SimpleEntry(key, value)));
+        assertTrue(result.contains(new SimpleEntry<String, String>(key, value)));
     }
 
     @Test

@@ -41,11 +41,11 @@ public class QueryEntry extends QueryableEntry {
      * <pre>
      * <code>Predicate predicate = ...
      * QueryEntry entry = new QueryEntry()
-     * for(i == 0; i < HUGE_NUMBER; i++) {
+     * for (i == 0; i < HUGE_NUMBER; i++) {
      *       entry.init(...)
      *       boolean valid = predicate.apply(queryEntry);
      *
-     *       if(valid) {
+     *       if (valid) {
      *          ....
      *       }
      *  }
@@ -113,5 +113,4 @@ public class QueryEntry extends QueryableEntry {
     public int hashCode() {
         return key.hashCode();
     }
-
 }
