@@ -49,9 +49,12 @@ public class XMLConfigWithSystemPropertyTest {
     public void testConfigurationWithFile() throws Exception{
         URL url = getClass().getClassLoader().getResource("hazelcast-default.xml");
         assertNotNull(url);
-        System.setProperty("hazelcast.config", URLDecoder.decode(url.getPath(), "UTF-8"));
+        String decodedURL = URLDecoder.decode(url.getPath(), "UTF-8");
+        System.setProperty("hazelcast.config", decodedURL);
         Config config = new XmlConfigBuilder().build();
-        assertEquals(url, config.getConfigurationUrl());
+        URL file = new URL("file:");
+        URL encodedURL = new URL(file, decodedURL);
+        assertEquals(encodedURL, config.getConfigurationUrl());
     }
 
     @Test(expected = HazelcastException.class)
