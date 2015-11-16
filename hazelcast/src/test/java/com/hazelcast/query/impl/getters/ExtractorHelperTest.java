@@ -91,7 +91,6 @@ public class ExtractorHelperTest {
         assertEquals(".';'.", extractArgumentsFromAttributeName("car.wheel[.';'.]"));
         assertEquals("", extractArgumentsFromAttributeName("car.wheel[]"));
         assertEquals(null, extractArgumentsFromAttributeName("car.wheel"));
-        assertEquals("BAR", extractArgumentsFromAttributeName("car.wheel[2].pressure[BAR]"));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -114,6 +113,11 @@ public class ExtractorHelperTest {
         extractArgumentsFromAttributeName("car.wheel]");
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void extractArgument_wrongArguments_tooManySquareBrackets() {
+        extractArgumentsFromAttributeName("car.wheel[2].pressure[BAR]");
+    }
+
     @Test
     public void extractAttributeName_correctArguments() {
         assertEquals("car.wheel", extractAttributeNameNameWithoutArguments("car.wheel[left-front]"));
@@ -121,7 +125,6 @@ public class ExtractorHelperTest {
         assertEquals("car.wheel", extractAttributeNameNameWithoutArguments("car.wheel[.';'.]"));
         assertEquals("car.wheel", extractAttributeNameNameWithoutArguments("car.wheel[]"));
         assertEquals("car.wheel", extractAttributeNameNameWithoutArguments("car.wheel"));
-        assertEquals("car.wheel[2].pressure", extractAttributeNameNameWithoutArguments("car.wheel[2].pressure[BAR]"));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -142,6 +145,11 @@ public class ExtractorHelperTest {
     @Test(expected = IllegalArgumentException.class)
     public void extractAttributeName_wrongArguments_noArgument_noOpening() {
         extractAttributeNameNameWithoutArguments("car.wheel]");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void extractAttributeName_wrongArguments_tooManySquareBrackets() {
+        extractArgumentsFromAttributeName("car.wheel[2].pressure[BAR]");
     }
 
     public static class IqExtractor extends ValueExtractor<Object, Object> {

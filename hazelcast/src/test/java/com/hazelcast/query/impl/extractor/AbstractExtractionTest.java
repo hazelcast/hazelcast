@@ -150,9 +150,8 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
             this.expected.expect(expected.throwable);
         }
 
-        putTestDataToMap(input.objects);
-
         // WHEN
+        putTestDataToMap(input.objects);
         Collection<?> values = map.values(query.predicate);
 
         // THEN
@@ -163,6 +162,5 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
             }
         }
     }
-
 
 }

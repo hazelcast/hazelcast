@@ -24,8 +24,18 @@ import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 final class ExtractorHelper {
+
+    private static final String NO_SQUARE_BRACKETS_EXP = "[^\\Q[]\\E]";
+    private static final String SQUARE_BRACKETS_EXP = "\\[([^\\Q[]\\E])*\\]";
+
+    private static final Pattern EXTRACTOR_ARGS_PATTERN = Pattern.compile(
+            String.format("^(%s)+%s$", NO_SQUARE_BRACKETS_EXP, SQUARE_BRACKETS_EXP));
+
+    private static final Pattern COLLECTION_ARGS_PATTERN = Pattern.compile(
+            String.format("^((%s)+(%s){0,1})+$", NO_SQUARE_BRACKETS_EXP, SQUARE_BRACKETS_EXP));
 
     private ExtractorHelper() {
     }
@@ -64,25 +74,25 @@ final class ExtractorHelper {
     static String extractArgumentsFromAttributeName(String attributeNameWithArguments) {
         int start = attributeNameWithArguments.lastIndexOf("[");
         int end = attributeNameWithArguments.lastIndexOf("]");
-        if (start > 0 && start < attributeNameWithArguments.length() && start < end) {
+        if (EXTRACTOR_ARGS_PATTERN.matcher(attributeNameWithArguments).matches()) {
             return attributeNameWithArguments.substring(start + 1, end);
-        }
-        if (start < 0 && end < 0) {
-            return null;
+        } else {
+            if (start < 0 && end < 0) {
+                return null;
+            }
         }
         throw new IllegalArgumentException("Wrong argument input passed to extractor " + attributeNameWithArguments);
     }
 
     static String extractAttributeNameNameWithoutArguments(String attributeNameWithArguments) {
         int start = attributeNameWithArguments.lastIndexOf("[");
-        int end = attributeNameWithArguments.lastIndexOf("]");
-        if (start > 0 && start < attributeNameWithArguments.length() && start < end) {
+        if (EXTRACTOR_ARGS_PATTERN.matcher(attributeNameWithArguments).matches()) {
             return attributeNameWithArguments.substring(0, start);
-        }
-        if (start < 0 && end < 0) {
+        } else if (COLLECTION_ARGS_PATTERN.matcher(attributeNameWithArguments).matches()) {
             return attributeNameWithArguments;
+        } else {
+            throw new IllegalArgumentException("Wrong argument input passed to extractor " + attributeNameWithArguments);
         }
-        throw new IllegalArgumentException("Wrong argument input passed to extractor " + attributeNameWithArguments);
     }
 
 }

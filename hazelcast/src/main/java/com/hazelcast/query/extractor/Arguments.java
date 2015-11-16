@@ -33,6 +33,8 @@ package com.hazelcast.query.extractor;
  * By default, if there's no custom {@link ArgumentsParser} registered, the default parser follows the pass-through
  * semantics, which means that the string that's in the square-brackets is passes "as-is" to the Arguments class.
  * <p/>
+ * <b>It is not allowed to use square brackets withing the argument string.</b>
+ * <p/>
  * <i>For now, it's not possible to register custom ArgumentsParsers. It will be possible in future releases.</i>
  *
  * @param <T> type of the argument object encompassed by this class

@@ -74,16 +74,65 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
 
     @Test
     public void extractorWithParam_indexOutOfBound() {
-        execute(Input.of(BOND, KRUEGER),
+        execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("tattoosCount[2]", 1), mv),
                 Expected.of(IndexOutOfBoundsException.class));
     }
 
     @Test
     public void extractorWithParam_negativeInput() {
-        execute(Input.of(BOND, KRUEGER),
+        execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("tattoosCount[-1]", 1), mv),
                 Expected.of(IndexOutOfBoundsException.class));
+    }
+
+    @Test
+    public void extractorWithParam_wrongInput_noClosingWithArg() {
+        execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
+                Query.of(Predicates.equal("tattoosCount[0", 1), mv),
+                Expected.of(IllegalArgumentException.class));
+    }
+
+    @Test
+    public void extractorWithParam_wrongInput_noOpeningWithArg() {
+        execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
+                Query.of(Predicates.equal("tattoosCount0]", 1), mv),
+                Expected.of(IllegalArgumentException.class));
+    }
+
+    @Test
+    public void extractorWithParam_wrongInput_noClosing() {
+        execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
+                Query.of(Predicates.equal("tattoosCount[", 1), mv),
+                Expected.of(IllegalArgumentException.class));
+    }
+
+    @Test
+    public void extractorWithParam_wrongInput_noOpening() {
+        execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
+                Query.of(Predicates.equal("tattoosCount]", 1), mv),
+                Expected.of(IllegalArgumentException.class));
+    }
+
+    @Test
+    public void extractorWithParam_wrongInput_noArgumentWithBrackets() {
+        execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
+                Query.of(Predicates.equal("tattoosCount[]", 1), mv),
+                Expected.of(NumberFormatException.class));
+    }
+
+    @Test
+    public void extractorWithParam_wrongInput_noArgumentNoBrackets() {
+        execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
+                Query.of(Predicates.equal("tattoosCount", 1), mv),
+                Expected.of(NumberFormatException.class));
+    }
+
+    @Test
+    public void extractorWithParam_wrongInput_squareBracketsInInput() {
+        execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
+                Query.of(Predicates.equal("tattoosCount[1183[2]3]", 1), mv),
+                Expected.of(IllegalArgumentException.class));
     }
 
     @Test
@@ -91,48 +140,6 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
         execute(Input.of(HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("tattoosCount[0]", 1), mv),
                 Expected.of(NullPointerException.class));
-    }
-
-    @Test
-    public void extractorWithParam_nullCollection_wrongInput_noClosingWithArg() {
-        execute(Input.of(BOND, KRUEGER),
-                Query.of(Predicates.equal("tattoosCount[0", 1), mv),
-                Expected.of(IllegalArgumentException.class));
-    }
-
-    @Test
-    public void extractorWithParam_nullCollection_wrongInput_noOpeningWithArg() {
-        execute(Input.of(BOND, KRUEGER),
-                Query.of(Predicates.equal("tattoosCount0]", 1), mv),
-                Expected.of(IllegalArgumentException.class));
-    }
-
-    @Test
-    public void extractorWithParam_nullCollection_wrongInput_noClosing() {
-        execute(Input.of(BOND, KRUEGER),
-                Query.of(Predicates.equal("tattoosCount[", 1), mv),
-                Expected.of(IllegalArgumentException.class));
-    }
-
-    @Test
-    public void extractorWithParam_nullCollection_wrongInput_noOpening() {
-        execute(Input.of(BOND, KRUEGER),
-                Query.of(Predicates.equal("tattoosCount]", 1), mv),
-                Expected.of(IllegalArgumentException.class));
-    }
-
-    @Test
-    public void extractorWithParam_nullCollection_wrongInput_noArgumentWithBrackets() {
-        execute(Input.of(BOND, KRUEGER),
-                Query.of(Predicates.equal("tattoosCount[]", 1), mv),
-                Expected.of(NumberFormatException.class));
-    }
-
-    @Test
-    public void extractorWithParam_nullCollection_wrongInput_noArgumentNoBrackets() {
-        execute(Input.of(BOND, KRUEGER),
-                Query.of(Predicates.equal("tattoosCount", 1), mv),
-                Expected.of(NumberFormatException.class));
     }
 
     protected AbstractExtractionTest.Configurator getInstanceConfigurator() {
