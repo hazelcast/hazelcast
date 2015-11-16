@@ -1,4 +1,4 @@
-package com.hazelcast.query.impl.extraction.specification;
+package com.hazelcast.query.impl.extractor.specification;
 
 import com.hazelcast.test.ObjectTestUtils;
 

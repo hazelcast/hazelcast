@@ -1,4 +1,4 @@
-package com.hazelcast.query.impl.extraction;
+package com.hazelcast.query.impl.extractor;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;

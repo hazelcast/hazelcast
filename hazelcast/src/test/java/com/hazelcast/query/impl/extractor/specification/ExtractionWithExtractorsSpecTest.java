@@ -1,4 +1,4 @@
-package com.hazelcast.query.impl.extraction.specification;
+package com.hazelcast.query.impl.extractor.specification;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
@@ -8,7 +8,7 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.extractor.Arguments;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
-import com.hazelcast.query.impl.extraction.AbstractExtractionTest;
+import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -19,13 +19,13 @@ import org.junit.runners.Parameterized;
 import java.util.Collection;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
-import static com.hazelcast.query.impl.extraction.AbstractExtractionSpecification.Index.NO_INDEX;
-import static com.hazelcast.query.impl.extraction.AbstractExtractionSpecification.Multivalue.LIST;
-import static com.hazelcast.query.impl.extraction.specification.ComplexDataStructure.Person;
-import static com.hazelcast.query.impl.extraction.specification.ComplexDataStructure.finger;
-import static com.hazelcast.query.impl.extraction.specification.ComplexDataStructure.limb;
-import static com.hazelcast.query.impl.extraction.specification.ComplexDataStructure.person;
-import static com.hazelcast.query.impl.extraction.specification.ComplexDataStructure.tattoos;
+import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.NO_INDEX;
+import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.LIST;
+import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.Person;
+import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.finger;
+import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.limb;
+import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.person;
+import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.tattoos;
 import static java.util.Arrays.asList;
 
 /**

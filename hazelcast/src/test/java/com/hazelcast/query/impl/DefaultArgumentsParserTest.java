@@ -13,7 +13,7 @@ import static org.hamcrest.Matchers.equalTo;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class DefaultArgumentParserTest {
+public class DefaultArgumentsParserTest {
 
     private final DefaultArgumentsParser parser = new DefaultArgumentsParser();
 
