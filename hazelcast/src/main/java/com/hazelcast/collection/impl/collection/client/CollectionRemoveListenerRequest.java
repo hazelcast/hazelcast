@@ -34,8 +34,8 @@ public class CollectionRemoveListenerRequest extends BaseClientRemoveListenerReq
     public CollectionRemoveListenerRequest() {
     }
 
-    public CollectionRemoveListenerRequest(String name, String registrationId, String serviceName) {
-        super(name, registrationId);
+    public CollectionRemoveListenerRequest(String name, String serviceName) {
+        super(name);
         this.serviceName = serviceName;
     }
 

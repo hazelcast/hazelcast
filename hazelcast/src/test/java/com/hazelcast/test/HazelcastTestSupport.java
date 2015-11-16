@@ -679,15 +679,15 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertClusterSize(int expectedSize, HazelcastInstance instance) {
-        int clusterSize = instance.getCluster().getMembers().size();
+        int clusterSize = getClusterSize(instance);
         if (expectedSize != clusterSize) {
-            ConnectionManager connectionManager = getNode(instance).getConnectionManager();
-            boolean isMockNetwork = (connectionManager instanceof MockConnectionManager);
-            int activeConnectionCount = connectionManager.getActiveConnectionCount();
-
-            fail(format("Cluster size is not correct. Expected: %d Actual: %d %s", expectedSize, clusterSize,
-                    isMockNetwork ? "(mocked network)" : "ActiveConnectionCount: " + activeConnectionCount));
+            fail(format("Cluster size is not correct. Expected: %d Actual: %d", expectedSize, clusterSize));
         }
+    }
+
+    private static int getClusterSize(HazelcastInstance instance) {
+        Set<Member> members = instance.getCluster().getMembers();
+        return members == null ? 0 : members.size();
     }
 
     public static void assertClusterSizeEventually(int expectedSize, HazelcastInstance instance) {

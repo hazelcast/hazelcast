@@ -35,8 +35,8 @@ public class CacheRemoveEntryListenerRequest
     public CacheRemoveEntryListenerRequest() {
     }
 
-    public CacheRemoveEntryListenerRequest(String name, String registrationId) {
-        super(name, registrationId);
+    public CacheRemoveEntryListenerRequest(String name) {
+        super(name);
     }
 
     @Override

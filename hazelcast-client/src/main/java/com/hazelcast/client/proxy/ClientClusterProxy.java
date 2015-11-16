@@ -24,7 +24,6 @@ import com.hazelcast.core.MembershipListener;
 import com.hazelcast.transaction.TransactionOptions;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -52,7 +51,7 @@ public class ClientClusterProxy implements Cluster {
     @Override
     public Set<Member> getMembers() {
         final Collection<Member> members = clusterService.getMemberList();
-        return members != null ? new LinkedHashSet<Member>(members) : Collections.<Member>emptySet();
+        return new LinkedHashSet<Member>(members);
     }
 
     @Override

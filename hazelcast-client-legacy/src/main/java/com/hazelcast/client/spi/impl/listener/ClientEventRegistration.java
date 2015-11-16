@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi.impl.listener;
 
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.nio.Address;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
@@ -28,9 +29,11 @@ public class ClientEventRegistration {
     private Address subscriber;
     private final String serverRegistrationId;
     private final int callId;
+    private BaseClientRemoveListenerRequest removeRequest;
 
     public ClientEventRegistration(String serverRegistrationId,
-                                   int callId, Address subscriber) {
+                                   int callId, Address subscriber, BaseClientRemoveListenerRequest removeRequest) {
+        this.removeRequest = removeRequest;
         isNotNull(serverRegistrationId, "serverRegistrationId");
         this.serverRegistrationId = serverRegistrationId;
         this.callId = callId;
@@ -46,7 +49,7 @@ public class ClientEventRegistration {
      *
      * @return server registration Id
      */
-    String getServerRegistrationId() {
+    public String getServerRegistrationId() {
         return serverRegistrationId;
     }
 
@@ -57,8 +60,16 @@ public class ClientEventRegistration {
      *
      * @return subscriber
      */
-    Address getSubscriber() {
+    public Address getSubscriber() {
         return subscriber;
+    }
+
+    /**
+     *
+     * @return request that will remove the listener from the remote
+     */
+    public BaseClientRemoveListenerRequest getRemoveRequest() {
+        return removeRequest;
     }
 
     /**
@@ -89,6 +100,5 @@ public class ClientEventRegistration {
     public int hashCode() {
         return serverRegistrationId.hashCode();
     }
-
 }
 

@@ -19,10 +19,11 @@ package com.hazelcast.client.util;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Cluster;
+import com.hazelcast.core.InitialMembershipEvent;
+import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -30,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * An abstract {@link com.hazelcast.client.LoadBalancer} implementation.
  */
-public abstract class AbstractLoadBalancer implements LoadBalancer, MembershipListener {
+public abstract class AbstractLoadBalancer implements LoadBalancer, InitialMembershipListener {
 
     private final AtomicReference<Member[]> membersRef = new AtomicReference(new Member[]{});
     private volatile Cluster clusterRef;
@@ -38,21 +39,22 @@ public abstract class AbstractLoadBalancer implements LoadBalancer, MembershipLi
     @Override
     public final void init(Cluster cluster, ClientConfig config) {
         this.clusterRef = cluster;
-        setMembersRef();
         cluster.addMembershipListener(this);
     }
 
     private void setMembersRef() {
-        Cluster cluster = clusterRef;
-        if (cluster != null) {
-            Set<Member> memberSet = cluster.getMembers();
-            Member[] members = memberSet.toArray(new Member[memberSet.size()]);
-            membersRef.set(members);
-        }
+        Set<Member> memberSet = clusterRef.getMembers();
+        Member[] members = memberSet.toArray(new Member[memberSet.size()]);
+        membersRef.set(members);
     }
 
     protected Member[] getMembers() {
         return membersRef.get();
+    }
+
+    @Override
+    public final void init(InitialMembershipEvent event) {
+        setMembersRef();
     }
 
     @Override
@@ -66,6 +68,6 @@ public abstract class AbstractLoadBalancer implements LoadBalancer, MembershipLi
     }
 
     @Override
-    public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+    public final void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
     }
 }

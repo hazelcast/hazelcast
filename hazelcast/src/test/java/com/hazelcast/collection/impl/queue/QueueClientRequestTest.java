@@ -18,15 +18,6 @@ package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.client.ClientTestSupport;
 import com.hazelcast.client.SimpleClient;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.QueueConfig;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemEventType;
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.collection.impl.queue.client.AddAllRequest;
 import com.hazelcast.collection.impl.queue.client.AddListenerRequest;
 import com.hazelcast.collection.impl.queue.client.ClearRequest;
@@ -42,6 +33,15 @@ import com.hazelcast.collection.impl.queue.client.RemainingCapacityRequest;
 import com.hazelcast.collection.impl.queue.client.RemoveListenerRequest;
 import com.hazelcast.collection.impl.queue.client.RemoveRequest;
 import com.hazelcast.collection.impl.queue.client.SizeRequest;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.QueueConfig;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableItemEvent;
 import com.hazelcast.test.AssertTask;
@@ -373,7 +373,7 @@ public class QueueClientRequestTest extends ClientTestSupport {
         });
 
         final SimpleClient client = getClient();
-        client.send(new RemoveListenerRequest(queueName, registrationId));
+        client.send(new RemoveListenerRequest(queueName));
         boolean result = (Boolean) client.receive();
 
         assertTrue(result);

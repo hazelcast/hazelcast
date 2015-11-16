@@ -576,21 +576,20 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public boolean removeEntryListener(String id) {
-        final MapRemoveEntryListenerRequest request = new MapRemoveEntryListenerRequest(name, id);
-        return deregisterListener(request, id);
+        return deregisterListener(id);
     }
 
     @Override
     public String addPartitionLostListener(MapPartitionLostListener listener) {
-        final MapAddPartitionLostListenerRequest request = new MapAddPartitionLostListenerRequest(name);
-        final EventHandler<PortableMapPartitionLostEvent> handler = new ClientMapPartitionLostEventHandler(listener);
-        return registerListener(request, handler);
+        MapAddPartitionLostListenerRequest addRequest = new MapAddPartitionLostListenerRequest(name);
+        MapRemovePartitionLostListenerRequest removeRequest = new MapRemovePartitionLostListenerRequest(name);
+        EventHandler<PortableMapPartitionLostEvent> handler = new ClientMapPartitionLostEventHandler(listener);
+        return registerListener(addRequest, removeRequest, handler);
     }
 
     @Override
     public boolean removePartitionLostListener(String id) {
-        final MapRemovePartitionLostListenerRequest request = new MapRemovePartitionLostListenerRequest(name, id);
-        return deregisterListener(request, id);
+        return deregisterListener(id);
     }
 
     @Override
@@ -627,10 +626,12 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         Data keyData = toData(key);
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
-        MapAddEntryListenerRequest request
+        MapAddEntryListenerRequest addRequest
                 = new MapAddEntryListenerRequest(name, keyData, includeValue, predicate, listenerFlags);
         EventHandler<PortableEntryEvent> handler = createHandler(listenerAdaptor);
-        return registerListener(request, handler);
+        MapRemoveEntryListenerRequest removeRequest = new MapRemoveEntryListenerRequest(name);
+
+        return registerListener(addRequest, removeRequest, handler);
     }
 
     @Override
@@ -738,7 +739,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     protected List<MapEntries> getAllInternal(Map<Integer, List<Data>> partitionToKeyData, Map<K, V> result) {
         List<Future<Data>> futures = new ArrayList<Future<Data>>(partitionToKeyData.size());
         List<MapEntries> responses = new ArrayList<MapEntries>(partitionToKeyData.size());
-        
+
         for (final Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
             int partitionId = entry.getKey();
             List<Data> keyList = entry.getValue();
@@ -747,13 +748,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         }
 
         for (Future<Data> future : futures) {
-            try {                
-                MapEntries entries = toObject(future.get());        
+            try {
+                MapEntries entries = toObject(future.get());
                 for (Entry<Data, Data> entry : entries.entries()) {
                     final V value = toObject(entry.getValue());
                     final K key = toObject(entry.getKey());
                     result.put(key, value);
-                }                
+                }
                 responses.add(entries);
             } catch (Exception e) {
                 ExceptionUtil.rethrow(e);

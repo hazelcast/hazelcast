@@ -23,7 +23,6 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.Client;
@@ -47,8 +46,11 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EventListener;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -59,8 +61,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ClientClusterServiceImpl extends ClusterListenerSupport {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientClusterService.class);
-    private final AtomicReference<Map<Address, Member>> membersRef = new AtomicReference<Map<Address, Member>>();
+    private final AtomicReference<Map<Address, Member>> members = new AtomicReference<Map<Address, Member>>();
     private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
+    private final Object initialMembershipListenerMutex = new Object();
 
     public ClientClusterServiceImpl(HazelcastClientInstanceImpl client, Collection<AddressProvider> addressProviders) {
         super(client, addressProviders);
@@ -80,12 +83,12 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
                 addMembershipListenerWithoutInit((MembershipListener) listener);
             }
         }
+        members.set(Collections.unmodifiableMap(new LinkedHashMap<Address, Member>()));
     }
 
     @Override
     public Member getMember(Address address) {
-        final Map<Address, Member> members = membersRef.get();
-        return members != null ? members.get(address) : null;
+        return members.get().get(address);
     }
 
     @Override
@@ -101,11 +104,9 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
 
     @Override
     public Collection<Member> getMemberList() {
-        final Map<Address, Member> members = membersRef.get();
-        return members != null ? members.values() : Collections.<Member>emptySet();
+        return members.get().values();
     }
 
-    @Override
     public Collection<Member> getMembers(MemberSelector selector) {
         return new MemberSelectingCollection<Member>(getMemberList(), selector);
     }
@@ -159,14 +160,20 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
             throw new NullPointerException("listener can't be null");
         }
 
-        String id = UuidUtil.newUnsecureUuidString();
-        listeners.put(id, listener);
-        if (listener instanceof InitialMembershipListener) {
-            // TODO: needs sync with membership events...
-            final Cluster cluster = client.getCluster();
-            ((InitialMembershipListener) listener).init(new InitialMembershipEvent(cluster, cluster.getMembers()));
+        synchronized (initialMembershipListenerMutex) {
+            String id = addMembershipListenerWithoutInit(listener);
+            initMembershipListener(listener);
+            return id;
         }
-        return id;
+    }
+
+    private void initMembershipListener(MembershipListener listener) {
+        if (listener instanceof InitialMembershipListener) {
+            Cluster cluster = client.getCluster();
+            Collection<Member> memberCollection = members.get().values();
+            Set<Member> members = Collections.unmodifiableSet(new LinkedHashSet<Member>(memberCollection));
+            ((InitialMembershipListener) listener).init(new InitialMembershipEvent(cluster, members));
+        }
     }
 
     private String addMembershipListenerWithoutInit(MembershipListener listener) {
@@ -175,13 +182,10 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
         return id;
     }
 
-    private void initMembershipListener() {
-        for (MembershipListener membershipListener : listeners.values()) {
-            if (membershipListener instanceof InitialMembershipListener) {
-                // TODO: needs sync with membership events...
-                Cluster cluster = client.getCluster();
-                InitialMembershipEvent event = new InitialMembershipEvent(cluster, cluster.getMembers());
-                ((InitialMembershipListener) membershipListener).init(event);
+    private void initMembershipListeners() {
+        synchronized (initialMembershipListenerMutex) {
+            for (MembershipListener listener : listeners.values()) {
+                initMembershipListener(listener);
             }
         }
     }
@@ -198,61 +202,45 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
     public void start() throws Exception {
         init();
         connectToCluster();
-        initMembershipListener();
+        initMembershipListeners();
     }
 
     private ClientConfig getClientConfig() {
         return client.getClientConfig();
     }
 
-    String membersString() {
-        StringBuilder sb = new StringBuilder("\n\nMembers [");
-        final Collection<Member> members = getMemberList();
-        sb.append(members != null ? members.size() : 0);
-        sb.append("] {");
-        if (members != null) {
-            for (Member member : members) {
-                sb.append("\n\t").append(member);
+    void handleMembershipEvent(MembershipEvent event) {
+        synchronized (initialMembershipListenerMutex) {
+            Member member = event.getMember();
+            if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
+                LinkedHashMap<Address, Member> newMap = new LinkedHashMap<Address, Member>(members.get());
+                newMap.put(member.getAddress(), member);
+                members.set(Collections.unmodifiableMap(newMap));
+            } else {
+                LinkedHashMap<Address, Member> newMap = new LinkedHashMap<Address, Member>(members.get());
+                newMap.remove(member.getAddress());
+                members.set(Collections.unmodifiableMap(newMap));
             }
+
+            fireMembershipEvent(event);
         }
-        sb.append("\n}\n");
-        return sb.toString();
     }
 
-    void fireMembershipEvent(final MembershipEvent event) {
-        ClientExecutionService clientExecutionService = client.getClientExecutionService();
-        clientExecutionService.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (MembershipListener listener : listeners.values()) {
-                    if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
-                        listener.memberAdded(event);
-                    } else {
-                        listener.memberRemoved(event);
-                    }
-                }
+    private void fireMembershipEvent(MembershipEvent event) {
+        for (MembershipListener listener : listeners.values()) {
+            if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
+                listener.memberAdded(event);
+            } else {
+                listener.memberRemoved(event);
             }
-        });
+        }
     }
 
     void fireMemberAttributeEvent(final MemberAttributeEvent event) {
-        ClientExecutionService clientExecutionService = client.getClientExecutionService();
-        clientExecutionService.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (MembershipListener listener : listeners.values()) {
-                    listener.memberAttributeChanged(event);
-                }
-            }
-        });
+        for (MembershipListener listener : listeners.values()) {
+            listener.memberAttributeChanged(event);
+        }
     }
 
-    Map<Address, Member> getMembersRef() {
-        return membersRef.get();
-    }
-
-    void setMembersRef(Map<Address, Member> map) {
-        membersRef.set(map);
-    }
 
 }

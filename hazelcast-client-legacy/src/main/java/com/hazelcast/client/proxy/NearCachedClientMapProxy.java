@@ -36,6 +36,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.executor.CompletedFuture;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -46,8 +47,6 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.util.Collections.emptyMap;
-
-import java.util.ArrayList;
 
 /**
  * A Client-side {@code IMap} implementation which is fronted by a near-cache.
@@ -345,9 +344,11 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     protected void addNearCacheInvalidateListener() {
         try {
-            MapAddNearCacheEntryListenerRequest request = new MapAddNearCacheEntryListenerRequest(name, false);
+            MapAddNearCacheEntryListenerRequest addRequest = new MapAddNearCacheEntryListenerRequest(name, false);
             EventHandler handler = new InvalidationListener(this.nearCache);
-            invalidationListenerId = registerListener(request, handler);
+            BaseClientRemoveListenerRequest removeRequest = new MapRemoveEntryListenerRequest(name);
+
+            invalidationListenerId = registerListener(addRequest, removeRequest, handler);
         } catch (Exception e) {
             Logger.getLogger(ClientHeapNearCache.class).severe(
                     "-----------------\n Near Cache is not initialized!!! \n-----------------", e);
@@ -401,7 +402,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             return;
         }
 
-        BaseClientRemoveListenerRequest request = new MapRemoveEntryListenerRequest(name, invalidationListenerId);
-        deregisterListener(request, invalidationListenerId);
+        deregisterListener(invalidationListenerId);
     }
 }

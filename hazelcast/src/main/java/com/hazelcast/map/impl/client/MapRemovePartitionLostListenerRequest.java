@@ -30,8 +30,8 @@ public class MapRemovePartitionLostListenerRequest extends BaseClientRemoveListe
     public MapRemovePartitionLostListenerRequest() {
     }
 
-    public MapRemovePartitionLostListenerRequest(String name, String registrationId) {
-        super(name, registrationId);
+    public MapRemovePartitionLostListenerRequest(String name) {
+        super(name);
     }
 
     protected boolean deRegisterListener() {

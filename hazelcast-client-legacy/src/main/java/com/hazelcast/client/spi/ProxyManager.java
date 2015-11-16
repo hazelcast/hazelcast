@@ -82,6 +82,7 @@ import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
@@ -305,13 +306,13 @@ public final class ProxyManager {
     }
 
     public Address findNextAddressToSendCreateRequest() {
-        final int clusterSize = client.getClientClusterService().getSize();
+        int clusterSize = client.getClientClusterService().getSize();
         Member liteMember = null;
 
         final LoadBalancer loadBalancer = client.getLoadBalancer();
         for (int i = 0; i < clusterSize; i++) {
-            final Member member = loadBalancer.next();
-            if (!member.isLiteMember()) {
+            Member member = loadBalancer.next();
+            if (member != null && !member.isLiteMember()) {
                 return member.getAddress();
             } else if (liteMember == null) {
                 liteMember = member;
@@ -337,9 +338,10 @@ public final class ProxyManager {
     }
 
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
-        AddDistributedObjectListenerRequest request = new AddDistributedObjectListenerRequest();
+        AddDistributedObjectListenerRequest addRequest = new AddDistributedObjectListenerRequest();
         EventHandler<PortableDistributedObjectEvent> eventHandler = new DistributedObjectEventHandler(listener, this);
-        return client.getListenerService().registerListener(request, eventHandler);
+        RemoveDistributedObjectListenerRequest removeRequest = new RemoveDistributedObjectListenerRequest();
+        return client.getListenerService().registerListener(addRequest, removeRequest, eventHandler);
     }
 
 
@@ -383,8 +385,7 @@ public final class ProxyManager {
 
 
     public boolean removeDistributedObjectListener(String id) {
-        final RemoveDistributedObjectListenerRequest request = new RemoveDistributedObjectListenerRequest(id);
-        return client.getListenerService().deregisterListener(request, id);
+        return client.getListenerService().deregisterListener(id);
     }
 
     private static class ClientProxyFuture {

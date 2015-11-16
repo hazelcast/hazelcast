@@ -27,8 +27,10 @@ import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
  */
 public interface ClientListenerService {
 
-    String registerListener(BaseClientAddListenerRequest request, EventHandler handler);
+    String registerListener(BaseClientAddListenerRequest addRequest,
+                            BaseClientRemoveListenerRequest removeRequest,
+                            EventHandler handler);
 
-    boolean deregisterListener(BaseClientRemoveListenerRequest request, String registrationId);
+    boolean deregisterListener(String registrationId);
 
 }

@@ -28,7 +28,6 @@ import com.hazelcast.cache.impl.client.CacheGetAndReplaceRequest;
 import com.hazelcast.cache.impl.client.CacheInvalidationMessage;
 import com.hazelcast.cache.impl.client.CachePutIfAbsentRequest;
 import com.hazelcast.cache.impl.client.CachePutRequest;
-import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveInvalidationListenerRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheReplaceRequest;
@@ -589,9 +588,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
     private void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
         for (String regId : listenerRegistrations) {
-            CacheRemoveEntryListenerRequest removeReq =
-                    new CacheRemoveEntryListenerRequest(nameWithPrefix, regId);
-            clientContext.getListenerService().deregisterListener(removeReq, regId);
+            clientContext.getListenerService().deregisterListener(regId);
         }
     }
 
@@ -785,10 +782,12 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     private void registerInvalidationListener() {
         if (nearCache != null && nearCache.isInvalidateOnChange()) {
             ClientListenerService listenerService = clientContext.getListenerService();
-            CacheAddInvalidationListenerRequest request = new CacheAddInvalidationListenerRequest(nameWithPrefix);
+            CacheAddInvalidationListenerRequest addRequest = new CacheAddInvalidationListenerRequest(nameWithPrefix);
             Client client = clientContext.getClusterService().getLocalClient();
             EventHandler handler = new NearCacheInvalidationHandler(client);
-            nearCacheMembershipRegistrationId = listenerService.registerListener(request, handler);
+            BaseClientRemoveListenerRequest removeRequest =
+                    new CacheRemoveInvalidationListenerRequest(nameWithPrefix);
+            nearCacheMembershipRegistrationId = listenerService.registerListener(addRequest, removeRequest, handler);
         }
     }
 
@@ -797,9 +796,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             String registrationId = nearCacheMembershipRegistrationId;
             if (registrationId != null) {
                 ClientListenerService listenerService = clientContext.getListenerService();
-                BaseClientRemoveListenerRequest request =
-                        new CacheRemoveInvalidationListenerRequest(nameWithPrefix, registrationId);
-                listenerService.deregisterListener(request, nearCacheMembershipRegistrationId);
+                listenerService.deregisterListener(nearCacheMembershipRegistrationId);
             }
         }
     }
