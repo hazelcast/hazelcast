@@ -107,9 +107,9 @@ public class ClientMapNearCacheTest {
         clientConfig.addNearCacheConfig(idleConfig);
 
         NearCacheConfig longIdleConfig = new NearCacheConfig();
-        idleConfig.setName(NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME + "*");
-        idleConfig.setInvalidateOnChange(true);
-        idleConfig.setMaxIdleSeconds(LONG_MAX_IDLE_SECONDS);
+        longIdleConfig.setName(NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME + "*");
+        longIdleConfig.setInvalidateOnChange(true);
+        longIdleConfig.setMaxIdleSeconds(LONG_MAX_IDLE_SECONDS);
         clientConfig.addNearCacheConfig(longIdleConfig);
 
         NearCacheConfig invalidateConfig = new NearCacheConfig();
