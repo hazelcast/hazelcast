@@ -975,6 +975,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public Object putFromLoad(Data key, Object value, long ttl) {
+        if (key == null || value == null) {
+            return null;
+        }
+
         final long now = getNow();
 
         if (shouldEvict(now)) {
