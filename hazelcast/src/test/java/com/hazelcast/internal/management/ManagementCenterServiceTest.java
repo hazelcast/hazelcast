@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URL;
+import java.net.URLDecoder;
 
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
@@ -40,7 +41,8 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     @Before
     public void setUp() throws Exception {
         URL root = new URL(MancenterServlet.class.getResource("/"), "../test-classes");
-        String baseDir = new File(root.getFile().replaceAll("%20", " ")).toString();
+        String decodedURL = URLDecoder.decode(root.getPath(), "UTF-8");
+        String baseDir = new File(decodedURL.replaceAll("%20", " ")).toString();
         String sourceDir = baseDir + "/../../src/test/webapp";
         String sourceName = "server_config.xml";
         portNum = availablePort();
