@@ -48,6 +48,16 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     }
 
     @Test
+    public void putIfAbsentToCacheAndThenGetFromClientNearCacheWithBinaryInMemoryFormat() {
+        putIfAbsentToCacheAndThenGetFromClientNearCache(InMemoryFormat.BINARY);
+    }
+
+    @Test
+    public void putIfAbsentToCacheAndThenGetFromClientNearCacheWithObjectInMemoryFormat() {
+        putIfAbsentToCacheAndThenGetFromClientNearCache(InMemoryFormat.OBJECT);
+    }
+
+    @Test
     public void putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCacheWithBinaryInMemoryFormat() {
         putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache(InMemoryFormat.BINARY);
     }

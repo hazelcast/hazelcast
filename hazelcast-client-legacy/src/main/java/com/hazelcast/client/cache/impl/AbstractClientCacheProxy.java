@@ -162,12 +162,12 @@ abstract class AbstractClientCacheProxy<K, V>
 
     @Override
     public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
-        return putIfAbsentAsyncInternal(key, value, null, false, true);
+        return (ICompletableFuture<Boolean>) putIfAbsentInternal(key, value, null, false, true);
     }
 
     @Override
     public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return putIfAbsentAsyncInternal(key, value, expiryPolicy, false, true);
+        return (ICompletableFuture<Boolean>) putIfAbsentInternal(key, value, expiryPolicy, false, true);
     }
 
     @Override
@@ -432,17 +432,7 @@ abstract class AbstractClientCacheProxy<K, V>
 
     @Override
     public boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy) {
-        final long start = System.nanoTime();
-        final Future<Boolean> f = putIfAbsentAsyncInternal(key, value, expiryPolicy, true, false);
-        try {
-            boolean saved = f.get();
-            if (statisticsEnabled) {
-                handleStatisticsOnPutIfAbsent(start, saved);
-            }
-            return saved;
-        } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
-        }
+        return (Boolean) putIfAbsentInternal(key, value, expiryPolicy, true, false);
     }
 
     @Override
