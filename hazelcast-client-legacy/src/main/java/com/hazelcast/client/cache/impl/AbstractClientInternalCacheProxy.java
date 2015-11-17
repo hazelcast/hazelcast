@@ -444,8 +444,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    protected ICompletableFuture<Boolean> putIfAbsentAsyncInternal(final K key, final V value, final ExpiryPolicy expiryPolicy,
-                                                                   final boolean withCompletionEvent, final boolean async) {
+    protected Object putIfAbsentInternal(final K key, final V value, final ExpiryPolicy expiryPolicy,
+                                         final boolean withCompletionEvent, final boolean async) {
         final long start = System.nanoTime();
         ensureOpen();
         validateNotNull(key, value);
@@ -462,30 +462,49 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
         DelegatingFuture delegatingFuture =
                 new DelegatingFuture<Boolean>(future, clientContext.getSerializationService());
-        if (nearCache != null || (async && statisticsEnabled)) {
-            delegatingFuture.andThen(new ExecutionCallback<Object>() {
-                @Override
-                public void onResponse(Object responseData) {
-                    if (nearCache != null) {
-                        if (cacheOnUpdate) {
-                            storeInNearCache(keyData, valueData, value);
-                        } else {
-                            invalidateNearCache(keyData);
+        if (!async) {
+            try {
+                Object response = delegatingFuture.get();
+                if (nearCache != null) {
+                    if (cacheOnUpdate) {
+                        storeInNearCache(keyData, valueData, value);
+                    } else {
+                        invalidateNearCache(keyData);
+                    }
+                }
+                if (statisticsEnabled) {
+                    handleStatisticsOnPutIfAbsent(start, (Boolean) response);
+                }
+                return response;
+            } catch (Throwable e) {
+                throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            }
+        } else {
+            if (nearCache != null || (async && statisticsEnabled)) {
+                delegatingFuture.andThen(new ExecutionCallback<Object>() {
+                    @Override
+                    public void onResponse(Object responseData) {
+                        if (nearCache != null) {
+                            if (cacheOnUpdate) {
+                                storeInNearCache(keyData, valueData, value);
+                            } else {
+                                invalidateNearCache(keyData);
+                            }
+                        }
+                        if (statisticsEnabled) {
+                            Object response = clientContext.getSerializationService().toObject(responseData);
+                            handleStatisticsOnPutIfAbsent(start, (Boolean) response);
                         }
                     }
-                    if (async && statisticsEnabled) {
-                        Object response = clientContext.getSerializationService().toObject(responseData);
-                        handleStatisticsOnPutIfAbsent(start, (Boolean) response);
+
+                    @Override
+                    public void onFailure(Throwable t) {
+
                     }
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-
-                }
-            });
+                });
+            }
+            return delegatingFuture;
         }
-        return delegatingFuture;
     }
 
     protected void handleStatisticsOnPutIfAbsent(long start, boolean saved) {

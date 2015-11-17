@@ -172,12 +172,12 @@ abstract class AbstractClientCacheProxy<K, V>
 
     @Override
     public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
-        return putIfAbsentAsyncInternal(key, value, null, false, true);
+        return (ICompletableFuture<Boolean>) putIfAbsentInternal(key, value, null, false, true);
     }
 
     @Override
     public ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return putIfAbsentAsyncInternal(key, value, expiryPolicy, false, true);
+        return (ICompletableFuture<Boolean>) putIfAbsentInternal(key, value, expiryPolicy, false, true);
     }
 
     @Override
@@ -207,22 +207,22 @@ abstract class AbstractClientCacheProxy<K, V>
 
     @Override
     public ICompletableFuture<Boolean> replaceAsync(K key, V value) {
-        return replaceAsyncInternal(key, null, value, null, false, false, true);
+        return replaceInternal(key, null, value, null, false, false, true);
     }
 
     @Override
     public ICompletableFuture<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return replaceAsyncInternal(key, null, value, expiryPolicy, false, false, true);
+        return replaceInternal(key, null, value, expiryPolicy, false, false, true);
     }
 
     @Override
     public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue) {
-        return replaceAsyncInternal(key, oldValue, newValue, null, true, false, true);
+        return replaceInternal(key, oldValue, newValue, null, true, false, true);
     }
 
     @Override
     public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
-        return replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false, true);
+        return replaceInternal(key, oldValue, newValue, expiryPolicy, true, false, true);
     }
 
     @Override
@@ -378,17 +378,6 @@ abstract class AbstractClientCacheProxy<K, V>
                         CachePutAllCodec.encodeRequest(nameWithPrefix, entries, expiryPolicyData, completionId);
                 Future f = invoke(request, partitionId, completionId);
                 futureEntriesTuples.add(new FutureEntriesTuple(f, entries));
-                if (nearCache != null) {
-                    if (cacheOnUpdate) {
-                        for (Map.Entry<Data, Data> entry : entries) {
-                            storeInNearCache(entry.getKey(), entry.getValue(), null);
-                        }
-                    } else {
-                        for (Map.Entry<Data, Data> entry : entries) {
-                            invalidateNearCache(entry.getKey());
-                        }
-                    }
-                }
             }
         }
 
@@ -447,28 +436,28 @@ abstract class AbstractClientCacheProxy<K, V>
     }
 
     private void handleNearCacheOnPutAll(List<Map.Entry<Data, Data>> entries, boolean invalidate) {
-
+        if (nearCache != null) {
+            if (cacheOnUpdate) {
+                for (Map.Entry<Data, Data> entry : entries) {
+                    storeInNearCache(entry.getKey(), entry.getValue(), null);
+                }
+            } else {
+                for (Map.Entry<Data, Data> entry : entries) {
+                    invalidateNearCache(entry.getKey());
+                }
+            }
+        }
     }
 
     @Override
     public boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy) {
-        final long start = System.nanoTime();
-        final Future<Boolean> f = putIfAbsentAsyncInternal(key, value, expiryPolicy, true, false);
-        try {
-            boolean saved = f.get();
-            if (statisticsEnabled) {
-                handleStatisticsOnPutIfAbsent(start, saved);
-            }
-            return saved;
-        } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
-        }
+        return (Boolean) putIfAbsentInternal(key, value, expiryPolicy, true, false);
     }
 
     @Override
     public boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
         final long start = System.nanoTime();
-        final Future<Boolean> f = replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, true, false);
+        final Future<Boolean> f = replaceInternal(key, oldValue, newValue, expiryPolicy, true, true, false);
         try {
             boolean replaced = f.get();
             if (statisticsEnabled) {
@@ -483,7 +472,7 @@ abstract class AbstractClientCacheProxy<K, V>
     @Override
     public boolean replace(K key, V value, ExpiryPolicy expiryPolicy) {
         final long start = System.nanoTime();
-        final Future<Boolean> f = replaceAsyncInternal(key, null, value, expiryPolicy, false, true, false);
+        final Future<Boolean> f = replaceInternal(key, null, value, expiryPolicy, false, true, false);
         try {
             boolean replaced = f.get();
             if (statisticsEnabled) {

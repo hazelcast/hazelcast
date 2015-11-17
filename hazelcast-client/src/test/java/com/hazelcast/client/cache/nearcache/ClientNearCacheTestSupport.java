@@ -132,9 +132,19 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
     protected NearCacheTestContext createNearCacheTestAndFillWithData(String cacheName,
                                                                       NearCacheConfig nearCacheConfig) {
+        return createNearCacheTestAndFillWithData(cacheName, nearCacheConfig, false);
+    }
+
+    protected NearCacheTestContext createNearCacheTestAndFillWithData(String cacheName,
+                                                                      NearCacheConfig nearCacheConfig,
+                                                                      boolean putIfAbsent) {
         NearCacheTestContext nearCacheTestContext = createNearCacheTest(cacheName, nearCacheConfig);
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheTestContext.cache.put(i, generateValueFromKey(i));
+            if (putIfAbsent) {
+                nearCacheTestContext.cache.putIfAbsent(i, generateValueFromKey(i));
+            } else {
+                nearCacheTestContext.cache.put(i, generateValueFromKey(i));
+            }
         }
         return nearCacheTestContext;
     }
@@ -163,11 +173,11 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         nearCacheTestContext.close();
     }
 
-    protected void putToCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
+    protected void putToCacheAndThenGetFromClientNearCacheInternal(InMemoryFormat inMemoryFormat, boolean putIfAbsent) {
         NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         nearCacheConfig.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE);
         final NearCacheTestContext nearCacheTestContext =
-                createNearCacheTestAndFillWithData(DEFAULT_CACHE_NAME, nearCacheConfig);
+                createNearCacheTestAndFillWithData(DEFAULT_CACHE_NAME, nearCacheConfig, putIfAbsent);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             String expectedValue = generateValueFromKey(i);
@@ -176,6 +186,14 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         }
 
         nearCacheTestContext.close();
+    }
+
+    protected void putToCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
+        putToCacheAndThenGetFromClientNearCacheInternal(inMemoryFormat, false);
+    }
+
+    protected void putIfAbsentToCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
+        putToCacheAndThenGetFromClientNearCacheInternal(inMemoryFormat, true);
     }
 
     protected void putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache(InMemoryFormat inMemoryFormat) {

@@ -72,14 +72,14 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
     protected CacheConfig createCacheConfig(InMemoryFormat inMemoryFormat) {
         return new CacheConfig()
-                    .setName(DEFAULT_CACHE_NAME)
-                    .setInMemoryFormat(inMemoryFormat);
+                .setName(DEFAULT_CACHE_NAME)
+                .setInMemoryFormat(inMemoryFormat);
     }
 
     protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
         return new NearCacheConfig()
-                        .setName(DEFAULT_CACHE_NAME)
-                        .setInMemoryFormat(inMemoryFormat);
+                .setName(DEFAULT_CACHE_NAME)
+                .setInMemoryFormat(inMemoryFormat);
     }
 
     protected class NearCacheTestContext {
@@ -132,9 +132,19 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
     protected NearCacheTestContext createNearCacheTestAndFillWithData(String cacheName,
                                                                       NearCacheConfig nearCacheConfig) {
+        return createNearCacheTestAndFillWithData(cacheName, nearCacheConfig, false);
+    }
+
+    protected NearCacheTestContext createNearCacheTestAndFillWithData(String cacheName,
+                                                                      NearCacheConfig nearCacheConfig,
+                                                                      boolean putIfAbsent) {
         NearCacheTestContext nearCacheTestContext = createNearCacheTest(cacheName, nearCacheConfig);
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheTestContext.cache.put(i, generateValueFromKey(i));
+            if (putIfAbsent) {
+                nearCacheTestContext.cache.putIfAbsent(i, generateValueFromKey(i));
+            } else {
+                nearCacheTestContext.cache.put(i, generateValueFromKey(i));
+            }
         }
         return nearCacheTestContext;
     }
@@ -146,7 +156,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             assertNull(nearCacheTestContext.nearCache.get(
-                            nearCacheTestContext.serializationService.toData(i)));
+                    nearCacheTestContext.serializationService.toData(i)));
         }
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -163,11 +173,11 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         nearCacheTestContext.close();
     }
 
-    protected void putToCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
+    protected void putToCacheAndThenGetFromClientNearCacheInternal(InMemoryFormat inMemoryFormat, boolean putIfAbsent) {
         NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         nearCacheConfig.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE);
         final NearCacheTestContext nearCacheTestContext =
-                createNearCacheTestAndFillWithData(DEFAULT_CACHE_NAME, nearCacheConfig);
+                createNearCacheTestAndFillWithData(DEFAULT_CACHE_NAME, nearCacheConfig, putIfAbsent);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             String expectedValue = generateValueFromKey(i);
@@ -176,6 +186,14 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         }
 
         nearCacheTestContext.close();
+    }
+
+    protected void putToCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
+        putToCacheAndThenGetFromClientNearCacheInternal(inMemoryFormat, false);
+    }
+
+    protected void putIfAbsentToCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
+        putToCacheAndThenGetFromClientNearCacheInternal(inMemoryFormat, true);
     }
 
     protected void putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache(InMemoryFormat inMemoryFormat) {
@@ -199,7 +217,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     assertEquals(value,
-                                 nearCacheTestContext2.nearCache.get(
+                            nearCacheTestContext2.nearCache.get(
                                     nearCacheTestContext2.serializationService.toData(key)));
                 }
             });
@@ -219,7 +237,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     assertNull(nearCacheTestContext2.nearCache.get(
-                                    nearCacheTestContext2.serializationService.toData(key)));
+                            nearCacheTestContext2.serializationService.toData(key)));
                 }
             });
         }
@@ -234,7 +252,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     assertEquals(value,
-                                 nearCacheTestContext2.nearCache.get(
+                            nearCacheTestContext2.nearCache.get(
                                     nearCacheTestContext2.serializationService.toData(key)));
                 }
             });
@@ -265,7 +283,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     assertEquals(value,
-                                 nearCacheTestContext2.nearCache.get(
+                            nearCacheTestContext2.nearCache.get(
                                     nearCacheTestContext2.serializationService.toData(key)));
                 }
             });
@@ -285,7 +303,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     assertNull(nearCacheTestContext2.nearCache.get(
-                                    nearCacheTestContext2.serializationService.toData(key)));
+                            nearCacheTestContext2.serializationService.toData(key)));
                 }
             });
         }
@@ -315,7 +333,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     assertEquals(value,
-                                 nearCacheTestContext2.nearCache.get(
+                            nearCacheTestContext2.nearCache.get(
                                     nearCacheTestContext2.serializationService.toData(key)));
                 }
             });
@@ -332,7 +350,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     assertNull(nearCacheTestContext2.nearCache.get(
-                                    nearCacheTestContext2.serializationService.toData(key)));
+                            nearCacheTestContext2.serializationService.toData(key)));
                 }
             });
         }
@@ -348,7 +366,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             assertNull(nearCacheTestContext.nearCache.get(
-                            nearCacheTestContext.serializationService.toData(i)));
+                    nearCacheTestContext.serializationService.toData(i)));
         }
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -366,4 +384,3 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
     }
 
 }
-
