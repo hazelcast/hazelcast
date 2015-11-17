@@ -157,7 +157,7 @@ abstract class AbstractClientCacheProxy<K, V>
 
     @Override
     public ICompletableFuture<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return putAsyncInternal(key, value, expiryPolicy, false, true, true);
+        return (ICompletableFuture<Void>) putInternal(key, value, expiryPolicy, false, true, true);
     }
 
     @Override
@@ -177,7 +177,7 @@ abstract class AbstractClientCacheProxy<K, V>
 
     @Override
     public ICompletableFuture<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return putAsyncInternal(key, value, expiryPolicy, true, false, true);
+        return (ICompletableFuture<V>) putInternal(key, value, expiryPolicy, true, false, true);
     }
 
     @Override
@@ -279,31 +279,12 @@ abstract class AbstractClientCacheProxy<K, V>
 
     @Override
     public void put(K key, V value, ExpiryPolicy expiryPolicy) {
-        final long start = System.nanoTime();
-        final ICompletableFuture<Object> f = putAsyncInternal(key, value, expiryPolicy, false, true, false);
-        try {
-            f.get();
-            if (statisticsEnabled) {
-                handleStatisticsOnPut(false, start, null);
-            }
-        } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
-        }
+        putInternal(key, value, expiryPolicy, false, true, false);
     }
 
     @Override
     public V getAndPut(K key, V value, ExpiryPolicy expiryPolicy) {
-        final long start = System.nanoTime();
-        final ICompletableFuture<V> f = putAsyncInternal(key, value, expiryPolicy, true, true, false);
-        try {
-            V oldValue = f.get();
-            if (statisticsEnabled) {
-                handleStatisticsOnPut(true, start, oldValue);
-            }
-            return oldValue;
-        } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
-        }
+        return (V) putInternal(key, value, expiryPolicy, true, true, false);
     }
 
     @Override

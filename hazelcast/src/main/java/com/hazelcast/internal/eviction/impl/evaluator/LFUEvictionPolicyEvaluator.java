@@ -26,10 +26,19 @@ public class LFUEvictionPolicyEvaluator<A, E extends Evictable>
 
     @Override
     protected Evictable selectEvictableAsPolicy(Evictable current, Evictable candidate) {
-        if (candidate.getAccessHit() < current.getAccessHit()) {
+        int candidateAccessHit = candidate.getAccessHit();
+        int currentAccessHit = current.getAccessHit();
+        if (candidateAccessHit < currentAccessHit) {
             return candidate;
-        } else {
+        } else if (currentAccessHit < candidateAccessHit) {
             return current;
+        } else {
+            // If access times are same, we select the oldest entry to evict
+            if (candidate.getCreationTime() < current.getCreationTime()) {
+                return candidate;
+            } else {
+                return current;
+            }
         }
     }
 

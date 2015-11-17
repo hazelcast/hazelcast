@@ -155,16 +155,9 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         }
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            final String expectedValue = generateValueFromKey(i);
-            final Data keyData = nearCacheTestContext.serializationService.toData(i);
-            // Entries are stored in the near-cache as async not sync.
-            // So these records will be there in near-cache eventually.
-            HazelcastTestSupport.assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertEquals(expectedValue, nearCacheTestContext.nearCache.get(keyData));
-                }
-            });
+            String expectedValue = generateValueFromKey(i);
+            Data keyData = nearCacheTestContext.serializationService.toData(i);
+            assertEquals(expectedValue, nearCacheTestContext.nearCache.get(keyData));
         }
 
         nearCacheTestContext.close();
@@ -177,16 +170,9 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 createNearCacheTestAndFillWithData(DEFAULT_CACHE_NAME, nearCacheConfig);
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            final String expectedValue = generateValueFromKey(i);
-            final Data keyData = nearCacheTestContext.serializationService.toData(i);
-            // Entries are stored in the near-cache as async not sync.
-            // So these records will be there in near-cache eventually.
-            HazelcastTestSupport.assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertEquals(expectedValue, nearCacheTestContext.nearCache.get(keyData));
-                }
-            });
+            String expectedValue = generateValueFromKey(i);
+            Data keyData = nearCacheTestContext.serializationService.toData(i);
+            assertEquals(expectedValue, nearCacheTestContext.nearCache.get(keyData));
         }
 
         nearCacheTestContext.close();
