@@ -76,17 +76,15 @@ final class ExtractorHelper {
         int end = attributeNameWithArguments.lastIndexOf("]");
         if (EXTRACTOR_ARGS_PATTERN.matcher(attributeNameWithArguments).matches()) {
             return attributeNameWithArguments.substring(start + 1, end);
-        } else {
-            if (start < 0 && end < 0) {
-                return null;
-            }
+        } else if (start < 0 && end < 0) {
+            return null;
         }
         throw new IllegalArgumentException("Wrong argument input passed to extractor " + attributeNameWithArguments);
     }
 
     static String extractAttributeNameNameWithoutArguments(String attributeNameWithArguments) {
-        int start = attributeNameWithArguments.lastIndexOf("[");
         if (EXTRACTOR_ARGS_PATTERN.matcher(attributeNameWithArguments).matches()) {
+            int start = attributeNameWithArguments.lastIndexOf("[");
             return attributeNameWithArguments.substring(0, start);
         } else if (COLLECTION_ARGS_PATTERN.matcher(attributeNameWithArguments).matches()) {
             return attributeNameWithArguments;
