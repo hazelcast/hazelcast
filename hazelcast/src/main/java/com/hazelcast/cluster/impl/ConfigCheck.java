@@ -184,7 +184,12 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         if (partitionGroupEnabled) {
             out.writeUTF(memberGroupType.toString());
         }
-        out.writeObject(properties);
+
+        out.writeInt(properties.size());
+        for (Map.Entry<String, String> entry : properties.entrySet()) {
+            out.writeUTF(entry.getKey());
+            out.writeUTF(entry.getValue());
+        }
 
         out.writeInt(maps.size());
         for (Map.Entry<String, Object> entry : maps.entrySet()) {
@@ -212,7 +217,13 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
             } catch (IllegalArgumentException ignored) {
             }
         }
-        properties = in.readObject();
+        int propSize = in.readInt();
+        properties = new HashMap<String, String>(propSize);
+        for (int k = 0; k < propSize; k++) {
+            String key = in.readUTF();
+            String value = in.readUTF();
+            properties.put(key, value);
+        }
 
         int mapSize = in.readInt();
         for (int k = 0; k < mapSize; k++) {

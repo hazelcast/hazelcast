@@ -36,7 +36,6 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 
-import java.io.Externalizable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -69,12 +68,10 @@ import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.B
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.ClassSerializer;
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.DateSerializer;
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.EnumSerializer;
-import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.ExternalizableSerializer;
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.JavaSerializer;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createSerializerAdapter;
 
-public class SerializationServiceV1
-        extends AbstractSerializationService {
+public class SerializationServiceV1 extends AbstractSerializationService {
 
     private final PortableContextImpl portableContext;
     private final PortableSerializer portableSerializer;
@@ -82,7 +79,8 @@ public class SerializationServiceV1
     SerializationServiceV1(InputOutputFactory inputOutputFactory, byte version, int portableVersion, ClassLoader classLoader,
             Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
             Map<Integer, ? extends PortableFactory> portableFactories, ManagedContext managedContext,
-            PartitioningStrategy globalPartitionStrategy, int initialOutputBufferSize, BufferPoolFactory bufferPoolFactory) {
+            PartitioningStrategy globalPartitionStrategy, int initialOutputBufferSize, BufferPoolFactory bufferPoolFactory,
+            boolean enableCompression, boolean enableSharedObject) {
         super(inputOutputFactory, version, classLoader, managedContext, globalPartitionStrategy, initialOutputBufferSize,
                 bufferPoolFactory);
 
@@ -96,11 +94,12 @@ public class SerializationServiceV1
         portableSerializer = new PortableSerializer(portableContext, loader.getFactories());
         portableSerializerAdapter = createSerializerAdapter(portableSerializer, this);
 
+        javaSerializerAdapter = createSerializerAdapter(new JavaSerializer(enableSharedObject, enableCompression), this);
         registerConstantSerializers();
+        registerJavaTypeSerializers();
     }
 
-    public PortableReader createPortableReader(Data data)
-            throws IOException {
+    public PortableReader createPortableReader(Data data) throws IOException {
         if (!data.isPortable()) {
             throw new IllegalArgumentException("Given data is not Portable! -> " + data.getType());
         }
@@ -113,6 +112,7 @@ public class SerializationServiceV1
     }
 
     protected void registerConstantSerializers() {
+        registerConstant(null, nullSerializerAdapter);
         registerConstant(DataSerializable.class, dataSerializerAdapter);
         registerConstant(Portable.class, portableSerializerAdapter);
         //primitives and String
@@ -137,25 +137,24 @@ public class SerializationServiceV1
         registerConstant(String[].class, new StringArraySerializer());
     }
 
-    public void registerJavaTypeSerializers(boolean enableCompression, boolean enableSharedObject) {
-        safeRegister(Date.class, new DateSerializer());
-        safeRegister(BigInteger.class, new BigIntegerSerializer());
-        safeRegister(BigDecimal.class, new BigDecimalSerializer());
-        safeRegister(Externalizable.class, new ExternalizableSerializer(enableCompression));
-        safeRegister(Serializable.class, new JavaSerializer(enableSharedObject, enableCompression));
-        safeRegister(Class.class, new ClassSerializer());
-        safeRegister(Enum.class, new EnumSerializer());
-        safeRegister(ArrayList.class, new ArrayListStreamSerializer());
-        safeRegister(LinkedList.class, new LinkedListStreamSerializer());
-    }
+    public void registerJavaTypeSerializers() {
+        //Java extensions: more serializers
+        registerConstant(Date.class, new DateSerializer());
+        registerConstant(BigInteger.class, new BigIntegerSerializer());
+        registerConstant(BigDecimal.class, new BigDecimalSerializer());
+        registerConstant(Class.class, new ClassSerializer());
+        registerConstant(Enum.class, new EnumSerializer());
+        registerConstant(ArrayList.class, new ArrayListStreamSerializer());
+        registerConstant(LinkedList.class, new LinkedListStreamSerializer());
 
+        safeRegister(Serializable.class, javaSerializerAdapter);
+    }
 
     public void registerClassDefinitions(Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors) {
         final Map<Integer, ClassDefinition> classDefMap = new HashMap<Integer, ClassDefinition>(classDefinitions.size());
         for (ClassDefinition cd : classDefinitions) {
             if (classDefMap.containsKey(cd.getClassId())) {
-                throw new HazelcastSerializationException("Duplicate registration found for class-id["
-                        + cd.getClassId() + "]!");
+                throw new HazelcastSerializationException("Duplicate registration found for class-id[" + cd.getClassId() + "]!");
             }
             classDefMap.put(cd.getClassId(), cd);
         }
@@ -165,7 +164,7 @@ public class SerializationServiceV1
     }
 
     protected void registerClassDefinition(ClassDefinition cd, Map<Integer, ClassDefinition> classDefMap,
-                                         boolean checkClassDefErrors) {
+            boolean checkClassDefErrors) {
         final Set<String> fieldNames = cd.getFieldNames();
         for (String fieldName : fieldNames) {
             FieldDefinition fd = cd.getField(fieldName);
@@ -176,8 +175,8 @@ public class SerializationServiceV1
                     registerClassDefinition(nestedCd, classDefMap, checkClassDefErrors);
                     portableContext.registerClassDefinition(nestedCd);
                 } else if (checkClassDefErrors) {
-                    throw new HazelcastSerializationException("Could not find registered ClassDefinition for class-id: "
-                            + classId);
+                    throw new HazelcastSerializationException(
+                            "Could not find registered ClassDefinition for class-id: " + classId);
                 }
             }
         }

@@ -32,12 +32,7 @@ import java.io.OutputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import static java.lang.Boolean.parseBoolean;
-
 public final class SerializationUtil {
-
-    public static final String PROP_DEFAULT_SERIALIZER_OVERRIDE = "hazelcast.serialization.default.serializer.override";
-    static final int CONSTANT_SERIALIZERS_SIZE = SerializationConstants.CONSTANT_SERIALIZERS_LENGTH;
 
     static final PartitioningStrategy EMPTY_PARTITIONING_STRATEGY = new PartitioningStrategy() {
         public Object getPartitionKey(Object key) {
@@ -45,14 +40,7 @@ public final class SerializationUtil {
         }
     };
 
-    private static boolean defaultSerializerOverride = parseBoolean(
-            System.getProperty(PROP_DEFAULT_SERIALIZER_OVERRIDE, "false"));
-
     private SerializationUtil() {
-    }
-
-    public static boolean isDefaultSerializerOverride() {
-        return defaultSerializerOverride;
     }
 
     static boolean isNullData(Data data) {
@@ -97,7 +85,7 @@ public final class SerializationUtil {
     }
 
     static int indexForDefaultType(final int typeId) {
-        return -typeId - 1;
+        return -typeId;
     }
 
     public static int getPortableVersion(Portable portable, int defaultVersion) {

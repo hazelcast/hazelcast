@@ -26,12 +26,12 @@ import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.SimpleMemberImpl;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -401,4 +401,34 @@ public class SerializationTest
         assertEquals(port, member2.getAddress().getPort());
         assertEquals(member.isLiteMember(), member2.isLiteMember());
     }
+
+    @Test
+    public void testInternallySupportedClassExtended() throws Exception {
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        TheClassThatExtendArrayList obj = new TheClassThatExtendArrayList();
+        Data data = ss.toData(obj);
+        Object obj2 = ss.toObject(data);
+
+        assertEquals(obj2.getClass(), TheClassThatExtendArrayList.class);
+
+    }
+
+    static class TheClassThatExtendArrayList extends ArrayList implements DataSerializable {
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(size());
+            for (Object item : this) {
+                out.writeObject(item);
+            }
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            int size = in.readInt();
+            for (int k = 0; k < size; k++) {
+                add(in.readObject());
+            }
+        }
+    }
+
 }
