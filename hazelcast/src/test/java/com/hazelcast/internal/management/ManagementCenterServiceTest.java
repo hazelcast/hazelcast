@@ -41,8 +41,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     @Before
     public void setUp() throws Exception {
         URL root = new URL(MancenterServlet.class.getResource("/"), "../test-classes");
-        String decodedURL = URLDecoder.decode(root.getPath(), "UTF-8");
-        String baseDir = new File(decodedURL.replaceAll("%20", " ")).toString();
+        String baseDir = URLDecoder.decode(root.getFile(), "UTF-8");
         String sourceDir = baseDir + "/../../src/test/webapp";
         String sourceName = "server_config.xml";
         portNum = availablePort();
