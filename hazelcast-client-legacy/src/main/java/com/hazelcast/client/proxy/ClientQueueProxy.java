@@ -34,6 +34,7 @@ import com.hazelcast.collection.impl.queue.client.OfferRequest;
 import com.hazelcast.collection.impl.queue.client.PeekRequest;
 import com.hazelcast.collection.impl.queue.client.PollRequest;
 import com.hazelcast.collection.impl.queue.client.RemainingCapacityRequest;
+import com.hazelcast.collection.impl.queue.client.RemoveListenerRequest;
 import com.hazelcast.collection.impl.queue.client.RemoveRequest;
 import com.hazelcast.collection.impl.queue.client.SizeRequest;
 import com.hazelcast.core.HazelcastException;
@@ -45,7 +46,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.replicatedmap.impl.client.ClientReplicatedMapRemoveEntryListenerRequest;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableItemEvent;
 
@@ -94,7 +94,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
             }
         };
         BaseClientRemoveListenerRequest removeRequest =
-                new ClientReplicatedMapRemoveEntryListenerRequest(getName());
+                new RemoveListenerRequest(getName());
         return registerListener(addRequest, removeRequest, eventHandler);
     }
 

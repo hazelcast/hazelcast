@@ -29,6 +29,7 @@ import com.hazelcast.collection.impl.collection.client.CollectionCompareAndRemov
 import com.hazelcast.collection.impl.collection.client.CollectionContainsRequest;
 import com.hazelcast.collection.impl.collection.client.CollectionGetAllRequest;
 import com.hazelcast.collection.impl.collection.client.CollectionIsEmptyRequest;
+import com.hazelcast.collection.impl.collection.client.CollectionRemoveListenerRequest;
 import com.hazelcast.collection.impl.collection.client.CollectionRemoveRequest;
 import com.hazelcast.collection.impl.collection.client.CollectionRequest;
 import com.hazelcast.collection.impl.collection.client.CollectionSizeRequest;
@@ -39,7 +40,6 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.replicatedmap.impl.client.ClientReplicatedMapRemoveEntryListenerRequest;
 import com.hazelcast.spi.impl.PortableItemEvent;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
@@ -185,7 +185,7 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
             }
         };
         BaseClientRemoveListenerRequest removeRequest =
-                new ClientReplicatedMapRemoveEntryListenerRequest(getName());
+                new CollectionRemoveListenerRequest(getName(), getServiceName());
         return registerListener(addRequest, removeRequest, eventHandler);
     }
 
