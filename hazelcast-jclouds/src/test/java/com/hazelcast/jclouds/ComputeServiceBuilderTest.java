@@ -38,6 +38,15 @@ import static org.mockito.Mockito.verify;
 public class ComputeServiceBuilderTest extends HazelcastTestSupport {
 
     @Test
+    public void test_getProperties() throws Exception {
+        Map<String,Comparable> properties = new HashMap<String, Comparable>();
+        properties.put("key", "value");
+        ComputeServiceBuilder builder = new ComputeServiceBuilder(properties);
+        assertEquals(1, builder.getProperties().size());
+        assertEquals("value", builder.getProperties().get("key"));
+    }
+    
+    @Test
     public void test_getServicePort_returns_default_hz_port() throws Exception {
         ComputeServiceBuilder builder = new ComputeServiceBuilder(new HashMap<String, Comparable>());
         assertEquals(builder.getServicePort(), NetworkConfig.DEFAULT_PORT);
@@ -100,7 +109,6 @@ public class ComputeServiceBuilderTest extends HazelcastTestSupport {
         assertTrue(builder.getZonesSet().contains("zone1"));
         assertTrue(builder.getZonesSet().contains("zone2"));
         assertTrue(builder.getZonesSet().contains("zone3"));
-        assertFalse(builder.getZonesSet().contains("zone4"));
     }
 
     @Test
@@ -123,7 +131,6 @@ public class ComputeServiceBuilderTest extends HazelcastTestSupport {
         assertTrue(builder.getRegionsSet().contains("region1"));
         assertTrue(builder.getRegionsSet().contains("region2"));
         assertTrue(builder.getRegionsSet().contains("region3"));
-        assertFalse(builder.getRegionsSet().contains("region4"));
     }
 
     @Test
@@ -250,6 +257,26 @@ public class ComputeServiceBuilderTest extends HazelcastTestSupport {
 
         Map<String, String> userMetaData = new HashMap<String, String>();
         userMetaData.put("tag1", "value1");
+
+        NodeMetadata metadata = new NodeMetadataBuilder().
+                userMetadata(userMetaData).id(UuidUtil.newSecureUuidString()).
+                status(NodeMetadata.Status.RUNNING).build();
+
+        assertFalse(nodeFilter.apply(metadata));
+
+    }
+
+    @Test
+    public void test_buildNodeFilter_with_NodeMetadata_with_single_tag() throws Exception {
+        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        properties.put("tag-keys", "tag1");
+        properties.put("tag-values", "value1");
+        ComputeServiceBuilder builder = new ComputeServiceBuilder(properties);
+        builder.buildTagConfig();
+        Predicate<ComputeMetadata> nodeFilter = builder.buildNodeFilter();
+
+        Map<String, String> userMetaData = new HashMap<String, String>();
+        userMetaData.put("tag1", "value2");
 
         NodeMetadata metadata = new NodeMetadataBuilder().
                 userMetadata(userMetaData).id(UuidUtil.newSecureUuidString()).
