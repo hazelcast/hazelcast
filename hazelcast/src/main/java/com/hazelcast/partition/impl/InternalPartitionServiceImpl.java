@@ -718,6 +718,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         lock.lock();
         try {
             final Address sender = partitionState.getEndpoint();
+            if (!node.getNodeExtension().isStartCompleted()) {
+                logger.warning("Ignoring received partition table, startup is not completed yet. Sender: " + sender);
+                return;
+            }
+
             final Address master = node.getMasterAddress();
             if (node.isMaster()) {
                 logger.warning("This is the master node and received a PartitionRuntimeState from "
