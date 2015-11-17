@@ -1,13 +1,18 @@
 package com.hazelcast.cache;
 
+import com.hazelcast.cache.impl.CacheEventType;
+import com.hazelcast.cache.impl.CachePartitionEventData;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
+import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionLostEvent;
@@ -21,6 +26,7 @@ import org.junit.runner.RunWith;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -31,6 +37,9 @@ import java.util.Set;
 import static com.hazelcast.cache.impl.HazelcastServerCachingProvider.createCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -94,6 +103,10 @@ public class CachePartitionLostListenerTest
                 assertEquals(1, events.size());
                 final CachePartitionLostEvent event = events.get(0);
                 assertEquals(internalEvent.getPartitionId(), event.getPartitionId());
+                assertEquals(getIthCacheName(0), event.getSource());
+                assertEquals(getIthCacheName(0), event.getName());
+                assertEquals(instance.getCluster().getLocalMember(), event.getMember());
+                assertEquals(CacheEventType.PARTITION_LOST, event.getEventType());
             }
         });
 
@@ -149,4 +162,38 @@ public class CachePartitionLostListenerTest
 
     }
 
+    @Test
+    public void test_cachePartitionEventData_serialization()
+            throws IOException {
+        final Address address = new Address();
+        final CachePartitionEventData cachePartitionEventData = new CachePartitionEventData("cacheName", 1, null);
+
+        final ObjectDataOutput output = mock(ObjectDataOutput.class);
+        cachePartitionEventData.writeData(output);
+
+        verify(output).writeUTF("cacheName");
+        verify(output).writeInt(1);
+    }
+
+    @Test
+    public void test_cachePartitionEventData_deserialization()
+            throws IOException {
+        final CachePartitionEventData cachePartitionEventData = new CachePartitionEventData("", 0, null);
+
+        final ObjectDataInput input = mock(ObjectDataInput.class);
+        when(input.readUTF()).thenReturn("cacheName");
+        when(input.readInt()).thenReturn(1);
+
+        cachePartitionEventData.readData(input);
+
+        assertEquals("cacheName", cachePartitionEventData.getName());
+        assertEquals(1, cachePartitionEventData.getPartitionId());
+    }
+
+    @Test
+    public void testCachePartitionLostEventFilter() {
+        final CachePartitionLostEventFilter filter = new CachePartitionLostEventFilter();
+        assertEquals(new CachePartitionLostEventFilter(), filter);
+        assertFalse(filter.eval(null));
+    }
 }
