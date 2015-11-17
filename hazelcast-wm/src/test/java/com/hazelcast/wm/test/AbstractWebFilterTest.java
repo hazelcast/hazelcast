@@ -39,9 +39,11 @@ import org.junit.Before;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -76,9 +78,9 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
         System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
         try {
             final URL root = new URL(TestServlet.class.getResource("/"), "../test-classes");
-            final String baseDir = new File(root.getFile().replaceAll("%20", " ")).toString();
+            final String baseDir = URLDecoder.decode(root.getFile(), "UTF-8");
             sourceDir = baseDir + "/../../src/test/webapp";
-        } catch (MalformedURLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new IllegalStateException("Couldn't initialize AbstractWebFilterTest");
         }
