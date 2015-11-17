@@ -308,6 +308,8 @@ public interface RecordStore<R extends Record> {
 
     Record createRecord(Object value, long ttlMillis, long now);
 
+    Record loadRecordOrNull(Data key, boolean backup);
+
     /**
      * This can be used to release unused resources.
      */
