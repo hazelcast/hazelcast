@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 
 class DataRecordWithStats extends AbstractRecordWithStats<Data> {
 
-    protected Data value;
+    protected volatile Data value;
 
     DataRecordWithStats() {
         super();

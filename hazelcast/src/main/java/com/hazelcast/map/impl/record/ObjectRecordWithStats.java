@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.record;
 
 class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
 
-    private Object value;
+    private volatile Object value;
 
     public ObjectRecordWithStats() {
         super();
