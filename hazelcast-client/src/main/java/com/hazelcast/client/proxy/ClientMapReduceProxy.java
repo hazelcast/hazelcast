@@ -62,7 +62,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -173,9 +172,9 @@ public class ClientMapReduceProxy
 
     private Map toObjectMap(ClientMessage res) {
         SerializationService serializationService = getContext().getSerializationService();
-        Set<Map.Entry<Data, Data>> entrySet = MapReduceForCustomCodec.decodeResponse(res).entrySet;
+        Collection<Map.Entry<Data, Data>> entries = MapReduceForCustomCodec.decodeResponse(res).entries;
         HashMap hashMap = new HashMap();
-        for (Map.Entry<Data, Data> entry : entrySet) {
+        for (Map.Entry<Data, Data> entry : entries) {
             Object key = serializationService.toObject(entry.getKey());
             Object value = serializationService.toObject(entry.getValue());
             hashMap.put(key, value);

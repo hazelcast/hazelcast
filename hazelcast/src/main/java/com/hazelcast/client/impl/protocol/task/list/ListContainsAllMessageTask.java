@@ -23,11 +23,14 @@ import com.hazelcast.collection.impl.collection.operations.CollectionContainsOpe
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Client Protocol Task for handling messages with type id:
@@ -42,7 +45,8 @@ public class ListContainsAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionContainsOperation(parameters.name, parameters.valueSet);
+        Set<Data> values = new HashSet<Data>(parameters.values);
+        return new CollectionContainsOperation(parameters.name, values);
     }
 
     @Override
@@ -62,7 +66,7 @@ public class ListContainsAllMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.valueSet};
+        return new Object[]{parameters.values};
     }
 
     @Override

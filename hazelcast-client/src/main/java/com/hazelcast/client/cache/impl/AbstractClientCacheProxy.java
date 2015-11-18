@@ -260,8 +260,8 @@ abstract class AbstractClientCacheProxy<K, V>
         Data expiryPolicyData = toData(expiryPolicy);
         ClientMessage request = CacheGetAllCodec.encodeRequest(nameWithPrefix, keySet, expiryPolicyData);
         ClientMessage responseMessage = invoke(request);
-        Set<Map.Entry<Data, Data>> entrySet = CacheGetAllCodec.decodeResponse(responseMessage).entrySet;
-        for (Map.Entry<Data, Data> dataEntry : entrySet) {
+        List<Map.Entry<Data, Data>> entries = CacheGetAllCodec.decodeResponse(responseMessage).entries;
+        for (Map.Entry<Data, Data> dataEntry : entries) {
             Data keyData = dataEntry.getKey();
             Data valueData = dataEntry.getValue();
             K key = toObject(keyData);
@@ -270,7 +270,7 @@ abstract class AbstractClientCacheProxy<K, V>
             storeInNearCache(keyData, valueData, value);
         }
         if (statisticsEnabled) {
-            statistics.increaseCacheHits(entrySet.size());
+            statistics.increaseCacheHits(entries.size());
             statistics.addGetTimeNanos(System.nanoTime() - start);
         }
         return result;

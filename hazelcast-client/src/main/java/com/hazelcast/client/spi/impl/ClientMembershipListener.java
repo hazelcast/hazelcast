@@ -78,7 +78,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     }
 
     @Override
-    public void handle(Set<Member> initialMembers) {
+    public void handle(Collection<Member> initialMembers) {
         Map<String, Member> prevMembers = Collections.emptyMap();
         if (!members.isEmpty()) {
             prevMembers = new HashMap<String, Member>(members.size());

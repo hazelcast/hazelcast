@@ -31,7 +31,9 @@ import com.hazelcast.spi.OperationFactory;
 
 import javax.cache.expiry.ExpiryPolicy;
 import java.security.Permission;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,7 +56,7 @@ public class CacheGetAllMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheGetAllCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
+        return CacheGetAllCodec.encodeResponse((List<Map.Entry<Data, Data>>) response);
     }
 
     @Override
@@ -62,12 +64,13 @@ public class CacheGetAllMessageTask
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
         CacheService service = getService(getServiceName());
         ExpiryPolicy expiryPolicy = (ExpiryPolicy) service.toObject(parameters.expiryPolicy);
-        return operationProvider.createGetAllOperationFactory((Set<Data>) parameters.keys, expiryPolicy);
+        Set<Data> keys = new HashSet<Data>(parameters.keys);
+        return operationProvider.createGetAllOperationFactory(keys, expiryPolicy);
     }
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        Set<Map.Entry<Data, Data>> reducedMap = new HashSet<Map.Entry<Data, Data>>(map.size());
+        List<Map.Entry<Data, Data>> reducedMap = new ArrayList<Map.Entry<Data, Data>>(map.size());
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
             MapEntries mapEntries = (MapEntries) nodeEngine.toObject(entry.getValue());
             for (Map.Entry<Data, Data> dataEntry : mapEntries) {
@@ -86,6 +89,7 @@ public class CacheGetAllMessageTask
     public String getDistributedObjectName() {
         return parameters.name;
     }
+
     @Override
     public String getMethodName() {
         return "getAll";

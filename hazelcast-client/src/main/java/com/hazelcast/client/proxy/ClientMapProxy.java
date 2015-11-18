@@ -984,7 +984,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     protected List<MapGetAllCodec.ResponseParameters> getAllInternal(Map<Integer, List<Data>> partitionToKeyData, Map<K, V> result) {
         List<Future<ClientMessage>> futures = new ArrayList<Future<ClientMessage>>(partitionToKeyData.size());
         List<MapGetAllCodec.ResponseParameters> responses = new ArrayList<MapGetAllCodec.ResponseParameters>(partitionToKeyData.size());
-        
+
         for (final Map.Entry<Integer, List<Data>> entry : partitionToKeyData.entrySet()) {
             int partitionId = entry.getKey();
             List<Data> keyList = entry.getValue();
@@ -996,8 +996,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             try {
                 ClientMessage response = future.get();
                 MapGetAllCodec.ResponseParameters resultParameters = MapGetAllCodec.decodeResponse(response);
-        
-                for (Entry<Data, Data> entry : resultParameters.entrySet) {
+
+                for (Entry<Data, Data> entry : resultParameters.entries) {
                     final V value = toObject(entry.getValue());
                     final K key = toObject(entry.getKey());
                     result.put(key, value);
@@ -1031,9 +1031,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage response = invoke(request);
         MapEntrySetCodec.ResponseParameters resultParameters = MapEntrySetCodec.decodeResponse(response);
 
-        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.entrySet.size());
+        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.entries.size());
         SerializationService serializationService = getContext().getSerializationService();
-        for (Entry<Data, Data> row : resultParameters.entrySet) {
+        for (Entry<Data, Data> row : resultParameters.entries) {
             LazyMapEntry entry = new LazyMapEntry(row.getKey(), row.getValue(), serializationService);
             setBuilder.add(entry);
         }
@@ -1086,9 +1086,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage response = invoke(request);
         MapEntriesWithPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPredicateCodec.decodeResponse(response);
 
-        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.entrySet.size());
+        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.entries.size());
         SerializationService serializationService = getContext().getSerializationService();
-        for (Entry<Data, Data> row : resultParameters.entrySet) {
+        for (Entry<Data, Data> row : resultParameters.entries) {
             LazyMapEntry entry = new LazyMapEntry(row.getKey(), row.getValue(), serializationService);
             setBuilder.add(entry);
         }
@@ -1105,7 +1105,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         MapEntriesWithPagingPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPagingPredicateCodec.decodeResponse(response);
 
         ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
-        for (Entry<Data, Data> entry : resultParameters.entrySet) {
+        for (Entry<Data, Data> entry : resultParameters.entries) {
             K key = toObject(entry.getKey());
             V value = toObject(entry.getValue());
             resultList.add(new AbstractMap.SimpleEntry<K, V>(key, value));
@@ -1139,8 +1139,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage response = invoke(request);
         MapValuesWithPagingPredicateCodec.ResponseParameters resultParameters = MapValuesWithPagingPredicateCodec.decodeResponse(response);
 
-        List<Entry> resultList = new ArrayList<Entry>(resultParameters.entrySet.size());
-        for (Entry<Data, Data> entry : resultParameters.entrySet) {
+        List<Entry> resultList = new ArrayList<Entry>(resultParameters.entries.size());
+        for (Entry<Data, Data> entry : resultParameters.entries) {
             K key = toObject(entry.getKey());
             V value = toObject(entry.getValue());
             resultList.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, value));
@@ -1213,16 +1213,16 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request = MapExecuteOnAllKeysCodec.encodeRequest(name, toData(entryProcessor));
         ClientMessage response = invoke(request);
         MapExecuteOnAllKeysCodec.ResponseParameters resultParameters = MapExecuteOnAllKeysCodec.decodeResponse(response);
-        return prepareResult(resultParameters.entrySet);
+        return prepareResult(resultParameters.entries);
     }
 
-    protected Map<K, Object> prepareResult(Set<Entry<Data, Data>> entrySet) {
-        if (CollectionUtil.isEmpty(entrySet)) {
+    protected Map<K, Object> prepareResult(Collection<Entry<Data, Data>> entries) {
+        if (CollectionUtil.isEmpty(entries)) {
             return emptyMap();
         }
 
-        Map<K, Object> result = MapUtil.createHashMap(entrySet.size());
-        for (Entry<Data, Data> entry : entrySet) {
+        Map<K, Object> result = MapUtil.createHashMap(entries.size());
+        for (Entry<Data, Data> entry : entries) {
             K key = toObject(entry.getKey());
             result.put(key, toObject(entry.getValue()));
         }
@@ -1237,7 +1237,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage response = invoke(request);
 
         MapExecuteWithPredicateCodec.ResponseParameters resultParameters = MapExecuteWithPredicateCodec.decodeResponse(response);
-        return prepareResult(resultParameters.entrySet);
+        return prepareResult(resultParameters.entries);
     }
 
     @Override
@@ -1288,7 +1288,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataKeys);
         ClientMessage response = invoke(request);
         MapExecuteOnKeysCodec.ResponseParameters resultParameters = MapExecuteOnKeysCodec.decodeResponse(response);
-        return prepareResult(resultParameters.entrySet);
+        return prepareResult(resultParameters.entries);
 
     }
 

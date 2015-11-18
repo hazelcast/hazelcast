@@ -23,7 +23,6 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
-import java.util.Set;
 
 @GenerateCodec(id = TemplateConstants.LIST_TEMPLATE_ID, name = "List", ns = "Hazelcast.Client.Protocol.Codec")
 public interface ListCodecTemplate {
@@ -51,12 +50,12 @@ public interface ListCodecTemplate {
      * Returns true if this list contains all of the elements of the specified collection.
      *
      * @param name     Name of the List
-     * @param valueSet Collection to be checked for containment in this list
+     * @param values Collection to be checked for containment in this list
      * @return True if this list contains all of the elements of the
      * specified collection
      */
     @Request(id = 3, retryable = true, response = ResponseMessageConst.BOOLEAN)
-    Object containsAll(String name, Set<Data> valueSet);
+    Object containsAll(String name, List<Data> values);
 
     /**
      * Appends the specified element to the end of this list (optional operation). Lists that support this operation may
@@ -101,22 +100,22 @@ public interface ListCodecTemplate {
      * Removes from this list all of its elements that are contained in the specified collection (optional operation).
      *
      * @param name     Name of the List
-     * @param valueSet The list of values to compare for removal.
+     * @param values The list of values to compare for removal.
      * @return True if removed at least one of the items, false otherwise.
      */
     @Request(id = 7, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    Object compareAndRemoveAll(String name, Set<Data> valueSet);
+    Object compareAndRemoveAll(String name, List<Data> values);
 
     /**
      * Retains only the elements in this list that are contained in the specified collection (optional operation).
      * In other words, removes from this list all of its elements that are not contained in the specified collection.
      *
      * @param name     Name of the List
-     * @param valueSet The list of values to compare for retaining.
+     * @param values The list of values to compare for retaining.
      * @return True if this list changed as a result of the call, false otherwise.
      */
     @Request(id = 8, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    Object compareAndRetainAll(String name, Set<Data> valueSet);
+    Object compareAndRetainAll(String name, List<Data> values);
 
     /**
      * Removes all of the elements from this list (optional operation). The list will be empty after this call returns.

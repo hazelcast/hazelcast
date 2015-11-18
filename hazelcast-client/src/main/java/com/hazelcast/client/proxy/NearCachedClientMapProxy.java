@@ -40,6 +40,7 @@ import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -51,8 +52,6 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.ALL_LISTENER_FLAGS;
 import static java.util.Collections.emptyMap;
-
-import java.util.ArrayList;
 
 /**
  * A Client-side {@code IMap} implementation which is fronted by a near-cache.
@@ -264,7 +263,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
         List<MapGetAllCodec.ResponseParameters> responses = super.getAllInternal(pIdToKeyData, result);
         for (MapGetAllCodec.ResponseParameters resultParameters : responses) {
-            for (Entry<Data, Data> entry : resultParameters.entrySet) {
+            for (Entry<Data, Data> entry : resultParameters.entries) {
                 nearCache.put(entry.getKey(), entry.getValue());
             }
         }
@@ -280,7 +279,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected Map<K, Object> prepareResult(Set<Entry<Data, Data>> entrySet) {
+    protected Map<K, Object> prepareResult(Collection<Entry<Data, Data>> entrySet) {
         if (CollectionUtil.isEmpty(entrySet)) {
             return emptyMap();
         }

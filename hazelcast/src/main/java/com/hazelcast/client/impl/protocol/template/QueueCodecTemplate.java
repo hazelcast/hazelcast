@@ -155,7 +155,7 @@ public interface QueueCodecTemplate {
      * @return <tt>true</tt> if this collection contains all of the elements in the specified collection
      */
     @Request(id = 12, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    Object containsAll(String name, Set<Data> dataList);
+    Object containsAll(String name, List<Data> dataList);
 
     /**
      * Removes all of this collection's elements that are also contained in the specified collection (optional operation).
@@ -166,7 +166,7 @@ public interface QueueCodecTemplate {
      * @return <tt>true</tt> if this collection changed as a result of the call
      */
     @Request(id = 13, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    Object compareAndRemoveAll(String name, Set<Data> dataList);
+    Object compareAndRemoveAll(String name, List<Data> dataList);
 
     /**
      * Retains only the elements in this collection that are contained in the specified collection (optional operation).
@@ -177,7 +177,7 @@ public interface QueueCodecTemplate {
      * @return <tt>true</tt> if this collection changed as a result of the call
      */
     @Request(id = 14, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    Object compareAndRetainAll(String name, Set<Data> dataList);
+    Object compareAndRetainAll(String name, List<Data> dataList);
 
     /**
      * Removes all of the elements from this collection (optional operation). The collection will be empty after this

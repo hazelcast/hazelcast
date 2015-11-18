@@ -59,7 +59,7 @@ public interface MapReduceCodecTemplate {
      * @param topologyChangedStrategy The strategy to use if a topology change is detected.
      * @return The resulting key-value pairs.
      */
-    @Request(id = 3, retryable = false, response = ResponseMessageConst.SET_ENTRY)
+    @Request(id = 3, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
     Object forMap(String name, String jobId, @Nullable Data predicate, Data mapper, @Nullable Data combinerFactory,
                 @Nullable Data reducerFactory, String mapName, int chunkSize, @Nullable List<Data> keys,
                 @Nullable String topologyChangedStrategy);
@@ -78,7 +78,7 @@ public interface MapReduceCodecTemplate {
      * @param topologyChangedStrategy The strategy to use if a topology change is detected.
      * @return The resulting key-value pairs.
      */
-    @Request(id = 4, retryable = false, response = ResponseMessageConst.SET_ENTRY)
+    @Request(id = 4, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
     Object forList(String name, String jobId, @Nullable Data predicate, Data mapper, @Nullable Data combinerFactory,
                  @Nullable Data reducerFactory, String listName, int chunkSize, @Nullable List<Data> keys,
                  @Nullable String topologyChangedStrategy);
@@ -97,7 +97,7 @@ public interface MapReduceCodecTemplate {
      * @param topologyChangedStrategy The strategy to use if a topology change is detected.
      * @return The resulting key-value pairs.
      */
-    @Request(id = 5, retryable = false, response = ResponseMessageConst.SET_ENTRY)
+    @Request(id = 5, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
     Object forSet(String name, String jobId, @Nullable Data predicate, Data mapper, @Nullable Data combinerFactory,
                 @Nullable Data reducerFactory, String setName, int chunkSize, @Nullable List<Data> keys,
                 @Nullable String topologyChangedStrategy);
@@ -116,7 +116,7 @@ public interface MapReduceCodecTemplate {
      * @param topologyChangedStrategy The strategy to use if a topology change is detected.
      * @return The resulting key-value pairs.
      */
-    @Request(id = 6, retryable = false, response = ResponseMessageConst.SET_ENTRY)
+    @Request(id = 6, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
     Object forMultiMap(String name, String jobId, @Nullable Data predicate, Data mapper, @Nullable Data combinerFactory,
                      @Nullable Data reducerFactory, String multiMapName, int chunkSize, @Nullable List<Data> keys,
                      @Nullable String topologyChangedStrategy);
@@ -136,7 +136,7 @@ public interface MapReduceCodecTemplate {
      * @param topologyChangedStrategy The strategy to use if a topology change is detected.
      * @return The resulting key-value pairs.
      */
-    @Request(id = 7, retryable = false, response = ResponseMessageConst.SET_ENTRY)
+    @Request(id = 7, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
     Object forCustom(String name, String jobId, @Nullable Data predicate, Data mapper, @Nullable Data combinerFactory,
                    @Nullable Data reducerFactory, Data keyValueSource, int chunkSize, @Nullable List<Data> keys,
                    @Nullable String topologyChangedStrategy);

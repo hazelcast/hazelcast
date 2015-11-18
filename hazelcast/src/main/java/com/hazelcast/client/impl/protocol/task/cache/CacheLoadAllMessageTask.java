@@ -29,6 +29,7 @@ import com.hazelcast.spi.OperationFactory;
 
 import javax.cache.CacheException;
 import java.security.Permission;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -57,7 +58,8 @@ public class CacheLoadAllMessageTask
     @Override
     protected OperationFactory createOperationFactory() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        return operationProvider.createLoadAllOperationFactory((Set<Data>) parameters.keys, parameters.replaceExistingValues);
+        Set<Data> keys = new HashSet<Data>(parameters.keys);
+        return operationProvider.createLoadAllOperationFactory(keys, parameters.replaceExistingValues);
     }
 
     @Override

@@ -67,7 +67,7 @@ public interface CacheCodecTemplate {
      *                     the request in the cluster.
      */
     @Request(id = 4, retryable = false, response = ResponseMessageConst.VOID)
-    void removeAllKeys(String name, Set<Data> keys, int completionId);
+    void removeAllKeys(String name, List<Data> keys, int completionId);
 
     /**
      * Removes all of the mappings from this cache. The order that the individual entries are removed is undefined.
@@ -137,8 +137,8 @@ public interface CacheCodecTemplate {
      * @return A map of entries that were found for the given keys. Keys not found
      * in the cache are not in the returned map.
      */
-    @Request(id = 10, retryable = false, response = ResponseMessageConst.SET_ENTRY)
-    Object getAll(String name, Set<Data> keys, @Nullable Data expiryPolicy);
+    @Request(id = 10, retryable = false, response = ResponseMessageConst.LIST_ENTRY)
+    Object getAll(String name, List<Data> keys, @Nullable Data expiryPolicy);
 
     /**
      * Atomically removes the entry for a key only if currently mapped to some value.
@@ -225,7 +225,7 @@ public interface CacheCodecTemplate {
      *                              be replaced by those loaded from a CacheLoader
      */
     @Request(id = 17, retryable = false, response = ResponseMessageConst.VOID)
-    void loadAll(String name, Set<Data> keys, boolean replaceExistingValues);
+    void loadAll(String name, List<Data> keys, boolean replaceExistingValues);
 
     /**
      * @param name    Name of the cache.

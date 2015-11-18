@@ -62,8 +62,8 @@ public interface EventResponseTemplate {
      * @param members The list of members in the cluster. It is used to retrieve the initial list in the cluster when the client
      *                registers for the membership events.
      */
-    @EventResponse(EventMessageConst.EVENT_MEMBERSET)
-    void MemberSet(Set<Member> members);
+    @EventResponse(EventMessageConst.EVENT_MEMBERLIST)
+    void MemberList(List<Member> members);
 
     /**
      *
@@ -168,7 +168,7 @@ public interface EventResponseTemplate {
      *                     the request in the cluster.
      */
     @EventResponse(EventMessageConst.EVENT_CACHE)
-    void Cache(int type, Set<CacheEventData> keys, int completionId);
+    void Cache(int type, List<CacheEventData> keys, int completionId);
 
     /**
      *

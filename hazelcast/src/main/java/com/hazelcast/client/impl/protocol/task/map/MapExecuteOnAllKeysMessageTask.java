@@ -30,9 +30,9 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class MapExecuteOnAllKeysMessageTask
         extends AbstractMapAllPartitionsMessageTask<MapExecuteOnAllKeysCodec.RequestParameters> {
@@ -50,7 +50,7 @@ public class MapExecuteOnAllKeysMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        Set<Map.Entry<Data, Data>> dataMap = new HashSet<Map.Entry<Data, Data>>();
+        List<Map.Entry<Data, Data>> dataMap = new ArrayList<Map.Entry<Data, Data>>();
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Object o : map.values()) {
             if (o != null) {
@@ -70,7 +70,7 @@ public class MapExecuteOnAllKeysMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapExecuteOnAllKeysCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
+        return MapExecuteOnAllKeysCodec.encodeResponse((List<Map.Entry<Data, Data>>) response);
     }
 
     @Override

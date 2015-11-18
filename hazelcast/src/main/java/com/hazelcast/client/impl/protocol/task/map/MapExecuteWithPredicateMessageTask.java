@@ -31,9 +31,9 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class MapExecuteWithPredicateMessageTask
         extends AbstractMapAllPartitionsMessageTask<MapExecuteWithPredicateCodec.RequestParameters> {
@@ -53,7 +53,7 @@ public class MapExecuteWithPredicateMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        Set<Map.Entry<Data, Data>> dataMap = new HashSet<Map.Entry<Data, Data>>();
+        List<Map.Entry<Data, Data>> dataMap = new ArrayList<Map.Entry<Data, Data>>();
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Object o : map.values()) {
             if (o != null) {
@@ -73,7 +73,7 @@ public class MapExecuteWithPredicateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapExecuteWithPredicateCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
+        return MapExecuteWithPredicateCodec.encodeResponse((List<Map.Entry<Data, Data>>) response);
     }
 
     @Override

@@ -29,8 +29,8 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class MapReduceForSetMessageTask
         extends AbstractMapReduceTask<MapReduceForSetCodec.RequestParameters> {
@@ -90,7 +90,7 @@ public class MapReduceForSetMessageTask
     }
 
     protected ClientMessage encodeResponse(Object response) {
-        return MapReduceForSetCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
+        return MapReduceForSetCodec.encodeResponse((List<Map.Entry<Data, Data>>) response);
     }
 
     @Override
