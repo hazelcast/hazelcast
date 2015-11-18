@@ -18,6 +18,7 @@ package com.hazelcast.replicatedmap;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
@@ -1029,6 +1030,18 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         map.remove(1);
         assertTrue(map.size() == 0);
     }
+
+
+    @Test
+    public void testDestroy() throws Exception {
+        HazelcastInstance instance = createHazelcastInstance();
+        ReplicatedMap<Object, Object> replicatedMap = instance.getReplicatedMap(randomName());
+        replicatedMap.put(1, 1);
+        replicatedMap.destroy();
+        Collection<DistributedObject> objects = instance.getDistributedObjects();
+        assertEquals(0, objects.size());
+    }
+
 
     /**
      * This method works around a bug in IBM's Java 6 J9 JVM where ArrayList's copy constructor

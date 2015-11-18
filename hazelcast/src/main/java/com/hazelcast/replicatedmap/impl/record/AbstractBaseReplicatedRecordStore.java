@@ -91,7 +91,6 @@ abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedReco
     @Override
     public void destroy() {
         storageRef.get().clear();
-        replicatedMapService.destroyDistributedObject(getName());
     }
 
 
