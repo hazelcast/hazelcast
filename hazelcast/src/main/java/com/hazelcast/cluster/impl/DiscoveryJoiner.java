@@ -29,10 +29,12 @@ public class DiscoveryJoiner
         extends TcpIpJoiner {
 
     private final DiscoveryService discoveryService;
+    private final boolean usePublicAddress;
 
-    public DiscoveryJoiner(Node node, DiscoveryService discoveryService) {
+    public DiscoveryJoiner(Node node, DiscoveryService discoveryService, boolean usePublicAddress) {
         super(node);
         this.discoveryService = discoveryService;
+        this.usePublicAddress = usePublicAddress;
     }
 
     @Override
@@ -44,7 +46,7 @@ public class DiscoveryJoiner
 
         Collection<Address> possibleMembers = new ArrayList<Address>();
         for (DiscoveryNode discoveryNode : discoveredNodes) {
-            Address discoveredAddress = discoveryNode.getPrivateAddress();
+            Address discoveredAddress = usePublicAddress ? discoveryNode.getPublicAddress() : discoveryNode.getPrivateAddress();
             if (localAddress.equals(discoveredAddress)) {
                 continue;
             }

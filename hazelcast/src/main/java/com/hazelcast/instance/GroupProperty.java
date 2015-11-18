@@ -563,6 +563,13 @@ public enum GroupProperty implements HazelcastProperty {
     DISCOVERY_SPI_ENABLED("hazelcast.discovery.enabled", false),
 
     /**
+     * <p>Enables the Discovery Joiner to use public ips from DiscoveredNode. This property is temporary and will
+     * eventually be removed when the experimental marker is removed.</p>
+     * <p>Discovery SPI is <b>disabled</b> by default</p>
+     */
+    DISCOVERY_SPI_PUBLIC_IP_ENABLED("hazelcast.discovery.public.ip.enabled", false),
+
+    /**
      * Hazelcast serialization version. This is single byte value between 1 and Max supported serialization version.
      * @see BuildInfo#getSerializationVersion()
      */
