@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-/**
- * Contains classes related to custom attributes and the extraction of their values.
- * <br/>
- * The values may be extracted with the usage of the {@link com.hazelcast.query.extractor.ValueExtractor} class.
- * The extracted values may be then collected by the {@link com.hazelcast.query.extractor.ValueCollector}.
- * The extraction logic may use custom arguments if specified by the user
- * see {@link com.hazelcast.query.extractor.ArgumentParser}.
- */
+package com.hazelcast.query.impl;
 
-package com.hazelcast.query.extractor;
+import com.hazelcast.query.extractor.ArgumentParser;
+
+/**
+ * ArgumentParser that's used by default. It simply passes the given object through - without doing any parsing.
+ *
+ * @see ArgumentParser
+ */
+public class DefaultArgumentParser extends ArgumentParser<Object, Object> {
+
+    @Override
+    public Object parse(Object input) {
+        return input;
+    }
+
+}

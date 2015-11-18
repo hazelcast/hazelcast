@@ -1,4 +1,4 @@
-package com.hazelcast.query.impl.extraction.predicates;
+package com.hazelcast.query.impl.extractor.predicates;
 
 import com.hazelcast.test.ObjectTestUtils;
 
@@ -15,7 +15,7 @@ import java.util.List;
 public class CollectionDataStructure {
 
     public static class Person implements Serializable {
-        List<Limb> limbs_list = new ArrayList<Limb>();
+        public List<Limb> limbs_list = new ArrayList<Limb>();
         Limb[] limbs_array = null;
 
         @Override
@@ -33,7 +33,7 @@ public class CollectionDataStructure {
 
     public static class Limb implements Serializable {
         String name;
-        Integer power;
+        public Integer power;
 
         @Override
         public boolean equals(Object o) {

@@ -30,7 +30,7 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.query.SampleObjects.Value;
 import com.hazelcast.query.impl.AttributeType;
-import com.hazelcast.query.impl.Extractors;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.QueryContext;

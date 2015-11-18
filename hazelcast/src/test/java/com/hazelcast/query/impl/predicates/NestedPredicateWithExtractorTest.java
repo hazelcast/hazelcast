@@ -34,17 +34,17 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
     private static int bodyExtractorExecutions;
     private static int limbExtractorExecutions;
 
-    public static class BodyNameExtractor extends ValueExtractor<Body> {
+    public static class BodyNameExtractor extends ValueExtractor<Body, Object> {
         @Override
-        public void extract(Body target, ValueCollector collector) {
+        public void extract(Body target, Object arguments, ValueCollector collector) {
             bodyExtractorExecutions++;
             collector.addObject(target.getName());
         }
     }
 
-    public static class LimbNameExtractor extends ValueExtractor<Body> {
+    public static class LimbNameExtractor extends ValueExtractor<Body, Object> {
         @Override
-        public void extract(Body target, ValueCollector collector) {
+        public void extract(Body target, Object arguments, ValueCollector collector) {
             limbExtractorExecutions++;
             collector.addObject(target.getLimb().getName());
         }

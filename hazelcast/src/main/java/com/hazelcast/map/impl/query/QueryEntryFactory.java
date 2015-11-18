@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.CachedQueryEntry;
-import com.hazelcast.query.impl.Extractors;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 

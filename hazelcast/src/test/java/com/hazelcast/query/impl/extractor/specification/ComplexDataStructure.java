@@ -1,4 +1,4 @@
-package com.hazelcast.query.impl.extraction.specification;
+package com.hazelcast.query.impl.extractor.specification;
 
 import com.hazelcast.test.ObjectTestUtils;
 
@@ -113,7 +113,11 @@ public class ComplexDataStructure {
     public static Person person(String name, Limb... limbs) {
         Person person = new Person();
         person.name = name;
-        person.limbs_list.addAll(Arrays.asList(limbs));
+        if(limbs.length > 0) {
+            person.limbs_list.addAll(Arrays.asList(limbs));
+        } else {
+            person.limbs_list = null;
+        }
         if (limbs.length > 0) {
             person.firstLimb = limbs[0];
         }

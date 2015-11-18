@@ -19,8 +19,6 @@ package com.hazelcast.query.impl.getters;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.IndexImpl;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -33,8 +31,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 import static com.hazelcast.query.impl.getters.NullGetter.NULL_GETTER;
@@ -48,18 +44,6 @@ public final class ReflectionHelper {
     static final ClassLoader THIS_CL = ReflectionHelper.class.getClassLoader();
 
     private static final int INITIAL_CAPACITY = 3;
-
-    private static final ConcurrentMap<Class, ConcurrentMap<String, Getter>> GETTER_CACHE
-            = new ConcurrentHashMap<Class, ConcurrentMap<String, Getter>>(1000);
-
-    private static final ConstructorFunction<Class, ConcurrentMap<String, Getter>> GETTER_CACHE_CONSTRUCTOR
-            = new ConstructorFunction<Class, ConcurrentMap<String, Getter>>() {
-        @Override
-        public ConcurrentMap<String, Getter> createNew(Class arg) {
-            return new ConcurrentHashMap<String, Getter>();
-        }
-    };
-
 
     // we don't want instances
     private ReflectionHelper() {
@@ -106,43 +90,14 @@ public final class ReflectionHelper {
         return null;
     }
 
-
-    private static Getter getFromCache(Class clazz, String attribute) {
-        ConcurrentMap<String, Getter> cache = GETTER_CACHE.get(clazz);
-        if (cache == null) {
-            return null;
-        }
-
-        return cache.get(attribute);
-    }
-
-    private static Getter storeIntoCache(Class clazz, String attribute, Getter getter) {
-        ConcurrentMap<String, Getter> cache = ConcurrencyUtil.getOrPutIfAbsent(GETTER_CACHE, clazz, GETTER_CACHE_CONSTRUCTOR);
-        Getter foundGetter = cache.putIfAbsent(attribute, getter);
-        return foundGetter == null ? getter : foundGetter;
-    }
-
-    public static void reset() {
-        GETTER_CACHE.clear();
-    }
-
-    public static AttributeType getAttributeType(Object value, String attribute) {
-        Getter getter = createGetter(value, attribute);
-        Class returnType = getter.getReturnType();
-        return getAttributeType(returnType);
-    }
-
-    private static Getter createGetter(Object obj, String attribute) {
+    public static Getter createGetter(Object obj, String attribute) {
         if (obj == null || obj == IndexImpl.NULL) {
             return NULL_GETTER;
         }
 
         final Class targetClazz = obj.getClass();
         Class clazz = targetClazz;
-        Getter getter = getFromCache(clazz, attribute);
-        if (getter != null) {
-            return getter;
-        }
+        Getter getter;
 
         try {
             Getter parent = null;
@@ -216,10 +171,6 @@ public final class ReflectionHelper {
                 parent = localGetter;
             }
             getter = parent;
-
-            if (getter.isCacheable()) {
-                getter = storeIntoCache(targetClazz, attribute, getter);
-            }
             return getter;
         } catch (Throwable e) {
             throw new QueryException(e);

@@ -25,6 +25,7 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.query.SampleObjects.Value;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;

@@ -1,8 +1,8 @@
-package com.hazelcast.query.impl.extraction.predicates;
+package com.hazelcast.query.impl.extractor.predicates;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.extraction.AbstractExtractionTest;
+import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -14,14 +14,14 @@ import java.util.Collection;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
-import static com.hazelcast.query.impl.extraction.AbstractExtractionSpecification.Index.NO_INDEX;
-import static com.hazelcast.query.impl.extraction.AbstractExtractionSpecification.Index.ORDERED;
-import static com.hazelcast.query.impl.extraction.AbstractExtractionSpecification.Index.UNORDERED;
-import static com.hazelcast.query.impl.extraction.AbstractExtractionSpecification.Multivalue.ARRAY;
-import static com.hazelcast.query.impl.extraction.AbstractExtractionSpecification.Multivalue.LIST;
-import static com.hazelcast.query.impl.extraction.predicates.CollectionDataStructure.Person;
-import static com.hazelcast.query.impl.extraction.predicates.CollectionDataStructure.limb;
-import static com.hazelcast.query.impl.extraction.predicates.CollectionDataStructure.person;
+import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.NO_INDEX;
+import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.ORDERED;
+import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.UNORDERED;
+import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.ARRAY;
+import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.LIST;
+import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.Person;
+import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.limb;
+import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.person;
 import static java.util.Arrays.asList;
 
 /**
