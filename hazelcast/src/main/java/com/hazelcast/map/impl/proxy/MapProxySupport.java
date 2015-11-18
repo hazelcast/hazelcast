@@ -250,10 +250,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
         MapOperation operation = operationProvider.createGetOperation(name, key);
         try {
-            InternalCompletableFuture<Data> future
-                    = operationService.createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+            long startTime = System.currentTimeMillis();
+            InternalCompletableFuture<Data> future = operationService
+                    .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .setResultDeserialized(false)
                     .invoke();
+
+            if (statisticsEnabled) {
+                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTime));
+            }
+
             return future;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -312,7 +318,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         MapOperation operation = operationProvider.createPutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
-            return operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            final long startTime = System.currentTimeMillis();
+            InternalCompletableFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+
+            if (statisticsEnabled) {
+                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTime));
+            }
+
+            return future;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -439,7 +452,15 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         MapOperation operation = operationProvider.createRemoveOperation(name, key);
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
-            return operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            long startTime = System.currentTimeMillis();
+            final InternalCompletableFuture<Data> future = operationService
+                    .invokeOnPartition(SERVICE_NAME, operation, partitionId);
+
+            if (statisticsEnabled) {
+                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTime));
+            }
+
+            return future;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -977,5 +998,30 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             executionCallback.onFailure(t);
         }
     }
+
+    public class IncrementStatsExecutionCallback<T> implements ExecutionCallback<T> {
+
+        private final MapOperation operation;
+
+        private final long startTime;
+
+        public IncrementStatsExecutionCallback(MapOperation operation, long startTime) {
+            this.operation = operation;
+            this.startTime = startTime;
+        }
+
+        @Override
+        public void onResponse(T response) {
+            final long duration = System.currentTimeMillis() - startTime;
+            mapServiceContext.incrementOperationStats(startTime, localMapStats, name, operation);
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+        }
+
+    }
+
+
 }
 

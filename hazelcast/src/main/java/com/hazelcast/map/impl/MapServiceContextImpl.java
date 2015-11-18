@@ -49,7 +49,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
@@ -518,19 +517,13 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation) {
+        final long duration = System.currentTimeMillis() - startTime;
         if (operation instanceof BasePutOperation) {
-            localMapStats.incrementPuts(Clock.currentTimeMillis() - startTime);
-            return;
-        }
-
-        if (operation instanceof BaseRemoveOperation) {
-            localMapStats.incrementRemoves(Clock.currentTimeMillis() - startTime);
-            return;
-        }
-
-        if (operation instanceof GetOperation) {
-            localMapStats.incrementGets(Clock.currentTimeMillis() - startTime);
-            return;
+            localMapStats.incrementPuts(duration);
+        } else if (operation instanceof BaseRemoveOperation) {
+            localMapStats.incrementRemoves(duration);
+        } else if (operation instanceof GetOperation) {
+            localMapStats.incrementGets(duration);
         }
     }
 
