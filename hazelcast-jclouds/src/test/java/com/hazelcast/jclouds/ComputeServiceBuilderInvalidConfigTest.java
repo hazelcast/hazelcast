@@ -113,7 +113,7 @@ public class ComputeServiceBuilderInvalidConfigTest extends HazelcastTestSupport
     }
 
     @Test(expected = InvalidConfigurationException.class)
-      public void test_invalid_config_when_port_config_exceed_max_value() throws Exception {
+    public void test_invalid_config_when_port_config_exceed_max_value() throws Exception {
 
         String propertiesUnderTest = "<property name=\"provider\">aws-ec2</property>" +
                 "<property name=\"identity\">test</property>" +
@@ -142,5 +142,11 @@ public class ComputeServiceBuilderInvalidConfigTest extends HazelcastTestSupport
     public void test_getCredentialFromFile_when_IOException() throws Exception {
         ComputeServiceBuilder builder = new ComputeServiceBuilder(new HashMap<String, Comparable>());
         builder.getCredentialFromFile("google-compute-engine", "blahblah.json");
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void test_InvalidCloudProvider() throws Exception {
+        ComputeServiceBuilder builder = new ComputeServiceBuilder(new HashMap<String, Comparable>());
+        builder.newContextBuilder("invalid-cloud-provider", "identity", "credential", null);
     }
 }
