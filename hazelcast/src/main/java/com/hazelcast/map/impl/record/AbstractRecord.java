@@ -154,4 +154,10 @@ public abstract class AbstractRecord<V> implements Record<V> {
     public void setKey(Data key) {
         this.key = key;
     }
+
+
+    @Override
+    public boolean isTombstone() {
+        return getValue() == null;
+    }
 }

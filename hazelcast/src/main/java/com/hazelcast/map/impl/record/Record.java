@@ -76,4 +76,5 @@ public interface Record<V> {
 
     void setCreationTime(long creationTime);
 
+    boolean isTombstone();
 }
