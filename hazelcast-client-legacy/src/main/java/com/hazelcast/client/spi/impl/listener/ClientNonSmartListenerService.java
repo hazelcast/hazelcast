@@ -46,7 +46,6 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
     public ClientNonSmartListenerService(HazelcastClientInstanceImpl client,
                                          int eventThreadCount, int eventQueueCapacity) {
         super(client, eventThreadCount, eventQueueCapacity);
-        client.getConnectionManager().addConnectionListener(this);
     }
 
     @Override
@@ -108,6 +107,11 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
             }
             return true;
         }
+    }
+
+    @Override
+    public void start() {
+        client.getConnectionManager().addConnectionListener(this);
     }
 
     @Override

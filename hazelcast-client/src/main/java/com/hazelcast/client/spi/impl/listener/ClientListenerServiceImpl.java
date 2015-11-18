@@ -85,6 +85,10 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
         return eventExecutor;
     }
 
+    public void start() {
+
+    }
+
     private final class ClientEventProcessor implements StripedRunnable {
         final ClientMessage clientMessage;
         final ClientConnection connection;

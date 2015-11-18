@@ -79,6 +79,9 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
         }
     }
 
+    public void start() {
+    }
+
     public void shutdown() {
         eventExecutor.shutdown();
     }
