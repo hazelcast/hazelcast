@@ -58,7 +58,7 @@ public class RingbufferAddMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.value};
+        return new Object[]{parameters.value, OverflowPolicy.getById(parameters.overflowPolicy)};
     }
 
     @Override
