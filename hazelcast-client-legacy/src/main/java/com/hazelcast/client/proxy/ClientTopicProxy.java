@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.cache.impl.client.CacheRemovePartitionLostListenerRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientProxy;
@@ -32,6 +31,7 @@ import com.hazelcast.topic.impl.DataAwareMessage;
 import com.hazelcast.topic.impl.client.AddMessageListenerRequest;
 import com.hazelcast.topic.impl.client.PortableMessage;
 import com.hazelcast.topic.impl.client.PublishRequest;
+import com.hazelcast.topic.impl.client.RemoveMessageListenerRequest;
 
 public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
@@ -80,7 +80,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
             }
         };
-        CacheRemovePartitionLostListenerRequest removeRequest = new CacheRemovePartitionLostListenerRequest(name);
+        RemoveMessageListenerRequest removeRequest = new RemoveMessageListenerRequest(name);
         return registerListener(addRequest, removeRequest, handler);
     }
 
