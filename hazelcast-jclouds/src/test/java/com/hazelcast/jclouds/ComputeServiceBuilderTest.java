@@ -20,6 +20,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -355,8 +356,9 @@ public class ComputeServiceBuilderTest extends HazelcastTestSupport {
         ComputeServiceBuilder builder = new ComputeServiceBuilder(new HashMap<String, Comparable>());
         URL resourceUrl = getClass().
                 getResource("/google-json-credential.json");
+        String decodedURL = URLDecoder.decode(resourceUrl.getFile(), "UTF-8");
         assertEquals("key", builder.getCredentialFromFile("google-compute-engine",
-                resourceUrl.getPath()));
+                decodedURL));
     }
 
     @Test
@@ -364,8 +366,9 @@ public class ComputeServiceBuilderTest extends HazelcastTestSupport {
         ComputeServiceBuilder builder = new ComputeServiceBuilder(new HashMap<String, Comparable>());
         URL resourceUrl = getClass().
                 getResource("/key.properties");
+        String decodedURL = URLDecoder.decode(resourceUrl.getFile(), "UTF-8");
         assertEquals("cloudkey", builder.getCredentialFromFile("gogrid",
-                resourceUrl.getPath()));
+                decodedURL));
     }
 
     @Test
