@@ -55,9 +55,7 @@ public class ClusterShutdownTest
         hz1.getCluster().changeClusterState(clusterState);
         hz1.getCluster().shutdown();
 
-        for (final HazelcastInstance instance : instances) {
-            assertEquals(NodeState.SHUT_DOWN, getNode(instance).getState());
-        }
+        assertNodesShutDownEventually(instances);
     }
 
     private void testClusterShutdownWithMultipleMembers(final int clusterSize, final int nodeCountToTriggerShutdown) {
