@@ -91,7 +91,7 @@ public class AddAllRequest extends RingbufferRequest {
 
     @Override
     public String getMethodName() {
-        return "addAllAsync";
+        return "addAll";
     }
 
     @Override

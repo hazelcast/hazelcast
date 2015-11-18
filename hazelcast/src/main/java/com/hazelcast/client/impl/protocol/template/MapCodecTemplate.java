@@ -98,44 +98,6 @@ public interface MapCodecTemplate {
     Object replaceIfSame(String name, Data key, Data testValue, Data value, long threadId);
 
     /**
-     * Asynchronously puts the given key and value into this map with a given ttl (time to live) value.Entry will expire
-     * and get evicted after the ttl. If ttl is 0, then the entry lives forever. Time resolution for TTL is seconds.
-     * The given TTL value is rounded to the next closest second value.
-     *
-     * @param name     Name of the map.
-     * @param key      Key for the map entry.
-     * @param value    New value for the map entry.
-     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
-     * @param ttl      The duration in milliseconds after which this entry shall be deleted. O means infinite.
-     * @return Clone of the previous value, not the original (identically equal) value previously put into the map.
-     */
-    @Request(id = 6, retryable = false, response = ResponseMessageConst.DATA)
-    Object putAsync(String name, Data key, Data value, long threadId, long ttl);
-
-
-    /**
-     * Asynchronously gets the given key.
-     *
-     * @param name     Name of the map.
-     * @param key      Key for the map entry.
-     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
-     * @return Clone of the value if exists, not the original (identically equal) value previously put into the map.
-     */
-    @Request(id = 7, retryable = true, response = ResponseMessageConst.DATA)
-    Object getAsync(String name, Data key, long threadId);
-
-    /**
-     * Asynchronously removes the given key.
-     *
-     * @param name     Name of the map.
-     * @param key      Key for the map entry.
-     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
-     * @return Clone of the removed value, not the original (identically equal) value previously put into the map.
-     */
-    @Request(id = 8, retryable = false, response = ResponseMessageConst.DATA)
-    Object removeAsync(String name, Data key, long threadId);
-
-    /**
      * Returns true if this map contains a mapping for the specified key.
      *
      * @param name     Name of the map.

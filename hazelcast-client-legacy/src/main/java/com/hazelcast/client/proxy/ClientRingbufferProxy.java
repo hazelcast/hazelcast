@@ -26,7 +26,6 @@ import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.client.AddAllRequest;
-import com.hazelcast.ringbuffer.impl.client.AddAsyncRequest;
 import com.hazelcast.ringbuffer.impl.client.AddRequest;
 import com.hazelcast.ringbuffer.impl.client.CapacityRequest;
 import com.hazelcast.ringbuffer.impl.client.HeadSequenceRequest;
@@ -103,7 +102,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
     public long add(E item) {
         checkNotNull(item, "item can't be null");
 
-        AddRequest request = new AddRequest(getName(), toData(item));
+        AddRequest request = new AddRequest(getName(), toData(item), OverflowPolicy.OVERWRITE);
         Long result = invokeOnPartition(request, getPartitionId());
         return result;
     }
@@ -113,7 +112,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         checkNotNull(item, "item can't be null");
         checkNotNull(overflowPolicy, "overflowPolicy can't be null");
 
-        AddAsyncRequest request = new AddAsyncRequest(getName(), toData(item), overflowPolicy);
+        AddRequest request = new AddRequest(getName(), toData(item), overflowPolicy);
         ClientInvocationFuture f  = new ClientInvocation(getClient(), request, getPartitionId()).invoke();
         f.setResponseDeserialized(true);
         return f;

@@ -59,10 +59,11 @@ public interface RingbufferCodecTemplate {
     Object remainingCapacity(String name);
 
     /**
-     * Adds an item to the tail of the Ringbuffer. If there is no space in the Ringbuffer, the add will overwrite the oldest
-     * item in the ringbuffer no matter what the ttl is. For more control on this behavior, check the
-     * addAsync(Object, OverflowPolicy) and the  OverflowPolicy. The returned value is the sequence of the added item.
-     * Using this sequence you can read the added item.
+     * Adds an item to the tail of the Ringbuffer. If there is space in the ringbuffer, the call
+     * will return the sequence of the written item. If there is no space, it depends on the overflow policy what happens:
+     * OverflowPolicy OVERWRITE we just overwrite the oldest item in the ringbuffer and we violate the ttl
+     * OverflowPolicy FAIL we return -1. The reason that FAIL exist is to give the opportunity to obey the ttl.
+     *
      * This sequence will always be unique for this Ringbuffer instance so it can be used as a unique id generator if you are
      * publishing items on this Ringbuffer. However you need to take care of correctly determining an initial id when any node
      * uses the ringbuffer for the first time. The most reliable way to do that is to write a dummy item into the ringbuffer and
@@ -73,25 +74,11 @@ public interface RingbufferCodecTemplate {
      * @param name Name of the Ringbuffer
      * @param overflowPolicy the OverflowPolicy to use.
      * @param value to item to add
-     * @return the sequence of the added item.
+     * @return the sequence of the added item, or -1 if the add failed.
      */
     @Request(id = 6, retryable = false, response = ResponseMessageConst.LONG)
     Object add(String name, int overflowPolicy, Data value);
 
-    /**
-     * Asynchronously writes an item with a configurable OverflowPolicy. If there is space in the ringbuffer, the call
-     * will return the sequence of the written item. If there is no space, it depends on the overflow policy what happens:
-     * OverflowPolicy OVERWRITE we just overwrite the oldest item in the ringbuffer and we violate the ttl
-     * OverflowPolicy FAIL we return -1. The reason that FAIL exist is to give the opportunity to obey the ttl. If
-     * blocking behavior is required, this can be implemented using retrying in combination with a exponential backoff.
-     *
-     * @param name Name of the Ringbuffer
-     * @param overflowPolicy the OveflowPolicy to use
-     * @param value to item to add
-     * @return the sequenceId of the added item, or -1 if the add failed.
-     */
-    @Request(id = 7, retryable = false, response = ResponseMessageConst.LONG)
-    Object addAsync(String name, int overflowPolicy, Data value);
     /**
      * Reads one item from the Ringbuffer. If the sequence is one beyond the current tail, this call blocks until an
      * item is added. This method is not destructive unlike e.g. a queue.take. So the same item can be read by multiple
@@ -121,7 +108,7 @@ public interface RingbufferCodecTemplate {
      * @return the ICompletableFuture to synchronize on completion.
      */
     @Request(id = 9, retryable = false, response = ResponseMessageConst.LONG)
-    Object addAllAsync(String name, List<Data> valueList, int overflowPolicy);
+    Object addAll(String name, List<Data> valueList, int overflowPolicy);
 
     /**
      * Reads a batch of items from the Ringbuffer. If the number of available items after the first read item is smaller
@@ -140,5 +127,5 @@ public interface RingbufferCodecTemplate {
      * @return  a future containing the items read.
      */
     @Request(id = 10, retryable = false, response = ResponseMessageConst.READ_RESULT_SET)
-    Object readManyAsync(String name, long startSequence, int minCount, int maxCount, @Nullable Data filter);
+    Object readMany(String name, long startSequence, int minCount, int maxCount, @Nullable Data filter);
 }

@@ -18,12 +18,11 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.RingbufferAddAllAsyncCodec;
-import com.hazelcast.client.impl.protocol.codec.RingbufferAddAsyncCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferAddAllCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferAddCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferCapacityCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferHeadSequenceCodec;
-import com.hazelcast.client.impl.protocol.codec.RingbufferReadManyAsyncCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferReadManyCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferReadOneCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferRemainingCapacityCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferSizeCodec;
@@ -65,7 +64,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
     private static final ClientMessageDecoder ADD_ALL_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {
         @Override
         public Long decodeClientMessage(ClientMessage clientMessage) {
-            return RingbufferAddAllAsyncCodec.decodeResponse(clientMessage).response;
+            return RingbufferAddAllCodec.decodeResponse(clientMessage).response;
         }
     };
 
@@ -86,8 +85,8 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         readManyAsyncResponseDecoder = new ClientMessageDecoder() {
             @Override
             public PortableReadResultSet decodeClientMessage(ClientMessage clientMessage) {
-                final RingbufferReadManyAsyncCodec.ResponseParameters responseParameters
-                        = RingbufferReadManyAsyncCodec.decodeResponse(clientMessage);
+                final RingbufferReadManyCodec.ResponseParameters responseParameters
+                        = RingbufferReadManyCodec.decodeResponse(clientMessage);
                 PortableReadResultSet readResultSet
                         = new PortableReadResultSet(responseParameters.readCount, responseParameters.items);
                 readResultSet.setSerializationService(serializationService);
@@ -158,7 +157,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         checkNotNull(overflowPolicy, "overflowPolicy can't be null");
 
         Data element = toData(item);
-        ClientMessage request = RingbufferAddAsyncCodec.encodeRequest(name, overflowPolicy.getId(), element);
+        ClientMessage request = RingbufferAddCodec.encodeRequest(name, overflowPolicy.getId(), element);
         request.setPartitionId(partitionId);
 
         try {
@@ -195,7 +194,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
             valueList.add(toData(e));
         }
 
-        ClientMessage request = RingbufferAddAllAsyncCodec.encodeRequest(name, valueList, overflowPolicy.getId());
+        ClientMessage request = RingbufferAddAllCodec.encodeRequest(name, valueList, overflowPolicy.getId());
         request.setPartitionId(partitionId);
 
         try {
@@ -219,7 +218,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         checkTrue(minCount <= capacity(), "the minCount should be smaller than or equal to the capacity");
         checkTrue(maxCount <= MAX_BATCH_SIZE, "maxCount can't be larger than " + MAX_BATCH_SIZE);
 
-        ClientMessage request = RingbufferReadManyAsyncCodec.encodeRequest(
+        ClientMessage request = RingbufferReadManyCodec.encodeRequest(
                 name,
                 startSequence,
                 minCount,

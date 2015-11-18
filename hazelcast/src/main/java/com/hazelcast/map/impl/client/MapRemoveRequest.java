@@ -119,9 +119,6 @@ public class MapRemoveRequest extends MapKeyBasedClientRequest implements Portab
 
     @Override
     public String getMethodName() {
-        if (async) {
-            return "removeAsync";
-        }
         return "remove";
     }
 

@@ -31,18 +31,20 @@ import java.security.Permission;
 public class AddRequest extends RingbufferRequest {
 
     private Data item;
+    private OverflowPolicy overflowPolicy;
 
     public AddRequest() {
     }
 
-    public AddRequest(String name, Data item) {
+    public AddRequest(String name, Data item, OverflowPolicy overflowPolicy) {
         super(name);
         this.item = item;
+        this.overflowPolicy = overflowPolicy;
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new AddOperation(name, item, OverflowPolicy.FAIL);
+        return new AddOperation(name, item, overflowPolicy);
     }
 
     @Override
@@ -53,14 +55,17 @@ public class AddRequest extends RingbufferRequest {
     @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
+        writer.writeInt("o", overflowPolicy.getId());
         writer.getRawDataOutput().writeData(item);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
+        overflowPolicy = OverflowPolicy.getById(reader.readInt("o"));
         item = reader.getRawDataInput().readData();
     }
+
     @Override
     public Permission getRequiredPermission() {
         return new RingBufferPermission(name, ActionConstants.ACTION_PUT);
@@ -68,7 +73,7 @@ public class AddRequest extends RingbufferRequest {
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{item};
+        return new Object[]{item, overflowPolicy};
     }
 
     @Override
