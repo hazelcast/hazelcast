@@ -34,7 +34,6 @@ import com.hazelcast.util.executor.TimeoutRunnable;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
@@ -201,7 +200,7 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
         }
 
         @Override
-        public void handle(List<QueryCacheEventData> events, String source, int partitionId) {
+        public void handle(Collection<QueryCacheEventData> events, String source, int partitionId) {
             adapter.onEvent(new BatchIMapEvent(new BatchEventData(events, source, partitionId)));
         }
     }
