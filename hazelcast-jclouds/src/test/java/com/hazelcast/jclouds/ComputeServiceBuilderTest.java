@@ -6,6 +6,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.UuidUtil;
+import org.jclouds.aws.ec2.compute.AWSEC2ComputeService;
 import org.jclouds.compute.ComputeService;
 import org.jclouds.compute.ComputeServiceContext;
 import org.jclouds.compute.domain.ComputeMetadata;
@@ -365,5 +366,16 @@ public class ComputeServiceBuilderTest extends HazelcastTestSupport {
                 getResource("/key.properties");
         assertEquals("cloudkey", builder.getCredentialFromFile("gogrid",
                 resourceUrl.getPath()));
+    }
+
+    @Test
+    public void test_compute_service_builder_return_correct_api_class() throws Exception {
+        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        properties.put("provider", "aws-ec2");
+        properties.put("identity", "id");
+        properties.put("credential", "credential");
+        ComputeServiceBuilder builder = new ComputeServiceBuilder(properties);
+        ComputeService service = builder.build();
+        assertEquals(AWSEC2ComputeService.class, service.getClass());
     }
 }
