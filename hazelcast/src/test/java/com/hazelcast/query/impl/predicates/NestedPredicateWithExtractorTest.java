@@ -9,6 +9,7 @@ import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.extractor.Arguments;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -34,17 +35,17 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
     private static int bodyExtractorExecutions;
     private static int limbExtractorExecutions;
 
-    public static class BodyNameExtractor extends ValueExtractor<Body> {
+    public static class BodyNameExtractor extends ValueExtractor<Body, Object> {
         @Override
-        public void extract(Body target, ValueCollector collector) {
+        public void extract(Body target, Arguments arguments, ValueCollector collector) {
             bodyExtractorExecutions++;
             collector.addObject(target.getName());
         }
     }
 
-    public static class LimbNameExtractor extends ValueExtractor<Body> {
+    public static class LimbNameExtractor extends ValueExtractor<Body, Object> {
         @Override
-        public void extract(Body target, ValueCollector collector) {
+        public void extract(Body target, Arguments arguments, ValueCollector collector) {
             limbExtractorExecutions++;
             collector.addObject(target.getLimb().getName());
         }

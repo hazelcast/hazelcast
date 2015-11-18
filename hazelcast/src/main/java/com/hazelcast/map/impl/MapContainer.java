@@ -35,7 +35,7 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.Extractors;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;

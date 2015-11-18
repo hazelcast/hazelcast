@@ -14,12 +14,28 @@
  * limitations under the License.
  */
 
-/**
- * Contains classes related to custom attributes and the extraction of their values.
- * <br/>
- * The values may be extracted with the usage of the {@link com.hazelcast.query.extractor.ValueExtractor} class.
- * The extracted values may be then collected by the {@link com.hazelcast.query.extractor.ValueCollector}.
- * The extraction logic may use custom {@link com.hazelcast.query.extractor.Arguments} if specified by the user.
- */
+package com.hazelcast.query.impl;
 
-package com.hazelcast.query.extractor;
+import com.hazelcast.query.extractor.Arguments;
+
+public class DefaultArguments extends Arguments<Object> {
+
+    private static final Arguments EMPTY = new DefaultArguments(null);
+
+    private final Object arguments;
+
+    public DefaultArguments(Object arguments) {
+        this.arguments = arguments;
+    }
+
+    @Override
+    public Object get() {
+        return arguments;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> Arguments<T> empty() {
+        return EMPTY;
+    }
+
+}

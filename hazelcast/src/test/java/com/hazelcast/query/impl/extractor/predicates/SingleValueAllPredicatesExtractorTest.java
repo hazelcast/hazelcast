@@ -1,16 +1,17 @@
-package com.hazelcast.query.impl.extraction.predicates;
+package com.hazelcast.query.impl.extractor.predicates;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.query.extractor.Arguments;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
-import com.hazelcast.query.impl.extraction.AbstractExtractionTest;
+import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import static com.hazelcast.query.impl.extraction.predicates.SingleValueDataStructure.Person;
+import static com.hazelcast.query.impl.extractor.predicates.SingleValueDataStructure.Person;
 
 /**
  * Tests whether all predicates work with the extraction in attributes that are not collections.
@@ -40,27 +41,27 @@ public class SingleValueAllPredicatesExtractorTest extends SingleValueAllPredica
 
                 MapAttributeConfig iqConfig = new AbstractExtractionTest.TestMapAttributeIndexConfig();
                 iqConfig.setName("brain.iq");
-                iqConfig.setExtractor("com.hazelcast.query.impl.extraction.predicates.SingleValueAllPredicatesExtractorTest$IqExtractor");
+                iqConfig.setExtractor("com.hazelcast.query.impl.extractor.predicates.SingleValueAllPredicatesExtractorTest$IqExtractor");
                 mapConfig.addMapAttributeConfig(iqConfig);
 
                 MapAttributeConfig nameConfig = new AbstractExtractionTest.TestMapAttributeIndexConfig();
                 nameConfig.setName("brain.name");
-                nameConfig.setExtractor("com.hazelcast.query.impl.extraction.predicates.SingleValueAllPredicatesExtractorTest$NameExtractor");
+                nameConfig.setExtractor("com.hazelcast.query.impl.extractor.predicates.SingleValueAllPredicatesExtractorTest$NameExtractor");
                 mapConfig.addMapAttributeConfig(nameConfig);
             }
         };
     }
 
-    public static class IqExtractor extends ValueExtractor<Person> {
+    public static class IqExtractor extends ValueExtractor<Person, Object> {
         @Override
-        public void extract(Person target, ValueCollector collector) {
+        public void extract(Person target, Arguments arguments, ValueCollector collector) {
             collector.addObject(target.brain.iq);
         }
     }
 
-    public static class NameExtractor extends ValueExtractor<Person> {
+    public static class NameExtractor extends ValueExtractor<Person, Object> {
         @Override
-        public void extract(Person target, ValueCollector collector) {
+        public void extract(Person target, Arguments arguments, ValueCollector collector) {
             collector.addObject(target.brain.name);
         }
     }

@@ -1,8 +1,8 @@
-package com.hazelcast.query.impl.extraction;
+package com.hazelcast.query.impl.extractor;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.extraction.specification.ComplexDataStructure;
+import com.hazelcast.query.impl.extractor.specification.ComplexDataStructure;
 import com.hazelcast.query.impl.predicates.AbstractPredicate;
 import com.hazelcast.query.impl.predicates.PredicateTestUtils;
 import com.hazelcast.test.HazelcastTestSupport;

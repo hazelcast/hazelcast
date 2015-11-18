@@ -23,7 +23,7 @@ package com.hazelcast.query.extractor;
  * How to use a ValueExtractor?
  * <p/>
  * First, extend this class and implement the @see com.hazelcast.query.extractor.ValueExtractor#extract method.
- * Then, define a new attribute with the above-mentioned extractor in the configuration of the map.
+ * Then, define a new custom attribute with the above-mentioned extractor in the configuration of the map.
  * <p/>
  * How to define a new custom attribute?
  * <code>
@@ -43,26 +43,19 @@ package com.hazelcast.query.extractor;
  * All extractor have to be defined upfront in the map's initial configuration.
  * <p/>
  * Reflection-based extraction is the default mechanism - ValueExtractors are an alternative way of extracting
- * attribute values from object.
+ * attribute values from an object.
  *
  * @param <T> type of the target object to extract the value from
+ * @param <K> type of the extraction arguments passed to the extract() method
  */
-public abstract class ValueExtractor<T> {
+public abstract class ValueExtractor<T, K> {
 
     /**
      * Extracts a value from the given target object.
-     * The method does not return any value, the extracted value is collected by the ValueCollector instead.<p/>
-     * The extractor may extract:
-     * <ul>
-     * <li>one 'single-value' result (not a collection)</li>
-     * <li>one 'multi-value' result (a collection)</li>
-     * <li>multiple 'single-value' or 'multi-value' results</li>
-     * </ul>
+     * The method does not return any value since the extracted value is collected by the ValueCollector.<p/>
      * <p/>
      * In order to return multiple results from a single extraction just invoke the ValueCollector#collect method
-     * multiple times, so that the collector collects all results. MultiResult is an aggregate of results that is
-     * returned if the extractor returns multiple results due to a reducing / grouping operation executed on a hierarchy
-     * of values.
+     * multiple times, so that the collector collects all results.
      * <p/>
      * It sounds counter-intuitive, but a single extraction may return multiple values when arrays or collections are
      * involved.
@@ -81,17 +74,22 @@ public abstract class ValueExtractor<T> {
      * Let's assume that we want to extract currencies of all legs from a single Swap object. Each Swap has two Legs
      * so there are two currencies too. In order to return both values from the extraction operation just collect them
      * separately using the ValueCollector. Collecting multiple values in such a way allows us to operate on multiple
-     * "reduced" values as if they were single-values.
+     * "reduced" values as if they were single-values during the evaluation of the predicates.
      * <p/>
-     * Let's have look at the following query 'swapCurrency = EUR', assuming that we registered a custom extractor to
-     * extract currencies from a swap under the name swapCurrency.
-     * It will return up to two currencies, but the default evaluation semantics is that it is enough if a single
-     * value evaluates the condition to true to return the Swap from the query.
+     * If more than one value is returned from the extraction they are treated as 'multiple' single values anyway, but
+     * it is enough if a single value evaluates the predicate's condition to true to return a match.
+     * <p/>
+     * Let's assume that we registered a custom extractor to under the name 'swapCurrency' and let's have a look at the
+     * following query: 'swapCurrency = EUR'.
+     * The extraction may return upp to two currencies for each Swap since each Swap has up to two Legs.
+     * The default evaluation semantics of the predicates is that it is enough if a single value evaluates the condition
+     * to true to return the Swap as a result of this query - so it will return a Swap if "any" of the currencies
+     * matches the expression.
      *
      * @param target    object to extract the value from
      * @param collector collector of the extracted value(s)
      * @see ValueCollector
      */
-    public abstract void extract(T target, ValueCollector collector);
+    public abstract void extract(T target, Arguments<K> arguments, ValueCollector collector);
 
 }
