@@ -20,14 +20,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,19 +36,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(Parameterized.class)
-public class ReplicatedMapWriteOrderTest extends HazelcastTestSupport {
-
-    protected static Field REPLICATED_MAP_SERVICE;
-
-    static {
-        try {
-            REPLICATED_MAP_SERVICE = ReplicatedMapProxy.class.getDeclaredField("service");
-            REPLICATED_MAP_SERVICE.setAccessible(true);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
+public class ReplicatedMapWriteOrderTest extends ReplicatedMapBaseTest {
 
     int nodeCount;
     int operations;
@@ -102,7 +84,7 @@ public class ReplicatedMapWriteOrderTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(nodeCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
         String replicatedMapName = "test";
-        final List<ReplicatedMap> maps = createMaps(instances, replicatedMapName);
+        final List<ReplicatedMap> maps = createMapOnEachInstance(instances, replicatedMapName);
         ArrayList<Integer> keys = generateRandomIntegerList(keyCount);
         Thread[] threads = createThreads(nodeCount, maps, keys, operations);
         for (Thread thread : threads) {
@@ -153,24 +135,6 @@ public class ReplicatedMapWriteOrderTest extends HazelcastTestSupport {
         return threads;
     }
 
-    private List<ReplicatedMap> createMaps(HazelcastInstance[] instances, String replicatedMapName) {
-        ArrayList<ReplicatedMap> maps = new ArrayList<ReplicatedMap>();
-        for (int i = 0; i < instances.length; i++) {
-            ReplicatedMap<Object, Object> replicatedMap = instances[i].getReplicatedMap(replicatedMapName);
-            maps.add(replicatedMap);
-        }
-        return maps;
-    }
-
-    private ArrayList<Integer> generateRandomIntegerList(int count) {
-        final ArrayList<Integer> keys = new ArrayList<Integer>();
-        final Random random = new Random();
-        for (int i = 0; i < count; i++) {
-            keys.add(random.nextInt());
-        }
-        return keys;
-    }
-
     private Thread createPutOperationThread(final ReplicatedMap<String, Object> map, final ArrayList<Integer> keys,
                                             final int operations) {
         return new Thread(new Runnable() {
@@ -188,21 +152,5 @@ public class ReplicatedMapWriteOrderTest extends HazelcastTestSupport {
             }
         });
     }
-
-    @SuppressWarnings("unchecked")
-    protected <K, V> ReplicatedRecord<K, V> getReplicatedRecord(ReplicatedMap<K, V> map, K key) throws Exception {
-        ReplicatedMapProxy<K, V> proxy = (ReplicatedMapProxy<K, V>) map;
-        ReplicatedMapService service = (ReplicatedMapService) REPLICATED_MAP_SERVICE.get(proxy);
-        ReplicatedRecordStore store = service.getReplicatedRecordStore(map.getName(), false, key);
-        return store.getReplicatedRecord(key);
-    }
-
-    @SuppressWarnings("unchecked")
-    protected <K, V> ReplicatedRecordStore getStore(ReplicatedMap<K, V> map, K key) throws Exception {
-        ReplicatedMapProxy<K, V> proxy = (ReplicatedMapProxy<K, V>) map;
-        ReplicatedMapService service = (ReplicatedMapService) REPLICATED_MAP_SERVICE.get(proxy);
-        return service.getReplicatedRecordStore(map.getName(), false, key);
-    }
-
 
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
+import com.hazelcast.util.scheduler.ScheduledEntry;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -33,8 +34,6 @@ public interface ReplicatedRecordStore {
     Object remove(Object key);
 
     void evict(Object key);
-
-    void removeTombstone(Object key);
 
     Object get(Object key);
 
@@ -79,6 +78,10 @@ public interface ReplicatedRecordStore {
     void putRecord(RecordMigrationInfo record);
 
     InternalReplicatedMapStorage getStorage();
+
+    ScheduledEntry<Object, Object> cancelTtlEntry(Object key);
+
+    boolean scheduleTtlEntry(long delayMillis, Object key, Object object);
 
     boolean isLoaded();
 

@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @param <K> key type
  * @param <V> value type
  */
-abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedRecordStore {
+public abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedRecordStore {
 
     protected final AtomicReference<InternalReplicatedMapStorage<K, V>> storageRef;
     protected final ReplicatedMapService replicatedMapService;
@@ -67,8 +67,7 @@ abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedReco
         this.storageRef.set(new InternalReplicatedMapStorage<K, V>());
         this.ttlEvictionScheduler = EntryTaskSchedulerFactory
                 .newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(),
-                        new ReplicatedMapEvictionProcessor(nodeEngine, replicatedMapService, name)
-                        , ScheduleType.POSTPONE);
+                        new ReplicatedMapEvictionProcessor(this, nodeEngine, partitionId), ScheduleType.POSTPONE);
     }
 
     public InternalReplicatedMapStorage<K, V> getStorage() {
@@ -107,12 +106,14 @@ abstract class AbstractBaseReplicatedRecordStore<K, V> implements ReplicatedReco
     }
 
 
-    ScheduledEntry<K, V> cancelTtlEntry(K key) {
+    @Override
+    public ScheduledEntry cancelTtlEntry(Object key) {
         return ttlEvictionScheduler.cancel(key);
     }
 
-    boolean scheduleTtlEntry(long delayMillis, K key, V object) {
-        return ttlEvictionScheduler.schedule(delayMillis, key, object);
+    @Override
+    public boolean scheduleTtlEntry(long delayMillis, Object key, Object value) {
+        return ttlEvictionScheduler.schedule(delayMillis, key, value);
     }
 
     @Override

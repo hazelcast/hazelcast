@@ -21,6 +21,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.scheduler.ScheduledEntry;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -565,11 +566,6 @@ public class LazyIteratorTest
         }
 
         @Override
-        public void removeTombstone(Object key) {
-
-        }
-
-        @Override
         public Object get(Object key) {
             return null;
         }
@@ -675,6 +671,16 @@ public class LazyIteratorTest
         @Override
         public InternalReplicatedMapStorage getStorage() {
             return null;
+        }
+
+        @Override
+        public ScheduledEntry<Object, Object> cancelTtlEntry(Object key) {
+            return null;
+        }
+
+        @Override
+        public boolean scheduleTtlEntry(long delayMillis, Object key, Object object) {
+            return false;
         }
 
         @Override
