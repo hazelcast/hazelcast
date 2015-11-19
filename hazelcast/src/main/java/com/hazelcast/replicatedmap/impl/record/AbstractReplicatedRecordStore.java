@@ -55,17 +55,6 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
     }
 
     @Override
-    public void removeTombstone(Object key) {
-        isNotNull(key, "key");
-        K marshalledKey = (K) marshall(key);
-        ReplicatedRecord<K, V> current = getStorage().get(marshalledKey);
-        if (current == null || current.getValueInternal() != null) {
-            return;
-        }
-        getStorage().remove(marshalledKey, current);
-    }
-
-    @Override
     public Object remove(Object key) {
         isNotNull(key, "key");
         long time = Clock.currentTimeMillis();
@@ -146,19 +135,19 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         K marshalledKey = (K) marshall(key);
         V marshalledValue = (V) marshall(value);
         final long ttlMillis = ttl == 0 ? 0 : timeUnit.toMillis(ttl);
-        final ReplicatedRecord old = getStorage().get(marshalledKey);
+        final ReplicatedRecord<K, V> old = getStorage().get(marshalledKey);
         ReplicatedRecord<K, V> record = old;
         if (old == null) {
             record = buildReplicatedRecord(marshalledKey, marshalledValue, ttlMillis);
             getStorage().put(marshalledKey, record);
         } else {
-            oldValue = (V) old.getValueInternal();
+            oldValue = old.getValueInternal();
             if (incrementHits) {
-                getStorage().get(marshalledKey).setValue(marshalledValue, ttlMillis);
+                old.setValue(marshalledValue, ttlMillis);
             } else {
-                getStorage().get(marshalledKey).setValueInternal(marshalledValue, ttlMillis);
+                old.setValueInternal(marshalledValue, ttlMillis);
             }
-            getStorage().incrementVersion();
+            getStorage().put(marshalledKey, old);
         }
         if (ttlMillis > 0) {
             scheduleTtlEntry(ttlMillis, marshalledKey, marshalledValue);

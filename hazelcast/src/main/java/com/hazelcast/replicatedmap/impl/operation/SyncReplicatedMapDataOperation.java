@@ -67,6 +67,9 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractOperation {
             if (oldRecord != null) {
                 replicatedRecord.setHits(oldRecord.getHits());
             }
+            if (record.getTtl() > 0) {
+                store.scheduleTtlEntry(record.getTtl(), key, value);
+            }
             newStorage.putInternal(key, replicatedRecord);
         }
         newStorage.setVersion(version);
