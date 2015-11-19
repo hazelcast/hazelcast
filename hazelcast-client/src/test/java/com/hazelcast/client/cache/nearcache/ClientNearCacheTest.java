@@ -68,6 +68,16 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     }
 
     @Test
+    public void putToCacheAndGetInvalidationEventWhenNodeShutdownWithBinaryInMemoryFormat() {
+        putToCacheAndGetInvalidationEventWhenNodeShutdown(InMemoryFormat.BINARY);
+    }
+
+    @Test
+    public void putToCacheAndGetInvalidationEventWhenNodeShutdownWithObjectInMemoryFormat() {
+        putToCacheAndGetInvalidationEventWhenNodeShutdown(InMemoryFormat.OBJECT);
+    }
+
+    @Test
     public void putToCacheAndRemoveFromOtherNodeThenCantGetUpdatedFromClientNearCacheWithBinaryInMemoryFormat() {
         putToCacheAndRemoveFromOtherNodeThenCantGetUpdatedFromClientNearCache(InMemoryFormat.BINARY);
     }
