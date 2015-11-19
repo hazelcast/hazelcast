@@ -190,12 +190,16 @@ class ClientMembershipListener implements EventHandler<ClientInitialMembershipEv
     private List<MembershipEvent> detectMembershipEvents(Map<String, Member> prevMembers) {
         final List<MembershipEvent> events = new LinkedList<MembershipEvent>();
         final Set<Member> eventMembers = Collections.unmodifiableSet(new LinkedHashSet<Member>(members));
+
+        final List<Member> newMembers = new LinkedList<Member>();
         for (Member member : members) {
             final Member former = prevMembers.remove(member.getUuid());
             if (former == null) {
-                events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_ADDED, eventMembers));
+                newMembers.add(member);
             }
         }
+
+        // removal events should be added before added events
         for (Member member : prevMembers.values()) {
             events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED, eventMembers));
             Address address = ((AbstractMember) member).getAddress();
@@ -206,6 +210,10 @@ class ClientMembershipListener implements EventHandler<ClientInitialMembershipEv
                 }
             }
         }
+        for (Member member : newMembers) {
+            events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_ADDED, eventMembers));
+        }
+
         return events;
     }
 
