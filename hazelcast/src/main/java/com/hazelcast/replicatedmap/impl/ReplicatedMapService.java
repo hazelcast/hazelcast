@@ -53,6 +53,7 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
@@ -350,7 +351,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
                 if (listener instanceof HazelcastInstanceAware) {
                     ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
                 }
-                eventPublishingService.addEventListener(listener, null, name);
+                eventPublishingService.addEventListener(listener, TrueEventFilter.INSTANCE, name);
             }
         }
     }

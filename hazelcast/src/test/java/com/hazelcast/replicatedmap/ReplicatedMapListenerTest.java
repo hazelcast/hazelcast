@@ -16,6 +16,9 @@
 
 package com.hazelcast.replicatedmap;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
@@ -39,6 +42,28 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class ReplicatedMapListenerTest extends HazelcastTestSupport {
+
+    @Test
+    public void testRegisterListenerViaConfiguration() throws Exception {
+        String mapName = randomMapName();
+        Config config = new Config();
+        ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(mapName);
+        EntryListenerConfig listenerConfig = new EntryListenerConfig();
+        final EventCountingListener listener = new EventCountingListener();
+        listenerConfig.setImplementation(listener);
+        replicatedMapConfig.addEntryListenerConfig(listenerConfig);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        ReplicatedMap<Object, Object> replicatedMap = instance.getReplicatedMap(mapName);
+        replicatedMap.put(3, 3);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, listener.addCount.get());
+                assertEquals(3, listener.keys.peek());
+            }
+        }, 10);
+    }
 
     @Test
     public void testEntryAdded() throws Exception {
