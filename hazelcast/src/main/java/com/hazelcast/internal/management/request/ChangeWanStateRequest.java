@@ -87,4 +87,16 @@ public class ChangeWanStateRequest implements ConsoleRequest {
         publisherName = getString(json, "publisherName");
         start = getBoolean(json, "start");
     }
+
+    public String getSchemeName() {
+        return schemeName;
+    }
+
+    public String getPublisherName() {
+        return publisherName;
+    }
+
+    public boolean isStart() {
+        return start;
+    }
 }

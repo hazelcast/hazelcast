@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -48,5 +49,18 @@ public class ChangeWanStateRequestTest extends HazelcastTestSupport {
 
         JsonObject result = (JsonObject) jsonObject.get("result");
         assertNotEquals(ChangeWanStateRequest.SUCCESS, changeWanStateRequest.readResponse(result));
+    }
+
+    @Test
+    public void testSerialization() throws IllegalAccessException {
+        ChangeWanStateRequest changeWanStateRequest1 = new ChangeWanStateRequest("schema", "publisher", false);
+        JsonObject jsonObject = changeWanStateRequest1.toJson();
+
+        ChangeWanStateRequest changeWanStateRequest2 = new ChangeWanStateRequest();
+        changeWanStateRequest2.fromJson(jsonObject);
+
+        assertEquals(changeWanStateRequest1.getPublisherName(), changeWanStateRequest2.getPublisherName());
+        assertEquals(changeWanStateRequest1.getSchemeName(), changeWanStateRequest2.getSchemeName());
+        assertEquals(changeWanStateRequest1.isStart(), changeWanStateRequest2.isStart());
     }
 }
