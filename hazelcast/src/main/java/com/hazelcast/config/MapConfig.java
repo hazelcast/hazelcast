@@ -105,7 +105,7 @@ public class MapConfig {
 
     private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
 
-    private MapStoreConfig mapStoreConfig;
+    private MapStoreConfig mapStoreConfig = new MapStoreConfig().setEnabled(false);
 
     private NearCacheConfig nearCacheConfig;
 
