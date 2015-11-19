@@ -3,6 +3,7 @@ package com.hazelcast.replicatedmap;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ReplicatedMapConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
@@ -11,6 +12,8 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.test.HazelcastTestSupport;
 import java.lang.reflect.Field;
 import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import static org.junit.Assert.fail;
@@ -72,6 +75,14 @@ public abstract class ReplicatedMapBaseTest extends HazelcastTestSupport {
     }
 
     @SuppressWarnings("unchecked")
+    protected <K, V> ReplicatedRecordStore getStore(ReplicatedMap<K, V> map, K key) throws Exception {
+        ReplicatedMapProxy<K, V> proxy = (ReplicatedMapProxy<K, V>) map;
+        ReplicatedMapService service = (ReplicatedMapService) REPLICATED_MAP_SERVICE.get(proxy);
+        return service.getReplicatedRecordStore(map.getName(), false, key);
+    }
+
+
+    @SuppressWarnings("unchecked")
     protected AbstractMap.SimpleEntry<Integer, Integer>[] buildTestValues() {
         Random random = new Random();
         AbstractMap.SimpleEntry<Integer, Integer>[] testValues = new AbstractMap.SimpleEntry[100];
@@ -79,5 +90,23 @@ public abstract class ReplicatedMapBaseTest extends HazelcastTestSupport {
             testValues[i] = new AbstractMap.SimpleEntry<Integer, Integer>(random.nextInt(), random.nextInt());
         }
         return testValues;
+    }
+
+    public List<ReplicatedMap> createMapOnEachInstance(HazelcastInstance[] instances, String replicatedMapName) {
+        ArrayList<ReplicatedMap> maps = new ArrayList<ReplicatedMap>();
+        for (int i = 0; i < instances.length; i++) {
+            ReplicatedMap<Object, Object> replicatedMap = instances[i].getReplicatedMap(replicatedMapName);
+            maps.add(replicatedMap);
+        }
+        return maps;
+    }
+
+    public ArrayList<Integer> generateRandomIntegerList(int count) {
+        final ArrayList<Integer> keys = new ArrayList<Integer>();
+        final Random random = new Random();
+        for (int i = 0; i < count; i++) {
+            keys.add(random.nextInt());
+        }
+        return keys;
     }
 }
