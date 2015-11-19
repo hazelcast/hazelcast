@@ -46,11 +46,11 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
     private final Map<ClientRegistrationKey, Map<Address, ClientEventRegistration>> registrations
             = new ConcurrentHashMap<ClientRegistrationKey, Map<Address, ClientEventRegistration>>();
     private final Object listenerRegLock = new Object();
+    private String membershipListenerId;
 
     public ClientSmartListenerService(HazelcastClientInstanceImpl client,
                                       int eventThreadCount, int eventQueueCapacity) {
         super(client, eventThreadCount, eventQueueCapacity);
-        client.getClientClusterService().addMembershipListener(this);
     }
 
     @Override
@@ -129,6 +129,19 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
             return successful;
         }
 
+    }
+
+    @Override
+    public void start() {
+        membershipListenerId = client.getClientClusterService().addMembershipListener(this);
+    }
+
+    @Override
+    public void shutdown() {
+        super.shutdown();
+        if (membershipListenerId != null) {
+            client.getClientClusterService().removeMembershipListener(membershipListenerId);
+        }
     }
 
     @Override

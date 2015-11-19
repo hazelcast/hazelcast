@@ -306,6 +306,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             lifecycleService.shutdown();
             throw ExceptionUtil.rethrow(e);
         }
+        listenerService.start();
         loadBalancer.init(getCluster(), config);
         partitionService.start();
         clientExtension.afterStart(this);
