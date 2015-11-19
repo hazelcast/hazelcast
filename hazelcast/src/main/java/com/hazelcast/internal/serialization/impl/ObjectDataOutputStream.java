@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 
+import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
+
 public class ObjectDataOutputStream extends OutputStream implements ObjectDataOutput, Closeable {
 
     private final SerializationService serializationService;
@@ -129,7 +131,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeByteArray(byte[] bytes) throws IOException {
-        int len = (bytes != null) ? bytes.length : -1;
+        int len = (bytes != null) ? bytes.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             write(bytes);
@@ -138,7 +140,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeBooleanArray(boolean[] booleans) throws IOException {
-        int len = booleans != null ? booleans.length : -1;
+        int len = booleans != null ? booleans.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             for (boolean c : booleans) {
@@ -150,7 +152,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeCharArray(char[] chars) throws IOException {
-        int len = chars != null ? chars.length : -1;
+        int len = chars != null ? chars.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             for (char c : chars) {
@@ -161,7 +163,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeIntArray(int[] ints) throws IOException {
-        int len = ints != null ? ints.length : -1;
+        int len = ints != null ? ints.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             for (int i : ints) {
@@ -172,7 +174,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeLongArray(long[] longs) throws IOException {
-        int len = longs != null ? longs.length : -1;
+        int len = longs != null ? longs.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             for (long l : longs) {
@@ -183,7 +185,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeDoubleArray(double[] doubles) throws IOException {
-        int len = doubles != null ? doubles.length : -1;
+        int len = doubles != null ? doubles.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             for (double d : doubles) {
@@ -194,7 +196,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeFloatArray(float[] floats) throws IOException {
-        int len = floats != null ? floats.length : -1;
+        int len = floats != null ? floats.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             for (float f : floats) {
@@ -205,7 +207,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeShortArray(short[] shorts) throws IOException {
-        int len = shorts != null ? shorts.length : -1;
+        int len = shorts != null ? shorts.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             for (short s : shorts) {
@@ -216,7 +218,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeUTFArray(String[] strings) throws IOException {
-        int len = strings != null ? strings.length : -1;
+        int len = strings != null ? strings.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             for (String s : strings) {
@@ -227,7 +229,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     @Override
     public void writeUTF(String str) throws IOException {
-        int len = (str == null) ? 0 : str.length();
+        int len = str != null ? str.length() : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
             for (int i = 0; i < len; i++) {

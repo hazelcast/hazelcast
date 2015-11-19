@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteOrder;
 
+import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
+
 public class ObjectDataInputStream extends InputStream implements ObjectDataInput, Closeable {
 
     private final SerializationService serializationService;
@@ -144,7 +146,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public byte[] readByteArray() throws IOException {
         int len = readInt();
-        if (len == -1) {
+        if (len == NULL_ARRAY_LENGTH) {
             return null;
         }
         if (len > 0) {
@@ -158,7 +160,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public boolean[] readBooleanArray() throws IOException {
         int len = readInt();
-        if (len == -1) {
+        if (len == NULL_ARRAY_LENGTH) {
             return null;
         }
         if (len > 0) {
@@ -174,7 +176,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public char[] readCharArray() throws IOException {
         int len = readInt();
-        if (len == -1) {
+        if (len == NULL_ARRAY_LENGTH) {
             return null;
         }
         if (len > 0) {
@@ -190,7 +192,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public int[] readIntArray() throws IOException {
         int len = readInt();
-        if (len == -1) {
+        if (len == NULL_ARRAY_LENGTH) {
             return null;
         }
         if (len > 0) {
@@ -206,7 +208,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public long[] readLongArray() throws IOException {
         int len = readInt();
-        if (len == -1) {
+        if (len == NULL_ARRAY_LENGTH) {
             return null;
         }
         if (len > 0) {
@@ -222,7 +224,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public double[] readDoubleArray() throws IOException {
         int len = readInt();
-        if (len == -1) {
+        if (len == NULL_ARRAY_LENGTH) {
             return null;
         }
         if (len > 0) {
@@ -238,7 +240,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public float[] readFloatArray() throws IOException {
         int len = readInt();
-        if (len == -1) {
+        if (len == NULL_ARRAY_LENGTH) {
             return null;
         }
         if (len > 0) {
@@ -254,7 +256,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public short[] readShortArray() throws IOException {
         int len = readInt();
-        if (len == -1) {
+        if (len == NULL_ARRAY_LENGTH) {
             return null;
         }
         if (len > 0) {
@@ -270,7 +272,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public String[] readUTFArray() throws IOException {
         int len = readInt();
-        if (len == -1) {
+        if (len == NULL_ARRAY_LENGTH) {
             return null;
         }
         if (len > 0) {
@@ -291,6 +293,9 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public String readUTF() throws IOException {
         int charCount = readInt();
+        if (charCount == NULL_ARRAY_LENGTH) {
+            return null;
+        }
         char[] charBuffer = new char[charCount];
         byte b;
         for (int i = 0; i < charCount; i++) {
