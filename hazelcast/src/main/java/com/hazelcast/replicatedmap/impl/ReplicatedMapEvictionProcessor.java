@@ -16,6 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl;
 
+import com.hazelcast.replicatedmap.impl.operation.EvictionOperation;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -28,30 +29,19 @@ import java.util.Collection;
  */
 public class ReplicatedMapEvictionProcessor implements ScheduledEntryProcessor<Object, Object> {
 
-    final NodeEngine nodeEngine;
-    final ReplicatedMapService replicatedMapService;
-    final String mapName;
+    private ReplicatedRecordStore store;
+    private NodeEngine nodeEngine;
+    private int partitionId;
 
-    public ReplicatedMapEvictionProcessor(NodeEngine nodeEngine, ReplicatedMapService replicatedMapService, String mapName) {
+    public ReplicatedMapEvictionProcessor(ReplicatedRecordStore store, NodeEngine nodeEngine, int partitionId) {
+        this.store = store;
         this.nodeEngine = nodeEngine;
-        this.replicatedMapService = replicatedMapService;
-        this.mapName = mapName;
+        this.partitionId = partitionId;
     }
 
     public void process(EntryTaskScheduler<Object, Object> scheduler, Collection<ScheduledEntry<Object, Object>> entries) {
-        for (ScheduledEntry<Object, Object> entry : entries) {
-            Object key = entry.getKey();
-            int partitionId = replicatedMapService.getNodeEngine().getPartitionService().getPartitionId(key);
-            final ReplicatedRecordStore store = replicatedMapService.getReplicatedRecordStore(mapName, false, partitionId);
-            if (store == null) {
-                continue;
-            }
-            if (entry.getValue() == null) {
-                store.removeTombstone(key);
-            } else {
-                store.evict(key);
-            }
-        }
+        EvictionOperation evictionOperation = new EvictionOperation(store, entries);
+        evictionOperation.setPartitionId(partitionId);
+        nodeEngine.getOperationService().executeOperation(evictionOperation);
     }
-
 }
