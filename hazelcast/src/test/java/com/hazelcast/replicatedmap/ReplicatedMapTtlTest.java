@@ -19,12 +19,28 @@ import org.junit.runner.RunWith;
 public class ReplicatedMapTtlTest extends ReplicatedMapBaseTest {
 
     @Test
-    public void testPutWithTTL() throws Exception {
+    public void testPutWithTTL_withMigration() throws Exception {
+        int nodeCount = 1;
+        int keyCount = 40000;
+        int operationCount = 40000;
+        int threadCount = 15;
+        int ttl = 500;
+        testPutWithTTL(nodeCount, keyCount, operationCount, threadCount, ttl, true);
+    }
+
+    @Test
+    public void testPutWithTTL_withoutMigration() throws Exception {
         int nodeCount = 5;
         int keyCount = 20000;
         int operationCount = 20000;
         int threadCount = 15;
         int ttl = 500;
+        testPutWithTTL(nodeCount, keyCount, operationCount, threadCount, ttl, false);
+
+    }
+
+    private void testPutWithTTL(int nodeCount, int keyCount, int operationCount, int threadCount, int ttl,
+                                boolean causeMigration) throws InterruptedException {
         TimeUnit timeUnit = TimeUnit.MILLISECONDS;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance[] instances = factory.newInstances(null, nodeCount);
@@ -35,13 +51,20 @@ public class ReplicatedMapTtlTest extends ReplicatedMapBaseTest {
         for (Thread thread : threads) {
             thread.start();
         }
+        HazelcastInstance instance = null;
+        if (causeMigration) {
+            instance = factory.newHazelcastInstance();
+        }
         for (Thread thread : threads) {
             thread.join();
+        }
+        if (causeMigration) {
+            ReplicatedMap<Object, Object> map = instance.getReplicatedMap(mapName);
+            maps.add(map);
         }
         for (ReplicatedMap map : maps) {
             assertSizeEventually(0, map, 60);
         }
-
     }
 
     private Thread[] createThreads(int count, List<ReplicatedMap> maps, ArrayList<Integer> keys,
