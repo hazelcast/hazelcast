@@ -113,7 +113,9 @@ public class QueryEntryTest extends HazelcastTestSupport {
         assertTrue("Old dataValue should not be here", dataValue != queryEntry.getValueData());
     }
 
+    @SuppressWarnings("unused")
     private static class SerializableObject implements DataSerializable {
+
         private int serializationCount;
         private int deserializationCount;
         private String name;

@@ -12,12 +12,12 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.IterationType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.util.IterationType.ENTRY;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -54,7 +54,7 @@ public class MapQueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends 
     public void whenLimitNotExceeded() throws Exception {
         fillPartition(limit - 1);
 
-        QueryResult result = queryEngine.queryLocalPartition(map.getName(), TruePredicate.INSTANCE, PARTITION_ID, IterationType.ENTRY);
+        QueryResult result = queryEngine.queryLocalPartition(map.getName(), TruePredicate.INSTANCE, PARTITION_ID, ENTRY);
 
         assertEquals(limit - 1, result.getRows().size());
     }
@@ -63,7 +63,7 @@ public class MapQueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends 
     public void whenLimitEquals() throws Exception {
         fillPartition(limit);
 
-        QueryResult result = queryEngine.queryLocalPartition(map.getName(), TruePredicate.INSTANCE, PARTITION_ID, IterationType.ENTRY);
+        QueryResult result = queryEngine.queryLocalPartition(map.getName(), TruePredicate.INSTANCE, PARTITION_ID, ENTRY);
 
         assertEquals(limit, result.getRows().size());
     }
@@ -72,7 +72,7 @@ public class MapQueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends 
     public void whenLimitExceeded() throws Exception {
         fillPartition(limit + 1);
 
-        queryEngine.queryLocalPartition(map.getName(), TruePredicate.INSTANCE, PARTITION_ID, IterationType.ENTRY);
+        queryEngine.queryLocalPartition(map.getName(), TruePredicate.INSTANCE, PARTITION_ID, ENTRY);
     }
 
     private void fillPartition(int count) {

@@ -64,7 +64,6 @@ public class MethodGetterTest {
         nailArrayMethod = Limb.class.getMethod("getNailArray");
         nailCollectionMethod = Limb.class.getMethod("getNailCollection");
 
-
         redNail = new Nail("red");
         greenNail = new Nail("green");
         leg = new Limb("leg", redNail, greenNail);
@@ -77,15 +76,15 @@ public class MethodGetterTest {
         body = new Body("bodyName", leg, hand, unnamedLimb);
     }
 
-
     @Test(expected = IllegalArgumentException.class)
-    public void constructor_whenModifierIsNotNullAndMethodReturnTypeIsNotArrayOrCollection_thenThrowIllegalArgumentException() throws NoSuchMethodException {
+    public void constructor_whenModifierIsNotNullAndMethodReturnTypeIsNotArrayOrCollection_thenThrowIllegalArgumentException()
+            throws Exception {
         Method method = Body.class.getMethod("getName");
         new MethodGetter(null, method, "[any]", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void constructor_whenModifierIsNegative_thenThrowIllegalArgumentException() throws NoSuchMethodException {
+    public void constructor_whenModifierIsNegative_thenThrowIllegalArgumentException() throws Exception {
         Method method = Body.class.getMethod("getName");
         new MethodGetter(null, method, "[-1]", null);
     }
@@ -109,7 +108,8 @@ public class MethodGetterTest {
     }
 
     @Test
-    public void getValue_whenParentIsMultiValueAndModifierOnArrayIsStar_thenReturnMultiValueResultWithAllItems() throws Exception {
+    public void getValue_whenParentIsMultiValueAndModifierOnArrayIsStar_thenReturnMultiValueResultWithAllItems()
+            throws Exception {
         MethodGetter limbGetter = new MethodGetter(null, limbArrayMethod, "[any]", null);
         MethodGetter nailGetter = new MethodGetter(limbGetter, nailArrayMethod, "[any]", null);
 
@@ -119,7 +119,8 @@ public class MethodGetterTest {
     }
 
     @Test
-    public void getValue_whenParentIsMultiValueAndModifierOnArrayIsPosition_thenReturnMultiValueResultWithItemsAtPosition() throws Exception {
+    public void getValue_whenParentIsMultiValueAndModifierOnArrayIsPosition_thenReturnMultiValueResultWithItemsAtPosition()
+            throws Exception {
         MethodGetter limbGetter = new MethodGetter(null, limbArrayMethod, "[any]", null);
         MethodGetter nailGetter = new MethodGetter(limbGetter, nailArrayMethod, "[0]", null);
 
@@ -129,7 +130,8 @@ public class MethodGetterTest {
     }
 
     @Test
-    public void getValue_whenParentIsMultiValueAndModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems() throws Exception {
+    public void getValue_whenParentIsMultiValueAndModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems()
+            throws Exception {
         MethodGetter limbGetter = new MethodGetter(null, limbArrayMethod, "[any]", null);
         MethodGetter nailGetter = new MethodGetter(limbGetter, nailCollectionMethod, "[any]", Nail.class);
 
@@ -139,7 +141,8 @@ public class MethodGetterTest {
     }
 
     @Test
-    public void getValue_whenParentIsMultiValueAndModifierOnCollectionIsPosition_thenReturnMultiValueResultWithItemsAtPosition() throws Exception {
+    public void getValue_whenParentIsMultiValueAndModifierOnCollectionIsPosition_thenReturnMultiValueResultWithItemsAtPosition()
+            throws Exception {
         MethodGetter limbGetter = new MethodGetter(null, limbArrayMethod, "[any]", null);
         MethodGetter nailGetter = new MethodGetter(limbGetter, nailArrayMethod, "[0]", Nail.class);
 
@@ -155,7 +158,6 @@ public class MethodGetterTest {
 
         assertContainsInAnyOrder(result, leg, hand, unnamedLimb);
     }
-
 
     @Test
     public void getValue_whenModifierOnArrayIsPositionAndElementAtGivenPositionExist_thenReturnTheItem() throws Exception {
@@ -190,6 +192,7 @@ public class MethodGetterTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void getValue_whenNoModifierOnCollection_thenReturnTheCollection() throws Exception {
         MethodGetter getter = new MethodGetter(null, limbCollectionMethod, null, null);
         Collection<Limb> result = (Collection<Limb>) getter.getValue(body);
@@ -198,7 +201,8 @@ public class MethodGetterTest {
     }
 
     @Test
-    public void getValue_whenParentIsMultiResultAndNoModifier_thenReturnTheMultiResultContainingCurrentObjects() throws Exception {
+    public void getValue_whenParentIsMultiResultAndNoModifier_thenReturnTheMultiResultContainingCurrentObjects()
+            throws Exception {
         MethodGetter limbGetter = new MethodGetter(null, limbArrayMethod, "[any]", null);
         Method getLimbNameMethod = Limb.class.getMethod("getName");
         MethodGetter nailNameGetter = new MethodGetter(limbGetter, getLimbNameMethod, null, null);
@@ -255,8 +259,8 @@ public class MethodGetterTest {
         assertEquals(Limb[].class, returnType);
     }
 
-    private void assertContainsInAnyOrder(MultiResult multiResult, Object...items) {
-        List<Object> results = multiResult.getResults();
+    private void assertContainsInAnyOrder(MultiResult multiResult, Object... items) {
+        List results = multiResult.getResults();
         if (results.size() != items.length) {
             fail("MultiResult " + multiResult + " has size " + results.size() + ", but expected size is " + items.length);
         }
@@ -267,6 +271,7 @@ public class MethodGetterTest {
         }
     }
 
+    @SuppressWarnings("unused")
     static class Body {
         String name;
         Limb[] limbArray = new Limb[0];
@@ -291,6 +296,7 @@ public class MethodGetterTest {
         }
     }
 
+    @SuppressWarnings("unused")
     static class Limb {
         String name;
         Nail[] nailArray = new Nail[0];
@@ -317,6 +323,7 @@ public class MethodGetterTest {
 
     static class Nail {
         String colour;
+
         private Nail(String colour) {
             this.colour = colour;
         }

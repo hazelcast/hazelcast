@@ -28,14 +28,15 @@ import static com.hazelcast.query.impl.extractor.predicates.SingleValueDataStruc
 @RunWith(Parameterized.class)
 public class SingleValueAllPredicatesExtractorTest extends SingleValueAllPredicatesReflectionTest {
 
-    public SingleValueAllPredicatesExtractorTest(InMemoryFormat inMemoryFormat, AbstractExtractionTest.Index index, AbstractExtractionTest.Multivalue multivalue) {
+    public SingleValueAllPredicatesExtractorTest(InMemoryFormat inMemoryFormat, AbstractExtractionTest.Index index,
+                                                 Multivalue multivalue) {
         super(inMemoryFormat, index, multivalue);
     }
 
     protected AbstractExtractionTest.Configurator getInstanceConfigurator() {
         return new AbstractExtractionTest.Configurator() {
             @Override
-            public void doWithConfig(Config config, AbstractExtractionTest.Multivalue mv) {
+            public void doWithConfig(Config config, Multivalue mv) {
                 MapConfig mapConfig = config.getMapConfig("map");
 
                 MapAttributeConfig iqConfig = new AbstractExtractionTest.TestMapAttributeIndexConfig();
@@ -64,5 +65,4 @@ public class SingleValueAllPredicatesExtractorTest extends SingleValueAllPredica
             collector.addObject(target.brain.name);
         }
     }
-
 }

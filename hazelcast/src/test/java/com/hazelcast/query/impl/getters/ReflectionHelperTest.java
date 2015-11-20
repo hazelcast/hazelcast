@@ -16,7 +16,8 @@ import static org.junit.Assert.fail;
 public class ReflectionHelperTest {
 
     @Test
-    public void extractValue_whenIntermediateFieldIsInterfaceAndDoesNotContainField_thenThrowIllegalArgumentException() throws Exception {
+    public void extractValue_whenIntermediateFieldIsInterfaceAndDoesNotContainField_thenThrowIllegalArgumentException()
+            throws Exception {
         OuterObject object = new OuterObject();
         try {
             ReflectionHelper.extractValue(object, "emptyInterface.doesNotExist");
@@ -30,14 +31,11 @@ public class ReflectionHelperTest {
         }
     }
 
-
-
+    @SuppressWarnings("unused")
     private static class OuterObject {
         private EmptyInterface emptyInterface;
     }
 
     private interface EmptyInterface {
-
     }
-
 }

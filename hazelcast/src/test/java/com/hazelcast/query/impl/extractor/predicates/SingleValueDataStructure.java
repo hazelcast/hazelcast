@@ -5,17 +5,20 @@ import com.hazelcast.test.ObjectTestUtils;
 import java.io.Serializable;
 
 /**
- * Data structure used in the tests of extraction in single-value attributes (not in collections)
+ * Data structure used in the tests of extraction in single-value attributes (not in collections).
  */
 public class SingleValueDataStructure {
 
     public static class Person implements Serializable {
+
         Brain brain;
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Person)) return false;
-            final Person other = (Person) o;
+            if (!(o instanceof Person)) {
+                return false;
+            }
+            Person other = (Person) o;
             return ObjectTestUtils.equals(this.brain, other.brain);
         }
 
@@ -26,13 +29,16 @@ public class SingleValueDataStructure {
     }
 
     public static class Brain implements Serializable {
+
         Integer iq;
         String name;
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Brain)) return false;
-            final Brain other = (Brain) o;
+            if (!(o instanceof Brain)) {
+                return false;
+            }
+            Brain other = (Brain) o;
             return ObjectTestUtils.equals(this.iq, other.iq);
         }
 
@@ -50,5 +56,4 @@ public class SingleValueDataStructure {
         person.brain = brain;
         return person;
     }
-
 }

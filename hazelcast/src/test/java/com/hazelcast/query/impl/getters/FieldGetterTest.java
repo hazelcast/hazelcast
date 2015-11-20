@@ -16,7 +16,6 @@
 
 package com.hazelcast.query.impl.getters;
 
-
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -77,26 +76,26 @@ public class FieldGetterTest {
         body = new Body("bodyName", leg, hand, unnamedLimb);
     }
 
-
     @Test(expected = IllegalArgumentException.class)
-    public void constructor_whenModifierIsNotNullAndFieldTypeIsNotArrayOrCollection_thenThrowIllegalArgumentException() throws NoSuchFieldException {
+    public void constructor_whenModifierIsNotNullAndFieldTypeIsNotArrayOrCollection_thenThrowIllegalArgumentException()
+            throws Exception {
         Field field = Body.class.getDeclaredField("name");
         new FieldGetter(null, field, "[any]", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void constructor_whenModifierIsNegative_thenThrowIllegalArgumentException() throws NoSuchFieldException {
+    public void constructor_whenModifierIsNegative_thenThrowIllegalArgumentException() throws Exception {
         Field field = Body.class.getDeclaredField("name");
         new FieldGetter(null, field, "[-1]", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void constructor_whenModifierIsStarAndFieldTypeIsCollection_thenThrowIllegalArgumentException() throws NoSuchFieldException {
+    public void constructor_whenModifierIsStarAndFieldTypeIsCollection_thenThrowIllegalArgumentException() throws Exception {
         new FieldGetter(null, limbCollectionField, "[any]", null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void constructor_whenModifierIsPositionAndFieldTypeIsCollection_thenThrowIllegalArgumentException() throws NoSuchFieldException {
+    public void constructor_whenModifierIsPositionAndFieldTypeIsCollection_thenThrowIllegalArgumentException() throws Exception {
         new FieldGetter(null, limbCollectionField, "[0]", null);
     }
 
@@ -109,7 +108,8 @@ public class FieldGetterTest {
     }
 
     @Test
-    public void getValue_whenParentIsMultiValueAndModifierOnArrayIsStar_thenReturnMultiValueResultWithAllItems() throws Exception {
+    public void getValue_whenParentIsMultiValueAndModifierOnArrayIsStar_thenReturnMultiValueResultWithAllItems()
+            throws Exception {
         FieldGetter limbGetter = new FieldGetter(null, limbArrayField, "[any]", null);
         FieldGetter nailGetter = new FieldGetter(limbGetter, nailArrayField, "[any]", null);
 
@@ -119,7 +119,8 @@ public class FieldGetterTest {
     }
 
     @Test
-    public void getValue_whenParentIsMultiValueAndModifierOnArrayIsPosition_thenReturnMultiValueResultWithItemsAtPosition() throws Exception {
+    public void getValue_whenParentIsMultiValueAndModifierOnArrayIsPosition_thenReturnMultiValueResultWithItemsAtPosition()
+            throws Exception {
         FieldGetter limbGetter = new FieldGetter(null, limbArrayField, "[any]", null);
         FieldGetter nailGetter = new FieldGetter(limbGetter, nailArrayField, "[0]", null);
 
@@ -129,7 +130,8 @@ public class FieldGetterTest {
     }
 
     @Test
-    public void getValue_whenParentIsMultiValueAndModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems() throws Exception {
+    public void getValue_whenParentIsMultiValueAndModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems()
+            throws Exception {
         FieldGetter limbGetter = new FieldGetter(null, limbArrayField, "[any]", null);
         FieldGetter nailGetter = new FieldGetter(limbGetter, nailCollectionField, "[any]", Nail.class);
 
@@ -139,7 +141,8 @@ public class FieldGetterTest {
     }
 
     @Test
-    public void getValue_whenParentIsMultiValueAndModifierOnCollectionIsPosition_thenReturnMultiValueResultWithItemsAtPosition() throws Exception {
+    public void getValue_whenParentIsMultiValueAndModifierOnCollectionIsPosition_thenReturnMultiValueResultWithItemsAtPosition()
+            throws Exception {
         FieldGetter limbGetter = new FieldGetter(null, limbArrayField, "[any]", null);
         FieldGetter nailGetter = new FieldGetter(limbGetter, nailArrayField, "[0]", Nail.class);
 
@@ -190,6 +193,7 @@ public class FieldGetterTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void getValue_whenNoModifierOnCollection_thenReturnTheCollection() throws Exception {
         FieldGetter getter = new FieldGetter(null, limbCollectionField, null, null);
         Collection<Limb> result = (Collection<Limb>) getter.getValue(body);
@@ -255,8 +259,8 @@ public class FieldGetterTest {
         assertEquals(Limb[].class, returnType);
     }
 
-    private void assertContainsInAnyOrder(MultiResult multiResult, Object...items) {
-        List<Object> results = multiResult.getResults();
+    private void assertContainsInAnyOrder(MultiResult multiResult, Object... items) {
+        List results = multiResult.getResults();
         if (results.size() != items.length) {
             fail("MultiResult " + multiResult + " has size " + results.size() + ", but expected size is " + items.length);
         }
@@ -293,6 +297,7 @@ public class FieldGetterTest {
 
     static class Nail {
         String colour;
+
         private Nail(String colour) {
             this.colour = colour;
         }

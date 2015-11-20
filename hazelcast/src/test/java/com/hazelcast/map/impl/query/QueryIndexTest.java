@@ -30,6 +30,9 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,21 +40,15 @@ import java.util.Collection;
 import java.util.List;
 
 import static java.util.UUID.randomUUID;
-
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class QueryIndexTest extends HazelcastTestSupport {
 
     @Test
-    public void testResultsReturned_whenCustomAttributeIndexed() throws Exception {
-
+    public void testResultsReturned_whenCustomAttributeIndexed() {
         HazelcastInstance h1 = createHazelcastInstance();
 
         IMap<String, CustomObject> imap = h1.getMap("objects");
@@ -96,7 +93,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
         for (Value configObject : values) {
             typeNames.add(configObject.getType().getTypeName());
         }
-        String[] array = typeNames.toArray(new String[0]);
+        String[] array = typeNames.toArray(new String[typeNames.size()]);
         Arrays.sort(array);
         assertArrayEquals(typeNames.toString(), new String[]{"type6", "type8"}, array);
     }
@@ -118,7 +115,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
         for (Value configObject : values) {
             typeNames.add(configObject.getType().getTypeName());
         }
-        assertArrayEquals(typeNames.toString(), new String[]{"type1"}, typeNames.toArray(new String[0]));
+        assertArrayEquals(typeNames.toString(), new String[]{"type1"}, typeNames.toArray(new String[typeNames.size()]));
     }
 
     @Test(timeout = 1000 * 60)
@@ -137,7 +134,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 1000 * 60)
-    public void testQueryDoesntMatchOldResults_whenEntriesAreUpdated() {
+    public void testQueryDoesNotMatchOldResults_whenEntriesAreUpdated() {
         HazelcastInstance instance = createHazelcastInstance();
         IMap<String, SampleObjects.Value> map = instance.getMap("default");
         map.addIndex("name", true);
@@ -150,29 +147,28 @@ public class QueryIndexTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 1000 * 60)
-        public void testOneIndexedFieldsWithTwoCriteriaField() throws Exception {
-            HazelcastInstance h1 = createHazelcastInstance();
-            IMap imap = h1.getMap("employees");
-            imap.addIndex("name", false);
-    //        imap.addIndex("age", false);
-            imap.put("1", new Employee(1L, "joe", 30, true, 100D));
-            EntryObject e = new PredicateBuilder().getEntryObject();
-            PredicateBuilder a = e.get("name").equal("joe");
-            Predicate b = e.get("age").equal("30");
-            Collection<Object> actual = imap.values(a.and(b));
-            assertEquals(1, actual.size());
-        }
+    public void testOneIndexedFieldsWithTwoCriteriaField() {
+        HazelcastInstance h1 = createHazelcastInstance();
+        IMap<String, Employee> map = h1.getMap("employees");
+        map.addIndex("name", false);
+        map.put("1", new Employee(1L, "joe", 30, true, 100D));
+        EntryObject e = new PredicateBuilder().getEntryObject();
+        PredicateBuilder a = e.get("name").equal("joe");
+        Predicate b = e.get("age").equal("30");
+        Collection<Employee> actual = map.values(a.and(b));
+        assertEquals(1, actual.size());
+    }
 
     @Test(timeout = 1000 * 60)
     public void testPredicateNotEqualWithIndex() {
         HazelcastInstance instance = createHazelcastInstance();
-        IMap map1 = instance.getMap("testPredicateNotEqualWithIndex-ordered");
-        IMap map2 = instance.getMap("testPredicateNotEqualWithIndex-unordered");
+        IMap<Integer, Value> map1 = instance.getMap("testPredicateNotEqualWithIndex-ordered");
+        IMap<Integer, Value> map2 = instance.getMap("testPredicateNotEqualWithIndex-unordered");
         testPredicateNotEqualWithIndex(map1, true);
         testPredicateNotEqualWithIndex(map2, false);
     }
 
-    private void testPredicateNotEqualWithIndex(IMap map, boolean ordered) {
+    private void testPredicateNotEqualWithIndex(IMap<Integer, Value> map, boolean ordered) {
         map.addIndex("name", ordered);
         map.put(1, new Value("abc", 1));
         map.put(2, new Value("xyz", 2));
@@ -184,6 +180,4 @@ public class QueryIndexTest extends HazelcastTestSupport {
         assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("name").notEqual("aac")).size());
         assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("index").notEqual(2)).size());
     }
-
-
 }

@@ -21,6 +21,7 @@ import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification
 import static com.hazelcast.query.impl.extractor.predicates.SingleValueDataStructure.Person;
 import static com.hazelcast.query.impl.extractor.predicates.SingleValueDataStructure.person;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 
 /**
  * Tests whether all predicates work with the extraction in attributes that are not collections.
@@ -111,8 +112,7 @@ public class SingleValueAllPredicatesReflectionTest extends AbstractExtractionTe
         return axes(
                 asList(BINARY, OBJECT),
                 asList(NO_INDEX, UNORDERED, ORDERED),
-                asList(SINGLE_VALUE)
+                singletonList(SINGLE_VALUE)
         );
     }
-
 }

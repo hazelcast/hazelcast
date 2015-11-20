@@ -84,13 +84,13 @@ public class IndexTest {
         Indexes is = new Indexes(ss, Extractors.empty());
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
-        Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.Istanbul));
+        Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
         is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null);
         assertNotNull(is.getIndex("favoriteCity"));
         Record record = recordFactory.newRecord(value);
         ((AbstractRecord) record).setKey(key);
         is.removeEntryIndex(key, Records.getValueOrCachedValue(record, ss));
-        assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.Istanbul).size());
+        assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.ISTANBUL).size());
     }
 
     @Test
@@ -98,14 +98,14 @@ public class IndexTest {
         Indexes is = new Indexes(ss, Extractors.empty());
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
-        Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.Istanbul));
+        Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
         is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null);
 
-        Data newValue = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.Krakow));
+        Data newValue = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.KRAKOW));
         is.saveEntryIndex(new QueryEntry(ss, key, newValue, Extractors.empty()), value);
 
-        assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.Istanbul).size());
-        assertEquals(1, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.Krakow).size());
+        assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.ISTANBUL).size());
+        assertEquals(1, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.KRAKOW).size());
     }
 
     @Test
@@ -190,8 +190,7 @@ public class IndexTest {
             is.saveEntryIndex(new QueryEntry(ss, key, value, Extractors.empty()), null);
         }
 
-        Comparable c = null;
-        assertEquals(2, strIndex.getRecords(c).size());
+        assertEquals(2, strIndex.getRecords((Comparable) null).size());
         assertEquals(998, strIndex.getSubRecords(ComparisonType.NOT_EQUAL, null).size());
     }
 
@@ -213,10 +212,10 @@ public class IndexTest {
     private static class SerializableWithEnum implements DataSerializable {
 
         enum City {
-            Istanbul,
-            Rize,
-            Krakow,
-            Trabzon;
+            ISTANBUL,
+            RIZE,
+            KRAKOW,
+            TRABZON
         }
 
         private City favoriteCity;
@@ -260,8 +259,7 @@ public class IndexTest {
             this.str = str;
         }
 
-        private MainPortable(byte b, boolean bool, char c, short s, int i, long l, float f,
-                             double d, String str) {
+        private MainPortable(byte b, boolean bool, char c, short s, int i, long l, float f, double d, String str) {
             this.b = b;
             this.bool = bool;
             this.c = c;
@@ -303,18 +301,40 @@ public class IndexTest {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             MainPortable that = (MainPortable) o;
-            if (b != that.b) return false;
-            if (bool != that.bool) return false;
-            if (c != that.c) return false;
-            if (Double.compare(that.d, d) != 0) return false;
-            if (Float.compare(that.f, f) != 0) return false;
-            if (i != that.i) return false;
-            if (l != that.l) return false;
-            if (s != that.s) return false;
-            if (str != null ? !str.equals(that.str) : that.str != null) return false;
+            if (b != that.b) {
+                return false;
+            }
+            if (bool != that.bool) {
+                return false;
+            }
+            if (c != that.c) {
+                return false;
+            }
+            if (Double.compare(that.d, d) != 0) {
+                return false;
+            }
+            if (Float.compare(that.f, f) != 0) {
+                return false;
+            }
+            if (i != that.i) {
+                return false;
+            }
+            if (l != that.l) {
+                return false;
+            }
+            if (s != that.s) {
+                return false;
+            }
+            if (str != null ? !str.equals(that.str) : that.str != null) {
+                return false;
+            }
             return true;
         }
 
@@ -356,6 +376,7 @@ public class IndexTest {
     }
 
     class QueryRecord extends QueryableEntry {
+
         Data key;
         Comparable attributeValue;
 
@@ -374,7 +395,7 @@ public class IndexTest {
 
         @Override
         public Object getTargetObject(boolean key) {
-            return key ? key : attributeValue;
+            return key ? true : attributeValue;
         }
 
         public Data getKeyData() {
@@ -448,7 +469,7 @@ public class IndexTest {
         assertEquals(1, index.getSubRecordsBetween(555L, 555L).size());
         QueryRecord record50 = newRecord(50L, 555L);
         index.saveEntryIndex(record50, null);
-        assertEquals(new HashSet(asList(record5, record50)), index.getRecords(555L));
+        assertEquals(new HashSet<QueryableEntry>(asList(record5, record50)), index.getRecords(555L));
 
         ConcurrentMap<Data, QueryableEntry> records = index.getRecordMap(555L);
         assertNotNull(records);

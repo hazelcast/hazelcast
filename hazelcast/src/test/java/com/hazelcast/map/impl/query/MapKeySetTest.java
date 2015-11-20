@@ -26,15 +26,15 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class MapKeySetTest extends HazelcastTestSupport {
 
-    private HazelcastInstance hz;
     private IMap<String, String> map;
     private SerializationService serializationService;
 
     @Before
     public void setup() {
-        hz = createHazelcastInstance();
-        map = hz.getMap(randomName());
-        serializationService = getSerializationService(hz);
+        HazelcastInstance instance = createHazelcastInstance();
+        
+        map = instance.getMap(randomName());
+        serializationService = getSerializationService(instance);
     }
 
     @Test(expected = NullPointerException.class)

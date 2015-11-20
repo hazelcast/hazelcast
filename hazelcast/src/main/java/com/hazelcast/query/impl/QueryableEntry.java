@@ -33,7 +33,7 @@ import static com.hazelcast.query.impl.TypeConverters.IDENTITY_CONVERTER;
 import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
 
 /**
- * This interface contains methods related to Queryable Entry which means searched an indexed by sql query or predicate.
+ * This abstract class contains methods related to Queryable Entry, which means searched an indexed by SQL query or predicate.
  */
 public abstract class QueryableEntry implements Map.Entry {
 
@@ -213,5 +213,4 @@ public abstract class QueryableEntry implements Map.Entry {
         }
         return ReflectionHelper.getAttributeType(firstResult.getClass());
     }
-
 }

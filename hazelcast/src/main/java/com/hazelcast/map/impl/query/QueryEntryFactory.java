@@ -24,12 +24,12 @@ import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 
 public final class QueryEntryFactory {
+
     private final boolean useCache;
 
     public QueryEntryFactory(boolean optimizeQueries) {
         useCache = optimizeQueries;
     }
-
 
     public QueryableEntry newEntry(SerializationService serializationService, Data key, Object value, Extractors extractors) {
         if (useCache) {

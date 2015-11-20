@@ -116,5 +116,4 @@ public class AbstractExtractionSpecification extends HazelcastTestSupport {
         }
         return combinations;
     }
-
 }

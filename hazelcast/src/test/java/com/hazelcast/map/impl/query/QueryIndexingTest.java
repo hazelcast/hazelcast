@@ -15,6 +15,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,97 +37,68 @@ public class QueryIndexingTest extends HazelcastTestSupport {
 
     private int count = 2000;
     private Map<Integer, Employee> employees;
-    private Config conf;
 
     private TestHazelcastInstanceFactory nodeFactory;
     private HazelcastInstance h1;
     private HazelcastInstance h2;
 
-    private EntryObject e;
     private Predicate predicate;
 
     @Before
-    public void waitForCluster() {
+    public void setUp() {
         employees = newEmployees(count);
-        conf = newConfig(employees);
 
         nodeFactory = createHazelcastInstanceFactory(2);
-        h1 = nodeFactory.newHazelcastInstance(conf);
-        h2 = nodeFactory.newHazelcastInstance(conf);
+        Config config = newConfig();
+        h1 = nodeFactory.newHazelcastInstance(config);
+        h2 = nodeFactory.newHazelcastInstance(config);
 
-        e = new PredicateBuilder().getEntryObject();
-        predicate = e.get("name").equal(null).and(e.get("city").isNull());
+        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        predicate = entryObject.get("name").equal(null).and(entryObject.get("city").isNull());
 
         assertClusterSizeEventually(2, h1);
     }
 
-    @Test
-    public void testResultsHaveNullFields_whenPredicateTestsForNull() throws Exception {
+    @After
+    public void tearDown() {
+        nodeFactory.shutdownAll();
+    }
 
-        IMap<Integer, Employee> imap1 = h1.getMap("employees");
-        imap1.putAll(employees);
+    @Test
+    public void testResultsHaveNullFields_whenPredicateTestsForNull() {
+        IMap<Integer, Employee> map = h1.getMap("employees");
+        map.putAll(employees);
         waitAllForSafeState();
 
         Collection<Employee> matchingEntries = runQueryNTimes(3, h2.<String, Employee>getMap("employees"));
 
-        assertEquals(count/2, matchingEntries.size());
+        assertEquals(count / 2, matchingEntries.size());
         // N queries result in getters called N times
         assertGettersCalledNTimes(matchingEntries, 3);
         assertFieldsAreNull(matchingEntries);
     }
 
     @Test
-    public void testResultsHaveNullFields_whenUsingIndexes()  throws Exception  {
+    public void testResultsHaveNullFields_whenUsingIndexes() {
+        IMap<Integer, Employee> map = h1.getMap("employees");
 
-        IMap<Integer, Employee> imap1 = h1.getMap("employees");
+        map.addIndex("name", false);
+        map.addIndex("city", true);
 
-        imap1.addIndex("name", false);
-        imap1.addIndex("city", true);
-
-        imap1.putAll(employees);
+        map.putAll(employees);
         waitAllForSafeState();
 
         Collection<Employee> matchingEntries = runQueryNTimes(3, h2.<String, Employee>getMap("employees"));
-        assertEquals(count/2, matchingEntries.size());
+        assertEquals(count / 2, matchingEntries.size());
 
         assertFieldsAreNull(matchingEntries);
-    }
-
-    private Collection<Employee> runQueryNTimes(int nTimes, IMap<String, Employee> imap2) {
-        Collection<Employee> result = emptyList();
-        for(int i = 0; i < nTimes; i++) {
-            result = imap2.values(predicate);
-        }
-        return result;
-    }
-
-    private static void assertGettersCalledNTimes(Collection<Employee> matchingEmployees, int n) {
-        for(Employee employee : matchingEmployees) {
-            verify(employee, times(n)).getCity();
-            verify(employee, times(n)).getName();
-        }
-    }
-
-    private static void assertFieldsAreNull(Collection<Employee> matchingEmployees) {
-        for(Employee employee : matchingEmployees) {
-            assertNull("city", employee.getCity());
-            assertNull("name", employee.getName());
-        }
-    }
-
-    private static Config newConfig(final Map<Integer, Employee> employees) {
-        Config conf = new Config();
-        conf.getMapConfig("employees").setInMemoryFormat(InMemoryFormat.OBJECT).setBackupCount(0);
-        // disabling replication since we don't use backups in this test
-        conf.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS, "0");
-        return conf;
     }
 
     private static Map<Integer, Employee> newEmployees(int employeeCount) {
         Map<Integer, Employee> employees = new HashMap<Integer, Employee>();
         for (int i = 0; i < employeeCount; i++) {
             Employee val;
-            if(i % 2 == 0) {
+            if (i % 2 == 0) {
                 val = new Employee(i, null, null, 0, true, i);
             } else {
                 val = new Employee(i, "name" + i, "city" + i, 0, true, i);
@@ -135,5 +107,35 @@ public class QueryIndexingTest extends HazelcastTestSupport {
             employees.put(i, spy);
         }
         return employees;
+    }
+
+    private static Config newConfig() {
+        Config conf = new Config();
+        conf.getMapConfig("employees").setInMemoryFormat(InMemoryFormat.OBJECT).setBackupCount(0);
+        // disabling replication since we don't use backups in this test
+        conf.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS, "0");
+        return conf;
+    }
+
+    private Collection<Employee> runQueryNTimes(int queryCount, IMap<String, Employee> map) {
+        Collection<Employee> result = emptyList();
+        for (int i = 0; i < queryCount; i++) {
+            result = map.values(predicate);
+        }
+        return result;
+    }
+
+    private static void assertGettersCalledNTimes(Collection<Employee> matchingEmployees, int expectedCalls) {
+        for (Employee employee : matchingEmployees) {
+            verify(employee, times(expectedCalls)).getCity();
+            verify(employee, times(expectedCalls)).getName();
+        }
+    }
+
+    private static void assertFieldsAreNull(Collection<Employee> matchingEmployees) {
+        for (Employee employee : matchingEmployees) {
+            assertNull("city", employee.getCity());
+            assertNull("name", employee.getName());
+        }
     }
 }

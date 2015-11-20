@@ -175,5 +175,4 @@ public class CollectionAllPredicatesReflectionTest extends AbstractExtractionTes
                 asList(ARRAY, LIST)
         );
     }
-
 }

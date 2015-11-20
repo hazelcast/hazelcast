@@ -84,7 +84,6 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         assertNull(map.get(1));
     }
 
-
     @Test(timeout = 1000 * 60)
     public void putAndQuery_whenMultipleMappingFound_thenDoNotReturnDuplicatedEntry() {
         HazelcastInstance instance = createHazelcastInstance();
@@ -131,12 +130,15 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
     static class Nail implements Serializable {
         String colour;
+
         private Nail(String colour) {
             this.colour = colour;
         }
     }
 
+    @SuppressWarnings("unused")
     public static class Trade implements Serializable {
+
         private String currency;
         private Long amount;
 
@@ -186,7 +188,9 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         assertThat(result, hasSize(1));
     }
 
+    @SuppressWarnings("unused")
     static class SillySequence implements DataSerializable {
+
         int count;
         Collection<Integer> payloadField;
 
@@ -224,5 +228,4 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
             payloadField = in.readObject();
         }
     }
-
 }
