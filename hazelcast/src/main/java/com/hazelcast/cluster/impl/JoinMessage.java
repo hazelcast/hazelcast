@@ -35,17 +35,18 @@ public class JoinMessage implements DataSerializable {
     protected boolean liteMember;
     protected ConfigCheck configCheck;
     protected Collection<Address> memberAddresses;
+    protected int dataMemberCount;
 
     public JoinMessage() {
     }
 
     public JoinMessage(byte packetVersion, int buildNumber, Address address,
                        String uuid, boolean liteMember, ConfigCheck configCheck) {
-        this(packetVersion, buildNumber, address, uuid, liteMember, configCheck, Collections.<Address>emptySet());
+        this(packetVersion, buildNumber, address, uuid, liteMember, configCheck, Collections.<Address>emptySet(), 0);
     }
 
-    public JoinMessage(byte packetVersion, int buildNumber, Address address,
-                       String uuid, boolean liteMember, ConfigCheck configCheck, Collection<Address> memberAddresses) {
+    public JoinMessage(byte packetVersion, int buildNumber, Address address, String uuid, boolean liteMember,
+                       ConfigCheck configCheck, Collection<Address> memberAddresses, int dataMemberCount) {
         this.packetVersion = packetVersion;
         this.buildNumber = buildNumber;
         this.address = address;
@@ -53,6 +54,7 @@ public class JoinMessage implements DataSerializable {
         this.liteMember = liteMember;
         this.configCheck = configCheck;
         this.memberAddresses = memberAddresses;
+        this.dataMemberCount = dataMemberCount;
     }
 
     public byte getPacketVersion() {
@@ -87,6 +89,10 @@ public class JoinMessage implements DataSerializable {
         return memberAddresses != null ? memberAddresses : Collections.<Address>emptySet();
     }
 
+    public int getDataMemberCount() {
+        return dataMemberCount;
+    }
+
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         packetVersion = in.readByte();
@@ -105,6 +111,7 @@ public class JoinMessage implements DataSerializable {
             member.readData(in);
             memberAddresses.add(member);
         }
+        dataMemberCount = in.readInt();
     }
 
     @Override
@@ -123,6 +130,7 @@ public class JoinMessage implements DataSerializable {
                 member.writeData(out);
             }
         }
+        out.writeInt(dataMemberCount);
     }
 
     @Override
@@ -134,6 +142,7 @@ public class JoinMessage implements DataSerializable {
                 + ", uuid='" + uuid + '\''
                 + ", liteMember=" + liteMember
                 + ", memberCount=" + getMemberCount()
+                + ", dataMemberCount=" + dataMemberCount
                 + '}';
     }
 

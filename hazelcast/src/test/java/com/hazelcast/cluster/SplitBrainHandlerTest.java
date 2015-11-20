@@ -34,6 +34,7 @@ import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.tcp.FirewallingTcpIpConnectionManager;
@@ -41,24 +42,24 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.util.Clock;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.io.IOException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstance;
 import static org.junit.Assert.assertEquals;
@@ -217,10 +218,10 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     }
 
     private void testMergeAfterSplitBrain(boolean multicast) throws InterruptedException {
+        String groupName = generateRandomString(10);
         Config config = new Config();
         config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "5");
         config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
-        String groupName = generateRandomString(10);
         config.getGroupConfig().setName(groupName);
 
         NetworkConfig networkConfig = config.getNetworkConfig();
@@ -250,13 +251,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         });
 
         final CountDownLatch mergeLatch = new CountDownLatch(1);
-        h3.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleState.MERGED) {
-                    mergeLatch.countDown();
-                }
-            }
-        });
+        h3.getLifecycleService().addLifecycleListener(new MergedEventLifeCycleListener(mergeLatch));
 
         closeConnectionBetween(h1, h3);
         closeConnectionBetween(h2, h3);
@@ -291,21 +286,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
 
         final CountDownLatch latch = new CountDownLatch(2);
-        c3.addListenerConfig(new ListenerConfig(new LifecycleListener() {
-            public void stateChanged(final LifecycleEvent event) {
-                if (event.getState() == LifecycleState.MERGED) {
-                    latch.countDown();
-                }
-            }
-        }));
+        c3.addListenerConfig(new ListenerConfig(new MergedEventLifeCycleListener(latch)));
 
-        c4.addListenerConfig(new ListenerConfig(new LifecycleListener() {
-            public void stateChanged(final LifecycleEvent event) {
-                if (event.getState() == LifecycleState.MERGED) {
-                    latch.countDown();
-                }
-            }
-        }));
+        c4.addListenerConfig(new ListenerConfig(new MergedEventLifeCycleListener(latch)));
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
@@ -482,15 +465,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         hz3.getCluster().addMembershipListener(membershipAdapter);
 
         final CountDownLatch mergeLatch = new CountDownLatch(1);
-        LifecycleListener lifecycleListener = new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleState.MERGED) {
-                    mergeLatch.countDown();
-                }
-            }
-        };
-        hz1.getLifecycleService().addLifecycleListener(lifecycleListener);
+        hz1.getLifecycleService().addLifecycleListener(new MergedEventLifeCycleListener(mergeLatch));
 
         FirewallingTcpIpConnectionManager cm1 = getFireWalledConnectionManager(hz1);
         FirewallingTcpIpConnectionManager cm2 = getFireWalledConnectionManager(hz2);
@@ -525,6 +500,109 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         assertEquals(n2.getThisAddress(), n1.getMasterAddress());
         assertEquals(n2.getThisAddress(), n2.getMasterAddress());
         assertEquals(n2.getThisAddress(), n3.getMasterAddress());
+    }
+
+    @Test
+    public void testClusterMerge_ignoresLiteMembers() {
+        String groupName = generateRandomString(10);
+
+        HazelcastInstance lite1 = newHazelcastInstance(buildConfig(groupName, true), "lite1", new FirewallingNodeContext());
+        HazelcastInstance lite2 = newHazelcastInstance(buildConfig(groupName, true), "lite2", new FirewallingNodeContext());
+        HazelcastInstance data1 = newHazelcastInstance(buildConfig(groupName, false), "data1", new FirewallingNodeContext());
+        HazelcastInstance data2 = newHazelcastInstance(buildConfig(groupName, false), "data2", new FirewallingNodeContext());
+        HazelcastInstance data3 = newHazelcastInstance(buildConfig(groupName, false), "data3", new FirewallingNodeContext());
+
+        final CountDownLatch splitLatch = new CountDownLatch(6);
+        data2.getCluster().addMembershipListener(new MemberRemovedMembershipListener(splitLatch));
+        data3.getCluster().addMembershipListener(new MemberRemovedMembershipListener(splitLatch));
+
+        final CountDownLatch mergeLatch = new CountDownLatch(3);
+        lite1.getLifecycleService().addLifecycleListener(new MergedEventLifeCycleListener(mergeLatch));
+        lite2.getLifecycleService().addLifecycleListener(new MergedEventLifeCycleListener(mergeLatch));
+        data1.getLifecycleService().addLifecycleListener(new MergedEventLifeCycleListener(mergeLatch));
+
+        block(lite1, data2);
+        block(lite2, data2);
+        block(data1, data2);
+
+        block(lite1, data3);
+        block(lite2, data3);
+        block(data1, data3);
+
+        disconnect(data2, lite1);
+        disconnect(data2, lite2);
+        disconnect(data2, data1);
+
+        disconnect(data3, lite1);
+        disconnect(data3, lite2);
+        disconnect(data3, data1);
+
+        disconnect(lite1, data2);
+        disconnect(lite2, data2);
+        disconnect(data1, data2);
+
+        disconnect(lite1, data3);
+        disconnect(lite2, data3);
+        disconnect(data1, data3);
+
+        assertOpenEventually(splitLatch, 10);
+
+        assertClusterSize(3, lite1);
+        assertClusterSize(3, lite2);
+        assertClusterSize(3, data1);
+        assertClusterSize(2, data2);
+        assertClusterSize(2, data3);
+
+        data1.getMap("default").put(1, "cluster1");
+        data3.getMap("default").put(1, "cluster2");
+
+        unblock(lite1, data2);
+        unblock(lite2, data2);
+        unblock(data1, data2);
+
+        unblock(lite1, data3);
+        unblock(lite2, data3);
+        unblock(data1, data3);
+
+        assertOpenEventually(mergeLatch, 120);
+        assertClusterSize(5, lite1);
+        assertClusterSize(5, lite2);
+        assertClusterSize(5, data1);
+        assertClusterSize(5, data2);
+        assertClusterSize(5, data3);
+
+        assertEquals("cluster1", lite1.getMap("default").get(1));
+    }
+
+    private void block(final HazelcastInstance source, final HazelcastInstance target) {
+        getFireWalledConnectionManager(source).block(getNode(target).address);
+        getFireWalledConnectionManager(target).block(getNode(source).address);
+    }
+
+    private void unblock(final HazelcastInstance source, final HazelcastInstance target) {
+        getFireWalledConnectionManager(source).unblock(getNode(target).address);
+        getFireWalledConnectionManager(target).unblock(getNode(source).address);
+    }
+
+    private void disconnect(final HazelcastInstance source, final HazelcastInstance target) {
+        getNode(source).clusterService.removeAddress(getNode(target).address);
+    }
+
+
+    private Config buildConfig(final String groupName, final boolean liteMember) {
+        Config config = new Config();
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "5");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config.getGroupConfig().setName(groupName);
+        config.setLiteMember(liteMember);
+
+        NetworkConfig networkConfig = config.getNetworkConfig();
+        JoinConfig join = networkConfig.getJoin();
+        join.getMulticastConfig().setEnabled(true);
+
+        config.getMapConfig("default").setMergePolicy(PassThroughMergePolicy.class.getName());
+
+        return config;
     }
 
     @Test
@@ -565,15 +643,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         hz2.getCluster().addMembershipListener(membershipAdapter);
 
         final CountDownLatch mergeLatch = new CountDownLatch(1);
-        LifecycleListener lifecycleListener = new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleState.MERGED) {
-                    mergeLatch.countDown();
-                }
-            }
-        };
-        hz3.getLifecycleService().addLifecycleListener(lifecycleListener);
+        hz3.getLifecycleService().addLifecycleListener(new MergedEventLifeCycleListener(mergeLatch));
 
         FirewallingTcpIpConnectionManager cm1 = getFireWalledConnectionManager(hz1);
         FirewallingTcpIpConnectionManager cm2 = getFireWalledConnectionManager(hz2);
@@ -714,5 +784,44 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
     private static FirewallingTcpIpConnectionManager getFireWalledConnectionManager(HazelcastInstance hz) {
         return (FirewallingTcpIpConnectionManager) getConnectionManager(hz);
+    }
+
+    private static class MergedEventLifeCycleListener
+            implements LifecycleListener {
+
+        private final CountDownLatch mergeLatch;
+
+        public MergedEventLifeCycleListener(CountDownLatch mergeLatch) {
+            this.mergeLatch = mergeLatch;
+        }
+
+        public void stateChanged(LifecycleEvent event) {
+            if (event.getState() == LifecycleState.MERGED) {
+                mergeLatch.countDown();
+            }
+        }
+
+    }
+
+    private static class MemberRemovedMembershipListener
+            implements MembershipListener {
+        private final CountDownLatch splitLatch;
+
+        public MemberRemovedMembershipListener(CountDownLatch splitLatch) {
+            this.splitLatch = splitLatch;
+        }
+
+        @Override
+        public void memberAdded(MembershipEvent membershipEvent) {
+        }
+
+        @Override
+        public void memberRemoved(MembershipEvent membershipEvent) {
+            splitLatch.countDown();
+        }
+
+        @Override
+        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+        }
     }
 }
