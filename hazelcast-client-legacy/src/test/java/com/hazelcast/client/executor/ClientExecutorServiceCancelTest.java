@@ -17,7 +17,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -31,6 +30,7 @@ import static org.junit.Assert.assertTrue;
  * This test is failing because of order problem between actual invoke and cancel.
  * For random and partition, the reason of broken order is also unknown to me (@sancar )
  * For submit to member, it is because we do not have order guarantee in the first place.
+ * and when there is partition movement, we can not is partition id since tasks will not move with partitions
  */
 public class ClientExecutorServiceCancelTest extends HazelcastTestSupport {
 
