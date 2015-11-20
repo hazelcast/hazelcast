@@ -18,6 +18,8 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.client.CacheBatchInvalidationMessage;
 import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
@@ -68,6 +70,14 @@ class CacheEventHandler {
                                          invalidationMessageBatchFreq,
                                           TimeUnit.SECONDS);
         }
+        nodeEngine.getHazelcastInstance().getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
+                    invalidateAllCaches();
+                }
+            }
+        });
     }
 
     void publishEvent(CacheEventContext cacheEventContext) {
@@ -179,7 +189,7 @@ class CacheEventHandler {
 
     private void flushInvalidationMessages(String cacheName, InvalidationEventQueue invalidationMessageQueue) {
         // If still in progress, no need to another attempt. So just ignore.
-        if (invalidationMessageQueue.flushingInProgress.compareAndSet(false, true)) {
+        if (invalidationMessageQueue.tryAcquire()) {
             try {
                 CacheBatchInvalidationMessage batchInvalidationMessage =
                         new CacheBatchInvalidationMessage(cacheName, invalidationMessageQueue.size());
@@ -202,8 +212,15 @@ class CacheEventHandler {
                                               batchInvalidationMessage, cacheName.hashCode());
                 }
             } finally {
-                invalidationMessageQueue.flushingInProgress.set(false);
+                invalidationMessageQueue.release();
             }
+        }
+    }
+
+    private void invalidateAllCaches() {
+        for (Map.Entry<String, InvalidationEventQueue> entry : invalidationMessageMap.entrySet()) {
+            String cacheName = entry.getKey();
+            sendInvalidationEvent(cacheName, null, null);
         }
     }
 
@@ -211,8 +228,9 @@ class CacheEventHandler {
 
         @Override
         public void run() {
+            Thread currentThread = Thread.currentThread();
             for (Map.Entry<String, InvalidationEventQueue> entry : invalidationMessageMap.entrySet()) {
-                if (Thread.currentThread().isInterrupted()) {
+                if (currentThread.isInterrupted()) {
                     break;
                 }
                 String cacheName = entry.getKey();
@@ -229,6 +247,14 @@ class CacheEventHandler {
 
         private final AtomicInteger elementCount = new AtomicInteger(0);
         private final AtomicBoolean flushingInProgress = new AtomicBoolean(false);
+
+        private boolean tryAcquire() {
+            return flushingInProgress.compareAndSet(false, true);
+        }
+
+        private void release() {
+            flushingInProgress.set(false);
+        }
 
         @Override
         public int size() {

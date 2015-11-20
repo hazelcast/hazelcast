@@ -100,12 +100,14 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final EvictionChecker evictionChecker;
     protected final EvictionStrategy<Data, R, CRM> evictionStrategy;
     protected final boolean wanReplicationEnabled;
+    protected final boolean isOwner;
 
     //CHECKSTYLE:OFF
     public AbstractCacheRecordStore(final String name, final int partitionId, final NodeEngine nodeEngine,
                                     final AbstractCacheService cacheService) {
         this.name = name;
         this.partitionId = partitionId;
+        this.isOwner = nodeEngine.getPartitionService().isPartitionOwner(partitionId);
         this.nodeEngine = nodeEngine;
         this.partitionService = nodeEngine.getPartitionService();
         this.partitionCount = partitionService.getPartitionCount();
@@ -219,7 +221,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected boolean isInvalidationEnabled() {
-        return cacheContext.getInvalidationListenerCount() > 0;
+        return isOwner && cacheContext.getInvalidationListenerCount() > 0;
     }
 
     @Override
