@@ -46,6 +46,9 @@ public class CachePutBackupOperation
 
     public CachePutBackupOperation(String name, Data key, CacheRecord cacheRecord) {
         super(name, key);
+        if (cacheRecord == null) {
+            throw new IllegalArgumentException("Cache record of backup operation cannot be null!");
+        }
         this.cacheRecord = cacheRecord;
     }
 
