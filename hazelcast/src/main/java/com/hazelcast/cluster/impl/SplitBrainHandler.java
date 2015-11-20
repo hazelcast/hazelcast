@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.instance.Node;
 
@@ -63,7 +64,9 @@ final class SplitBrainHandler implements Runnable {
             return false;
         }
 
-        return true;
+        final ClusterState clusterState = node.clusterService.getClusterState();
+        return clusterState == ClusterState.ACTIVE;
+
     }
 
     private void searchForOtherClusters() {
