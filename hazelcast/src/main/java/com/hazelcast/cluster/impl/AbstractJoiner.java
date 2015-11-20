@@ -44,6 +44,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
 public abstract class AbstractJoiner implements Joiner {
@@ -210,22 +211,24 @@ public abstract class AbstractJoiner implements Joiner {
                 }
             }
 
-            int currentMemberCount = clusterService.getSize();
-            if (joinMessage.getMemberCount() > currentMemberCount) {
+            int targetDataMemberCount = joinMessage.getDataMemberCount();
+            int currentDataMemberCount = clusterService.getSize(DATA_MEMBER_SELECTOR);
+            
+            if (targetDataMemberCount > currentDataMemberCount) {
                 // I should join the other cluster
                 logger.info(node.getThisAddress() + " is merging to " + joinMessage.getAddress()
-                        + ", because : joinMessage.getMemberCount() > currentMemberCount ["
-                        + (joinMessage.getMemberCount() + " > " + currentMemberCount) + ']');
+                        + ", because : joinMessage.getDataMemberCount() > currentDataMemberCount ["
+                        + (targetDataMemberCount + " > " + currentDataMemberCount) + ']');
                 if (logger.isFinestEnabled()) {
                     logger.finest(joinMessage.toString());
                 }
                 return true;
-            } else if (joinMessage.getMemberCount() == currentMemberCount) {
+            } else if (targetDataMemberCount == currentDataMemberCount) {
                 // compare the hashes
                 if (node.getThisAddress().hashCode() > joinMessage.getAddress().hashCode()) {
                     logger.info(node.getThisAddress() + " is merging to " + joinMessage.getAddress()
                             + ", because : node.getThisAddress().hashCode() > joinMessage.address.hashCode() "
-                            + ", this node member count: " + currentMemberCount);
+                            + ", this node member count: " + currentDataMemberCount);
                     if (logger.isFinestEnabled()) {
                         logger.finest(joinMessage.toString());
                     }
@@ -233,12 +236,12 @@ public abstract class AbstractJoiner implements Joiner {
                 } else {
                     logger.info(joinMessage.getAddress() + " should merge to this node "
                             + ", because : node.getThisAddress().hashCode() < joinMessage.address.hashCode() "
-                            + ", this node member count: " + currentMemberCount);
+                            + ", this node data member count: " + currentDataMemberCount);
                 }
             } else {
                 logger.info(joinMessage.getAddress() + " should merge to this node "
-                        + ", because : currentMemberCount > joinMessage.getMemberCount() ["
-                        + (currentMemberCount + " > " + joinMessage.getMemberCount()) + ']');
+                        + ", because : currentDataMemberCount > joinMessage.getDataMemberCount() ["
+                        + (currentDataMemberCount + " > " + targetDataMemberCount) + ']');
             }
         } catch (Throwable e) {
             logger.severe(e);

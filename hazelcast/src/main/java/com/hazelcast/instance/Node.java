@@ -27,6 +27,7 @@ import com.hazelcast.cluster.impl.JoinRequest;
 import com.hazelcast.cluster.impl.MulticastJoiner;
 import com.hazelcast.cluster.impl.MulticastService;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.JoinConfig;
@@ -536,7 +537,8 @@ public class Node {
 
     public JoinMessage createSplitBrainJoinMessage() {
         return new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), address, localMember.getUuid(),
-                localMember.isLiteMember(), createConfigCheck(), clusterService.getMemberAddresses());
+                localMember.isLiteMember(), createConfigCheck(), clusterService.getMemberAddresses(),
+                clusterService.getSize(MemberSelectors.DATA_MEMBER_SELECTOR));
     }
 
     public JoinRequest createJoinRequest(boolean withCredentials) {
