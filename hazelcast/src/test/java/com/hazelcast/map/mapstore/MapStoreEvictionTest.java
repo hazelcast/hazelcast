@@ -40,7 +40,12 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() throws Exception {
-        loader = new CountingMapLoader(MAP_STORE_ENTRY_COUNT);
+        loader = new CountingMapLoader(MAP_STORE_ENTRY_COUNT) {
+            @Override
+            public Integer load(Integer key) {
+                return key;
+            }
+        };
         nodeFactory = createHazelcastInstanceFactory(NODE_COUNT);
     }
 
@@ -78,6 +83,34 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 2 * MINUTE)
+    public void testLoadsLessThanMaxSize_AfterContainsKey_whenEvictionEnabled() throws Exception {
+        final String mapName = randomMapName();
+        Config cfg = newConfig(mapName, true, EAGER);
+
+        IMap<Object, Object> map = getMap(mapName, cfg);
+
+        for (int i = 0; i < MAP_STORE_ENTRY_COUNT; i++) {
+            map.containsKey(i);
+        }
+
+        assertTrue(MAX_SIZE_PER_CLUSTER >= map.size());
+    }
+
+    @Test(timeout = 2 * MINUTE)
+    public void testLoadsLessThanMaxSize_AfterGet_whenEvictionEnabled() throws Exception {
+        final String mapName = randomMapName();
+        Config cfg = newConfig(mapName, true, EAGER);
+
+        IMap<Object, Object> map = getMap(mapName, cfg);
+
+        for (int i = 0; i < MAP_STORE_ENTRY_COUNT; i++) {
+            map.get(i);
+        }
+
+        assertTrue(MAX_SIZE_PER_CLUSTER >= map.size());
+    }
+
+    @Test(timeout = 2 * MINUTE)
     public void testLoadsLessThanMaxSize_whenEvictionEnabledAndReloaded() throws Exception {
         final String mapName = randomMapName();
         Config cfg = newConfig(mapName, true, EAGER);
@@ -100,7 +133,6 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setImplementation(loader)
-                .setImplementation(loader)
                 .setInitialLoadMode(loadMode);
 
         MapConfig mapConfig = cfg.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
@@ -109,6 +141,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
             MaxSizeConfig maxSizeConfig = new MaxSizeConfig(MAX_SIZE_PER_NODE, MaxSizeConfig.MaxSizePolicy.PER_NODE);
             mapConfig.setMaxSizeConfig(maxSizeConfig);
             mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
+            mapConfig.setMinEvictionCheckMillis(0);
         }
 
         return cfg;

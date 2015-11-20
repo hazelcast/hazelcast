@@ -32,6 +32,7 @@ import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 
@@ -278,7 +279,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
                 return true;
             }
         }
-        postReadCleanUp(now, false);
         return false;
     }
 
@@ -377,6 +377,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         if (value != null) {
             record = createRecord(key, value, getNow());
             records.put(key, record);
+            evictEntries(Clock.currentTimeMillis(), false);
             if (!backup) {
                 saveIndex(record);
             }
@@ -648,7 +649,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         Object value = record == null ? null : record.getValue();
         value = mapServiceContext.interceptGet(name, value);
 
-        postReadCleanUp(now, false);
         return value;
     }
 
@@ -738,19 +738,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
         Record record = getRecordOrNull(key, now, false);
         if (record == null) {
-            Object value = mapDataStore.load(key);
-            if (value != null) {
-                record = createRecord(key, value, now);
-                records.put(key, record);
-                updateSizeEstimator(calculateRecordHeapCost(record));
-            }
+            record = loadRecordOrNull(key, false);
         }
         boolean contains = record != null;
         if (contains) {
             accessRecord(record, now);
         }
-
-        postReadCleanUp(now, false);
         return contains;
     }
 
