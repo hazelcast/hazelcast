@@ -137,7 +137,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(String[].class, new StringArraySerializer());
     }
 
-    public void registerJavaTypeSerializers() {
+    protected void registerJavaTypeSerializers() {
         //Java extensions: more serializers
         registerConstant(Date.class, new DateSerializer());
         registerConstant(BigInteger.class, new BigIntegerSerializer());
