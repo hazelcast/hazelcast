@@ -48,37 +48,22 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
  */
 abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
-    /**
-     * Number of reads before clean up.
-     * A nice number such as 2^n - 1.
-     */
-    private static final int POST_READ_CHECK_POINT = 63;
-
+    private final long expiryDelayMillis;
+    private final Evictor evictor;
     /**
      * Iterates over a pre-set entry count/percentage in one round.
      * Used in expiration logic for traversing entries. Initializes lazily.
      */
     private Iterator<Record> expirationIterator;
-
-    /**
-     * If there is no clean-up caused by puts after some time,
-     * count a number of gets and start eviction.
-     */
-    private int readCountBeforeCleanUp;
-
     /**
      * used in LRU eviction logic.
      */
     private long lruAccessSequenceNumber;
-
     /**
      * Last run time of cleanup operation.
      */
     private long lastEvictionTime;
-
     private volatile boolean hasEntryWithCustomTTL;
-    private final long expiryDelayMillis;
-    private final Evictor evictor;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
@@ -189,22 +174,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     /**
-     * If there is no clean-up caused by puts after some time,
-     * try to clean-up from gets.
-     *
-     * @param now now.
-     */
-    protected void postReadCleanUp(long now) {
-        if (isEvictionEnabled()) {
-            readCountBeforeCleanUp++;
-            if ((readCountBeforeCleanUp & POST_READ_CHECK_POINT) == 0) {
-                cleanUp(now);
-            }
-        }
-
-    }
-
-    /**
      * Makes eviction clean-up logic.
      *
      * @param now now in millis.
@@ -216,7 +185,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (shouldEvict(now)) {
             evict();
             lastEvictionTime = now;
-            readCountBeforeCleanUp = 0;
         }
     }
 
