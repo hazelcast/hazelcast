@@ -104,7 +104,6 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
 
     private static final ILogger LOGGER = Logger.getLogger(XmlConfigBuilder.class);
 
-    private static final int DEFAULT_VALUE = 5;
     private static final int THOUSAND_FACTOR = 5;
 
     private Config config;

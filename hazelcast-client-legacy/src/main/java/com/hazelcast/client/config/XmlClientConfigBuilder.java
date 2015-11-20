@@ -77,7 +77,6 @@ import static com.hazelcast.util.StringUtil.upperCaseInternal;
  */
 public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
-    private static final int DEFAULT_VALUE = 5;
     private static final ILogger LOGGER = Logger.getLogger(XmlClientConfigBuilder.class);
 
     private Properties properties = System.getProperties();
