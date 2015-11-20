@@ -72,8 +72,8 @@ final class ExtractorHelper {
 
     @Nullable
     static String extractArgumentsFromAttributeName(String attributeNameWithArguments) {
-        int start = attributeNameWithArguments.lastIndexOf("[");
-        int end = attributeNameWithArguments.lastIndexOf("]");
+        int start = attributeNameWithArguments.lastIndexOf('[');
+        int end = attributeNameWithArguments.lastIndexOf(']');
         if (EXTRACTOR_ARGS_PATTERN.matcher(attributeNameWithArguments).matches()) {
             return attributeNameWithArguments.substring(start + 1, end);
         } else if (start < 0 && end < 0) {
