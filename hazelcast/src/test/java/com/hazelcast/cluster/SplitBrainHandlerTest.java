@@ -61,6 +61,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.cluster.ClusterState.FROZEN;
+import static com.hazelcast.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -572,6 +574,80 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         assertClusterSize(5, data3);
 
         assertEquals("cluster1", lite1.getMap("default").get(1));
+    }
+
+    @Test
+    public void testClustersShouldNotMergeWhenBiggerClusterIsNotActive() {
+        String groupName = generateRandomString(10);
+
+        HazelcastInstance hz1 = newHazelcastInstance(buildConfig(groupName, false), "hz1", new FirewallingNodeContext());
+        HazelcastInstance hz2 = newHazelcastInstance(buildConfig(groupName, false), "hz2", new FirewallingNodeContext());
+        HazelcastInstance hz3 = newHazelcastInstance(buildConfig(groupName, false), "hz3", new FirewallingNodeContext());
+
+        final CountDownLatch splitLatch = new CountDownLatch(2);
+        hz3.getCluster().addMembershipListener(new MemberRemovedMembershipListener(splitLatch));
+
+        block(hz1, hz3);
+        block(hz2, hz3);
+
+        disconnect(hz3, hz1);
+        disconnect(hz3, hz2);
+
+        disconnect(hz1, hz3);
+        disconnect(hz2, hz3);
+
+        assertOpenEventually(splitLatch, 10);
+
+        assertClusterSize(2, hz1);
+        assertClusterSize(2, hz2);
+        assertClusterSize(1, hz3);
+
+        changeClusterStateEventually(hz1, FROZEN);
+
+        unblock(hz1, hz3);
+        unblock(hz2, hz3);
+
+        sleepAtLeastSeconds(10);
+        assertClusterSize(2, hz1);
+        assertClusterSize(2, hz2);
+        assertClusterSize(1, hz3);
+    }
+
+    @Test
+    public void testClustersShouldNotMergeWhenSmallerClusterIsNotActive() {
+        String groupName = generateRandomString(10);
+
+        HazelcastInstance hz1 = newHazelcastInstance(buildConfig(groupName, false), "hz1", new FirewallingNodeContext());
+        HazelcastInstance hz2 = newHazelcastInstance(buildConfig(groupName, false), "hz2", new FirewallingNodeContext());
+        HazelcastInstance hz3 = newHazelcastInstance(buildConfig(groupName, false), "hz3", new FirewallingNodeContext());
+
+        final CountDownLatch splitLatch = new CountDownLatch(2);
+        hz3.getCluster().addMembershipListener(new MemberRemovedMembershipListener(splitLatch));
+
+        block(hz1, hz3);
+        block(hz2, hz3);
+
+        disconnect(hz3, hz1);
+        disconnect(hz3, hz2);
+
+        disconnect(hz1, hz3);
+        disconnect(hz2, hz3);
+
+        assertOpenEventually(splitLatch, 10);
+
+        assertClusterSize(2, hz1);
+        assertClusterSize(2, hz2);
+        assertClusterSize(1, hz3);
+
+        changeClusterStateEventually(hz3, FROZEN);
+
+        unblock(hz1, hz3);
+        unblock(hz2, hz3);
+
+        sleepAtLeastSeconds(10);
+        assertClusterSize(2, hz1);
+        assertClusterSize(2, hz2);
+        assertClusterSize(1, hz3);
     }
 
     private void block(final HazelcastInstance source, final HazelcastInstance target) {

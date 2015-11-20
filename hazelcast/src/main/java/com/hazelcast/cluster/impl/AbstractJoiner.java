@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.operations.JoinCheckOperation;
@@ -192,6 +193,15 @@ public abstract class AbstractJoiner implements Joiner {
                 return false;
             }
 
+            final ClusterState clusterState = clusterService.getClusterState();
+            if (clusterState != ClusterState.ACTIVE) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Should not merge to " + joinMessage.getAddress() + ", because this cluster is in "
+                            + clusterState + " state.");
+                }
+                return false;
+            }
+
             Collection<Address> targetMemberAddresses = joinMessage.getMemberAddresses();
             if (targetMemberAddresses.contains(node.getThisAddress())) {
                 node.nodeEngine.getOperationService()
@@ -313,6 +323,10 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     private boolean prepareClusterState(ClusterServiceImpl clusterService) {
+        if (!preCheckClusterState(clusterService)) {
+            return false;
+        }
+
         long until = Clock.currentTimeMillis() + mergeNextRunDelayMs;
         while (clusterService.getClusterState() == ClusterState.ACTIVE) {
             try {
@@ -339,6 +353,16 @@ public abstract class AbstractJoiner implements Joiner {
             }
         }
         return false;
+    }
+
+    private boolean preCheckClusterState(final ClusterService clusterService) {
+        final ClusterState initialState = clusterService.getClusterState();
+        if (initialState != ClusterState.ACTIVE) {
+            logger.warning("Could not prepare cluster state since it has been changed to " + initialState);
+            return false;
+        }
+
+        return true;
     }
 
     @Override
