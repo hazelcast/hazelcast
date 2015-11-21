@@ -100,7 +100,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         if (eventType == null) {
             return;
         }
-        invalidateNearCaches();
+        invalidateNearCache(dataKey);
         publishEntryEvent();
         publishWanReplicationEvent();
         evict();

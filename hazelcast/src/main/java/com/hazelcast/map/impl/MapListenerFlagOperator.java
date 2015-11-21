@@ -27,7 +27,7 @@ public final class MapListenerFlagOperator {
     /**
      * Sets all listener flags. Used to be notified for all events. No filtering.
      */
-    public static final int ALL_LISTENER_FLAGS = setAndGetAllListenerFlags();
+    public static final int SET_ALL_LISTENER_FLAGS = setAndGetAllListenerFlags();
 
     private MapListenerFlagOperator() {
     }

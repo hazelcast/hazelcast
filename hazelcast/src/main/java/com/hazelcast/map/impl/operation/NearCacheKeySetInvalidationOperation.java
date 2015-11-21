@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
@@ -25,19 +24,23 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
+
 import java.io.IOException;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class NearCacheKeySetInvalidationOperation extends AbstractOperation implements MutatingOperation {
     private MapService mapService;
-    private MapKeySet mapKeySet;
+    private List<Data> keys;
     private String mapName;
 
     public NearCacheKeySetInvalidationOperation() {
     }
 
-    public NearCacheKeySetInvalidationOperation(String mapName, Set<Data> keys) {
-        this.mapKeySet = new MapKeySet(keys);
+    public NearCacheKeySetInvalidationOperation(String mapName, List<Data> keys) {
+        this.keys = checkNotNull(keys);
         this.mapName = mapName;
     }
 
@@ -52,7 +55,7 @@ public class NearCacheKeySetInvalidationOperation extends AbstractOperation impl
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         if (mapServiceContext.getMapContainer(mapName).isNearCacheEnabled()) {
             NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-            nearCacheProvider.invalidateNearCache(mapName, mapKeySet.getKeySet());
+            nearCacheProvider.getNearCacheInvalidator().invalidateLocalNearCache(mapName, keys);
         } else {
             getLogger().warning("Cache clear operation has been accepted while near cache is not enabled for "
                     + mapName + " map. Possible configuration conflict among nodes.");
@@ -68,15 +71,23 @@ public class NearCacheKeySetInvalidationOperation extends AbstractOperation impl
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(mapName);
-        mapKeySet.writeData(out);
+        out.writeInt(keys.size());
+        for (Data key : keys) {
+            out.writeData(key);
+        }
     }
 
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         mapName = in.readUTF();
-        mapKeySet = new MapKeySet();
-        mapKeySet.readData(in);
+        int size = in.readInt();
+        List<Data> keys = new ArrayList<Data>(size);
+        for (int i = 0; i < size; i++) {
+            Data key = in.readData();
+            keys.add(key);
+        }
+        this.keys = keys;
     }
 
     @Override

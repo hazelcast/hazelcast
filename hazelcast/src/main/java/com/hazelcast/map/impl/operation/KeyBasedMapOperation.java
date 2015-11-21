@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -106,17 +105,6 @@ public abstract class KeyBasedMapOperation extends MapOperation implements Parti
     @Override
     public boolean returnsResponse() {
         return true;
-    }
-
-    protected final void invalidateNearCaches() {
-        if (!mapContainer.isNearCacheEnabled()) {
-            return;
-        }
-
-        if (mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
-            NearCacheProvider nearCacheProvider = mapService.getMapServiceContext().getNearCacheProvider();
-            nearCacheProvider.invalidateAllNearCaches(name, dataKey);
-        }
     }
 
     protected void evict() {

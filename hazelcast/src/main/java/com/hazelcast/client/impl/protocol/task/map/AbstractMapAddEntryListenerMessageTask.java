@@ -47,7 +47,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         final ClientEndpoint endpoint = getEndpoint();
         final MapService mapService = getService(MapService.SERVICE_NAME);
 
-        MapListenerAdapter<Object, Object> listener = new MapListener();
+        Object listener = newMapListener();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         String name = getDistributedObjectName();
         EventFilter eventFilter = getEventFilter();
@@ -59,6 +59,10 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         }
         endpoint.addListenerDestroyAction(MapService.SERVICE_NAME, name, registrationId);
         return registrationId;
+    }
+
+    protected Object newMapListener() {
+        return new ClientMapListener();
     }
 
     protected abstract EventFilter getEventFilter();
@@ -80,7 +84,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
     }
 
-    private class MapListener extends MapListenerAdapter<Object, Object> {
+    private class ClientMapListener extends MapListenerAdapter<Object, Object> {
 
         @Override
         public void onEntryEvent(EntryEvent<Object, Object> event) {

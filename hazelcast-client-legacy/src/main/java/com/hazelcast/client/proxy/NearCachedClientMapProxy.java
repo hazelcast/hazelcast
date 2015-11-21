@@ -28,12 +28,14 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.client.MapAddNearCacheEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapRemoveEntryListenerRequest;
+import com.hazelcast.map.impl.nearcache.BatchNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.CleaningNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.SingleNearCacheInvalidation;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.executor.CompletedFuture;
 
 import java.util.ArrayList;
@@ -328,6 +330,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         super.onShutdown();
     }
 
+    public NearCache<Data, Object> getNearCache() {
+        return nearCache;
+    }
+
     protected void invalidateNearCache(Data key) {
         nearCache.remove(key);
     }
@@ -343,7 +349,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     protected void addNearCacheInvalidateListener() {
-        EventHandler handler = new InvalidationListener(this.nearCache);
+        EventHandler handler = new InvalidationListener();
         addNearCacheInvalidateListener(handler);
     }
 
@@ -359,33 +365,33 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
     }
 
-    protected static final class InvalidationListener implements EventHandler<PortableEntryEvent> {
+    protected final class InvalidationListener implements EventHandler<Object> {
 
-        protected final NearCache nearCache;
-
-        protected InvalidationListener(NearCache nearCache) {
-            this.nearCache = nearCache;
+        public InvalidationListener() {
         }
 
         @Override
-        public void handle(PortableEntryEvent event) {
-            switch (event.getEventType()) {
-                case ADDED:
-                case REMOVED:
-                case UPDATED:
-                case MERGED:
-                case EVICTED:
-                case EXPIRED:
-                    final Data key = event.getKey();
+        public void handle(Object event) {
+            if (event instanceof BatchNearCacheInvalidation) {
+                List<Data> keys = ((BatchNearCacheInvalidation) event).getDataList();
+                for (Data key : keys) {
                     nearCache.remove(key);
-                    break;
-                case CLEAR_ALL:
-                case EVICT_ALL:
-                    nearCache.clear();
-                    break;
-                default:
-                    throw new IllegalArgumentException("Not a known event type " + event.getEventType());
+                }
+
+                return;
             }
+
+            if (event instanceof SingleNearCacheInvalidation) {
+                Data key = ((SingleNearCacheInvalidation) event).getKey();
+                nearCache.remove(key);
+                return;
+            }
+
+            if (event instanceof CleaningNearCacheInvalidation) {
+                nearCache.clear();
+            }
+
+            throw new IllegalArgumentException("Unexpected event received [" + event + ']');
         }
 
         @Override

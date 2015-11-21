@@ -1,4 +1,4 @@
-package com.hazelcast.client.map;
+package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -6,6 +6,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.AssertTask;
@@ -230,6 +231,9 @@ public class MapNearCacheInvalidationFromClientTest {
     private Config createServerConfig(final String mapName, final boolean liteMember) {
         final Config config = new Config();
         config.setLiteMember(liteMember);
+        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED, "true");
+        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS, "5");
+        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE, "1000");
         final NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(true);
         config.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig);

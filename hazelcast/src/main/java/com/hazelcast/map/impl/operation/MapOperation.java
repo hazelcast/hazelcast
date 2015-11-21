@@ -19,7 +19,11 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
+
+import java.util.List;
 
 public abstract class MapOperation extends AbstractNamedOperation {
 
@@ -72,5 +76,20 @@ public abstract class MapOperation extends AbstractNamedOperation {
 
     public long getThreadId() {
         throw new UnsupportedOperationException();
+    }
+
+    protected final void invalidateNearCache(List<Data> keys) {
+        NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
+        nearCacheProvider.getNearCacheInvalidator().invalidateNearCache(name, keys, getCallerUuid());
+    }
+
+    protected final void invalidateNearCache(Data key) {
+        NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
+        nearCacheProvider.getNearCacheInvalidator().invalidateNearCache(name, key, getCallerUuid());
+    }
+
+    protected final void clearNearCache(boolean owner) {
+        NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
+        nearCacheProvider.getNearCacheInvalidator().clearNearCache(name, owner, getCallerUuid());
     }
 }

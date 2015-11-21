@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.BackupOperation;
@@ -37,8 +36,9 @@ public class EvictAllBackupOperation extends MapOperation implements BackupOpera
 
     @Override
     public void run() throws Exception {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final RecordStore recordStore = mapServiceContext.getExistingRecordStore(getPartitionId(), name);
+        clearNearCache(false);
+
+        RecordStore recordStore = mapServiceContext.getExistingRecordStore(getPartitionId(), name);
         //if there is no recordStore, then there is nothing to evict.
         if (recordStore == null) {
             return;

@@ -19,19 +19,19 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.EntryViews;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
-import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -113,8 +113,8 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
             final Data key = keyValueSequence.get(i);
             dataKeys.add(key);
         }
-        NearCacheProvider nearCacheProvider = mapService.getMapServiceContext().getNearCacheProvider();
-        nearCacheProvider.invalidateNearCache(name, dataKeys);
+
+        invalidateNearCache(dataKeys);
     }
 
     @Override

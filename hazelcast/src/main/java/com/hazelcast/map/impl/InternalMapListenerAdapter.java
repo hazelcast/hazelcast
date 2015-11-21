@@ -32,7 +32,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * And also to provide an abstraction over all {@link MapListener} sub-interfaces to make a smooth usage when passing
  * fired events to listeners e.g. only calling {@link ListenerAdapter#onEvent} is sufficient to fire any event.
  */
-public class InternalMapListenerAdapter implements ListenerAdapter {
+public class InternalMapListenerAdapter implements ListenerAdapter<IMapEvent> {
 
     private final ListenerAdapter[] listenerAdapters;
 

@@ -34,6 +34,10 @@ public final class ListenerAdapters {
     }
 
     public static ListenerAdapter createListenerAdapter(Object listener) {
+        if (listener instanceof ListenerAdapter) {
+            return ((ListenerAdapter) listener);
+        }
+
         if (listener instanceof MapListener) {
             return createMapListenerAdaptor((MapListener) listener);
         }

@@ -341,4 +341,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         return partitionService.getPartitionOwner(partitionId).equals(thisAddress);
     }
 
+    public NearCache getNearCache() {
+        return nearCache;
+    }
 }

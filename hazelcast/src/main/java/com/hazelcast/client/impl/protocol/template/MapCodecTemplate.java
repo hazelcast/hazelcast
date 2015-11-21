@@ -310,7 +310,7 @@ public interface MapCodecTemplate {
      * @param includeValue  <tt>true</tt> if <tt>EntryEvent</tt> should
      *                      contain the value.
      * @param listenerFlags flags of enabled listeners.
-     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
+     * @param localOnly     if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string which is used as a key to remove the listener.
      */
     @Request(id = 25, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
@@ -326,7 +326,7 @@ public interface MapCodecTemplate {
      * @param includeValue  <tt>true</tt> if <tt>EntryEvent</tt> should
      *                      contain the value.
      * @param listenerFlags flags of enabled listeners.
-     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
+     * @param localOnly     if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string which is used as a key to remove the listener.
      */
     @Request(id = 26, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
@@ -341,7 +341,7 @@ public interface MapCodecTemplate {
      * @param key           Key for the map entry.
      * @param includeValue  <tt>true</tt> if <tt>EntryEvent</tt> should contain the value.
      * @param listenerFlags flags of enabled listeners.
-     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
+     * @param localOnly     if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string which is used as a key to remove the listener.
      */
     @Request(id = 27, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
@@ -354,7 +354,7 @@ public interface MapCodecTemplate {
      * @param name          name of map
      * @param includeValue  <tt>true</tt> if <tt>EntryEvent</tt> should contain the value.
      * @param listenerFlags flags of enabled listeners.
-     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
+     * @param localOnly     if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string which is used as a key to remove the listener.
      */
     @Request(id = 28, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
@@ -364,12 +364,13 @@ public interface MapCodecTemplate {
      * Adds an entry listener for this map. Listener will get notified for all map add/remove/update/evict events.
      *
      * @param name          name of map
-     * @param includeValue  <tt>true</tt> if <tt>EntryEvent</tt> should contain the value.
-     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
+     * @param listenerFlags flags of enabled listeners.
+     * @param localOnly     if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string which is used as a key to remove the listener.
      */
-    @Request(id = 29, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    Object addNearCacheEntryListener(String name, boolean includeValue, int listenerFlags, boolean localOnly);
+    @Request(id = 29, retryable = true, response = ResponseMessageConst.STRING,
+            event = {EventMessageConst.EVENT_IMAPINVALIDATION, EventMessageConst.EVENT_IMAPBATCHINVALIDATION})
+    Object addNearCacheEntryListener(String name, int listenerFlags, boolean localOnly);
 
     /**
      * Removes the specified entry listener. Returns silently if there is no such listener added before.
@@ -389,7 +390,7 @@ public interface MapCodecTemplate {
      * IMPORTANT: Listeners registered from HazelcastClient may miss some of the map partition lost events due
      * to design limitations.
      *
-     * @param name name of map
+     * @param name      name of map
      * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return returns the registration id for the MapPartitionLostListener.
      */
@@ -600,7 +601,6 @@ public interface MapCodecTemplate {
      * Please note that all the keys in the request should belong to the partition id to which this request is being sent, all keys
      * matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
      * of these request messages for filling a request for a key set if the keys belong to different partitions.
-
      *
      * @param name    name of map
      * @param entries mappings to be stored in this map
