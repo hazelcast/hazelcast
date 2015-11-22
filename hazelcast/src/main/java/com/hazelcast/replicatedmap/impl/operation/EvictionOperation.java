@@ -43,11 +43,6 @@ public class EvictionOperation extends AbstractOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
     public boolean validatesTarget() {
         return false;
     }
