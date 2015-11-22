@@ -24,14 +24,19 @@ public final class Hashing {
     private Hashing() { }
 
     public static int intHash(final int value, final int mask) {
-        final int hash = (value << 1) - (value << 8);
+        final int hash = value ^ (value >>> 16);
         return hash & mask;
     }
 
     public static int longHash(final long value, final int mask) {
         int hash = (int) value ^ (int) (value >>> 32);
-        hash = (hash << 1) - (hash << 8);
+        hash ^= (hash >>> 16);
         return hash & mask;
     }
 
+    public static int evenLongHash(final long value, final int mask) {
+        int hash = (int) value ^ (int) (value >>> 32);
+        hash = (hash << 1) - (hash << 8);
+        return hash & mask;
+    }
 }

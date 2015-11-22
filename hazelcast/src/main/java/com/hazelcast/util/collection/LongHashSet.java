@@ -27,6 +27,7 @@ import java.util.Set;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static com.hazelcast.util.QuickMath.nextPowerOfTwo;
+import static com.hazelcast.util.collection.Hashing.longHash;
 
 /**
  * Simple fixed-size long hashset.
@@ -81,7 +82,7 @@ public final class LongHashSet implements Set<Long> {
         if (size == capacity) {
             throw new IllegalStateException("This LongHashSet of capacity " + capacity + " is full");
         }
-        int index = Hashing.longHash(value, mask);
+        int index = longHash(value, mask);
 
         while (values[index] != missingValue) {
             if (values[index] == value) {
@@ -111,12 +112,13 @@ public final class LongHashSet implements Set<Long> {
      * @return true if the value was present, false otherwise
      */
     public boolean remove(final long value) {
-        int index = Hashing.longHash(value, mask);
+        int index = longHash(value, mask);
 
         while (values[index] != missingValue) {
             if (values[index] == value) {
                 values[index] = missingValue;
                 compactChain(index);
+                size--;
                 return true;
             }
 
@@ -130,19 +132,22 @@ public final class LongHashSet implements Set<Long> {
         return (index + 1) & mask;
     }
 
-    private void compactChain(final int deleteIndex) {
+    private void compactChain(int deleteIndex) {
         final long[] values = this.values;
-
         int index = deleteIndex;
         while (true) {
-            final int previousIndex = index;
             index = next(index);
             if (values[index] == missingValue) {
                 return;
             }
-
-            values[previousIndex] = values[index];
-            values[index] = missingValue;
+            final int hash = longHash(values[index], mask);
+            if ((index < hash && (hash <= deleteIndex || deleteIndex <= index))
+                    || (hash <= deleteIndex && deleteIndex <= index)
+            ) {
+                values[deleteIndex] = values[index];
+                values[index] = missingValue;
+                deleteIndex = index;
+            }
         }
     }
 
@@ -157,7 +162,7 @@ public final class LongHashSet implements Set<Long> {
      * {@inheritDoc}
      */
     public boolean contains(final long value) {
-        int index = Hashing.longHash(value, mask);
+        int index = longHash(value, mask);
 
         while (values[index] != missingValue) {
             if (values[index] == value) {
@@ -338,7 +343,7 @@ public final class LongHashSet implements Set<Long> {
             if (i == missingValue) {
                 continue;
             }
-            b.append(i).append(separator);
+            b.append(separator).append(i);
             separator = ",";
         }
         return b.append('}').toString();

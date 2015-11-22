@@ -31,6 +31,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.collection.Hashing.longHash;
 
 /**
  * {@link java.util.Map} implementation specialised for long keys using open addressing and
@@ -136,7 +137,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
      * @return true if the key is found otherwise false.
      */
     public boolean containsKey(final long key) {
-        int index = hash(key);
+        int index = longHash(key, mask);
         while (null != values[index]) {
             if (key == keys[index]) {
                 return true;
@@ -174,7 +175,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
      */
     @SuppressWarnings("unchecked")
     public V get(final long key) {
-        int index = hash(key);
+        int index = longHash(key, mask);
         Object value;
         while (null != (value = values[index])) {
             if (key == keys[index]) {
@@ -224,7 +225,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
     public V put(final long key, final V value) {
         checkNotNull(value, "Value cannot be null");
         V oldValue = null;
-        int index = hash(key);
+        int index = longHash(key, mask);
         while (null != values[index]) {
             if (key == keys[index]) {
                 oldValue = (V) values[index];
@@ -258,7 +259,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
      */
     @SuppressWarnings("unchecked")
     public V remove(final long key) {
-        int index = hash(key);
+        int index = longHash(key, mask);
         Object value;
         while (null != (value = values[index])) {
             if (key == keys[index]) {
@@ -364,7 +365,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
             final Object value = values[i];
             if (null != value) {
                 final long key = keys[i];
-                int newHash = hash(key);
+                int newHash = longHash(key, mask);
                 while (null != tempValues[newHash]) {
                     newHash = ++newHash & mask;
                 }
@@ -383,21 +384,16 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
             if (null == values[index]) {
                 return;
             }
-            final int hash = hash(keys[index]);
+            final int hash = longHash(keys[index], mask);
             if ((index < hash && (hash <= deleteIndex || deleteIndex <= index))
-                    || (hash <= deleteIndex && deleteIndex <= index)) {
+                    || (hash <= deleteIndex && deleteIndex <= index)
+            ) {
                 keys[deleteIndex] = keys[index];
                 values[deleteIndex] = values[index];
                 values[index] = null;
                 deleteIndex = index;
             }
         }
-    }
-
-    private int hash(final long key) {
-        int hash = (int) key ^ (int) (key >>> 32);
-        hash = (hash << 1) - (hash << 8);
-        return hash & mask;
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

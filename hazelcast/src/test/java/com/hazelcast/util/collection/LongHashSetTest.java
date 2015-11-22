@@ -17,7 +17,9 @@
 
 package com.hazelcast.util.collection;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,6 +30,7 @@ import org.junit.runner.RunWith;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Random;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.contains;
@@ -38,12 +41,12 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class LongHashSetTest {
     @Rule public final ExpectedException rule = ExpectedException.none();
 
-    private final LongHashSet set = new LongHashSet(100, -1);
+    private final LongHashSet set = new LongHashSet(1000, -1);
 
     @Test public void initiallyContainsNoElements() throws Exception {
         for (int i = 0; i < 10000; i++) {
@@ -82,11 +85,20 @@ public class LongHashSetTest {
     }
 
     @Test public void removingAPresentElementRemovesIt() {
-        assertTrue(set.add(1));
-
-        assertTrue(set.remove(1));
-
-        assertFalse(set.contains(1));
+        final Set<Long> jdkSet = new HashSet<Long>();
+        final Random rnd = new Random();
+        for (int i = 0; i < 1000; i++) {
+            final long value = rnd.nextInt();
+            set.add(value);
+            jdkSet.add(value);
+        }
+        assertEquals(jdkSet, set);
+        for (Iterator<Long> iter = jdkSet.iterator(); iter.hasNext();) {
+            final long value = iter.next();
+            assertTrue("Set suddenly doesn't contain " + value, set.contains(value));
+            assertTrue("Didn't remove " + value, set.remove(value));
+            iter.remove();
+        }
     }
 
     @Test public void sizeIsInitiallyZero() {
@@ -158,7 +170,7 @@ public class LongHashSetTest {
         set.add(1);
         set.add(2);
 
-        final LongHashSet other = new LongHashSet(100, -1);
+        final LongHashSet other = new LongHashSet(1000, -1);
         other.copy(set);
 
         assertThat(other, contains(1L, 2L));
