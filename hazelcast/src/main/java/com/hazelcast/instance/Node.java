@@ -208,8 +208,11 @@ public class Node {
         }
         ILogger logger = getLogger(DiscoveryService.class);
 
-        DiscoveryServiceSettings settings = new DiscoveryServiceSettings().setConfigClassLoader(configClassLoader)
-                .setLogger(logger).setDiscoveryMode(DiscoveryMode.Member).setDiscoveryConfig(discoveryConfig)
+        DiscoveryServiceSettings settings = new DiscoveryServiceSettings()
+                .setConfigClassLoader(configClassLoader)
+                .setLogger(logger)
+                .setDiscoveryMode(DiscoveryMode.Member)
+                .setDiscoveryConfig(discoveryConfig)
                 .setDiscoveryNode(new SimpleDiscoveryNode(localMember.getAddress(), localMember.getAttributes()));
 
         return factory.newDiscoveryService(settings);
