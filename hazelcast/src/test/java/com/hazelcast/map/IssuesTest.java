@@ -56,7 +56,7 @@ public class IssuesTest extends HazelcastTestSupport {
         int n = 1;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
 
-        final IMap<Integer, Integer> imap = factory.newHazelcastInstance(null).getMap("testIssue321_1");
+        final IMap<Integer, Integer> imap = factory.newHazelcastInstance((Config)null).getMap("testIssue321_1");
         final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
@@ -85,7 +85,7 @@ public class IssuesTest extends HazelcastTestSupport {
         int n = 1;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
 
-        final IMap<Integer, Integer> imap = factory.newHazelcastInstance(null).getMap("testIssue321_2");
+        final IMap<Integer, Integer> imap = factory.newHazelcastInstance((Config)null).getMap("testIssue321_2");
         final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
@@ -115,7 +115,7 @@ public class IssuesTest extends HazelcastTestSupport {
         int n = 1;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
 
-        final IMap<Integer, Integer> imap = factory.newHazelcastInstance(null).getMap("testIssue321_3");
+        final IMap<Integer, Integer> imap = factory.newHazelcastInstance((Config)null).getMap("testIssue321_3");
         final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         final EntryAdapter<Integer, Integer> listener = new EntryAdapter<Integer, Integer>() {
             @Override
@@ -139,7 +139,7 @@ public class IssuesTest extends HazelcastTestSupport {
     public void testIssue304() {
         int n = 1;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
-        IMap<String, String> map = factory.newHazelcastInstance(null).getMap("testIssue304");
+        IMap<String, String> map = factory.newHazelcastInstance((Config)null).getMap("testIssue304");
         map.lock("1");
         assertEquals(0, map.size());
         assertEquals(0, map.entrySet().size());
