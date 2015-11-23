@@ -52,9 +52,9 @@ public class ClusterInfoTest extends HazelcastTestSupport {
         HazelcastInstance h2 = factory.newHazelcastInstance();
         HazelcastInstance h3 = factory.newHazelcastInstance();
 
-        assertSizeEventually(3, h1.getCluster().getMembers());
-        assertSizeEventually(3, h2.getCluster().getMembers());
-        assertSizeEventually(3, h3.getCluster().getMembers());
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         Node node1 = TestUtil.getNode(h1);
         Node node2 = TestUtil.getNode(h2);
@@ -86,9 +86,9 @@ public class ClusterInfoTest extends HazelcastTestSupport {
         HazelcastInstance h2 = factory.newHazelcastInstance();
         HazelcastInstance h3 = factory.newHazelcastInstance();
 
-        assertSizeEventually(3, h1.getCluster().getMembers());
-        assertSizeEventually(3, h2.getCluster().getMembers());
-        assertSizeEventually(3, h3.getCluster().getMembers());
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         Node node1 = TestUtil.getNode(h1);
         final ClusterServiceImpl clusterService = node1.getClusterService();
@@ -99,7 +99,7 @@ public class ClusterInfoTest extends HazelcastTestSupport {
         assertTrue(clusterUpTime > 0);
         assertTrue(node1.isMaster());
         h1.shutdown();
-        assertSizeEventually(2, h2.getCluster().getMembers());
+        assertClusterSizeEventually(2, h2);
 
         HazelcastInstance h4 = factory.newHazelcastInstance();
 
