@@ -20,6 +20,8 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.impl.nearcache.Invalidation;
+import com.hazelcast.map.impl.nearcache.InvalidationListener;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
@@ -58,7 +60,7 @@ public final class MapListenerAdaptors {
                         return null;
                     }
                     final EntryAddedListener listener = (EntryAddedListener) mapListener;
-                    return new ListenerAdapter() {
+                    return new ListenerAdapter<IMapEvent>() {
                         @Override
                         public void onEvent(IMapEvent event) {
                             listener.entryAdded((EntryEvent) event);
@@ -78,7 +80,7 @@ public final class MapListenerAdaptors {
                         return null;
                     }
                     final EntryRemovedListener listener = (EntryRemovedListener) mapListener;
-                    return new ListenerAdapter() {
+                    return new ListenerAdapter<IMapEvent>() {
                         @Override
                         public void onEvent(IMapEvent event) {
                             listener.entryRemoved((EntryEvent) event);
@@ -99,7 +101,7 @@ public final class MapListenerAdaptors {
                         return null;
                     }
                     final EntryEvictedListener listener = (EntryEvictedListener) mapListener;
-                    return new ListenerAdapter() {
+                    return new ListenerAdapter<IMapEvent>() {
                         @Override
                         public void onEvent(IMapEvent event) {
                             listener.entryEvicted((EntryEvent) event);
@@ -120,7 +122,7 @@ public final class MapListenerAdaptors {
                         return null;
                     }
                     final EntryUpdatedListener listener = (EntryUpdatedListener) mapListener;
-                    return new ListenerAdapter() {
+                    return new ListenerAdapter<IMapEvent>() {
                         @Override
                         public void onEvent(IMapEvent event) {
                             listener.entryUpdated((EntryEvent) event);
@@ -141,7 +143,7 @@ public final class MapListenerAdaptors {
                         return null;
                     }
                     final MapEvictedListener listener = (MapEvictedListener) mapListener;
-                    return new ListenerAdapter() {
+                    return new ListenerAdapter<IMapEvent>() {
                         @Override
                         public void onEvent(IMapEvent event) {
                             listener.mapEvicted((MapEvent) event);
@@ -162,7 +164,7 @@ public final class MapListenerAdaptors {
                         return null;
                     }
                     final MapClearedListener listener = (MapClearedListener) mapListener;
-                    return new ListenerAdapter() {
+                    return new ListenerAdapter<IMapEvent>() {
                         @Override
                         public void onEvent(IMapEvent event) {
                             listener.mapCleared((MapEvent) event);
@@ -182,7 +184,7 @@ public final class MapListenerAdaptors {
                         return null;
                     }
                     final EntryMergedListener listener = (EntryMergedListener) mapListener;
-                    return new ListenerAdapter() {
+                    return new ListenerAdapter<IMapEvent>() {
                         @Override
                         public void onEvent(IMapEvent event) {
                             listener.entryMerged((EntryEvent) event);
@@ -191,6 +193,26 @@ public final class MapListenerAdaptors {
                 }
             };
 
+
+    /**
+     * Converts an {@link InvalidationListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
+     */
+    private static final ConstructorFunction<MapListener, ListenerAdapter> INVALIDATION_LISTENER =
+            new ConstructorFunction<MapListener, ListenerAdapter>() {
+                @Override
+                public ListenerAdapter createNew(MapListener mapListener) {
+                    if (!(mapListener instanceof InvalidationListener)) {
+                        return null;
+                    }
+                    final InvalidationListener listener = (InvalidationListener) mapListener;
+                    return new ListenerAdapter<Invalidation>() {
+                        @Override
+                        public void onEvent(Invalidation event) {
+                            listener.onInvalidate(event);
+                        }
+                    };
+                }
+            };
 
     /**
      * Converts an {@link EntryExpiredListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
@@ -203,7 +225,7 @@ public final class MapListenerAdaptors {
                         return null;
                     }
                     final EntryExpiredListener listener = (EntryExpiredListener) mapListener;
-                    return new ListenerAdapter() {
+                    return new ListenerAdapter<IMapEvent>() {
                         @Override
                         public void onEvent(IMapEvent event) {
                             listener.entryExpired((EntryEvent) event);
@@ -211,6 +233,7 @@ public final class MapListenerAdaptors {
                     };
                 }
             };
+
 
     /**
      * Register all {@link com.hazelcast.map.impl.ListenerAdapter} constructors
@@ -225,6 +248,7 @@ public final class MapListenerAdaptors {
         CONSTRUCTORS.put(EntryEventType.EXPIRED, ENTRY_EXPIRED_LISTENER_ADAPTER_CONSTRUCTOR);
         CONSTRUCTORS.put(EntryEventType.EVICT_ALL, MAP_EVICTED_LISTENER_ADAPTER_CONSTRUCTOR);
         CONSTRUCTORS.put(EntryEventType.CLEAR_ALL, MAP_CLEARED_LISTENER_ADAPTER_CONSTRUCTOR);
+        CONSTRUCTORS.put(EntryEventType.INVALIDATION, INVALIDATION_LISTENER);
     }
 
     private MapListenerAdaptors() {

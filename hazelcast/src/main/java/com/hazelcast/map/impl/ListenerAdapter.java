@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.core.IMapEvent;
-
 /**
  * Adapter for all {@link com.hazelcast.core.IMap} listeners. This interface is considered to be used only
  * by {@link com.hazelcast.core.IMap} internals.
@@ -25,12 +23,12 @@ import com.hazelcast.core.IMapEvent;
  * Also every {@link com.hazelcast.map.listener.MapListener} should be wrapped
  * in a {@link com.hazelcast.map.impl.ListenerAdapter} before {@link com.hazelcast.spi.EventService} registration.
  */
-public interface ListenerAdapter {
+public interface ListenerAdapter<T> {
 
     /**
      * Handle event.
      *
      * @param event type of event.
      */
-    void onEvent(IMapEvent event);
+    void onEvent(T event);
 }

@@ -134,7 +134,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     // this method is overridden in another context.
     NearCacheProvider createNearCacheProvider() {
-        return new NearCacheProvider(this, nodeEngine);
+        return new NearCacheProvider(this);
     }
 
     PartitionContainer[] createPartitionContainers() {
@@ -488,6 +488,7 @@ class MapServiceContextImpl implements MapServiceContext {
             int enabledListeners = setAndGetListenerFlags(listenerAdaptor);
             filter = new EventListenerFilter(enabledListeners, filter);
         }
+
         if (local) {
             return eventService.registerLocalListener(SERVICE_NAME, mapName, filter, listenerAdaptor);
         } else {
@@ -495,9 +496,11 @@ class MapServiceContextImpl implements MapServiceContext {
         }
     }
 
+
     @Override
     public boolean removeEventListener(String mapName, String registrationId) {
         return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
+
     }
 
     @Override

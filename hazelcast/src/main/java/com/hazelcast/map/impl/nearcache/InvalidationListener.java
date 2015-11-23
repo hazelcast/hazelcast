@@ -14,26 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.operation;
+package com.hazelcast.map.impl.nearcache;
 
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.map.listener.MapListener;
 
-public class ClearNearCacheOperation extends MapOperation implements MutatingOperation {
+/**
+ * Used to receive invalidation events from an {@link com.hazelcast.core.IMap IMap}
+ * <p/>
+ * For example, a client near-cache implementation can listen changes in IMap data and
+ * can remove stale data in its own cache.
+ *
+ * @since 3.6
+ */
+public interface InvalidationListener extends MapListener {
 
-    public ClearNearCacheOperation() {
-    }
-
-    public ClearNearCacheOperation(String mapName) {
-        super(mapName);
-    }
-
-    @Override
-    public void run() {
-        clearNearCache(false);
-    }
-
-    @Override
-    public Object getResponse() {
-        return Boolean.TRUE;
-    }
+    /**
+     * Called upon an invalidation.
+     *
+     * @param event the received {@link Invalidation} event.
+     */
+    void onInvalidate(Invalidation event);
 }

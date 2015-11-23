@@ -29,7 +29,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * Main purpose of this adapter is to avoid backward compatibility problems
  * when one doesn't use a {@link com.hazelcast.map.listener.MapListener MapListener}
  */
-class InternalEntryListenerAdapter implements ListenerAdapter {
+class InternalEntryListenerAdapter implements ListenerAdapter<IMapEvent> {
 
     private final ListenerAdapter[] listenerAdapters;
 

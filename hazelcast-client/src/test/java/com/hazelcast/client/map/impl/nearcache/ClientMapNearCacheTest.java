@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.map;
+package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -22,10 +22,10 @@ import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCode
 import com.hazelcast.client.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.listener.EntryExpiredListener;
@@ -41,12 +41,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.core.EntryEventType.getByType;
+import static com.hazelcast.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
@@ -78,6 +79,7 @@ public class ClientMapNearCacheTest {
     private static final String NEAR_CACHE_RANDOM_WITH_MAX_SIZE = "NEAR_CACHE_RANDOM_WITH_MAX_SIZE";
     private static final String NEAR_CACHE_NONE_WITH_MAX_SIZE = "NEAR_CACHE_NONE_WITH_MAX_SIZE";
 
+    private static final ClientConfig clientConfig = new ClientConfig();
     private static final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     private static HazelcastInstance server;
@@ -85,10 +87,10 @@ public class ClientMapNearCacheTest {
 
     @BeforeClass
     public static void setup() throws Exception {
-        server = hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
-
-        ClientConfig clientConfig = new ClientConfig();
+        Config config = new Config();
+        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED, "false");
+        server = hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
 
         NearCacheConfig basicConfigNoInvalidation = new NearCacheConfig();
         basicConfigNoInvalidation.setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -396,12 +398,13 @@ public class ClientMapNearCacheTest {
     public void testNearCacheInvalidateOnChange() {
         String mapName = randomMapName(NEAR_CACHE_WITH_INVALIDATION);
         IMap<Integer, Integer> serverMap = server.getMap(mapName);
-        final IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
         int size = 118;
         for (int i = 0; i < size; i++) {
             serverMap.put(i, i);
         }
+
+        final IMap<Integer, Integer> clientMap = hazelcastFactory.newHazelcastClient(clientConfig).getMap(mapName);
         // populate near cache
         for (int i = 0; i < size; i++) {
             clientMap.get(i);
@@ -718,17 +721,16 @@ public class ClientMapNearCacheTest {
         }
 
         @Override
-        public void handle(Data key, Data value, Data oldValue, Data mergingValue, int eventType, String uuid,
-                           int numberOfAffectedEntries) {
-            EntryEventType entryEventType = getByType(eventType);
-            assertNotNull(entryEventType);
-            switch (entryEventType) {
-                case ADDED:
-                    eventAddedLatch.countDown();
-                    break;
-                default:
-                    throw new UnsupportedOperationException("Unsupported EntryEventType: " + entryEventType);
+        public void handle(Data key) {
+            eventAddedLatch.countDown();
+        }
+
+        @Override
+        public void handle(Collection<Data> keys) {
+            for (Data key : keys) {
+                eventAddedLatch.countDown();
             }
+
         }
     }
 }

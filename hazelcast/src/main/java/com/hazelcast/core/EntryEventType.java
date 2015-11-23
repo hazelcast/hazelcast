@@ -28,7 +28,8 @@ public enum EntryEventType {
     EVICT_ALL(Type.EVICT_ALL),
     CLEAR_ALL(Type.CLEAR_ALL),
     MERGED(Type.MERGED),
-    EXPIRED(Type.EXPIRED);
+    EXPIRED(Type.EXPIRED),
+    INVALIDATION(Type.INVALIDATION);
 
     private int type;
 
@@ -74,6 +75,7 @@ public enum EntryEventType {
         private static final int CLEAR_ALL = 1 << 5;
         private static final int MERGED = 1 << 6;
         private static final int EXPIRED = 1 << 7;
+        private static final int INVALIDATION = 1 << 8;
     }
     //CHECKSTYLE:ON
 }

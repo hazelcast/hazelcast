@@ -53,7 +53,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         mapServiceContext.interceptAfterRemove(name, dataValue);
         final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.REMOVED, dataKey, dataOldValue, null);
-        invalidateNearCaches();
+        invalidateNearCache(dataKey);
         if (mapContainer.isWanReplicationEnabled() && !disableWanReplicationEvent) {
             // todo should evict operation replicated??
             mapEventPublisher.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());

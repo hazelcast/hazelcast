@@ -17,15 +17,15 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
@@ -50,8 +50,7 @@ public class EvictAllOperation extends MapOperation implements BackupAwareOperat
     public void run() throws Exception {
 
         // TODO this also clears locked keys from near cache which should be preserved.
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        mapServiceContext.getNearCacheProvider().clearNearCache(name);
+        clearNearCache(true);
 
         final RecordStore recordStore = mapServiceContext.getExistingRecordStore(getPartitionId(), name);
         if (recordStore == null) {

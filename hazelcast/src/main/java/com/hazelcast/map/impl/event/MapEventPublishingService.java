@@ -19,13 +19,14 @@ package com.hazelcast.map.impl.event;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.nearcache.Invalidation;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.NodeEngine;
 
@@ -34,7 +35,7 @@ import com.hazelcast.spi.NodeEngine;
  *
  * @see com.hazelcast.spi.EventPublishingService
  */
-public class MapEventPublishingService implements EventPublishingService<EventData, ListenerAdapter> {
+public class MapEventPublishingService implements EventPublishingService<Object, ListenerAdapter> {
 
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
@@ -45,7 +46,7 @@ public class MapEventPublishingService implements EventPublishingService<EventDa
     }
 
     @Override
-    public void dispatchEvent(EventData eventData, ListenerAdapter listener) {
+    public void dispatchEvent(Object eventData, ListenerAdapter listener) {
         if (eventData instanceof EntryEventData) {
             dispatchEntryEventData((EntryEventData) eventData, listener);
             return;
@@ -60,11 +61,26 @@ public class MapEventPublishingService implements EventPublishingService<EventDa
             return;
         }
 
-        throw new IllegalArgumentException("Unknown map event data");
+        if (eventData instanceof Invalidation) {
+            listener.onEvent(eventData);
+            incrementEventStats(((Invalidation) eventData));
+            return;
+        }
+
+        throw new IllegalArgumentException("Unknown event data [" + eventData + ']');
+    }
+
+    private void incrementEventStats(Invalidation data) {
+        String mapName = data.getName();
+        incrementEventStatsInternal(mapName);
     }
 
     private void incrementEventStats(IMapEvent event) {
-        final String mapName = event.getName();
+        String mapName = event.getName();
+        incrementEventStatsInternal(mapName);
+    }
+
+    private void incrementEventStatsInternal(String mapName) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapServiceContext.getLocalMapStatsProvider()

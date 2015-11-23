@@ -109,7 +109,7 @@ public enum GroupProperty implements HazelcastProperty {
     /**
      * The minimum level for probes is MANDATORY, but it can be changed to INFO or DEBUG. A lower level will increase
      * memory usage (probably just a few 100KB) and provides much greater detail on what is going on inside a HazelcastInstance.
-     *
+     * <p/>
      * By default only mandatory probes are being tracked
      */
     PERFORMANCE_METRICS_LEVEL("hazelcast.performance.metric.level", ProbeLevel.MANDATORY.name()),
@@ -433,6 +433,24 @@ public enum GroupProperty implements HazelcastProperty {
     CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS("hazelcast.cache.invalidation.batchfrequency.seconds", 10, SECONDS),
 
     /**
+     * Defines near-cache invalidation event batch sending is enabled or not.
+     */
+    MAP_INVALIDATION_MESSAGE_BATCH_ENABLED("hazelcast.map.invalidation.batch.enabled", true),
+
+    /**
+     * Defines the maximum number of near-cache invalidation events to be drained and sent to the event near-caches in a batch.
+     */
+    MAP_INVALIDATION_MESSAGE_BATCH_SIZE("hazelcast.map.invalidation.batch.size", 100),
+
+    /**
+     * Defines the near-cache invalidation event batch sending frequency in seconds.
+     * <p/>
+     * When the number of events do not come up to {@link #MAP_INVALIDATION_MESSAGE_BATCH_SIZE} in the given time period (which
+     * is defined by this property), those events are gathered into a batch and sent to target.
+     */
+    MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS("hazelcast.map.invalidation.batchfrequency.seconds", 10, SECONDS),
+
+    /**
      * Using back pressure, you can prevent an overload of pending asynchronous backups. With a map with a
      * single asynchronous backup, producing asynchronous backups could happen at a higher rate than
      * the consumption of the backup. This can eventually lead to an OOME (especially if the backups are slow).
@@ -539,12 +557,11 @@ public enum GroupProperty implements HazelcastProperty {
      * Type of Query Optimizer.
      * Valid Values:
      * <ul>
-     *     <li>RULES - for optimizations based on static rules</li>
-     *     <li>NONE - optimization are disabled</li>
+     * <li>RULES - for optimizations based on static rules</li>
+     * <li>NONE - optimization are disabled</li>
      * </ul>
-     *
+     * <p/>
      * Values are case sensitive
-     *
      */
     QUERY_OPTIMIZER_TYPE("hazelcast.query.optimizer.type", QueryOptimizerFactory.Type.RULES.toString()),
 
@@ -564,6 +581,7 @@ public enum GroupProperty implements HazelcastProperty {
 
     /**
      * Hazelcast serialization version. This is single byte value between 1 and Max supported serialization version.
+     *
      * @see BuildInfo#getSerializationVersion()
      */
     SERIALIZATION_VERSION("hazelcast.serialization.version", BuildInfoProvider.getBuildInfo().getSerializationVersion());

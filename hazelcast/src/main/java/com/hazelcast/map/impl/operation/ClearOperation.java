@@ -17,20 +17,20 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 public class ClearOperation extends MapOperation implements BackupAwareOperation,
         PartitionAwareOperation, MutatingOperation {
 
-    boolean shouldBackup = true;
+    private boolean shouldBackup;
 
     private int numberOfClearedEntries;
 
@@ -45,17 +45,15 @@ public class ClearOperation extends MapOperation implements BackupAwareOperation
     public void run() {
         // near-cache clear will be called multiple times by each clear operation,
         // but it's still preferred to send a separate operation to clear near-cache.
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        mapServiceContext.getNearCacheProvider().clearNearCache(name);
+        clearNearCache(true);
 
-        final RecordStore recordStore = mapServiceContext.getExistingRecordStore(getPartitionId(), name);
-        //if there is no recordStore, then there is nothing to clear.
+        RecordStore recordStore = mapServiceContext.getExistingRecordStore(getPartitionId(), name);
         if (recordStore == null) {
-            shouldBackup = false;
             return;
         }
 
         numberOfClearedEntries = recordStore.clear();
+        shouldBackup = true;
     }
 
     @Override

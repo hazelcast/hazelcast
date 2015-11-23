@@ -23,8 +23,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
+
 import java.io.IOException;
 
 public class EvictOperation extends LockAwareOperation implements MutatingOperation, BackupAwareOperation {
@@ -96,7 +97,7 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
         EntryEventType eventType = EntryEventType.EVICTED;
         mapServiceContext.getMapEventPublisher()
                 .publishEvent(getCallerAddress(), name, eventType, dataKey, dataValue, null);
-        invalidateNearCaches();
+        invalidateNearCache(dataKey);
     }
 
     @Override

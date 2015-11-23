@@ -25,7 +25,7 @@ import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 
 import java.io.IOException;
 
-import static com.hazelcast.map.impl.MapListenerFlagOperator.ALL_LISTENER_FLAGS;
+import static com.hazelcast.map.impl.MapListenerFlagOperator.SET_ALL_LISTENER_FLAGS;
 
 /**
  * Prevents sending of not requested events to a {@link com.hazelcast.map.listener.MapListener MapListener}
@@ -56,7 +56,7 @@ public class EventListenerFilter implements EventFilter, DataSerializable {
     private EventFilter eventFilter;
 
     public EventListenerFilter() {
-        this(ALL_LISTENER_FLAGS, TrueEventFilter.INSTANCE);
+        this(SET_ALL_LISTENER_FLAGS, TrueEventFilter.INSTANCE);
     }
 
     public EventListenerFilter(int listenerFlags, EventFilter eventFilter) {

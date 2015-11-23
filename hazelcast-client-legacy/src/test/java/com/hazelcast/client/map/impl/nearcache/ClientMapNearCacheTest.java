@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.map;
+package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
@@ -27,7 +28,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -43,6 +43,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
@@ -75,16 +76,17 @@ public class ClientMapNearCacheTest {
     private static final String NEAR_CACHE_NONE_WITH_MAX_SIZE = "NEAR_CACHE_NONE_WITH_MAX_SIZE";
 
     private static final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private static final ClientConfig clientConfig = new ClientConfig();
 
     private static HazelcastInstance server;
     private static HazelcastInstance client;
 
     @BeforeClass
     public static void setup() throws Exception {
-        server = hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
-
-        ClientConfig clientConfig = new ClientConfig();
+        Config config = new Config();
+        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED, "false");
+        server = hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
 
         NearCacheConfig basicConfigNoInvalidation = new NearCacheConfig();
         basicConfigNoInvalidation.setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -392,12 +394,13 @@ public class ClientMapNearCacheTest {
     public void testNearCacheInvalidateOnChange() {
         String mapName = randomMapName(NEAR_CACHE_WITH_INVALIDATION);
         IMap<Integer, Integer> serverMap = server.getMap(mapName);
-        final IMap<Integer, Integer> clientMap = client.getMap(mapName);
 
         int size = 118;
         for (int i = 0; i < size; i++) {
             serverMap.put(i, i);
         }
+
+        final IMap<Integer, Integer> clientMap = hazelcastFactory.newHazelcastClient(clientConfig).getMap(mapName);
         // populate near cache
         for (int i = 0; i < size; i++) {
             clientMap.get(i);
@@ -414,7 +417,7 @@ public class ClientMapNearCacheTest {
             public void run() throws Exception {
                 assertThatOwnedEntryCountEquals(clientMap, 0);
             }
-        });
+        },10);
     }
 
     @Test(expected = NullPointerException.class)
@@ -696,7 +699,7 @@ public class ClientMapNearCacheTest {
         mapProxy.addNearCacheInvalidateListener(listener);
     }
 
-    private static class NearCacheEventListener implements EventHandler<PortableEntryEvent> {
+    private static class NearCacheEventListener implements EventHandler<Object> {
 
         private final CountDownLatch eventAddedLatch;
 
@@ -713,14 +716,8 @@ public class ClientMapNearCacheTest {
         }
 
         @Override
-        public void handle(PortableEntryEvent event) {
-            switch (event.getEventType()) {
-                case ADDED:
-                    eventAddedLatch.countDown();
-                    break;
-                default:
-                    throw new UnsupportedOperationException("Unsupported EntryEventType: " + event.getEventType());
-            }
+        public void handle(Object event) {
+            eventAddedLatch.countDown();
         }
     }
 }

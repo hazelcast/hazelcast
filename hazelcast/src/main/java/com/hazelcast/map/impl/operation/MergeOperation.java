@@ -90,7 +90,7 @@ public class MergeOperation extends BasePutOperation {
             mapServiceContext.interceptAfterPut(name, dataValue);
             mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.MERGED, false, dataKey, dataOldValue,
                     dataValue, mergingValue);
-            invalidateNearCaches();
+            invalidateNearCache(dataKey);
             evict();
         }
     }

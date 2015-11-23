@@ -27,7 +27,6 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.Logger;
@@ -50,7 +49,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
-import static com.hazelcast.map.impl.MapListenerFlagOperator.ALL_LISTENER_FLAGS;
+import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -327,6 +326,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         super.onShutdown();
     }
 
+    public NearCache<Data, Object> getNearCache() {
+        return nearCache;
+    }
+
     protected void invalidateNearCache(Data key) {
         nearCache.remove(key);
     }
@@ -342,7 +345,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     protected void addNearCacheInvalidateListener() {
-        EventHandler handler = new ClientMapAddNearCacheEventHandler(this.nearCache);
+        EventHandler handler = new ClientMapAddNearCacheEventHandler();
         addNearCacheInvalidateListener(handler);
     }
 
@@ -360,8 +363,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         return new ListenerMessageCodec() {
             @Override
             public ClientMessage encodeAddRequest(boolean localOnly) {
-                return MapAddNearCacheEntryListenerCodec.encodeRequest(name, false,
-                        ALL_LISTENER_FLAGS, localOnly);
+                return MapAddNearCacheEntryListenerCodec.encodeRequest(name, INVALIDATION.getType(), localOnly);
             }
 
             @Override
@@ -389,13 +391,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         deregisterListener(invalidationListenerId);
     }
 
-    protected static final class ClientMapAddNearCacheEventHandler extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler
+    protected class ClientMapAddNearCacheEventHandler extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
-        protected final NearCache nearCache;
-
-        protected ClientMapAddNearCacheEventHandler(NearCache nearCache) {
-            this.nearCache = nearCache;
+        protected ClientMapAddNearCacheEventHandler() {
         }
 
         @Override
@@ -408,25 +407,22 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             nearCache.clear();
         }
 
+
         @Override
-        public void handle(Data key, Data value, Data oldValue, Data mergingValue,
-                           int eventType, String uuid, int numberOfAffectedEntries) {
-            EntryEventType entryEventType = EntryEventType.getByType(eventType);
-            switch (entryEventType) {
-                case ADDED:
-                case REMOVED:
-                case UPDATED:
-                case MERGED:
-                case EVICTED:
-                case EXPIRED:
-                    nearCache.remove(key);
-                    break;
-                case CLEAR_ALL:
-                case EVICT_ALL:
-                    nearCache.clear();
-                    break;
-                default:
-                    throw new IllegalArgumentException("Not a known event type " + entryEventType);
+        public void handle(Data key) {
+            // null key means near cache has to remove all entries in it.
+            // see MapAddNearCacheEntryListenerMessageTask.
+            if (key == null) {
+                nearCache.clear();
+            } else {
+                nearCache.remove(key);
+            }
+        }
+
+        @Override
+        public void handle(Collection<Data> keys) {
+            for (Data key : keys) {
+                nearCache.remove(key);
             }
         }
     }

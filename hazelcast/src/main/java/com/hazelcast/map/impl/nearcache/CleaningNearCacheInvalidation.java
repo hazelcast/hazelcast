@@ -14,26 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.operation;
+package com.hazelcast.map.impl.nearcache;
 
-import com.hazelcast.spi.impl.MutatingOperation;
+/**
+ * Used when invalidating client near-caches.
+ * When a client near-cache invalidation listener receives this data, the near-cache is cleared.
+ */
+public class CleaningNearCacheInvalidation extends Invalidation {
 
-public class ClearNearCacheOperation extends MapOperation implements MutatingOperation {
-
-    public ClearNearCacheOperation() {
+    public CleaningNearCacheInvalidation() {
     }
 
-    public ClearNearCacheOperation(String mapName) {
-        super(mapName);
-    }
-
-    @Override
-    public void run() {
-        clearNearCache(false);
-    }
-
-    @Override
-    public Object getResponse() {
-        return Boolean.TRUE;
+    public CleaningNearCacheInvalidation(String mapName, String sourceUuid) {
+        super(mapName, sourceUuid);
     }
 }
