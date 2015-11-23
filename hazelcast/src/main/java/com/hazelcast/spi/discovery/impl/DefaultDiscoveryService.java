@@ -150,7 +150,7 @@ public class DefaultDiscoveryService
             return discoveryStrategies;
         } catch (Exception e) {
             if (e instanceof ValidationException) {
-                throw new InvalidConfigurationException("Invalid configutation ", e);
+                throw new InvalidConfigurationException("Invalid configuration", e);
             } else {
                 throw new RuntimeException("Failed to configure discovery strategies", e);
             }
