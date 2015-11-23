@@ -108,7 +108,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> schedule(final Runnable command, long delay, TimeUnit unit) {
         return scheduledExecutor.schedule(new Runnable() {
             public void run() {
-                executeInternal(command);
+                executeInternalSafely(command);
             }
         }, delay, unit);
     }
@@ -117,7 +117,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
         return scheduledExecutor.scheduleAtFixedRate(new Runnable() {
             public void run() {
-                executeInternal(command);
+                executeInternalSafely(command);
             }
         }, initialDelay, period, unit);
     }
@@ -126,7 +126,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
         return scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
             public void run() {
-                executeInternal(command);
+                executeInternalSafely(command);
             }
         }, initialDelay, period, unit);
     }
@@ -137,9 +137,17 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     public void shutdown() {
-        shutdownExecutor("internal", internalExecutor);
         shutdownExecutor("scheduled", scheduledExecutor);
         shutdownExecutor("user", userExecutor);
+        shutdownExecutor("internal", internalExecutor);
+    }
+
+    private void executeInternalSafely(Runnable command) {
+        try {
+            executeInternal(command);
+        } catch (RejectedExecutionException e) {
+            LOGGER.warning("Rejected internal execution on scheduledExecutor", e);
+        }
     }
 
     private void shutdownExecutor(String name, ExecutorService executor) {
