@@ -81,7 +81,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     public static final String SERVICE_NAME = "hz:impl:replicatedMapService";
     public static final int INVOCATION_TRY_COUNT = 3;
 
-    private static final int SYNC_INTERVAL_SECONDS = 10;
+    private static final int SYNC_INTERVAL_SECONDS = 30;
     private static final int MAX_CLEAR_EXECUTION_RETRY = 5;
 
     private final Config config;

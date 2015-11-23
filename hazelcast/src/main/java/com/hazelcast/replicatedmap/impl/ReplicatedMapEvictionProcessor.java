@@ -24,6 +24,8 @@ import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 import java.util.Collection;
 
+import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
+
 /**
  * Actual eviction processor implementation to remove values to evict values from the replicated map
  */
@@ -42,6 +44,6 @@ public class ReplicatedMapEvictionProcessor implements ScheduledEntryProcessor<O
     public void process(EntryTaskScheduler<Object, Object> scheduler, Collection<ScheduledEntry<Object, Object>> entries) {
         EvictionOperation evictionOperation = new EvictionOperation(store, entries);
         evictionOperation.setPartitionId(partitionId);
-        nodeEngine.getOperationService().executeOperation(evictionOperation);
+        nodeEngine.getOperationService().invokeOnTarget(SERVICE_NAME, evictionOperation, nodeEngine.getThisAddress());
     }
 }

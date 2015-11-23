@@ -274,6 +274,9 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         newRecord.setCreationTime(record.getCreationTime());
         newRecord.setLastAccessTime(record.getLastAccessTime());
         newRecord.setUpdateTime(record.getLastUpdateTime());
+        if (record.getTtl() > 0) {
+            scheduleTtlEntry(record.getTtl(), key, value);
+        }
         getStorage().putInternal(key, newRecord);
     }
 
