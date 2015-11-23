@@ -1,6 +1,7 @@
 package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
@@ -45,7 +46,10 @@ public class MapNearCacheInvalidationFromClientTest {
         mapName = randomMapName();
         factory.newHazelcastInstance(createServerConfig(mapName, false));
         lite = factory.newHazelcastInstance(createServerConfig(mapName, true));
-        client = factory.newHazelcastClient();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNearCacheConfig("default").setInvalidateOnChange(false);
+        client = factory.newHazelcastClient(clientConfig);
     }
 
     @After
