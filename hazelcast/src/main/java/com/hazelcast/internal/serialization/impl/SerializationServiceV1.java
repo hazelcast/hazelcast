@@ -111,7 +111,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         return portableContext;
     }
 
-    protected void registerConstantSerializers() {
+    private void registerConstantSerializers() {
         registerConstant(null, nullSerializerAdapter);
         registerConstant(DataSerializable.class, dataSerializerAdapter);
         registerConstant(Portable.class, portableSerializerAdapter);
@@ -137,7 +137,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(String[].class, new StringArraySerializer());
     }
 
-    protected void registerJavaTypeSerializers() {
+    private void registerJavaTypeSerializers() {
         //Java extensions: more serializers
         registerConstant(Date.class, new DateSerializer());
         registerConstant(BigInteger.class, new BigIntegerSerializer());
