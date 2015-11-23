@@ -458,8 +458,8 @@ public abstract class AbstractSerializationService implements SerializationServi
     private SerializerAdapter lookupJavaSerializer(Class type) {
         if (Serializable.class.isAssignableFrom(type)) {
             if (!Throwable.class.isAssignableFrom(type)) {
-                logger.warning("WARNING!!! Serialization service will use Java Serialization for : " + type.getName()
-                        + " . Please consider using a faster serialization option!!!");
+                logger.info("Performance Hint: Serialization service will use Java Serialization for : " + type.getName()
+                    + " . Please consider using a faster serialization option such as DataSerializable. ");
             }
             safeRegister(type, javaSerializerAdapter);
             return javaSerializerAdapter;
