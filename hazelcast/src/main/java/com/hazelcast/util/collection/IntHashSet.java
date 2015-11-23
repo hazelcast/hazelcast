@@ -27,6 +27,7 @@ import java.util.Set;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static com.hazelcast.util.QuickMath.nextPowerOfTwo;
+import static com.hazelcast.util.collection.Hashing.intHash;
 
 /**
  * Simple fixed-size int hashset.
@@ -74,7 +75,7 @@ public final class IntHashSet implements Set<Integer> {
         if (size == capacity) {
             throw new IllegalStateException("This IntHashSet of capacity " + capacity + " is full");
         }
-        int index = Hashing.intHash(value, mask);
+        int index = intHash(value, mask);
 
         while (values[index] != missingValue) {
             if (values[index] == value) {
@@ -104,7 +105,7 @@ public final class IntHashSet implements Set<Integer> {
      * @return true if the value was present, false otherwise
      */
     public boolean remove(final int value) {
-        int index = Hashing.intHash(value, mask);
+        int index = intHash(value, mask);
 
         while (values[index] != missingValue) {
             if (values[index] == value) {
@@ -124,19 +125,22 @@ public final class IntHashSet implements Set<Integer> {
         return index;
     }
 
-    private void compactChain(final int deleteIndex) {
+    private void compactChain(int deleteIndex) {
         final int[] values = this.values;
-
         int index = deleteIndex;
         while (true) {
-            final int previousIndex = index;
             index = next(index);
             if (values[index] == missingValue) {
                 return;
             }
-
-            values[previousIndex] = values[index];
-            values[index] = missingValue;
+            final int hash = intHash(values[index], mask);
+            if ((index < hash && (hash <= deleteIndex || deleteIndex <= index))
+                    || (hash <= deleteIndex && deleteIndex <= index)
+            ) {
+                values[deleteIndex] = values[index];
+                values[index] = missingValue;
+                deleteIndex = index;
+            }
         }
     }
 
@@ -151,7 +155,7 @@ public final class IntHashSet implements Set<Integer> {
      * {@inheritDoc}
      */
     public boolean contains(final int value) {
-        int index = Hashing.intHash(value, mask);
+        int index = intHash(value, mask);
 
         while (values[index] != missingValue) {
             if (values[index] == value) {

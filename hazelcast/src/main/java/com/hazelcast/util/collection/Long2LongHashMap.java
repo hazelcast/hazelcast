@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import static com.hazelcast.util.collection.Hashing.evenLongHash;
+
 /**
  * A Probing hashmap specialised for long key and value pairs.
  */
@@ -93,7 +95,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
 
     public long get(final long key) {
         final long[] entries = this.entries;
-        int index = hash(key);
+        int index = evenLongHash(key, mask);
         long candidateKey;
         while ((candidateKey = entries[index]) != missingValue) {
             if (candidateKey == key) {
@@ -106,7 +108,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
 
     public long put(final long key, final long value) {
         long oldValue = missingValue;
-        int index = hash(key);
+        int index = evenLongHash(key, mask);
         long candidateKey;
         while ((candidateKey = entries[index]) != missingValue) {
             if (candidateKey == key) {
@@ -143,12 +145,6 @@ public class Long2LongHashMap implements Map<Long, Long> {
                 put(key, oldEntries[i + 1]);
             }
         }
-    }
-
-    private int hash(final long key) {
-        int hash = (int) key ^ (int) (key >>> 32);
-        hash = (hash << 1) - (hash << 8);
-        return hash & mask;
     }
 
     /**
@@ -310,7 +306,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
 
     public long remove(final long key) {
         final long[] entries = this.entries;
-        int index = hash(key);
+        int index = evenLongHash(key, mask);
         long candidateKey;
         while ((candidateKey = entries[index]) != missingValue) {
             if (candidateKey == key) {
@@ -348,7 +344,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
             if (entries[index] == missingValue) {
                 return;
             }
-            final int hash = hash(entries[index]);
+            final int hash = evenLongHash(entries[index], mask);
             if ((index < hash && (hash <= deleteIndex || deleteIndex <= index))
                     || (hash <= deleteIndex && deleteIndex <= index)) {
                 entries[deleteIndex] = entries[index];

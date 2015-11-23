@@ -33,20 +33,20 @@ import java.util.Set;
  *
  * It requires creation via {@link com.hazelcast.util.collection.InflatableSet.Builder}
  *
- * The builder doesn't not call equals/hash methods on initial data insertion hence it avoids
+ * The builder doesn't call equals/hash methods on initial data insertion, hence it avoids
  * performance penalty in the case these methods are expensive. It also means it does
- * not detect duplicates - it's a responsibility of a caller to make sure no duplicated
+ * not detect duplicates - it's the responsibility of the caller to make sure no duplicated
  * entries are inserted.
  *
- * Once InflatableSet is constructed via {@link Builder#build()} then it act as regular set. It has
- * been designed to mimic {@link HashSet}. On new entry insertion or look-up via
+ * Once InflatableSet is constructed via {@link Builder#build()} then it acts as a regular set. It has
+ * been designed to mimic {@link HashSet}. On new entry insertion or lookup via
  * {@link #contains(Object)} it inflates itself: The backing list is copied into
- * internal {@link HashSet}. This obviously costs time and space. We are make a bet the
+ * internal {@link HashSet}. This obviously costs time and space. We are making a bet the
  * Set won't be modified in most cases.
  *
- * It's intended to be use in cases where a contract mandates us to return Set,
- * but we know our data contains not duplicates. It performs the best in cases
- * biased towards sequential iterations.
+ * It's intended to be used in cases where the contract mandates us to return Set,
+ * but we know our data does not contain duplicates. It performs best in cases
+ * biased towards sequential iteration.
  *
  * @param <T> the type of elements maintained by this set
  */
