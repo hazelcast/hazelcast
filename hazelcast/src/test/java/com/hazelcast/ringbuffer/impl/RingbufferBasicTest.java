@@ -592,13 +592,23 @@ public abstract class RingbufferBasicTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void readManyAsync_whenMinZeroAndItemAvailable() throws ExecutionException, InterruptedException {
+        ringbuffer.add("1");
+
+        ICompletableFuture<ReadResultSet<String>> f = ringbuffer.readManyAsync(0, 0, 10, null);
+
+        assertCompletesEventually(f);
+        assertEquals(asList("1"), f.get());
+    }
+
+    @Test
     public void readManyAsync_whenEnoughItems() throws ExecutionException, InterruptedException {
         ringbuffer.add("item1");
         ringbuffer.add("item2");
         ringbuffer.add("item3");
         ringbuffer.add("item4");
 
-        final ICompletableFuture<ReadResultSet<String>> f = ringbuffer.readManyAsync(1, 1, 2, null);
+        ICompletableFuture<ReadResultSet<String>> f = ringbuffer.readManyAsync(1, 1, 2, null);
         assertCompletesEventually(f);
 
         ReadResultSet<String> resultSet = f.get();
@@ -615,7 +625,7 @@ public abstract class RingbufferBasicTest extends HazelcastTestSupport {
         ringbuffer.add("item3");
         ringbuffer.add("item4");
 
-        final ICompletableFuture<ReadResultSet<String>> f = ringbuffer.readManyAsync(1, 1, 2, null);
+        ICompletableFuture<ReadResultSet<String>> f = ringbuffer.readManyAsync(1, 1, 2, null);
         assertCompletesEventually(f);
 
         ReadResultSet<String> resultSet = f.get();
@@ -641,8 +651,7 @@ public abstract class RingbufferBasicTest extends HazelcastTestSupport {
         ringbuffer.add("good3");
         ringbuffer.add("bad1");
 
-
-        final ICompletableFuture<ReadResultSet<String>> f = ringbuffer.readManyAsync(0, 2, 10, new GoodStringFunction());
+        ICompletableFuture<ReadResultSet<String>> f = ringbuffer.readManyAsync(0, 2, 10, new GoodStringFunction());
 
         assertCompletesEventually(f);
 
