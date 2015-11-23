@@ -5,9 +5,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
-import com.hazelcast.map.mapstore.MapStoreTest;
+import com.hazelcast.map.mapstore.AbstractMapStoreTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -29,7 +28,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientMapLoadAllTest extends HazelcastTestSupport {
+public class ClientMapLoadAllTest extends AbstractMapStoreTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -92,12 +91,12 @@ public class ClientMapLoadAllTest extends HazelcastTestSupport {
         assertEquals(1000, map.size());
     }
 
-    private static Config createNewConfig(String mapName) {
+    private Config createNewConfig(String mapName) {
         return createNewConfig(mapName, new SimpleStore());
     }
 
-    private static Config createNewConfig(String mapName, MapStore mapStore) {
-        return MapStoreTest.newConfig(mapName, mapStore, 0);
+    private Config createNewConfig(String mapName, MapStore mapStore) {
+        return newConfig(mapName, mapStore, 0);
     }
 
     private static void populateMap(IMap map, int itemCount) {

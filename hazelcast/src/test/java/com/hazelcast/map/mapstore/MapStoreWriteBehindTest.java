@@ -28,9 +28,9 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.mapstore.MapStoreTest.MapStoreWithStoreCount;
 import com.hazelcast.map.mapstore.MapStoreTest.SimpleMapStore;
 import com.hazelcast.map.mapstore.MapStoreTest.TestEventBasedMapStore;
@@ -40,11 +40,13 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -63,24 +65,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.map.mapstore.MapStoreTest.newConfig;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 /**
  * @author enesakar 1/21/13
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MapStoreWriteBehindTest extends HazelcastTestSupport {
+public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
 
     @Test(timeout = 120000)
     public void testOneMemberWriteBehindWithMaxIdle() throws Exception {
@@ -358,7 +354,7 @@ public class MapStoreWriteBehindTest extends HazelcastTestSupport {
 
     @Test(timeout = 120000)
     public void testIssue1085WriteBehindBackup() throws InterruptedException {
-        Config config = new Config();
+        Config config = getConfig();
         String name = "testIssue1085WriteBehindBackup";
         MapConfig writeBehindBackup = config.getMapConfig(name);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -383,7 +379,7 @@ public class MapStoreWriteBehindTest extends HazelcastTestSupport {
         final String name = randomMapName("testIssue1085WriteBehindBackup");
         final int expectedStoreCount = 3;
         final int nodeCount = 3;
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS, "30");
         MapConfig writeBehindBackupConfig = config.getMapConfig(name);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -549,7 +545,8 @@ public class MapStoreWriteBehindTest extends HazelcastTestSupport {
                 .setImplementation(new SimpleMapStore<String, String>())
                 .setWriteDelaySeconds(Integer.MAX_VALUE);
 
-        Config config = new Config().addMapConfig(new MapConfig("map").setMapStoreConfig(mapStoreConfig));
+        Config config = getConfig();
+        config.getMapConfig("map").setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<String, String> map = instance.getMap("map");
@@ -688,7 +685,6 @@ public class MapStoreWriteBehindTest extends HazelcastTestSupport {
         }
 
     }
-
 
 
     public static class FailAwareMapStore implements MapStore {

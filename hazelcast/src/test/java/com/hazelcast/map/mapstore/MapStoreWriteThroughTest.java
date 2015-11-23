@@ -30,7 +30,6 @@ import com.hazelcast.map.mapstore.MapStoreTest.TestMapStore;
 import com.hazelcast.map.mapstore.MapStoreWriteBehindTest.FailAwareMapStore;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -41,7 +40,6 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.map.mapstore.MapStoreTest.newConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -53,7 +51,7 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MapStoreWriteThroughTest extends HazelcastTestSupport {
+public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
 
     @Test(timeout = 120000)
     public void testOneMemberWriteThroughWithIndex() throws Exception {
@@ -236,7 +234,7 @@ public class MapStoreWriteThroughTest extends HazelcastTestSupport {
 
         testMapStore.assertAwait(10);
         // N put-load N put-store call and 1 loadAllKeys
-        assertEquals(items*2+1, testMapStore.callCount.get());
+        assertEquals(items * 2 + 1, testMapStore.callCount.get());
     }
 
     @Test(timeout = 120000)
