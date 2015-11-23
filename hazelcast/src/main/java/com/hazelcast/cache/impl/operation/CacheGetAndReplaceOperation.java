@@ -54,7 +54,11 @@ public class CacheGetAndReplaceOperation
 
     @Override
     public boolean shouldBackup() {
-        return response != null;
+        // Backup record may be null since record store might be cleared by destroy operation at the same time
+        // because destroy operation is not called from partition thread pool.
+        // In this case, we simply ignore backup operation
+        // because record store on backup will be cleared also by destroy operation.
+        return response != null && backupRecord != null;
     }
 
     @Override

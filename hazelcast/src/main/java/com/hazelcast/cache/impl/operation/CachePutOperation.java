@@ -64,7 +64,11 @@ public class CachePutOperation
 
     @Override
     public boolean shouldBackup() {
-        return true;
+        // Backup record may be null since record store might be cleared by destroy operation at the same time
+        // because destroy operation is not called from partition thread pool.
+        // In this case, we simply ignore backup operation
+        // because record store on backup will be cleared also by destroy operation.
+        return backupRecord != null;
     }
 
     @Override
