@@ -824,6 +824,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Object putFromLoad(Data key, Object value, long ttl) {
+        if (!isKeyAndValueLoadable(key, value)) {
+            return null;
+        }
+
         final long now = getNow();
 
         if (shouldEvict(now)) {
@@ -845,6 +849,20 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
         saveIndex(record, oldValue);
         return oldValue;
+    }
+
+    protected boolean isKeyAndValueLoadable(Data key, Object value) {
+        if (key == null) {
+            logger.warning("Found an attempt to load a null key from map-store, ignoring it.");
+            return false;
+        }
+
+        if (value == null) {
+            logger.warning("Found an attempt to load a null value from map-store, ignoring it.");
+            return false;
+        }
+
+        return true;
     }
 
     @Override
