@@ -37,6 +37,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
+@Ignore //https://github.com/hazelcast/hazelcast/issues/5916
 public class BaseAggregationTest
         extends AbstractAggregationTest {
 
