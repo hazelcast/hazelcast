@@ -46,9 +46,7 @@ public class MapNearCacheInvalidationFromClientTest {
         factory.newHazelcastInstance(createServerConfig(mapName, false));
         lite = factory.newHazelcastInstance(createServerConfig(mapName, true));
 
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNearCacheConfig("default").setInvalidateOnChange(false);
-        client = factory.newHazelcastClient(clientConfig);
+        client = factory.newHazelcastClient();
     }
 
     @After
