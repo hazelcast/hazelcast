@@ -639,16 +639,17 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
                 checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
 
-                int partitionId = partitionService.getPartitionId(entry.getKey());
+                Data keyData = toData(entry.getKey(), partitionStrategy);
+
+                int partitionId = partitionService.getPartitionId(keyData);
+
                 MapEntries entries = entriesPerPartition[partitionId];
                 if (entries == null) {
                     entries = new MapEntries();
                     entriesPerPartition[partitionId] = entries;
                 }
 
-                Data keyData = toData(entry.getKey(), partitionStrategy);
-                Data valueData = toData(entry.getValue());
-                entries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, valueData));
+                entries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, toData(entry.getValue())));
             }
 
             // then we invoke the operations
