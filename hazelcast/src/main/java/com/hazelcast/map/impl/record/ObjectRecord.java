@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.record;
 
 class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
 
-    private Object value;
+    private volatile Object value;
 
     ObjectRecord() {
         super();
