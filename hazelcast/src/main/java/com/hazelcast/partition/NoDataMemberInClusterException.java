@@ -23,9 +23,6 @@ import com.hazelcast.core.HazelcastException;
  */
 public class NoDataMemberInClusterException
         extends HazelcastException {
-    public NoDataMemberInClusterException() {
-        super();
-    }
 
     public NoDataMemberInClusterException(String message) {
         super(message);
