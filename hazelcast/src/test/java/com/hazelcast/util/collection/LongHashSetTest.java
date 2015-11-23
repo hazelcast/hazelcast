@@ -173,7 +173,7 @@ public class LongHashSetTest {
         final LongHashSet other = new LongHashSet(1000, -1);
         other.copy(set);
 
-        assertThat(other, contains(1L, 2L));
+        assertThat(other, contains(2L, 1L));
     }
 
     @Test public void twoEmptySetsAreEqual() {
@@ -275,9 +275,9 @@ public class LongHashSetTest {
         final Iterator<Long> iter = set.iterator();
 
         assertTrue(iter.hasNext());
-        assertEquals(Long.valueOf(1), iter.next());
-        assertTrue(iter.hasNext());
         assertEquals(Long.valueOf(2), iter.next());
+        assertTrue(iter.hasNext());
+        assertEquals(Long.valueOf(1), iter.next());
         assertFalse(iter.hasNext());
     }
 }

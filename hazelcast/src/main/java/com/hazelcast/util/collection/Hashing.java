@@ -17,26 +17,25 @@
 
 package com.hazelcast.util.collection;
 
+import static com.hazelcast.util.HashUtil.fastIntMix;
+import static com.hazelcast.util.HashUtil.fastLongMix;
+
 /**
- * Hashcode calculation.
+ * Hashcode functions for classes in this package.
  */
 public final class Hashing {
     private Hashing() { }
 
-    public static int intHash(final int value, final int mask) {
-        final int hash = value ^ (value >>> 16);
-        return hash & mask;
+    static int intHash(final int value, final int mask) {
+        return fastIntMix(value) & mask;
     }
 
-    public static int longHash(final long value, final int mask) {
-        int hash = (int) value ^ (int) (value >>> 32);
-        hash ^= (hash >>> 16);
-        return hash & mask;
+    static int longHash(final long value, final int mask) {
+        return ((int) fastLongMix(value)) & mask;
     }
 
-    public static int evenLongHash(final long value, final int mask) {
-        int hash = (int) value ^ (int) (value >>> 32);
-        hash = (hash << 1) - (hash << 8);
-        return hash & mask;
+    static int evenLongHash(final long value, final int mask) {
+        final int h = (int) fastLongMix(value);
+        return h & mask & ~1;
     }
 }
