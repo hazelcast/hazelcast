@@ -159,7 +159,7 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
 
     @Override
     public void invalidateLocalNearCache(String mapName, Data key) {
-        if (!isLocalNearCacheAndInvalidationEnabled(mapName)) {
+        if (!isNearCacheAndInvalidationEnabled(mapName)) {
             return;
         }
 
@@ -171,7 +171,7 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
 
     @Override
     public void invalidateLocalNearCache(String mapName, Collection<Data> keys) {
-        if (!isLocalNearCacheAndInvalidationEnabled(mapName)) {
+        if (!isNearCacheAndInvalidationEnabled(mapName)) {
             return;
         }
         NearCache nearCache = nearCacheProvider.getOrNullNearCache(mapName);
@@ -184,7 +184,7 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
 
     @Override
     public void clearLocalNearCache(String mapName, String sourceUuid) {
-        if (!isLocalNearCacheAndInvalidationEnabled(mapName)) {
+        if (!isNearCacheAndInvalidationEnabled(mapName)) {
             return;
         }
 
@@ -234,7 +234,7 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
         clientInvalidationListenerIds.remove(mapName);
     }
 
-    private boolean isLocalNearCacheAndInvalidationEnabled(String mapName) {
+    private boolean isNearCacheAndInvalidationEnabled(String mapName) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         return mapContainer.isNearCacheEnabled() && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange();
     }
@@ -325,6 +325,9 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
     }
 
     private void sendInvalidationToServerNearCache(String mapName, Data key) {
+        if (!isNearCacheAndInvalidationEnabled(mapName)) {
+            return;
+        }
         Collection<Member> members = nodeEngine.getClusterService().getMembers();
         for (Member member : members) {
             try {
@@ -340,6 +343,9 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
     }
 
     private void sendInvalidationToServerNearCache(String mapName, List<Data> keys) {
+        if (!isNearCacheAndInvalidationEnabled(mapName)) {
+            return;
+        }
         Operation operation = new NearCacheKeySetInvalidationOperation(mapName, keys).setServiceName(SERVICE_NAME);
         Collection<Member> members = nodeEngine.getClusterService().getMembers();
         for (Member member : members) {
