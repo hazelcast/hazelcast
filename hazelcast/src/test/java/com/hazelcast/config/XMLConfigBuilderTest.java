@@ -1097,6 +1097,21 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testGlobalSerializer() {
+        String name = randomName();
+        String val = "true";
+        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                "<serialization><serializers><global-serializer override-java-serialization=\"" + val + "\">" + name
+                + "</global-serializer></serializers></serialization>" + "</hazelcast>";
+
+        Config config = new InMemoryXmlConfig(xml);
+        GlobalSerializerConfig globalSerializerConfig = config.getSerializationConfig().getGlobalSerializerConfig();
+        globalSerializerConfig.getClassName();
+        assertEquals(name, globalSerializerConfig.getClassName());
+        assertTrue(globalSerializerConfig.isOverrideJavaSerialization());
+    }
+
+    @Test
     public void testHotRestart() {
         String dir = "/mnt/hot-restart-root/";
         int validationTimeout = 13131;

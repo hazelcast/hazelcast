@@ -175,12 +175,13 @@ public class IssuesTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
     public void testIssue1067GlobalSerializer() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
         final Config config = new Config();
-        config.getSerializationConfig().setGlobalSerializerConfig(new GlobalSerializerConfig()
+        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
+        globalSerializerConfig.setOverrideJavaSerialization(false);
+        config.getSerializationConfig().setGlobalSerializerConfig(globalSerializerConfig
                 .setImplementation(new StreamSerializer() {
                     public void write(ObjectDataOutput out, Object object) throws IOException {
                     }

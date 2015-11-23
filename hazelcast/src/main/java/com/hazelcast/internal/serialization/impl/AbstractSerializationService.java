@@ -74,6 +74,9 @@ public abstract class AbstractSerializationService implements SerializationServi
     private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<Integer, SerializerAdapter>();
     private final AtomicReference<SerializerAdapter> global = new AtomicReference<SerializerAdapter>();
 
+    //Global serializer may override Java Serialization or not
+    private boolean overrideJavaSerialization;
+
     private final ClassLoader classLoader;
     private final int outputBufferSize;
     private volatile boolean active = true;
@@ -287,13 +290,19 @@ public abstract class AbstractSerializationService implements SerializationServi
     }
 
     public final void registerGlobal(final Serializer serializer) {
+        registerGlobal(serializer, false);
+    }
+
+    public final void registerGlobal(final Serializer serializer, boolean overrideJavaSerialization) {
         SerializerAdapter adapter = createSerializerAdapter(serializer, this);
         if (!global.compareAndSet(null, adapter)) {
             throw new IllegalStateException("Global serializer is already registered!");
         }
+        this.overrideJavaSerialization = overrideJavaSerialization;
         SerializerAdapter current = idMap.putIfAbsent(serializer.getTypeId(), adapter);
         if (current != null && current.getImpl().getClass() != adapter.getImpl().getClass()) {
             global.compareAndSet(adapter, null);
+            this.overrideJavaSerialization = false;
             throw new IllegalStateException(
                     "Serializer [" + current.getImpl() + "] has been already registered for type-id: " + serializer.getTypeId());
         }
@@ -367,8 +376,8 @@ public abstract class AbstractSerializationService implements SerializationServi
             1-NULL serializer
             2-Default serializers, like primitives, arrays, String and some Java types
             3-Custom registered types by user
-            4-Global serializer if registered by user
-            5-JDK serialization ( Serializable and Externalizable )
+            4-JDK serialization ( Serializable and Externalizable ) if a global serializer with Java serialization not registered
+            5-Global serializer if registered by user
          */
 
         //1-NULL serializer
@@ -386,14 +395,14 @@ public abstract class AbstractSerializationService implements SerializationServi
             serializer = lookupCustomSerializer(type);
         }
 
-        //4-Global serializer if registered by user
-        if (serializer == null) {
-            serializer = lookupGlobalSerializer(type);
+        //4-JDK serialization ( Serializable and Externalizable )
+        if (serializer == null && !overrideJavaSerialization) {
+            serializer = lookupJavaSerializer(type);
         }
 
-        //5-JDK serialization ( Serializable and Externalizable )
+        //5-Global serializer if registered by user
         if (serializer == null) {
-            serializer = lookupJavaSerializer(type);
+            serializer = lookupGlobalSerializer(type);
         }
 
         if (serializer == null) {
@@ -450,6 +459,7 @@ public abstract class AbstractSerializationService implements SerializationServi
     private SerializerAdapter lookupGlobalSerializer(Class type) {
         SerializerAdapter serializer = global.get();
         if (serializer != null) {
+            logger.fine("Registering global serializer for : " + type.getName());
             safeRegister(type, serializer);
         }
         return serializer;

@@ -235,7 +235,8 @@ public class DefaultSerializationServiceBuilder
                     ((HazelcastInstanceAware) serializer).setHazelcastInstance(hazelcastInstance);
                 }
 
-                ((AbstractSerializationService) ss).registerGlobal(serializer);
+                ((AbstractSerializationService) ss)
+                        .registerGlobal(serializer, globalSerializerConfig.isOverrideJavaSerialization());
             }
         }
         return ss;
