@@ -36,6 +36,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 
+import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 
 import static org.mockito.Mockito.inOrder;
@@ -48,7 +49,6 @@ import static org.mockito.Mockito.when;
 public class NodeExtensionTest extends HazelcastTestSupport {
 
     private HazelcastInstanceImpl hazelcastInstance;
-    private int port = 5000;
 
     @After
     public void cleanup() {
@@ -59,10 +59,10 @@ public class NodeExtensionTest extends HazelcastTestSupport {
 
     @Test
     public void verifyMethods() throws Exception {
-        NodeExtension nodeExtension = prepareNodeExtension();
+        DummyNodeContext nodeContext = new DummyNodeContext(new Address("127.0.0.1", 5000));
+        NodeExtension nodeExtension = nodeContext.getNodeExtension();
 
-        hazelcastInstance = new HazelcastInstanceImpl(randomName(), getConfig(),
-                new DummyNodeContext(nextAddress(), nodeExtension));
+        hazelcastInstance = new HazelcastInstanceImpl(randomName(), getConfig(), nodeContext);
 
         InOrder inOrder = inOrder(nodeExtension);
 
@@ -78,15 +78,6 @@ public class NodeExtensionTest extends HazelcastTestSupport {
         inOrder.verify(nodeExtension, times(1)).shutdown();
     }
 
-    private NodeExtension prepareNodeExtension() {
-        NodeExtension nodeExtension = mock(NodeExtension.class);
-        when(nodeExtension.createService(MapService.class)).thenReturn(mock(MapService.class));
-        when(nodeExtension.createService(ICacheService.class)).thenReturn(mock(ICacheService.class));
-        when(nodeExtension.createService(WanReplicationService.class)).thenReturn(mock(WanReplicationService.class));
-        when(nodeExtension.createSerializationService()).thenReturn(new DefaultSerializationServiceBuilder().build());
-        return nodeExtension;
-    }
-
     protected Config getConfig() {
         Config config = new Config();
         NetworkConfig networkConfig = config.getNetworkConfig();
@@ -95,11 +86,7 @@ public class NodeExtensionTest extends HazelcastTestSupport {
         return config;
     }
 
-    private Address nextAddress() throws Exception {
-        return new Address("127.0.0.1", port++);
-    }
-
-    private static class DummyAddressPicker implements AddressPicker {
+    public static class DummyAddressPicker implements AddressPicker {
         final Address address;
 
         private DummyAddressPicker(Address address) {
@@ -126,18 +113,29 @@ public class NodeExtensionTest extends HazelcastTestSupport {
         }
     }
 
-    private static class DummyNodeContext implements NodeContext {
+    public static class DummyNodeContext implements NodeContext {
 
         private final Address address;
-        private final NodeExtension nodeExtension;
+        private final NodeExtension nodeExtension = mock(NodeExtension.class);
 
-        private DummyNodeContext(Address address, NodeExtension nodeExtension) {
+        public DummyNodeContext() throws UnknownHostException {
+            this(new Address("127.0.0.1", 5000));
+        }
+
+        public DummyNodeContext(Address address) {
             this.address = address;
-            this.nodeExtension = nodeExtension;
+        }
+
+        public NodeExtension getNodeExtension() {
+            return nodeExtension;
         }
 
         @Override
         public NodeExtension createNodeExtension(Node node) {
+            when(nodeExtension.createService(MapService.class)).thenReturn(mock(MapService.class));
+            when(nodeExtension.createService(ICacheService.class)).thenReturn(mock(ICacheService.class));
+            when(nodeExtension.createService(WanReplicationService.class)).thenReturn(mock(WanReplicationService.class));
+            when(nodeExtension.createSerializationService()).thenReturn(new DefaultSerializationServiceBuilder().build());
             return nodeExtension;
         }
 

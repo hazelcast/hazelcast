@@ -1222,7 +1222,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private boolean hasOnGoingMigrationMaster(Level level) {
         Address masterAddress = node.getMasterAddress();
         if (masterAddress == null) {
-            return true;
+            return node.joined();
         }
         Operation operation = new HasOngoingMigration();
         OperationService operationService = nodeEngine.getOperationService();
