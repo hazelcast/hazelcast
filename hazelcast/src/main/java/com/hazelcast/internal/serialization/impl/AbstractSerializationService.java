@@ -312,11 +312,11 @@ public abstract class AbstractSerializationService implements SerializationServi
         return partitionHash;
     }
 
-    protected final void safeRegister(final Class type, final Serializer serializer) {
-        safeRegister(type, createSerializerAdapter(serializer, this));
+    protected final boolean safeRegister(final Class type, final Serializer serializer) {
+        return safeRegister(type, createSerializerAdapter(serializer, this));
     }
 
-    protected final void safeRegister(final Class type, final SerializerAdapter serializer) {
+    protected final boolean safeRegister(final Class type, final SerializerAdapter serializer) {
         if (constantTypesMap.containsKey(type)) {
             throw new IllegalArgumentException("[" + type + "] serializer cannot be overridden!");
         }
@@ -330,6 +330,7 @@ public abstract class AbstractSerializationService implements SerializationServi
             throw new IllegalStateException(
                     "Serializer [" + current.getImpl() + "] has been already registered for type-id: " + serializer.getTypeId());
         }
+        return current == null;
     }
 
     protected final void registerConstant(Class type, Serializer serializer) {
@@ -457,11 +458,10 @@ public abstract class AbstractSerializationService implements SerializationServi
 
     private SerializerAdapter lookupJavaSerializer(Class type) {
         if (Serializable.class.isAssignableFrom(type)) {
-            if (!Throwable.class.isAssignableFrom(type)) {
+            if (safeRegister(type, javaSerializerAdapter) && !Throwable.class.isAssignableFrom(type)) {
                 logger.info("Performance Hint: Serialization service will use Java Serialization for : " + type.getName()
                     + " . Please consider using a faster serialization option such as DataSerializable. ");
             }
-            safeRegister(type, javaSerializerAdapter);
             return javaSerializerAdapter;
         }
         return null;
