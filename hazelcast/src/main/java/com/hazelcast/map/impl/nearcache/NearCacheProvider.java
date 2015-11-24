@@ -41,7 +41,7 @@ public class NearCacheProvider {
         public NearCache createNew(String mapName) {
             MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
             SizeEstimator nearCacheSizeEstimator = mapContainer.getNearCacheSizeEstimator();
-            NearCacheImpl nearCache = new NearCacheImpl(mapName, nodeEngine);
+            NearCacheImpl nearCache = new NearCacheImpl(mapContainer, nodeEngine);
             nearCache.setNearCacheSizeEstimator(nearCacheSizeEstimator);
             return nearCache;
         }
