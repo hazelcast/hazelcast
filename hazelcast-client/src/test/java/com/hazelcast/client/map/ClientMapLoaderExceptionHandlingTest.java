@@ -6,10 +6,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
-import com.hazelcast.map.mapstore.MapStoreTest;
+import com.hazelcast.map.mapstore.AbstractMapStoreTest;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -29,7 +28,7 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientMapLoaderExceptionHandlingTest extends HazelcastTestSupport {
+public class ClientMapLoaderExceptionHandlingTest extends AbstractMapStoreTest {
 
     private static final String mapName = randomMapName();
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
@@ -90,8 +89,8 @@ public class ClientMapLoaderExceptionHandlingTest extends HazelcastTestSupport {
         assertEquals(IllegalStateException.class, exception.getClass());
     }
 
-    private static Config createNewConfig(String mapName, MapStore store) {
-        return MapStoreTest.newConfig(mapName, store, 0);
+    private Config createNewConfig(String mapName, MapStore store) {
+        return newConfig(mapName, store, 0);
     }
 
     private static class ExceptionalMapStore extends MapStoreAdapter {

@@ -7,10 +7,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -23,17 +25,12 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class LoadAllTest extends HazelcastTestSupport {
+public class LoadAllTest extends AbstractMapStoreTest {
 
     @Test(expected = NullPointerException.class)
     public void load_givenKeys_null() throws Exception {
@@ -190,9 +187,9 @@ public class LoadAllTest extends HazelcastTestSupport {
     }
 
 
-    private static Config createNewConfig(String mapName) {
+    private Config createNewConfig(String mapName) {
         final SimpleStore simpleStore = new SimpleStore();
-        return MapStoreTest.newConfig(mapName, simpleStore, 0);
+        return newConfig(mapName, simpleStore, 0);
     }
 
     private static void populateMap(IMap map, int itemCount) {

@@ -6,7 +6,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -17,13 +16,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.map.mapstore.MapStoreTest.newConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class MapStoreWithPredicateTest extends HazelcastTestSupport {
+public class MapStoreWithPredicateTest extends AbstractMapStoreTest {
 
     @Test
     public void testKeySetWithPredicate_checksMapStoreLoad() throws InterruptedException {

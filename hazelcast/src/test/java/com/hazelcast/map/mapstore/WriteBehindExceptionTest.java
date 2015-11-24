@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -36,7 +35,7 @@ import java.util.concurrent.CountDownLatch;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class TestWriteBehindException extends HazelcastTestSupport {
+public class WriteBehindExceptionTest extends AbstractMapStoreTest {
 
     final CountDownLatch latch1 = new CountDownLatch(1);
     final CountDownLatch latch2 = new CountDownLatch(1);
@@ -45,7 +44,7 @@ public class TestWriteBehindException extends HazelcastTestSupport {
     public void testWriteBehindStoreWithException() throws InterruptedException {
         final MapStore mapStore = new MapStore();
         mapStore.setLoadAllKeys(false);
-        Config config = MapStoreTest.newConfig(mapStore, 5);
+        Config config = newConfig(mapStore, 5);
         config.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, String> map = instance.getMap("map");
