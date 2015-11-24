@@ -19,7 +19,8 @@ package com.hazelcast.wan;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.wan.impl.WanDataSerializerHook;
 
 import java.io.IOException;
 
@@ -27,7 +28,7 @@ import java.io.IOException;
  * Event class used to transmit the actual event object
  */
 public class WanReplicationEvent
-        implements DataSerializable {
+        implements IdentifiedDataSerializable {
 
     private String serviceName;
     private ReplicationEventObject eventObject;
@@ -100,5 +101,15 @@ public class WanReplicationEvent
             throws IOException {
         serviceName = in.readUTF();
         eventObject = in.readObject();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return WanDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return WanDataSerializerHook.WAN_REPLICATION_EVENT;
     }
 }
