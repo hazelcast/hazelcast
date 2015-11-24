@@ -1,7 +1,6 @@
 package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
@@ -88,14 +87,18 @@ public class MapNearCacheInvalidationFromClientTest {
         }
 
         final IMap<Object, Object> liteMap = lite.getMap(mapName);
-
-        for (int i = 0; i < count; i++) {
-            assertNotNull(liteMap.get(i));
-        }
-
         final NearCache nearCache = getNearCache(lite, mapName);
-        final int sizeAfterPut = nearCache.size();
-        assertTrue("lite member near cache size should be > 0 but was " + sizeAfterPut, sizeAfterPut > 0);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                for (int i = 0; i < count; i++) {
+                    liteMap.get(i);
+                }
+                assertEquals(count, nearCache.size());
+            }
+        });
 
         map.clear();
 
@@ -103,10 +106,9 @@ public class MapNearCacheInvalidationFromClientTest {
             @Override
             public void run()
                     throws Exception {
-                final int sizeAfterClear = nearCache.size();
-                assertEquals("lite member near cache size should be 0 after clear but was " + sizeAfterClear, 0, sizeAfterClear);
+                assertEquals(0, nearCache.size());
             }
-        }, 10);
+        });
     }
 
     @Test
@@ -119,14 +121,18 @@ public class MapNearCacheInvalidationFromClientTest {
         }
 
         final IMap<Object, Object> liteMap = lite.getMap(mapName);
-
-        for (int i = 0; i < count; i++) {
-            assertNotNull(liteMap.get(i));
-        }
-
         final NearCache nearCache = getNearCache(lite, mapName);
-        final int sizeAfterPut = nearCache.size();
-        assertTrue("lite member near cache size should be > 0 but was " + sizeAfterPut, sizeAfterPut > 0);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                for (int i = 0; i < count; i++) {
+                    liteMap.get(i);
+                }
+                assertEquals(count, nearCache.size());
+            }
+        });
 
         map.evictAll();
 
@@ -134,10 +140,9 @@ public class MapNearCacheInvalidationFromClientTest {
             @Override
             public void run()
                     throws Exception {
-                final int sizeAfterEvict = nearCache.size();
-                assertEquals("lite member near cache size should be 0 after evict but was " + sizeAfterEvict, 0, sizeAfterEvict);
+                assertTrue(nearCache.size() < count);
             }
-        }, 10);
+        });
     }
 
     @Test
@@ -150,14 +155,18 @@ public class MapNearCacheInvalidationFromClientTest {
         }
 
         final IMap<Object, Object> liteMap = lite.getMap(mapName);
-
-        for (int i = 0; i < count; i++) {
-            assertNotNull(liteMap.get(i));
-        }
-
         final NearCache nearCache = getNearCache(lite, mapName);
-        final int sizeAfterPut = nearCache.size();
-        assertTrue("lite member near cache size should be > 0 but was " + sizeAfterPut, sizeAfterPut > 0);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                for (int i = 0; i < count; i++) {
+                    liteMap.get(i);
+                }
+                assertEquals(count, nearCache.size());
+            }
+        });
 
         map.evict(0);
 
@@ -165,11 +174,9 @@ public class MapNearCacheInvalidationFromClientTest {
             @Override
             public void run()
                     throws Exception {
-                final int sizeAfterEvict = nearCache.size();
-                assertTrue("lite member near cache size should be less than " + sizeAfterPut + " after evict but was "
-                        + sizeAfterEvict, sizeAfterEvict < sizeAfterPut);
+                assertTrue(nearCache.size() < count);
             }
-        }, 10);
+        });
     }
 
     @Test
