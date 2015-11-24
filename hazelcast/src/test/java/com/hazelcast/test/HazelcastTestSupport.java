@@ -37,7 +37,6 @@ import com.hazelcast.partition.impl.InternalPartitionServiceState;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.test.TestNodeRegistry.MockConnectionManager;
 import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Assert;
@@ -76,6 +75,8 @@ import static org.junit.Assert.fail;
 public abstract class HazelcastTestSupport {
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
+
+    private static org.apache.log4j.Level logLevel;
 
     static {
         ASSERT_TRUE_EVENTUALLY_TIMEOUT = Integer.getInteger("hazelcast.assertTrueEventually.timeout", 120);
@@ -223,8 +224,17 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void setLogLevel(org.apache.log4j.Level level) {
-        if (isLog4jLoaded()) {
-            org.apache.log4j.Logger.getRootLogger().setLevel(level);
+        if (isLog4jLoaded() && logLevel == null) {
+            org.apache.log4j.Logger rootLogger = org.apache.log4j.Logger.getRootLogger();
+            logLevel = rootLogger.getLevel();
+            rootLogger.setLevel(level);
+        }
+    }
+
+    public static void resetLogLevel() {
+        if (isLog4jLoaded() && logLevel != null) {
+            org.apache.log4j.Logger.getRootLogger().setLevel(logLevel);
+            logLevel = null;
         }
     }
 

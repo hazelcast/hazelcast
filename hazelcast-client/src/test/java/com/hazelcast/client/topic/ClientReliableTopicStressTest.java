@@ -1,6 +1,5 @@
 package com.hazelcast.client.topic;
 
-
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
@@ -63,6 +62,8 @@ public class ClientReliableTopicStressTest extends HazelcastTestSupport {
 
     @After
     public void teardown() {
+        resetLogLevel();
+
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
