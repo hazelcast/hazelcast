@@ -97,6 +97,5 @@ public final class ClientProtocolErrorCodes {
     public static final int REPLICATED_MAP_CANT_BE_CREATED = 72;
 
     private ClientProtocolErrorCodes() {
-
     }
 }
