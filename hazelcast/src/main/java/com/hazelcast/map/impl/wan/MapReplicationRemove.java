@@ -19,11 +19,13 @@ package com.hazelcast.map.impl.wan;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.impl.WanDataSerializerHook;
+
 import java.io.IOException;
 
-public class MapReplicationRemove implements ReplicationEventObject, DataSerializable {
+public class MapReplicationRemove implements ReplicationEventObject, IdentifiedDataSerializable {
 
     String mapName;
     Data key;
@@ -74,5 +76,15 @@ public class MapReplicationRemove implements ReplicationEventObject, DataSeriali
         mapName = in.readUTF();
         removeTime = in.readLong();
         key = in.readData();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return WanDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return WanDataSerializerHook.MAP_REPLICATION_REMOVE;
     }
 }

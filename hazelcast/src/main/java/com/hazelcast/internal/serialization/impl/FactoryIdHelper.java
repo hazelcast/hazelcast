@@ -95,6 +95,9 @@ public final class FactoryIdHelper {
     public static final String HIBERNATE_DS_FACTORY = "hazelcast.serialization.ds.hibernate";
     public static final String WEB_DS_FACTORY = "hazelcast.serialization.ds.web";
 
+    public static final String WAN_REPLICATION_DS_FACTORY = "hazelcast.serialization.ds.wan_replication";
+    public static final int WAN_REPLICATION_DS_FACTORY_ID = -31;
+
     // =========================== portables =============================================
 
     public static final String SPI_PORTABLE_FACTORY = "hazelcast.serialization.portable.spi";
