@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.wm.test;
 
-import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -26,7 +26,7 @@ import java.util.Collection;
 
 @RunWith(WebTestRunner.class)
 @DelegatedRunWith(Parameterized.class)
-@Category(NightlyTest.class)
+@Category(SlowTest.class)
 public class TomcatWebFilterTest extends WebFilterSlowTests {
 
     @Parameterized.Parameters(name = "Executing: {0}")

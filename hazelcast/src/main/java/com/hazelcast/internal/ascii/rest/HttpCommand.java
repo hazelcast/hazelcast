@@ -18,14 +18,16 @@ package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.ascii.AbstractTextCommand;
 import com.hazelcast.internal.ascii.TextCommandConstants;
-import com.hazelcast.nio.IOUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
 import static com.hazelcast.util.StringUtil.stringToBytes;
-@SuppressFBWarnings({ "EI_EXPOSE_REP", "MS_MUTABLE_ARRAY", "MS_PKGPROTECT" })
+
+@SuppressFBWarnings({"EI_EXPOSE_REP", "MS_MUTABLE_ARRAY", "MS_PKGPROTECT" })
 public abstract class HttpCommand extends AbstractTextCommand {
+
     public static final String HEADER_CONTENT_TYPE = "content-type: ";
     public static final String HEADER_CONTENT_LENGTH = "content-length: ";
     public static final String HEADER_CHUNKED = "transfer-encoding: chunked";
@@ -52,6 +54,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
         this.uri = uri;
     }
 
+    @Override
     public boolean shouldReply() {
         return true;
     }
@@ -99,7 +102,6 @@ public abstract class HttpCommand extends AbstractTextCommand {
         size += TextCommandConstants.RETURN.length;
         size += TextCommandConstants.RETURN.length;
         size += valueSize;
-        size += TextCommandConstants.RETURN.length;
         this.response = ByteBuffer.allocate(size);
         response.put(RES_200);
         if (contentType != null) {
@@ -114,12 +116,12 @@ public abstract class HttpCommand extends AbstractTextCommand {
         if (value != null) {
             response.put(value);
         }
-        response.put(TextCommandConstants.RETURN);
         response.flip();
     }
 
+    @Override
     public boolean writeTo(ByteBuffer dst) {
-        IOUtil.copyToHeapBuffer(response, dst);
+        copyToHeapBuffer(response, dst);
         return !response.hasRemaining();
     }
 

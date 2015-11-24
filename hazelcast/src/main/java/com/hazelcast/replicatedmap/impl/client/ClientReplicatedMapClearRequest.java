@@ -16,32 +16,27 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.operation.ClearLocalAndRemoteOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
+import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 /**
  * Client request class for {@link java.util.Map#clear()} implementation
  */
-public class ClientReplicatedMapClearRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapClearRequest extends AbstractReplicatedMapClientRequest {
 
     ClientReplicatedMapClearRequest() {
-        super(null);
     }
 
-    public ClientReplicatedMapClearRequest(String mapName) {
-        super(mapName);
+    public ClientReplicatedMapClearRequest(String name, int partitionId) {
+        super(name, partitionId);
     }
 
     @Override
-    public Object call()
-            throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        recordStore.clear(true, true);
-        return Boolean.TRUE;
+    protected Operation prepareOperation() {
+        return new ClearLocalAndRemoteOperation(getMapName());
     }
 
     @Override

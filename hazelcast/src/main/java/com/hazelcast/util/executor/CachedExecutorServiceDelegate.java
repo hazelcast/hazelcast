@@ -37,12 +37,14 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
+
 public final class CachedExecutorServiceDelegate implements ExecutorService, ManagedExecutorService {
 
     public static final long TIME = 250;
 
-    private static final AtomicLongFieldUpdater<CachedExecutorServiceDelegate> EXECUTED_COUNT_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(CachedExecutorServiceDelegate.class, "executedCount");
+    private static final AtomicLongFieldUpdater<CachedExecutorServiceDelegate> EXECUTED_COUNT =
+            newUpdater(CachedExecutorServiceDelegate.class, "executedCount");
 
     private volatile long executedCount;
     private final String name;
@@ -208,7 +210,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
                     r = taskQ.poll(1, TimeUnit.MILLISECONDS);
                     if (r != null) {
                         r.run();
-                        EXECUTED_COUNT_UPDATER.incrementAndGet(CachedExecutorServiceDelegate.this);
+                        EXECUTED_COUNT.incrementAndGet(CachedExecutorServiceDelegate.this);
                     }
                 }
                 while (r != null);

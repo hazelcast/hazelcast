@@ -16,17 +16,16 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.nio.serialization.Data;
-
 class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
 
-    private Object value;
+    private volatile Object value;
 
     ObjectRecord() {
+        super();
     }
 
-    ObjectRecord(Data key, Object value) {
-        super(key);
+    ObjectRecord(Object value) {
+        super();
         this.value = value;
     }
 

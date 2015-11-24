@@ -24,8 +24,8 @@ import com.hazelcast.cache.impl.nearcache.impl.store.NearCacheDataRecordStore;
 import com.hazelcast.cache.impl.nearcache.impl.store.NearCacheObjectRecordStore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.monitor.NearCacheStats;
 
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -88,9 +88,9 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     protected ScheduledFuture scheduleExpirationTask(NearCacheExecutor nearCacheExecutor,
                                                      ExpirationTask expirationTask) {
         return nearCacheExecutor.scheduleWithFixedDelay(expirationTask,
-                                                        DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS,
-                                                        DEFAULT_EXPIRATION_TASK_DELAY_IN_SECONDS,
-                                                        TimeUnit.SECONDS);
+                DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS,
+                DEFAULT_EXPIRATION_TASK_DELAY_IN_SECONDS,
+                TimeUnit.SECONDS);
     }
 
     protected NearCacheRecordStore<K, V> createNearCacheRecordStore(NearCacheConfig nearCacheConfig,
@@ -124,7 +124,6 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     @Override
     public void put(K key, V value) {
         checkNotNull(key, "key cannot be null on put!");
-        checkNotNull(value, "value cannot be null on put");
 
         nearCacheRecordStore.doEvictionIfRequired();
 
@@ -136,13 +135,6 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
         checkNotNull(key, "key cannot be null on remove!");
 
         return nearCacheRecordStore.remove(key);
-    }
-
-    @Override
-    public void invalidate(K key) {
-        checkNotNull(key, "key cannot be null on invalidate!");
-
-        nearCacheRecordStore.remove(key);
     }
 
     @Override

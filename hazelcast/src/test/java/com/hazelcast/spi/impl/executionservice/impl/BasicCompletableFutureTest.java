@@ -14,15 +14,15 @@ import org.junit.rules.ExpectedException;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
@@ -37,7 +37,6 @@ import static org.mockito.Mockito.when;
 public class BasicCompletableFutureTest {
 
     private static final String DELEGATE_RESULT = "DELEGATE_RESULT";
-    private static final String OUTER_RESULT = "OUTER_RESULT";
 
     @Rule
     public ExpectedException expected = ExpectedException.none();
@@ -102,22 +101,6 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    public void completeOuter_outerDoneDelegateNot_delegateAskedFirst() {
-        outerFuture.setResult(OUTER_RESULT);
-
-        assertFalse(delegateFuture.isDone());
-        assertTrue(outerFuture.isDone());
-    }
-
-    @Test
-    public void completeOuter_outerDoneDelegateNot_outerAskedFirst() {
-        outerFuture.setResult(OUTER_RESULT);
-
-        assertTrue(outerFuture.isDone());
-        assertFalse(delegateFuture.isDone());
-    }
-
-    @Test
     public void completeDelegate_bothDone_delegateAskedFirst() {
         delegateFuture.run();
 
@@ -131,36 +114,6 @@ public class BasicCompletableFutureTest {
 
         assertTrue(outerFuture.isDone());
         assertTrue(delegateFuture.isDone());
-    }
-
-    @Test
-    // PROBLEM NR.1
-    // If you complete the BasicCompletableFuture through setResult it will return isDone() == true,
-    // but get() may hang forever implying that the delegate future (the future that's enclosed in BCF) will not complete.
-    // Infinite waiting path:
-    // <pre>
-    //     BasicCompletableFuture bcf = new ...();
-    //     bcf.setResult("result"); (will "complete" the BCF but not the delegate future)
-    //     if(bcf.isDone()) { // will return true
-    //         bcf.get() // hangs forever on the delegate future get() assuming it never completes.
-    //     }
-    //</pre>
-    public void completeOuter_getWithTimeout_delegateAsked() throws Exception {
-        outerFuture.setResult(OUTER_RESULT);
-
-        assertTrue(outerFuture.isDone());
-        expected.expect(TimeoutException.class);
-        delegateFuture.get(100, TimeUnit.MILLISECONDS);
-    }
-
-    @Test
-    // PROBLEM NR.1
-    public void completeOuter_getWithTimeout_outerAsked() throws Exception {
-        outerFuture.setResult(OUTER_RESULT);
-
-        assertTrue(outerFuture.isDone());
-        expected.expect(TimeoutException.class);
-        outerFuture.get(10, TimeUnit.MILLISECONDS);
     }
 
     @Test
@@ -235,7 +188,6 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    // PROBLEM NR.2 (this behavior is correct, but it takes part in the problematic scenario to show inconsistency)
     public void completeDelegate_successfully_callbackBeforeGet_invokeGetOnOuter_callbacksRun() throws Exception {
         ExecutionCallback callback = mock(ExecutionCallback.class);
 
@@ -248,7 +200,6 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    // PROBLEM NR.2 (this behavior is correct, but it takes part in the problematic scenario to show inconsistency)
     public void completeDelegate_withException_callbackBeforeGet_invokeIsDoneOnOuter_callbacksRun() throws Exception {
         ExecutionCallback callback = mock(ExecutionCallback.class);
         delegateThrowException = true;
@@ -262,8 +213,6 @@ public class BasicCompletableFutureTest {
     }
 
     @Test
-    // PROBLEM NR.2 -> root cause of this problem -> callbacks are never run
-    // which is not consistent with the other cases marked with PROBLEM NR.2
     public void completeDelegate_withException_callbackBeforeGet_invokeGetOnOuter_callbacksNeverReached() throws Exception {
         ExecutionCallback callback = mock(ExecutionCallback.class);
         delegateThrowException = true;
@@ -274,12 +223,12 @@ public class BasicCompletableFutureTest {
         try {
             outerFuture.get();
             fail();
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             assertEquals("Exception in execution", t.getCause().getMessage());
         }
 
-        // potential callbacks never executed as opposed to test above
-        verifyZeroInteractions(callback);
+        verify(callback, times(0)).onResponse(any(Throwable.class));
+        verify(callback, times(1)).onFailure(any(Throwable.class));
     }
 
     private <V> FutureTask<V> future(final V result) {
@@ -322,7 +271,11 @@ public class BasicCompletableFutureTest {
 
         public void execute(Runnable r) {
             // run in current thread
-            r.run();
+            try {
+                r.run();
+            } catch (Exception ex) {
+                sneakyThrow(new ExecutionException(ex));
+            }
         }
     }
 

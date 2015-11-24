@@ -23,6 +23,7 @@ import com.hazelcast.util.Clock;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
+import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 /**
  * This class collects statistics about the replication map usage for management center and is
@@ -31,36 +32,36 @@ import static com.hazelcast.util.JsonUtil.getLong;
 public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
 
     //CHECKSTYLE:OFF
-    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> LAST_ACCESS_TIME_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalReplicatedMapStatsImpl.class, "lastAccessTime");
-    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> LAST_UPDATE_TIME_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalReplicatedMapStatsImpl.class, "lastUpdateTime");
-    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> HITS_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalReplicatedMapStatsImpl.class, "hits");
-    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> NUMBER_OF_OTHER_OPERATIONS_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalReplicatedMapStatsImpl.class, "numberOfOtherOperations");
-    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> NUMBER_OF_EVENTS_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalReplicatedMapStatsImpl.class, "numberOfEvents");
-    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> NUMBER_OF_REPLICATION_EVENTS_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalReplicatedMapStatsImpl.class, "numberOfReplicationEvents");
-    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> GET_COUNT_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalReplicatedMapStatsImpl.class, "getCount");
-    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> PUT_COUNT_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalReplicatedMapStatsImpl.class, "putCount");
-    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> REMOVE_COUNT_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalReplicatedMapStatsImpl.class, "removeCount");
-    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> TOTAL_GET_LATENCIES_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalReplicatedMapStatsImpl.class, "totalGetLatencies");
-    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> TOTAL_PUT_LATENCIES_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalReplicatedMapStatsImpl.class, "totalPutLatencies");
-    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> TOTAL_REMOVE_LATENCIES_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalReplicatedMapStatsImpl.class, "totalRemoveLatencies");
-    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> MAX_GET_LATENCY_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalReplicatedMapStatsImpl.class, "maxGetLatency");
-    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> MAX_PUT_LATENCY_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalReplicatedMapStatsImpl.class, "maxPutLatency");
-    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> MAX_REMOVE_LATENCY_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalReplicatedMapStatsImpl.class, "maxRemoveLatency");
+    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> LAST_ACCESS_TIME =
+            newUpdater(LocalReplicatedMapStatsImpl.class, "lastAccessTime");
+    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> LAST_UPDATE_TIME =
+            newUpdater(LocalReplicatedMapStatsImpl.class, "lastUpdateTime");
+    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> HITS =
+            newUpdater(LocalReplicatedMapStatsImpl.class, "hits");
+    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> NUMBER_OF_OTHER_OPERATIONS =
+            newUpdater(LocalReplicatedMapStatsImpl.class, "numberOfOtherOperations");
+    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> NUMBER_OF_EVENTS =
+            newUpdater(LocalReplicatedMapStatsImpl.class, "numberOfEvents");
+    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> GET_COUNT =
+            newUpdater(LocalReplicatedMapStatsImpl.class, "getCount");
+    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> PUT_COUNT =
+            newUpdater(LocalReplicatedMapStatsImpl.class, "putCount");
+    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> REMOVE_COUNT =
+            newUpdater(LocalReplicatedMapStatsImpl.class, "removeCount");
+    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> TOTAL_GET_LATENCIES =
+            newUpdater(LocalReplicatedMapStatsImpl.class, "totalGetLatencies");
+    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> TOTAL_PUT_LATENCIES =
+            newUpdater(LocalReplicatedMapStatsImpl.class, "totalPutLatencies");
+    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> TOTAL_REMOVE_LATENCIES =
+            newUpdater(LocalReplicatedMapStatsImpl.class, "totalRemoveLatencies");
+    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> MAX_GET_LATENCY =
+            newUpdater(LocalReplicatedMapStatsImpl.class, "maxGetLatency");
+    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> MAX_PUT_LATENCY =
+            newUpdater(LocalReplicatedMapStatsImpl.class, "maxPutLatency");
+    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> MAX_REMOVE_LATENCY =
+            newUpdater(LocalReplicatedMapStatsImpl.class, "maxRemoveLatency");
+    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> OWNED_ENTRY_MEMORY_COST =
+            newUpdater(LocalReplicatedMapStatsImpl.class, "ownedEntryMemoryCost");
     //CHECKSTYLE:ON
 
     // These fields are only accessed through the updaters
@@ -69,7 +70,6 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     private volatile long hits;
     private volatile long numberOfOtherOperations;
     private volatile long numberOfEvents;
-    private volatile long numberOfReplicationEvents;
     private volatile long getCount;
     private volatile long putCount;
     private volatile long removeCount;
@@ -82,6 +82,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
 
     private volatile long creationTime;
     private volatile long ownedEntryCount;
+    private volatile long ownedEntryMemoryCost;
 
     public LocalReplicatedMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -116,11 +117,11 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
 
     @Override
     public long getOwnedEntryMemoryCost() {
-        return 0;
+        return ownedEntryMemoryCost;
     }
 
-    // TODO: unused
     public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
+        OWNED_ENTRY_MEMORY_COST.set(this, ownedEntryMemoryCost);
     }
 
     @Override
@@ -144,7 +145,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
 
     public void setLastAccessTime(long lastAccessTime) {
         long max = Math.max(this.lastAccessTime, lastAccessTime);
-        LAST_ACCESS_TIME_UPDATER.set(this, max);
+        LAST_ACCESS_TIME.set(this, max);
     }
 
     @Override
@@ -154,7 +155,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
 
     public void setLastUpdateTime(long lastUpdateTime) {
         long max = Math.max(this.lastUpdateTime, lastUpdateTime);
-        LAST_UPDATE_TIME_UPDATER.set(this, max);
+        LAST_UPDATE_TIME.set(this, max);
     }
 
     @Override
@@ -163,7 +164,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     }
 
     public void setHits(long hits) {
-        HITS_UPDATER.set(this, hits);
+        HITS.set(this, hits);
     }
 
     @Override
@@ -195,9 +196,9 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     }
 
     public void incrementPuts(long latency) {
-        PUT_COUNT_UPDATER.incrementAndGet(this);
-        TOTAL_PUT_LATENCIES_UPDATER.addAndGet(this, latency);
-        MAX_PUT_LATENCY_UPDATER.set(this, Math.max(maxPutLatency, latency));
+        PUT_COUNT.incrementAndGet(this);
+        TOTAL_PUT_LATENCIES.addAndGet(this, latency);
+        MAX_PUT_LATENCY.set(this, Math.max(maxPutLatency, latency));
     }
 
     @Override
@@ -206,9 +207,9 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     }
 
     public void incrementGets(long latency) {
-        GET_COUNT_UPDATER.incrementAndGet(this);
-        TOTAL_GET_LATENCIES_UPDATER.addAndGet(this, latency);
-        MAX_GET_LATENCY_UPDATER.set(this, Math.max(maxGetLatency, latency));
+        GET_COUNT.incrementAndGet(this);
+        TOTAL_GET_LATENCIES.addAndGet(this, latency);
+        MAX_GET_LATENCY.set(this, Math.max(maxGetLatency, latency));
     }
 
     @Override
@@ -217,9 +218,9 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     }
 
     public void incrementRemoves(long latency) {
-        REMOVE_COUNT_UPDATER.incrementAndGet(this);
-        TOTAL_REMOVE_LATENCIES_UPDATER.addAndGet(this, latency);
-        MAX_REMOVE_LATENCY_UPDATER.set(this, Math.max(maxRemoveLatency, latency));
+        REMOVE_COUNT.incrementAndGet(this);
+        TOTAL_REMOVE_LATENCIES.addAndGet(this, latency);
+        MAX_REMOVE_LATENCY.set(this, Math.max(maxRemoveLatency, latency));
     }
 
     @Override
@@ -258,7 +259,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     }
 
     public void incrementOtherOperations() {
-        NUMBER_OF_OTHER_OPERATIONS_UPDATER.incrementAndGet(this);
+        NUMBER_OF_OTHER_OPERATIONS.incrementAndGet(this);
     }
 
     @Override
@@ -267,19 +268,9 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     }
 
     public void incrementReceivedEvents() {
-        NUMBER_OF_EVENTS_UPDATER.incrementAndGet(this);
+        NUMBER_OF_EVENTS.incrementAndGet(this);
     }
 
-    @Override
-    public long getReplicationEventCount() {
-        return numberOfReplicationEvents;
-    }
-
-    public void incrementReceivedReplicationEvents() {
-        NUMBER_OF_REPLICATION_EVENTS_UPDATER.incrementAndGet(this);
-    }
-
-    @Override
     public long getHeapCost() {
         return 0;
     }
@@ -287,6 +278,12 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     // TODO: unused
     public void setHeapCost(long heapCost) {
     }
+
+    @Override
+    public long getReplicationEventCount() {
+        return 0;
+    }
+
 
     @Override
     public NearCacheStatsImpl getNearCacheStats() {
@@ -301,11 +298,11 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
         root.add("removeCount", removeCount);
         root.add("numberOfOtherOperations", numberOfOtherOperations);
         root.add("numberOfEvents", numberOfEvents);
-        root.add("numberOfReplicationEvents", numberOfReplicationEvents);
         root.add("lastAccessTime", lastAccessTime);
         root.add("lastUpdateTime", lastUpdateTime);
         root.add("hits", hits);
         root.add("ownedEntryCount", ownedEntryCount);
+        root.add("ownedEntryMemoryCost", ownedEntryMemoryCost);
         root.add("creationTime", creationTime);
         root.add("totalGetLatencies", totalGetLatencies);
         root.add("totalPutLatencies", totalPutLatencies);
@@ -323,11 +320,11 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
         removeCount = getLong(json, "removeCount", -1L);
         numberOfOtherOperations = getLong(json, "numberOfOtherOperations", -1L);
         numberOfEvents = getLong(json, "numberOfEvents", -1L);
-        numberOfReplicationEvents = getLong(json, "numberOfReplicationEvents", -1L);
         lastAccessTime = getLong(json, "lastAccessTime", -1L);
         lastUpdateTime = getLong(json, "lastUpdateTime", -1L);
         hits = getLong(json, "hits", -1L);
         ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
+        ownedEntryMemoryCost = getLong(json, "ownedEntryMemoryCost", -1L);
         creationTime = getLong(json, "creationTime", -1L);
         totalGetLatencies = getLong(json, "totalGetLatencies", -1L);
         totalPutLatencies = getLong(json, "totalPutLatencies", -1L);
@@ -345,7 +342,6 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
                 + ", hits=" + hits
                 + ", numberOfOtherOperations=" + numberOfOtherOperations
                 + ", numberOfEvents=" + numberOfEvents
-                + ", numberOfReplicationEvents=" + numberOfReplicationEvents
                 + ", getCount=" + getCount
                 + ", putCount=" + putCount
                 + ", removeCount=" + removeCount
@@ -353,6 +349,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
                 + ", totalPutLatencies=" + totalPutLatencies
                 + ", totalRemoveLatencies=" + totalRemoveLatencies
                 + ", ownedEntryCount=" + ownedEntryCount
+                + ", ownedEntryMemoryCost=" + ownedEntryMemoryCost
                 + ", creationTime=" + creationTime
                 + '}';
     }

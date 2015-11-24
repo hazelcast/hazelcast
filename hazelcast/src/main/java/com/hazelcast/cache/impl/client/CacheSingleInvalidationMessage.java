@@ -78,12 +78,11 @@ public class CacheSingleInvalidationMessage extends CacheInvalidationMessage {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("CacheSingleInvalidationMessage{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", key=").append(key);
-        sb.append(", sourceUuid='").append(sourceUuid).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "CacheSingleInvalidationMessage{"
+                + "name='" + name + '\''
+                + ", key=" + key
+                + ", sourceUuid='" + sourceUuid + '\''
+                + '}';
     }
 
 }

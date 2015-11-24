@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
-@GenerateCodec(id = TemplateConstants.ENTERPRISE_MAP_TEMPLATE_ID, name = "EnterpriseMap", ns = "Hazelcast.Client.Protocol.Map")
+@GenerateCodec(id = TemplateConstants.ENTERPRISE_MAP_TEMPLATE_ID, name = "EnterpriseMap", ns = "Hazelcast.Client.Protocol.Codec")
 public interface EnterpriseMapCodecTemplate {
 
     /**
@@ -38,7 +38,7 @@ public interface EnterpriseMapCodecTemplate {
      *                 batch, otherwise all changed values are included in the update.
      * @return Array of key-value pairs.
      */
-    @Request(id = 1, retryable = true, response = ResponseMessageConst.SET_ENTRY)
+    @Request(id = 1, retryable = true, response = ResponseMessageConst.LIST_ENTRY)
     Object publisherCreateWithValue(String mapName, String cacheName, Data predicate, int batchSize, int bufferSize,
                                   long delaySeconds, boolean populate, boolean coalesce);
 
@@ -55,7 +55,7 @@ public interface EnterpriseMapCodecTemplate {
      *                 batch, otherwise all changed values are included in the update.
      * @return Array of keys.
      */
-    @Request(id = 2, retryable = true, response = ResponseMessageConst.SET_DATA)
+    @Request(id = 2, retryable = true, response = ResponseMessageConst.LIST_DATA)
     Object publisherCreate(String mapName, String cacheName, Data predicate, int batchSize, int bufferSize, long delaySeconds,
                          boolean populate, boolean coalesce);
 
@@ -71,11 +71,12 @@ public interface EnterpriseMapCodecTemplate {
     /**
      *
      * @param listenerName Name of the MapListener which will be used to listen this QueryCache
+     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return Registration id for the listener.
      */
     @Request(id = 4, retryable = true, response = ResponseMessageConst.STRING,
              event = {EventMessageConst.EVENT_QUERYCACHESINGLE, EventMessageConst.EVENT_QUERYCACHEBATCH})
-    Object addListener(String listenerName);
+    Object addListener(String listenerName, boolean localOnly);
 
     /**
      *

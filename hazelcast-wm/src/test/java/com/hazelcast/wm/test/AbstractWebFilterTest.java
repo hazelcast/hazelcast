@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +39,11 @@ import org.junit.Before;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -63,7 +65,7 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
         if (System.getProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK) == null) {
             System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
         }
-        System.setProperty("hazelcast.version.check.enabled", "false");
+        System.setProperty("hazelcast.phone.home.enabled", "false");
         System.setProperty("hazelcast.mancenter.enabled", "false");
         System.setProperty("hazelcast.wait.seconds.before.join", "0");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
@@ -76,9 +78,9 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
         System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
         try {
             final URL root = new URL(TestServlet.class.getResource("/"), "../test-classes");
-            final String baseDir = new File(root.getFile().replaceAll("%20", " ")).toString();
+            final String baseDir = URLDecoder.decode(root.getFile(), "UTF-8");
             sourceDir = baseDir + "/../../src/test/webapp";
-        } catch (MalformedURLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new IllegalStateException("Couldn't initialize AbstractWebFilterTest");
         }
@@ -177,11 +179,7 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
             return true;
         }
         Node node = TestUtil.getNode(hz);
-        if (node == null) {
-            return true;
-        } else {
-            return !node.isActive();
-        }
+        return node == null || !node.isRunning();
     }
 
     @AfterClass

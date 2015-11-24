@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -147,7 +147,7 @@ public class SystemClockChangeTest extends HazelcastTestSupport {
 
     private static HazelcastInstance startNode() throws Exception {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "10");
+        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "10");
         return Hazelcast.newHazelcastInstance(config);
     }
 
@@ -155,8 +155,7 @@ public class SystemClockChangeTest extends HazelcastTestSupport {
         Thread thread = Thread.currentThread();
         ClassLoader tccl = thread.getContextClassLoader();
         try {
-            FilteringClassLoader cl = new FilteringClassLoader(Collections.<String>emptyList(),
-                    "com.hazelcast");
+            FilteringClassLoader cl = new FilteringClassLoader(Collections.<String>emptyList(), "com.hazelcast");
             thread.setContextClassLoader(cl);
 
             Class<?> configClazz = cl.loadClass("com.hazelcast.config.Config");
@@ -164,7 +163,7 @@ public class SystemClockChangeTest extends HazelcastTestSupport {
             Method setClassLoader = configClazz.getDeclaredMethod("setClassLoader", ClassLoader.class);
             setClassLoader.invoke(config, cl);
             Method setProperty = configClazz.getDeclaredMethod("setProperty", String.class, String.class);
-            setProperty.invoke(config, GroupProperties.PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "10");
+            setProperty.invoke(config, GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "10");
 
             Class<?> hazelcastClazz = cl.loadClass("com.hazelcast.core.Hazelcast");
             Method newHazelcastInstance = hazelcastClazz.getDeclaredMethod("newHazelcastInstance", configClazz);
@@ -174,4 +173,3 @@ public class SystemClockChangeTest extends HazelcastTestSupport {
         }
     }
 }
-

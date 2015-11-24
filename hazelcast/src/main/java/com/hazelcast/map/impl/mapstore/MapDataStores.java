@@ -20,13 +20,15 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindProcessor;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writethrough.WriteThroughStore;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.TimeUnit;
@@ -41,6 +43,8 @@ import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.crea
  * @see com.hazelcast.map.impl.mapstore.MapDataStore
  */
 public final class MapDataStores {
+
+    public static final MapDataStore EMPTY_MAP_DATA_STORE = new EmptyMapDataStore();
 
     private MapDataStores() {
     }
@@ -85,10 +89,10 @@ public final class MapDataStores {
     }
 
     private static WriteBehindQueue newWriteBehindQueue(MapServiceContext mapServiceContext, boolean writeCoalescing) {
-        final int capacity = mapServiceContext.getNodeEngine().getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
+        GroupProperties groupProperties = mapServiceContext.getNodeEngine().getGroupProperties();
+        final int capacity = groupProperties.getInteger(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY);
         final AtomicInteger counter = mapServiceContext.getWriteBehindQueueItemCounter();
-        return writeCoalescing ? createDefaultWriteBehindQueue()
-                : createBoundedWriteBehindQueue(capacity, counter);
+        return (writeCoalescing ? createDefaultWriteBehindQueue() : createBoundedWriteBehindQueue(capacity, counter));
     }
 
     /**
@@ -117,10 +121,6 @@ public final class MapDataStores {
      * @return empty store manager.
      */
     public static <K, V> MapDataStore<K, V> emptyStore() {
-        return (MapDataStore<K, V>) EmptyStoreHolder.EMPTY;
-    }
-
-    private static class EmptyStoreHolder {
-        static final MapDataStore EMPTY = new EmptyMapDataStore();
+        return (MapDataStore<K, V>) EMPTY_MAP_DATA_STORE;
     }
 }

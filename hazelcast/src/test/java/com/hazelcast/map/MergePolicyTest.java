@@ -1,6 +1,5 @@
 package com.hazelcast.map;
 
-
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
@@ -11,7 +10,7 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
 import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
@@ -211,7 +210,7 @@ public class MergePolicyTest extends HazelcastTestSupport {
         map1.put(key, "value");
 
         IMap<Object, Object> map2 = h2.getMap(mapName);
-        map2.put(key,Integer.valueOf(1));
+        map2.put(key, Integer.valueOf(1));
 
         assertOpenEventually(lifeCycleListener.latch);
         assertClusterSizeEventually(2, h1);
@@ -223,9 +222,9 @@ public class MergePolicyTest extends HazelcastTestSupport {
     }
 
     private Config newConfig(String mergePolicy, String mapName) {
-        Config config = new Config();
-        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
-        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        Config config = getConfig();
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "5");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
         config.getGroupConfig().setName(generateRandomString(10));
         MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.setMergePolicy(mergePolicy);

@@ -20,7 +20,6 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,9 +31,6 @@ public class ClassDefinitionImpl implements ClassDefinition {
     private int classId;
     private int version = -1;
     private final Map<String, FieldDefinition> fieldDefinitionsMap = new LinkedHashMap<String, FieldDefinition>();
-
-    public ClassDefinitionImpl() {
-    }
 
     public ClassDefinitionImpl(int factoryId, int classId, int version) {
         this.factoryId = factoryId;
@@ -92,10 +88,6 @@ public class ClassDefinitionImpl implements ClassDefinition {
         throw new IllegalArgumentException("Unknown field: " + fieldName);
     }
 
-    Collection<FieldDefinition> getFieldDefinitions() {
-        return fieldDefinitionsMap.values();
-    }
-
     @Override
     public int getFieldCount() {
         return fieldDefinitionsMap.size();
@@ -132,29 +124,17 @@ public class ClassDefinitionImpl implements ClassDefinition {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         ClassDefinitionImpl that = (ClassDefinitionImpl) o;
-
+        if (factoryId != that.factoryId) {
+            return false;
+        }
         if (classId != that.classId) {
             return false;
         }
         if (version != that.version) {
             return false;
         }
-        if (getFieldCount() != that.getFieldCount()) {
-            return false;
-        }
-        for (FieldDefinition fd : fieldDefinitionsMap.values()) {
-            FieldDefinition fd2 = that.getField(fd.getName());
-            if (fd2 == null) {
-                return false;
-            }
-            if (!fd.equals(fd2)) {
-                return false;
-            }
-        }
-
-        return true;
+        return fieldDefinitionsMap.equals(that.fieldDefinitionsMap);
     }
     //CHECKSTYLE:ON
 
@@ -167,13 +147,11 @@ public class ClassDefinitionImpl implements ClassDefinition {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("ClassDefinition");
-        sb.append("{factoryId=").append(factoryId);
-        sb.append(", classId=").append(classId);
-        sb.append(", version=").append(version);
-        sb.append(", fieldDefinitions=").append(fieldDefinitionsMap.values());
-        sb.append('}');
-        return sb.toString();
+        return "ClassDefinition{"
+                + "factoryId=" + factoryId
+                + ", classId=" + classId
+                + ", version=" + version
+                + ", fieldDefinitions=" + fieldDefinitionsMap.values()
+                + '}';
     }
 }

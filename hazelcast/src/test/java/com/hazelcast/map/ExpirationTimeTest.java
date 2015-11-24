@@ -155,19 +155,19 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
     }
 
     private IMap<Integer, Integer> createMap() {
-        final String mapName = randomMapName();
-        final HazelcastInstance node = createHazelcastInstance();
+        String mapName = randomMapName();
+        HazelcastInstance node = createHazelcastInstance(getConfig());
         return node.getMap(mapName);
     }
 
     private IMap<Integer, Integer> createMapWithMaxIdleSeconds(int maxIdleSeconds) {
-        final String mapName = randomMapName();
+        String mapName = randomMapName();
 
-        final Config config = new Config();
-        final MapConfig mapConfig = config.getMapConfig(mapName);
+        Config config = getConfig();
+        MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.setMaxIdleSeconds(maxIdleSeconds);
 
-        final HazelcastInstance node = createHazelcastInstance(config);
+        HazelcastInstance node = createHazelcastInstance(config);
         return node.getMap(mapName);
     }
 }

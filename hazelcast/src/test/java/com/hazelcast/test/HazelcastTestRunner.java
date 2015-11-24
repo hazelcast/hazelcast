@@ -17,32 +17,32 @@
 package com.hazelcast.test;
 
 import com.hazelcast.test.annotation.RunParallel;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import org.junit.runner.Runner;
 import org.junit.runners.Suite;
 import org.junit.runners.model.FrameworkMethod;
 
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import static org.junit.runners.Parameterized.Parameters;
 
-
 /**
- * A test suite with an ability to run parameterized tests.
- * This suite runs the tests with either {@link com.hazelcast.test.HazelcastSerialClassRunner}
- * or {@link com.hazelcast.test.HazelcastParallelClassRunner}
+ * A testsuite with an ability to run parameterized tests.
+ * <p/>
+ * This {@link Suite} runs the tests with either {@link HazelcastSerialClassRunner} or {@link HazelcastParallelClassRunner}.
  */
 public class HazelcastTestRunner extends Suite {
 
-    private static final List<Runner> NO_RUNNERS = Collections.<Runner>emptyList();
+    private static final List<Runner> NO_RUNNERS = Collections.emptyList();
 
     private final ArrayList<Runner> runners = new ArrayList<Runner>();
 
     private boolean isParallel;
 
-    public HazelcastTestRunner(Class<?> klass) throws Throwable {
-        super(klass, NO_RUNNERS);
+    public HazelcastTestRunner(Class<?> clazz) throws Throwable {
+        super(clazz, NO_RUNNERS);
 
         RunParallel parallel = getTestClass().getJavaClass().getAnnotation(RunParallel.class);
         if (parallel != null) {
@@ -52,12 +52,10 @@ public class HazelcastTestRunner extends Suite {
         createRunnersForParameters(allParameters(), parameters.name());
     }
 
-
     @Override
     protected List<Runner> getChildren() {
         return runners;
     }
-
 
     @SuppressWarnings("unchecked")
     private Iterable<Object[]> allParameters() throws Throwable {
@@ -70,33 +68,25 @@ public class HazelcastTestRunner extends Suite {
     }
 
     private FrameworkMethod getParametersMethod() throws Exception {
-        List<FrameworkMethod> methods = getTestClass().getAnnotatedMethods(
-                Parameters.class);
+        List<FrameworkMethod> methods = getTestClass().getAnnotatedMethods(Parameters.class);
         for (FrameworkMethod each : methods) {
             if (each.isStatic() && each.isPublic()) {
                 return each;
             }
         }
-
-        throw new Exception("No public static parameters method on class "
-                + getTestClass().getName());
+        throw new Exception("No public static parameters method on class " + getTestClass().getName());
     }
 
-    private void createRunnersForParameters(Iterable<Object[]> allParameters,
-                                            String namePattern) throws Exception {
+    private void createRunnersForParameters(Iterable<Object[]> allParameters, String namePattern) throws Exception {
         try {
             int i = 0;
             for (Object[] parametersOfSingleTest : allParameters) {
                 String name = nameFor(namePattern, i, parametersOfSingleTest);
                 AbstractHazelcastClassRunner runner;
                 if (isParallel) {
-                    runner = new HazelcastParallelClassRunner(
-                            getTestClass().getJavaClass(), parametersOfSingleTest,
-                            name);
+                    runner = new HazelcastParallelClassRunner(getTestClass().getJavaClass(), parametersOfSingleTest, name);
                 } else {
-                    runner = new HazelcastSerialClassRunner(
-                            getTestClass().getJavaClass(), parametersOfSingleTest,
-                            name);
+                    runner = new HazelcastSerialClassRunner(getTestClass().getJavaClass(), parametersOfSingleTest, name);
                 }
                 runner.setParameterized(true);
                 runners.add(runner);
@@ -108,8 +98,7 @@ public class HazelcastTestRunner extends Suite {
     }
 
     private String nameFor(String namePattern, int index, Object[] parameters) {
-        String finalPattern = namePattern.replaceAll("\\{index\\}",
-                Integer.toString(index));
+        String finalPattern = namePattern.replaceAll("\\{index\\}", Integer.toString(index));
         String name = MessageFormat.format(finalPattern, parameters);
         return "[" + name + "]";
     }
@@ -117,9 +106,7 @@ public class HazelcastTestRunner extends Suite {
     private Exception parametersMethodReturnedWrongType() throws Exception {
         String className = getTestClass().getName();
         String methodName = getParametersMethod().getName();
-        String message = MessageFormat.format(
-                "{0}.{1}() must return an Iterable of arrays.",
-                className, methodName);
+        String message = MessageFormat.format("{0}.{1}() must return an Iterable of arrays.", className, methodName);
         return new Exception(message);
     }
 }

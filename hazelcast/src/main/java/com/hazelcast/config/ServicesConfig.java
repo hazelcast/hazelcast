@@ -70,10 +70,6 @@ public class ServicesConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ServicesConfig{");
-        sb.append("enableDefaults=").append(enableDefaults);
-        sb.append(", services=").append(services);
-        sb.append('}');
-        return sb.toString();
+        return "ServicesConfig{enableDefaults=" + enableDefaults + ", services=" + services + '}';
     }
 }

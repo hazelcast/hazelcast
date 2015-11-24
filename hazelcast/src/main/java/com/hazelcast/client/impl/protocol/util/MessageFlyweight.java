@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.impl.protocol.util;
 
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.impl.HeapData;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -51,7 +51,6 @@ public class MessageFlyweight {
     //starts from zero, incremented each tome something set to buffer
     private int index;
 
-
     public MessageFlyweight() {
         offset = 0;
     }
@@ -79,6 +78,12 @@ public class MessageFlyweight {
     //region SET Overloads
     public MessageFlyweight set(boolean value) {
         buffer.putByte(index + offset, (byte) (value ? 1 : 0));
+        index += Bits.BYTE_SIZE_IN_BYTES;
+        return this;
+    }
+
+    public MessageFlyweight set(byte value) {
+        buffer.putByte(index + offset, value);
         index += Bits.BYTE_SIZE_IN_BYTES;
         return this;
     }
@@ -134,6 +139,12 @@ public class MessageFlyweight {
         byte result = buffer.getByte(index + offset);
         index += Bits.BYTE_SIZE_IN_BYTES;
         return result != 0;
+    }
+
+    public byte getByte() {
+        byte result = buffer.getByte(index + offset);
+        index += Bits.BYTE_SIZE_IN_BYTES;
+        return result;
     }
 
     public int getInt() {

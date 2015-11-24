@@ -435,15 +435,13 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("LockResource");
-        sb.append("{owner='").append(owner).append('\'');
-        sb.append(", threadId=").append(threadId);
-        sb.append(", lockCount=").append(lockCount);
-        sb.append(", acquireTime=").append(acquireTime);
-        sb.append(", expirationTime=").append(expirationTime);
-        sb.append('}');
-        return sb.toString();
+        return "LockResource{"
+                + "owner='" + owner + '\''
+                + ", threadId=" + threadId
+                + ", lockCount=" + lockCount
+                + ", acquireTime=" + acquireTime
+                + ", expirationTime=" + expirationTime
+                + '}';
     }
 
     private static boolean isNullOrEmpty(Collection c) {

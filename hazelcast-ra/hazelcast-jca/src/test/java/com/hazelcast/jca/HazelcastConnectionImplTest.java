@@ -43,7 +43,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -177,9 +176,10 @@ public class HazelcastConnectionImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void getConfig() {
+    public void testGetConfig() {
         Config config = connection.getConfig();
         assertSame(config, hz.getConfig());
+
     }
 
     @Test
@@ -191,7 +191,7 @@ public class HazelcastConnectionImplTest extends HazelcastTestSupport {
     @Test
     public void getCluster() {
         Cluster cluster = connection.getCluster();
-        assertNotSame(cluster, hz.getCluster());
+        assertSame(cluster, hz.getCluster());
     }
 
     @Test

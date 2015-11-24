@@ -18,6 +18,8 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.IndexAwarePredicate;
@@ -25,7 +27,10 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.SampleObjects.Employee;
+import com.hazelcast.query.SampleObjects.Value;
 import com.hazelcast.query.impl.AttributeType;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.QueryContext;
@@ -41,15 +46,10 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.hazelcast.instance.TestUtil.toData;
-
-import com.hazelcast.query.impl.predicates.AndPredicate;
-
-import com.hazelcast.query.impl.predicates.EqualPredicate;
-import org.mockito.Mockito;
-
 import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.between;
 import static com.hazelcast.query.Predicates.equal;
@@ -64,11 +64,8 @@ import static com.hazelcast.query.Predicates.like;
 import static com.hazelcast.query.Predicates.notEqual;
 import static com.hazelcast.query.Predicates.or;
 import static com.hazelcast.query.Predicates.regex;
-import static com.hazelcast.query.SampleObjects.Employee;
-import static com.hazelcast.query.SampleObjects.Value;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
-import static java.util.Map.Entry;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
@@ -78,6 +75,10 @@ import static org.mockito.Mockito.when;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class PredicatesTest extends HazelcastTestSupport {
+
+    private static final String ATTRIBUTE = "DUMMY_ATTRIBUTE_IGNORED";
+
+    final SerializationService ss = new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void testAndPredicate_whenFirstIndexAwarePredicateIsNotIndexed() throws Exception {
@@ -119,65 +120,65 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test
     public void testEqual() {
-        assertPredicateTrue(equal(null, "value"), "value");
-        assertPredicateFalse(equal(null, "value1"), "value");
-        assertPredicateTrue(equal(null, TRUE), true);
-        assertPredicateTrue(equal(null, true), TRUE);
-        assertPredicateFalse(equal(null, true), FALSE);
-        assertPredicateFalse(equal(null, new BigDecimal("1.23E3")), new BigDecimal("1.23E2"));
-        assertPredicateTrue(equal(null, new BigDecimal("1.23E3")), new BigDecimal("1.23E3"));
-        assertPredicateFalse(equal(null, 15.22), 15.23);
-        assertPredicateTrue(equal(null, 15.22), 15.22);
-        assertPredicateFalse(equal(null, 16), 15);
+        assertPredicateTrue(equal(ATTRIBUTE, "value"), "value");
+        assertPredicateFalse(equal(ATTRIBUTE, "value1"), "value");
+        assertPredicateTrue(equal(ATTRIBUTE, TRUE), true);
+        assertPredicateTrue(equal(ATTRIBUTE, true), TRUE);
+        assertPredicateFalse(equal(ATTRIBUTE, true), FALSE);
+        assertPredicateFalse(equal(ATTRIBUTE, new BigDecimal("1.23E3")), new BigDecimal("1.23E2"));
+        assertPredicateTrue(equal(ATTRIBUTE, new BigDecimal("1.23E3")), new BigDecimal("1.23E3"));
+        assertPredicateFalse(equal(ATTRIBUTE, 15.22), 15.23);
+        assertPredicateTrue(equal(ATTRIBUTE, 15.22), 15.22);
+        assertPredicateFalse(equal(ATTRIBUTE, 16), 15);
     }
 
 
     @Test
     public void testAnd() {
-        final Predicate and1 = and(greaterThan(null, 4), lessThan(null, 6));
+        final Predicate and1 = and(greaterThan(ATTRIBUTE, 4), lessThan(ATTRIBUTE, 6));
         assertPredicateTrue(and1, 5);
-        final Predicate and2 = and(greaterThan(null, 5), lessThan(null, 6));
+        final Predicate and2 = and(greaterThan(ATTRIBUTE, 5), lessThan(ATTRIBUTE, 6));
         assertPredicateFalse(and2, 4);
-        final Predicate and3 = and(greaterThan(null, 4), lessThan(null, 6), equal(null, 5));
+        final Predicate and3 = and(greaterThan(ATTRIBUTE, 4), lessThan(ATTRIBUTE, 6), equal(ATTRIBUTE, 5));
         assertPredicateTrue(and3, 5);
-        final Predicate and4 = Predicates.and(greaterThan(null, 3), lessThan(null, 6), equal(null, 4));
+        final Predicate and4 = Predicates.and(greaterThan(ATTRIBUTE, 3), lessThan(ATTRIBUTE, 6), equal(ATTRIBUTE, 4));
         assertPredicateFalse(and4, 5);
     }
 
     @Test
     public void testOr() {
-        final Predicate or1 = or(equal(null, 3), equal(null, 4), equal(null, 5));
+        final Predicate or1 = or(equal(ATTRIBUTE, 3), equal(ATTRIBUTE, 4), equal(ATTRIBUTE, 5));
         assertPredicateTrue(or1, 4);
         assertPredicateFalse(or1, 6);
     }
 
     @Test
     public void testGreaterEqual() {
-        assertPredicateTrue(greaterEqual(null, 5), 5);
+        assertPredicateTrue(greaterEqual(ATTRIBUTE, 5), 5);
     }
 
     @Test
     public void testLessThan() {
-        assertPredicateTrue(lessThan(null, 7), 6);
-        assertPredicateFalse(lessThan(null, 3), 4);
-        assertPredicateFalse(lessThan(null, 4), 4);
-        assertPredicateTrue(lessThan(null, "tc"), "bz");
-        assertPredicateFalse(lessThan(null, "gx"), "h0");
+        assertPredicateTrue(lessThan(ATTRIBUTE, 7), 6);
+        assertPredicateFalse(lessThan(ATTRIBUTE, 3), 4);
+        assertPredicateFalse(lessThan(ATTRIBUTE, 4), 4);
+        assertPredicateTrue(lessThan(ATTRIBUTE, "tc"), "bz");
+        assertPredicateFalse(lessThan(ATTRIBUTE, "gx"), "h0");
     }
 
     @Test
     public void testGreaterThan() {
-        assertPredicateTrue(greaterThan(null, 5), 6);
-        assertPredicateFalse(greaterThan(null, 5), 4);
-        assertPredicateFalse(greaterThan(null, 5), 5);
-        assertPredicateTrue(greaterThan(null, "aa"), "xa");
-        assertPredicateFalse(greaterThan(null, "da"), "cz");
-        assertPredicateTrue(greaterThan(null, new BigDecimal("1.23E2")), new BigDecimal("1.23E3"));
+        assertPredicateTrue(greaterThan(ATTRIBUTE, 5), 6);
+        assertPredicateFalse(greaterThan(ATTRIBUTE, 5), 4);
+        assertPredicateFalse(greaterThan(ATTRIBUTE, 5), 5);
+        assertPredicateTrue(greaterThan(ATTRIBUTE, "aa"), "xa");
+        assertPredicateFalse(greaterThan(ATTRIBUTE, "da"), "cz");
+        assertPredicateTrue(greaterThan(ATTRIBUTE, new BigDecimal("1.23E2")), new BigDecimal("1.23E3"));
     }
 
     @Test
     public void testLessEqual() {
-        assertPredicateTrue(lessEqual(null, 4), 4);
+        assertPredicateTrue(lessEqual(ATTRIBUTE, 4), 4);
     }
 
     @Test
@@ -190,64 +191,64 @@ public class PredicatesTest extends HazelcastTestSupport {
         assertFalse_withNullEntry(greaterThan("nullField", 1));
         assertFalse_withNullEntry(equal("nullField", 1));
         assertFalse_withNullEntry(notEqual("nullField", null));
-        assertFalse_withNullEntry(notEqual("nullField", 1));
         assertFalse_withNullEntry(between("nullField", 1, 1));
         assertTrue_withNullEntry(like("nullField", null));
         assertTrue_withNullEntry(ilike("nullField", null));
         assertTrue_withNullEntry(regex("nullField", null));
+        assertTrue_withNullEntry(notEqual("nullField", 1));
     }
 
     @Test
     public void testBetween() {
-        assertPredicateTrue(between(null, 4, 6), 5);
-        assertPredicateTrue(between(null, 5, 6), 5);
-        assertPredicateTrue(between(null, "abc", "xyz"), "prs");
-        assertPredicateFalse(between(null, "klmn", "xyz"), "efgh");
-        assertPredicateFalse(between(null, 6, 7), 5);
+        assertPredicateTrue(between(ATTRIBUTE, 4, 6), 5);
+        assertPredicateTrue(between(ATTRIBUTE, 5, 6), 5);
+        assertPredicateTrue(between(ATTRIBUTE, "abc", "xyz"), "prs");
+        assertPredicateFalse(between(ATTRIBUTE, "klmn", "xyz"), "efgh");
+        assertPredicateFalse(between(ATTRIBUTE, 6, 7), 5);
     }
 
     @Test
     public void testIn() {
-        assertPredicateTrue(in(null, 4, 7, 8, 5), 5);
-        assertPredicateTrue(in(null, 5, 7, 8), 5);
-        assertPredicateFalse(in(null, 6, 7, 8), 5);
-        assertPredicateFalse(in(null, 6, 7, 8), 9);
+        assertPredicateTrue(in(ATTRIBUTE, 4, 7, 8, 5), 5);
+        assertPredicateTrue(in(ATTRIBUTE, 5, 7, 8), 5);
+        assertPredicateFalse(in(ATTRIBUTE, 6, 7, 8), 5);
+        assertPredicateFalse(in(ATTRIBUTE, 6, 7, 8), 9);
     }
 
     @Test
     public void testLike() {
-        assertPredicateTrue(like(null, "J%"), "Java");
-        assertPredicateTrue(like(null, "Ja%"), "Java");
-        assertPredicateTrue(like(null, "J_v_"), "Java");
-        assertPredicateTrue(like(null, "_av_"), "Java");
-        assertPredicateTrue(like(null, "_a__"), "Java");
-        assertPredicateTrue(like(null, "J%v_"), "Java");
-        assertPredicateTrue(like(null, "J%_"), "Java");
-        assertPredicateFalse(like(null, "java"), "Java");
-        assertPredicateFalse(like(null, "j%"), "Java");
-        assertPredicateFalse(like(null, "J_a"), "Java");
-        assertPredicateFalse(like(null, "J_ava"), "Java");
-        assertPredicateFalse(like(null, "J_a_a"), "Java");
-        assertPredicateFalse(like(null, "J_av__"), "Java");
-        assertPredicateFalse(like(null, "J_Va"), "Java");
-        assertPredicateTrue(like(null, "Java World"), "Java World");
-        assertPredicateTrue(like(null, "Java%ld"), "Java World");
-        assertPredicateTrue(like(null, "%World"), "Java World");
-        assertPredicateTrue(like(null, "Java_World"), "Java World");
+        assertPredicateTrue(like(ATTRIBUTE, "J%"), "Java");
+        assertPredicateTrue(like(ATTRIBUTE, "Ja%"), "Java");
+        assertPredicateTrue(like(ATTRIBUTE, "J_v_"), "Java");
+        assertPredicateTrue(like(ATTRIBUTE, "_av_"), "Java");
+        assertPredicateTrue(like(ATTRIBUTE, "_a__"), "Java");
+        assertPredicateTrue(like(ATTRIBUTE, "J%v_"), "Java");
+        assertPredicateTrue(like(ATTRIBUTE, "J%_"), "Java");
+        assertPredicateFalse(like(ATTRIBUTE, "java"), "Java");
+        assertPredicateFalse(like(ATTRIBUTE, "j%"), "Java");
+        assertPredicateFalse(like(ATTRIBUTE, "J_a"), "Java");
+        assertPredicateFalse(like(ATTRIBUTE, "J_ava"), "Java");
+        assertPredicateFalse(like(ATTRIBUTE, "J_a_a"), "Java");
+        assertPredicateFalse(like(ATTRIBUTE, "J_av__"), "Java");
+        assertPredicateFalse(like(ATTRIBUTE, "J_Va"), "Java");
+        assertPredicateTrue(like(ATTRIBUTE, "Java World"), "Java World");
+        assertPredicateTrue(like(ATTRIBUTE, "Java%ld"), "Java World");
+        assertPredicateTrue(like(ATTRIBUTE, "%World"), "Java World");
+        assertPredicateTrue(like(ATTRIBUTE, "Java_World"), "Java World");
 
-        assertPredicateTrue(like(null, "J.-*.*\\%"), "J.-*.*%");
-        assertPredicateTrue(like(null, "J\\_"), "J_");
-        assertPredicateTrue(like(null, "J%"), "Java");
+        assertPredicateTrue(like(ATTRIBUTE, "J.-*.*\\%"), "J.-*.*%");
+        assertPredicateTrue(like(ATTRIBUTE, "J\\_"), "J_");
+        assertPredicateTrue(like(ATTRIBUTE, "J%"), "Java");
 
     }
 
     @Test
     public void testILike() {
-        assertPredicateFalse(like(null, "JavaWorld"), "Java World");
-        assertPredicateTrue(ilike(null, "Java_World"), "java World");
-        assertPredicateTrue(ilike(null, "java%ld"), "Java World");
-        assertPredicateTrue(ilike(null, "%world"), "Java World");
-        assertPredicateFalse(ilike(null, "Java_World"), "gava World");
+        assertPredicateFalse(like(ATTRIBUTE, "JavaWorld"), "Java World");
+        assertPredicateTrue(ilike(ATTRIBUTE, "Java_World"), "java World");
+        assertPredicateTrue(ilike(ATTRIBUTE, "java%ld"), "Java World");
+        assertPredicateTrue(ilike(ATTRIBUTE, "%world"), "Java World");
+        assertPredicateFalse(ilike(ATTRIBUTE, "Java_World"), "gava World");
     }
 
     @Test
@@ -270,37 +271,37 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testBetweenNull() {
-        Predicates.between("", null, null);
+        Predicates.between(ATTRIBUTE, null, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testLessThanNull() {
-        Predicates.lessThan("", null);
+        Predicates.lessThan(ATTRIBUTE, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testLessEqualNull() {
-        Predicates.lessEqual("", null);
+        Predicates.lessEqual(ATTRIBUTE, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testGreaterThanNull() {
-        Predicates.greaterThan("", null);
+        Predicates.greaterThan(ATTRIBUTE, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testGreaterEqualNull() {
-        Predicates.greaterEqual("", null);
+        Predicates.greaterEqual(ATTRIBUTE, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testInNullWithNullArray() {
-        Predicates.in("", null);
+        Predicates.in(ATTRIBUTE, null);
     }
 
     @Test
     public void testNotEqualsPredicateDoesNotUseIndex() {
-        Index dummyIndex = new IndexImpl("foo", false);
+        Index dummyIndex = new IndexImpl("foo", false, ss, Extractors.empty());
         QueryContext mockQueryContext = mock(QueryContext.class);
         when(mockQueryContext.getIndex(anyString())).
                 thenReturn(dummyIndex);
@@ -315,11 +316,11 @@ public class PredicatesTest extends HazelcastTestSupport {
     private class DummyEntry extends QueryEntry {
 
         DummyEntry(Comparable attribute) {
-            super(null, toData("1"), "1", attribute);
+            super(ss, toData("1"), attribute, Extractors.empty());
         }
 
         @Override
-        public Comparable getAttribute(String attributeName) throws QueryException {
+        public Comparable getAttributeValue(String attributeName) throws QueryException {
             return (Comparable) getValue();
         }
 
@@ -329,7 +330,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         }
     }
 
-    private class NullDummyEntry implements QueryableEntry {
+    private class NullDummyEntry extends QueryableEntry {
 
         private Integer nullField;
 
@@ -360,13 +361,18 @@ public class PredicatesTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Comparable getAttribute(String attributeName) throws QueryException {
+        public Comparable getAttributeValue(String attributeName) throws QueryException {
             return null;
         }
 
         @Override
         public AttributeType getAttributeType(String attributeName) {
             return AttributeType.INTEGER;
+        }
+
+        @Override
+        protected Object getTargetObject(boolean key) {
+            return null;
         }
 
         @Override
@@ -379,15 +385,10 @@ public class PredicatesTest extends HazelcastTestSupport {
             return null;
         }
 
-        @Override
-        public Data getIndexKey() {
-            return null;
-        }
-
     }
 
-    private static Entry createEntry(final Object key, final Object value) {
-        return new QueryEntry(null, toData(key), key, value);
+    private Entry createEntry(final Object key, final Object value) {
+        return new QueryEntry(ss, toData(key), value, Extractors.empty());
     }
 
     private void assertPredicateTrue(Predicate p, Comparable comparable) {

@@ -17,10 +17,7 @@ package com.hazelcast.mapreduce;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.MultiMap;
 import com.hazelcast.mapreduce.helpers.Employee;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,6 +30,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.TestProperties;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -58,293 +56,25 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 @TestProperties(maxThreadsCalculatorClass = MapReduceTestThreads.class)
-@SuppressWarnings("unused")
-public class MapReduceTest
-        extends HazelcastTestSupport {
-    final static Logger logger = Logger.getLogger("test");
+public class MapReduceTest extends HazelcastTestSupport {
 
+    private static final int TEST_TIMEOUT = 60000;
     private static final String MAP_NAME = "default";
+
+    private static final Logger LOGGER = Logger.getLogger("test");
 
     private void tripTerminate(HazelcastInstance... instances) {
         for (HazelcastInstance instance : instances) {
             try {
                 instance.getLifecycleService().terminate();
             } catch (Throwable ex) {
-                logger.log(java.util.logging.Level.INFO, ex.getMessage(), ex);
+                LOGGER.log(java.util.logging.Level.INFO, ex.getMessage(), ex);
             }
         }
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = TEST_TIMEOUT)
     public void test_early_finalization_combiner_github_5283() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-
-        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
-
-        assertClusterSizeEventually(3, h1);
-        assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
-
-        try {
-            IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
-            for (int i = 0; i < 100; i++) {
-                m1.put(i, i);
-            }
-
-            JobTracker tracker = h1.getJobTracker("default");
-            KeyValueSource<Integer, Integer> kvs = KeyValueSource.fromMap(m1);
-            KeyValueSource<Integer, Integer> wrapper = new MapKeyValueSourceAdapter<Integer, Integer>(kvs);
-            Job<Integer, Integer> job = tracker.newJob(wrapper);
-
-            ICompletableFuture<Map<String, List<Integer>>> future =
-                    job.mapper(new TestMapper())
-                            .combiner(new FinalizingCombinerFactory())
-                            .reducer(new ListBasedReducerFactory()).submit();
-
-            Map<String, List<Integer>> result = future.get();
-
-            assertEquals(100, result.size());
-            for (List<Integer> value : result.values()) {
-                assertEquals(1, value.size());
-            }
-        } finally {
-            tripTerminate(h1, h2, h3);
-        }
-    }
-
-    @Test(timeout = 60000)
-    public void testPartitionPostpone()
-            throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-
-        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
-
-        assertClusterSizeEventually(3, h1);
-        assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
-
-        try {
-            IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
-            for (int i = 0; i < 100; i++) {
-                m1.put(i, i);
-            }
-
-            JobTracker tracker = h1.getJobTracker("default");
-            KeyValueSource<Integer, Integer> kvs = KeyValueSource.fromMap(m1);
-            KeyValueSource<Integer, Integer> wrapper = new MapKeyValueSourceAdapter<Integer, Integer>(kvs);
-            Job<Integer, Integer> job = tracker.newJob(wrapper);
-            ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new TestMapper()).submit();
-
-            Map<String, List<Integer>> result = future.get();
-
-            assertEquals(100, result.size());
-            for (List<Integer> value : result.values()) {
-                assertEquals(1, value.size());
-            }
-        } finally {
-            tripTerminate(h1, h2, h3);
-        }
-    }
-
-    @Test(timeout = 60000)
-    public void test_collide_user_provided_combiner_list_result_github_3614() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-
-        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
-
-        assertClusterSizeEventually(3, h1);
-        assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
-
-        try {
-            IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
-            for (int i = 0; i < 100; i++) {
-                m1.put(i, i);
-            }
-
-            JobTracker tracker = h1.getJobTracker("default");
-            KeyValueSource<Integer, Integer> kvs = KeyValueSource.fromMap(m1);
-            KeyValueSource<Integer, Integer> wrapper = new MapKeyValueSourceAdapter<Integer, Integer>(kvs);
-            Job<Integer, Integer> job = tracker.newJob(wrapper);
-            ICompletableFuture<Map<String, List<Integer>>> future =
-                    job.mapper(new TestMapper())
-                            .combiner(new ListResultingCombinerFactory())
-                            .reducer(new ListBasedReducerFactory()).submit();
-
-            Map<String, List<Integer>> result = future.get();
-
-            assertEquals(100, result.size());
-            for (List<Integer> value : result.values()) {
-                assertEquals(1, value.size());
-            }
-        } finally {
-            tripTerminate(h1, h2, h3);
-        }
-    }
-
-    @Test(timeout = 30000, expected = ExecutionException.class)
-    public void testExceptionDistributionWithCollator()
-            throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-
-        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
-
-        assertClusterSizeEventually(3, h1);
-        assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
-
-        try {
-            IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
-            for (int i = 0; i < 100; i++) {
-                m1.put(i, i);
-            }
-
-            JobTracker tracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-            ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new ExceptionThrowingMapper())
-                    .submit(new Collator<Map.Entry<String, List<Integer>>, Map<String, List<Integer>>>() {
-                        @Override
-                        public Map<String, List<Integer>> collate(
-                                Iterable<Map.Entry<String, List<Integer>>> values) {
-                            return null;
-                        }
-                    });
-
-            try {
-                Map<String, List<Integer>> result = future.get();
-                fail();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                assertTrue(e.getCause() instanceof NullPointerException);
-                throw e;
-            }
-        } finally {
-            tripTerminate(h1, h2, h3);
-        }
-    }
-
-    @Test(timeout = 30000, expected = ExecutionException.class)
-    public void testExceptionDistribution()
-            throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-
-        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
-
-        assertClusterSizeEventually(3, h1);
-        assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
-
-        try {
-            IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
-            for (int i = 0; i < 100; i++) {
-                m1.put(i, i);
-            }
-
-            JobTracker tracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-            ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new ExceptionThrowingMapper()).submit();
-
-            try {
-                Map<String, List<Integer>> result = future.get();
-                fail();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                assertTrue(e.getCause() instanceof NullPointerException);
-                throw e;
-            }
-        } finally {
-            tripTerminate(h1, h2, h3);
-        }
-    }
-
-    @Test(timeout = 30000, expected = CancellationException.class)
-    public void testInProcessCancellation()
-            throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-
-        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
-
-        assertClusterSizeEventually(3, h1);
-        assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
-
-        try {
-            IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
-            for (int i = 0; i < 100; i++) {
-                m1.put(i, i);
-            }
-
-            JobTracker tracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-            ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new TimeConsumingMapper()).submit();
-
-            future.cancel(true);
-
-            try {
-                Map<String, List<Integer>> result = future.get();
-                fail();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw e;
-            }
-        } finally {
-            tripTerminate(h1, h2, h3);
-        }
-    }
-
-    @Test(timeout = 60000)
-    public void testMapper()
-            throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-
-        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
-
-        assertClusterSizeEventually(3, h1);
-        assertClusterSizeEventually(3, h2);
-        assertClusterSizeEventually(3, h3);
-
-        try {
-
-            IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
-            for (int i = 0; i < 100; i++) {
-                m1.put(i, i);
-            }
-
-            JobTracker tracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-            ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new TestMapper()).submit();
-
-            Map<String, List<Integer>> result = future.get();
-
-            assertEquals(100, result.size());
-            for (List<Integer> value : result.values()) {
-                assertEquals(1, value.size());
-            }
-        } finally {
-            tripTerminate(h1, h2, h3);
-        }
-    }
-
-    @Test(timeout = 60000)
-    public void testKeyedMapperCollator()
-            throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -356,14 +86,275 @@ public class MapReduceTest
         assertClusterSizeEventually(3, h3);
 
         try {
+            IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+            for (int i = 0; i < 100; i++) {
+                m1.put(i, i);
+            }
 
+            JobTracker tracker = h1.getJobTracker("default");
+            KeyValueSource<Integer, Integer> kvs = integerKvSource(m1);
+            KeyValueSource<Integer, Integer> wrapper = new MapKeyValueSourceAdapter<Integer, Integer>(kvs);
+            Job<Integer, Integer> job = tracker.newJob(wrapper);
+
+            ICompletableFuture<Map<String, List<Integer>>> future =
+                    job.mapper(new TestMapper())
+                            .combiner(new FinalizingCombinerFactory())
+                            .reducer(new ListBasedReducerFactory())
+                            .submit();
+
+            Map<String, List<Integer>> result = future.get();
+
+            assertEquals(100, result.size());
+            for (List<Integer> value : result.values()) {
+                assertEquals(1, value.size());
+            }
+        } finally {
+            tripTerminate(h1, h2, h3);
+        }
+    }
+
+    @Test(timeout = TEST_TIMEOUT)
+    public void testPartitionPostpone() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
+        try {
+            IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+            for (int i = 0; i < 100; i++) {
+                m1.put(i, i);
+            }
+
+            JobTracker tracker = h1.getJobTracker("default");
+            KeyValueSource<Integer, Integer> kvs = integerKvSource(m1);
+            KeyValueSource<Integer, Integer> wrapper = new MapKeyValueSourceAdapter<Integer, Integer>(kvs);
+            Job<Integer, Integer> job = tracker.newJob(wrapper);
+            ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new TestMapper()).submit();
+
+            Map<String, List<Integer>> result = future.get();
+
+            assertEquals(100, result.size());
+            for (List<Integer> value : result.values()) {
+                assertEquals(1, value.size());
+            }
+        } finally {
+            tripTerminate(h1, h2, h3);
+        }
+    }
+
+    @Test(timeout = TEST_TIMEOUT)
+    public void test_collide_user_provided_combiner_list_result_github_3614() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
+        try {
+            IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+            for (int i = 0; i < 100; i++) {
+                m1.put(i, i);
+            }
+
+            JobTracker tracker = h1.getJobTracker("default");
+            KeyValueSource<Integer, Integer> kvs = integerKvSource(m1);
+            KeyValueSource<Integer, Integer> wrapper = new MapKeyValueSourceAdapter<Integer, Integer>(kvs);
+            Job<Integer, Integer> job = tracker.newJob(wrapper);
+            ICompletableFuture<Map<String, List<Integer>>> future =
+                    job.mapper(new TestMapper())
+                            .combiner(new ListResultingCombinerFactory())
+                            .reducer(new ListBasedReducerFactory())
+                            .submit();
+
+            Map<String, List<Integer>> result = future.get();
+
+            assertEquals(100, result.size());
+            for (List<Integer> value : result.values()) {
+                assertEquals(1, value.size());
+            }
+        } finally {
+            tripTerminate(h1, h2, h3);
+        }
+    }
+
+    @Test(timeout = TEST_TIMEOUT, expected = ExecutionException.class)
+    public void testExceptionDistributionWithCollator() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
+        try {
+            IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+            for (int i = 0; i < 100; i++) {
+                m1.put(i, i);
+            }
+
+            JobTracker tracker = h1.getJobTracker("default");
+            Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
+            ICompletableFuture<Map<String, List<Integer>>> future = job
+                    .mapper(new ExceptionThrowingMapper())
+                    .submit(new Collator<Map.Entry<String, List<Integer>>, Map<String, List<Integer>>>() {
+                        @Override
+                        public Map<String, List<Integer>> collate(
+                                Iterable<Map.Entry<String, List<Integer>>> values) {
+                            return null;
+                        }
+                    });
+
+            try {
+                future.get();
+                fail();
+            } catch (Exception e) {
+                e.printStackTrace();
+                assertTrue(e.getCause() instanceof NullPointerException);
+                throw e;
+            }
+        } finally {
+            tripTerminate(h1, h2, h3);
+        }
+    }
+
+    @Test(timeout = TEST_TIMEOUT, expected = ExecutionException.class)
+    public void testExceptionDistribution() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
+        try {
+            IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+            for (int i = 0; i < 100; i++) {
+                m1.put(i, i);
+            }
+
+            JobTracker tracker = h1.getJobTracker("default");
+            Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
+            ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new ExceptionThrowingMapper()).submit();
+
+            try {
+                future.get();
+                fail();
+            } catch (Exception e) {
+                e.printStackTrace();
+                assertTrue(e.getCause() instanceof NullPointerException);
+                throw e;
+            }
+        } finally {
+            tripTerminate(h1, h2, h3);
+        }
+    }
+
+    @Test(timeout = TEST_TIMEOUT, expected = CancellationException.class)
+    public void testInProcessCancellation() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
+        try {
+            IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+            for (int i = 0; i < 100; i++) {
+                m1.put(i, i);
+            }
+
+            JobTracker tracker = h1.getJobTracker("default");
+            Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
+            ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new TimeConsumingMapper()).submit();
+
+            future.cancel(true);
+
+            try {
+                future.get();
+                fail();
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw e;
+            }
+        } finally {
+            tripTerminate(h1, h2, h3);
+        }
+    }
+
+    @Test(timeout = TEST_TIMEOUT)
+    public void testMapper() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
+        try {
+            IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+            for (int i = 0; i < 100; i++) {
+                m1.put(i, i);
+            }
+
+            JobTracker tracker = h1.getJobTracker("default");
+            Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
+            ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new TestMapper()).submit();
+
+            Map<String, List<Integer>> result = future.get();
+
+            assertEquals(100, result.size());
+            for (List<Integer> value : result.values()) {
+                assertEquals(1, value.size());
+            }
+        } finally {
+            tripTerminate(h1, h2, h3);
+        }
+    }
+
+    @Ignore//https://github.com/hazelcast/hazelcast/issues/6059
+    @Test(timeout = TEST_TIMEOUT)
+    public void testKeyedMapperCollator() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
+        try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
             for (int i = 0; i < 10000; i++) {
                 m1.put(i, i);
             }
 
             JobTracker tracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+            Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
             ICompletableFuture<Integer> future = job.onKeys(50).mapper(new TestMapper()).submit(new GroupingTestCollator());
 
             int result = future.get();
@@ -374,9 +365,9 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
-    public void testKeyPredicateMapperCollator()
-            throws Exception {
+    @Ignore//https://github.com/hazelcast/hazelcast/issues/6059
+    @Test(timeout = TEST_TIMEOUT)
+    public void testKeyPredicateMapperCollator() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -394,8 +385,10 @@ public class MapReduceTest
             }
 
             JobTracker tracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-            ICompletableFuture<Integer> future = job.keyPredicate(new TestKeyPredicate()).mapper(new TestMapper())
+            Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
+            ICompletableFuture<Integer> future = job
+                    .keyPredicate(new TestKeyPredicate())
+                    .mapper(new TestMapper())
                     .submit(new GroupingTestCollator());
 
             int result = future.get();
@@ -406,9 +399,8 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
-    public void testMapperComplexMapping()
-            throws Exception {
+    @Test(timeout = TEST_TIMEOUT)
+    public void testMapperComplexMapping() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -426,7 +418,7 @@ public class MapReduceTest
             }
 
             JobTracker tracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+            Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
             ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new GroupingTestMapper(2)).submit();
 
             Map<String, List<Integer>> result = future.get();
@@ -438,9 +430,8 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
-    public void testMapperReducer()
-            throws Exception {
+    @Test(timeout = TEST_TIMEOUT)
+    public void testMapperReducer() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -452,20 +443,21 @@ public class MapReduceTest
         assertClusterSizeEventually(3, h3);
 
         try {
-
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
             for (int i = 0; i < 100; i++) {
                 m1.put(i, i);
             }
 
             JobTracker tracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-            ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper()).reducer(new TestReducerFactory())
+            Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
+            ICompletableFuture<Map<String, Integer>> future = job
+                    .mapper(new GroupingTestMapper())
+                    .reducer(new TestReducerFactory())
                     .submit();
 
             Map<String, Integer> result = future.get();
 
-            // Precalculate results
+            // pre-calculate results
             int[] expectedResults = new int[4];
             for (int i = 0; i < 100; i++) {
                 int index = i % 4;
@@ -480,36 +472,37 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
-    public void testMapperReducerChunked()
-            throws Exception {
+    @Test(timeout = TEST_TIMEOUT)
+    public void testMapperReducerChunked() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
-        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         assertClusterSizeEventually(3, h1);
         assertClusterSizeEventually(3, h2);
         assertClusterSizeEventually(3, h3);
 
         try {
-
-            final IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+            IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
             for (int i = 0; i < 10000; i++) {
                 m1.put(i, i);
             }
 
             JobTracker tracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-            JobCompletableFuture<Map<String, Integer>> future = job.chunkSize(10).mapper(new GroupingTestMapper())
-                    .reducer(new TestReducerFactory()).submit();
+            Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
+            JobCompletableFuture<Map<String, Integer>> future = job
+                    .chunkSize(10)
+                    .mapper(new GroupingTestMapper())
+                    .reducer(new TestReducerFactory())
+                    .submit();
 
-            final TrackableJob trackableJob = tracker.getTrackableJob(future.getJobId());
+            TrackableJob trackableJob = tracker.getTrackableJob(future.getJobId());
             final JobProcessInformation processInformation = trackableJob.getJobProcessInformation();
             Map<String, Integer> result = future.get();
 
-            // Precalculate results
+            // pre-calculate results
             int[] expectedResults = new int[4];
             for (int i = 0; i < 10000; i++) {
                 int index = i % 4;
@@ -534,9 +527,8 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
-    public void testMapperCollator()
-            throws Exception {
+    @Test(timeout = TEST_TIMEOUT)
+    public void testMapperCollator() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -548,19 +540,18 @@ public class MapReduceTest
         assertClusterSizeEventually(3, h3);
 
         try {
-
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
             for (int i = 0; i < 100; i++) {
                 m1.put(i, i);
             }
 
             JobTracker tracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+            Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
             ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).submit(new GroupingTestCollator());
 
             int result = future.get();
 
-            // Precalculate result
+            // pre-calculate result
             int expectedResult = 0;
             for (int i = 0; i < 100; i++) {
                 expectedResult += i;
@@ -574,9 +565,8 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
-    public void testMapperReducerCollator()
-            throws Exception {
+    @Test(timeout = TEST_TIMEOUT)
+    public void testMapperReducerCollator() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -594,13 +584,13 @@ public class MapReduceTest
             }
 
             JobTracker tracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+            Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
             ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).reducer(new TestReducerFactory())
                     .submit(new TestCollator());
 
             int result = future.get();
 
-            // Precalculate result
+            // pre-calculate result
             int expectedResult = 0;
             for (int i = 0; i < 100; i++) {
                 expectedResult += i;
@@ -614,9 +604,8 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
-    public void testAsyncMapper()
-            throws Exception {
+    @Test(timeout = TEST_TIMEOUT)
+    public void testAsyncMapper() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -628,7 +617,6 @@ public class MapReduceTest
         assertClusterSizeEventually(3, h3);
 
         try {
-
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
             for (int i = 0; i < 100; i++) {
                 m1.put(i, i);
@@ -639,7 +627,7 @@ public class MapReduceTest
             semaphore.acquire();
 
             JobTracker tracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+            Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
             ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new TestMapper()).submit();
 
             future.andThen(new ExecutionCallback<Map<String, List<Integer>>>() {
@@ -658,7 +646,6 @@ public class MapReduceTest
                 }
             });
 
-
             semaphore.acquire();
 
             assertEquals(100, listenerResults.size());
@@ -670,9 +657,8 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
-    public void testKeyedAsyncMapper()
-            throws Exception {
+    @Test(timeout = TEST_TIMEOUT)
+    public void testKeyedAsyncMapper() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -682,7 +668,6 @@ public class MapReduceTest
         assertClusterSizeEventually(3, h1);
         assertClusterSizeEventually(3, h2);
         assertClusterSizeEventually(3, h3);
-
 
         try {
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
@@ -695,7 +680,7 @@ public class MapReduceTest
             semaphore.acquire();
 
             JobTracker tracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+            Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
             ICompletableFuture<Map<String, List<Integer>>> future = job.onKeys(50).mapper(new TestMapper()).submit();
 
             future.andThen(new ExecutionCallback<Map<String, List<Integer>>>() {
@@ -725,9 +710,8 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
-    public void testAsyncMapperReducer()
-            throws Exception {
+    @Test(timeout = TEST_TIMEOUT)
+    public void testAsyncMapperReducer() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -750,9 +734,9 @@ public class MapReduceTest
             semaphore.acquire();
 
             JobTracker tracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-            ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper()).reducer(new TestReducerFactory())//
-                    .submit();
+            Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
+            ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper())
+                    .reducer(new TestReducerFactory()).submit();
 
             future.andThen(new ExecutionCallback<Map<String, Integer>>() {
                 @Override
@@ -770,7 +754,7 @@ public class MapReduceTest
                 }
             });
 
-            // Precalculate results
+            // pre-calculate results
             int[] expectedResults = new int[4];
             for (int i = 0; i < 100; i++) {
                 int index = i % 4;
@@ -787,9 +771,8 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
-    public void testAsyncMapperCollator()
-            throws Exception {
+    @Test(timeout = TEST_TIMEOUT)
+    public void testAsyncMapperCollator() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -801,7 +784,6 @@ public class MapReduceTest
         assertClusterSizeEventually(3, h3);
 
         try {
-
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
             for (int i = 0; i < 100; i++) {
                 m1.put(i, i);
@@ -812,14 +794,14 @@ public class MapReduceTest
             semaphore.acquire();
 
             JobTracker tracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+            Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
             ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).submit(new GroupingTestCollator());
 
             future.andThen(new ExecutionCallback<Integer>() {
                 @Override
                 public void onResponse(Integer response) {
                     try {
-                        result[0] = response.intValue();
+                        result[0] = response;
                     } finally {
                         semaphore.release();
                     }
@@ -831,7 +813,7 @@ public class MapReduceTest
                 }
             });
 
-            // Precalculate result
+            // pre-calculate result
             int expectedResult = 0;
             for (int i = 0; i < 100; i++) {
                 expectedResult += i;
@@ -847,9 +829,8 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
-    public void testAsyncMapperReducerCollator()
-            throws Exception {
+    @Test(timeout = TEST_TIMEOUT)
+    public void testAsyncMapperReducerCollator() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -861,7 +842,6 @@ public class MapReduceTest
         assertClusterSizeEventually(3, h3);
 
         try {
-
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
             for (int i = 0; i < 100; i++) {
                 m1.put(i, i);
@@ -872,7 +852,7 @@ public class MapReduceTest
             semaphore.acquire();
 
             JobTracker tracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
+            Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
             ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).reducer(new TestReducerFactory())
                     .submit(new TestCollator());
 
@@ -880,7 +860,7 @@ public class MapReduceTest
                 @Override
                 public void onResponse(Integer response) {
                     try {
-                        result[0] = response.intValue();
+                        result[0] = response;
                     } finally {
                         semaphore.release();
                     }
@@ -892,7 +872,7 @@ public class MapReduceTest
                 }
             });
 
-            // Precalculate result
+            // pre-calculate result
             int expectedResult = 0;
             for (int i = 0; i < 100; i++) {
                 expectedResult += i;
@@ -908,9 +888,8 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
-    public void testNullFromObjectCombiner()
-            throws Exception {
+    @Test(timeout = TEST_TIMEOUT)
+    public void testNullFromObjectCombiner() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -928,7 +907,7 @@ public class MapReduceTest
             }
 
             JobTracker jobTracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = jobTracker.newJob(KeyValueSource.fromMap(m1));
+            Job<Integer, Integer> job = jobTracker.newJob(integerKvSource(m1));
             JobCompletableFuture<Map<String, BigInteger>> future = job.chunkSize(10).mapper(new GroupingTestMapper())
                     .combiner(new ObjectCombinerFactory())
                     .reducer(new ObjectReducerFactory()).submit();
@@ -948,9 +927,8 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
-    public void testNullFromObjectReducer()
-            throws Exception {
+    @Test(timeout = TEST_TIMEOUT)
+    public void testNullFromObjectReducer() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -958,7 +936,6 @@ public class MapReduceTest
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         try {
-
             assertClusterSizeEventually(3, h1);
             assertClusterSizeEventually(3, h2);
             assertClusterSizeEventually(3, h3);
@@ -969,7 +946,7 @@ public class MapReduceTest
             }
 
             JobTracker jobTracker = h1.getJobTracker("default");
-            Job<Integer, Integer> job = jobTracker.newJob(KeyValueSource.fromMap(m1));
+            Job<Integer, Integer> job = jobTracker.newJob(integerKvSource(m1));
             JobCompletableFuture<Map<String, BigInteger>> future = job.chunkSize(10).mapper(new GroupingTestMapper())
                     .combiner(new ObjectCombinerFactory())
                     .reducer(new NullReducerFactory()).submit();
@@ -981,9 +958,8 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
-    public void testDataSerializableIntermediateObject()
-            throws Exception {
+    @Test(timeout = TEST_TIMEOUT)
+    public void testDataSerializableIntermediateObject() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -1000,13 +976,13 @@ public class MapReduceTest
         }
 
         JobTracker jobTracker = h1.getJobTracker("default");
-        Job<Integer, Integer> job = jobTracker.newJob(KeyValueSource.fromMap(m1));
+        Job<Integer, Integer> job = jobTracker.newJob(integerKvSource(m1));
         ICompletableFuture<Integer> future = job.mapper(new TestMapper())
                 .combiner(new DataSerializableIntermediateCombinerFactory())
                 .reducer(new DataSerializableIntermediateReducerFactory())
                 .submit(new DataSerializableIntermediateCollator());
 
-        // Precalculate result
+        // pre-calculate result
         int expectedResult = 0;
         for (int i = 0; i < 100; i++) {
             expectedResult += i;
@@ -1016,24 +992,23 @@ public class MapReduceTest
         assertEquals(expectedResult, (int) future.get());
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = TEST_TIMEOUT)
     public void employeeMapReduceTest() throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
 
         try {
-            final IMap map = h1.getMap(randomString());
+            IMap<Integer, Employee> map = h1.getMap(randomString());
 
-            final int keyCount = 100;
+            int keyCount = 100;
             for (int id = 0; id < keyCount; id++) {
                 map.put(id, new Employee(id));
             }
 
             JobTracker tracker = h1.getJobTracker(randomString());
-            Job<Integer, Employee> job = tracker.newJob(KeyValueSource.fromMap(map));
+            Job<Integer, Employee> job = tracker.newJob(KeyValueSource.<Integer, Employee>fromMap(map));
 
             ICompletableFuture<Map<Integer, Set<Employee>>> future = job
                     .mapper(new ModIdMapper(2))
@@ -1043,12 +1018,15 @@ public class MapReduceTest
 
             Map<Integer, Set<Employee>> result = future.get();
 
-            assertEquals("expected 8 Employees with id's ending 2, 4, 6, 8", 8, result.size());
+            assertEquals("Expected 8 employees with ids ending 2, 4, 6, 8", 8, result.size());
         } finally {
             tripTerminate(h1, h2, h3);
         }
     }
 
+    static KeyValueSource<Integer, Integer> integerKvSource(IMap<Integer, Integer> m) {
+        return KeyValueSource.<Integer, Integer>fromMap(m);
+    }
 
     public static class ModIdMapper implements Mapper<Integer, Employee, Integer, Employee> {
 
@@ -1100,7 +1078,6 @@ public class MapReduceTest
         }
     }
 
-
     public static class IdReducerFactory implements ReducerFactory<Integer, Set<Employee>, Set<Employee>> {
 
         private int[] removeIds = null;
@@ -1141,11 +1118,10 @@ public class MapReduceTest
         }
     }
 
-
     public static class EmployeeCollator implements Collator<Map.Entry<Integer, Set<Employee>>, Map<Integer, Set<Employee>>> {
 
         public Map<Integer, Set<Employee>> collate(Iterable<Map.Entry<Integer, Set<Employee>>> values) {
-            Map<Integer, Set<Employee>> result = new HashMap();
+            Map<Integer, Set<Employee>> result = new HashMap<Integer, Set<Employee>>();
             for (Map.Entry<Integer, Set<Employee>> entry : values) {
                 for (Employee e : entry.getValue()) {
                     result.put(e.getId(), entry.getValue());
@@ -1155,9 +1131,7 @@ public class MapReduceTest
         }
     }
 
-
-    public static class TupleIntInt
-            implements DataSerializable {
+    public static class TupleIntInt implements DataSerializable {
 
         private int count;
         private int amount;
@@ -1171,24 +1145,19 @@ public class MapReduceTest
         }
 
         @Override
-        public void writeData(ObjectDataOutput out)
-                throws IOException {
-
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(count);
             out.writeInt(amount);
         }
 
         @Override
-        public void readData(ObjectDataInput in)
-                throws IOException {
-
+        public void readData(ObjectDataInput in) throws IOException {
             count = in.readInt();
             amount = in.readInt();
         }
     }
 
-    public static class ObjectCombinerFactory
-            implements CombinerFactory<String, Integer, BigInteger> {
+    public static class ObjectCombinerFactory implements CombinerFactory<String, Integer, BigInteger> {
 
         @Override
         public Combiner<Integer, BigInteger> newCombiner(String key) {
@@ -1196,8 +1165,7 @@ public class MapReduceTest
         }
     }
 
-    public static class ObjectCombiner
-            extends Combiner<Integer, BigInteger> {
+    public static class ObjectCombiner extends Combiner<Integer, BigInteger> {
 
         private BigInteger count;
 
@@ -1217,8 +1185,7 @@ public class MapReduceTest
         }
     }
 
-    public static class ObjectReducerFactory
-            implements ReducerFactory<String, BigInteger, BigInteger> {
+    public static class ObjectReducerFactory implements ReducerFactory<String, BigInteger, BigInteger> {
 
         @Override
         public Reducer<BigInteger, BigInteger> newReducer(String key) {
@@ -1226,8 +1193,7 @@ public class MapReduceTest
         }
     }
 
-    public static class ObjectReducer
-            extends Reducer<BigInteger, BigInteger> {
+    public static class ObjectReducer extends Reducer<BigInteger, BigInteger> {
 
         private BigInteger count;
 
@@ -1242,8 +1208,7 @@ public class MapReduceTest
         }
     }
 
-    public static class DataSerializableIntermediateCombinerFactory
-            implements CombinerFactory<String, Integer, TupleIntInt> {
+    public static class DataSerializableIntermediateCombinerFactory implements CombinerFactory<String, Integer, TupleIntInt> {
 
         @Override
         public Combiner<Integer, TupleIntInt> newCombiner(String key) {
@@ -1251,8 +1216,7 @@ public class MapReduceTest
         }
     }
 
-    public static class DataSerializableIntermediateCombiner
-            extends Combiner<Integer, TupleIntInt> {
+    public static class DataSerializableIntermediateCombiner extends Combiner<Integer, TupleIntInt> {
 
         private int count;
         private int amount;
@@ -1273,8 +1237,7 @@ public class MapReduceTest
         }
     }
 
-    public static class DataSerializableIntermediateReducerFactory
-            implements ReducerFactory<String, TupleIntInt, TupleIntInt> {
+    public static class DataSerializableIntermediateReducerFactory implements ReducerFactory<String, TupleIntInt, TupleIntInt> {
 
         @Override
         public Reducer<TupleIntInt, TupleIntInt> newReducer(String key) {
@@ -1282,8 +1245,7 @@ public class MapReduceTest
         }
     }
 
-    public static class DataSerializableIntermediateReducer
-            extends Reducer<TupleIntInt, TupleIntInt> {
+    public static class DataSerializableIntermediateReducer extends Reducer<TupleIntInt, TupleIntInt> {
 
         private volatile int count;
         private volatile int amount;
@@ -1300,8 +1262,7 @@ public class MapReduceTest
         }
     }
 
-    public static class DataSerializableIntermediateCollator
-            implements Collator<Map.Entry<String, TupleIntInt>, Integer> {
+    public static class DataSerializableIntermediateCollator implements Collator<Map.Entry<String, TupleIntInt>, Integer> {
 
         @Override
         public Integer collate(Iterable<Map.Entry<String, TupleIntInt>> values) {
@@ -1316,17 +1277,15 @@ public class MapReduceTest
         }
     }
 
-    public static class ExceptionThrowingMapper
-            implements Mapper<Integer, Integer, String, Integer> {
+    public static class ExceptionThrowingMapper implements Mapper<Integer, Integer, String, Integer> {
 
         @Override
         public void map(Integer key, Integer value, Context<String, Integer> context) {
-            throw new NullPointerException("BUMM!");
+            throw new NullPointerException("expected NPE");
         }
     }
 
-    public static class TimeConsumingMapper
-            implements Mapper<Integer, Integer, String, Integer> {
+    public static class TimeConsumingMapper implements Mapper<Integer, Integer, String, Integer> {
 
         @Override
         public void map(Integer key, Integer value, Context<String, Integer> collector) {
@@ -1338,8 +1297,7 @@ public class MapReduceTest
         }
     }
 
-    public static class TestKeyPredicate
-            implements KeyPredicate<Integer> {
+    public static class TestKeyPredicate implements KeyPredicate<Integer> {
 
         @Override
         public boolean evaluate(Integer key) {
@@ -1347,8 +1305,7 @@ public class MapReduceTest
         }
     }
 
-    public static class TestMapper
-            implements Mapper<Integer, Integer, String, Integer> {
+    public static class TestMapper implements Mapper<Integer, Integer, String, Integer> {
 
         @Override
         public void map(Integer key, Integer value, Context<String, Integer> collector) {
@@ -1356,8 +1313,7 @@ public class MapReduceTest
         }
     }
 
-    public static class GroupingTestMapper
-            implements Mapper<Integer, Integer, String, Integer> {
+    public static class GroupingTestMapper implements Mapper<Integer, Integer, String, Integer> {
 
         private int moduleKey = -1;
 
@@ -1376,8 +1332,7 @@ public class MapReduceTest
         }
     }
 
-    public static class TestReducer
-            extends Reducer<Integer, Integer> {
+    public static class TestReducer extends Reducer<Integer, Integer> {
 
         private volatile int sum = 0;
 
@@ -1392,8 +1347,7 @@ public class MapReduceTest
         }
     }
 
-    public static class TestReducerFactory
-            implements ReducerFactory<String, Integer, Integer> {
+    public static class TestReducerFactory implements ReducerFactory<String, Integer, Integer> {
 
         public TestReducerFactory() {
         }
@@ -1404,8 +1358,7 @@ public class MapReduceTest
         }
     }
 
-    public static class GroupingTestCollator
-            implements Collator<Map.Entry<String, List<Integer>>, Integer> {
+    public static class GroupingTestCollator implements Collator<Map.Entry<String, List<Integer>>, Integer> {
 
         @Override
         public Integer collate(Iterable<Map.Entry<String, List<Integer>>> values) {
@@ -1419,8 +1372,7 @@ public class MapReduceTest
         }
     }
 
-    public static class TestCollator
-            implements Collator<Map.Entry<String, Integer>, Integer> {
+    public static class TestCollator implements Collator<Map.Entry<String, Integer>, Integer> {
 
         @Override
         public Integer collate(Iterable<Map.Entry<String, Integer>> values) {
@@ -1432,8 +1384,7 @@ public class MapReduceTest
         }
     }
 
-    public static class NullReducerFactory
-            implements ReducerFactory<String, BigInteger, BigInteger> {
+    public static class NullReducerFactory implements ReducerFactory<String, BigInteger, BigInteger> {
 
         @Override
         public Reducer<BigInteger, BigInteger> newReducer(String key) {
@@ -1441,8 +1392,7 @@ public class MapReduceTest
         }
     }
 
-    public static class NullReducer
-            extends Reducer<BigInteger, BigInteger> {
+    public static class NullReducer extends Reducer<BigInteger, BigInteger> {
 
         @Override
         public void reduce(BigInteger value) {
@@ -1454,9 +1404,8 @@ public class MapReduceTest
         }
     }
 
-    public static class MapKeyValueSourceAdapter<K, V>
-            extends KeyValueSource<K, V>
-            implements DataSerializable, PartitionIdAware {
+    public static class MapKeyValueSourceAdapter<K, V> extends KeyValueSource<K, V> implements DataSerializable,
+            PartitionIdAware {
 
         private volatile KeyValueSource<K, V> keyValueSource;
         private int openCount = 0;
@@ -1507,37 +1456,18 @@ public class MapReduceTest
             return keyValueSource.getAllKeys0();
         }
 
-        public static <K1, V1> KeyValueSource<K1, V1> fromMap(IMap<K1, V1> map) {
-            return KeyValueSource.fromMap(map);
-        }
-
-        public static <K1, V1> KeyValueSource<K1, V1> fromMultiMap(MultiMap<K1, V1> multiMap) {
-            return KeyValueSource.fromMultiMap(multiMap);
-        }
-
-        public static <V1> KeyValueSource<String, V1> fromList(IList<V1> list) {
-            return KeyValueSource.fromList(list);
-        }
-
-        public static <V1> KeyValueSource<String, V1> fromSet(ISet<V1> set) {
-            return KeyValueSource.fromSet(set);
-        }
-
         @Override
-        public void close()
-                throws IOException {
+        public void close() throws IOException {
             keyValueSource.close();
         }
 
         @Override
-        public void writeData(ObjectDataOutput out)
-                throws IOException {
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(keyValueSource);
         }
 
         @Override
-        public void readData(ObjectDataInput in)
-                throws IOException {
+        public void readData(ObjectDataInput in) throws IOException {
             keyValueSource = in.readObject();
         }
 

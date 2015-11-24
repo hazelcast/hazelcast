@@ -21,6 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
+import static com.hazelcast.map.impl.record.RecordStatistics.EMPTY_STATS;
+
 /**
  * Record info.
  */
@@ -104,7 +106,7 @@ public class RecordInfo implements DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        if (statistics != null) {
+        if (statistics != EMPTY_STATS) {
             out.writeBoolean(true);
             statistics.writeData(out);
         } else {
@@ -123,7 +125,7 @@ public class RecordInfo implements DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         boolean statsEnabled = in.readBoolean();
         if (statsEnabled) {
-            statistics = new RecordStatistics();
+            statistics = new RecordStatisticsImpl();
             statistics.readData(in);
         }
         version = in.readLong();
@@ -136,23 +138,14 @@ public class RecordInfo implements DataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder builder = new StringBuilder();
-        builder.append("RecordInfo{");
-        builder.append("statistics=");
-        builder.append(statistics);
-        builder.append(", version=");
-        builder.append(version);
-        builder.append(", evictionCriteriaNumber=");
-        builder.append(evictionCriteriaNumber);
-        builder.append(", ttl=");
-        builder.append(ttl);
-        builder.append(", creationTime=");
-        builder.append(creationTime);
-        builder.append(", lastAccessTime=");
-        builder.append(lastAccessTime);
-        builder.append(", lastUpdateTime=");
-        builder.append(lastUpdateTime);
-        builder.append('}');
-        return builder.toString();
+        return "RecordInfo{"
+                + "statistics=" + statistics
+                + ", version=" + version
+                + ", evictionCriteriaNumber=" + evictionCriteriaNumber
+                + ", ttl=" + ttl
+                + ", creationTime=" + creationTime
+                + ", lastAccessTime=" + lastAccessTime
+                + ", lastUpdateTime=" + lastUpdateTime
+                + '}';
     }
 }

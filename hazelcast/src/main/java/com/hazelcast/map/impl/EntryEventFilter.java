@@ -25,8 +25,8 @@ import java.io.IOException;
 
 public class EntryEventFilter implements EventFilter, DataSerializable {
 
-    boolean includeValue;
-    Data key;
+    protected boolean includeValue;
+    protected Data key;
 
     public EntryEventFilter(boolean includeValue, Data key) {
         this.includeValue = includeValue;

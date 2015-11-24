@@ -24,9 +24,12 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheClearCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.OperationFactory;
 
 import javax.cache.CacheException;
+import java.security.Permission;
 import java.util.Map;
 
 /**
@@ -73,6 +76,10 @@ public class CacheClearMessageTask
         return null;
     }
 
+    @Override
+    public Permission getRequiredPermission() {
+        return new CachePermission(parameters.name, ActionConstants.ACTION_REMOVE);
+    }
 
     @Override
     public String getServiceName() {
@@ -82,6 +89,16 @@ public class CacheClearMessageTask
     @Override
     public String getDistributedObjectName() {
         return parameters.name;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "clear";
     }
 
 }

@@ -18,53 +18,58 @@ package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.operation.RemoveOperation;
+import com.hazelcast.replicatedmap.impl.operation.VersionResponsePair;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
+import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
 /**
  * Client request class for {@link java.util.Map#remove(Object)} implementation
  */
-public class ClientReplicatedMapRemoveRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapRemoveRequest extends AbstractReplicatedMapClientRequest {
 
-    private Object key;
+    private Data key;
 
-    ClientReplicatedMapRemoveRequest() {
-        super(null);
+    public ClientReplicatedMapRemoveRequest() {
     }
 
-    public ClientReplicatedMapRemoveRequest(String mapName, Object key) {
-        super(mapName);
+    public ClientReplicatedMapRemoveRequest(String name, Data key) {
+        super(name);
         this.key = key;
     }
 
     @Override
-    public Object call()
-            throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return recordStore.remove(key);
+    protected Operation prepareOperation() {
+        return new RemoveOperation(getMapName(), key);
     }
 
     @Override
-    public void write(PortableWriter writer)
-            throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(key);
+        out.writeData(key);
     }
 
     @Override
-    public void read(PortableReader reader)
-            throws IOException {
+    public void read(PortableReader reader) throws IOException {
         super.read(reader);
         ObjectDataInput in = reader.getRawDataInput();
-        key = in.readObject();
+        key = in.readData();
+    }
+
+    @Override
+    protected Object filter(Object response) {
+        if (response instanceof VersionResponsePair) {
+            VersionResponsePair pair = (VersionResponsePair) response;
+            return pair.getResponse();
+        }
+        return response;
     }
 
     @Override
@@ -85,5 +90,10 @@ public class ClientReplicatedMapRemoveRequest
     @Override
     public Object[] getParameters() {
         return new Object[]{key};
+    }
+
+    @Override
+    protected int getPartition() {
+        return getClientEngine().getPartitionService().getPartitionId(key);
     }
 }

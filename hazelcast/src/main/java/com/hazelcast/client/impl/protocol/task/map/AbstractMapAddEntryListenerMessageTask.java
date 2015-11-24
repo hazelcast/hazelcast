@@ -19,12 +19,12 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.map.impl.MapListenerAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.Connection;
@@ -47,15 +47,27 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         final ClientEndpoint endpoint = getEndpoint();
         final MapService mapService = getService(MapService.SERVICE_NAME);
 
-        EntryAdapter<Object, Object> listener = new MapListener();
+        Object listener = newMapListener();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final String name = getDistributedObjectName();
-        final String registrationId = mapServiceContext.addEventListener(listener, getEventFilter(), name);
-        endpoint.setListenerRegistration(MapService.SERVICE_NAME, name, registrationId);
+        String name = getDistributedObjectName();
+        EventFilter eventFilter = getEventFilter();
+        String registrationId;
+        if (isLocalOnly()) {
+            registrationId = mapServiceContext.addLocalEventListener(listener, eventFilter, name);
+        } else {
+            registrationId = mapServiceContext.addEventListener(listener, eventFilter, name);
+        }
+        endpoint.addListenerDestroyAction(MapService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
 
+    protected Object newMapListener() {
+        return new ClientMapListener();
+    }
+
     protected abstract EventFilter getEventFilter();
+
+    protected abstract boolean isLocalOnly();
 
     @Override
     public String getServiceName() {
@@ -72,7 +84,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
     }
 
-    private class MapListener extends EntryAdapter<Object, Object> {
+    private class ClientMapListener extends MapListenerAdapter<Object, Object> {
 
         @Override
         public void onEntryEvent(EntryEvent<Object, Object> event) {

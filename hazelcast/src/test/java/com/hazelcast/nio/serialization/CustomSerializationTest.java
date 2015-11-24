@@ -19,12 +19,11 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,11 +41,6 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class CustomSerializationTest {
-
-    @After
-    public void cleanup() {
-        System.clearProperty("hazelcast.serialization.custom.override");
-    }
 
     @Test
     public void testSerializer() throws Exception {
@@ -66,37 +60,6 @@ public class CustomSerializationTest {
     @Test
     public void testSerializerNativeOrderUsingUnsafe() throws Exception {
         testSerializer(ByteOrder.nativeOrder(), true);
-    }
-
-    @Test
-    public void testSerializerOverridenHierarchyWhenEnabled() throws Exception {
-        System.setProperty("hazelcast.serialization.custom.override", "true");
-        SerializationConfig config = new SerializationConfig();
-        FooXmlSerializer serializer = new FooXmlSerializer();
-        SerializerConfig sc = new SerializerConfig()
-                .setImplementation(serializer)
-                .setTypeClass(FooDataSerializable.class);
-        config.addSerializerConfig(sc);
-        SerializationService ss = new DefaultSerializationServiceBuilder().setConfig(config).build();
-        FooDataSerializable foo = new FooDataSerializable("foo");
-        ss.toData(foo);
-        assertEquals(0, foo.serializationCount.get());
-        assertEquals(1, serializer.serializationCount.get());
-    }
-
-    @Test
-    public void testSerializerOverridenHierarchyWhenDisabled() throws Exception {
-        SerializationConfig config = new SerializationConfig();
-        FooXmlSerializer serializer = new FooXmlSerializer();
-        SerializerConfig sc = new SerializerConfig()
-                .setImplementation(serializer)
-                .setTypeClass(FooDataSerializable.class);
-        config.addSerializerConfig(sc);
-        SerializationService ss = new DefaultSerializationServiceBuilder().setConfig(config).build();
-        FooDataSerializable foo = new FooDataSerializable("foo");
-        ss.toData(foo);
-        assertEquals(1, foo.serializationCount.get());
-        assertEquals(0, serializer.serializationCount.get());
     }
 
     private void testSerializer(ByteOrder order, boolean allowUnsafe) throws Exception {

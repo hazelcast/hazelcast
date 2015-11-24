@@ -18,7 +18,7 @@ package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
-import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
@@ -57,6 +57,10 @@ public class CacheLoadAllRequest
         this.replaceExistingValues = replaceExistingValues;
     }
 
+    public Set<Data> getKeys() {
+        return keys;
+    }
+
     @Override
     public int getFactoryId() {
         return CachePortableHook.F_ID;
@@ -80,7 +84,7 @@ public class CacheLoadAllRequest
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override

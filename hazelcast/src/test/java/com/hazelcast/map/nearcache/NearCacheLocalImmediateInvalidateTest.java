@@ -44,7 +44,7 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
 
     private static final TimeUnit timeunit = TimeUnit.MILLISECONDS;
 
-    private static final String mapName = NearCacheLocalImmediateInvalidateTest.class.getCanonicalName();
+    public static final String mapName = NearCacheLocalImmediateInvalidateTest.class.getCanonicalName();
 
     private HazelcastInstance hcInstance;
 
@@ -52,6 +52,14 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
 
     @Before
     public void setUp() throws Exception {
+        Config config = createConfig();
+        // create Hazelcast instance
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
+        hcInstance = factory.newHazelcastInstance(config);
+        hcInstance2 = factory.newHazelcastInstance(config);
+    }
+
+    protected Config createConfig() {
         // create config
         Config config = new Config();
         // configure near cache
@@ -60,10 +68,7 @@ public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport 
         nearCacheConfig.setEvictionPolicy("NONE");
         nearCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         mapConfig.setNearCacheConfig(nearCacheConfig);
-        // create Hazelcast instance
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
-        hcInstance = factory.newHazelcastInstance(config);
-        hcInstance2 = factory.newHazelcastInstance(config);
+        return config;
     }
 
     @After

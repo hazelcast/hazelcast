@@ -16,123 +16,77 @@
 
 package com.hazelcast.util.executor;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.impl.AbstractCompletableFuture;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
-public class CompletableFutureTask<V> extends FutureTask<V> implements ICompletableFuture<V> {
+public class CompletableFutureTask<V> extends AbstractCompletableFuture<V> implements ICompletableFuture<V>, RunnableFuture<V> {
 
-    private final AtomicReferenceFieldUpdater<CompletableFutureTask, ExecutionCallbackNode> callbackUpdater;
-    private final ILogger logger = Logger.getLogger(CompletableFutureTask.class);
-    private final ExecutorService asyncExecutor;
+    private static final AtomicReferenceFieldUpdater<CompletableFutureTask, Thread> RUNNER
+            = newUpdater(CompletableFutureTask.class, Thread.class, "runner");
 
-    private volatile ExecutionCallbackNode<V> callbackHead;
+    private final Callable<V> callable;
+
+    private volatile Thread runner;
 
     public CompletableFutureTask(Callable<V> callable, ExecutorService asyncExecutor) {
-        super(callable);
-        this.asyncExecutor = asyncExecutor;
-        this.callbackUpdater = AtomicReferenceFieldUpdater.newUpdater(
-                CompletableFutureTask.class, ExecutionCallbackNode.class, "callbackHead");
+        super(asyncExecutor, Logger.getLogger(CompletableFutureTask.class));
+        this.callable = callable;
     }
 
     public CompletableFutureTask(Runnable runnable, V result, ExecutorService asyncExecutor) {
-        super(runnable, result);
-        this.asyncExecutor = asyncExecutor;
-        this.callbackUpdater = AtomicReferenceFieldUpdater.newUpdater(
-                CompletableFutureTask.class, ExecutionCallbackNode.class, "callbackHead");
+        super(asyncExecutor, Logger.getLogger(CompletableFutureTask.class));
+        this.callable = Executors.callable(runnable, result);
     }
 
     @Override
     public void run() {
-        try {
-            super.run();
-        } finally {
-            fireCallbacks();
-        }
-    }
-
-    @Override
-    public void andThen(ExecutionCallback<V> callback) {
-        andThen(callback, asyncExecutor);
-    }
-
-    @Override
-    public void andThen(ExecutionCallback<V> callback, Executor executor) {
-        isNotNull(callback, "callback");
-        isNotNull(executor, "executor");
-
         if (isDone()) {
-            runAsynchronous(callback, executor);
             return;
         }
-        for ( ;;) {
-            ExecutionCallbackNode<V> oldCallbackHead = callbackHead;
-            ExecutionCallbackNode<V> newCallbackHead = new ExecutionCallbackNode<V>(callback, executor, oldCallbackHead);
-            if (callbackUpdater.compareAndSet(this, oldCallbackHead, newCallbackHead)) {
-                break;
-            }
-        }
-    }
 
-    private Object readResult() {
+        if (runner != null || !RUNNER.compareAndSet(this, null, Thread.currentThread())) {
+            // prevents concurrent calls to run
+            return;
+        }
+
         try {
-            return get();
-        } catch (Throwable t) {
-            return t;
-        }
-    }
-
-    private void fireCallbacks() {
-        ExecutionCallbackNode<V> callbackChain;
-        for (;;) {
-            callbackChain = callbackHead;
-            if (callbackUpdater.compareAndSet(this, callbackChain, null)) {
-                break;
-            }
-        }
-        while (callbackChain != null) {
-            runAsynchronous(callbackChain.callback, callbackChain.executor);
-            callbackChain = callbackChain.next;
-        }
-    }
-
-    private void runAsynchronous(final ExecutionCallback<V> callback, final Executor executor) {
-        final Object result = readResult();
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
+            Callable c = callable;
+            if (c != null) {
+                Object result = null;
                 try {
-                    if (result instanceof Throwable) {
-                        callback.onFailure((Throwable) result);
-                    } else {
-                        callback.onResponse((V) result);
-                    }
-                } catch (Throwable t) {
-                    //todo: improved error message
-                    logger.severe("Failed to async for " + CompletableFutureTask.this, t);
+                    result = c.call();
+                } catch (Throwable ex) {
+                    result = new ExecutionException(ex);
+                } finally {
+                    setResult(result);
                 }
             }
-        });
-    }
-
-    private static final class ExecutionCallbackNode<E> {
-        private final ExecutionCallback<E> callback;
-        private final Executor executor;
-        private final ExecutionCallbackNode<E> next;
-
-        private ExecutionCallbackNode(ExecutionCallback<E> callback, Executor executor, ExecutionCallbackNode<E> next) {
-            this.callback = callback;
-            this.executor = executor;
-            this.next = next;
+        } finally {
+            // runner must be non-null until state is settled in setResult() to
+            // prevent concurrent calls to run()
+            runner = null;
         }
     }
+
+    @Override
+    protected void cancelled(boolean mayInterruptIfRunning) {
+        // additionally handle the interruption of the executing thread
+        if (mayInterruptIfRunning) {
+            Thread executingThread = runner;
+            if (executingThread != null) {
+                executingThread.interrupt();
+            }
+        }
+    }
+
 }

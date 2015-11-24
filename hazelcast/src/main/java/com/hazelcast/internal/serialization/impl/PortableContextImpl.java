@@ -165,7 +165,7 @@ final class PortableContextImpl implements PortableContext {
 
     @Override
     public ClassDefinition lookupOrRegisterClassDefinition(Portable p) throws IOException {
-        int portableVersion = PortableVersionHelper.getVersion(p, version);
+        int portableVersion = SerializationUtil.getPortableVersion(p, version);
         ClassDefinition cd = lookupClassDefinition(p.getFactoryId(), p.getClassId(), portableVersion);
         if (cd == null) {
             ClassDefinitionWriter writer = new ClassDefinitionWriter(this, p.getFactoryId(),

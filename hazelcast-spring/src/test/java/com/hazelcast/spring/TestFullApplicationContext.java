@@ -25,12 +25,15 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ManagementCenterConfig;
+import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -51,6 +54,7 @@ import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
@@ -74,7 +78,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -96,6 +99,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.nio.ByteOrder;
 import java.util.Collection;
@@ -106,6 +110,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
+import static com.hazelcast.instance.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
+import static com.hazelcast.instance.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -209,17 +215,20 @@ public class TestFullApplicationContext {
         assertEquals(1, config.getCacheConfigs().size());
         CacheSimpleConfig cacheConfig = config.getCacheConfig("testCache");
         assertEquals("testCache", cacheConfig.getName());
+        assertTrue(cacheConfig.isHotRestartEnabled());
 
         WanReplicationRef wanRef = cacheConfig.getWanReplicationRef();
         assertEquals("testWan", wanRef.getName());
         assertEquals("PUT_IF_ABSENT", wanRef.getMergePolicy());
+        assertEquals(1,wanRef.getFilters().size());
+        assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
         assertFalse(wanRef.isRepublishingEnabled());
     }
 
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(10, config.getMapConfigs().size());
+        assertEquals(12, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -229,6 +238,7 @@ public class TestFullApplicationContext {
         assertEquals(Integer.MAX_VALUE, testMapConfig.getMaxSizeConfig().getSize());
         assertEquals(30, testMapConfig.getEvictionPercentage());
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
+        assertTrue(testMapConfig.isHotRestartEnabled());
         assertEquals(1000, testMapConfig.getMinEvictionCheckMillis());
         assertEquals("PUT_IF_ABSENT", testMapConfig.getMergePolicy());
         assertTrue(testMapConfig.isReadBackupData());
@@ -240,6 +250,16 @@ public class TestFullApplicationContext {
                 assertTrue(index.isOrdered());
             } else {
                 fail("unknown index!");
+            }
+        }
+        assertEquals(2, testMapConfig.getMapAttributeConfigs().size());
+        for (MapAttributeConfig attribute : testMapConfig.getMapAttributeConfigs()) {
+            if ("power".equals(attribute.getName())) {
+                assertEquals("com.car.PowerExtractor", attribute.getExtractor());
+            } else if ("weight".equals(attribute.getName())) {
+                assertEquals("com.car.WeightExtractor", attribute.getExtractor());
+            } else {
+                fail("unknown attribute!");
             }
         }
         assertEquals("my-quorum", testMapConfig.getQuorumName());
@@ -322,6 +342,11 @@ public class TestFullApplicationContext {
 
         MapConfig mapWithDefaultOptimizedQueriesConfig = config.getMapConfig("mapWithDefaultOptimizedQueries");
         assertFalse(mapWithDefaultOptimizedQueriesConfig.isOptimizeQueries());
+
+        MapConfig testMapWithPartitionLostListenerConfig = config.getMapConfig("mapWithPartitionLostListener");
+        List<MapPartitionLostListenerConfig> partitionLostListenerConfigs = testMapWithPartitionLostListenerConfig.getPartitionLostListenerConfigs();
+        assertEquals(1, partitionLostListenerConfigs.size());
+        assertEquals("DummyMapPartitionLostListenerImpl", partitionLostListenerConfigs.get(0).getClassName());
     }
 
     @Test
@@ -455,15 +480,16 @@ public class TestFullApplicationContext {
 
     @Test
     public void testProperties() {
-        final Properties properties = config.getProperties();
+        Properties properties = config.getProperties();
         assertNotNull(properties);
-        assertEquals("5", properties.get(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS));
-        assertEquals("5", properties.get(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS));
-        final Config config2 = instance.getConfig();
-        final Properties properties2 = config2.getProperties();
+        assertEquals("5", properties.get(MERGE_FIRST_RUN_DELAY_SECONDS.getName()));
+        assertEquals("5", properties.get(MERGE_NEXT_RUN_DELAY_SECONDS.getName()));
+
+        Config config2 = instance.getConfig();
+        Properties properties2 = config2.getProperties();
         assertNotNull(properties2);
-        assertEquals("5", properties2.get(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS));
-        assertEquals("5", properties2.get(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS));
+        assertEquals("5", properties2.get(MERGE_FIRST_RUN_DELAY_SECONDS.getName()));
+        assertEquals("5", properties2.get(MERGE_NEXT_RUN_DELAY_SECONDS.getName()));
     }
 
     @Test
@@ -525,6 +551,8 @@ public class TestFullApplicationContext {
         assertEquals("10.2.1.1:5701", targetCfg.getEndpoints().get(0));
         assertEquals("10.2.1.2:5701", targetCfg.getEndpoints().get(1));
         assertEquals(wanReplication, wcfg.getTargetClusterConfigs().get(1).getReplicationImplObject());
+        assertEquals(WanAcknowledgeType.ACK_ON_TRANSMIT, wcfg.getTargetClusterConfigs().get(0).getAcknowledgeType());
+        assertEquals(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE, wcfg.getTargetClusterConfigs().get(1).getAcknowledgeType());
     }
 
     @Test
@@ -721,4 +749,23 @@ public class TestFullApplicationContext {
             assertFalse(mapIndexConfig.isOrdered());
         }
     }
+
+    @Test
+    public void testMapNativeMaxSizePolicy() {
+        MapConfig mapConfig = config.getMapConfig("map-with-native-max-size-policy");
+        MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
+
+        assertEquals(MaxSizeConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE, maxSizeConfig.getMaxSizePolicy());
+    }
+
+    @Test
+    public void testHotRestart() {
+        File dir = new File("/mnt/hot-restart/");
+        HotRestartConfig hotRestartConfig = config.getHotRestartConfig();
+        assertTrue(hotRestartConfig.isEnabled());
+        assertEquals(dir.getAbsolutePath(), hotRestartConfig.getHomeDir().getAbsolutePath());
+        assertEquals(1111, hotRestartConfig.getValidationTimeoutSeconds());
+        assertEquals(2222, hotRestartConfig.getDataLoadTimeoutSeconds());
+    }
+
 }

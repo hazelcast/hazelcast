@@ -32,24 +32,25 @@ import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.PostProcessingMapStore;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.TestUtil;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapStoreWrapper;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.mapstore.MapStoreWriteBehindTest.RecordingMapStore;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.SampleObjects.Employee;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.InputStream;
 import java.util.Collection;
@@ -69,16 +70,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 
 /**
  * @author enesakar 1/21/13
@@ -142,6 +138,45 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertTrue(loadAllCalled.get());
         assertFalse(loadCalled.get());
     }
+
+
+    @Test(timeout = 120000)
+    public void testNullValuesFromMapLoaderAreNotInsertedIntoMap() throws Exception {
+        Config config = newConfig(new NullLoader());
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap map = node.getMap(randomName());
+
+        // load entries.
+        map.getAll(new HashSet(asList("key1", "key2", "key3")));
+
+        assertEquals(0, map.size());
+    }
+
+    /**
+     * Always loads null values for requested keys.
+     */
+    private static class NullLoader implements MapLoader {
+
+        @Override
+        public Object load(Object key) {
+            return null;
+        }
+
+        @Override
+        public Map loadAll(Collection keys) {
+            Map map = new HashMap();
+            for (Object key : keys) {
+                map.put(key, null);
+            }
+            return map;
+        }
+
+        @Override
+        public Iterable loadAllKeys() {
+            return null;
+        }
+    }
+
 
     @Test(timeout = 120000)
     public void testSlowStore() throws Exception {
@@ -511,35 +546,6 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(1000, map2.size());
     }
 
-    private boolean checkIfMapLoaded(String mapName, HazelcastInstance instance) throws InterruptedException {
-        NodeEngineImpl nodeEngine = TestUtil.getNode(instance).nodeEngine;
-        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
-        boolean loaded = false;
-
-        final long end = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
-
-        while (!loaded) {
-            for (int i = 0; i < partitionCount; i++) {
-                final RecordStore recordStore = service.getMapServiceContext()
-                        .getPartitionContainer(i).getRecordStore(mapName);
-                if (recordStore != null) {
-                    loaded = recordStore.isLoaded();
-                    if (!loaded) {
-                        break;
-                    }
-                }
-            }
-            if (System.currentTimeMillis() >= end) {
-                break;
-            }
-            //give a rest to cpu.
-            Thread.sleep(10);
-        }
-
-        return loaded;
-    }
-
     /*
      * Test for Issue 572
     */
@@ -777,9 +783,8 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     private Config createChunkedMapLoaderConfig(String mapName, int chunkSize, ChunkedLoader chunkedLoader) {
         Config cfg = new Config();
-        cfg.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1");
-        cfg.setProperty(GroupProperties.PROP_MAP_LOAD_CHUNK_SIZE, String.valueOf(chunkSize));
-
+        cfg.setProperty(GroupProperty.PARTITION_COUNT, "1");
+        cfg.setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE, String.valueOf(chunkSize));
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
@@ -931,6 +936,9 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(0, store.getStore().keySet().size());
     }
 
+    private Config newConfig(Object storeImpl) {
+        return newConfig("default", storeImpl, 0, InitialLoadMode.LAZY);
+    }
 
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {
         return newConfig("default", storeImpl, writeDelaySeconds, InitialLoadMode.LAZY);

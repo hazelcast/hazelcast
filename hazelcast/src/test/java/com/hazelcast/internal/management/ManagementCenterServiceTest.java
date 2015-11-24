@@ -9,6 +9,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -25,12 +26,13 @@ import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URL;
+import java.net.URLDecoder;
 
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
-@Category(NightlyTest.class)
+@Category(SlowTest.class)
 public class ManagementCenterServiceTest extends HazelcastTestSupport {
 
     private JettyServer jettyServer;
@@ -40,7 +42,7 @@ public class ManagementCenterServiceTest extends HazelcastTestSupport {
     @Before
     public void setUp() throws Exception {
         URL root = new URL(MancenterServlet.class.getResource("/"), "../test-classes");
-        String baseDir = new File(root.getFile().replaceAll("%20", " ")).toString();
+        String baseDir = URLDecoder.decode(root.getFile(), "UTF-8");
         String sourceDir = baseDir + "/../../src/test/webapp";
         String sourceName = "server_config.xml";
         portNum = availablePort();

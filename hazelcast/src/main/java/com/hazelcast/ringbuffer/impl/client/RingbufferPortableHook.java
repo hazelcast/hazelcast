@@ -36,15 +36,14 @@ public class RingbufferPortableHook implements PortableHook {
 
     public static final int ADD_ALL = 1;
     public static final int ADD = 2;
-    public static final int ADD_ASYNC = 3;
-    public static final int CAPACITY = 4;
-    public static final int HEAD_SEQUENCE = 5;
-    public static final int READ_MANY = 6;
-    public static final int READ_ONE = 7;
-    public static final int REMAINING_CAPACITY = 8;
-    public static final int SIZE = 9;
-    public static final int TAIL_SEQUENCE = 10;
-    public static final int READ_RESULT_SET = 11;
+    public static final int CAPACITY = 3;
+    public static final int HEAD_SEQUENCE = 4;
+    public static final int READ_MANY = 5;
+    public static final int READ_ONE = 6;
+    public static final int REMAINING_CAPACITY = 7;
+    public static final int SIZE = 8;
+    public static final int TAIL_SEQUENCE = 9;
+    public static final int READ_RESULT_SET = 10;
 
     @Override
     public int getFactoryId() {
@@ -61,8 +60,6 @@ public class RingbufferPortableHook implements PortableHook {
                         return new AddAllRequest();
                     case ADD:
                         return new AddRequest();
-                    case ADD_ASYNC:
-                        return new AddAsyncRequest();
                     case CAPACITY:
                         return new CapacityRequest();
                     case HEAD_SEQUENCE:

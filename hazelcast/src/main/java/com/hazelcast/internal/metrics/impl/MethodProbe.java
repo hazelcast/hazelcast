@@ -57,7 +57,7 @@ abstract class MethodProbe implements ProbeFunction {
 
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
         String name = getName(namePrefix);
-        metricsRegistry.registerInternal(source, name, this);
+        metricsRegistry.registerInternal(source, name, probe.level(), this);
     }
 
     private String getName(String namePrefix) {

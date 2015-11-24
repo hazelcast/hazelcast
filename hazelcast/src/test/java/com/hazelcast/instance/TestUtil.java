@@ -63,6 +63,7 @@ public final class TestUtil {
         final Node node = getNode(hz);
         node.getConnectionManager().shutdown();
         node.shutdown(true);
+        hz.getLifecycleService().terminate();
     }
 
     public static void warmUpPartitions(HazelcastInstance...instances) throws InterruptedException {

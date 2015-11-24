@@ -56,6 +56,8 @@ import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
+import com.hazelcast.wan.WanReplicationService;
+
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.Collections;
@@ -90,6 +92,7 @@ public final class ServiceManagerImpl implements ServiceManager {
 
     private void registerServices(Map<String, Properties> serviceProps, Map<String, Object> serviceConfigObjects) {
         registerCoreServices();
+        registerExtensionServices();
 
         Node node = nodeEngine.getNode();
         ServicesConfig servicesConfig = node.getConfig().getServicesConfig();
@@ -109,6 +112,16 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(TransactionManagerServiceImpl.SERVICE_NAME, nodeEngine.getTransactionManagerService());
         registerService(ClientEngineImpl.SERVICE_NAME, node.clientEngine);
         registerService(QuorumServiceImpl.SERVICE_NAME, nodeEngine.getQuorumService());
+        registerService(WanReplicationService.SERVICE_NAME, nodeEngine.getWanReplicationService());
+    }
+
+    private void registerExtensionServices() {
+        logger.finest("Registering extension services...");
+        NodeExtension nodeExtension = nodeEngine.getNode().getNodeExtension();
+        Map<String, Object> services = nodeExtension.createExtensionServices();
+        for (Map.Entry<String, Object> entry : services.entrySet()) {
+            registerService(entry.getKey(), entry.getValue());
+        }
     }
 
     private void registerDefaultServices(ServicesConfig servicesConfig) {

@@ -17,7 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientProperties;
+import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
@@ -54,6 +54,7 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -76,8 +77,8 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientRegressionWithMockNetworkTest
-        extends HazelcastTestSupport {
+@Ignore //https://github.com/hazelcast/hazelcast/issues/6153
+public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -85,7 +86,6 @@ public class ClientRegressionWithMockNetworkTest
     public void cleanup() {
         hazelcastFactory.terminateAll();
     }
-
 
     @Test
     public void testInitialMemberListener() throws InterruptedException {
@@ -105,7 +105,7 @@ public class ClientRegressionWithMockNetworkTest
         assertTrue("After starting", latch2.await(5, TimeUnit.SECONDS));
     }
 
-    static class StaticMemberListener implements MembershipListener, InitialMembershipListener {
+    private static class StaticMemberListener implements MembershipListener, InitialMembershipListener {
 
         final CountDownLatch latch;
 
@@ -135,7 +135,6 @@ public class ClientRegressionWithMockNetworkTest
 
         final HazelcastInstance hz1 = hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastInstance();
-
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
@@ -291,7 +290,6 @@ public class ClientRegressionWithMockNetworkTest
         list.offer(LifecycleState.CLIENT_DISCONNECTED);
         list.offer(LifecycleState.CLIENT_CONNECTED);
 
-
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final CountDownLatch latch = new CountDownLatch(list.size());
         LifecycleListener listener = new LifecycleListener() {
@@ -335,15 +333,12 @@ public class ClientRegressionWithMockNetworkTest
             }
 
             public void memberAdded(MembershipEvent membershipEvent) {
-
             }
 
             public void memberRemoved(MembershipEvent membershipEvent) {
-
             }
 
             public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-
             }
         }));
         hazelcastFactory.newHazelcastClient(clientConfig);
@@ -352,7 +347,6 @@ public class ClientRegressionWithMockNetworkTest
 
     @Test
     public void testInterceptor() throws InterruptedException {
-
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
@@ -373,7 +367,6 @@ public class ClientRegressionWithMockNetworkTest
 
         assertEquals("val", map.get("key1"));
 
-
         map.put("key2", "oldValue");
         assertEquals("oldValue", map.get("key2"));
         map.put("key2", "newValue");
@@ -382,12 +375,9 @@ public class ClientRegressionWithMockNetworkTest
         map.put("key3", "value2");
         assertEquals("value2", map.get("key3"));
         assertEquals("removeIntercepted", map.remove("key3"));
-
-
     }
 
-    static class MapInterceptorImpl implements MapInterceptor {
-
+    private static class MapInterceptorImpl implements MapInterceptor {
 
         MapInterceptorImpl() {
         }
@@ -400,7 +390,6 @@ public class ClientRegressionWithMockNetworkTest
         }
 
         public void afterGet(Object value) {
-
         }
 
         public Object interceptPut(Object oldValue, Object newValue) {
@@ -422,7 +411,6 @@ public class ClientRegressionWithMockNetworkTest
 
         public void afterRemove(Object value) {
         }
-
     }
 
     @Test
@@ -456,7 +444,6 @@ public class ClientRegressionWithMockNetworkTest
         securityConfig.setCredentialsClassname(MyCredentials.class.getName());
 
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-
     }
 
     public static class MyCredentials extends UsernamePasswordCredentials {
@@ -519,7 +506,6 @@ public class ClientRegressionWithMockNetworkTest
         }
 
         public SamplePortable() {
-
         }
 
         public int getFactoryId() {
@@ -541,7 +527,6 @@ public class ClientRegressionWithMockNetworkTest
 
     @Test
     public void testNearCache_WhenRegisteredNodeIsDead() {
-
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
         final ClientConfig clientConfig = new ClientConfig();
@@ -570,7 +555,6 @@ public class ClientRegressionWithMockNetworkTest
                 assertEquals(null, map.get("a"));
             }
         });
-
     }
 
     @Category(NightlyTest.class)
@@ -586,7 +570,6 @@ public class ClientRegressionWithMockNetworkTest
     }
 
     private void testLock_WhenClientAndOwnerNodeDiesTogether(boolean smart) throws InterruptedException {
-
         hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(smart);
@@ -627,14 +610,63 @@ public class ClientRegressionWithMockNetworkTest
             map1.put(i, i);
         }
 
-        assertOpenEventually("dadas", latch);
+        assertOpenEventually(latch);
     }
 
+    @Test
+    public void testDeadlock_WhenDoingOperationFromLifecycleListener() {
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        final ClientConfig clientConfig = new ClientConfig();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig.setExecutorPoolSize(1));
+
+        hazelcastFactory.newHazelcastInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final IMap<Object, Object> map = client.getMap(randomMapName());
+
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleState.CLIENT_DISCONNECTED) {
+                    map.get(1);
+                    latch.countDown();
+                }
+            }
+        });
+
+        instance.shutdown();
+        assertOpenEventually(latch);
+    }
+
+    @Test
+    public void testDeadlock_WhenDoingOperationFromLifecycleListener_and_NearCache() {
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        final ClientConfig clientConfig = new ClientConfig();
+        final NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setMaxSize(1);
+        clientConfig.addNearCacheConfig(nearCacheConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig.setExecutorPoolSize(1));
+
+        hazelcastFactory.newHazelcastInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final IMap<Object, Object> map = client.getMap(randomMapName());
+
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleState.CLIENT_DISCONNECTED) {
+                    map.get(1);
+                    map.get(2);
+                    latch.countDown();
+                }
+            }
+        });
+
+        instance.shutdown();
+        assertOpenEventually(latch);
+    }
 
     @Test(expected = ExecutionException.class, timeout = 120000)
-    public void testGithubIssue3557()
-            throws Exception {
-
+    public void testGithubIssue3557() throws Exception {
         HazelcastInstance hz = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
@@ -645,8 +677,7 @@ public class ClientRegressionWithMockNetworkTest
         future.get();
     }
 
-    public static class Issue2509Runnable
-            implements Callable<Integer>, DataSerializable {
+    public static class Issue2509Runnable implements Callable<Integer>, DataSerializable {
 
         private UnDeserializable unDeserializable;
 
@@ -658,16 +689,12 @@ public class ClientRegressionWithMockNetworkTest
         }
 
         @Override
-        public void writeData(ObjectDataOutput out)
-                throws IOException {
-
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(unDeserializable);
         }
 
         @Override
-        public void readData(ObjectDataInput in)
-                throws IOException {
-
+        public void readData(ObjectDataInput in) throws IOException {
             unDeserializable = in.readObject();
         }
 
@@ -677,8 +704,7 @@ public class ClientRegressionWithMockNetworkTest
         }
     }
 
-    public static class UnDeserializable
-            implements DataSerializable {
+    public static class UnDeserializable implements DataSerializable {
 
         private int foo;
 
@@ -687,16 +713,12 @@ public class ClientRegressionWithMockNetworkTest
         }
 
         @Override
-        public void writeData(ObjectDataOutput out)
-                throws IOException {
-
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(foo);
         }
 
         @Override
-        public void readData(ObjectDataInput in)
-                throws IOException {
-
+        public void readData(ObjectDataInput in) throws IOException {
             foo = in.readInt();
         }
     }
@@ -739,14 +761,13 @@ public class ClientRegressionWithMockNetworkTest
             }
         }).start();
 
-
         ClientConfig clientConfig = new ClientConfig();
         //Retry all requests
         clientConfig.getNetworkConfig().setRedoOperation(true);
         //retry to connect to cluster forever(never shutdown the client)
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         //Retry all requests forever(until client is shutdown)
-        clientConfig.setProperty(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS, String.valueOf(Integer.MAX_VALUE));
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS, String.valueOf(Integer.MAX_VALUE));
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         IMap<Object, Object> map = client.getMap(randomMapName());
@@ -772,7 +793,7 @@ public class ClientRegressionWithMockNetworkTest
         //Retry all requests
         clientConfig.getNetworkConfig().setRedoOperation(true);
         //Retry all requests forever(until client is shutdown)
-        clientConfig.setProperty(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS, String.valueOf(Integer.MAX_VALUE));
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS, String.valueOf(Integer.MAX_VALUE));
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final IMap<Object, Object> map = client.getMap(randomMapName());
@@ -810,6 +831,5 @@ public class ClientRegressionWithMockNetworkTest
         hazelcastInstance.shutdown();
 
         assertOpenEventually("Put operations should not hang.", testFinishedLatch);
-
     }
 }

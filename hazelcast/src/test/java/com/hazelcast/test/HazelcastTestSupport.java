@@ -27,23 +27,26 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.impl.InternalPartitionServiceState;
-import com.hazelcast.replicatedmap.impl.record.VectorClockTimestamp;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.test.TestNodeRegistry.MockConnectionManager;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.ComparisonFailure;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -58,6 +61,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.TestPartitionUtils.getInternalPartitionServiceState;
 import static java.lang.String.format;
@@ -65,23 +69,20 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@SuppressWarnings("unused")
 public abstract class HazelcastTestSupport {
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     static {
-        System.setProperty("hazelcast.repmap.hooks.allowed", "true");
-
         ASSERT_TRUE_EVENTUALLY_TIMEOUT = Integer.getInteger("hazelcast.assertTrueEventually.timeout", 120);
         System.out.println("ASSERT_TRUE_EVENTUALLY_TIMEOUT = " + ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
     private TestHazelcastInstanceFactory factory;
-
 
     public static void assertUtilityConstructor(Class clazz) {
         Constructor[] constructors = clazz.getDeclaredConstructors();
@@ -95,26 +96,24 @@ public abstract class HazelcastTestSupport {
         try {
             constructor.newInstance();
         } catch (Exception e) {
+            EmptyStatement.ignore(e);
         }
     }
 
-    public static void assertHappensBefore(VectorClockTimestamp clock1, VectorClockTimestamp clock2) {
-        assertTrue(VectorClockTimestamp.happenedBefore(clock1, clock2));
-    }
-
-    public static void assertNotHappensBefore(VectorClockTimestamp clock1, VectorClockTimestamp clock2) {
-        assertFalse(VectorClockTimestamp.happenedBefore(clock1, clock2));
+    // overridden in another context.
+    protected Config getConfig() {
+        return new Config();
     }
 
     public HazelcastInstance createHazelcastInstance() {
-        return createHazelcastInstance(new Config());
+        return createHazelcastInstance(getConfig());
     }
 
     public HazelcastInstance createHazelcastInstance(Config config) {
         return createHazelcastInstanceFactory(1).newHazelcastInstance(config);
     }
 
-    public static int getPartitionId(HazelcastInstance hz, String name){
+    public static int getPartitionId(HazelcastInstance hz, String name) {
         PartitionService partitionService = hz.getPartitionService();
         Partition partition = partitionService.getPartition(name);
         return partition.getPartitionId();
@@ -139,6 +138,13 @@ public abstract class HazelcastTestSupport {
             throw new IllegalStateException("Node factory is already created!");
         }
         return factory = new TestHazelcastInstanceFactory();
+    }
+
+    protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(int initialPort, String... addresses) {
+        if (factory != null) {
+            throw new IllegalStateException("Node factory is already created!");
+        }
+        return factory = new TestHazelcastInstanceFactory(initialPort, addresses);
     }
 
     public static Future spawn(Runnable task) {
@@ -198,7 +204,7 @@ public abstract class HazelcastTestSupport {
         return node.nodeEngine;
     }
 
-    public static MetricsRegistry getMetricsRegistry(HazelcastInstance hz){
+    public static MetricsRegistry getMetricsRegistry(HazelcastInstance hz) {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
         return nodeEngine.getMetricsRegistry();
     }
@@ -210,10 +216,6 @@ public abstract class HazelcastTestSupport {
             factory = null;
             testHazelcastInstanceFactory.terminateAll();
         }
-    }
-
-    public static void setLoggingNone() {
-        System.setProperty("hazelcast.logging.type", "none");
     }
 
     public static void setLoggingLog4j() {
@@ -255,17 +257,17 @@ public abstract class HazelcastTestSupport {
 
     /**
      * Sleeps for the given amount of time and after that, sets stop to true.
-     *
+     * <p/>
      * If stop is changed to true while sleeping, the calls returns before waiting the full sleeping period.
-     *
+     * <p/>
      * This method is very useful for stress tests that run for a certain amount of time. But if one of the stress tests
      * runs into a failure, the test should be aborted immediately. This is done by letting the thread set stop to true.
      *
-     * @param stop
-     * @param durationSeconds
+     * @param stop            an {@link AtomicBoolean} to stop the sleep method
+     * @param durationSeconds sleep duration in seconds
      */
     public static void sleepAndStop(AtomicBoolean stop, long durationSeconds) {
-        for (int k = 0; k < durationSeconds; k++) {
+        for (int i = 0; i < durationSeconds; i++) {
             if (stop.get()) {
                 return;
             }
@@ -275,24 +277,24 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void sleepAtLeastMillis(long sleepFor) {
-       boolean interrupted = false;
-       try {
-           long remainingNanos = MILLISECONDS.toNanos(sleepFor);
-           final long sleepUntil = System.nanoTime() + remainingNanos;
-           while (remainingNanos > 0) {
-               try {
-                   NANOSECONDS.sleep(remainingNanos);
-               } catch (InterruptedException e) {
-                   interrupted = true;
-               } finally {
-                   remainingNanos = sleepUntil - System.nanoTime();
-               }
-           }
-       } finally {
-           if (interrupted) {
-               Thread.currentThread().interrupt();
-           }
-       }
+        boolean interrupted = false;
+        try {
+            long remainingNanos = MILLISECONDS.toNanos(sleepFor);
+            long sleepUntil = System.nanoTime() + remainingNanos;
+            while (remainingNanos > 0) {
+                try {
+                    NANOSECONDS.sleep(remainingNanos);
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                } finally {
+                    remainingNanos = sleepUntil - System.nanoTime();
+                }
+            }
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     public static void sleepAtLeastSeconds(long seconds) {
@@ -355,15 +357,17 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void printAllStackTraces() {
+        StringBuilder sb = new StringBuilder();
         Map liveThreads = Thread.getAllStackTraces();
         for (Object object : liveThreads.keySet()) {
             Thread key = (Thread) object;
-            System.err.println("Thread " + key.getName());
+            sb.append("Thread ").append(key.getName());
             StackTraceElement[] trace = (StackTraceElement[]) liveThreads.get(key);
             for (StackTraceElement aTrace : trace) {
-                System.err.println("\tat " + aTrace);
+                sb.append("\tat ").append(aTrace);
             }
         }
+        System.err.println(sb.toString());
     }
 
     public static void interruptCurrentThread(final int delayMillis) {
@@ -446,6 +450,21 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    protected static String generateKeyForPartition(HazelcastInstance instance, int partitionId) {
+        Cluster cluster = instance.getCluster();
+        checkPartitionCountGreaterOrEqualMemberCount(instance);
+
+        Member localMember = cluster.getLocalMember();
+        PartitionService partitionService = instance.getPartitionService();
+        while (true) {
+            String id = randomString();
+            Partition partition = partitionService.getPartition(id);
+            if (partition.getPartitionId() == partitionId) {
+                return id;
+            }
+        }
+    }
+
     private static void checkPartitionCountGreaterOrEqualMemberCount(HazelcastInstance instance) {
         Cluster cluster = instance.getCluster();
         int memberCount = cluster.getMembers().size();
@@ -462,14 +481,14 @@ public abstract class HazelcastTestSupport {
         if (generateOwnedKey) {
             return;
         }
-        final Set<Member> members = cluster.getMembers();
+        Set<Member> members = cluster.getMembers();
         if (members.size() < 2) {
             throw new UnsupportedOperationException("Cluster has only one member, you can not generate a `not owned key`");
         }
     }
 
     private static boolean comparePartitionOwnership(boolean ownedBy, Member member, Partition partition) {
-        final Member owner = partition.getOwner();
+        Member owner = partition.getOwner();
         if (ownedBy) {
             return member.equals(owner);
         } else {
@@ -477,12 +496,12 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    public static boolean isInstanceInSafeState(final HazelcastInstance instance) {
-        final Node node = TestUtil.getNode(instance);
+    public static boolean isInstanceInSafeState(HazelcastInstance instance) {
+        Node node = TestUtil.getNode(instance);
         if (node == null) {
             return true;
         }
-        final InternalPartitionService ps = node.getPartitionService();
+        InternalPartitionService ps = node.getPartitionService();
         return ps.isMemberStateSafe();
     }
 
@@ -494,8 +513,8 @@ public abstract class HazelcastTestSupport {
         });
     }
 
-    public static boolean isClusterInSafeState(final HazelcastInstance instance) {
-        final PartitionService ps = instance.getPartitionService();
+    public static boolean isClusterInSafeState(HazelcastInstance instance) {
+        PartitionService ps = instance.getPartitionService();
         return ps.isClusterSafe();
     }
 
@@ -508,7 +527,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static boolean isAllInSafeState() {
-        final Set<HazelcastInstance> nodeSet = HazelcastInstanceFactory.getAllHazelcastInstances();
+        Set<HazelcastInstance> nodeSet = HazelcastInstanceFactory.getAllHazelcastInstances();
         return isAllInSafeState(nodeSet);
     }
 
@@ -522,19 +541,19 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void waitAllForSafeState() {
-       waitAllForSafeState(HazelcastInstanceFactory.getAllHazelcastInstances());
+        waitAllForSafeState(HazelcastInstanceFactory.getAllHazelcastInstances());
     }
 
-    public static void waitAllForSafeState(final Collection<HazelcastInstance> instances) {
+    public static void waitAllForSafeState(Collection<HazelcastInstance> instances) {
         waitAllForSafeState(instances, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
     public static void waitAllForSafeState(final Collection<HazelcastInstance> instances, int timeoutInSeconds) {
         assertTrueEventually(new AssertTask() {
             public void run() {
-                final Map<Address, InternalPartitionServiceState> states = new HashMap<Address, InternalPartitionServiceState>();
+                Map<Address, InternalPartitionServiceState> states = new HashMap<Address, InternalPartitionServiceState>();
                 for (HazelcastInstance instance : instances) {
-                    final InternalPartitionServiceState state = getInternalPartitionServiceState(instance);
+                    InternalPartitionServiceState state = getInternalPartitionServiceState(instance);
                     if (state != InternalPartitionServiceState.SAFE) {
                         states.put(getNode(instance).getThisAddress(), state);
                     }
@@ -545,7 +564,7 @@ public abstract class HazelcastTestSupport {
         }, timeoutInSeconds);
     }
 
-    public static void waitAllForSafeState(final HazelcastInstance... nodes) {
+    public static void waitAllForSafeState(HazelcastInstance... nodes) {
         waitAllForSafeState(asList(nodes));
     }
 
@@ -581,10 +600,11 @@ public abstract class HazelcastTestSupport {
         message.append((value == null) ? "null" : value.getClass().getName()).append("<").append(valueString).append(">");
     }
 
-    public static <E> E assertInstanceOf(Class<E> clazz, Object o) {
-        Assert.assertNotNull(o);
-        assertTrue(o + " is not an instanceof " + clazz.getName(), clazz.isAssignableFrom(o.getClass()));
-        return (E)o;
+    @SuppressWarnings("unchecked")
+    public static <E> E assertInstanceOf(Class<E> clazz, Object object) {
+        Assert.assertNotNull(object);
+        assertTrue(object + " is not an instanceof " + clazz.getName(), clazz.isAssignableFrom(object.getClass()));
+        return (E) object;
     }
 
     public static void assertJoinable(Thread... threads) {
@@ -592,16 +612,15 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertIterableEquals(Iterable iterable, Object... values) {
-        int counter = 0;
+        List actual = new ArrayList();
         for (Object object : iterable) {
-            if (values.length < counter + 1) {
-                throw new AssertionError("Iterator and values sizes are not equal");
-            }
-            assertEquals(values[counter], object);
-            counter++;
+            actual.add(object);
         }
 
-        assertEquals("Iterator and values sizes are not equal", values.length, counter);
+        List expected = Arrays.asList(values);
+
+        assertEquals("size should match", expected.size(), actual.size());
+        assertEquals(expected, actual);
     }
 
     public static void assertCompletesEventually(final Future future) {
@@ -613,28 +632,29 @@ public abstract class HazelcastTestSupport {
         });
     }
 
-    public static void assertSizeEventually(int expectedSize, Collection c) {
-        assertSizeEventually(expectedSize, c, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    public static void assertSizeEventually(int expectedSize, Collection collection) {
+        assertSizeEventually(expectedSize, collection, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
-    public static void assertSizeEventually(final int expectedSize, final Collection c, long timeoutSeconds) {
+    public static void assertSizeEventually(final int expectedSize, final Collection collection, long timeoutSeconds) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("the size of the collection is not correct: found-content:" + c, expectedSize, c.size());
+                assertEquals("the size of the collection is not correct: found-content:" + collection, expectedSize,
+                        collection.size());
             }
         }, timeoutSeconds);
     }
 
-    public static void assertSizeEventually(int expectedSize, Map<?, ?> m) {
-        assertSizeEventually(expectedSize, m, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    public static void assertSizeEventually(int expectedSize, Map<?, ?> map) {
+        assertSizeEventually(expectedSize, map, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
-    public static void assertSizeEventually(final int expectedSize, final Map<?, ?> m, long timeoutSeconds) {
+    public static void assertSizeEventually(final int expectedSize, final Map<?, ?> map, long timeoutSeconds) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("the size of the map is not correct", expectedSize, m.size());
+                assertEquals("the size of the map is not correct", expectedSize, map.size());
             }
         }, timeoutSeconds);
     }
@@ -659,19 +679,28 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertClusterSize(int expectedSize, HazelcastInstance instance) {
-        assertEquals("Cluster size is not correct", expectedSize, instance.getCluster().getMembers().size());
+        int clusterSize = getClusterSize(instance);
+        if (expectedSize != clusterSize) {
+            fail(format("Cluster size is not correct. Expected: %d Actual: %d", expectedSize, clusterSize));
+        }
+    }
+
+    private static int getClusterSize(HazelcastInstance instance) {
+        Set<Member> members = instance.getCluster().getMembers();
+        return members == null ? 0 : members.size();
     }
 
     public static void assertClusterSizeEventually(int expectedSize, HazelcastInstance instance) {
         assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
-    public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance, long timeoutSeconds) {
+    public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance,
+                                                   long timeoutSeconds) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                assertEquals("the size of the cluster is not correct", expectedSize, instance.getCluster().getMembers().size());
+                assertClusterSize(expectedSize, instance);
             }
         }, timeoutSeconds);
     }
@@ -723,6 +752,51 @@ public abstract class HazelcastTestSupport {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void assertCountEventually(final String message, final int expectedCount, final CountDownLatch latch,
+                                             long timeoutInSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
+                    if (latch.getCount() != expectedCount) {
+                        throw new AssertionError("Latch count has not been met. " + message);
+                    }
+                    sleepMillis(50);
+                }
+            }
+        }, timeoutInSeconds);
+    }
+
+    public static void assertAtomicEventually(final String message, final int expectedValue, final AtomicInteger atomic,
+                                              int timeoutInSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
+                    if (atomic.get() != expectedValue) {
+                        throw new AssertionError("Atomic value has not been met. " + message);
+                    }
+                    sleepMillis(50);
+                }
+            }
+        }, timeoutInSeconds);
+    }
+
+    public static void assertAtomicEventually(final String message, final boolean expectedValue, final AtomicBoolean atomic,
+                                              int timeoutInSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
+                    if (atomic.get() != expectedValue) {
+                        throw new AssertionError("Atomic value has not been met. " + message);
+                    }
+                    sleepMillis(50);
+                }
+            }
+        }, timeoutInSeconds);
     }
 
     public static void assertTrueFiveSeconds(AssertTask task) {
@@ -787,16 +861,21 @@ public abstract class HazelcastTestSupport {
      * @param actual   actual value which is used for assert
      */
     public static void assertEqualsStringFormat(String message, Object expected, Object actual) {
-        assertEquals(String.format(message, expected, actual), expected, actual);
+        assertEquals(format(message, expected, actual), expected, actual);
     }
 
     public static void closeConnectionBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        if (h1 == null || h2 == null) return;
-        final Node n1 = TestUtil.getNode(h1);
-        final Node n2 = TestUtil.getNode(h2);
-        n1.clusterService.removeAddress(n2.address);
-        n2.clusterService.removeAddress(n1.address);
+        if (h1 == null || h2 == null) {
+            return;
+        }
+        Node n1 = TestUtil.getNode(h1);
+        Node n2 = TestUtil.getNode(h2);
+        if (n1 != null && n2 != null) {
+            n1.clusterService.removeAddress(n2.address);
+            n2.clusterService.removeAddress(n1.address);
+        }
     }
+
     public final class DummyUncheckedHazelcastTestException extends RuntimeException {
     }
 
@@ -821,5 +900,9 @@ public abstract class HazelcastTestSupport {
             }
         }
         throw lastException;
+    }
+
+    public static void ignore(Throwable t) {
+        // NO-OP
     }
 }

@@ -22,9 +22,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.IOThreadingModel;
-import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -183,14 +183,14 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
     }
 
     @Override
-    public WriteHandler newWriteHandler(TcpIpConnection connection) {
+    public SocketWriter newSocketWriter(TcpIpConnection connection) {
         int index = hashToIndex(nextOutputThreadIndex.getAndIncrement(), outputThreads.length);
-        return new NonBlockingWriteHandler(connection, outputThreads[index], metricsRegistry);
+        return new NonBlockingSocketWriter(connection, outputThreads[index], metricsRegistry);
     }
 
     @Override
-    public ReadHandler newReadHandler(TcpIpConnection connection) {
+    public SocketReader newSocketReader(TcpIpConnection connection) {
         int index = hashToIndex(nextInputThreadIndex.getAndIncrement(), inputThreads.length);
-        return new NonBlockingReadHandler(connection, inputThreads[index], metricsRegistry);
+        return new NonBlockingSocketReader(connection, inputThreads[index], metricsRegistry);
     }
 }

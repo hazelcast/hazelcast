@@ -21,19 +21,22 @@ import com.hazelcast.cache.impl.nearcache.impl.DefaultNearCacheManager;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.proxy.ClientMapProxy;
+import com.hazelcast.client.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.spi.ClientProxy;
+import com.hazelcast.client.spi.ClientProxyFactory;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.tcp.DefaultSocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
@@ -52,10 +55,9 @@ public class DefaultClientExtension implements ClientExtension {
 
     @Override
     public void afterStart(HazelcastClientInstanceImpl client) {
-
     }
 
-    public SerializationService createSerializationService() {
+    public SerializationService createSerializationService(byte version) {
         SerializationService ss;
         try {
             ClientConfig config = client.getClientConfig();
@@ -67,6 +69,9 @@ public class DefaultClientExtension implements ClientExtension {
             SerializationServiceBuilder builder = new DefaultSerializationServiceBuilder();
             SerializationConfig serializationConfig = config.getSerializationConfig() != null ? config
                     .getSerializationConfig() : new SerializationConfig();
+            if (version > 0) {
+                builder.setVersion(version);
+            }
             ss = builder.setClassLoader(configClassLoader)
                     .setConfig(serializationConfig)
                     .setManagedContext(new HazelcastClientManagedContext(client, config.getManagedContext()))
@@ -80,7 +85,7 @@ public class DefaultClientExtension implements ClientExtension {
     }
 
     protected PartitioningStrategy getPartitioningStrategy(ClassLoader configClassLoader) throws Exception {
-        String partitioningStrategyClassName = System.getProperty(GroupProperties.PROP_PARTITIONING_STRATEGY_CLASS);
+        String partitioningStrategyClassName = GroupProperty.PARTITIONING_STRATEGY_CLASS.getSystemProperty();
         if (partitioningStrategyClassName != null && partitioningStrategyClassName.length() > 0) {
             return ClassLoaderUtil.newInstance(configClassLoader, partitioningStrategyClassName);
         } else {
@@ -99,14 +104,27 @@ public class DefaultClientExtension implements ClientExtension {
         return new DefaultSocketChannelWrapperFactory();
     }
 
-
     @Override
-    public <T> Class<? extends ClientProxy> getServiceProxy(Class<T> service) {
+    public <T> ClientProxyFactory createServiceProxyFactory(Class<T> service) {
         if (MapService.class.isAssignableFrom(service)) {
-            return ClientMapProxy.class;
+            return createClientMapProxyFactory();
         }
 
-        throw new IllegalArgumentException("Proxy cannot be created. Unknown service : " + service);
+        throw new IllegalArgumentException("Proxy factory cannot be created. Unknown service : " + service);
+    }
+
+    private ClientProxyFactory createClientMapProxyFactory() {
+        return new ClientProxyFactory() {
+            @Override
+            public ClientProxy create(String id) {
+                NearCacheConfig nearCacheConfig = client.getClientConfig().getNearCacheConfig(id);
+                if (nearCacheConfig != null) {
+                    return new NearCachedClientMapProxy(MapService.SERVICE_NAME, id);
+                } else {
+                    return new ClientMapProxy(MapService.SERVICE_NAME, id);
+                }
+            }
+        };
     }
 
     @Override
@@ -116,5 +134,4 @@ public class DefaultClientExtension implements ClientExtension {
         // Currently "DefaultNearCacheManager" is enough.
         return new DefaultNearCacheManager();
     }
-
 }

@@ -47,48 +47,47 @@ public final class SerializationConstants {
 
     public static final int CONSTANT_TYPE_BYTE_ARRAY = -12;
 
-    public static final int CONSTANT_TYPE_CHAR_ARRAY = -13;
+    public static final int CONSTANT_TYPE_BOOLEAN_ARRAY = -13;
 
-    public static final int CONSTANT_TYPE_SHORT_ARRAY = -14;
+    public static final int CONSTANT_TYPE_CHAR_ARRAY = -14;
 
-    public static final int CONSTANT_TYPE_INTEGER_ARRAY = -15;
+    public static final int CONSTANT_TYPE_SHORT_ARRAY = -15;
 
-    public static final int CONSTANT_TYPE_LONG_ARRAY = -16;
+    public static final int CONSTANT_TYPE_INTEGER_ARRAY = -16;
 
-    public static final int CONSTANT_TYPE_FLOAT_ARRAY = -17;
+    public static final int CONSTANT_TYPE_LONG_ARRAY = -17;
 
-    public static final int CONSTANT_TYPE_DOUBLE_ARRAY = -18;
+    public static final int CONSTANT_TYPE_FLOAT_ARRAY = -18;
 
-    // NUMBER OF CONSTANT SERIALIZERS...
-    public static final int CONSTANT_SERIALIZERS_LENGTH = 18;
+    public static final int CONSTANT_TYPE_DOUBLE_ARRAY = -19;
+
+    public static final int CONSTANT_TYPE_STRING_ARRAY = -20;
 
     // ------------------------------------------------------------
     // DEFAULT SERIALIZERS
 
-    public static final int DEFAULT_TYPE_CLASS = -19;
+    public static final int JAVA_DEFAULT_TYPE_CLASS = -21;
 
-    public static final int DEFAULT_TYPE_DATE = -20;
+    public static final int JAVA_DEFAULT_TYPE_DATE = -22;
 
-    public static final int DEFAULT_TYPE_BIG_INTEGER = -21;
+    public static final int JAVA_DEFAULT_TYPE_BIG_INTEGER = -23;
 
-    public static final int DEFAULT_TYPE_BIG_DECIMAL = -22;
+    public static final int JAVA_DEFAULT_TYPE_BIG_DECIMAL = -24;
 
-    public static final int DEFAULT_TYPE_OBJECT = -23;
+    public static final int JAVA_DEFAULT_TYPE_ENUM = -25;
 
-    public static final int DEFAULT_TYPE_EXTERNALIZABLE = -24;
+    public static final int JAVA_DEFAULT_TYPE_ARRAY_LIST = -26;
 
-    public static final int DEFAULT_TYPE_ENUM = -25;
+    public static final int JAVA_DEFAULT_TYPE_LINKED_LIST = -27;
+
+    // NUMBER OF CONSTANT SERIALIZERS...
+    public static final int CONSTANT_SERIALIZERS_LENGTH = 28;
 
     // ------------------------------------------------------------
-    // AUTOMATICALLY REGISTERED SERIALIZERS
+    // JAVA SERIALIZATION
 
-    public static final int AUTO_TYPE_ARRAY_LIST = -100;
+    public static final int JAVA_DEFAULT_TYPE_SERIALIZABLE = -100;
 
-    public static final int AUTO_TYPE_JOB_PARTITION_STATE = -101;
-
-    public static final int AUTO_TYPE_JOB_PARTITION_STATE_ARRAY = -102;
-
-    public static final int AUTO_TYPE_LINKED_LIST = -103;
     // ------------------------------------------------------------
     // HIBERNATE SERIALIZERS
 

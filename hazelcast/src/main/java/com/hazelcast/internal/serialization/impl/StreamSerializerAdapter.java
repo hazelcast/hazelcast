@@ -63,10 +63,7 @@ class StreamSerializerAdapter implements SerializerAdapter {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("SerializerAdapter{");
-        sb.append("serializer=").append(serializer);
-        sb.append('}');
-        return sb.toString();
+        return "StreamSerializerAdapter{serializer=" + serializer + '}';
     }
 
     @Override

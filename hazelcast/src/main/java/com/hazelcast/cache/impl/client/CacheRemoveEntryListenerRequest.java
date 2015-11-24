@@ -17,8 +17,10 @@
 package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CachePortableHook;
-import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 
 import java.security.Permission;
 
@@ -33,20 +35,19 @@ public class CacheRemoveEntryListenerRequest
     public CacheRemoveEntryListenerRequest() {
     }
 
-    public CacheRemoveEntryListenerRequest(String name, String registrationId) {
-        super(name, registrationId);
+    public CacheRemoveEntryListenerRequest(String name) {
+        super(name);
     }
 
     @Override
-    public Object call()
-            throws Exception {
-        final CacheService service = getService();
+    protected boolean deRegisterListener() {
+        final ICacheService service = getService();
         return service.deregisterListener(name, registrationId);
     }
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override
@@ -60,8 +61,23 @@ public class CacheRemoveEntryListenerRequest
     }
 
     @Override
-    public Permission getRequiredPermission() {
+    public Object[] getParameters() {
         return null;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new CachePermission(name, ActionConstants.ACTION_LISTEN);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "deregisterCacheEntryListener";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
 }

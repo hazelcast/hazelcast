@@ -19,6 +19,7 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.monitor.LocalOperationStats;
@@ -46,7 +47,7 @@ public class LocalOperationStatsImpl implements LocalOperationStats {
     }
 
     public LocalOperationStatsImpl(Node node) {
-        this.maxVisibleSlowOperationCount = node.groupProperties.MC_MAX_SLOW_OPERATION_COUNT.getInteger();
+        this.maxVisibleSlowOperationCount = node.groupProperties.getInteger(GroupProperty.MC_MAX_VISIBLE_SLOW_OPERATION_COUNT);
         this.slowOperations = node.nodeEngine.getOperationService().getSlowOperationDTOs();
         this.creationTime = Clock.currentTimeMillis();
     }

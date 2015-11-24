@@ -20,6 +20,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.wan.ReplicationEventObject;
 import com.hazelcast.wan.WanReplicationEndpoint;
+import com.hazelcast.wan.WanReplicationEvent;
 
 public class DummyWanReplication implements WanReplicationEndpoint {
 
@@ -32,7 +33,18 @@ public class DummyWanReplication implements WanReplicationEndpoint {
     public void shutdown() {
     }
 
+    @Override
     public void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject) {
+
+    }
+
+    @Override
+    public void publishReplicationEvent(WanReplicationEvent wanReplicationEvent) {
+
+    }
+
+    @Override
+    public void publishReplicationEventBackup(String serviceName, ReplicationEventObject eventObject) {
 
     }
 }

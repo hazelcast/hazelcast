@@ -21,15 +21,19 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public final class RemoveOperation extends BaseRemoveOperation implements IdentifiedDataSerializable {
+public class RemoveOperation extends BaseRemoveOperation implements IdentifiedDataSerializable {
 
-    private boolean successful;
+    protected boolean successful;
 
     public RemoveOperation() {
     }
 
     public RemoveOperation(String name, Data dataKey) {
         super(name, dataKey);
+    }
+
+    public RemoveOperation(String name, Data dataKey, boolean disableWanReplicationEvent) {
+        super(name, dataKey, disableWanReplicationEvent);
     }
 
     @Override
@@ -49,11 +53,6 @@ public final class RemoveOperation extends BaseRemoveOperation implements Identi
     @Override
     public boolean shouldBackup() {
         return successful;
-    }
-
-    @Override
-    public String toString() {
-        return "RemoveOperation{" + name + "}";
     }
 
     @Override

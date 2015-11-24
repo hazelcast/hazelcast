@@ -32,12 +32,12 @@ public class RemoveListenerRequest extends BaseClientRemoveListenerRequest {
     public RemoveListenerRequest() {
     }
 
-    public RemoveListenerRequest(String name, String registrationId) {
-        super(name, registrationId);
+    public RemoveListenerRequest(String name) {
+        super(name);
     }
 
     @Override
-    public Object call() throws Exception {
+    protected boolean deRegisterListener() {
         final QueueService service = getService();
         return service.removeItemListener(name, registrationId);
     }

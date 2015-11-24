@@ -37,7 +37,7 @@ public class SetMasterOperation extends AbstractClusterOperation implements Join
     @Override
     public void run() {
         ClusterServiceImpl clusterService = getService();
-        clusterService.handleMaster(masterAddress, getCallerAddress());
+        clusterService.getClusterJoinManager().handleMaster(masterAddress, getCallerAddress());
     }
 
     public Address getMasterAddress() {
@@ -56,7 +56,9 @@ public class SetMasterOperation extends AbstractClusterOperation implements Join
     }
 
     @Override
-    public String toString() {
-        return "Master " + masterAddress;
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", master=").append(masterAddress);
     }
 }

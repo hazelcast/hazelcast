@@ -23,13 +23,14 @@ import com.hazelcast.util.Clock;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
+import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 public class LocalTopicStatsImpl implements LocalTopicStats {
 
-    private static final AtomicLongFieldUpdater<LocalTopicStatsImpl> TOTAL_PUBLISHES_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalTopicStatsImpl.class, "totalPublishes");
-    private static final AtomicLongFieldUpdater<LocalTopicStatsImpl> TOTAL_RECEIVED_MESSAGES_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalTopicStatsImpl.class, "totalReceivedMessages");
+    private static final AtomicLongFieldUpdater<LocalTopicStatsImpl> TOTAL_PUBLISHES =
+            newUpdater(LocalTopicStatsImpl.class, "totalPublishes");
+    private static final AtomicLongFieldUpdater<LocalTopicStatsImpl> TOTAL_RECEIVED_MESSAGES =
+            newUpdater(LocalTopicStatsImpl.class, "totalReceivedMessages");
     private long creationTime;
 
     // These fields are only accessed through the updaters
@@ -51,7 +52,7 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
     }
 
     public void incrementPublishes() {
-        TOTAL_PUBLISHES_UPDATER.incrementAndGet(this);
+        TOTAL_PUBLISHES.incrementAndGet(this);
     }
 
     @Override
@@ -60,7 +61,7 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
     }
 
     public void incrementReceives() {
-        TOTAL_RECEIVED_MESSAGES_UPDATER.incrementAndGet(this);
+        TOTAL_RECEIVED_MESSAGES.incrementAndGet(this);
     }
 
     @Override
@@ -75,8 +76,8 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
     @Override
     public void fromJson(JsonObject json) {
         creationTime = getLong(json, "creationTime", -1L);
-        TOTAL_PUBLISHES_UPDATER.set(this, getLong(json, "totalPublishes", -1L));
-        TOTAL_RECEIVED_MESSAGES_UPDATER.set(this, getLong(json, "totalReceivedMessages", -1L));
+        TOTAL_PUBLISHES.set(this, getLong(json, "totalPublishes", -1L));
+        TOTAL_RECEIVED_MESSAGES.set(this, getLong(json, "totalReceivedMessages", -1L));
     }
 
     @Override

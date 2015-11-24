@@ -28,7 +28,7 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -175,7 +175,7 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
         final int instanceCount = 6;
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
         final Config config = new Config();
-        config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
         final String mapName = randomMapName();
         // index config is added since it was blocking post join operations.
         config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig("name", false));

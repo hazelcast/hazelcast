@@ -20,10 +20,9 @@ import com.hazelcast.nio.serialization.Data;
 
 class DataRecord extends AbstractRecord<Data> {
 
-    protected Data value;
+    protected volatile Data value;
 
-    DataRecord(Data keyData, Data value) {
-        super(keyData);
+    DataRecord(Data value) {
         this.value = value;
     }
 

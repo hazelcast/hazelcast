@@ -1,6 +1,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
@@ -14,9 +15,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
 
+import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport {
 
@@ -75,7 +79,7 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
     }
 
     protected TcpIpConnectionManager newConnectionManager(int port) throws Exception {
-        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(loggingService.getLogger(MetricsRegistryImpl.class));
+        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(loggingService.getLogger(MetricsRegistryImpl.class), INFO);
         MockIOService ioService = new MockIOService(port);
 
         return new TcpIpConnectionManager(
@@ -106,5 +110,24 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         });
 
         return ref.get();
+    }
+
+    public static TcpIpConnection getConnection(TcpIpConnectionManager connManager, SocketAddress localSocketAddress) {
+        long startMs = System.currentTimeMillis();
+
+        for (; ; ) {
+            for (TcpIpConnection connection : connManager.getActiveConnections()) {
+                if (connection.getRemoteSocketAddress().equals(localSocketAddress)) {
+                    return connection;
+                }
+            }
+
+
+            if (startMs + 20000 < System.currentTimeMillis()) {
+                fail("Timeout: Could not find connection");
+            }
+
+            sleepMillis(100);
+        }
     }
 }

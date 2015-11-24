@@ -16,6 +16,7 @@
 
 package com.hazelcast.quorum.impl;
 
+import com.hazelcast.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.core.Member;
@@ -35,12 +36,13 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
+
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-
 
 /**
  * Service containing logic for cluster quorum.
@@ -48,17 +50,12 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, QuorumListener>, MembershipAwareService,
         QuorumService {
 
-    /**
-     * Service name of map service used
-     * to register {@link com.hazelcast.spi.impl.ServiceManager#registerService}
-     */
     public static final String SERVICE_NAME = "hz:impl:quorumService";
 
     private final NodeEngineImpl nodeEngine;
     private final EventService eventService;
     private boolean inactive;
     private final Map<String, QuorumImpl> quorums = new HashMap<String, QuorumImpl>();
-
 
     public QuorumServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -105,7 +102,6 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
     public void addQuorumListener(String name, QuorumListener listener) {
         eventService.registerLocalListener(SERVICE_NAME, name, listener);
     }
-
 
     public void ensureQuorumPresent(Operation op) {
         if (inactive) {
@@ -157,11 +153,13 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
 
     @Override
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
-        updateQuorums(event);
+        // nop
+        // MemberAttributeServiceEvent does NOT contain set of members
+        // They cannot change quorum state
     }
 
     private void updateQuorums(MembershipEvent event) {
-        Set<Member> members = event.getMembers();
+        final Collection<Member> members = new MemberSelectingCollection<Member>(event.getMembers(), DATA_MEMBER_SELECTOR);
         for (QuorumImpl quorum : quorums.values()) {
             quorum.update(members);
         }

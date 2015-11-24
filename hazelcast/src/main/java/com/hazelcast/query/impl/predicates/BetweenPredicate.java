@@ -29,9 +29,10 @@ import java.util.Set;
 /**
  * Between Predicate
  */
-public class BetweenPredicate extends AbstractPredicate {
-    private Comparable to;
-    private Comparable from;
+public class BetweenPredicate extends AbstractIndexAwarePredicate {
+
+    Comparable to;
+    Comparable from;
 
     public BetweenPredicate() {
     }
@@ -46,17 +47,16 @@ public class BetweenPredicate extends AbstractPredicate {
     }
 
     @Override
-    public boolean apply(Map.Entry entry) {
-        Comparable entryValue = readAttribute(entry);
-        if (entryValue == null) {
+    protected boolean applyForSingleAttributeValue(Map.Entry entry, Comparable attributeValue) {
+        if (attributeValue == null) {
             return false;
         }
-        Comparable fromConvertedValue = convert(entry, entryValue, from);
-        Comparable toConvertedValue = convert(entry, entryValue, to);
+        Comparable fromConvertedValue = convert(entry, attributeValue, from);
+        Comparable toConvertedValue = convert(entry, attributeValue, to);
         if (fromConvertedValue == null || toConvertedValue == null) {
             return false;
         }
-        return entryValue.compareTo(fromConvertedValue) >= 0 && entryValue.compareTo(toConvertedValue) <= 0;
+        return attributeValue.compareTo(fromConvertedValue) >= 0 && attributeValue.compareTo(toConvertedValue) <= 0;
     }
 
     @Override
@@ -81,6 +81,6 @@ public class BetweenPredicate extends AbstractPredicate {
 
     @Override
     public String toString() {
-        return attribute + " BETWEEN " + from + " AND " + to;
+        return attributeName + " BETWEEN " + from + " AND " + to;
     }
 }

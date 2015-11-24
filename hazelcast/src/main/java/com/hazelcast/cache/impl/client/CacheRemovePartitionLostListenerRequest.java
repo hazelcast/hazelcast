@@ -16,33 +16,29 @@
 
 package com.hazelcast.cache.impl.client;
 
-import com.hazelcast.cache.impl.AbstractCacheService;
 import com.hazelcast.cache.impl.CachePortableHook;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 
 import java.security.Permission;
 
-public class CacheRemovePartitionLostListenerRequest  extends BaseClientRemoveListenerRequest {
-
+public class CacheRemovePartitionLostListenerRequest extends BaseClientRemoveListenerRequest {
 
     public CacheRemovePartitionLostListenerRequest() {
     }
 
-    public CacheRemovePartitionLostListenerRequest(String name, String registrationId) {
-        super(name, registrationId);
+    public CacheRemovePartitionLostListenerRequest(String name) {
+        super(name);
     }
 
-    public Object call() throws Exception {
+    protected boolean deRegisterListener() {
         final ICacheService service = getService();
         return service.getNodeEngine().getEventService().
-                deregisterListener(AbstractCacheService.SERVICE_NAME,
-                        name, registrationId);
+                deregisterListener(ICacheService.SERVICE_NAME, name, registrationId);
     }
 
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     public int getFactoryId() {
@@ -62,4 +58,5 @@ public class CacheRemovePartitionLostListenerRequest  extends BaseClientRemoveLi
     public String getMethodName() {
         return "removeCachePartitionLostListener";
     }
+
 }

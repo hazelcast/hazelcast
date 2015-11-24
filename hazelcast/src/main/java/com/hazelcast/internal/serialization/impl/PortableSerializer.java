@@ -97,7 +97,7 @@ final class PortableSerializer implements StreamSerializer<Portable> {
     private int findPortableVersion(int factoryId, int classId, Portable portable) {
         int currentVersion = context.getClassVersion(factoryId, classId);
         if (currentVersion < 0) {
-            currentVersion = PortableVersionHelper.getVersion(portable, context.getVersion());
+            currentVersion = SerializationUtil.getPortableVersion(portable, context.getVersion());
             if (currentVersion > 0) {
                 context.setClassVersion(factoryId, classId, currentVersion);
             }
@@ -129,6 +129,17 @@ final class PortableSerializer implements StreamSerializer<Portable> {
         int version = in.readInt();
 
         return createReader(in, factoryId, classId, version, version);
+    }
+
+    DefaultPortableReader createMorphingReader(BufferObjectDataInput in) throws IOException {
+        int factoryId = in.readInt();
+        int classId = in.readInt();
+        int version = in.readInt();
+
+        Portable portable = createNewPortableInstance(factoryId, classId);
+        int portableVersion = findPortableVersion(factoryId, classId, portable);
+
+        return createReader(in, factoryId, classId, version, portableVersion);
     }
 
     private DefaultPortableReader createReader(BufferObjectDataInput in, int factoryId, int classId, int version,

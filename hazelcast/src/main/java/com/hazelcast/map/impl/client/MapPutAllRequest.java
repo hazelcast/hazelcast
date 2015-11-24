@@ -16,12 +16,11 @@
 
 package com.hazelcast.map.impl.client;
 
-import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.MapPutAllOperationFactory;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -30,24 +29,25 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 import java.security.Permission;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MapPutAllRequest extends AllPartitionsClientRequest implements Portable, SecureRequest {
+public class MapPutAllRequest extends MapPartitionClientRequest implements Portable, SecureRequest {
 
-    protected String name;
-    private MapEntrySet entrySet;
+    private MapEntries entries;
+    private int partitionId;
 
     public MapPutAllRequest() {
     }
 
-    public MapPutAllRequest(String name, MapEntrySet entrySet) {
-        this.name = name;
-        this.entrySet = entrySet;
+    public MapPutAllRequest(String name, MapEntries entries, int partitionId) {
+        super(name);
+        this.entries = entries;
+        this.partitionId = partitionId;
     }
 
     public int getFactoryId() {
@@ -59,20 +59,15 @@ public class MapPutAllRequest extends AllPartitionsClientRequest implements Port
     }
 
     @Override
-    protected OperationFactory createOperationFactory() {
-        return new MapPutAllOperationFactory(name, entrySet);
+    protected Operation prepareOperation() {
+        MapOperation operation = getOperationProvider().createPutAllOperation(name, entries, false);
+        operation.setPartitionId(partitionId);
+        return operation;
     }
 
     @Override
-    protected Object reduce(Map<Integer, Object> map) {
-        MapService mapService = getService();
-        for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            Object result = mapService.getMapServiceContext().toObject(entry.getValue());
-            if (result instanceof Throwable) {
-                throw ExceptionUtil.rethrow((Throwable) result);
-            }
-        }
-        return null;
+    protected int getPartition() {
+        return partitionId;
     }
 
     public String getServiceName() {
@@ -81,15 +76,17 @@ public class MapPutAllRequest extends AllPartitionsClientRequest implements Port
 
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
+        writer.writeInt("p", partitionId);
         ObjectDataOutput output = writer.getRawDataOutput();
-        entrySet.writeData(output);
+        entries.writeData(output);
     }
 
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        partitionId = reader.readInt("p");
         ObjectDataInput input = reader.getRawDataInput();
-        entrySet = new MapEntrySet();
-        entrySet.readData(input);
+        entries = new MapEntries();
+        entries.readData(input);
     }
 
     public Permission getRequiredPermission() {
@@ -108,8 +105,8 @@ public class MapPutAllRequest extends AllPartitionsClientRequest implements Port
 
     @Override
     public Object[] getParameters() {
-        final HashMap map = new HashMap();
-        for (Map.Entry<Data, Data> entry : entrySet.getEntrySet()) {
+        Map map = new HashMap();
+        for (Map.Entry<Data, Data> entry : entries) {
             map.put(entry.getKey(), entry.getValue());
         }
         return new Object[]{map};

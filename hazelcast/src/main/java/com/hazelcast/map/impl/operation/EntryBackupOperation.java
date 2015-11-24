@@ -16,18 +16,26 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.event.MapEventPublisher;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.Map;
+
+import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 
 public class EntryBackupOperation extends KeyBasedMapOperation implements BackupOperation, MutatingOperation {
 
@@ -43,7 +51,9 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
     }
 
     @Override
-    public void innerBeforeRun() {
+    public void innerBeforeRun() throws Exception {
+        super.innerBeforeRun();
+
         if (entryProcessor instanceof HazelcastInstanceAware) {
             HazelcastInstance hazelcastInstance = getNodeEngine().getHazelcastInstance();
             ((HazelcastInstanceAware) entryProcessor).setHazelcastInstance(hazelcastInstance);
@@ -52,8 +62,7 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
 
     @Override
     public void run() {
-        final long now = getNow();
-        oldValue = getValueFor(dataKey, now);
+        oldValue = recordStore.get(dataKey, true);
 
         Map.Entry entry = createMapEntry(dataKey, oldValue);
 
@@ -70,19 +79,34 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         entryAddedOrUpdatedBackup(entry);
     }
 
+    private void publishWanReplicationEvent(EntryEventType eventType) {
+        final MapContainer mapContainer = this.mapContainer;
+        if (!mapContainer.isWanReplicationEnabled()) {
+            return;
+        }
+        final MapEventPublisher mapEventPublisher = mapContainer.getMapServiceContext().getMapEventPublisher();
+        final Data key = dataKey;
+
+        if (EntryEventType.REMOVED == eventType) {
+            mapEventPublisher.publishWanReplicationRemoveBackup(name, key, getNow());
+        } else {
+            final Record record = recordStore.getRecord(key);
+            if (record != null) {
+                dataValue = mapContainer.getMapServiceContext().toData(dataValue);
+                final EntryView entryView = createSimpleEntryView(key, dataValue, record);
+                mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
+            }
+        }
+    }
+
     @Override
     public void afterRun() throws Exception {
-        evict(true);
+        evict();
     }
 
     @Override
     public Object getResponse() {
         return true;
-    }
-
-    @Override
-    public String toString() {
-        return "EntryBackupOperation{}";
     }
 
     private void processBackup(Map.Entry entry) {
@@ -93,6 +117,7 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         final Object value = entry.getValue();
         if (value == null) {
             recordStore.removeBackup(dataKey);
+            publishWanReplicationEvent(EntryEventType.REMOVED);
             return true;
         }
         return false;
@@ -102,6 +127,7 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         final Object value = entry.getValue();
         if (value != null) {
             recordStore.putBackup(dataKey, value);
+            publishWanReplicationEvent(EntryEventType.UPDATED);
             return true;
         }
         return false;
@@ -119,11 +145,6 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
 
     private Map.Entry createMapEntry(Data key, Object value) {
         return new LazyMapEntry(key, value, getNodeEngine().getSerializationService());
-    }
-
-    private Object getValueFor(Data dataKey, long now) {
-        Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(dataKey, now);
-        return mapEntry.getValue();
     }
 
     private long getNow() {

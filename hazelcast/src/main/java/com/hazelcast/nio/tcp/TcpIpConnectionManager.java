@@ -31,13 +31,13 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
+import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedRunnable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
@@ -53,6 +53,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -79,7 +80,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     private final ILogger logger;
 
-    @Probe(name = "count")
+    @Probe(name = "count", level = MANDATORY)
     private final ConcurrentHashMap<Address, Connection> connectionsMap = new ConcurrentHashMap<Address, Connection>(100);
 
     @Probe(name = "monitorCount")
@@ -90,15 +91,15 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private final Set<Address> connectionsInProgress =
             Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
-    @Probe(name = "acceptedSocketCount")
+    @Probe(name = "acceptedSocketCount", level = MANDATORY)
     private final Set<SocketChannelWrapper> acceptedSockets =
             Collections.newSetFromMap(new ConcurrentHashMap<SocketChannelWrapper, Boolean>());
 
-    @Probe(name = "activeCount")
+    @Probe(name = "activeCount", level = MANDATORY)
     private final Set<TcpIpConnection> activeConnections =
             Collections.newSetFromMap(new ConcurrentHashMap<TcpIpConnection, Boolean>());
 
-    @Probe(name = "textCount")
+    @Probe(name = "textCount", level = MANDATORY)
     private final AtomicInteger allTextConnections = new AtomicInteger();
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
@@ -187,6 +188,14 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     // just for testing
     public Set<TcpIpConnection> getActiveConnections() {
         return activeConnections;
+    }
+
+    // just for testing
+    public IOBalancer getIoBalancer() {
+        if (ioThreadingModel instanceof NonBlockingIOThreadingModel) {
+            return ((NonBlockingIOThreadingModel) ioThreadingModel).getIOBalancer();
+        }
+        return null;
     }
 
     @Override
@@ -392,34 +401,39 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             logger.finest("Destroying " + connection);
         }
 
-        activeConnections.remove(connection);
-        final Address endPoint = connection.getEndPoint();
-        if (endPoint != null) {
-            connectionsInProgress.remove(endPoint);
-            connectionsMap.remove(endPoint, connection);
+        if (activeConnections.remove(connection)) {
             // this should not be needed; but some tests are using DroppingConnection which is not a TcpIpConnection.
             if (connection instanceof TcpIpConnection) {
                 ioThreadingModel.onConnectionRemoved((TcpIpConnection) connection);
             }
-            if (live) {
-                ioService.getEventService().executeEventCallback(new StripedRunnable() {
-                    @Override
-                    public void run() {
-                        for (ConnectionListener listener : connectionListeners) {
-                            listener.connectionRemoved(connection);
-                        }
-                    }
-
-                    @Override
-                    public int getKey() {
-                        return endPoint.hashCode();
-                    }
-                });
-            }
+        }
+        final Address endPoint = connection.getEndPoint();
+        if (endPoint != null) {
+            connectionsInProgress.remove(endPoint);
+            connectionsMap.remove(endPoint, connection);
+            fireConnectionRemovedEvent(connection, endPoint);
         }
         if (connection.isAlive()) {
             connection.close();
             closedCount.inc();
+        }
+    }
+
+    private void fireConnectionRemovedEvent(final Connection connection, final Address endPoint) {
+        if (live) {
+            ioService.getEventService().executeEventCallback(new StripedRunnable() {
+                @Override
+                public void run() {
+                    for (ConnectionListener listener : connectionListeners) {
+                        listener.connectionRemoved(connection);
+                    }
+                }
+
+                @Override
+                public int getKey() {
+                    return endPoint.hashCode();
+                }
+            });
         }
     }
 
@@ -522,7 +536,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         }
     }
 
-    @Probe(name = "clientCount")
+    @Probe(name = "clientCount", level = MANDATORY)
     @Override
     public int getCurrentClientConnections() {
         int count = 0;

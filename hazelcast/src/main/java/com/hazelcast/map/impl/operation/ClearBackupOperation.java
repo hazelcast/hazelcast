@@ -16,17 +16,12 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-public class ClearBackupOperation extends AbstractNamedOperation implements BackupOperation, MutatingOperation, DataSerializable {
-
-    private MapService mapService;
-    private RecordStore recordStore;
+public class ClearBackupOperation extends MapOperation implements BackupOperation, MutatingOperation, DataSerializable {
 
     public ClearBackupOperation() {
     }
@@ -36,23 +31,14 @@ public class ClearBackupOperation extends AbstractNamedOperation implements Back
     }
 
     @Override
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-        mapService = getService();
-        recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
-    }
-
-    @Override
     public void run() {
-        recordStore.clear();
-    }
+        // clear near-cache also on this backup operation, there is a possibility that no owner partition exists on this
+        // node but a near-cache exists.
+        clearNearCache(false);
 
-    @Override
-    public String toString() {
-        return "ClearBackupOperation{}";
+        RecordStore recordStore = mapServiceContext.getExistingRecordStore(getPartitionId(), name);
+        if (recordStore != null) {
+            recordStore.clear();
+        }
     }
 }

@@ -18,6 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.ComparisonType;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
@@ -30,7 +31,9 @@ import java.util.Set;
 /**
  * Greater Less Predicate
  */
-public class GreaterLessPredicate extends EqualPredicate {
+public final class GreaterLessPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate {
+
+    protected Comparable value;
     boolean equal;
     boolean less;
 
@@ -50,13 +53,12 @@ public class GreaterLessPredicate extends EqualPredicate {
     }
 
     @Override
-    public boolean apply(Map.Entry mapEntry) {
-        final Comparable entryValue = readAttribute(mapEntry);
-        if (entryValue == null) {
+    protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
+        if (attributeValue == null) {
             return false;
         }
-        final Comparable attributeValue = convert(mapEntry, entryValue, value);
-        final int result = entryValue.compareTo(attributeValue);
+        Comparable givenValue = convert(mapEntry, attributeValue, value);
+        int result = attributeValue.compareTo(givenValue);
         return equal && result == 0 || (less ? (result < 0) : (result > 0));
     }
 
@@ -75,6 +77,7 @@ public class GreaterLessPredicate extends EqualPredicate {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
+        value = in.readObject();
         equal = in.readBoolean();
         less = in.readBoolean();
     }
@@ -82,6 +85,7 @@ public class GreaterLessPredicate extends EqualPredicate {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
+        out.writeObject(value);
         out.writeBoolean(equal);
         out.writeBoolean(less);
     }
@@ -89,12 +93,17 @@ public class GreaterLessPredicate extends EqualPredicate {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append(attribute);
+        sb.append(attributeName);
         sb.append(less ? "<" : ">");
         if (equal) {
             sb.append("=");
         }
         sb.append(value);
         return sb.toString();
+    }
+
+    @Override
+    public Predicate negate() {
+        return new GreaterLessPredicate(attributeName, value, !equal, !less);
     }
 }

@@ -45,6 +45,7 @@ public class ClientNonSmartInvocationServiceImpl extends ClientInvocationService
 
     @Override
     public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException {
+        invocation.getClientMessage().setPartitionId(partitionId);
         sendToOwner(invocation);
     }
 

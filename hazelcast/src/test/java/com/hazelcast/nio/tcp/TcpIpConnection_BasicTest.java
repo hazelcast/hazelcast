@@ -20,6 +20,12 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class TcpIpConnection_BasicTest extends TcpIpConnection_AbstractTest {
 
+    // sleep time for lastWrite and lastRead tests
+    private static final int LAST_READ_WRITE_SLEEP_SECONDS = 5;
+
+    // if we make this MARGIN_OF_ERROR_MS very small, there is a high chance of spurious failures
+    private static final int MARGIN_OF_ERROR_MS = 3000;
+
     private List<Packet> packetsB;
 
     @Before
@@ -82,7 +88,7 @@ public abstract class TcpIpConnection_BasicTest extends TcpIpConnection_Abstract
 
         // we need to sleep some so that the lastWriteTime of the connection gets nice and old.
         // we need this so we can determine the lastWriteTime got updated
-        sleepSeconds(5);
+        sleepSeconds(LAST_READ_WRITE_SLEEP_SECONDS);
 
         Packet packet = new Packet(serializationService.toBytes("foo"));
 
@@ -97,15 +103,14 @@ public abstract class TcpIpConnection_BasicTest extends TcpIpConnection_Abstract
         });
 
         long lastWriteTimeMs = connAB.lastWriteTimeMillis();
-
         long nowMs = currentTimeMillis();
-        // make sure that the lastWrite time is within the given marginOfErrorMs.
-        // if we make this marginOfError very small, there is a high chance of spurious failures
-        int marginOfErrorMs = 1000;
-        // last read time should be equal or smaller than now.
-        assertTrue("nowMs = " + nowMs + " lastReadTimeMs:" + lastWriteTimeMs, lastWriteTimeMs <= nowMs);
-        // last read time should be larger or equal than the now-marginOfError
-        assertTrue("nowMs = " + nowMs + " lastReadTimeMs:" + lastWriteTimeMs, lastWriteTimeMs >= nowMs - marginOfErrorMs);
+
+        // make sure that the lastWrite time is within the given MARGIN_OF_ERROR_MS
+
+        // last write time should be equal or smaller than now
+        assertTrue("nowMs = " + nowMs + ", lastWriteTimeMs = " + lastWriteTimeMs, lastWriteTimeMs <= nowMs);
+        // last write time should be larger or equal than the now - MARGIN_OF_ERROR_MS
+        assertTrue("nowMs = " + nowMs + ", lastWriteTimeMs = " + lastWriteTimeMs, lastWriteTimeMs >= nowMs - MARGIN_OF_ERROR_MS);
     }
 
     @Test
@@ -127,7 +132,7 @@ public abstract class TcpIpConnection_BasicTest extends TcpIpConnection_Abstract
 
         // we need to sleep some so that the lastReadTime of the connection gets nice and old.
         // we need this so we can determine the lastReadTime got updated
-        sleepSeconds(3);
+        sleepSeconds(LAST_READ_WRITE_SLEEP_SECONDS);
 
         Packet packet = new Packet(serializationService.toBytes("foo"));
 
@@ -145,14 +150,12 @@ public abstract class TcpIpConnection_BasicTest extends TcpIpConnection_Abstract
         long lastReadTimeMs = connBA.lastReadTimeMillis();
         long nowMs = currentTimeMillis();
 
-        // make sure that the lastWrite time is within the given marginOfErrorMs.
-        // if we make this marginOfError very small, there is a high chance of spurious failures
-        int marginOfErrorMs = 1000;
+        // make sure that the lastRead time is within the given MARGIN_OF_ERROR_MS
 
-        // last read time should be equal or smaller than now.
-        assertTrue("nowMs = " + nowMs + " lastReadTimeMs:" + lastReadTimeMs, lastReadTimeMs <= nowMs);
-        // last read time should be larger or equal than the now-marginOfError
-        assertTrue("nowMs = " + nowMs + " lastReadTimeMs:" + lastReadTimeMs, lastReadTimeMs >= nowMs - marginOfErrorMs);
+        // last read time should be equal or smaller than now
+        assertTrue("nowMs = " + nowMs + ", lastReadTimeMs = " + lastReadTimeMs, lastReadTimeMs <= nowMs);
+        // last read time should be larger or equal than the now - MARGIN_OF_ERROR_MS
+        assertTrue("nowMs = " + nowMs + ", lastReadTimeMs = " + lastReadTimeMs, lastReadTimeMs >= nowMs - MARGIN_OF_ERROR_MS);
     }
 
     @Test

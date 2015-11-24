@@ -18,10 +18,10 @@ package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.internal.ascii.AbstractTextCommand;
 import com.hazelcast.internal.ascii.TextCommandConstants;
-import com.hazelcast.nio.IOUtil;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class StatsCommand extends AbstractTextCommand {
@@ -53,6 +53,7 @@ public class StatsCommand extends AbstractTextCommand {
         super(TextCommandConstants.TextCommandType.STATS);
     }
 
+    @Override
     public boolean readFrom(ByteBuffer src) {
         return true;
     }
@@ -94,11 +95,12 @@ public class StatsCommand extends AbstractTextCommand {
         response.put(TextCommandConstants.RETURN);
     }
 
+    @Override
     public boolean writeTo(ByteBuffer dst) {
         if (response == null) {
             response = ByteBuffer.allocate(0);
         }
-        IOUtil.copyToHeapBuffer(response, dst);
+        copyToHeapBuffer(response, dst);
         return !response.hasRemaining();
     }
 

@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 public class NearCacheSizeEstimator
         implements SizeEstimator<NearCacheRecord> {
 
-    private static final AtomicLongFieldUpdater<NearCacheSizeEstimator> SIZE_UPDATER = AtomicLongFieldUpdater
+    private static final AtomicLongFieldUpdater<NearCacheSizeEstimator> SIZE = AtomicLongFieldUpdater
             .newUpdater(NearCacheSizeEstimator.class, "size");
 
     private volatile long size;
@@ -35,7 +35,7 @@ public class NearCacheSizeEstimator
     }
 
     @Override
-    public long getCost(NearCacheRecord record) {
+    public long calculateSize(NearCacheRecord record) {
         // immediate check nothing to do if record is null
         if (record == null) {
             return 0;
@@ -61,11 +61,11 @@ public class NearCacheSizeEstimator
 
     @Override
     public void add(long size) {
-        SIZE_UPDATER.addAndGet(this, size);
+        SIZE.addAndGet(this, size);
     }
 
     @Override
     public void reset() {
-        SIZE_UPDATER.set(this, 0L);
+        SIZE.set(this, 0L);
     }
 }

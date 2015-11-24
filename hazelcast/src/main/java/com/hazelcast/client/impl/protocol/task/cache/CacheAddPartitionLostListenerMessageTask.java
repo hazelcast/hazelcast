@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.impl.protocol.task.cache;
 
-import com.hazelcast.cache.impl.AbstractCacheService;
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
@@ -30,6 +30,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
 
 import java.security.Permission;
 
@@ -45,27 +46,33 @@ public class CacheAddPartitionLostListenerMessageTask
     protected Object call() {
         final ClientEndpoint endpoint = getEndpoint();
 
-        final CachePartitionLostListener listener = new CachePartitionLostListener() {
+        CachePartitionLostListener listener = new CachePartitionLostListener() {
             @Override
             public void partitionLost(CachePartitionLostEvent event) {
                 if (endpoint.isAlive()) {
                     ClientMessage eventMessage =
                             CacheAddPartitionLostListenerCodec.encodeCachePartitionLostEvent(event.getPartitionId(),
-                                   event.getMember().getUuid());
+                                    event.getMember().getUuid());
                     sendClientMessage(null, eventMessage);
                 }
             }
         };
 
-        final InternalCachePartitionLostListenerAdapter listenerAdapter =
+        InternalCachePartitionLostListenerAdapter listenerAdapter =
                 new InternalCachePartitionLostListenerAdapter(listener);
-        final EventFilter filter = new CachePartitionLostEventFilter();
-        final CacheService service = getService(CacheService.SERVICE_NAME);
-        final EventRegistration registration = service.getNodeEngine().
-                getEventService().registerListener(AbstractCacheService.SERVICE_NAME,
-                parameters.name, filter, listenerAdapter);
-        final String registrationId = registration.getId();
-        endpoint.setListenerRegistration(CacheService.SERVICE_NAME, parameters.name, registrationId);
+        EventFilter filter = new CachePartitionLostEventFilter();
+        CacheService service = getService(CacheService.SERVICE_NAME);
+        EventService eventService = service.getNodeEngine().getEventService();
+        EventRegistration registration;
+        if (parameters.localOnly) {
+            registration = eventService
+                    .registerLocalListener(ICacheService.SERVICE_NAME, parameters.name, filter, listenerAdapter);
+        } else {
+            registration = eventService
+                    .registerListener(ICacheService.SERVICE_NAME, parameters.name, filter, listenerAdapter);
+        }
+        String registrationId = registration.getId();
+        endpoint.addListenerDestroyAction(CacheService.SERVICE_NAME, parameters.name, registrationId);
         return registrationId;
 
     }

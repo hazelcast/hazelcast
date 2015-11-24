@@ -11,7 +11,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>3.6-SNAPSHOT</version>
+        <version>3.6-RC2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -38,10 +38,10 @@
                     <perCoreThreadCount>true</perCoreThreadCount>
                     <parallel>methods</parallel -->
 
-                    <!-- the argLine variable is needed for jacoco-->
+                    <!-- the argLine variable is needed for JaCoco-->
                     <argLine>
                         -Xms128m -Xmx1G -XX:MaxPermSize=128M
-                        -Dhazelcast.version.check.enabled=false
+                        -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
                         -Dhazelcast.test.use.network=false
@@ -60,11 +60,11 @@
 
     <profiles>
         <profile>
-            <!-- This profile is needed to override configuration from the root pom.xml.
-
-                Otherwise a build of hazelcast-code-generation module is failing as the Surefire Maven plugin
-                cannot load com.hazelcast.test.annotation.ParallelTest classes
-                -->
+            <!--
+            This profile is needed to override configuration from the root pom.xml.
+            Otherwise a build of hazelcast-code-generation module is failing as the Surefire Maven plugin
+            cannot load com.hazelcast.test.annotation.ParallelTest classes
+            -->
             <id>parallelTest</id>
             <build>
                 <plugins>
@@ -83,7 +83,7 @@
                                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                                     <argLine>
                                         -Xms128m -Xmx1G -XX:MaxPermSize=128M
-                                        -Dhazelcast.version.check.enabled=false
+                                        -Dhazelcast.phone.home.enabled=false
                                         -Dhazelcast.mancenter.enabled=false
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
@@ -114,7 +114,7 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
                                 -Xms128m -Xmx1G
-                                -Dhazelcast.version.check.enabled=false
+                                -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
                             </argLine>
@@ -126,7 +126,6 @@
                 </plugins>
             </build>
         </profile>
-
     </profiles>
 
     <dependencies>
@@ -136,10 +135,4 @@
             <version>2.3.23</version>
         </dependency>
     </dependencies>
-
-
-
-
-
-
 </project>

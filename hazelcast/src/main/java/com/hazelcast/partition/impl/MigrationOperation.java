@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.logging.Level;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
@@ -229,13 +230,16 @@ public final class MigrationOperation extends BaseMigrationOperation {
                 Operation op = in.readObject();
                 tasks.add(op);
             }
+        } else {
+            tasks = Collections.emptyList();
         }
     }
 
     @Override
-    public String toString() {
-        final int numberOfTasks = tasks != null ? tasks.size() : 0;
-        return getClass().getSimpleName() + "{partitionId=" + getPartitionId() + ", migration=" + migrationInfo
-                + ", replicaVersions=" + Arrays.toString(replicaVersions) + ", numberOfTasks=" + numberOfTasks + '}';
+    protected void toString(StringBuilder sb) {
+        int numberOfTasks = tasks == null ? 0 : tasks.size();
+        sb.append(", migration=").append(migrationInfo);
+        sb.append(", replicaVersions=").append(Arrays.toString(replicaVersions));
+        sb.append(", numberOfTasks=").append(numberOfTasks);
     }
 }

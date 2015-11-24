@@ -19,6 +19,7 @@ package com.hazelcast.internal.metrics;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -68,4 +69,14 @@ public @interface Probe {
      * @return the name of the Probe.
      */
     String name() default "";
+
+    /**
+     * Returns the ProbeLevel.
+     *
+     * Using ProbeLevel one can indicate how 'important' this Probe is. This is useful to reduce memory overhead due
+     * to tracking of probes.
+     *
+     * @return the ProbeLevel.
+     */
+    ProbeLevel level() default INFO;
 }

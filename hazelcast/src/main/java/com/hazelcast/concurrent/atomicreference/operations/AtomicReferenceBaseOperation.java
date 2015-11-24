@@ -81,4 +81,11 @@ public abstract class AtomicReferenceBaseOperation extends Operation
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
     }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", name=").append(name);
+    }
 }

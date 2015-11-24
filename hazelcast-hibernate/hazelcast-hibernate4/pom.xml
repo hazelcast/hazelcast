@@ -25,14 +25,15 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-hibernate</artifactId>
-        <version>3.6-SNAPSHOT</version>
+        <version>3.6-RC2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <properties>
-        <hibernate.core.version>4.3.8.Final</hibernate.core.version>
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.parent.basedir}</main.basedir>
+
+        <hibernate.core.version>4.3.8.Final</hibernate.core.version>
     </properties>
 
     <build>
@@ -74,5 +75,4 @@
             </exclusions>
         </dependency>
     </dependencies>
-
 </project>

@@ -34,7 +34,11 @@ public final class CacheEventDataCodec {
     public static CacheEventData decode(ClientMessage clientMessage) {
         int typeId = clientMessage.getInt();
         String name = clientMessage.getStringUtf8();
-        Data key = clientMessage.getData();
+        boolean key_isNull = clientMessage.getBoolean();
+        Data key = null;
+        if (!key_isNull) {
+            key = clientMessage.getData();
+        }
         boolean value_isNull = clientMessage.getBoolean();
         Data value = null;
         if (!value_isNull) {
@@ -53,7 +57,12 @@ public final class CacheEventDataCodec {
     public static void encode(CacheEventData cacheEventData, ClientMessage clientMessage) {
         clientMessage.set(cacheEventData.getCacheEventType().getType());
         clientMessage.set(cacheEventData.getName());
-        clientMessage.set(cacheEventData.getDataKey());
+        Data dataKey = cacheEventData.getDataKey();
+        boolean dataKey_isNull = dataKey == null;
+        clientMessage.set(dataKey_isNull);
+        if (!dataKey_isNull) {
+            clientMessage.set(dataKey);
+        }
 
         Data dataValue = cacheEventData.getDataValue();
         boolean dataValue_isNull = dataValue == null;
@@ -74,7 +83,12 @@ public final class CacheEventDataCodec {
     public static int calculateDataSize(CacheEventData cacheEventData) {
         int dataSize = Bits.INT_SIZE_IN_BYTES;
         dataSize += ParameterUtil.calculateDataSize(cacheEventData.getName());
-        dataSize += ParameterUtil.calculateDataSize(cacheEventData.getDataKey());
+        Data dataKey = cacheEventData.getDataKey();
+        if (dataKey == null) {
+            dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;
+        } else {
+            dataSize += ParameterUtil.calculateDataSize(dataKey);
+        }
         Data dataValue = cacheEventData.getDataValue();
         if (dataValue == null) {
             dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;

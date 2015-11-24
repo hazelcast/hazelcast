@@ -28,6 +28,7 @@ import java.util.Properties;
 public class IdGeneratorService implements ManagedService, RemoteService {
 
     public static final String SERVICE_NAME = "hz:impl:idGeneratorService";
+
     public static final String ATOMIC_LONG_NAME = "hz:atomic:idGenerator:";
 
     private NodeEngine nodeEngine;

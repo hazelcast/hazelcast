@@ -18,30 +18,27 @@ package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapSizeCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.operation.SizeOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
+import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 public class ReplicatedMapSizeMessageTask
-        extends AbstractCallableMessageTask<ReplicatedMapSizeCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<ReplicatedMapSizeCodec.RequestParameters> {
 
     public ReplicatedMapSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        ReplicatedMapService replicatedMapService = getService(getServiceName());
-        final ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        return recordStore.size();
+    protected Operation prepareOperation() {
+        return new SizeOperation(parameters.name);
     }
-
 
     @Override
     protected ReplicatedMapSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {

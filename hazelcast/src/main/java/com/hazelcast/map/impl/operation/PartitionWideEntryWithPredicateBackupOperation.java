@@ -40,11 +40,6 @@ public class PartitionWideEntryWithPredicateBackupOperation extends PartitionWid
     }
 
     @Override
-    public String toString() {
-        return "PartitionWideEntryWithPredicateBackupOperation{}";
-    }
-
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         predicate = in.readObject();

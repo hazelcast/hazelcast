@@ -105,9 +105,6 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("TransactionalQueue{");
-        sb.append("name=").append(name);
-        sb.append('}');
-        return sb.toString();
+        return "TransactionalQueue{name=" + name + '}';
     }
 }

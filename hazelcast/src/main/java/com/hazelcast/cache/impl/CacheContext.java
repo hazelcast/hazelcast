@@ -17,14 +17,40 @@
 package com.hazelcast.cache.impl;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Holds some specific informations for per cache in the node and shared by all partitions of that cache on the node.
  */
 public class CacheContext {
 
+    private final AtomicLong entryCount = new AtomicLong(0L);
     private final AtomicInteger cacheEntryListenerCount = new AtomicInteger(0);
     private final AtomicInteger invalidationListenerCount = new AtomicInteger(0);
+
+    public long getEntryCount() {
+        return entryCount.get();
+    }
+
+    public long increaseEntryCount() {
+        return entryCount.incrementAndGet();
+    }
+
+    public long increaseEntryCount(long count) {
+        return entryCount.addAndGet(count);
+    }
+
+    public long decreaseEntryCount() {
+        return entryCount.decrementAndGet();
+    }
+
+    public long decreaseEntryCount(long count) {
+        return entryCount.addAndGet(-count);
+    }
+
+    public void resetEntryCount() {
+        entryCount.set(0L);
+    }
 
     public int getCacheEntryListenerCount() {
         return cacheEntryListenerCount.get();
@@ -61,7 +87,8 @@ public class CacheContext {
     @Override
     public String toString() {
         return "CacheContext{"
-                + "cacheEntryListenerCount=" + cacheEntryListenerCount.get()
+                + "entryCount=" + entryCount.get()
+                + ", cacheEntryListenerCount=" + cacheEntryListenerCount.get()
                 + ", invalidationListenerCount=" + invalidationListenerCount.get()
                 + '}';
     }

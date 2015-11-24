@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -64,19 +65,19 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class BasicMapTest extends HazelcastTestSupport {
 
-    private static final int instanceCount = 3;
-    private static final Random rand = new Random();
+    static final int instanceCount = 3;
+    static final Random rand = new Random();
 
-    private HazelcastInstance[] instances;
+    HazelcastInstance[] instances;
 
     @Before
     public void init() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
-        Config config = new Config();
+        Config config = getConfig();
         instances = factory.newInstances(config);
     }
 
-    private HazelcastInstance getInstance() {
+    HazelcastInstance getInstance() {
         return instances[rand.nextInt(instanceCount)];
     }
 
@@ -185,7 +186,6 @@ public class BasicMapTest extends HazelcastTestSupport {
             assertTrue(e instanceof NullPointerException);
         }
     }
-
 
     @Test
     public void testMapEvictAndListener() throws InterruptedException {
@@ -1094,20 +1094,16 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testPutWithTtl() throws InterruptedException {
-        IMap<String, String> map = getInstance().getMap("testPutWithTtl");
-        final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryAdapter<String, String>() {
-            public void entryEvicted(EntryEvent<String, String> event) {
-                latch.countDown();
+        final IMap<String, String> map = getInstance().getMap("testPutWithTtl");
+
+        map.put("key", "value", 2, TimeUnit.SECONDS);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNull(map.get("key"));
             }
-        }, true);
-
-        // ttl should be bigger than 5sec (= sync backup wait timeout)
-        map.put("key", "value", 6, TimeUnit.SECONDS);
-        assertEquals("value", map.get("key"));
-
-        assertOpenEventually(latch);
-        assertNull(map.get("key"));
+        }, 30);
     }
 
     @Test

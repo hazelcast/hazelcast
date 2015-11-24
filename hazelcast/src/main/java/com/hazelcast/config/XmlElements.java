@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 enum XmlElements {
     HAZELCAST("hazelcast", false),
+    INSTANCE_NAME("instance-name", false),
     IMPORT("import", true),
     GROUP("group", false),
     LICENSE_KEY("license-key", false),
@@ -45,7 +46,10 @@ enum XmlElements {
     SECURITY("security", false),
     MEMBER_ATTRIBUTES("member-attributes", false),
     NATIVE_MEMORY("native-memory", false),
-    QUORUM("quorum", true);
+    QUORUM("quorum", true),
+    LITE_MEMBER("lite-member", false),
+    HOT_RESTART("hot-restart", false),
+    ;
 
     final String name;
     final boolean multipleOccurrence;

@@ -34,52 +34,39 @@ public class UnsortedIndexStore extends BaseIndexStore {
             = new ConcurrentHashMap<Comparable, ConcurrentMap<Data, QueryableEntry>>(1000);
 
     @Override
-    public void newIndex(Comparable newValue, QueryableEntry record) {
-        takeWriteLock();
-        try {
-            if (newValue instanceof IndexImpl.NullObject) {
-                recordsWithNullValue.put(record.getIndexKey(), record);
-            } else {
-                ConcurrentMap<Data, QueryableEntry> records = recordMap.get(newValue);
-                if (records == null) {
-                    records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
-                    recordMap.put(newValue, records);
-                }
-                records.put(record.getIndexKey(), record);
-            }
-        } finally {
-            releaseWriteLock();
+    void newIndexInternal(Comparable newValue, QueryableEntry record) {
+        if (newValue instanceof IndexImpl.NullObject) {
+            recordsWithNullValue.put(record.getKeyData(), record);
+        } else {
+            mapAttributeToEntry(newValue, record);
         }
     }
 
-    @Override
-    public void updateIndex(Comparable oldValue, Comparable newValue, QueryableEntry entry) {
-        takeWriteLock();
-        try {
-            removeIndex(oldValue, entry.getIndexKey());
-            newIndex(newValue, entry);
-        } finally {
-            releaseWriteLock();
+    private void mapAttributeToEntry(Comparable attribute, QueryableEntry entry) {
+        ConcurrentMap<Data, QueryableEntry> records = recordMap.get(attribute);
+        if (records == null) {
+            records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
+            recordMap.put(attribute, records);
         }
+        records.put(entry.getKeyData(), entry);
     }
 
     @Override
-    public void removeIndex(Comparable oldValue, Data indexKey) {
-        takeWriteLock();
-        try {
-            if (oldValue instanceof IndexImpl.NullObject) {
-                recordsWithNullValue.remove(indexKey);
-            } else {
-                ConcurrentMap<Data, QueryableEntry> records = recordMap.get(oldValue);
-                if (records != null) {
-                    records.remove(indexKey);
-                    if (records.size() == 0) {
-                        recordMap.remove(oldValue);
-                    }
-                }
+    void removeIndexInternal(Comparable oldValue, Data indexKey) {
+        if (oldValue instanceof IndexImpl.NullObject) {
+            recordsWithNullValue.remove(indexKey);
+        } else {
+            removeMappingForAttribute(oldValue, indexKey);
+        }
+    }
+
+    private void removeMappingForAttribute(Object attribute, Data indexKey) {
+        ConcurrentMap<Data, QueryableEntry> records = recordMap.get(attribute);
+        if (records != null) {
+            records.remove(indexKey);
+            if (records.size() == 0) {
+                recordMap.remove(attribute);
             }
-        } finally {
-            releaseWriteLock();
         }
     }
 
@@ -95,9 +82,10 @@ public class UnsortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to) {
+    public Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
         takeReadLock();
         try {
+            MultiResultSet results = createMultiResultSet();
             Comparable paramFrom = from;
             Comparable paramTo = to;
             int trend = paramFrom.compareTo(paramTo);
@@ -106,7 +94,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
                 if (records != null) {
                     results.addResultSet(records);
                 }
-                return;
+                return results;
             }
             if (trend < 0) {
                 Comparable oldFrom = paramFrom;
@@ -122,15 +110,17 @@ public class UnsortedIndexStore extends BaseIndexStore {
                     }
                 }
             }
+            return results;
         } finally {
             releaseReadLock();
         }
     }
 
     @Override
-    public void getSubRecords(MultiResultSet results, ComparisonType comparisonType, Comparable searchedValue) {
+    public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
         takeReadLock();
         try {
+            MultiResultSet results = createMultiResultSet();
             Set<Comparable> values = recordMap.keySet();
             for (Comparable value : values) {
                 boolean valid;
@@ -161,6 +151,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
                     }
                 }
             }
+            return results;
         } finally {
             releaseReadLock();
         }
@@ -195,9 +186,10 @@ public class UnsortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public void getRecords(MultiResultSet results, Set<Comparable> values) {
+    public Set<QueryableEntry> getRecords(Set<Comparable> values) {
         takeReadLock();
         try {
+            MultiResultSet results = createMultiResultSet();
             for (Comparable value : values) {
                 ConcurrentMap<Data, QueryableEntry> records;
                 if (value instanceof IndexImpl.NullObject) {
@@ -209,6 +201,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
                     results.addResultSet(records);
                 }
             }
+            return results;
         } finally {
             releaseReadLock();
         }

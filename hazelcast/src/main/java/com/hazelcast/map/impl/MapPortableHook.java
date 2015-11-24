@@ -16,17 +16,19 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.internal.serialization.PortableHook;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.map.impl.client.MapAddEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapAddEntryListenerSqlRequest;
 import com.hazelcast.map.impl.client.MapAddIndexRequest;
 import com.hazelcast.map.impl.client.MapAddInterceptorRequest;
 import com.hazelcast.map.impl.client.MapAddNearCacheEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapAddPartitionLostListenerRequest;
+import com.hazelcast.map.impl.client.MapClearNearCacheRequest;
 import com.hazelcast.map.impl.client.MapClearRequest;
 import com.hazelcast.map.impl.client.MapContainsKeyRequest;
 import com.hazelcast.map.impl.client.MapContainsValueRequest;
 import com.hazelcast.map.impl.client.MapDeleteRequest;
-import com.hazelcast.map.impl.client.MapEntrySetRequest;
 import com.hazelcast.map.impl.client.MapEvictAllRequest;
 import com.hazelcast.map.impl.client.MapEvictRequest;
 import com.hazelcast.map.impl.client.MapExecuteOnAllKeysRequest;
@@ -39,7 +41,6 @@ import com.hazelcast.map.impl.client.MapGetEntryViewRequest;
 import com.hazelcast.map.impl.client.MapGetRequest;
 import com.hazelcast.map.impl.client.MapIsEmptyRequest;
 import com.hazelcast.map.impl.client.MapIsLockedRequest;
-import com.hazelcast.map.impl.client.MapKeySetRequest;
 import com.hazelcast.map.impl.client.MapLoadAllKeysRequest;
 import com.hazelcast.map.impl.client.MapLoadGivenKeysRequest;
 import com.hazelcast.map.impl.client.MapLockRequest;
@@ -61,14 +62,11 @@ import com.hazelcast.map.impl.client.MapSizeRequest;
 import com.hazelcast.map.impl.client.MapTryPutRequest;
 import com.hazelcast.map.impl.client.MapTryRemoveRequest;
 import com.hazelcast.map.impl.client.MapUnlockRequest;
-import com.hazelcast.map.impl.client.MapValuesRequest;
 import com.hazelcast.map.impl.client.TxnMapRequest;
 import com.hazelcast.map.impl.client.TxnMapRequestWithSQLQuery;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.internal.serialization.PortableHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
@@ -105,9 +103,9 @@ public class MapPortableHook implements PortableHook {
     public static final int ADD_ENTRY_LISTENER_SQL = 26;
     public static final int GET_ENTRY_VIEW = 27;
     public static final int ADD_INDEX = 28;
-    public static final int KEY_SET = 29;
-    public static final int VALUES = 30;
-    public static final int ENTRY_SET = 31;
+//    public static final int KEY_SET = 29;
+//    public static final int VALUES = 30;
+//    public static final int ENTRY_SET = 31;
     public static final int SIZE = 33;
     public static final int QUERY = 34;
     public static final int SQL_QUERY = 35;
@@ -128,6 +126,7 @@ public class MapPortableHook implements PortableHook {
     public static final int ADD_NEAR_CACHE_ENTRY_LISTENER = 50;
     public static final int ADD_MAP_PARTITION_LOST_LISTENER = 51;
     public static final int REMOVE_MAP_PARTITION_LOST_LISTENER = 52;
+    public static final int CLEAR_NEAR_CACHE = 53;
 
     @Override
     public int getFactoryId() {
@@ -138,7 +137,7 @@ public class MapPortableHook implements PortableHook {
     public PortableFactory createFactory() {
         return new PortableFactory() {
             final ConstructorFunction<Integer, Portable>[] constructors
-                    = new ConstructorFunction[REMOVE_MAP_PARTITION_LOST_LISTENER + 1];
+                    = new ConstructorFunction[CLEAR_NEAR_CACHE + 1];
 
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
@@ -298,24 +297,6 @@ public class MapPortableHook implements PortableHook {
                     }
                 };
 
-                constructors[KEY_SET] = new ConstructorFunction<Integer, Portable>() {
-                    public Portable createNew(Integer arg) {
-                        return new MapKeySetRequest();
-                    }
-                };
-
-                constructors[VALUES] = new ConstructorFunction<Integer, Portable>() {
-                    public Portable createNew(Integer arg) {
-                        return new MapValuesRequest();
-                    }
-                };
-
-                constructors[ENTRY_SET] = new ConstructorFunction<Integer, Portable>() {
-                    public Portable createNew(Integer arg) {
-                        return new MapEntrySetRequest();
-                    }
-                };
-
                 constructors[SIZE] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapSizeRequest();
@@ -425,6 +406,12 @@ public class MapPortableHook implements PortableHook {
                 constructors[REMOVE_MAP_PARTITION_LOST_LISTENER] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapRemovePartitionLostListenerRequest();
+                    }
+                };
+
+                constructors[CLEAR_NEAR_CACHE] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapClearNearCacheRequest();
                     }
                 };
             }

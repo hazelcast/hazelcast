@@ -101,7 +101,6 @@ public class CacheProxy<K, V>
         ensureOpen();
         validateNotNull(key);
         final Data k = serializationService.toData(key);
-//        final Operation op = new CacheContainsKeyOperation(getDistributedObjectName(), k);
         Operation operation = operationProvider.createContainsKeyOperation(k);
         OperationService operationService = getNodeEngine().getOperationService();
         int partitionId = getPartitionId(getNodeEngine(), k);
@@ -116,7 +115,6 @@ public class CacheProxy<K, V>
         for (K key : keys) {
             CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
         }
-        validateCacheLoader(completionListener);
         HashSet<Data> keysData = new HashSet<Data>(keys.size());
         for (K key : keys) {
             keysData.add(serializationService.toData(key));
@@ -253,7 +251,7 @@ public class CacheProxy<K, V>
     @Override
     public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor,
                                                          Object... arguments) {
-        //TODO implement a Multiple invoke operation and its factory
+        // TODO Implement a multiple (batch) invoke operation and its factory
         ensureOpen();
         validateNotNull(keys);
         checkNotNull(entryProcessor, "Entry Processor is null");
@@ -300,11 +298,10 @@ public class CacheProxy<K, V>
         final CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(this,
                 cacheEntryListenerConfiguration, getNodeEngine().getSerializationService());
         final String regId =
-                service.registerListener(getDistributedObjectName(), entryListener, entryListener);
+                service.registerListener(getDistributedObjectName(), entryListener, entryListener, false);
         if (regId != null) {
             cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
             addListenerLocally(regId, cacheEntryListenerConfiguration);
-            //CREATE ON OTHERS TOO
             updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, true);
         }
     }
@@ -314,13 +311,11 @@ public class CacheProxy<K, V>
         checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
 
         final ICacheService service = getService();
-        final String regId = removeListenerLocally(cacheEntryListenerConfiguration);
+        final String regId = getListenerIdLocal(cacheEntryListenerConfiguration);
         if (regId != null) {
-            if (!service.deregisterListener(getDistributedObjectName(), regId)) {
-                addListenerLocally(regId, cacheEntryListenerConfiguration);
-            } else {
+            if (service.deregisterListener(getDistributedObjectName(), regId)) {
+                removeListenerLocally(cacheEntryListenerConfiguration);
                 cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
-                //REMOVE ON OTHERS TOO
                 updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, false);
             }
         }
@@ -334,19 +329,13 @@ public class CacheProxy<K, V>
         for (Member member : members) {
             if (!member.localMember()) {
                 final Operation op = new CacheListenerRegistrationOperation(getDistributedObjectName(),
-                        cacheEntryListenerConfiguration, isRegister);
-                final InternalCompletableFuture<Object> future = operationService
-                        .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+                        cacheEntryListenerConfiguration,
+                        isRegister);
+                final InternalCompletableFuture<Object> future =
+                        operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
                 futures.add(future);
             }
         }
-        //make sure all configs are created
-        //TODO do we need this ???s
-//        try {
-//            FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-//        } catch (TimeoutException e) {
-//            logger.warning(e);
-//        }
     }
 
     @Override
@@ -363,8 +352,9 @@ public class CacheProxy<K, V>
 
         final EventFilter filter = new CachePartitionLostEventFilter();
         final ICacheService service = getService();
-        final EventRegistration registration = service.getNodeEngine().getEventService().
-                registerListener(AbstractCacheService.SERVICE_NAME, name, filter, listenerAdapter);
+        final EventRegistration registration =
+                service.getNodeEngine().getEventService()
+                        .registerListener(AbstractCacheService.SERVICE_NAME, name, filter, listenerAdapter);
         return registration.getId();
     }
 
@@ -372,8 +362,8 @@ public class CacheProxy<K, V>
     public boolean removePartitionLostListener(String id) {
         checkNotNull(id, "Listener id should not be null!");
         final ICacheService service = getService();
-        return service.getNodeEngine().getEventService().
-                deregisterListener(AbstractCacheService.SERVICE_NAME,
-                        name, id);
+        return service.getNodeEngine().getEventService()
+                .deregisterListener(AbstractCacheService.SERVICE_NAME, name, id);
     }
+
 }

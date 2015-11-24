@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.instance.Node;
@@ -26,6 +27,7 @@ import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.security.Permission;
+import java.util.concurrent.Callable;
 
 public class AddDistributedObjectListenerMessageTask
         extends AbstractCallableMessageTask<ClientAddDistributedObjectListenerCodec.RequestParameters>
@@ -37,9 +39,15 @@ public class AddDistributedObjectListenerMessageTask
 
     @Override
     protected Object call() throws Exception {
-        ProxyService proxyService = clientEngine.getProxyService();
-        String registrationId = proxyService.addProxyListener(this);
-        endpoint.setDistributedObjectListener(registrationId);
+        final ProxyService proxyService = clientEngine.getProxyService();
+        final String registrationId = proxyService.addProxyListener(this);
+        endpoint.addDestroyAction(registrationId, new Callable() {
+            @Override
+            public Boolean call() {
+                return proxyService.removeProxyListener(registrationId);
+            }
+        });
+
         return registrationId;
     }
 
@@ -89,13 +97,29 @@ public class AddDistributedObjectListenerMessageTask
     }
 
     private void send(DistributedObjectEvent event) {
-        if (endpoint.isAlive()) {
-            String name = event.getDistributedObject().getName();
-            String serviceName = event.getServiceName();
-            ClientMessage eventMessage =
-                    ClientAddDistributedObjectListenerCodec.encodeDistributedObjectEvent(name,
-                            serviceName, event.getEventType().name());
-            sendClientMessage(null, eventMessage);
+        if (!shouldSendEvent()) {
+            return;
         }
+
+        String name = (String) event.getObjectName();
+        String serviceName = event.getServiceName();
+        ClientMessage eventMessage =
+                ClientAddDistributedObjectListenerCodec.encodeDistributedObjectEvent(name,
+                        serviceName, event.getEventType().name());
+        sendClientMessage(null, eventMessage);
+    }
+
+    private boolean shouldSendEvent() {
+        if (!endpoint.isAlive()) {
+            return false;
+        }
+
+        ClusterService clusterService = clientEngine.getClusterService();
+        boolean currentMemberIsMaster = clusterService.getMasterAddress().equals(clientEngine.getThisAddress());
+        if (parameters.localOnly && !currentMemberIsMaster) {
+            //if client registered localOnly, only master is allowed to send request
+            return false;
+        }
+        return true;
     }
 }

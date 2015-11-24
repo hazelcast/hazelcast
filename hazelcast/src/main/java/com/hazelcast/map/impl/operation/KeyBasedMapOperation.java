@@ -16,57 +16,59 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NamedOperation;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
-public abstract class KeyBasedMapOperation extends Operation implements PartitionAwareOperation, NamedOperation {
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
-    protected String name;
+public abstract class KeyBasedMapOperation extends MapOperation implements PartitionAwareOperation, NamedOperation {
+
     protected Data dataKey;
     protected long threadId;
     protected Data dataValue;
-    protected long ttl = -1;
+    protected long ttl = DEFAULT_TTL;
 
-    protected transient MapService mapService;
-    protected transient MapContainer mapContainer;
     protected transient RecordStore recordStore;
 
     public KeyBasedMapOperation() {
     }
 
     public KeyBasedMapOperation(String name, Data dataKey) {
+        super(name);
         this.dataKey = dataKey;
-        this.name = name;
     }
 
     protected KeyBasedMapOperation(String name, Data dataKey, Data dataValue) {
-        this.name = name;
+        super(name);
         this.dataKey = dataKey;
         this.dataValue = dataValue;
     }
 
     protected KeyBasedMapOperation(String name, Data dataKey, long ttl) {
-        this.name = name;
+        super(name);
         this.dataKey = dataKey;
         this.ttl = ttl;
     }
 
     protected KeyBasedMapOperation(String name, Data dataKey, Data dataValue, long ttl) {
-        this.name = name;
+        super(name);
         this.dataKey = dataKey;
         this.dataValue = dataValue;
         this.ttl = ttl;
+    }
+
+    @Override
+    public void innerBeforeRun() throws Exception {
+        super.innerBeforeRun();
+        recordStore = mapServiceContext.getPartitionContainer(getPartitionId()).getRecordStore(name);
     }
 
     @Override
@@ -74,18 +76,16 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
         return MapService.SERVICE_NAME;
     }
 
-    public final String getName() {
-        return name;
-    }
-
     public final Data getKey() {
         return dataKey;
     }
 
+    @Override
     public final long getThreadId() {
         return threadId;
     }
 
+    @Override
     public final void setThreadId(long threadId) {
         this.threadId = threadId;
     }
@@ -99,17 +99,6 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
     }
 
     @Override
-    public final void beforeRun() throws Exception {
-        mapService = getService();
-        mapContainer = mapService.getMapServiceContext().getMapContainer(name);
-        recordStore = mapService.getMapServiceContext().getPartitionContainer(getPartitionId()).getRecordStore(name);
-        innerBeforeRun();
-    }
-
-    public void innerBeforeRun() {
-    }
-
-    @Override
     public void afterRun() throws Exception {
     }
 
@@ -118,20 +107,9 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
         return true;
     }
 
-    protected final void invalidateNearCaches() {
-        if (!mapContainer.isNearCacheEnabled()) {
-            return;
-        }
-
-        if (mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
-            NearCacheProvider nearCacheProvider = mapService.getMapServiceContext().getNearCacheProvider();
-            nearCacheProvider.invalidateAllNearCaches(name, dataKey);
-        }
-    }
-
-    protected void evict(boolean backup) {
+    protected void evict() {
         final long now = Clock.currentTimeMillis();
-        recordStore.evictEntries(now, backup);
+        recordStore.evictEntries(now);
     }
 
     @Override
@@ -150,5 +128,13 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
         threadId = in.readLong();
         dataValue = in.readData();
         ttl = in.readLong();
+    }
+
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", name=").append(name);
     }
 }

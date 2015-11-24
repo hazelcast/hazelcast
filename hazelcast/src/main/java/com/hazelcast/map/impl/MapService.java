@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.partition.InternalPartitionLostEvent;
 import com.hazelcast.spi.ClientAwareService;
@@ -38,6 +39,7 @@ import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.wan.WanReplicationEvent;
+
 import java.util.Map;
 import java.util.Properties;
 
@@ -59,14 +61,10 @@ import java.util.Properties;
  * @see MapServiceContext
  */
 public class MapService implements ManagedService, MigrationAwareService,
-        TransactionalService, RemoteService, EventPublishingService<EventData, ListenerAdapter>,
+        TransactionalService, RemoteService, EventPublishingService<Object, ListenerAdapter>,
         PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService,
         PartitionAwareService, ClientAwareService, QuorumAwareService {
 
-    /**
-     * Service name of map service used
-     * to register {@link com.hazelcast.spi.impl.ServiceManager#registerService}
-     */
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
     protected ManagedService managedService;
@@ -87,7 +85,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     @Override
-    public void dispatchEvent(EventData event, ListenerAdapter listener) {
+    public void dispatchEvent(Object event, ListenerAdapter listener) {
         eventPublishingService.dispatchEvent(event, listener);
     }
 

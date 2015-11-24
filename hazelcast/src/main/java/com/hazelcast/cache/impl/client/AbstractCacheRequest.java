@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.client.KeyBasedClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
@@ -29,12 +28,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * Abstract cache request to handle a completion id registration.
- */
 public abstract class AbstractCacheRequest
         extends KeyBasedClientRequest
-        implements RetryableRequest {
+        implements RetryableRequest, CompletionAwareCacheRequest {
 
     protected String name;
     protected InMemoryFormat inMemoryFormat;
@@ -52,9 +48,10 @@ public abstract class AbstractCacheRequest
     }
 
     public final String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
+    @Override
     public void setCompletionId(Integer completionId) {
     }
 

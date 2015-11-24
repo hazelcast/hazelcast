@@ -1,5 +1,6 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -8,8 +9,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -19,13 +22,13 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
     public void testConstruction() {
         initExecutor();
 
-        assertEquals(groupProperties.PARTITION_COUNT.getInteger(), executor.getPartitionOperationRunners().length);
+        assertEquals(groupProperties.getInteger(GroupProperty.PARTITION_COUNT), executor.getPartitionOperationRunners().length);
         assertEquals(executor.getGenericOperationThreadCount(), executor.getGenericOperationRunners().length);
 
-        assertEquals(groupProperties.PARTITION_OPERATION_THREAD_COUNT.getInteger(),
+        assertEquals(groupProperties.getInteger(GroupProperty.PARTITION_OPERATION_THREAD_COUNT),
                 executor.getPartitionOperationThreadCount());
 
-        assertEquals(groupProperties.GENERIC_OPERATION_THREAD_COUNT.getInteger(),
+        assertEquals(groupProperties.getInteger(GroupProperty.GENERIC_OPERATION_THREAD_COUNT),
                 executor.getGenericOperationThreadCount());
     }
 
@@ -82,5 +85,39 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
                 assertEquals(expectedCount, executor.getOperationExecutorQueueSize());
             }
         });
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void test_runOnAllPartitionThreads_whenTaskNull() {
+        initExecutor();
+        executor.runOnAllPartitionThreads(null);
+    }
+
+    @Test
+    public void test_runOnAllPartitionThreads() throws Exception {
+        initExecutor();
+
+        int threadCount = executor.getPartitionOperationThreadCount();
+        final CyclicBarrier barrier = new CyclicBarrier(threadCount + 1);
+
+        executor.runOnAllPartitionThreads(new Runnable() {
+            @Override
+            public void run() {
+                // current thread must be a PartitionOperationThread
+                if (Thread.currentThread() instanceof PartitionOperationThread) {
+                    try {
+                        awaitBarrier(barrier);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+
+        awaitBarrier(barrier);
+    }
+
+    private static void awaitBarrier(CyclicBarrier barrier) throws Exception {
+        barrier.await(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
     }
 }

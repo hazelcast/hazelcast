@@ -23,9 +23,10 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.TX_MULTIMAP_TEMPLATE_ID,
-        name = "TransactionalMultiMap", ns = "Hazelcast.Client.Protocol.TransactionalMultiMap")
+        name = "TransactionalMultiMap", ns = "Hazelcast.Client.Protocol.Codec")
 public interface TransactionalMultiMapCodecTemplate {
     /**
+     * Stores a key-value pair in the multimap.
      *
      * @param name Name of the Transactional Multi Map
      * @param txnId ID of the transaction
@@ -38,6 +39,7 @@ public interface TransactionalMultiMapCodecTemplate {
     Object put(String name, String txnId, long threadId, Data key, Data value);
 
     /**
+     * Returns the collection of values associated with the key.
      *
      * @param name Name of the Transactional Multi Map
      * @param txnId ID of the transaction
@@ -49,6 +51,7 @@ public interface TransactionalMultiMapCodecTemplate {
     Object get(String name, String txnId, long threadId, Data key);
 
     /**
+     * Removes the given key value pair from the multimap.
      *
      * @param name Name of the Transactional Multi Map
      * @param txnId ID of the transaction
@@ -60,8 +63,9 @@ public interface TransactionalMultiMapCodecTemplate {
     Object remove(String name, String txnId, long threadId, Data key);
 
     /**
+     * Removes all the entries associated with the given key.
      *
-     * @param name Name of the Transactioanal Multi Map
+     * @param name Name of the Transactional Multi Map
      * @param txnId ID of the this transaction operation
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param key The key whose associated values are returned
@@ -72,8 +76,9 @@ public interface TransactionalMultiMapCodecTemplate {
     Object removeEntry(String name, String txnId, long threadId, Data key, Data value);
 
     /**
+     * Returns the number of values matching the given key in the multimap.
      *
-     * @param name Name of the Transactioanal Multi Map
+     * @param name Name of the Transactional Multi Map
      * @param txnId ID of the this transaction operation
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param  key The key whose number of values are returned
@@ -83,6 +88,7 @@ public interface TransactionalMultiMapCodecTemplate {
     Object valueCount(String name, String txnId, long threadId, Data key);
 
     /**
+     * Returns the number of key-value pairs in the multimap.
      *
      * @param name Name of the Transactional Multi Map
      * @param txnId ID of the this transaction operation

@@ -18,11 +18,15 @@ package com.hazelcast.test;
 
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.AbstractJoiner;
+import com.hazelcast.cluster.impl.ClusterJoinManager;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
+import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.instance.NodeExtensionFactory;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -31,8 +35,8 @@ import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.NodeIOService;
+import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -69,18 +73,25 @@ public final class TestNodeRegistry {
     }
 
     public NodeContext createNodeContext(Address address) {
+        NodeEngineImpl nodeEngine;
+        if ((nodeEngine = nodes.get(address)) != null) {
+            if (nodeEngine.isRunning()) {
+                throw new IllegalArgumentException("This address already in registry! " + address);
+            }
+            nodes.remove(address);
+        }
         return new MockNodeContext(joinAddresses, nodes, address, joinerLock);
     }
 
     public HazelcastInstance getInstance(Address address) {
         NodeEngineImpl nodeEngine = nodes.get(address);
-        return nodeEngine != null && nodeEngine.isActive() ? nodeEngine.getHazelcastInstance() : null;
+        return nodeEngine != null && nodeEngine.isRunning() ? nodeEngine.getHazelcastInstance() : null;
     }
 
     Collection<HazelcastInstance> getAllHazelcastInstances() {
         Collection<HazelcastInstance> all = new LinkedList<HazelcastInstance>();
         for (NodeEngineImpl nodeEngine : nodes.values()) {
-            if (nodeEngine.isActive()) {
+            if (nodeEngine.isRunning()) {
                 all.add(nodeEngine.getHazelcastInstance());
             }
         }
@@ -88,7 +99,7 @@ public final class TestNodeRegistry {
     }
 
     void shutdown() {
-        final Collection<NodeEngineImpl> values = new ArrayList<NodeEngineImpl>(nodes.values());
+        Collection<NodeEngineImpl> values = new ArrayList<NodeEngineImpl>(nodes.values());
         nodes.clear();
         for (NodeEngineImpl value : values) {
             value.getHazelcastInstance().shutdown();
@@ -96,7 +107,7 @@ public final class TestNodeRegistry {
     }
 
     void terminate() {
-        final Collection<NodeEngineImpl> values = new ArrayList<NodeEngineImpl>(nodes.values());
+        Collection<NodeEngineImpl> values = new ArrayList<NodeEngineImpl>(nodes.values());
         nodes.clear();
         for (NodeEngineImpl value : values) {
             HazelcastInstance hz = value.getHazelcastInstance();
@@ -106,16 +117,22 @@ public final class TestNodeRegistry {
 
     private static class MockNodeContext implements NodeContext {
 
-        final CopyOnWriteArrayList<Address> joinAddresses;
-        final ConcurrentMap<Address, NodeEngineImpl> nodes;
-        final Address thisAddress;
-        final Object joinerLock;
+        private final CopyOnWriteArrayList<Address> joinAddresses;
+        private final ConcurrentMap<Address, NodeEngineImpl> nodes;
+        private final Address thisAddress;
+        private final Object joinerLock;
 
-        public MockNodeContext(CopyOnWriteArrayList<Address> addresses, ConcurrentMap<Address, NodeEngineImpl> nodes, Address thisAddress, Object joinerLock) {
+        public MockNodeContext(CopyOnWriteArrayList<Address> addresses, ConcurrentMap<Address, NodeEngineImpl> nodes,
+                               Address thisAddress, Object joinerLock) {
             this.joinAddresses = addresses;
             this.nodes = nodes;
             this.thisAddress = thisAddress;
             this.joinerLock = joinerLock;
+        }
+
+        @Override
+        public NodeExtension createNodeExtension(Node node) {
+            return NodeExtensionFactory.create(node);
         }
 
         public AddressPicker createAddressPicker(Node node) {
@@ -133,7 +150,8 @@ public final class TestNodeRegistry {
     }
 
     private static class StaticAddressPicker implements AddressPicker {
-        final Address thisAddress;
+
+        private final Address thisAddress;
 
         private StaticAddressPicker(Address thisAddress) {
             this.thisAddress = thisAddress;
@@ -157,11 +175,12 @@ public final class TestNodeRegistry {
 
     private static class MockJoiner extends AbstractJoiner {
 
-        final CopyOnWriteArrayList<Address> joinAddresses;
-        final ConcurrentMap<Address, NodeEngineImpl> nodes;
-        final Object joinerLock;
+        private final CopyOnWriteArrayList<Address> joinAddresses;
+        private final ConcurrentMap<Address, NodeEngineImpl> nodes;
+        private final Object joinerLock;
 
-        MockJoiner(Node node, CopyOnWriteArrayList<Address> addresses, ConcurrentMap<Address, NodeEngineImpl> nodes, Object joinerLock) {
+        MockJoiner(Node node, CopyOnWriteArrayList<Address> addresses, ConcurrentMap<Address, NodeEngineImpl> nodes,
+                   Object joinerLock) {
             super(node);
             this.joinAddresses = addresses;
             this.nodes = nodes;
@@ -173,7 +192,7 @@ public final class TestNodeRegistry {
             synchronized (joinerLock) {
                 for (Address address : joinAddresses) {
                     NodeEngineImpl ne = nodes.get(address);
-                    if (ne != null && ne.getNode().isActive() && ne.getNode().joined()) {
+                    if (ne != null && ne.isRunning() && ne.getNode().joined()) {
                         nodeEngine = ne;
                         break;
                     }
@@ -194,17 +213,21 @@ public final class TestNodeRegistry {
                     node.setJoined();
                     node.setAsMaster();
                 } else {
-                    for (int i = 0; !node.joined() && i < 2000; i++) {
+                    final ClusterJoinManager clusterJoinManager = node.clusterService.getClusterJoinManager();
+
+                    for (int i = 0; !node.joined() && node.isRunning() && i < 2000; i++) {
                         try {
-                            node.clusterService.sendJoinRequest(node.getMasterAddress(), true);
+                            clusterJoinManager.sendJoinRequest(node.getMasterAddress(), true);
                             Thread.sleep(50);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
+                            break;
                         }
                     }
                     if (!node.joined()) {
-                        throw new AssertionError("Node[" + node.getThisAddress()
+                        logger.severe("Node[" + node.getThisAddress()
                                 + "] should have been joined to " + node.getMasterAddress());
+                        node.shutdown(true);
                     }
                 }
             }
@@ -238,20 +261,22 @@ public final class TestNodeRegistry {
     }
 
     public static class MockConnectionManager implements ConnectionManager {
+
         private static final int RETRY_NUMBER = 5;
         private static final int DELAY_FACTOR = 100;
 
-        final ConcurrentMap<Address, NodeEngineImpl> nodes;
         final Map<Address, MockConnection> mapConnections = new ConcurrentHashMap<Address, MockConnection>(10);
+        final ConcurrentMap<Address, NodeEngineImpl> nodes;
         final Node node;
         final Object joinerLock;
+
         private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
+        private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(4);
         private final IOService ioService;
         private final ILogger logger;
-        private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(4);
 
-        public MockConnectionManager(IOService ioService, ConcurrentMap<Address, NodeEngineImpl> nodes,
-                                     Node node, Object joinerLock) {
+        public MockConnectionManager(IOService ioService, ConcurrentMap<Address, NodeEngineImpl> nodes, Node node,
+                                     Object joinerLock) {
             this.ioService = ioService;
             this.nodes = nodes;
             this.node = node;
@@ -289,13 +314,15 @@ public final class TestNodeRegistry {
         @Override
         public void shutdown() {
             for (Address address : nodes.keySet()) {
-                if (address.equals(node.getThisAddress())) continue;
+                if (address.equals(node.getThisAddress())) {
+                    continue;
+                }
 
                 final NodeEngineImpl nodeEngine = nodes.get(address);
-                if (nodeEngine != null && nodeEngine.isActive()) {
+                if (nodeEngine != null && nodeEngine.isRunning()) {
                     nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
                         public void run() {
-                            final ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+                            ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
                             clusterService.removeAddress(node.getThisAddress());
                         }
                     });
@@ -333,6 +360,7 @@ public final class TestNodeRegistry {
 
         public void destroyConnection(final Connection connection) {
             final Address endPoint = connection.getEndPoint();
+            mapConnections.remove(endPoint);
             ioService.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
                 public void run() {
@@ -374,10 +402,7 @@ public final class TestNodeRegistry {
 
         @Override
         public boolean transmit(Packet packet, Connection connection) {
-            if (connection == null) {
-                return false;
-            }
-            return connection.write(packet);
+            return (connection != null && connection.write(packet));
         }
 
         /**
@@ -409,8 +434,10 @@ public final class TestNodeRegistry {
         }
 
         private final class SendTask implements Runnable {
+
             private final Packet packet;
             private final Address target;
+
             private volatile int retries;
 
             private SendTask(Packet packet, Address target) {
@@ -431,10 +458,14 @@ public final class TestNodeRegistry {
     }
 
     public static class MockConnection implements Connection {
+
         protected final Address localEndpoint;
-        volatile Connection localConnection;
-        final Address remoteEndpoint;
         protected final NodeEngineImpl nodeEngine;
+
+        final Address remoteEndpoint;
+
+        volatile Connection localConnection;
+
         private volatile boolean live = true;
 
         public MockConnection(Address localEndpoint, Address remoteEndpoint, NodeEngineImpl nodeEngine) {
@@ -451,9 +482,9 @@ public final class TestNodeRegistry {
             return live;
         }
 
-        public boolean write(SocketWritable socketWritable) {
-            final Packet packet = (Packet) socketWritable;
-            if (nodeEngine.getNode().isActive()) {
+        public boolean write(OutboundFrame frame) {
+            Packet packet = (Packet) frame;
+            if (nodeEngine.getNode().getState() != NodeState.SHUT_DOWN) {
                 Packet newPacket = readFromPacket(packet);
                 nodeEngine.getPacketDispatcher().dispatch(newPacket);
                 return true;
@@ -537,10 +568,10 @@ public final class TestNodeRegistry {
 
         @Override
         public String toString() {
-            return "MockConnection{" +
-                    "localEndpoint=" + localEndpoint +
-                    ", remoteEndpoint=" + remoteEndpoint +
-                    '}';
+            return "MockConnection{"
+                    + "localEndpoint=" + localEndpoint
+                    + ", remoteEndpoint=" + remoteEndpoint
+                    + '}';
         }
     }
 }

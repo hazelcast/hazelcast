@@ -119,12 +119,10 @@ public class QueueStoreConfig {
     }
 
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("QueueStoreConfig");
-        sb.append("{enabled=").append(enabled);
-        sb.append(", className='").append(className).append('\'');
-        sb.append(", properties=").append(properties);
-        sb.append('}');
-        return sb.toString();
+        return "QueueStoreConfig{"
+                + "enabled=" + enabled
+                + ", className='" + className + '\''
+                + ", properties=" + properties
+                + '}';
     }
 }

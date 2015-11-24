@@ -22,9 +22,10 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.TX_SET_TEMPLATE_ID,
-        name = "TransactionalSet", ns = "Hazelcast.Client.Protocol.TransactionalSet")
+        name = "TransactionalSet", ns = "Hazelcast.Client.Protocol.Codec")
 public interface TransactionalSetCodecTemplate {
     /**
+     * Add new item to transactional set.
      *
      * @param name Name of the Transactional Set
      * @param txnId ID of the this transaction operation
@@ -35,16 +36,18 @@ public interface TransactionalSetCodecTemplate {
     @Request(id = 1, retryable = false, response = ResponseMessageConst.BOOLEAN)
     Object add(String name, String txnId, long threadId, Data item);
     /**
+     * Remove item from transactional set.
      *
      * @param name Name of the Transactional Set
      * @param txnId ID of the this transaction operation
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param item Item removed from Transactional Set
-     * @return True if item is remove succesfully
+     * @return True if item is remove successfully
      */
     @Request(id = 2, retryable = false, response = ResponseMessageConst.BOOLEAN)
     Object remove(String name, String txnId, long threadId, Data item);
     /**
+     * Returns the size of the set.
      *
      * @param name Name of the Transactional Set
      * @param txnId ID of the this transaction operation

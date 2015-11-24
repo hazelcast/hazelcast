@@ -44,7 +44,9 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
     }
 
     @Override
-    public void innerBeforeRun() {
+    public void innerBeforeRun() throws Exception {
+        super.innerBeforeRun();
+
         if (!recordStore.canAcquireLock(dataKey, ownerUuid, threadId)) {
             throw new TransactionException("Cannot acquire lock uuid: " + ownerUuid + ", threadId: " + threadId);
         }
@@ -82,7 +84,7 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
 
     @Override
     public Operation getBackupOperation() {
-        TxnUnlockBackupOperation txnUnlockOperation = new TxnUnlockBackupOperation(name, dataKey);
+        TxnUnlockBackupOperation txnUnlockOperation = new TxnUnlockBackupOperation(name, dataKey, ownerUuid);
         txnUnlockOperation.setThreadId(getThreadId());
         return txnUnlockOperation;
     }

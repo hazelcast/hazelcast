@@ -17,6 +17,8 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberSelector;
+import com.hazelcast.core.Cluster;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.CoreService;
@@ -28,7 +30,7 @@ import java.util.Collection;
  * <p/>
  * This API is an internal API; the end user will use the {@link com.hazelcast.core.Cluster} interface.
  */
-public interface ClusterService extends CoreService {
+public interface ClusterService extends CoreService, Cluster {
 
     /**
      * Gets the member for the given address.
@@ -56,11 +58,12 @@ public interface ClusterService extends CoreService {
     Collection<MemberImpl> getMemberImpls();
 
     /**
-     * Returns a collection of all members part of the cluster.
+     * Returns a collection of the members that satisfy the given {@link com.hazelcast.core.MemberSelector}.
      *
-     * @return all members that are part of the cluster.
+     * @param selector {@link com.hazelcast.core.MemberSelector} instance to filter members to return
+     * @return members that satisfy the given {@link com.hazelcast.core.MemberSelector}.
      */
-    Collection<Member> getMembers();
+    Collection<Member> getMembers(MemberSelector selector);
 
     /**
      * Returns the address of the master member.
@@ -84,11 +87,25 @@ public interface ClusterService extends CoreService {
     Address getThisAddress();
 
     /**
+     * Gets the local member instance.
+     *
+     * @return the local member instance. The returned value will never be null.
+     */
+    Member getLocalMember();
+
+    /**
      * Gets the current number of members.
      *
      * @return the current number of members.
      */
     int getSize();
+
+    /**
+     * Gets the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance.
+     * @param selector {@link com.hazelcast.core.MemberSelector} instance that filters members to be counted.
+     * @return the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance.
+     */
+    int getSize(MemberSelector selector);
 
     /**
      * Returns the {@link com.hazelcast.cluster.ClusterClock} of the cluster.
@@ -105,6 +122,5 @@ public interface ClusterService extends CoreService {
      * @return unique Id for cluster
      */
     String getClusterId();
-
 
 }

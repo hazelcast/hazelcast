@@ -442,19 +442,18 @@ public class SerializationConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("SerializationConfig{");
-        sb.append("portableVersion=").append(portableVersion);
-        sb.append(", dataSerializableFactoryClasses=").append(dataSerializableFactoryClasses);
-        sb.append(", dataSerializableFactories=").append(dataSerializableFactories);
-        sb.append(", portableFactoryClasses=").append(portableFactoryClasses);
-        sb.append(", portableFactories=").append(portableFactories);
-        sb.append(", globalSerializerConfig=").append(globalSerializerConfig);
-        sb.append(", serializerConfigs=").append(serializerConfigs);
-        sb.append(", checkClassDefErrors=").append(checkClassDefErrors);
-        sb.append(", classDefinitions=").append(classDefinitions);
-        sb.append(", byteOrder=").append(byteOrder);
-        sb.append(", useNativeByteOrder=").append(useNativeByteOrder);
-        sb.append('}');
-        return sb.toString();
+        return "SerializationConfig{"
+                + "portableVersion=" + portableVersion
+                + ", dataSerializableFactoryClasses=" + dataSerializableFactoryClasses
+                + ", dataSerializableFactories=" + dataSerializableFactories
+                + ", portableFactoryClasses=" + portableFactoryClasses
+                + ", portableFactories=" + portableFactories
+                + ", globalSerializerConfig=" + globalSerializerConfig
+                + ", serializerConfigs=" + serializerConfigs
+                + ", checkClassDefErrors=" + checkClassDefErrors
+                + ", classDefinitions=" + classDefinitions
+                + ", byteOrder=" + byteOrder
+                + ", useNativeByteOrder=" + useNativeByteOrder
+                + '}';
     }
 }

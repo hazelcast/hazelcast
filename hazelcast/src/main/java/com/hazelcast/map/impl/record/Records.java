@@ -16,6 +16,11 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
+
+import static com.hazelcast.map.impl.record.Record.NOT_CACHED;
+
 /**
  * Contains various factory & helper methods for a {@link com.hazelcast.map.impl.record.Record} object.
  */
@@ -44,5 +49,26 @@ public final class Records {
         return info;
     }
 
+    public static Object getValueOrCachedValue(Record record, SerializationService serializationService) {
+        Object value = record.getCachedValue();
+        if (value == NOT_CACHED) {
+            value = record.getValue();
+        } else if (value == null) {
+            value = record.getValue();
+            if (shouldCache(record, value)) {
+                value = serializationService.toObject(value);
+                record.setCachedValue(value);
+            }
+        }
+        return value;
+    }
+
+    private static boolean shouldCache(Record record, Object value) {
+        boolean isCachableRecordType = record instanceof CachedDataRecordWithStats || record instanceof CachedDataRecord;
+        if (!isCachableRecordType) {
+            return false;
+        }
+        return value instanceof Data && !((Data) value).isPortable();
+    }
 
 }

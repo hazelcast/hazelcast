@@ -2,30 +2,24 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.UUID;
-
-import static com.hazelcast.instance.GroupProperties.*;
 import static com.hazelcast.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.impl.operationservice.impl.DummyBackupAwareOperation.backupCompletedMap;
 import static java.lang.Math.min;
-import static java.util.UUID.*;
+import static java.util.UUID.randomUUID;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -50,8 +44,8 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
 
     public void setup(boolean backPressureEnabled) {
         Config config = new Config()
-                .setProperty(PROP_BACKPRESSURE_ENABLED, ""+backPressureEnabled)
-                .setProperty(PROP_BACKPRESSURE_SYNCWINDOW, "1");
+                .setProperty(GroupProperty.BACKPRESSURE_ENABLED, String.valueOf(backPressureEnabled))
+                .setProperty(GroupProperty.BACKPRESSURE_SYNCWINDOW, "1");
 
         // we create a nice big cluster so that we have enough backups.
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(BACKUPS + 1).newInstances(config);
@@ -101,7 +95,7 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
     public void asyncBackups_whenForceSyncDisabled() {
         setup(BACKPRESSURE_ENABLED);
 
-         // when forceSync disabled, only the async matters
+        // when forceSync disabled, only the async matters
         assertEquals(0, backupHandler.asyncBackups(0, 0, FORCE_SYNC_DISABLED));
         assertEquals(1, backupHandler.asyncBackups(0, 1, FORCE_SYNC_DISABLED));
         assertEquals(0, backupHandler.asyncBackups(2, 0, FORCE_SYNC_DISABLED));

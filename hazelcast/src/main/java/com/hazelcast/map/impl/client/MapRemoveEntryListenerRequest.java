@@ -29,11 +29,11 @@ public class MapRemoveEntryListenerRequest extends BaseClientRemoveListenerReque
     public MapRemoveEntryListenerRequest() {
     }
 
-    public MapRemoveEntryListenerRequest(String name, String registrationId) {
-        super(name, registrationId);
+    public MapRemoveEntryListenerRequest(String name) {
+        super(name);
     }
 
-    public Object call() throws Exception {
+    protected boolean deRegisterListener() {
         final MapService service = getService();
         return service.getMapServiceContext().removeEventListener(name, registrationId);
     }

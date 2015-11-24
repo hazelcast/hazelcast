@@ -45,12 +45,12 @@ public class StartProcessingJobOperation<K>
     private String name;
     private Collection<K> keys;
     private String jobId;
-    private KeyPredicate<K> predicate;
+    private KeyPredicate<? super K> predicate;
 
     public StartProcessingJobOperation() {
     }
 
-    public StartProcessingJobOperation(String name, String jobId, Collection<K> keys, KeyPredicate<K> predicate) {
+    public StartProcessingJobOperation(String name, String jobId, Collection<K> keys, KeyPredicate<? super K> predicate) {
         this.name = name;
         this.keys = keys;
         this.jobId = jobId;

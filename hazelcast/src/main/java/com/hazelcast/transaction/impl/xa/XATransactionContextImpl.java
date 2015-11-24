@@ -123,7 +123,7 @@ public class XATransactionContextImpl implements TransactionContext {
             txnObjectMap.put(key, obj);
         } else {
             if (service == null) {
-                if (!nodeEngine.isActive()) {
+                if (!nodeEngine.isRunning()) {
                     throw new HazelcastInstanceNotActiveException();
                 }
                 throw new IllegalArgumentException("Unknown Service[" + serviceName + "]!");

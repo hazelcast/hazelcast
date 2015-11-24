@@ -18,39 +18,28 @@ package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapKeySetCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.client.ReplicatedMapKeys;
+import com.hazelcast.replicatedmap.impl.operation.KeySetOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
+import com.hazelcast.spi.Operation;
 import java.security.Permission;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
 public class ReplicatedMapKeySetMessageTask
-        extends AbstractCallableMessageTask<ReplicatedMapKeySetCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<ReplicatedMapKeySetCodec.RequestParameters> {
 
     public ReplicatedMapKeySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        ReplicatedMapService replicatedMapService = getService(getServiceName());
-        final ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        final Collection values = recordStore.keySet();
-        Set<Data> res = new HashSet<Data>(values.size());
-        for (Object o : values) {
-            res.add(serializationService.toData(o));
-        }
-        return res;
+    protected Operation prepareOperation() {
+        return new KeySetOperation(parameters.name);
     }
-
 
     @Override
     protected ReplicatedMapKeySetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
@@ -59,7 +48,8 @@ public class ReplicatedMapKeySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ReplicatedMapKeySetCodec.encodeResponse((Set<Data>) response);
+        ReplicatedMapKeys keySet = (ReplicatedMapKeys) response;
+        return ReplicatedMapKeySetCodec.encodeResponse(keySet.getKeys());
     }
 
     @Override

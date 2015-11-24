@@ -17,18 +17,20 @@
 package com.hazelcast.cluster.impl.operations;
 
 import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class MemberInfoUpdateOperation extends AbstractClusterOperation implements JoinOperation {
+public class MemberInfoUpdateOperation extends AbstractClusterOperation implements JoinOperation, IdentifiedDataSerializable {
 
     protected Collection<MemberInfo> memberInfos;
     protected long masterTime = Clock.currentTimeMillis();
@@ -95,13 +97,23 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
     }
 
     @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("MemberInfoUpdateOperation {\n");
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", members=");
         for (MemberInfo address : memberInfos) {
-            sb.append(address).append('\n');
+            sb.append(address).append(' ');
         }
-        sb.append('}');
-        return sb.toString();
     }
+
+    public int getFactoryId() {
+        return ClusterDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
+    }
+
 }
 

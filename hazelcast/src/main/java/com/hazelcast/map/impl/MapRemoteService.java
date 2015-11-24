@@ -16,7 +16,10 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 
@@ -31,17 +34,23 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
  */
 class MapRemoteService implements RemoteService {
 
-    private final MapServiceContext mapServiceContext;
-    private final NodeEngine nodeEngine;
+    protected final MapServiceContext mapServiceContext;
+    protected final NodeEngine nodeEngine;
 
-    public MapRemoteService(MapServiceContext mapServiceContext) {
+    MapRemoteService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
     }
 
     @Override
-    public MapProxyImpl createDistributedObject(String name) {
-        return new MapProxyImpl(name, mapServiceContext.getService(), nodeEngine);
+    public DistributedObject createDistributedObject(String name) {
+        MapConfig mapConfig = nodeEngine.getConfig().findMapConfig(name);
+
+        if (mapConfig.isNearCacheEnabled()) {
+            return new NearCachedMapProxyImpl(name, mapServiceContext.getService(), nodeEngine);
+        } else {
+            return new MapProxyImpl(name, mapServiceContext.getService(), nodeEngine);
+        }
     }
 
     @Override
@@ -58,7 +67,4 @@ class MapRemoteService implements RemoteService {
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
     }
 
-    MapServiceContext getMapServiceContext() {
-        return mapServiceContext;
-    }
 }

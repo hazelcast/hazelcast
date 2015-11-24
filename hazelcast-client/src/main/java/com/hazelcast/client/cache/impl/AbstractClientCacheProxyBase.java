@@ -16,33 +16,27 @@
 
 package com.hazelcast.client.cache.impl;
 
-import com.hazelcast.cache.impl.client.CacheDestroyRequest;
-import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
+import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.CacheDestroyCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
-import javax.cache.configuration.Factory;
-import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CompletionListener;
-import java.io.Closeable;
-import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Abstract class providing cache open/close operations and {@link ClientContext} accessor which will be used
@@ -51,7 +45,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
  * @param <K> the type of key
  * @param <V> the type of value
  */
-abstract class AbstractClientCacheProxyBase<K, V> {
+abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V> {
 
     static final int TIMEOUT = 10;
 
@@ -62,26 +56,21 @@ abstract class AbstractClientCacheProxyBase<K, V> {
     protected final String nameWithPrefix;
 
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
-    private CacheLoader<K, V> cacheLoader;
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
+
+    private final AtomicInteger completionIdCounter = new AtomicInteger();
 
     protected AbstractClientCacheProxyBase(CacheConfig cacheConfig, ClientContext clientContext) {
         this.name = cacheConfig.getName();
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;
         this.clientContext = clientContext;
-        init();
     }
 
-    private void init() {
-        if (cacheConfig.getCacheLoaderFactory() != null) {
-            final Factory<CacheLoader<K, V>> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
-            cacheLoader = cacheLoaderFactory.create();
-        } else {
-            cacheLoader = null;
-        }
+    protected int nextCompletionId() {
+        return completionIdCounter.incrementAndGet();
     }
 
     //region close&destroy
@@ -103,8 +92,6 @@ abstract class AbstractClientCacheProxyBase<K, V> {
             }
         }
         loadAllTasks.clear();
-        //close the configured CacheLoader
-        closeCacheLoader();
         closeListeners();
     }
 
@@ -116,10 +103,10 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         isClosed.set(true);
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(nameWithPrefix);
-            CacheDestroyRequest request = new CacheDestroyRequest(nameWithPrefix, partitionId);
+            ClientMessage request = CacheDestroyCodec.encodeRequest(nameWithPrefix);
             final ClientInvocation clientInvocation = new ClientInvocation(
                     (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request, partitionId);
-            final Future<SerializableList> future = clientInvocation.invoke();
+            final Future<ClientMessage> future = clientInvocation.invoke();
             future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -141,7 +128,6 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         if (!isClosed.compareAndSet(true, false)) {
             return;
         }
-        init();
     }
 
     protected abstract void closeListeners();
@@ -160,34 +146,32 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         return clientContext.getSerializationService().toData(o);
     }
 
-    protected <T> T invoke(ClientRequest req) {
+    protected ClientMessage invoke(ClientMessage clientMessage) {
         try {
-            final ClientInvocation clientInvocation = new ClientInvocation(
-                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), req);
-            final Future<SerializableList> future = clientInvocation.invoke();
-            Object result = future.get();
-            return toObject(result);
+            final Future<ClientMessage> future = new ClientInvocation(
+                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), clientMessage).invoke();
+            return future.get();
+
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
     }
-    //endregion DISTRIBUTED OBJECT
 
-    //region CacheLoader
-    protected void validateCacheLoader(CompletionListener completionListener) {
-        if (cacheLoader == null && completionListener != null) {
-            completionListener.onCompletion();
+    protected ClientMessage invoke(ClientMessage clientMessage, Data keyData) {
+        try {
+            final int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
+            final Future future = new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
+                    clientMessage, partitionId).invoke();
+            return (ClientMessage) future.get();
+
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
-    protected void closeCacheLoader() {
-        //close the configured CacheLoader
-        if (cacheLoader instanceof Closeable) {
-            IOUtil.closeResource((Closeable) cacheLoader);
-        }
-    }
-
-    protected void submitLoadAllTask(final CacheLoadAllRequest request, final CompletionListener completionListener) {
+    protected void submitLoadAllTask(final ClientMessage request, final CompletionListener completionListener,
+                                     final Set<Data> keys) {
+        final long start = System.nanoTime();
         LoadAllTask loadAllTask = new LoadAllTask(request, completionListener);
         ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) clientContext.getExecutionService();
 
@@ -197,6 +181,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
             @Override
             public void onResponse(Object response) {
                 loadAllTasks.remove(future);
+                onLoadAll(keys, response, start, System.nanoTime());
             }
 
             @Override
@@ -206,13 +191,17 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         });
     }
 
+    protected void onLoadAll(Set<Data> keys, Object response, long start, long end) {
+
+    }
+
     private final class LoadAllTask
             implements Runnable {
 
-        private final CacheLoadAllRequest request;
+        private final ClientMessage request;
         private final CompletionListener completionListener;
 
-        private LoadAllTask(CacheLoadAllRequest request, CompletionListener completionListener) {
+        private LoadAllTask(ClientMessage request, CompletionListener completionListener) {
             this.request = request;
             this.completionListener = completionListener;
         }
@@ -220,8 +209,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         @Override
         public void run() {
             try {
-                final Map<Integer, Object> results = invoke(request);
-                validateResults(results);
+                invoke(request);
                 if (completionListener != null) {
                     completionListener.onCompletion();
                 }

@@ -20,7 +20,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.OutboundFrame;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -32,19 +32,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * The Tcp/Ip implementation of the {@link com.hazelcast.nio.Connection}.
  *
- * A {@link TcpIpConnection} has 2 sides:
+ * A {@link TcpIpConnection} is not responsible for reading or writing data to a socket, this is done through:
  * <ol>
- * <li>{@link ReadHandler}: the side  that takes care of reading from the other side</li>
- * <li>{@link WriteHandler}: the side that takes care of writing data to the other side</li>
+ * <li>{@link SocketReader}: which care of reading from the socket and feeding it into the system/li>
+ * <li>{@link SocketWriter}: which care of writing data to the socket.</li>
  * </ol>
+ *
+ * @see IOThreadingModel
  */
 public final class TcpIpConnection implements Connection {
 
     private final SocketChannelWrapper socketChannel;
 
-    private final ReadHandler readHandler;
+    private final SocketReader socketReader;
 
-    private final WriteHandler writeHandler;
+    private final SocketWriter socketWriter;
 
     private final TcpIpConnectionManager connectionManager;
 
@@ -68,16 +70,16 @@ public final class TcpIpConnection implements Connection {
         this.logger = connectionManager.getIoService().getLogger(TcpIpConnection.class.getName());
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
-        this.writeHandler = ioThreadingModel.newWriteHandler(this);
-        this.readHandler = ioThreadingModel.newReadHandler(this);
+        this.socketWriter = ioThreadingModel.newSocketWriter(this);
+        this.socketReader = ioThreadingModel.newSocketReader(this);
     }
 
-    public ReadHandler getReadHandler() {
-        return readHandler;
+    public SocketReader getSocketReader() {
+        return socketReader;
     }
 
-    public WriteHandler getWriteHandler() {
-        return writeHandler;
+    public SocketWriter getSocketWriter() {
+        return socketWriter;
     }
 
     @Override
@@ -122,12 +124,12 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public long lastWriteTimeMillis() {
-        return writeHandler.getLastWriteTimeMillis();
+        return socketWriter.getLastWriteTimeMillis();
     }
 
     @Override
     public long lastReadTimeMillis() {
-        return readHandler.getLastReadTimeMillis();
+        return socketReader.getLastReadTimeMillis();
     }
 
     @Override
@@ -182,19 +184,19 @@ public final class TcpIpConnection implements Connection {
      * Starting means that the connection is going to register itself to listen to incoming traffic.
      */
     public void start() {
-        writeHandler.start();
-        readHandler.start();
+        socketWriter.start();
+        socketReader.init();
     }
 
     @Override
-    public boolean write(SocketWritable packet) {
+    public boolean write(OutboundFrame frame) {
         if (!alive.get()) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Connection is closed, won't write packet -> " + packet);
+                logger.finest("Connection is closed, won't write packet -> " + frame);
             }
             return false;
         }
-        writeHandler.offer(packet);
+        socketWriter.offer(frame);
         return true;
     }
 
@@ -228,8 +230,8 @@ public final class TcpIpConnection implements Connection {
 
         try {
             if (socketChannel != null && socketChannel.isOpen()) {
-                readHandler.shutdown();
-                writeHandler.shutdown();
+                socketReader.destroy();
+                socketWriter.shutdown();
                 socketChannel.close();
             }
         } catch (Exception e) {

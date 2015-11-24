@@ -17,6 +17,8 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -33,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.CollectionUtil.isEmpty;
@@ -192,8 +193,8 @@ public class StoreWorker implements Runnable {
     }
 
     private long getReplicaWaitTime() {
-        return TimeUnit.SECONDS.toMillis(mapServiceContext.getNodeEngine().getGroupProperties()
-                .MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS.getInteger());
+        GroupProperties groupProperties = mapServiceContext.getNodeEngine().getGroupProperties();
+        return groupProperties.getMillis(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS);
     }
 
     private RecordStore getRecordStoreOrNull(String mapName, int partitionId) {

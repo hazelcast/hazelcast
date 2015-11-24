@@ -17,11 +17,13 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ClientAwareService;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
@@ -50,23 +52,29 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.transaction.impl.Transaction.State;
+import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
+import static com.hazelcast.transaction.impl.Transaction.State.COMMITTING;
+import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.Collections.shuffle;
 
 public class TransactionManagerServiceImpl implements TransactionManagerService, ManagedService,
         MembershipAwareService, ClientAwareService {
 
     public static final String SERVICE_NAME = "hz:core:txManagerService";
 
+    private static final Address[] EMPTY_ADDRESSES = new Address[0];
+
+    final ConcurrentMap<String, TxBackupLog> txBackupLogs = new ConcurrentHashMap<String, TxBackupLog>();
+
     private final ExceptionHandler finalizeExceptionHandler;
 
     private final NodeEngineImpl nodeEngine;
 
     private final ILogger logger;
-
-    private final ConcurrentMap<String, TxBackupLog> txBackupLogs = new ConcurrentHashMap<String, TxBackupLog>();
 
     public TransactionManagerServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -85,7 +93,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         final TransactionContextImpl context = new TransactionContextImpl(this, nodeEngine, options, null);
         context.beginTransaction();
         try {
-            final T value = task.execute(context);
+            T value = task.execute(context);
             context.commitTransaction();
             return value;
         } catch (Throwable e) {
@@ -113,6 +121,39 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         return new TransactionContextImpl(this, nodeEngine, options, clientUuid);
     }
 
+    /**
+     * Creates a plain transaction object, without wrapping it
+     * inside a TransactionContext.
+     * <p/>
+     * A Transaction is a lower level API than TransactionContext.
+     * It's not possible to create/access transactional
+     * data structures without TransactionContext.
+     * <p/>
+     * A Transaction object
+     * only allows starting/committing/rolling back transaction,
+     * accessing state of the transaction
+     * and adding TransactionLogRecord to the transaction.
+     *
+     * @param options transaction options
+     * @return a new transaction
+     */
+    public Transaction newTransaction(TransactionOptions options) {
+        return new TransactionImpl(this, nodeEngine, options, null);
+    }
+
+    /**
+     * Creates a plain transaction object which can be used while cluster state is {@link ClusterState#PASSIVE},
+     * without wrapping it inside a TransactionContext.
+     * <p/>
+     * Also see {@link TransactionManagerServiceImpl#newTransaction(TransactionOptions)} for more details
+     *
+     * @param options transaction options
+     * @return a new transaction which can be used while cluster state is {@link ClusterState#PASSIVE}
+     */
+    public Transaction newAllowedDuringPassiveStateTransaction(TransactionOptions options) {
+        return new AllowedDuringPassiveStateTransactionImpl(this, nodeEngine, options, null);
+    }
+
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
     }
@@ -133,9 +174,13 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
-        final MemberImpl member = event.getMember();
-        String uuid = member.getUuid();
-        finalizeTransactionsOf(uuid);
+        final String uuid = event.getMember().getUuid();
+        nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+            @Override
+            public void run() {
+                finalizeTransactionsOf(uuid);
+            }
+        });
     }
 
     @Override
@@ -155,7 +200,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
 
         //TODO shouldn't we remove TxBackupLog from map ?
-        if (log.state == State.ACTIVE) {
+        if (log.state == ACTIVE) {
             Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
             Collection<Future> futures = new ArrayList<Future>(memberList.size());
             for (Member member : memberList) {
@@ -167,9 +212,16 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             long timeoutMillis = TransactionOptions.getDefault().getTimeoutMillis();
             waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, finalizeExceptionHandler);
         } else {
-            TransactionImpl tx = new TransactionImpl(this, nodeEngine, txnId, log.records,
-                    log.timeoutMillis, log.startTime, log.callerUuid);
-            if (log.state == State.COMMITTING) {
+            TransactionImpl tx;
+            if (log.allowedDuringPassiveState) {
+                tx = new AllowedDuringPassiveStateTransactionImpl(this, nodeEngine, txnId, log.records,
+                        log.timeoutMillis, log.startTime, log.callerUuid);
+            } else {
+                tx = new TransactionImpl(this, nodeEngine, txnId, log.records,
+                        log.timeoutMillis, log.startTime, log.callerUuid);
+            }
+
+            if (log.state == COMMITTING) {
                 try {
                     tx.commit();
                 } catch (Throwable e) {
@@ -190,12 +242,19 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         finalizeTransactionsOf(clientUuid);
     }
 
-    Address[] pickBackupAddresses(int durability) {
-        final ClusterService clusterService = nodeEngine.getClusterService();
-        final List<MemberImpl> members = new ArrayList<MemberImpl>(clusterService.getMemberImpls());
+    Address[] pickBackupLogAddresses(int durability) {
+        if (durability == 0) {
+            return EMPTY_ADDRESSES;
+        }
+
+        // This should be cleaned up because this is quite a complex approach since it depends on
+        // the number of members in the cluster and creates litter.
+
+        ClusterService clusterService = nodeEngine.getClusterService();
+        List<MemberImpl> members = new ArrayList<MemberImpl>(clusterService.getMemberImpls());
         members.remove(nodeEngine.getLocalMember());
-        final int c = Math.min(members.size(), durability);
-        Collections.shuffle(members);
+        int c = Math.min(members.size(), durability);
+        shuffle(members);
         Address[] addresses = new Address[c];
         for (int i = 0; i < c; i++) {
             addresses[i] = members.get(i).getAddress();
@@ -203,55 +262,68 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         return addresses;
     }
 
-    public void beginTxBackupLog(String callerUuid, String txnId) {
-        TxBackupLog log = new TxBackupLog(Collections.<TransactionLogRecord>emptyList(), callerUuid, State.ACTIVE, -1, -1);
+    public void createBackupLog(String callerUuid, String txnId) {
+        createBackupLog(callerUuid, txnId, false);
+    }
+
+    public void createAllowedDuringPassiveStateBackupLog(String callerUuid, String txnId) {
+        createBackupLog(callerUuid, txnId, true);
+    }
+
+    private void createBackupLog(String callerUuid, String txnId, boolean allowedDuringPassiveState) {
+        TxBackupLog log = new TxBackupLog(Collections.<TransactionLogRecord>emptyList(), callerUuid,
+                ACTIVE, -1, -1, allowedDuringPassiveState);
         if (txBackupLogs.putIfAbsent(txnId, log) != null) {
             throw new TransactionException("TxLog already exists!");
         }
     }
 
-    public void prepareTxBackupLog(List<TransactionLogRecord> records, String callerUuid, String txnId,
-                                   long timeoutMillis, long startTime) {
+    public void replicaBackupLog(List<TransactionLogRecord> records, String callerUuid, String txnId,
+                                 long timeoutMillis, long startTime) {
         TxBackupLog beginLog = txBackupLogs.get(txnId);
         if (beginLog == null) {
             throw new TransactionException("Could not find begin tx log!");
         }
-        if (beginLog.state != State.ACTIVE) {
+        if (beginLog.state != ACTIVE) {
+            // the exception message is very strange
             throw new TransactionException("TxLog already exists!");
         }
-        TxBackupLog newTxBackupLog = new TxBackupLog(records, callerUuid, State.COMMITTING, timeoutMillis, startTime);
+        TxBackupLog newTxBackupLog = new TxBackupLog(records, callerUuid, COMMITTING, timeoutMillis, startTime,
+                beginLog.allowedDuringPassiveState);
         if (!txBackupLogs.replace(txnId, beginLog, newTxBackupLog)) {
             throw new TransactionException("TxLog already exists!");
         }
     }
 
-    public void rollbackTxBackupLog(String txnId) {
-        final TxBackupLog log = txBackupLogs.get(txnId);
-        if (log != null) {
-            log.state = State.ROLLING_BACK;
-        } else {
+    public void rollbackBackupLog(String txnId) {
+        TxBackupLog log = txBackupLogs.get(txnId);
+        if (log == null) {
             logger.warning("No tx backup log is found, tx -> " + txnId);
+        } else {
+            log.state = ROLLING_BACK;
         }
     }
 
-    public void purgeTxBackupLog(String txnId) {
+    public void purgeBackupLog(String txnId) {
         txBackupLogs.remove(txnId);
     }
 
-    private static final class TxBackupLog {
-        private final List<TransactionLogRecord> records;
-        private final String callerUuid;
-        private final long timeoutMillis;
-        private final long startTime;
-        private volatile State state;
+    static final class TxBackupLog {
+        final List<TransactionLogRecord> records;
+        final String callerUuid;
+        final long timeoutMillis;
+        final long startTime;
+        volatile State state;
+        final boolean allowedDuringPassiveState;
 
         private TxBackupLog(List<TransactionLogRecord> records, String callerUuid, State state,
-                            long timeoutMillis, long startTime) {
+                            long timeoutMillis, long startTime, boolean allowedDuringPassiveState) {
             this.records = records;
             this.callerUuid = callerUuid;
             this.state = state;
             this.timeoutMillis = timeoutMillis;
             this.startTime = startTime;
+            this.allowedDuringPassiveState = allowedDuringPassiveState;
         }
 
         @Override
@@ -262,6 +334,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
                     + ", timeoutMillis=" + timeoutMillis
                     + ", startTime=" + startTime
                     + ", state=" + state
+                    + ", allowedDuringPassiveState=" + allowedDuringPassiveState
                     + '}';
         }
     }

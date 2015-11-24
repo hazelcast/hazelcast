@@ -1,6 +1,7 @@
 package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -13,6 +14,7 @@ import org.junit.runner.RunWith;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
@@ -26,18 +28,19 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
     }
 
     @Test
     public void modCount() {
         long modCount = metricsRegistry.modCount();
-        metricsRegistry.register(this, "foo", new LongProbeFunction() {
-            @Override
-            public long get(Object obj) throws Exception {
-                return 1;
-            }
-        });
+        metricsRegistry.register(this, "foo", ProbeLevel.MANDATORY,
+                new LongProbeFunction() {
+                    @Override
+                    public long get(Object obj) throws Exception {
+                        return 1;
+                    }
+                });
         assertEquals(modCount + 1, metricsRegistry.modCount());
 
         metricsRegistry.deregister(this);
@@ -78,12 +81,13 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
         expected.add("third");
 
         for (String name : expected) {
-            metricsRegistry.register(this, name, new LongProbeFunction() {
-                @Override
-                public long get(Object obj) throws Exception {
-                    return 0;
-                }
-            });
+            metricsRegistry.register(this, name, ProbeLevel.MANDATORY,
+                    new LongProbeFunction() {
+                        @Override
+                        public long get(Object obj) throws Exception {
+                            return 0;
+                        }
+                    });
         }
 
         Set<String> names = metricsRegistry.getNames();

@@ -18,16 +18,17 @@ package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -39,16 +40,15 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.PostJoinRegistrationO
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedExecutor;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -79,7 +79,7 @@ public class EventServiceImpl implements InternalEventService {
     private final ExceptionHandler deregistrationExceptionHandler;
     private final ConcurrentMap<String, EventServiceSegment> segments;
     private final StripedExecutor eventExecutor;
-    private final int eventQueueTimeoutMs;
+    private final long eventQueueTimeoutMs;
 
     @Probe(name = "threadCount")
     private final int eventThreadCount;
@@ -97,9 +97,9 @@ public class EventServiceImpl implements InternalEventService {
         this.logger = nodeEngine.getLogger(EventService.class.getName());
         final Node node = nodeEngine.getNode();
         GroupProperties groupProperties = node.getGroupProperties();
-        this.eventThreadCount = groupProperties.EVENT_THREAD_COUNT.getInteger();
-        this.eventQueueCapacity = groupProperties.EVENT_QUEUE_CAPACITY.getInteger();
-        this.eventQueueTimeoutMs = groupProperties.EVENT_QUEUE_TIMEOUT_MILLIS.getInteger();
+        this.eventThreadCount = groupProperties.getInteger(GroupProperty.EVENT_THREAD_COUNT);
+        this.eventQueueCapacity = groupProperties.getInteger(GroupProperty.EVENT_QUEUE_CAPACITY);
+        this.eventQueueTimeoutMs = groupProperties.getMillis(GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS);
         HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
         this.eventExecutor = new StripedExecutor(
                 node.getLogger(EventServiceImpl.class),
@@ -150,7 +150,7 @@ public class EventServiceImpl implements InternalEventService {
 
     @Override
     public EventRegistration registerLocalListener(String serviceName, String topic, Object listener) {
-        return registerListenerInternal(serviceName, topic, new EmptyFilter(), listener, true);
+        return registerListenerInternal(serviceName, topic, TrueEventFilter.INSTANCE, listener, true);
     }
 
     @Override
@@ -160,7 +160,7 @@ public class EventServiceImpl implements InternalEventService {
 
     @Override
     public EventRegistration registerListener(String serviceName, String topic, Object listener) {
-        return registerListenerInternal(serviceName, topic, new EmptyFilter(), listener, false);
+        return registerListenerInternal(serviceName, topic, TrueEventFilter.INSTANCE, listener, false);
     }
 
     @Override
@@ -168,8 +168,8 @@ public class EventServiceImpl implements InternalEventService {
         return registerListenerInternal(serviceName, topic, filter, listener, false);
     }
 
-    private EventRegistration registerListenerInternal(String serviceName, String topic, EventFilter filter,
-                                                       Object listener, boolean localOnly) {
+    private EventRegistration registerListenerInternal(String serviceName, String topic, EventFilter filter, Object listener,
+                                                       boolean localOnly) {
         if (listener == null) {
             throw new IllegalArgumentException("Listener required!");
         }
@@ -177,8 +177,8 @@ public class EventServiceImpl implements InternalEventService {
             throw new IllegalArgumentException("EventFilter required!");
         }
         EventServiceSegment segment = getSegment(serviceName, true);
-        Registration reg = new Registration(UUID.randomUUID().toString(), serviceName, topic, filter,
-                nodeEngine.getThisAddress(), listener, localOnly);
+        String id = UuidUtil.newUnsecureUuidString();
+        Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener, localOnly);
         if (!segment.addRegistration(topic, reg)) {
             return null;
         }
@@ -296,11 +296,12 @@ public class EventServiceImpl implements InternalEventService {
         if (!(registration instanceof Registration)) {
             throw new IllegalArgumentException();
         }
+
         if (isLocal(registration)) {
             executeLocal(serviceName, event, registration, orderKey);
         } else {
-            final Address subscriber = registration.getSubscriber();
-            sendEventPacket(subscriber, new EventPacket(registration.getId(), serviceName, event), orderKey);
+            EventEnvelope eventEnvelope = new EventEnvelope(registration.getId(), serviceName, event);
+            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey);
         }
     }
 
@@ -319,8 +320,8 @@ public class EventServiceImpl implements InternalEventService {
             if (eventData == null) {
                 eventData = serializationService.toData(event);
             }
-            EventPacket eventPacket = new EventPacket(registration.getId(), serviceName, eventData);
-            sendEventPacket(registration.getSubscriber(), eventPacket, orderKey);
+            EventEnvelope eventEnvelope = new EventEnvelope(registration.getId(), serviceName, eventData);
+            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey);
         }
     }
 
@@ -337,13 +338,13 @@ public class EventServiceImpl implements InternalEventService {
             if (isLocal(registration)) {
                 continue;
             }
-            EventPacket eventPacket = new EventPacket(registration.getId(), serviceName, eventData);
-            sendEventPacket(registration.getSubscriber(), eventPacket, orderKey);
+            EventEnvelope eventEnvelope = new EventEnvelope(registration.getId(), serviceName, eventData);
+            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey);
         }
     }
 
     private void executeLocal(String serviceName, Object event, EventRegistration registration, int orderKey) {
-        if (nodeEngine.isActive()) {
+        if (nodeEngine.isRunning()) {
             Registration reg = (Registration) registration;
             try {
                 if (reg.getListener() != null) {
@@ -363,13 +364,13 @@ public class EventServiceImpl implements InternalEventService {
         }
     }
 
-    private void sendEventPacket(Address subscriber, EventPacket eventPacket, int orderKey) {
-        final String serviceName = eventPacket.getServiceName();
+    private void sendEvent(Address subscriber, EventEnvelope eventEnvelope, int orderKey) {
+        final String serviceName = eventEnvelope.getServiceName();
         final EventServiceSegment segment = getSegment(serviceName, true);
         boolean sync = segment.incrementPublish() % EVENT_SYNC_FREQUENCY == 0;
 
         if (sync) {
-            SendEventOperation op = new SendEventOperation(eventPacket, orderKey);
+            SendEventOperation op = new SendEventOperation(eventEnvelope, orderKey);
             Future f = nodeEngine.getOperationService()
                     .createInvocationBuilder(serviceName, op, subscriber)
                     .setTryCount(SEND_RETRY_COUNT).invoke();
@@ -379,12 +380,12 @@ public class EventServiceImpl implements InternalEventService {
                 ignore(ignored);
             }
         } else {
-            Packet packet = new Packet(serializationService.toBytes(eventPacket), orderKey);
+            Packet packet = new Packet(serializationService.toBytes(eventEnvelope), orderKey);
             packet.setHeader(Packet.HEADER_EVENT);
 
             if (!nodeEngine.getNode().getConnectionManager().transmit(packet, subscriber)) {
-                if (nodeEngine.isActive()) {
-                    logFailure("IO Queue overloaded! Failed to send event packet to: %s", subscriber);
+                if (nodeEngine.isRunning()) {
+                    logFailure("Failed to send event packet to: %s , connection might not alive.", subscriber);
                 }
             }
         }
@@ -412,7 +413,7 @@ public class EventServiceImpl implements InternalEventService {
 
     @Override
     public void executeEventCallback(Runnable callback) {
-        if (nodeEngine.isActive()) {
+        if (nodeEngine.isRunning()) {
             try {
                 eventExecutor.execute(callback);
             } catch (RejectedExecutionException e) {
@@ -428,7 +429,7 @@ public class EventServiceImpl implements InternalEventService {
     @Override
     public void handle(Packet packet) {
         try {
-            eventExecutor.execute(new RemoteEventPacketProcessor(this, packet));
+            eventExecutor.execute(new RemoteEventProcessor(this, packet));
         } catch (RejectedExecutionException e) {
             rejectedCount.inc();
 

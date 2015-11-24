@@ -17,17 +17,20 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -45,7 +48,7 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
     }
 
     @Override
-    public void innerBeforeRun() {
+    public void innerBeforeRun() throws Exception {
         super.innerBeforeRun();
         final SerializationService serializationService = getNodeEngine().getSerializationService();
         final ManagedContext managedContext = serializationService.getManagedContext();
@@ -54,21 +57,20 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
 
     @Override
     public void run() {
-        final long now = getNow();
+        long now = getNow();
 
-        final Iterator<Record> iterator = recordStore.iterator(now, false);
+        Iterator<Record> iterator = recordStore.iterator(now, false);
         while (iterator.hasNext()) {
-            final Record record = iterator.next();
-            final Data dataKey = record.getKey();
-            final Object oldValue = record.getValue();
+            Record record = iterator.next();
+            Data dataKey = record.getKey();
+            Object oldValue = record.getValue();
 
-            if (!applyPredicate(dataKey, dataKey, oldValue)) {
+            if (!applyPredicate(dataKey, oldValue)) {
                 continue;
             }
 
-            final Map.Entry entry = createMapEntry(dataKey, oldValue);
-
-            final Data response = process(entry);
+            Map.Entry entry = createMapEntry(dataKey, oldValue);
+            Data response = process(entry);
 
             addToResponses(dataKey, response);
 
@@ -81,7 +83,7 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
             }
             entryAddedOrUpdated(entry, dataKey, oldValue, now);
 
-            evict(false);
+            evict();
         }
     }
 
@@ -111,22 +113,23 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
         return backupProcessor != null ? new PartitionWideEntryBackupOperation(name, backupProcessor) : null;
     }
 
-    private boolean applyPredicate(Data dataKey, Object key, Object value) {
-        if (getPredicate() == null) {
+    private boolean applyPredicate(Data key, Object value) {
+        Predicate predicate = getPredicate();
+
+        if (predicate == null || TruePredicate.INSTANCE == predicate) {
             return true;
         }
-        final SerializationService ss = getNodeEngine().getSerializationService();
-        QueryEntry queryEntry = new QueryEntry(ss, dataKey, key, value);
+
+        if (FalsePredicate.INSTANCE == predicate) {
+            return false;
+        }
+
+        QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
         return getPredicate().apply(queryEntry);
     }
 
     protected Predicate getPredicate() {
         return null;
-    }
-
-    @Override
-    public String toString() {
-        return "PartitionWideEntryOperation{}";
     }
 
     @Override

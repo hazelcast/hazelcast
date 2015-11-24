@@ -58,9 +58,6 @@ import java.util.concurrent.Future;
 public class MapReduceService
         implements ManagedService, RemoteService {
 
-    /**
-     * The service name to retrieve an instance of the MapReduceService
-     */
     public static final String SERVICE_NAME = "hz:impl:mapReduceService";
 
     private static final ILogger LOGGER = Logger.getLogger(MapReduceService.class);
@@ -187,16 +184,7 @@ public class MapReduceService
 
     public Address getKeyMember(Object key) {
         int partitionId = partitionService.getPartitionId(key);
-        Address owner;
-        while ((owner = partitionService.getPartitionOwner(partitionId)) == null) {
-            try {
-                Thread.sleep(DEFAULT_RETRY_SLEEP_MILLIS);
-            } catch (Exception ignore) {
-                // Partitions might not assigned yet so we need to retry
-                LOGGER.finest("Partitions not yet assigned, retry", ignore);
-            }
-        }
-        return owner;
+        return partitionService.getPartitionOwnerOrWait(partitionId);
     }
 
     public boolean checkAssignedMembersAvailable(Collection<Address> assignedMembers) {
@@ -225,7 +213,6 @@ public class MapReduceService
 
     public void sendNotification(Address address, MapReduceNotification notification) {
         try {
-            String name = MapReduceUtil.buildExecutorName(notification.getName());
             ProcessingOperation operation = new FireNotificationOperation(notification);
             processRequest(address, operation);
         } catch (Exception e) {

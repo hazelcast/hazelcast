@@ -27,6 +27,10 @@
             <param-value>default</param-value>
         </init-param>
         <init-param>
+            <param-name>transient-attributes</param-name>
+            <param-value>transient1,transient2,transient3</param-value>
+        </init-param>
+        <init-param>
             <param-name>sticky-session</param-name>
             <param-value>false</param-value>
         </init-param>

@@ -16,16 +16,17 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -34,17 +35,20 @@ import java.util.Set;
 /**
  * Defines a record-store.
  */
-public interface RecordStore {
+public interface RecordStore<R extends Record> {
+
+    /**
+     * Default TTL value of a record.
+     */
+    long DEFAULT_TTL = -1L;
 
     String getName();
 
     Object put(Data dataKey, Object dataValue, long ttl);
 
-    void put(Map.Entry<Data, Object> entry);
-
     Object putIfAbsent(Data dataKey, Object value, long ttl);
 
-    Record putBackup(Data key, Object value);
+    R putBackup(Data key, Object value);
 
     /**
      * @param key          the key to be processed.
@@ -53,10 +57,13 @@ public interface RecordStore {
      * @param putTransient {@code true} if putting transient entry, otherwise {@code false}
      * @return previous record if exists otherwise null.
      */
-    Record putBackup(Data key, Object value, long ttl, boolean putTransient);
+    R putBackup(Data key, Object value, long ttl, boolean putTransient);
 
-    boolean tryPut(Data dataKey, Object value, long ttl);
-
+    /**
+     * Returns {@code true} if key doesn't exist previously, otherwise returns {@code false}.
+     *
+     * @see com.hazelcast.core.IMap#set(Object, Object)
+     */
     boolean set(Data dataKey, Object value, long ttl);
 
     Object remove(Data dataKey);
@@ -94,7 +101,7 @@ public interface RecordStore {
      */
     Data readBackupData(Data key);
 
-    MapEntrySet getAll(Set<Data> keySet);
+    MapEntries getAll(Set<Data> keySet);
 
     boolean containsKey(Data dataKey);
 
@@ -141,7 +148,7 @@ public interface RecordStore {
 
     boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy);
 
-    Record getRecord(Data key);
+    R getRecord(Data key);
 
     /**
      * Puts a data key and a record value to record-store.
@@ -151,25 +158,24 @@ public interface RecordStore {
      * @param record the value for record store.
      * @see com.hazelcast.map.impl.operation.MapReplicationOperation
      */
-    void putRecord(Data key, Record record);
+    void putRecord(Data key, R record);
 
     /**
-     * Iterates over record store values.
+     * Iterates over record store entries.
      *
      * @return read only iterator for map values.
      */
     Iterator<Record> iterator();
 
     /**
-     * Iterates over record store values by respecting expiration.
+     * Iterates over record store entries by respecting expiration.
      *
      * @return read only iterator for map values.
      */
     Iterator<Record> iterator(long now, boolean backup);
 
-
     /**
-     * Iterates over record store values but first waits map store to load.
+     * Iterates over record store entries but first waits map store to load.
      * If an operation needs to wait a data source load like query operations
      * {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
      * this method can be used to return a read-only iterator.
@@ -179,13 +185,6 @@ public interface RecordStore {
      * @return read only iterator for map values.
      */
     Iterator<Record> loadAwareIterator(long now, boolean backup);
-
-    /**
-     * Returns records map.
-     *
-     * @see RecordStoreLoader
-     */
-    Map<Data, Record> getRecordMap();
 
     Set<Data> keySet();
 
@@ -217,13 +216,9 @@ public interface RecordStore {
      */
     int evictAll(boolean backup);
 
-    Collection<Data> valuesData();
-
     MapContainer getMapContainer();
 
     Set<Map.Entry<Data, Data>> entrySetData();
-
-    Map.Entry<Data, Object> getMapEntry(Data dataKey, long now);
 
     void flush();
 
@@ -261,6 +256,18 @@ public interface RecordStore {
     boolean isExpirable();
 
     /**
+     * Checks whether a record is expired or not.
+     *
+     * @param record the record from record-store.
+     * @param now    current time in millis
+     * @param backup <code>true</code> if a backup partition, otherwise <code>false</code>.
+     * @return <code>true</code> if the record is expired, <code>false</code> otherwise.
+     */
+    boolean isExpired(R record, long now, boolean backup);
+
+    void doPostEvictionOperations(Data key, Object value, boolean isExpired);
+
+    /**
      * Loads all given keys from defined map store.
      *
      * @param keys                  keys to be loaded.
@@ -281,9 +288,9 @@ public interface RecordStore {
      * @return live record or null
      * @see #get
      */
-    Record getRecordOrNull(Data key);
+    R getRecordOrNull(Data key);
 
-    void evictEntries(long now, boolean backup);
+    void evictEntries(long now);
 
     /**
      * Loads all keys and values
@@ -292,6 +299,40 @@ public interface RecordStore {
      **/
     void loadAll(boolean replaceExistingValues);
 
-    /** Performs initial loading from a MapLoader if it has not been done before  **/
+    /**
+     * Performs initial loading from a MapLoader if it has not been done before
+     **/
     void maybeDoInitialLoad();
+
+    Storage createStorage(RecordFactory<R> recordFactory, InMemoryFormat memoryFormat);
+
+    Record createRecord(Object value, long ttlMillis, long now);
+
+    Record loadRecordOrNull(Data key, boolean backup);
+
+    /**
+     * This can be used to release unused resources.
+     */
+    void dispose();
+
+    void destroy();
+
+    Storage getStorage();
+
+    boolean isEvictionEnabled();
+
+    /**
+     * Starts mapLoader
+     */
+    void startLoading();
+
+    /**
+     * Initialize the recordStore after creation
+     */
+    void init();
+
+    /**
+     * Register a callback for when key loading is complete
+     **/
+    void onKeyLoad(ExecutionCallback<Boolean> callback);
 }

@@ -36,6 +36,7 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, DataSeri
     protected volatile long expirationTime = -1;
     protected volatile long accessTime = -1;
     protected volatile int accessHit;
+    protected long tombstoneSequence;
 
     protected AbstractCacheRecord() {
     }
@@ -99,6 +100,21 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, DataSeri
     @Override
     public boolean isExpiredAt(long now) {
         return expirationTime > -1 && expirationTime <= now;
+    }
+
+    @Override
+    public boolean isTombstone() {
+        return getValue() == null;
+    }
+
+    @Override
+    public long getTombstoneSequence() {
+        return tombstoneSequence;
+    }
+
+    @Override
+    public void setTombstoneSequence(long seq) {
+        this.tombstoneSequence = seq;
     }
 
     @Override

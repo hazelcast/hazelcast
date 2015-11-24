@@ -16,6 +16,10 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.getters.MultiResult;
+
+import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -29,11 +33,78 @@ public abstract class BaseIndexStore implements IndexStore {
     protected ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     protected ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
 
-    protected void takeWriteLock() {
+    private boolean multiResultHasToDetectDuplicates;
+
+
+    abstract void newIndexInternal(Comparable newValue, QueryableEntry record);
+
+    abstract void removeIndexInternal(Comparable oldValue, Data indexKey);
+
+    @Override
+    public final void newIndex(Object newValue, QueryableEntry record) {
+        takeWriteLock();
+        try {
+            unwrapAndAddToIndex(newValue, record);
+        } finally {
+            releaseWriteLock();
+        }
+    }
+
+    private void unwrapAndAddToIndex(Object newValue, QueryableEntry record) {
+        if (newValue instanceof MultiResult) {
+            multiResultHasToDetectDuplicates = true;
+            List<Object> results = ((MultiResult) newValue).getResults();
+            for (Object o : results) {
+                Comparable sanitizedValue = sanitizeValue(o);
+                newIndexInternal(sanitizedValue, record);
+            }
+        } else {
+            Comparable sanitizedValue = sanitizeValue(newValue);
+            newIndexInternal(sanitizedValue, record);
+        }
+    }
+
+    @Override
+    public final void removeIndex(Object oldValue, Data indexKey) {
+        takeWriteLock();
+        try {
+            unwrapAndRemoveFromIndex(oldValue, indexKey);
+        } finally {
+            releaseWriteLock();
+        }
+    }
+
+    private void unwrapAndRemoveFromIndex(Object oldValue, Data indexKey) {
+        if (oldValue instanceof MultiResult) {
+            List<Object> results = ((MultiResult) oldValue).getResults();
+            for (Object o : results) {
+                Comparable sanitizedValue = sanitizeValue(o);
+                removeIndexInternal(sanitizedValue, indexKey);
+            }
+        } else {
+            Comparable sanitizedValue = sanitizeValue(oldValue);
+            removeIndexInternal(sanitizedValue, indexKey);
+        }
+    }
+
+    @Override
+    public final void updateIndex(Object oldValue, Object newValue, QueryableEntry entry) {
+        takeWriteLock();
+        try {
+            Data indexKey = entry.getKeyData();
+            unwrapAndRemoveFromIndex(oldValue, indexKey);
+            unwrapAndAddToIndex(newValue, entry);
+        } finally {
+            releaseWriteLock();
+        }
+    }
+
+
+    void takeWriteLock() {
         writeLock.lock();
     }
 
-    protected void releaseWriteLock() {
+    void releaseWriteLock() {
         writeLock.unlock();
     }
 
@@ -43,5 +114,25 @@ public abstract class BaseIndexStore implements IndexStore {
 
     protected void releaseReadLock() {
         readLock.unlock();
+    }
+
+    private Comparable sanitizeValue(Object input) {
+        if (input == null || input instanceof Comparable) {
+            Comparable value = (Comparable) input;
+            if (value == null) {
+                value = IndexImpl.NULL;
+            } else if (value.getClass().isEnum()) {
+                value = TypeConverters.ENUM_CONVERTER.convert(value);
+            }
+            return value;
+        } else {
+            throw new IllegalArgumentException("It is not allowed to used a type that is not Comparable: "
+                    + input.getClass());
+        }
+
+    }
+
+    protected MultiResultSet createMultiResultSet() {
+        return multiResultHasToDetectDuplicates ? new DuplicateDetectingMultiResult() : new FastMultiResultSet();
     }
 }

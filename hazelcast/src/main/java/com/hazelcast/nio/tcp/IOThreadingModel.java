@@ -16,17 +16,41 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
-
 /**
  * An abstract of the threading model used by the {@link TcpIpConnection}.
  *
- * The default implementation of this is the {@link NonBlockingIOThreadingModel} that relies on selectors. But also
- * different implementations can be added like spinning, thread per connection etc.
+ * The default implementation of this is the {@link com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel}
+ * that relies on selectors. But also different implementations can be added like spinning, thread per connection etc.
  *
  * Apart from providing a hook to add new functionality, it also simplifies the {@link TcpIpConnection} and
- * {@link TcpIpConnectionManager} since the IOThreadingModel provides a separation of concerns. The TcpIpConnectManager
- * is responsible for managing connections, the IOThreadingModel is responsible for providing threads to the connections.
+ * {@link TcpIpConnectionManager} since concerns are separated:
+ * separated:
+ * <ol>
+ * <li>the TcpIpConnectManager is responsible for managing connections</li>
+ * <li>the IOThreadingModel is responsible for providing threads to the connections.</li>
+ * </ol>
+ *
+ * The 2 crucial parts of the IOThreadingModel are the:
+ * <ol>
+ * <li>{@link SocketReader}: responsible for reading data from the socket(channel)</li>
+ * <li>{@link SocketWriter}: responsible for writing data to the socket(channel)</li>
+ * </ol>
+ * The {@link TcpIpConnection} is pretty dumb; it doesn't know anything about threading models; it just owns
+ * a {@link SocketReader} and {@link SocketWriter}. This keeps the TcpIpConnection very clean and flexible.
+ *
+ * The idea is that different SocketReader and SocketWriter implementations can be made. We already have specific
+ * one for non blocking (selector based) IO and for spinning io.  These SocketReader/SocketWriter instances only
+ * focus on getting data to and from the socket; they do not concern themselves about interpreting the data. This
+ * is a concern of the {@link ReadHandler} and the {@link WriteHandler} instance each SocketReader/SocketWriter
+ * has. So a SocketReader/SocketWriter-class is independent of the type of communication that runs on top of it.
+ *
+ * @see com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel
+ * @see com.hazelcast.nio.tcp.spinning.SpinningIOThreadingModel
+ * @see SocketReader
+ * @see SocketWriter
+ * @see ReadHandler
+ * @see WriteHandler
+ * @see TcpIpConnection
  */
 public interface IOThreadingModel {
 
@@ -39,20 +63,20 @@ public interface IOThreadingModel {
     boolean isBlocking();
 
     /**
-     * Creates a new WriteHandler for the given connection.
+     * Creates a new SocketWriter for the given connection.
      *
-     * @param connection the TcpIpConnection to create the WriteHandler for.
-     * @return the created WriteHandler
+     * @param connection the TcpIpConnection to create the SocketWriter for.
+     * @return the created SocketWriter
      */
-    WriteHandler newWriteHandler(TcpIpConnection connection);
+    SocketWriter newSocketWriter(TcpIpConnection connection);
 
     /**
-     * Creates a new ReadHandler for the given connection.
+     * Creates a new SocketReader for the given connection.
      *
-     * @param connection the TcpIpConnection to create the ReadHandler for.
-     * @return the created ReadHandler
+     * @param connection the TcpIpConnection to create the SocketReader for.
+     * @return the created SocketReader
      */
-    ReadHandler newReadHandler(TcpIpConnection connection);
+    SocketReader newSocketReader(TcpIpConnection connection);
 
     /**
      * Is called when a connection is added.
@@ -69,12 +93,16 @@ public interface IOThreadingModel {
     void onConnectionRemoved(TcpIpConnection connection);
 
     /**
-     * Starts the ReadWriteHandlerFactory. Is called by the {@link TcpIpConnectionManager} when it starts.
+     * Starts the IOThreadingModel. Is called by the {@link TcpIpConnectionManager} when it starts.
+     *
+     * @see TcpIpConnectionManager#start()
      */
     void start();
 
     /**
-     * Shuts down the ReadWriteHandlerFactory. Is called by the {@link TcpIpConnectionManager} when it shuts down.
+     * Shuts down the IOThreadingModel. Is called by the {@link TcpIpConnectionManager} when it shuts down.
+     *
+     * @see TcpIpConnectionManager#shutdown()
      */
     void shutdown();
 }

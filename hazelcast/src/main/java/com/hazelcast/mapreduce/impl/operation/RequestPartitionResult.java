@@ -82,7 +82,7 @@ public class RequestPartitionResult
     /**
      * This enum is used to define the basic state of an operations result
      */
-    public static enum ResultState {
+    public enum ResultState {
         /**
          * Operation was successfully executed, partitionId contains value other than -1
          */

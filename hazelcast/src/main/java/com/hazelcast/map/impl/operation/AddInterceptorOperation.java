@@ -76,8 +76,10 @@ public class AddInterceptorOperation extends AbstractOperation implements Mutati
     }
 
     @Override
-    public String toString() {
-        return "AddInterceptorOperation{}";
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", name=").append(mapName);
     }
 
     @Override

@@ -26,12 +26,12 @@ import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.SimpleMemberImpl;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -59,6 +59,7 @@ import java.util.Random;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -105,8 +106,8 @@ public class SerializationTest
     @Test
     public void test_callid_on_correct_stream_position() throws Exception {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        CancellationOperation operation = new CancellationOperation(UuidUtil.buildRandomUuidString(), true);
-        operation.setCallerUuid(UuidUtil.buildRandomUuidString());
+        CancellationOperation operation = new CancellationOperation(UuidUtil.newUnsecureUuidString(), true);
+        operation.setCallerUuid(UuidUtil.newUnsecureUuidString());
         OperationAccessor.setCallId(operation, 12345);
 
         Data data = serializationService.toData(operation);
@@ -243,10 +244,14 @@ public class SerializationTest
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
 
         String obj = String.valueOf(System.nanoTime());
-        Data data = ss.toData(obj, partitionStrategy);
+        Data dataWithPartitionHash = ss.toData(obj, partitionStrategy);
+        Data dataWithOutPartitionHash = ss.toData(obj);
 
-        assertTrue(data.hasPartitionHash());
-        assertNotEquals(data.hashCode(), data.getPartitionHash());
+        assertTrue(dataWithPartitionHash.hasPartitionHash());
+        assertNotEquals(dataWithPartitionHash.hashCode(), dataWithPartitionHash.getPartitionHash());
+
+        assertFalse(dataWithOutPartitionHash.hasPartitionHash());
+        assertEquals(dataWithOutPartitionHash.hashCode(), dataWithOutPartitionHash.getPartitionHash());
     }
 
     /**
@@ -337,7 +342,7 @@ public class SerializationTest
     
     @Test
     public void testMemberLeftException_usingMemberImpl() throws IOException, ClassNotFoundException {
-        String uuid = UuidUtil.buildRandomUuidString();
+        String uuid = UuidUtil.newUnsecureUuidString();
         String host = "127.0.0.1";
         int port = 5000;
 
@@ -348,11 +353,32 @@ public class SerializationTest
 
     @Test
     public void testMemberLeftException_usingSimpleMember() throws IOException, ClassNotFoundException {
-        String uuid = UuidUtil.buildRandomUuidString();
+        String uuid = UuidUtil.newUnsecureUuidString();
         String host = "127.0.0.1";
         int port = 5000;
 
         Member member = new SimpleMemberImpl(uuid, new InetSocketAddress(host, port));
+        testMemberLeftException(uuid, host, port, member);
+    }
+
+    @Test
+    public void testMemberLeftException_withLiteMemberImpl() throws IOException, ClassNotFoundException {
+        String uuid = UuidUtil.newUnsecureUuidString();
+        String host = "127.0.0.1";
+        int port = 5000;
+
+        Member member = new MemberImpl(new Address(host, port), false, uuid, null, null, true);
+
+        testMemberLeftException(uuid, host, port, member);
+    }
+
+    @Test
+    public void testMemberLeftException_withLiteSimpleMemberImpl() throws IOException, ClassNotFoundException {
+        String uuid = UuidUtil.newUnsecureUuidString();
+        String host = "127.0.0.1";
+        int port = 5000;
+
+        Member member = new SimpleMemberImpl(uuid, new InetSocketAddress(host, port), true);
         testMemberLeftException(uuid, host, port, member);
     }
 
@@ -373,5 +399,36 @@ public class SerializationTest
         assertEquals(uuid, member2.getUuid());
         assertEquals(host, member2.getAddress().getHost());
         assertEquals(port, member2.getAddress().getPort());
+        assertEquals(member.isLiteMember(), member2.isLiteMember());
     }
+
+    @Test
+    public void testInternallySupportedClassExtended() throws Exception {
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        TheClassThatExtendArrayList obj = new TheClassThatExtendArrayList();
+        Data data = ss.toData(obj);
+        Object obj2 = ss.toObject(data);
+
+        assertEquals(obj2.getClass(), TheClassThatExtendArrayList.class);
+
+    }
+
+    static class TheClassThatExtendArrayList extends ArrayList implements DataSerializable {
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(size());
+            for (Object item : this) {
+                out.writeObject(item);
+            }
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            int size = in.readInt();
+            for (int k = 0; k < size; k++) {
+                add(in.readObject());
+            }
+        }
+    }
+
 }

@@ -24,35 +24,24 @@ import com.hazelcast.spi.NodeEngine;
  * This is a {@link com.hazelcast.nio.serialization.Data} based {@link ReplicatedRecordStore}
  * implementation
  */
-public class DataReplicatedRecordStore
-        extends AbstractReplicatedRecordStore<Data, Data> {
+public class DataReplicatedRecordStore extends AbstractReplicatedRecordStore<Data, Data> {
 
     private final NodeEngine nodeEngine;
 
-    public DataReplicatedRecordStore(String name, NodeEngine nodeEngine,
-                                     ReplicatedMapService replicatedMapService) {
-        super(name, nodeEngine, replicatedMapService);
-        this.nodeEngine = nodeEngine;
+    public DataReplicatedRecordStore(String name, ReplicatedMapService replicatedMapService, int partitionId) {
+        super(name, replicatedMapService, partitionId);
+        this.nodeEngine = replicatedMapService.getNodeEngine();
     }
 
     @Override
-    public Object unmarshallKey(Object key) {
-        return key == null ? null : nodeEngine.toObject(key);
+    public Object unmarshall(Object object) {
+        return object == null ? null : nodeEngine.toObject(object);
     }
 
     @Override
-    public Object unmarshallValue(Object value) {
-        return value == null ? null : nodeEngine.toObject(value);
+    public Object marshall(Object object) {
+        return nodeEngine.toData(object);
     }
 
-    @Override
-    public Object marshallKey(Object key) {
-        return key == null ? null : nodeEngine.toData(key);
-    }
-
-    @Override
-    public Object marshallValue(Object value) {
-        return value == null ? null : nodeEngine.toData(value);
-    }
 
 }

@@ -23,10 +23,16 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveAllKeysCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.OperationFactory;
 
 import javax.cache.CacheException;
+import java.security.Permission;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This client request  specifically calls {@link CacheRemoveAllOperationFactory} on the server side.
@@ -53,7 +59,8 @@ public class CacheRemoveAllKeysMessageTask
     @Override
     protected OperationFactory createOperationFactory() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        return operationProvider.createRemoveAllOperationFactory(parameters.keys, parameters.completionId);
+        Set<Data> keys = new HashSet<Data>(parameters.keys);
+        return operationProvider.createRemoveAllOperationFactory(keys, parameters.completionId);
     }
 
     @Override
@@ -72,8 +79,24 @@ public class CacheRemoveAllKeysMessageTask
     }
 
     @Override
+    public Permission getRequiredPermission() {
+        return new CachePermission(parameters.name, ActionConstants.ACTION_REMOVE);
+    }
+
+    @Override
     public String getDistributedObjectName() {
         return parameters.name;
     }
 
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{parameters.keys};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "removeAll";
+    }
+
 }
+

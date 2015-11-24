@@ -35,13 +35,11 @@ import com.hazelcast.collection.impl.txnqueue.client.TxnOfferRequest;
 import com.hazelcast.collection.impl.txnqueue.client.TxnPeekRequest;
 import com.hazelcast.collection.impl.txnqueue.client.TxnPollRequest;
 import com.hazelcast.collection.impl.txnqueue.client.TxnSizeRequest;
+import com.hazelcast.internal.serialization.PortableHook;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.internal.serialization.PortableHook;
-import com.hazelcast.internal.serialization.impl.ArrayPortableFactory;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
@@ -52,9 +50,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.QUEUE_PO
  * Provides a Portable hook for the queue operations.
  */
 public class QueuePortableHook implements PortableHook {
-
     public static final int F_ID = FactoryIdHelper.getFactoryId(QUEUE_PORTABLE_FACTORY, QUEUE_PORTABLE_FACTORY_ID);
-
     public static final int OFFER = 1;
     public static final int SIZE = 2;
     public static final int REMOVE = 3;
@@ -75,135 +71,60 @@ public class QueuePortableHook implements PortableHook {
     public static final int REMOVE_LISTENER = 18;
     public static final int IS_EMPTY = 19;
 
-    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
-    @Override
     public PortableFactory createFactory() {
-
-        ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[IS_EMPTY + 1];
-
-        constructors[OFFER] = new ConstructorFunction<Integer, Portable>() {
+        return new PortableFactory() {
             @Override
-            public Portable createNew(Integer arg) {
-                return new OfferRequest();
+            public Portable create(int classId) {
+                switch (classId) {
+                    case OFFER:
+                        return new OfferRequest();
+                    case SIZE:
+                        return new SizeRequest();
+                    case REMOVE:
+                        return new RemoveRequest();
+                    case POLL:
+                        return new PollRequest();
+                    case PEEK:
+                        return new PeekRequest();
+                    case ITERATOR:
+                        return new IteratorRequest();
+                    case DRAIN:
+                        return new DrainRequest();
+                    case CONTAINS:
+                        return new ContainsRequest();
+                    case COMPARE_AND_REMOVE:
+                        return new CompareAndRemoveRequest();
+                    case CLEAR:
+                        return new ClearRequest();
+                    case ADD_ALL:
+                        return new AddAllRequest();
+                    case ADD_LISTENER:
+                        return new AddListenerRequest();
+                    case REMAINING_CAPACITY:
+                        return new RemainingCapacityRequest();
+                    case TXN_OFFER:
+                        return new TxnOfferRequest();
+                    case TXN_POLL:
+                        return new TxnPollRequest();
+                    case TXN_SIZE:
+                        return new TxnSizeRequest();
+                    case TXN_PEEK:
+                        return new TxnPeekRequest();
+                    case REMOVE_LISTENER:
+                        return new RemoveListenerRequest();
+                    case IS_EMPTY:
+                        return new IsEmptyRequest();
+                    default:
+                        return null;
+                }
             }
         };
-        constructors[SIZE] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new SizeRequest();
-            }
-        };
-        constructors[REMOVE] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new RemoveRequest();
-            }
-        };
-        constructors[POLL] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new PollRequest();
-            }
-        };
-        constructors[PEEK] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new PeekRequest();
-            }
-        };
-        constructors[ITERATOR] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new IteratorRequest();
-            }
-        };
-        constructors[DRAIN] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new DrainRequest();
-            }
-        };
-        constructors[CONTAINS] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new ContainsRequest();
-            }
-        };
-        constructors[COMPARE_AND_REMOVE] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new CompareAndRemoveRequest();
-            }
-        };
-        constructors[CLEAR] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new ClearRequest();
-            }
-        };
-        constructors[ADD_ALL] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new AddAllRequest();
-            }
-        };
-        constructors[ADD_LISTENER] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new AddListenerRequest();
-            }
-        };
-        constructors[REMAINING_CAPACITY] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new RemainingCapacityRequest();
-            }
-        };
-        constructors[TXN_OFFER] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new TxnOfferRequest();
-            }
-        };
-        constructors[TXN_POLL] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new TxnPollRequest();
-            }
-        };
-        constructors[TXN_SIZE] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new TxnSizeRequest();
-            }
-        };
-        constructors[TXN_PEEK] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new TxnPeekRequest();
-            }
-        };
-        constructors[REMOVE_LISTENER] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new RemoveListenerRequest();
-            }
-        };
-        constructors[IS_EMPTY] = new ConstructorFunction<Integer, Portable>() {
-            @Override
-            public Portable createNew(Integer arg) {
-                return new IsEmptyRequest();
-            }
-        };
-
-        return new ArrayPortableFactory(constructors);
     }
 
-    @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }

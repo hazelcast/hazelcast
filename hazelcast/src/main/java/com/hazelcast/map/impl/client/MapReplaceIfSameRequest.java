@@ -17,13 +17,14 @@
 package com.hazelcast.map.impl.client;
 
 import com.hazelcast.map.impl.MapPortableHook;
-import com.hazelcast.map.impl.operation.ReplaceIfSameOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 
 public class MapReplaceIfSameRequest extends MapPutRequest {
@@ -43,7 +44,7 @@ public class MapReplaceIfSameRequest extends MapPutRequest {
     }
 
     protected Operation prepareOperation() {
-        ReplaceIfSameOperation op = new ReplaceIfSameOperation(name, key, testValue, value);
+        MapOperation op = getOperationProvider().createReplaceIfSameOperation(name, key, testValue, value);
         op.setThreadId(threadId);
         return op;
     }

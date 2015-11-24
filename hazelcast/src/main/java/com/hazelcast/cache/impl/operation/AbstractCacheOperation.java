@@ -17,11 +17,10 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.CacheNotExistsException;
-import com.hazelcast.cache.impl.AbstractCacheService;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.ICacheRecordStore;
+import com.hazelcast.cache.impl.CacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -44,9 +43,13 @@ abstract class AbstractCacheOperation
     protected Data key;
     protected Object response;
 
-    protected transient ICacheRecordStore cache;
+    protected transient CacheRecordStore cache;
 
     protected transient CacheRecord backupRecord;
+
+    protected transient ICacheService cacheService;
+
+    protected transient CacheWanEventPublisher wanEventPublisher;
 
     protected AbstractCacheOperation() {
     }
@@ -58,14 +61,17 @@ abstract class AbstractCacheOperation
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override
     public final void beforeRun()
             throws Exception {
-        AbstractCacheService service = getService();
-        cache = service.getOrCreateRecordStore(name, getPartitionId());
+        cacheService = getService();
+        cache = (CacheRecordStore) cacheService.getOrCreateRecordStore(name, getPartitionId());
+        if (cache.isWanReplicationEnabled()) {
+            wanEventPublisher = cacheService.getCacheWanEventPublisher();
+        }
     }
 
     @Override

@@ -28,13 +28,8 @@ public class RemovePartitionLostListenerRequest
     public RemovePartitionLostListenerRequest() {
     }
 
-    public RemovePartitionLostListenerRequest(String registrationId) {
-        super(null, registrationId);
-    }
-
     @Override
-    public Object call()
-            throws Exception {
+    protected boolean deRegisterListener() {
         final InternalPartitionService service = getService();
         return service.removePartitionLostListener(registrationId);
     }
@@ -53,6 +48,7 @@ public class RemovePartitionLostListenerRequest
     public int getClassId() {
         return ClientPortableHook.REMOVE_PARTITION_LOST_LISTENER;
     }
+
     @Override
     public Permission getRequiredPermission() {
         return null;

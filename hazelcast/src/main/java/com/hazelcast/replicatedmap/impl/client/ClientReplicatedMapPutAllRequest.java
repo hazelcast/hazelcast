@@ -16,59 +16,73 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
+import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.replicatedmap.impl.operation.PutAllOperationFactory;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
+import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
 import java.security.Permission;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Client request class for {@link Map#putAll(java.util.Map)} implementation
  */
-public class ClientReplicatedMapPutAllRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapPutAllRequest extends AllPartitionsClientRequest {
 
-    private ReplicatedMapEntrySet entrySet;
+    private String name;
+    private ReplicatedMapEntries entrySet;
 
-    ClientReplicatedMapPutAllRequest() {
-        super(null);
+    public ClientReplicatedMapPutAllRequest() {
     }
 
-    public ClientReplicatedMapPutAllRequest(String mapName, ReplicatedMapEntrySet entrySet) {
-        super(mapName);
+    public ClientReplicatedMapPutAllRequest(String name, ReplicatedMapEntries entrySet) {
+        this.name = name;
         this.entrySet = entrySet;
     }
 
     @Override
-    public Object call()
-            throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        Set<Map.Entry> entries = entrySet.getEntrySet();
-        for (Map.Entry entry : entries) {
-            recordStore.put(entry.getKey(), entry.getValue());
+    protected OperationFactory createOperationFactory() {
+        return new PutAllOperationFactory(name, entrySet);
+    }
+
+    @Override
+    protected Object reduce(Map<Integer, Object> map) {
+        for (Map.Entry<Integer, Object> entry : map.entrySet()) {
+            Object result = serializationService.toObject(entry.getValue());
+            if (result instanceof Throwable) {
+                throw ExceptionUtil.rethrow((Throwable) result);
+            }
         }
         return null;
     }
 
     @Override
-    public void write(PortableWriter writer)
-            throws IOException {
-        super.write(writer);
+    public String getServiceName() {
+        return ReplicatedMapService.SERVICE_NAME;
+    }
+
+    @Override
+    public void write(PortableWriter writer) throws IOException {
+        writer.writeUTF("n", name);
         entrySet.writePortable(writer);
     }
 
     @Override
-    public void read(PortableReader reader)
-            throws IOException {
-        super.read(reader);
-        entrySet = new ReplicatedMapEntrySet();
+    public void read(PortableReader reader) throws IOException {
+        name = reader.readUTF("n");
+        entrySet = new ReplicatedMapEntries();
         entrySet.readPortable(reader);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ReplicatedMapPortableHook.F_ID;
     }
 
     @Override
@@ -77,8 +91,13 @@ public class ClientReplicatedMapPutAllRequest
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
     public Permission getRequiredPermission() {
-        return new ReplicatedMapPermission(getMapName(), ActionConstants.ACTION_PUT);
+        return new ReplicatedMapPermission(name, ActionConstants.ACTION_PUT);
     }
 
     @Override
@@ -88,9 +107,8 @@ public class ClientReplicatedMapPutAllRequest
 
     @Override
     public Object[] getParameters() {
-        final Set<Map.Entry> set = entrySet.getEntrySet();
         final HashMap map = new HashMap();
-        for (Map.Entry entry : set) {
+        for (Map.Entry entry : entrySet.getEntries()) {
             map.put(entry.getKey(), entry.getValue());
         }
         return new Object[]{map};

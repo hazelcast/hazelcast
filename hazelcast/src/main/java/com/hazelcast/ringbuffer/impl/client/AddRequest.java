@@ -21,6 +21,8 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.impl.operations.AddOperation;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.RingBufferPermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -29,18 +31,20 @@ import java.security.Permission;
 public class AddRequest extends RingbufferRequest {
 
     private Data item;
+    private OverflowPolicy overflowPolicy;
 
     public AddRequest() {
     }
 
-    public AddRequest(String name, Data item) {
+    public AddRequest(String name, Data item, OverflowPolicy overflowPolicy) {
         super(name);
         this.item = item;
+        this.overflowPolicy = overflowPolicy;
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new AddOperation(name, item, OverflowPolicy.FAIL);
+        return new AddOperation(name, item, overflowPolicy);
     }
 
     @Override
@@ -49,19 +53,36 @@ public class AddRequest extends RingbufferRequest {
     }
 
     @Override
-    public Permission getRequiredPermission() {
-        return null;
-    }
-
-    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
+        writer.writeInt("o", overflowPolicy.getId());
         writer.getRawDataOutput().writeData(item);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
+        overflowPolicy = OverflowPolicy.getById(reader.readInt("o"));
         item = reader.getRawDataInput().readData();
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new RingBufferPermission(name, ActionConstants.ACTION_PUT);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{item, overflowPolicy};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "add";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 }

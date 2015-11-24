@@ -6,22 +6,26 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.SizeEstimator;
-import com.hazelcast.map.impl.eviction.EvictionOperator;
+import com.hazelcast.map.impl.eviction.EvictionCheckerImpl;
+import com.hazelcast.map.impl.eviction.Evictor;
+import com.hazelcast.map.impl.eviction.EvictorImpl;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.MemoryInfoAccessor;
@@ -33,15 +37,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
     private static final int PARTITION_COUNT = 271;
-
 
     @Test
     public void testPerNodePolicy() {
@@ -56,6 +61,28 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testOwnerAndBackupEntryCountsAreEqualAfterEviction_whenPerNodeMaxSizePolicyIsUsed() throws Exception {
+        String mapName = randomMapName();
+        Config config = createConfig(PER_NODE, 300, mapName);
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance node1 = instanceFactory.newHazelcastInstance(config);
+        HazelcastInstance node2 = instanceFactory.newHazelcastInstance(config);
+
+        IMap map1 = node1.getMap(mapName);
+
+        for (int i = 0; i < 2222; i++) {
+            map1.put(i, i);
+        }
+
+        IMap map2 = node2.getMap(mapName);
+        LocalMapStats localMapStats1 = map1.getLocalMapStats();
+        LocalMapStats localMapStats2 = map2.getLocalMapStats();
+
+        assertEquals(localMapStats1.getOwnedEntryCount(), localMapStats2.getBackupEntryCount());
+        assertEquals(localMapStats2.getOwnedEntryCount(), localMapStats1.getBackupEntryCount());
+    }
+
+    @Test
     public void testPerPartitionPolicy() {
         final int perPartitionMaxSize = 1;
         final int nodeCount = 1;
@@ -65,7 +92,6 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         populateMaps(maps, 1000);
 
         assertPerPartitionPolicyWorks(maps, perPartitionMaxSize);
-
     }
 
     @Test
@@ -122,26 +148,6 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         assertUsedHeapPercentagePolicyTriggersEviction(maps, putCount);
     }
 
-
-    /**
-     * https://github.com/hazelcast/hazelcast/issues/5516
-     *
-     * @see com.hazelcast.map.impl.eviction.MaxSizeChecker#getApproximateMaxSize(int)
-     */
-    @Test
-    public void testUsedHeapSizePolicy_doesNotTriggerEviction_whenEntryHeapCostIsSmallerThanApproximateMaxSize() {
-        int perNodeHeapMaxSizeInMegaBytes = 1;
-        String mapName = randomMapName();
-        Config config = createConfig(MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE,
-                perNodeHeapMaxSizeInMegaBytes, mapName);
-        HazelcastInstance node = createHazelcastInstance(config);
-        IMap map = node.getMap(mapName);
-        setTestSizeEstimator(map, 100);
-        map.put(1, 1);
-
-        assertEquals(1, map.size());
-    }
-
     @Test
     public void testFreeHeapPercentagePolicy() {
         final int minFreeHeapPercentage = 60;
@@ -168,10 +174,10 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         assertUsedFreeHeapPolicyTriggersEviction(maps);
     }
 
-    private void testPerNodePolicy(int nodeCount) {
-        final int perNodeMaxSize = 100;
+    void testPerNodePolicy(int nodeCount) {
+        final int perNodeMaxSize = 300;
         final String mapName = randomMapName();
-        final Config config = createConfig(MaxSizeConfig.MaxSizePolicy.PER_NODE, perNodeMaxSize, mapName);
+        final Config config = createConfig(PER_NODE, perNodeMaxSize, mapName);
         final Collection<IMap> maps = createMaps(mapName, config, nodeCount);
         populateMaps(maps, 1000);
 
@@ -179,13 +185,13 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     }
 
 
-    private void setTestSizeEstimator(Collection<IMap> maps, long oneEntryHeapCostInMegaBytes) {
+    void setTestSizeEstimator(Collection<IMap> maps, long oneEntryHeapCostInMegaBytes) {
         for (IMap map : maps) {
             setTestSizeEstimator(map, oneEntryHeapCostInMegaBytes);
         }
     }
 
-    private void setTestSizeEstimator(IMap map, final long oneEntryHeapCostInBytes) {
+    void setTestSizeEstimator(IMap map, final long oneEntryHeapCostInBytes) {
         final MapProxyImpl mapProxy = (MapProxyImpl) map;
         final MapService mapService = (MapService) mapProxy.getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
@@ -215,7 +221,10 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
                     }
 
                     @Override
-                    public long getCost(Object record) {
+                    public long calculateSize(Object record) {
+                        if (record == null) {
+                            return 0L;
+                        }
                         return oneEntryHeapCostInBytes;
                     }
 
@@ -228,11 +237,12 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         }
     }
 
-    private void setMockRuntimeMemoryInfoAccessor(IMap map, final long totalMemoryMB, final long freeMemoryMB, final long maxMemoryMB) {
+    void setMockRuntimeMemoryInfoAccessor(IMap map, final long totalMemoryMB, final long freeMemoryMB, final long maxMemoryMB) {
         final MapProxyImpl mapProxy = (MapProxyImpl) map;
         final MapService mapService = (MapService) mapProxy.getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final EvictionOperator evictionOperator = EvictionOperator.create(new MemoryInfoAccessor() {
+        EvictionCheckerImpl evictionChecker = new EvictionCheckerImpl(mapServiceContext);
+        MemoryInfoAccessor memoryInfoAccessor = new MemoryInfoAccessor() {
             @Override
             public long getTotalMemory() {
                 return MemoryUnit.MEGABYTES.toBytes(totalMemoryMB);
@@ -247,26 +257,28 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
             public long getMaxMemory() {
                 return MemoryUnit.MEGABYTES.toBytes(maxMemoryMB);
             }
-        }, mapServiceContext);
+        };
 
-        mapServiceContext.setEvictionOperator(evictionOperator);
+        evictionChecker.setMemoryInfoAccessor(memoryInfoAccessor);
+        Evictor evictor = new EvictorImpl(evictionChecker, mapServiceContext);
+        mapServiceContext.getMapContainer(map.getName()).setEvictor(evictor);
     }
 
-    private void setMockRuntimeMemoryInfoAccessor(Collection<IMap> maps, final long totalMemory,
-                                                  final long freeMemory, final long maxMemory) {
+    void setMockRuntimeMemoryInfoAccessor(Collection<IMap> maps, final long totalMemory,
+                                          final long freeMemory, final long maxMemory) {
         for (IMap map : maps) {
             setMockRuntimeMemoryInfoAccessor(map, totalMemory, freeMemory, maxMemory);
         }
     }
 
-    public void populateMaps(Collection<IMap> maps, int putOperationCount) {
+    void populateMaps(Collection<IMap> maps, int putOperationCount) {
         final IMap<Integer, Integer> map = maps.iterator().next();
         for (int i = 0; i < putOperationCount; i++) {
             map.put(i, i);
         }
     }
 
-    private Collection<IMap> createMaps(String mapName, Config config, int nodeCount) {
+    Collection<IMap> createMaps(String mapName, Config config, int nodeCount) {
         final List<IMap> maps = new ArrayList<IMap>();
         final HazelcastInstance[] nodes = createNodes(nodeCount, config);
         for (HazelcastInstance node : nodes) {
@@ -276,29 +288,29 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         return maps;
     }
 
-    private Config createConfig(MaxSizeConfig.MaxSizePolicy maxSizePolicy, int maxSize, String mapName) {
-        Config config = new Config();
-        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, String.valueOf(PARTITION_COUNT));
-
-        MapConfig mapConfig = config.getMapConfig(mapName);
-        mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
-        mapConfig.setEvictionPercentage(25);
+    Config createConfig(MaxSizeConfig.MaxSizePolicy maxSizePolicy, int maxSize, String mapName) {
+        Config config = getConfig();
+        config.setProperty(GroupProperty.PARTITION_COUNT, String.valueOf(PARTITION_COUNT));
 
         MaxSizeConfig msc = new MaxSizeConfig();
         msc.setMaxSizePolicy(maxSizePolicy);
         msc.setSize(maxSize);
 
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
+        mapConfig.setEvictionPercentage(25);
         mapConfig.setMaxSizeConfig(msc);
         mapConfig.setMinEvictionCheckMillis(0L);
+
         return config;
     }
 
-    private HazelcastInstance[] createNodes(int nodeCount, Config config) {
+    HazelcastInstance[] createNodes(int nodeCount, Config config) {
         return createHazelcastInstanceFactory(nodeCount).newInstances(config);
     }
 
 
-    private int getSize(Collection<IMap> maps) {
+    int getSize(Collection<IMap> maps) {
         if (maps == null || maps.isEmpty()) {
             throw new IllegalArgumentException("No IMap found.");
         }
@@ -307,7 +319,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     }
 
 
-    private long getHeapCost(Collection<IMap> maps) {
+    long getHeapCost(Collection<IMap> maps) {
         if (maps == null || maps.isEmpty()) {
             throw new IllegalArgumentException("No IMap found.");
         }
@@ -319,7 +331,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     }
 
 
-    private void assertPerNodePolicyWorks(final Collection<IMap> maps, final int perNodeMaxSize, final int nodeCount) {
+    void assertPerNodePolicyWorks(final Collection<IMap> maps, final int perNodeMaxSize, final int nodeCount) {
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -335,7 +347,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     }
 
 
-    private void assertPerPartitionPolicyWorks(final Collection<IMap> maps, final int perPartitionMaxSize) {
+    void assertPerPartitionPolicyWorks(final Collection<IMap> maps, final int perPartitionMaxSize) {
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -350,7 +362,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         });
     }
 
-    private void assertUsedHeapSizePolicyWorks(final Collection<IMap> maps, final int maxSizeInMegaBytes) {
+    void assertUsedHeapSizePolicyWorks(final Collection<IMap> maps, final int maxSizeInMegaBytes) {
 
         assertTrueEventually(new AssertTask() {
 
@@ -367,7 +379,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
     }
 
-    private void assertUsedHeapPercentagePolicyTriggersEviction(final Collection<IMap> maps, final int putCount) {
+    void assertUsedHeapPercentagePolicyTriggersEviction(final Collection<IMap> maps, final int putCount) {
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -383,7 +395,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         });
     }
 
-    private void assertUsedFreeHeapPolicyTriggersEviction(final Collection<IMap> maps) {
+    void assertUsedFreeHeapPolicyTriggersEviction(final Collection<IMap> maps) {
 
         assertTrueEventually(new AssertTask() {
             @Override

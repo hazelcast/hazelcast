@@ -19,6 +19,8 @@ package com.hazelcast.ringbuffer.impl.client;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.ringbuffer.impl.operations.ReadOneOperation;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.RingBufferPermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -47,11 +49,6 @@ public class ReadOneRequest extends RingbufferRequest {
     }
 
     @Override
-    public Permission getRequiredPermission() {
-        return null;
-    }
-
-    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         writer.writeLong("s", sequence);
@@ -61,5 +58,25 @@ public class ReadOneRequest extends RingbufferRequest {
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         sequence = reader.readLong("s");
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new RingBufferPermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{sequence};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "readOne";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 }

@@ -23,10 +23,11 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 
-public class MasterConfirmationOperation extends AbstractClusterOperation {
+public class MasterConfirmationOperation extends AbstractClusterOperation implements AllowedDuringPassiveState {
 
     private long timestamp;
 
@@ -54,7 +55,7 @@ public class MasterConfirmationOperation extends AbstractClusterOperation {
             operationService.send(new MemberRemoveOperation(clusterService.getThisAddress()), endpoint);
         } else {
             if (clusterService.isMaster()) {
-                clusterService.acceptMasterConfirmation(member, timestamp);
+                clusterService.getClusterHeartbeatManager().acceptMasterConfirmation(member, timestamp);
             } else {
                 logger.warning(endpoint + " has sent MasterConfirmation, but this node is not master!");
             }

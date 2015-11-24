@@ -103,12 +103,6 @@ public class ManagementCenterConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("ManagementCenterConfig");
-        sb.append("{enabled=").append(enabled);
-        sb.append(", url='").append(url).append('\'');
-        sb.append(", updateInterval=").append(updateInterval);
-        sb.append('}');
-        return sb.toString();
+        return "ManagementCenterConfig{enabled=" + enabled + ", url='" + url + "', updateInterval=" + updateInterval + '}';
     }
 }

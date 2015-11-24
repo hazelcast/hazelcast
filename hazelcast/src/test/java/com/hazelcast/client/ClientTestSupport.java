@@ -77,7 +77,7 @@ public abstract class ClientTestSupport extends HazelcastTestSupport {
     }
 
     public static SimpleClient newClient(Node node) throws IOException {
-        if (node.isActive()) {
+        if (node.nodeEngine.isRunning()) {
             if (TestEnvironment.isMockNetwork()) {
                 ClientEngineImpl engine = node.clientEngine;
                 return new MockSimpleClient(engine, node.getSerializationService());

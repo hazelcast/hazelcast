@@ -71,6 +71,7 @@ public class CacheConfig<K, V>
     private WanReplicationRef wanReplicationRef;
     private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
     private String quorumName;
+    private String mergePolicy = CacheSimpleConfig.DEFAULT_CACHE_MERGE_POLICY;
 
     public CacheConfig() {
     }
@@ -89,6 +90,7 @@ public class CacheConfig<K, V>
             this.asyncBackupCount = config.asyncBackupCount;
             this.backupCount = config.backupCount;
             this.inMemoryFormat = config.inMemoryFormat;
+            this.hotRestartEnabled = config.hotRestartEnabled;
             // Eviction config cannot be null
             if (config.evictionConfig != null) {
                 this.evictionConfig = new CacheEvictionConfig(config.evictionConfig);
@@ -101,6 +103,7 @@ public class CacheConfig<K, V>
                         config.partitionLostListenerConfigs);
             }
             this.quorumName = config.quorumName;
+            this.mergePolicy = config.mergePolicy;
         }
     }
 
@@ -152,8 +155,9 @@ public class CacheConfig<K, V>
         for (CachePartitionLostListenerConfig listenerConfig : simpleConfig.getPartitionLostListenerConfigs()) {
             getPartitionLostListenerConfigs().add(listenerConfig);
         }
-
         this.quorumName = simpleConfig.getQuorumName();
+        this.mergePolicy = simpleConfig.getMergePolicy();
+        this.hotRestartEnabled = simpleConfig.isHotRestartEnabled();
     }
 
     private void initExpiryPolicyFactoryConfig(CacheSimpleConfig simpleConfig) throws Exception {
@@ -437,7 +441,7 @@ public class CacheConfig<K, V>
     /**
      * Gets the name of the associated quorum if any.
      *
-     * @return
+     * @return the name of the associated quorum if any
      */
     public String getQuorumName() {
         return quorumName;
@@ -453,6 +457,28 @@ public class CacheConfig<K, V>
     public CacheConfig setQuorumName(String quorumName) {
         this.quorumName = quorumName;
         return this;
+    }
+
+    /**
+     * Gets the class name of {@link com.hazelcast.cache.CacheMergePolicy}
+     * implementation of this cache config.
+     *
+     * @return the class name of {@link com.hazelcast.cache.CacheMergePolicy}
+     *         implementation of this cache config
+     */
+    public String getMergePolicy() {
+        return mergePolicy;
+    }
+
+    /**
+     * Sets the class name of {@link com.hazelcast.cache.CacheMergePolicy}
+     * implementation to this cache config.
+     *
+     * @param mergePolicy the class name of {@link com.hazelcast.cache.CacheMergePolicy}
+     *                    implementation to be set to this cache config
+     */
+    public void setMergePolicy(String mergePolicy) {
+        this.mergePolicy = mergePolicy;
     }
 
     @Override
@@ -480,6 +506,7 @@ public class CacheConfig<K, V>
         out.writeBoolean(isStoreByValue);
         out.writeBoolean(isManagementEnabled);
         out.writeBoolean(isStatisticsEnabled);
+        out.writeBoolean(hotRestartEnabled);
 
         out.writeUTF(quorumName);
 
@@ -491,6 +518,8 @@ public class CacheConfig<K, V>
                 out.writeObject(cc);
             }
         }
+
+        out.writeUTF(mergePolicy);
     }
 
     @Override
@@ -520,6 +549,7 @@ public class CacheConfig<K, V>
         isStoreByValue = in.readBoolean();
         isManagementEnabled = in.readBoolean();
         isStatisticsEnabled = in.readBoolean();
+        hotRestartEnabled = in.readBoolean();
 
         quorumName = in.readUTF();
 
@@ -531,6 +561,8 @@ public class CacheConfig<K, V>
                 listenerConfigurations.add((CacheEntryListenerConfiguration<K, V>) in.readObject());
             }
         }
+
+        mergePolicy = in.readUTF();
     }
 
     @Override
@@ -539,7 +571,6 @@ public class CacheConfig<K, V>
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (managerPrefix != null ? managerPrefix.hashCode() : 0);
         result = 31 * result + (uriString != null ? uriString.hashCode() : 0);
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
         return result;
     }
 
@@ -564,9 +595,6 @@ public class CacheConfig<K, V>
         if (uriString != null ? !uriString.equals(that.uriString) : that.uriString != null) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
-            return false;
-        }
 
         return super.equals(o);
     }
@@ -578,6 +606,8 @@ public class CacheConfig<K, V>
                 + ", managerPrefix='" + managerPrefix + '\''
                 + ", inMemoryFormat=" + inMemoryFormat
                 + ", backupCount=" + backupCount
+                + ", hotRestart=" + isHotRestartEnabled()
                 + '}';
     }
+
 }

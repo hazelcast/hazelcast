@@ -25,7 +25,7 @@ public class LoggerTest {
     private static final String LOGGING_TYPE_LOG4J2 = "log4j2";
 
     private static Field LOGGER_FACTORY_FIELD;
-    private static String actualLoggingTypePropertyValue;
+    private static String backupLoggingTypeProperty;
 
     @BeforeClass
     public static void beforeClass() {
@@ -33,20 +33,15 @@ public class LoggerTest {
             LOGGER_FACTORY_FIELD = Logger.class.getDeclaredField("loggerFactory");
             LOGGER_FACTORY_FIELD.setAccessible(true);
         } catch (NoSuchFieldException e) {
-            throw
-                    new IllegalStateException(
-                            "Couldn't retrieve \"loggerFactory\" field from "
-                                    + Logger.class.getName() + " class !", e);
+            throw new IllegalStateException(
+                    "Couldn't retrieve \"loggerFactory\" field from " + Logger.class.getName() + " class !", e);
         }
-
-        // Store actual logging type property value to set this current value after all tests
-        actualLoggingTypePropertyValue = System.getProperty(LOGGING_TYPE_PROPERTY_NAME);
+        backupLoggingTypeProperty = System.getProperty(LOGGING_TYPE_PROPERTY_NAME);
     }
 
     @AfterClass
     public static void afterClass() {
-        // Back to the old (actual) value of logging type property after all tests
-        System.setProperty(LOGGING_TYPE_PROPERTY_NAME, actualLoggingTypePropertyValue);
+        System.setProperty(LOGGING_TYPE_PROPERTY_NAME, backupLoggingTypeProperty);
     }
 
     @Before
@@ -55,10 +50,8 @@ public class LoggerTest {
             // Reset logger factory field
             LOGGER_FACTORY_FIELD.set(null, null);
         } catch (IllegalAccessException e) {
-            throw
-                new IllegalStateException(
-                        "Couldn't clear \"loggerFactory\" field from "
-                            + Logger.class.getName() + " class !", e);
+            throw new IllegalStateException(
+                    "Couldn't clear \"loggerFactory\" field from " + Logger.class.getName() + " class !", e);
         }
     }
 

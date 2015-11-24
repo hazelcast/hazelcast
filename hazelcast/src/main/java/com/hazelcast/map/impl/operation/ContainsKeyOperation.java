@@ -63,9 +63,4 @@ public class ContainsKeyOperation extends KeyBasedMapOperation implements Readon
     public void onWaitExpire() {
         sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
-
-    @Override
-    public String toString() {
-        return "ContainsKeyOperation{}";
-    }
 }

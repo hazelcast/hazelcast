@@ -20,17 +20,16 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingReadHandler;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingWriteHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketReader;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketWriter;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.counters.SwCounter;
 
-import static com.hazelcast.instance.GroupProperties.PROP_IO_BALANCER_INTERVAL_SECONDS;
-import static com.hazelcast.instance.GroupProperties.PROP_IO_THREAD_COUNT;
+import static com.hazelcast.instance.GroupProperty.IO_BALANCER_INTERVAL_SECONDS;
+import static com.hazelcast.instance.GroupProperty.IO_THREAD_COUNT;
 import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 
@@ -41,14 +40,14 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
  * We have measured significant fluctuations of performance when the threads are not utilized equally.
  *
  * <code>com.hazelcast.nio.tcp.iobalancer.HandlerBalancer</code> tries to detect such situations and fix
- * them by moving {@link NonBlockingReadHandler} and {@link NonBlockingWriteHandler} between
+ * them by moving {@link NonBlockingSocketReader} and {@link NonBlockingSocketWriter} between
  * threads.
  *
  * It measures number of events serviced by each handler in a given interval and if imbalance is detected then it
  * schedules handler migration to fix the situation. The exact migration strategy can be customized via
  * {@link com.hazelcast.nio.tcp.nonblocking.iobalancer.MigrationStrategy}.
  *
- * Measuring interval can be customized via {@link com.hazelcast.instance.GroupProperties#IO_BALANCER_INTERVAL_SECONDS}
+ * Measuring interval can be customized via {@link com.hazelcast.instance.GroupProperty#IO_BALANCER_INTERVAL_SECONDS}
  *
  * It doesn't leverage {@link com.hazelcast.nio.ConnectionListener} capability
  * provided by {@link com.hazelcast.nio.ConnectionManager} to observe connections as it has to be notified
@@ -93,41 +92,38 @@ public class IOBalancer {
         this.enabled = isEnabled(inputThreads, outputThreads);
     }
 
-    public void connectionAdded(Connection connection) {
-        if (!(connection instanceof TcpIpConnection)) {
-            return;
-        }
-
-        TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
-        NonBlockingReadHandler readHandler = (NonBlockingReadHandler) tcpIpConnection.getReadHandler();
-        NonBlockingWriteHandler writeHandler = (NonBlockingWriteHandler) tcpIpConnection.getWriteHandler();
-
-        if (logger.isFinestEnabled()) {
-            logger.finest("Connection " + connection + " uses read handler "
-                    + readHandler + " and write handler " + writeHandler);
-        }
-
-        inLoadTracker.addHandler(readHandler);
-        outLoadTracker.addHandler(writeHandler);
+    // just for testing
+    LoadTracker getInLoadTracker() {
+        return inLoadTracker;
     }
 
-    public void connectionRemoved(Connection connection) {
-        if (!(connection instanceof TcpIpConnection)) {
-            return;
+    // just for testing
+    LoadTracker getOutLoadTracker() {
+        return outLoadTracker;
+    }
+
+    public void connectionAdded(TcpIpConnection connection) {
+        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
+        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("Added handlers for: " + connection);
         }
 
-        TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
-        NonBlockingReadHandler readHandler = (NonBlockingReadHandler) tcpIpConnection.getReadHandler();
-        if (logger.isFinestEnabled()) {
-            logger.finest("Removing read handler " + readHandler);
-        }
-        inLoadTracker.removeHandler(readHandler);
+        inLoadTracker.addHandler(socketReader);
+        outLoadTracker.addHandler(socketWriter);
+    }
 
-        NonBlockingWriteHandler writeHandler = (NonBlockingWriteHandler) tcpIpConnection.getWriteHandler();
+    public void connectionRemoved(TcpIpConnection connection) {
+        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
+        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
+
         if (logger.isFinestEnabled()) {
-            logger.finest("Removing write handler " + readHandler);
+            logger.finest("Removing handlers from: " + connection);
         }
-        outLoadTracker.removeHandler(writeHandler);
+
+        inLoadTracker.removeHandler(socketReader);
+        outLoadTracker.removeHandler(socketWriter);
     }
 
     public void start() {
@@ -178,15 +174,14 @@ public class IOBalancer {
 
     private boolean isEnabled(NonBlockingIOThread[] inputThreads, NonBlockingIOThread[] outputThreads) {
         if (balancerIntervalSeconds <= 0) {
-            logger.warning("I/O Balancer is disabled as the '"
-                    + PROP_IO_BALANCER_INTERVAL_SECONDS + "' property is set to "
+            logger.warning("I/O Balancer is disabled as the '" + IO_BALANCER_INTERVAL_SECONDS + "' property is set to "
                     + balancerIntervalSeconds + ". Set the property to a value larger than 0 to enable the I/O Balancer.");
             return false;
         }
 
         if (inputThreads.length == 1 && outputThreads.length == 1) {
             logger.finest("I/O Balancer is disabled as there is only a single a pair of I/O threads. Use the '"
-                    + PROP_IO_THREAD_COUNT + "' property to increase number of I/O Threads.");
+                    + IO_THREAD_COUNT + "' property to increase number of I/O Threads.");
             return false;
         }
 

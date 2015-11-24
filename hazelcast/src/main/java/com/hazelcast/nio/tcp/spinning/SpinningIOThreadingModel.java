@@ -22,9 +22,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.IOThreadingModel;
-import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.nio.tcp.SocketWriter;
 
 /**
  * A {@link IOThreadingModel} that uses (busy) spinning on the SocketChannels to see if there is something
@@ -36,8 +36,8 @@ import com.hazelcast.nio.tcp.WriteHandler;
  * <li>1 thread spinning on all SocketChannels for writing</li>
  * </ol>
  * In the future we need to play with this a lot more. 1 thread should be able to saturate a 40GbE connection, but that
- * currently doesn't work for us. So I guess our IO threads are doing too much stuff not relevant like writing the Packets
- * to bytebuffers or converting the bytebuffers to Packets.
+ * currently doesn't work for us. So I guess our IO threads are doing too much stuff not relevant like writing the Frames
+ * to bytebuffers or converting the bytebuffers to Frames.
  *
  * This is an experimental feature and disabled by default.
  */
@@ -67,15 +67,15 @@ public class SpinningIOThreadingModel implements IOThreadingModel {
     }
 
     @Override
-    public WriteHandler newWriteHandler(TcpIpConnection connection) {
-        ILogger logger = loggingService.getLogger(SpinningWriteHandler.class);
-        return new SpinningWriteHandler(connection, metricsRegistry, logger);
+    public SocketWriter newSocketWriter(TcpIpConnection connection) {
+        ILogger logger = loggingService.getLogger(SpinningSocketWriter.class);
+        return new SpinningSocketWriter(connection, metricsRegistry, logger);
     }
 
     @Override
-    public ReadHandler newReadHandler(TcpIpConnection connection) {
-        ILogger logger = loggingService.getLogger(SpinningReadHandler.class);
-        return new SpinningReadHandler(connection, metricsRegistry, logger);
+    public SocketReader newSocketReader(TcpIpConnection connection) {
+        ILogger logger = loggingService.getLogger(SpinningSocketReader.class);
+        return new SpinningSocketReader(connection, metricsRegistry, logger);
     }
 
     @Override

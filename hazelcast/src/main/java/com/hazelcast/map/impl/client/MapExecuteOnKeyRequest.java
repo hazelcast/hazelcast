@@ -16,12 +16,11 @@
 
 package com.hazelcast.map.impl.client;
 
-import com.hazelcast.client.impl.client.KeyBasedClientRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.EntryOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,12 +30,12 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 import java.security.Permission;
 
-public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
+public class MapExecuteOnKeyRequest extends MapKeyBasedClientRequest implements Portable, SecureRequest {
 
-    private String name;
     private Data key;
     private EntryProcessor processor;
     private boolean submitToKey;
@@ -46,7 +45,7 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
     }
 
     public MapExecuteOnKeyRequest(String name, EntryProcessor processor, Data key, long threadId) {
-        this.name = name;
+        super(name);
         this.processor = processor;
         this.key = key;
         this.threadId = threadId;
@@ -59,7 +58,7 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
 
     @Override
     protected Operation prepareOperation() {
-        EntryOperation op = new EntryOperation(name, key, processor);
+        MapOperation op = getOperationProvider().createEntryOperation(name, key, processor);
         op.setThreadId(threadId);
         return op;
     }
@@ -118,6 +117,6 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
 
     @Override
     public Object[] getParameters() {
-        return new Object[] {key, processor};
+        return new Object[]{key, processor};
     }
 }

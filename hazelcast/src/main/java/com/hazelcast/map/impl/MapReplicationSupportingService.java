@@ -17,11 +17,12 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.map.impl.operation.MergeOperation;
-import com.hazelcast.map.impl.operation.WanOriginatedDeleteOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.wan.MapReplicationRemove;
 import com.hazelcast.map.impl.wan.MapReplicationUpdate;
+import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.util.ExceptionUtil;
@@ -36,7 +37,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
 
-    public MapReplicationSupportingService(MapServiceContext mapServiceContext) {
+    MapReplicationSupportingService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
     }
@@ -52,8 +53,11 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
     }
 
     private void handleRemove(MapReplicationRemove replicationRemove) {
-         WanOriginatedDeleteOperation operation = new WanOriginatedDeleteOperation(replicationRemove.getMapName(),
-                replicationRemove.getKey());
+        String mapName = replicationRemove.getMapName();
+        MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
+        MapOperation operation = operationProvider.createRemoveOperation(replicationRemove.getMapName(),
+                replicationRemove.getKey(), true);
+
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
             Future f = nodeEngine.getOperationService()
@@ -69,8 +73,9 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
         MapMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
         String mapName = replicationUpdate.getMapName();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        MergeOperation operation = new MergeOperation(mapName, mapServiceContext.toData(entryView.getKey(),
-                mapContainer.getPartitioningStrategy()), entryView, mergePolicy);
+        MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
+        Data dataKey = mapServiceContext.toData(entryView.getKey(), mapContainer.getPartitioningStrategy());
+        MapOperation operation = operationProvider.createMergeOperation(mapName, dataKey, entryView, mergePolicy, true);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(entryView.getKey());
             Future f = nodeEngine.getOperationService()

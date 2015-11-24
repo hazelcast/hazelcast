@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -80,7 +81,7 @@ public class ConfigXmlGenerator {
                 .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
-                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.5.xsd\">");
+                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.6.xsd\">");
         xml.append("<group>");
         xml.append("<name>").append(config.getGroupConfig().getName()).append("</name>");
         xml.append("<password>").append("****").append("</password>");
@@ -124,6 +125,10 @@ public class ConfigXmlGenerator {
 
         reliableTopicXmlGenerator(xml, config);
 
+        liteMemberXmlGenerator(xml, config);
+
+        hotRestartXmlGenerator(xml, config);
+
         xml.append("</hazelcast>");
 
         return format(xml.toString(), INDENT);
@@ -150,7 +155,7 @@ public class ConfigXmlGenerator {
                 }
                 xml.append("</entry-listeners>");
             }
-                xml.append("</replicatedmap>");
+            xml.append("</replicatedmap>");
         }
     }
 
@@ -384,6 +389,8 @@ public class ConfigXmlGenerator {
                     .append("</merge-policy>");
             xml.append("<read-backup-data>").append(m.isReadBackupData())
                     .append("</read-backup-data>");
+            xml.append("<hot-restart-enabled>").append(m.isHotRestartEnabled())
+                    .append("</hot-restart-enabled>");
             xml.append("<statistics-enabled>").append(m.isStatisticsEnabled())
                     .append("</statistics-enabled>");
 
@@ -392,6 +399,8 @@ public class ConfigXmlGenerator {
             wanReplicationConfigXmlGenerator(xml, m.getWanReplicationRef());
 
             mapIndexConfigXmlGenerator(xml, m);
+
+            mapAttributeConfigXmlGenerator(xml, m);
 
             mapEntryListenerConfigXmlGenerator(xml, m);
 
@@ -411,39 +420,18 @@ public class ConfigXmlGenerator {
             xml.append("<management-enabled>").append(c.isManagementEnabled()).append("</management-enabled>");
             xml.append("<backup-count>").append(c.getBackupCount()).append("</backup-count>");
             xml.append("<async-backup-count>").append(c.getAsyncBackupCount()).append("</async-backup-count>");
+            xml.append("<hot-restart-enabled>").append(c.isHotRestartEnabled()) .append("</hot-restart-enabled>");
             xml.append("<read-through>").append(c.isReadThrough()).append("</read-through>");
             xml.append("<write-through>").append(c.isWriteThrough()).append("</write-through>");
             xml.append("<cache-loader-factory class-name=\"").append(c.getCacheLoaderFactory()).append("\"/>");
             xml.append("<cache-writer-factory class-name=\"").append(c.getCacheWriterFactory()).append("\"/>");
             ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig = c.getExpiryPolicyFactoryConfig();
-            if (expiryPolicyFactoryConfig != null) {
-                if (StringUtil.isNullOrEmpty(expiryPolicyFactoryConfig.getClassName())) {
-                    xml.append("<expiry-policy-factory class-name=\"")
-                            .append(expiryPolicyFactoryConfig.getClassName())
-                            .append("\"/>");
-                } else {
-                    TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig =
-                            expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
-                    if (timedExpiryPolicyFactoryConfig != null
-                            && timedExpiryPolicyFactoryConfig.getExpiryPolicyType() != null
-                            && timedExpiryPolicyFactoryConfig.getDurationConfig() != null) {
-                        ExpiryPolicyType expiryPolicyType = timedExpiryPolicyFactoryConfig.getExpiryPolicyType();
-                        DurationConfig durationConfig = timedExpiryPolicyFactoryConfig.getDurationConfig();
-                        xml.append("<expiry-policy-factory>");
-                        xml.append("<timed-expiry-policy-factory")
-                                .append(" expiry-policy-type=\"").append(expiryPolicyType.name()).append("\"/>")
-                                .append(" duration-amount=\"").append(durationConfig.getDurationAmount()).append("\"/>")
-                                .append(" time-unit=\"").append(durationConfig.getTimeUnit().name()).append("\"/>");
-                        xml.append("</expiry-policy-factory>");
-                    }
-                }
-            }
+            cacheExpiryPolicyFactoryConfigXmlGenerator(xml, expiryPolicyFactoryConfig);
             xml.append("<cache-entry-listeners>");
             for (CacheSimpleEntryListenerConfig el : c.getCacheEntryListeners()) {
                 xml.append("<cache-entry-listener")
                         .append(" old-value-required=\"").append(el.isOldValueRequired()).append("\"")
-                        .append(" synchronous=\"").append(el.isSynchronous()).append("\"")
-                        .append(">");
+                        .append(" synchronous=\"").append(el.isSynchronous()).append("\"").append(">");
                 xml.append("<cache-entry-listener-factory class-name=\"")
                         .append(el.getCacheEntryListenerFactory()).append("\"/>");
                 xml.append("<cache-entry-event-filter-factory class-name=\"")
@@ -451,19 +439,41 @@ public class ConfigXmlGenerator {
                 xml.append("</cache-entry-listener>");
             }
             xml.append("</cache-entry-listeners>");
-
             wanReplicationConfigXmlGenerator(xml, c.getWanReplicationRef());
-
-            cachePartitionLostListenerConfigXmlGenerator(xml,
-                    c.getPartitionLostListenerConfigs());
-
+            cachePartitionLostListenerConfigXmlGenerator(xml, c.getPartitionLostListenerConfigs());
             evictionConfigXmlGenerator(xml, c.getEvictionConfig());
-
             if (c.getQuorumName() != null) {
                 xml.append("<quorum-ref>").append(c.getQuorumName()).append("</quorum-ref>");
             }
-
+            if (c.getMergePolicy() != null) {
+                xml.append("<merge-policy>").append(c.getMergePolicy()).append("</merge-policy>");
+            }
             xml.append("</cache>");
+        }
+    }
+
+    private void cacheExpiryPolicyFactoryConfigXmlGenerator(StringBuilder xml,
+            ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig) {
+        if (expiryPolicyFactoryConfig != null) {
+            if (StringUtil.isNullOrEmpty(expiryPolicyFactoryConfig.getClassName())) {
+                xml.append("<expiry-policy-factory class-name=\"")
+                        .append(expiryPolicyFactoryConfig.getClassName()).append("\"/>");
+            } else {
+                TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig =
+                        expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
+                if (timedExpiryPolicyFactoryConfig != null
+                        && timedExpiryPolicyFactoryConfig.getExpiryPolicyType() != null
+                        && timedExpiryPolicyFactoryConfig.getDurationConfig() != null) {
+                    ExpiryPolicyType expiryPolicyType = timedExpiryPolicyFactoryConfig.getExpiryPolicyType();
+                    DurationConfig durationConfig = timedExpiryPolicyFactoryConfig.getDurationConfig();
+                    xml.append("<expiry-policy-factory>");
+                    xml.append("<timed-expiry-policy-factory")
+                            .append(" expiry-policy-type=\"").append(expiryPolicyType.name()).append("\"/>")
+                            .append(" duration-amount=\"").append(durationConfig.getDurationAmount()).append("\"/>")
+                            .append(" time-unit=\"").append(durationConfig.getTimeUnit().name()).append("\"/>");
+                    xml.append("</expiry-policy-factory>");
+                }
+            }
         }
     }
 
@@ -534,6 +544,18 @@ public class ConfigXmlGenerator {
                 xml.append("</index>");
             }
             xml.append("</indexes>");
+        }
+    }
+
+    private void mapAttributeConfigXmlGenerator(StringBuilder xml, MapConfig m) {
+        if (!m.getMapAttributeConfigs().isEmpty()) {
+            xml.append("<attributes>");
+            for (MapAttributeConfig attributeCfg : m.getMapAttributeConfigs()) {
+                xml.append("<attribute extractor=\"").append(attributeCfg.getExtractor()).append("\">");
+                xml.append(attributeCfg.getName());
+                xml.append("</attribute>");
+            }
+            xml.append("</attributes>");
         }
     }
 
@@ -686,13 +708,35 @@ public class ConfigXmlGenerator {
         }
     }
 
+    private void hotRestartXmlGenerator(StringBuilder xml, Config config) {
+        HotRestartConfig hotRestartConfig = config.getHotRestartConfig();
+        if (hotRestartConfig == null) {
+            xml.append("<hot-restart enabled=\"false\" />");
+            return;
+        }
+        xml.append("<hot-restart enabled=\"").append(hotRestartConfig.isEnabled()).append("\">");
+        xml.append("<home-dir>").append(hotRestartConfig.getHomeDir().getAbsolutePath()).append("</home-dir>");
+        xml.append("<validation-timeout-seconds>")
+                .append(hotRestartConfig.getValidationTimeoutSeconds())
+                .append("</validation-timeout-seconds>");
+        xml.append("<data-load-timeout-seconds>")
+                .append(hotRestartConfig.getDataLoadTimeoutSeconds())
+                .append("</data-load-timeout-seconds>");
+        xml.append("</hot-restart>");
+    }
+
+    private void liteMemberXmlGenerator(StringBuilder xml, Config config) {
+        xml.append("<lite-member enabled=\"").append(config.isLiteMember()).append("\"/>");
+    }
+
     private String format(final String input, int indent) {
         if (!formatted) {
             return input;
         }
+        StreamResult xmlOutput = null;
         try {
             final Source xmlInput = new StreamSource(new StringReader(input));
-            final StreamResult xmlOutput = new StreamResult(new StringWriter());
+            xmlOutput = new StreamResult(new StringWriter());
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             /* Older versions of Xalan still use this method of setting indent values.
             * Attempt to make this work but don't completely fail if it's a problem.
@@ -719,10 +763,15 @@ public class ConfigXmlGenerator {
                 }
             }
             transformer.transform(xmlInput, xmlOutput);
-            return xmlOutput.getWriter().toString();
+            String response = xmlOutput.getWriter().toString();
+            return response;
         } catch (Exception e) {
             LOGGER.warning(e);
             return input;
+        } finally {
+            if (xmlOutput != null) {
+                closeResource(xmlOutput.getWriter());
+            }
         }
     }
 

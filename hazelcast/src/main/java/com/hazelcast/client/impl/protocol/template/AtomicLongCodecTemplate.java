@@ -22,10 +22,12 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.ATOMIC_LONG_TEMPLATE_ID,
-        name = "AtomicLong", ns = "Hazelcast.Client.Protocol.AtomicLong")
+        name = "AtomicLong", ns = "Hazelcast.Client.Protocol.Codec")
+
 public interface AtomicLongCodecTemplate {
 
     /**
+     * Applies a function on the value, the actual stored value will not change.
      *
      * @param name The name of this IAtomicLong instance.
      * @param function The function applied to the value, the value is not changed.
@@ -35,6 +37,7 @@ public interface AtomicLongCodecTemplate {
     Object apply(String name, Data function);
 
     /**
+     * Alters the currently stored value by applying a function on it.
      *
      * @param name The name of this IAtomicLong instance.
      * @param function The function applied to the currently stored value.
@@ -43,6 +46,7 @@ public interface AtomicLongCodecTemplate {
     void alter(String name, Data function);
 
     /**
+     * Alters the currently stored value by applying a function on it and gets the result.
      *
      * @param name The name of this IAtomicLong instance.
      * @param function The function applied to the currently stored value.
@@ -52,6 +56,7 @@ public interface AtomicLongCodecTemplate {
     Object alterAndGet(String name, Data function);
 
     /**
+     * Alters the currently stored value by applying a function on it on and gets the old value.
      *
      * @param name The name of this IAtomicLong instance.
      * @param function The function applied to the currently stored value.
@@ -61,6 +66,7 @@ public interface AtomicLongCodecTemplate {
     Object getAndAlter(String name, Data function);
 
     /**
+     * Atomically adds the given value to the current value.
      *
      * @param name The name of this IAtomicLong instance.
      * @param delta the value to add to the current value
@@ -70,6 +76,7 @@ public interface AtomicLongCodecTemplate {
     Object addAndGet(String name, long delta);
 
     /**
+     * Atomically sets the value to the given updated value only if the current value the expected value.
      *
      * @param name The name of this IAtomicLong instance.
      * @param expected the expected value
@@ -81,6 +88,7 @@ public interface AtomicLongCodecTemplate {
     Object compareAndSet(String name, long expected, long updated);
 
     /**
+     * Atomically decrements the current value by one.
      *
      * @param name The name of this IAtomicLong instance.
      * @return the updated value, the current value decremented by one
@@ -89,6 +97,7 @@ public interface AtomicLongCodecTemplate {
     Object decrementAndGet(String name);
 
     /**
+     * Gets the current value.
      *
      * @param name The name of this IAtomicLong instance.
      * @return the current value
@@ -97,6 +106,7 @@ public interface AtomicLongCodecTemplate {
     Object get(String name);
 
     /**
+     * Atomically adds the given value to the current value.
      *
      * @param name The name of this IAtomicLong instance.
      * @param delta the value to add to the current value
@@ -106,6 +116,7 @@ public interface AtomicLongCodecTemplate {
     Object getAndAdd(String name, long delta);
 
     /**
+     * Atomically sets the given value and returns the old value.
      *
      * @param name The name of this IAtomicLong instance.
      * @param newValue the new value
@@ -115,6 +126,7 @@ public interface AtomicLongCodecTemplate {
     Object getAndSet(String name, long newValue);
 
     /**
+     * Atomically increments the current value by one.
      *
      * @param name The name of this IAtomicLong instance.
      * @return The updated value, the current value incremented by one
@@ -123,6 +135,7 @@ public interface AtomicLongCodecTemplate {
     Object incrementAndGet(String name);
 
     /**
+     * Atomically increments the current value by one.
      *
      * @param name The name of this IAtomicLong instance.
      * @return the old value
@@ -131,6 +144,7 @@ public interface AtomicLongCodecTemplate {
     Object getAndIncrement(String name);
 
     /**
+     * Atomically sets the given value.
      *
      * @param name The name of this IAtomicLong instance.
      * @param newValue The new value

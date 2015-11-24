@@ -21,17 +21,12 @@ import com.hazelcast.internal.ascii.TextCommandConstants;
 
 import java.nio.ByteBuffer;
 
-/**
- * User: sancar
- * Date: 3/8/13
- * Time: 1:54 PM
- */
 public class TouchCommand extends AbstractTextCommand {
 
-    String key;
-    int expiration;
-    boolean noreply;
-    ByteBuffer response;
+    private String key;
+    private int expiration;
+    private boolean noreply;
+    private ByteBuffer response;
 
     public TouchCommand(TextCommandConstants.TextCommandType type, String key, int expiration, boolean noReply) {
         super(type);
@@ -40,6 +35,7 @@ public class TouchCommand extends AbstractTextCommand {
         this.noreply = noReply;
     }
 
+    @Override
     public boolean writeTo(ByteBuffer dst) {
         if (response == null) {
             response = ByteBuffer.wrap(TextCommandConstants.STORED);
@@ -50,10 +46,12 @@ public class TouchCommand extends AbstractTextCommand {
         return !response.hasRemaining();
     }
 
+    @Override
     public boolean readFrom(ByteBuffer src) {
         return true;
     }
 
+    @Override
     public boolean shouldReply() {
         return !noreply;
     }

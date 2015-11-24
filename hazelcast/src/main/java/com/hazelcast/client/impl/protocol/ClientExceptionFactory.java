@@ -33,8 +33,10 @@ import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.mapreduce.RemoteMapReduceException;
 import com.hazelcast.mapreduce.TopologyChangedException;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.quorum.QuorumException;
+import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
@@ -238,6 +240,18 @@ public class ClientExceptionFactory {
             @Override
             public Throwable createException(String message, Throwable cause) {
                 return new IllegalArgumentException(message, cause);
+            }
+        });
+        register(ClientProtocolErrorCodes.ILLEGAL_ACCESS_EXCEPTION, IllegalAccessException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new IllegalAccessException(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.ILLEGAL_ACCESS_ERROR, IllegalAccessError.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new IllegalAccessError(message);
             }
         });
         register(ClientProtocolErrorCodes.ILLEGAL_MONITOR_STATE, IllegalMonitorStateException.class, new ExceptionFactory() {
@@ -499,8 +513,18 @@ public class ClientExceptionFactory {
                 return new UnsupportedCallbackException(null, message);
             }
         });
-
-
+        register(ClientProtocolErrorCodes.NO_DATA_MEMBER, NoDataMemberInClusterException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new NoDataMemberInClusterException(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.REPLICATED_MAP_CANT_BE_CREATED, ReplicatedMapCantBeCreatedOnLiteMemberException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new ReplicatedMapCantBeCreatedOnLiteMemberException(message);
+            }
+        });
     }
 
     interface ExceptionFactory {

@@ -87,7 +87,7 @@ class DefaultAddressPicker implements AddressPicker {
 
     private AddressDefinition getPublicAddressByPortSearch() throws IOException {
         NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
-        boolean bindAny = node.getGroupProperties().SOCKET_SERVER_BIND_ANY.getBoolean();
+        boolean bindAny = node.getGroupProperties().getBoolean(GroupProperty.SOCKET_SERVER_BIND_ANY);
 
         Throwable error = null;
         ServerSocket serverSocket = null;
@@ -267,6 +267,9 @@ class DefaultAddressPicker implements AddressPicker {
         for (InetAddress inetAddress : inetAddresses) {
             addresses.add(inetAddress.getHostAddress());
         }
+        logger.warning("You configured your member address as host name. "
+                + "Please be aware of that your dns can be spoofed. "
+                + "Make sure that your dns configurations are correct.");
         logger.info("Resolving domain name '" + domainName + "' to address(es): " + addresses);
         return addresses;
     }
@@ -342,7 +345,7 @@ class DefaultAddressPicker implements AddressPicker {
 
     private boolean preferIPv4Stack() {
         boolean preferIPv4Stack = Boolean.getBoolean("java.net.preferIPv4Stack")
-                || node.groupProperties.PREFER_IPv4_STACK.getBoolean();
+                || node.groupProperties.getBoolean(GroupProperty.PREFER_IPv4_STACK);
         // AWS does not support IPv6
         JoinConfig join = node.getConfig().getNetworkConfig().getJoin();
         AwsConfig awsConfig = join.getAwsConfig();

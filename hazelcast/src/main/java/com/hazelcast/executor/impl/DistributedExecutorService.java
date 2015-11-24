@@ -49,9 +49,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 
-    //Updates the CallableProcessor.responseFlag field. An AtomicBoolean is simpler, but creates another unwanted
-    //object. Using this approach, you don't create that object.
-    private static final AtomicReferenceFieldUpdater<CallableProcessor, Boolean> RESPONSE_FLAG_FIELD_UPDATER =
+    // Updates the CallableProcessor.responseFlag field. An AtomicBoolean is simpler, but creates another unwanted
+    // object. Using this approach, you don't create that object.
+    private static final AtomicReferenceFieldUpdater<CallableProcessor, Boolean> RESPONSE_FLAG =
             AtomicReferenceFieldUpdater.newUpdater(CallableProcessor.class, Boolean.class, "responseFlag");
 
     private NodeEngine nodeEngine;
@@ -136,6 +136,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     public void destroyDistributedObject(String name) {
         shutdownExecutors.remove(name);
         executionService.shutdownExecutor(name);
+        statsMap.remove(name);
     }
 
     LocalExecutorStatsImpl getLocalExecutorStats(String name) {
@@ -174,7 +175,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     private final class CallableProcessor extends FutureTask implements Runnable {
-        //is being used through the RESPONSE_FLAG_FIELD_UPDATER. Can't be private due to reflection constraint.
+        //is being used through the RESPONSE_FLAG. Can't be private due to reflection constraint.
         volatile Boolean responseFlag = Boolean.FALSE;
 
         private final String name;
@@ -223,7 +224,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         }
 
         private void sendResponse(Object result) {
-            if (RESPONSE_FLAG_FIELD_UPDATER.compareAndSet(this, Boolean.FALSE, Boolean.TRUE)) {
+            if (RESPONSE_FLAG.compareAndSet(this, Boolean.FALSE, Boolean.TRUE)) {
                 op.sendResponse(result);
             }
         }

@@ -20,6 +20,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.Collection;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -39,7 +40,7 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
 
     @Test
     public void testDestroyJustAfterCreate() {
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
         instance.addDistributedObjectListener(new EventCountListener());
         IMap<Object, Object> map = instance.getMap(randomString());
         map.destroy();
@@ -48,6 +49,8 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
             public void run() throws Exception {
                 Assert.assertEquals(1, EventCountListener.createdCount.get());
                 Assert.assertEquals(1, EventCountListener.destroyedCount.get());
+                Collection<DistributedObject> distributedObjects = instance.getDistributedObjects();
+                Assert.assertTrue(distributedObjects.isEmpty());
             }
         };
         assertTrueEventually(task, 5);

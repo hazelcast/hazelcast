@@ -28,7 +28,11 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 
 /**
  * Access underlying HazelcastInstance using Hibernate SessionFactory
+ *
+ * @deprecated Set instanceName for your Hazelcast instance and
+ * use {@link com.hazelcast.core.Hazelcast#getHazelcastInstanceByName(String instanceName)} instead
  */
+@Deprecated
 public final class HazelcastAccessor {
 
     static final ILogger LOGGER = Logger.getLogger(HazelcastAccessor.class);
@@ -69,10 +73,6 @@ public final class HazelcastAccessor {
     public static HazelcastInstance getHazelcastInstance(final SessionFactoryImplementor sessionFactory) {
         final Settings settings = sessionFactory.getSettings();
         final RegionFactory rf = settings.getRegionFactory();
-        if (rf == null) {
-            LOGGER.severe("Hibernate 2nd level cache has not been enabled!");
-            return null;
-        }
         if (rf instanceof AbstractHazelcastCacheRegionFactory) {
             return ((AbstractHazelcastCacheRegionFactory) rf).getHazelcastInstance();
         } else {

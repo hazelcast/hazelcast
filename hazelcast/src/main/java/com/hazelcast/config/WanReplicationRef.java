@@ -22,6 +22,8 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Configuration for Wan target replication reference
@@ -30,6 +32,7 @@ public class WanReplicationRef implements DataSerializable, Serializable {
 
     private String name;
     private String mergePolicy;
+    private List<String> filters = new LinkedList<String>();
     private boolean republishingEnabled = true;
 
     private WanReplicationRefReadOnly readOnly;
@@ -37,15 +40,17 @@ public class WanReplicationRef implements DataSerializable, Serializable {
     public WanReplicationRef() {
     }
 
-    public WanReplicationRef(String name, String mergePolicy, boolean republishingEnabled) {
+    public WanReplicationRef(String name, String mergePolicy, List<String> filters, boolean republishingEnabled) {
         this.name = name;
         this.mergePolicy = mergePolicy;
+        this.filters = filters;
         this.republishingEnabled = republishingEnabled;
     }
 
     public WanReplicationRef(WanReplicationRef ref) {
         name = ref.name;
         mergePolicy = ref.mergePolicy;
+        filters = ref.filters;
         republishingEnabled = ref.republishingEnabled;
     }
 
@@ -74,6 +79,20 @@ public class WanReplicationRef implements DataSerializable, Serializable {
         return this;
     }
 
+    public WanReplicationRef addFilter(String filter) {
+        filters.add(filter);
+        return this;
+    }
+
+    public List<String> getFilters() {
+        return filters;
+    }
+
+    public WanReplicationRef setFilters(List<String> filters) {
+        this.filters = filters;
+        return this;
+    }
+
     public boolean isRepublishingEnabled() {
         return republishingEnabled;
     }
@@ -87,6 +106,10 @@ public class WanReplicationRef implements DataSerializable, Serializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(mergePolicy);
+        out.writeInt(filters.size());
+        for (String filter : filters) {
+            out.writeUTF(filter);
+        }
         out.writeBoolean(republishingEnabled);
     }
 
@@ -94,6 +117,10 @@ public class WanReplicationRef implements DataSerializable, Serializable {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         mergePolicy = in.readUTF();
+        int size = in.readInt();
+        for (int i = 0; i < size; i++) {
+            filters.add(in.readUTF());
+        }
         republishingEnabled = in.readBoolean();
     }
 
@@ -102,6 +129,7 @@ public class WanReplicationRef implements DataSerializable, Serializable {
         return "WanReplicationRef{"
                 + "name='" + name + '\''
                 + ", mergePolicy='" + mergePolicy + '\''
+                + ", filters='" + filters + '\''
                 + ", republishingEnabled='" + republishingEnabled
                 + '\''
                 + '}';

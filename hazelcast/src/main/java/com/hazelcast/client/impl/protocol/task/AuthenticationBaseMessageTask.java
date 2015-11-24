@@ -16,12 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.operations.ClientReAuthOperation;
+import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Member;
@@ -45,11 +45,11 @@ import java.util.logging.Level;
 /**
  * Base authentication task
  */
-public abstract class AuthenticationBaseMessageTask<P>
-        extends AbstractCallableMessageTask<P> {
+public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableMessageTask<P> {
 
     protected transient ClientPrincipal principal;
     protected transient Credentials credentials;
+    protected transient byte clientSerializationVersion;
 
     public AuthenticationBaseMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -76,65 +76,80 @@ public abstract class AuthenticationBaseMessageTask<P>
 
     @Override
     public Object call() {
-        boolean authenticated = authenticate();
-
-        if (authenticated) {
-            return handleAuthenticated();
+        byte serializationServiceVersion = serializationService.getVersion();
+        AuthenticationStatus authenticationStatus;
+        if (clientSerializationVersion != serializationServiceVersion) {
+            authenticationStatus = AuthenticationStatus.SERIALIZATION_VERSION_MISMATCH;
         } else {
-            return handleUnauthenticated();
+            authenticationStatus = authenticate();
+        }
+        switch (authenticationStatus) {
+            case AUTHENTICATED:
+                return handleAuthenticated();
+            case CREDENTIALS_FAILED:
+                return handleUnauthenticated();
+            case SERIALIZATION_VERSION_MISMATCH:
+                return handleSerializationVersionMismatch();
+            default:
+                throw new IllegalStateException("Unsupported authentication status :" + authenticationStatus);
         }
     }
 
-    private boolean authenticate() {
+    private AuthenticationStatus authenticate() {
         ILogger logger = clientEngine.getLogger(getClass());
-        boolean authenticated;
+        AuthenticationStatus status;
         if (credentials == null) {
-            authenticated = false;
+            status = AuthenticationStatus.CREDENTIALS_FAILED;
             logger.severe("Could not retrieve Credentials object!");
         } else if (clientEngine.getSecurityContext() != null) {
-            authenticated = authenticate(clientEngine.getSecurityContext());
+            status = authenticate(clientEngine.getSecurityContext());
         } else if (credentials instanceof UsernamePasswordCredentials) {
             UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
-            authenticated = authenticate(usernamePasswordCredentials);
+            status = authenticate(usernamePasswordCredentials);
         } else {
-            authenticated = false;
+            status = AuthenticationStatus.CREDENTIALS_FAILED;
             logger.severe("Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster "
-                    + "group-name and group-password should be used for authentication!\n"
-                    + "Current credentials type is: " + credentials.getClass().getName());
+                    + "group-name and group-password should be used for authentication!\n" + "Current credentials type is: "
+                    + credentials.getClass().getName());
         }
-
-        return authenticated;
+        return status;
     }
 
-    private boolean authenticate(SecurityContext securityContext) {
+    private AuthenticationStatus authenticate(SecurityContext securityContext) {
         Connection connection = endpoint.getConnection();
         credentials.setEndpoint(connection.getInetAddress().getHostAddress());
         try {
             LoginContext lc = securityContext.createClientLoginContext(credentials);
             lc.login();
             endpoint.setLoginContext(lc);
-            return true;
+            return AuthenticationStatus.AUTHENTICATED;
         } catch (LoginException e) {
             logger.warning(e);
-            return false;
+            return AuthenticationStatus.CREDENTIALS_FAILED;
         }
     }
 
-    private boolean authenticate(UsernamePasswordCredentials credentials) {
+    private AuthenticationStatus authenticate(UsernamePasswordCredentials credentials) {
         GroupConfig groupConfig = nodeEngine.getConfig().getGroupConfig();
         String nodeGroupName = groupConfig.getName();
         String nodeGroupPassword = groupConfig.getPassword();
         boolean usernameMatch = nodeGroupName.equals(credentials.getUsername());
         boolean passwordMatch = nodeGroupPassword.equals(credentials.getPassword());
-        return usernameMatch && passwordMatch;
+        return usernameMatch && passwordMatch ? AuthenticationStatus.AUTHENTICATED : AuthenticationStatus.CREDENTIALS_FAILED;
     }
 
     private Object handleUnauthenticated() {
         Connection connection = endpoint.getConnection();
         ILogger logger = clientEngine.getLogger(getClass());
-        logger.log(Level.WARNING, "Received auth from " + connection
-                + " with principal " + principal + " , authentication failed");
-        return new AuthenticationException("Invalid credentials!");
+        logger.log(Level.WARNING,
+                "Received auth from " + connection + " with principal " + principal + " , authentication failed");
+        byte status = AuthenticationStatus.CREDENTIALS_FAILED.getId();
+        return encodeAuth(status, null, null, null, serializationService.getVersion());
+    }
+
+    private Object handleSerializationVersionMismatch() {
+        return encodeAuth(AuthenticationStatus.SERIALIZATION_VERSION_MISMATCH.getId(), null, null, null,
+                serializationService.getVersion());
     }
 
     private Object handleAuthenticated() {
@@ -156,22 +171,23 @@ public abstract class AuthenticationBaseMessageTask<P>
 
         boolean isNotMember = clientEngine.getClusterService().getMember(principal.getOwnerUuid()) == null;
         if (isNotMember) {
-            throw new AuthenticationException("Invalid owner-uuid: " + principal.getOwnerUuid()
-                    + ", it's not member of this cluster!");
+            byte status = AuthenticationStatus.CREDENTIALS_FAILED.getId();
+            return encodeAuth(status, null, null, null, serializationService.getVersion());
         }
 
         Connection connection = endpoint.getConnection();
         ILogger logger = clientEngine.getLogger(getClass());
-        logger.log(Level.INFO, "Received auth from " + connection + ", successfully authenticated"
-        + ", principal : " + principal + ", owner connection : " + isOwnerConnection());
 
         endpoint.authenticated(principal, credentials, isOwnerConnection());
         setConnectionType();
+        logger.log(Level.INFO, "Received auth from " + connection + ", successfully authenticated" + ", principal : " + principal
+                + ", owner connection : " + isOwnerConnection());
         endpointManager.registerEndpoint(endpoint);
         clientEngine.bind(endpoint);
 
         final Address thisAddress = clientEngine.getThisAddress();
-        return encodeAuth(thisAddress, principal.getUuid(), principal.getOwnerUuid());
+        byte status = AuthenticationStatus.AUTHENTICATED.getId();
+        return encodeAuth(status, thisAddress, principal.getUuid(), principal.getOwnerUuid(), serializationService.getVersion());
     }
 
     private void setConnectionType() {
@@ -192,7 +208,8 @@ public abstract class AuthenticationBaseMessageTask<P>
         }
     }
 
-    protected abstract ClientMessage encodeAuth(Address thisAddress, String uuid, String ownerUuid);
+    protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, String uuid, String ownerUuid,
+            byte serializationVersion);
 
     protected abstract boolean isOwnerConnection();
 

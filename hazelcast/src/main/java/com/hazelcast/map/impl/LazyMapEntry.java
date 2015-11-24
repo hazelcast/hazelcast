@@ -19,6 +19,8 @@ package com.hazelcast.map.impl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.Map;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -32,16 +34,23 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * <p/>
  * <STRONG>Note that this implementation is not synchronized and is not thread-safe.</STRONG>
  *
+ * LazyMapEntry itself is serializable as long as the object representations of both key and value are serializable.
+ * After serialization objects are resolved using injected SerializationService. De-serialized LazyMapEntry
+ * does contain object representation only Data representations and SerializationService is set to null. In other
+ * words: It's as usable just as a regular Map.Entry.
+ *
  * @see com.hazelcast.map.impl.operation.EntryOperation#createMapEntry(Data, Object)
  */
-public class LazyMapEntry implements Map.Entry {
 
-    private Object keyObject;
-    private Object valueObject;
-    private Data keyData;
-    private Data valueData;
-    private boolean modified;
-    private SerializationService serializationService;
+public class LazyMapEntry implements Map.Entry, Serializable {
+    private static final long serialVersionUID = 0L;
+
+    private transient Object keyObject;
+    private transient Object valueObject;
+    private transient Data keyData;
+    private transient Data valueData;
+    private transient boolean modified;
+    private transient SerializationService serializationService;
 
     public LazyMapEntry() {
     }
@@ -141,6 +150,18 @@ public class LazyMapEntry implements Map.Entry {
     @Override
     public String toString() {
         return getKey() + "=" + getValue();
+    }
+
+    private void readObject(java.io.ObjectInputStream s) throws IOException, ClassNotFoundException {
+        s.defaultReadObject();
+        keyObject = s.readObject();
+        valueObject = s.readObject();
+    }
+
+    private void writeObject(java.io.ObjectOutputStream s) throws IOException {
+        s.defaultWriteObject();
+        s.writeObject(getKey());
+        s.writeObject(getValue());
     }
 }
 

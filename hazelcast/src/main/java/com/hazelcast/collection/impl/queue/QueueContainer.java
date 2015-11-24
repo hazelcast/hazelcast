@@ -20,13 +20,13 @@ import com.hazelcast.collection.impl.txnqueue.TxQueueItem;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.Clock;
@@ -42,6 +42,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -52,23 +53,18 @@ import java.util.concurrent.TimeUnit;
  */
 public class QueueContainer implements IdentifiedDataSerializable {
     private static final int ID_PROMOTION_OFFSET = 100000;
-
-    private LinkedList<QueueItem> itemQueue;
-    private Map<Long, QueueItem> backupMap;
     private final Map<Long, TxQueueItem> txMap = new HashMap<Long, TxQueueItem>();
     private final Map<Long, Data> dataMap = new HashMap<Long, Data>();
-
+    private final QueueWaitNotifyKey pollWaitNotifyKey;
+    private final QueueWaitNotifyKey offerWaitNotifyKey;
+    private LinkedList<QueueItem> itemQueue;
+    private Map<Long, QueueItem> backupMap;
     private QueueConfig config;
     private QueueStoreWrapper store;
     private NodeEngine nodeEngine;
     private QueueService service;
     private ILogger logger;
-
     private long idGenerator;
-
-    private final QueueWaitNotifyKey pollWaitNotifyKey;
-    private final QueueWaitNotifyKey offerWaitNotifyKey;
-
     private String name;
 
     private long minAge = Long.MAX_VALUE;
@@ -172,15 +168,27 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     public boolean txnRollbackPoll(long itemId, boolean backup) {
-        QueueItem item = txMap.remove(itemId);
+        TxQueueItem item = txMap.remove(itemId);
         if (item == null) {
             return false;
         }
         if (!backup) {
-            getItemQueue().offerFirst(item);
+            addTxItemOrdered(item);
         }
         cancelEvictionIfExists();
         return true;
+    }
+
+    private void addTxItemOrdered(TxQueueItem txQueueItem) {
+        ListIterator<QueueItem> iterator = ((List) getItemQueue()).listIterator();
+        while (iterator.hasNext()) {
+            QueueItem queueItem = iterator.next();
+            if (txQueueItem.itemId < queueItem.itemId) {
+                iterator.previous();
+                break;
+            }
+        }
+        iterator.add(txQueueItem);
     }
 
     //TX Offer
@@ -645,10 +653,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return idGenerator++;
     }
 
-    void setId(long itemId) {
-        idGenerator = Math.max(itemId + 1, idGenerator);
-    }
-
     public QueueWaitNotifyKey getPollWaitNotifyKey() {
         return pollWaitNotifyKey;
     }
@@ -772,5 +776,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
     @Override
     public int getId() {
         return QueueDataSerializerHook.QUEUE_CONTAINER;
+    }
+
+    void setId(long itemId) {
+        idGenerator = Math.max(itemId + 1, idGenerator);
     }
 }

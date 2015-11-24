@@ -33,7 +33,7 @@
     4. If a configuration cannot be found, Hazelcast will use the default hazelcast configuration
        ’hazelcast-default.xml’, which is included in the the Hazelcast jar
 -->
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.5.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.6.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
@@ -56,6 +56,7 @@
                 <address>10.3.5.1:5701</address>
                 <address>10.3.5.2:5701</address>
             </end-points>
+            <acknowledge-type>ACK_ON_TRANSMIT</acknowledge-type>
         </target-cluster>
     </wan-replication>
     <network>
@@ -273,12 +274,21 @@
 
         <wan-replication-ref name="my-wan-cluster">
             <merge-policy>hz.PASS_THROUGH</merge-policy>
+            <filters>
+                <filter-impl>com.example.WanTestFilter1</filter-impl>
+                <filter-impl>com.example.WanTestFilter2</filter-impl>
+            </filters>
         </wan-replication-ref>
 
         <indexes>
             <index ordered="false">name</index>
             <index ordered="true">age</index>
         </indexes>
+
+        <attributes>
+            <attribute extractor="com.example.CurrencyExtractor">currency</attribute>
+            <attribute extractor="com.example.AgeExtractor">age</attribute>
+        </attributes>
 
         <entry-listeners>
             <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>

@@ -18,7 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
 
 import javax.cache.expiry.ExpiryPolicy;
@@ -43,8 +43,7 @@ import java.util.Set;
  */
 public interface ICacheRecordStore {
 
-    // Defined as constant for check-style error
-    int ONE_HUNDRED_PERCENT = 100;
+    int UNIT_PERCENTAGE = 100;
 
     /**
      * Gets the value to which the specified key is mapped,
@@ -77,8 +76,9 @@ public interface ICacheRecordStore {
      * @param value value to be associated with the specified key.
      * @param expiryPolicy custom expiry policy or null to use configured default value.
      * @param caller  uuid of the calling node or client.
+     * @return the stored {@link CacheRecord}  (added as new record or updated). <code>null</code> if record has expired.
      */
-    void put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
+    CacheRecord put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
 
     /**
      * Associates the specified value with the specified key in this cache,
@@ -286,7 +286,7 @@ public interface ICacheRecordStore {
      * @return A simple wrapper for map of entries that were found for the given keys. Keys not found
      *         in the cache are not in the result.
      */
-    MapEntrySet getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy);
+    MapEntries getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy);
 
     /**
      *  Calculates the entry size of this store which reflects the partition size of the cache.
@@ -307,12 +307,27 @@ public interface ICacheRecordStore {
     void removeAll(Set<Data> keys, int completionId);
 
     /**
+     * Close is equivalent to below operations in the given order:
+     * <ul>
+     *     <li>close resources.</li>
+     *     <li>unregister all listeners.</li>
+     * </ul>
+     *
+     * @see #clear()
+     * @see #destroy()
+     */
+    void close();
+
+    /**
      * Destroy is equivalent to below operations in the given order:
      * <ul>
      *     <li>clear all.</li>
      *     <li>close resources.</li>
      *     <li>unregister all listeners.</li>
      * </ul>
+     *
+     * @see #clear()
+     * @see #close()
      */
     void destroy();
 
@@ -340,17 +355,6 @@ public interface ICacheRecordStore {
      * @return {@link CacheRecord} instance mapped.
      */
     CacheRecord getRecord(Data key);
-
-    /**
-     * Associates the specified record with the specified key.
-     * This is simply a put operation on the internal map data
-     * without any CacheLoad. It also <b>DOES NOT</b> trigger eviction,
-     * be aware of the fact it might cause an OutOfMemoryException!
-     *
-     * @param key the key to the entry.
-     * @param record the value to be associated with the specified key.
-     */
-    void setRecord(Data key, CacheRecord record);
 
     /**
      * Associates the specified record with the specified key.
@@ -422,4 +426,20 @@ public interface ICacheRecordStore {
      */
     int evictIfRequired();
 
+    /**
+     * Determines whether wan replication is enabled or not for this record store.
+     *
+     * @return <tt>true</tt> if wan replication is enabled for this record store, <tt>false</tt> otherwise
+     */
+    boolean isWanReplicationEnabled();
+
+    /**
+     * Transfers all records from source record store
+     * and drops previous records owned by this record store.
+     * Source record store should not be accessed anymore
+     * after transfer.
+     *
+     * @param src source record store whose records will be transferred
+     */
+    void transferRecordsFrom(ICacheRecordStore src);
 }

@@ -25,9 +25,9 @@ import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
-import com.hazelcast.map.impl.EntryEventData;
-import com.hazelcast.map.impl.EventData;
-import com.hazelcast.map.impl.MapEventData;
+import com.hazelcast.map.impl.event.EntryEventData;
+import com.hazelcast.map.impl.event.EventData;
+import com.hazelcast.map.impl.event.MapEventData;
 
 import java.util.logging.Level;
 

@@ -16,19 +16,17 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 
 /**
  * Client service to add/remove remote listeners.
+ * <p/>
+ * For smart client, it registers local  listeners to all nodes in cluster.
+ * For dummy client, it registers global listener to one node.
  */
 public interface ClientListenerService {
 
-    String startListening(ClientRequest request, Object key, EventHandler handler);
+    String registerListener(ListenerMessageCodec listenerMessageCodec, EventHandler handler);
 
-    boolean stopListening(BaseClientRemoveListenerRequest request, String registrationId);
-
-    void registerListener(String uuid, Integer callId);
-
-    String deRegisterListener(String uuid);
+    boolean deregisterListener(String registrationId);
 }

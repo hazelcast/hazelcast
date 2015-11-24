@@ -35,6 +35,9 @@ import java.nio.channels.SocketChannel;
  *
  * That is why a new 'wrapper' interface is introduced which acts like a SocketChannel and the implementations wrap a
  * SocketChannel.
+ *
+ * In the future we should get rid of this class and rely on {@link ReadHandler}/{@link WriteHandler} chaining to add encryption.
+ * This will remove more artifacts from the architecture that can't carry their weight.
  */
 public interface SocketChannelWrapper extends Closeable {
 

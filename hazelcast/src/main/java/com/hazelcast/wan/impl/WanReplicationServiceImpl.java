@@ -22,6 +22,7 @@ import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ReplicationSupportingService;
@@ -160,7 +161,22 @@ public class WanReplicationServiceImpl implements WanReplicationService {
         }
     }
 
+    @Override
+    public void pause(String name, String targetGroupName) {
+        throw new UnsupportedOperationException("Pausing wan replication is not supported.");
+    }
+
+    @Override
+    public void resume(String name, String targetGroupName) {
+        throw new UnsupportedOperationException("Resuming wan replication is not supported");
+    }
+
     private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWanReplicationPublisherMapping() {
         return new ConcurrentHashMap<String, WanReplicationPublisherDelegate>(2);
+    }
+
+    @Override
+    public Map<String, LocalWanStats> getStats() {
+        return null;
     }
 }

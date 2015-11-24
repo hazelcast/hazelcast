@@ -40,9 +40,6 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class AtomicLongService implements ManagedService, RemoteService, MigrationAwareService {
 
-    /**
-     * The name of this service.s
-     */
     public static final String SERVICE_NAME = "hz:impl:atomicLongService";
 
     private NodeEngine nodeEngine;

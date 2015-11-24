@@ -25,17 +25,21 @@ import com.hazelcast.partition.InternalPartitionService;
 import java.security.Permission;
 
 public class RemovePartitionLostListenerMessageTask
-        extends AbstractCallableMessageTask<ClientRemovePartitionLostListenerCodec.RequestParameters> {
+        extends AbstractRemoveListenerMessageTask<ClientRemovePartitionLostListenerCodec.RequestParameters> {
 
     public RemovePartitionLostListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected boolean deRegisterListener() {
         final InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
-        boolean success = service.removePartitionLostListener(parameters.registrationId);
-        return success;
+        return service.removePartitionLostListener(parameters.registrationId);
+    }
+
+    @Override
+    protected String getRegistrationId() {
+        return parameters.registrationId;
     }
 
     @Override
@@ -68,8 +72,4 @@ public class RemovePartitionLostListenerMessageTask
         return "removePartitionLostListener";
     }
 
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{parameters.registrationId};
-    }
 }

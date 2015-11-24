@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.client;
 
 import com.hazelcast.map.impl.MapPortableHook;
-import com.hazelcast.map.impl.operation.PutIfAbsentOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
@@ -41,7 +41,7 @@ public class MapPutIfAbsentRequest extends MapPutRequest {
     }
 
     protected Operation prepareOperation() {
-        PutIfAbsentOperation op = new PutIfAbsentOperation(name, key, value, ttl);
+        MapOperation op = getOperationProvider().createPutIfAbsentOperation(name, key, value, ttl);
         op.setThreadId(threadId);
         return op;
     }

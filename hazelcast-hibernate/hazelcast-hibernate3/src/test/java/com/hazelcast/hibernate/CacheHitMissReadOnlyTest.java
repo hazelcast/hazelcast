@@ -94,4 +94,12 @@ public class CacheHitMissReadOnlyTest extends HibernateStatisticsTestSupport {
         ReadOnlyAccessDelegate readOnlyAccessDelegate = new ReadOnlyAccessDelegate(hzRegion, null);
         readOnlyAccessDelegate.afterUpdate(null, null, null, null, null);
     }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testUpdateQueryCausesInvalidationOfEntireCollectionRegion() {
+        insertDummyEntities(1, 10);
+
+        //attempt to evict properties reference in DummyEntity because of custom SQL query on Collection region
+        executeUpdateQuery(sf, "update DummyProperty ent set ent.key='manually-updated'");
+    }
 }

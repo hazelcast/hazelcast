@@ -26,9 +26,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
@@ -37,12 +39,13 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.Serializable;
 import java.security.Permission;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 /**
  * Client request which registers an event listener on behalf of the client and delegates the received events
  * back to client.
  *
- * @see CacheService#registerListener(String, CacheEventListener)
+ * @see CacheService#registerListener(String, CacheEventListener, boolean localOnly)
  */
 public class CacheAddEntryListenerMessageTask
         extends AbstractCallableMessageTask<CacheAddEntryListenerCodec.RequestParameters> {
@@ -53,19 +56,28 @@ public class CacheAddEntryListenerMessageTask
 
     @Override
     protected Object call() {
-        final ClientEndpoint endpoint = getEndpoint();
+        ClientEndpoint endpoint = getEndpoint();
         final CacheService service = getService(CacheService.SERVICE_NAME);
         CacheEntryListener cacheEntryListener = new CacheEntryListener(endpoint, this);
-        return service.registerListener(parameters.name, cacheEntryListener, cacheEntryListener);
+
+        final String registrationId =
+                service.registerListener(parameters.name, cacheEntryListener, cacheEntryListener, parameters.localOnly);
+        endpoint.addDestroyAction(registrationId, new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return service.deregisterListener(parameters.name, registrationId);
+            }
+        });
+        return registrationId;
     }
 
     @SuppressFBWarnings(value = "SE_NO_SERIALVERSIONID",
             justification = "Class is Serializable, but doesn't define serialVersionUID")
     private static final class CacheEntryListener
             implements CacheEventListener,
-                       NotifiableEventListener<CacheService>,
-                       ListenerWrapperEventFilter,
-                       Serializable {
+            NotifiableEventListener<CacheService>,
+            ListenerWrapperEventFilter,
+            Serializable {
 
         private final transient ClientEndpoint endpoint;
         private final transient CacheAddEntryListenerMessageTask cacheAddEntryListenerMessageTask;
@@ -148,11 +160,6 @@ public class CacheAddEntryListenerMessageTask
     }
 
     @Override
-    public String getMethodName() {
-        return null;
-    }
-
-    @Override
     public Object[] getParameters() {
         return null;
     }
@@ -164,7 +171,12 @@ public class CacheAddEntryListenerMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CachePermission(parameters.name, ActionConstants.ACTION_LISTEN);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "registerCacheEntryListener";
     }
 
 }

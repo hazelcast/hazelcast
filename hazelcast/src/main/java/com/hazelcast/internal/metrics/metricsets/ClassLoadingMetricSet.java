@@ -16,12 +16,13 @@
 
 package com.hazelcast.internal.metrics.metricsets;
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -42,7 +43,7 @@ public final class ClassLoadingMetricSet {
 
         ClassLoadingMXBean mxBean = ManagementFactory.getClassLoadingMXBean();
 
-        metricsRegistry.register(mxBean, "classloading.loadedClassesCount",
+        metricsRegistry.register(mxBean, "classloading.loadedClassesCount", MANDATORY,
                 new LongProbeFunction<ClassLoadingMXBean>() {
                     @Override
                     public long get(ClassLoadingMXBean classLoadingMXBean) {
@@ -51,7 +52,7 @@ public final class ClassLoadingMetricSet {
                 }
         );
 
-        metricsRegistry.register(mxBean, "classloading.totalLoadedClassesCount",
+        metricsRegistry.register(mxBean, "classloading.totalLoadedClassesCount", MANDATORY,
                 new LongProbeFunction<ClassLoadingMXBean>() {
                     @Override
                     public long get(ClassLoadingMXBean classLoadingMXBean) {
@@ -60,7 +61,7 @@ public final class ClassLoadingMetricSet {
                 }
         );
 
-        metricsRegistry.register(mxBean, "classloading.unloadedClassCount",
+        metricsRegistry.register(mxBean, "classloading.unloadedClassCount", MANDATORY,
                 new LongProbeFunction<ClassLoadingMXBean>() {
                     @Override
                     public long get(ClassLoadingMXBean classLoadingMXBean) {

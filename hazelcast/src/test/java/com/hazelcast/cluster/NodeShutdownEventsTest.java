@@ -22,7 +22,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -35,7 +35,6 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
-
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -60,7 +59,7 @@ public class NodeShutdownEventsTest {
 
         final Config config2 = new Config();
         // force join failure.
-        config2.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "-100");
+        config2.setProperty(GroupProperty.MAX_JOIN_SECONDS, "-100");
         // add lifecycle listener.
         final ListenerConfig listenerConfig = new ListenerConfig();
         listenerConfig.setImplementation(new LifecycleListener() {

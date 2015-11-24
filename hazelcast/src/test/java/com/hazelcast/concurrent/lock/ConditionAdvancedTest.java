@@ -5,7 +5,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -31,7 +31,7 @@ public class ConditionAdvancedTest extends HazelcastTestSupport{
     public void testInterruptionDuringWaiting() throws InterruptedException {
         Config config = new Config();
         // the system should wait at most 5000 ms in order to determine the operation status
-        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "5000");
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, "5000");
 
         HazelcastInstance instance = createHazelcastInstance(config);
 

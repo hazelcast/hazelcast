@@ -22,6 +22,8 @@ import com.hazelcast.spi.OperationFactory;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -30,6 +32,8 @@ import java.util.Set;
 public interface CacheOperationProvider {
 
     Operation createPutOperation(Data key, Data value, ExpiryPolicy policy, boolean get, int completionId);
+
+    Operation createPutAllOperation(List<Map.Entry<Data, Data>> entries, ExpiryPolicy policy, int completionId);
 
     Operation createGetOperation(Data key, ExpiryPolicy policy);
 

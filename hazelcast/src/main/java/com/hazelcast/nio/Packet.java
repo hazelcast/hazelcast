@@ -23,15 +23,15 @@ import java.nio.ByteBuffer;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 
 /**
- * A Packet is a piece of data send over the line.
+ * A Packet is a piece of data send over the line. The Packet is used for member to member communication and old-client to
+ * member communication.
  *
  * The Packet extends HeapData instead of wrapping it. From a design point of view this is often not the preferred solution (
  * prefer composition over inheritance), but in this case that would mean more object litter.
  *
  * Since the Packet isn't used throughout the system, this design choice is visible locally.
  */
-public final class Packet extends HeapData
-        implements SocketWritable, SocketReadable {
+public final class Packet extends HeapData implements OutboundFrame {
 
     public static final byte VERSION = 4;
 
@@ -126,7 +126,6 @@ public final class Packet extends HeapData
         return isHeaderSet(HEADER_URGENT);
     }
 
-    @Override
     public boolean writeTo(ByteBuffer dst) {
         if (!writeVersion(dst)) {
             return false;
@@ -152,7 +151,6 @@ public final class Packet extends HeapData
         return true;
     }
 
-    @Override
     public boolean readFrom(ByteBuffer src) {
         if (!readVersion(src)) {
             return false;
@@ -409,14 +407,13 @@ public final class Packet extends HeapData
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("Packet{");
-        sb.append("header=").append(header);
-        sb.append(", isResponse=").append(isHeaderSet(Packet.HEADER_RESPONSE));
-        sb.append(", isOperation=").append(isHeaderSet(Packet.HEADER_OP));
-        sb.append(", isEvent=").append(isHeaderSet(Packet.HEADER_EVENT));
-        sb.append(", partitionId=").append(partitionId);
-        sb.append(", conn=").append(conn);
-        sb.append('}');
-        return sb.toString();
+        return "Packet{"
+                + "header=" + header
+                + ", isResponse=" + isHeaderSet(Packet.HEADER_RESPONSE)
+                + ", isOperation=" + isHeaderSet(Packet.HEADER_OP)
+                + ", isEvent=" + isHeaderSet(Packet.HEADER_EVENT)
+                + ", partitionId=" + partitionId
+                + ", conn=" + conn
+                + '}';
     }
 }

@@ -17,17 +17,15 @@
 package com.hazelcast.collection.impl.queue.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.client.CallableClientRequest;
-import com.hazelcast.client.impl.client.RetryableRequest;
-import com.hazelcast.client.impl.client.SecureRequest;
+import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
+import com.hazelcast.collection.common.DataAwareItemEvent;
+import com.hazelcast.collection.impl.queue.QueuePortableHook;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.collection.common.DataAwareItemEvent;
-import com.hazelcast.collection.impl.queue.QueuePortableHook;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.impl.PortableItemEvent;
@@ -38,7 +36,7 @@ import java.security.Permission;
 /**
  * this class is used to attach a listener to targeted node which sends back the events to client for a queue
  */
-public class AddListenerRequest extends CallableClientRequest implements SecureRequest, RetryableRequest {
+public class AddListenerRequest extends BaseClientAddListenerRequest {
 
     private String name;
     private boolean includeValue;
@@ -68,12 +66,14 @@ public class AddListenerRequest extends CallableClientRequest implements SecureR
 
     @Override
     public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeUTF("n", name);
         writer.writeBoolean("i", includeValue);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         name = reader.readUTF("n");
         includeValue = reader.readBoolean("i");
     }
@@ -110,8 +110,8 @@ public class AddListenerRequest extends CallableClientRequest implements SecureR
                 }
             }
         };
-        String registrationId = service.addItemListener(name, listener, includeValue);
-        endpoint.setListenerRegistration(QueueService.SERVICE_NAME, name, registrationId);
+        String registrationId = service.addItemListener(name, listener, includeValue, localOnly);
+        endpoint.addListenerDestroyAction(QueueService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
 

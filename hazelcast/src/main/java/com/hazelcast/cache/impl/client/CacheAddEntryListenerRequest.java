@@ -21,14 +21,16 @@ import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListener;
 import com.hazelcast.cache.impl.CacheEventSet;
 import com.hazelcast.cache.impl.CachePortableHook;
-import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.client.CallableClientRequest;
-import com.hazelcast.client.impl.client.RetryableRequest;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.client.impl.ClientEndpointImpl;
+import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
@@ -38,16 +40,16 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.security.Permission;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 /**
  * Client request which registers an event listener on behalf of the client and delegates the received events
  * back to client.
  *
- * @see com.hazelcast.cache.impl.CacheService#registerListener(String, com.hazelcast.cache.impl.CacheEventListener)
+ * @see com.hazelcast.cache.impl.CacheService#registerListener(String,
+ * com.hazelcast.cache.impl.CacheEventListener, boolean localOnly)
  */
-public class CacheAddEntryListenerRequest
-        extends CallableClientRequest
-        implements RetryableRequest {
+public class CacheAddEntryListenerRequest extends BaseClientAddListenerRequest {
 
     private String name;
 
@@ -60,19 +62,26 @@ public class CacheAddEntryListenerRequest
 
     @Override
     public Object call() {
-        final ClientEndpoint endpoint = getEndpoint();
-        final CacheService service = getService();
+        final ClientEndpointImpl endpoint = (ClientEndpointImpl) getEndpoint();
+        final ICacheService service = getService();
         CacheEntryListener cacheEntryListener = new CacheEntryListener(getCallId(), endpoint);
-        return service.registerListener(name, cacheEntryListener, cacheEntryListener);
+        final String registrationId = service.registerListener(name, cacheEntryListener, cacheEntryListener, localOnly);
+        endpoint.addDestroyAction(registrationId, new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return service.deregisterListener(name, registrationId);
+            }
+        });
+        return registrationId;
     }
 
     @SuppressFBWarnings(value = "SE_NO_SERIALVERSIONID",
             justification = "Class is Serializable, but doesn't define serialVersionUID")
     private static final class CacheEntryListener
             implements CacheEventListener,
-                       NotifiableEventListener<CacheService>,
-                       ListenerWrapperEventFilter,
-                       Serializable {
+            NotifiableEventListener<ICacheService>,
+            ListenerWrapperEventFilter,
+            Serializable {
 
         private final int callId;
         private final transient ClientEndpoint endpoint;
@@ -106,14 +115,14 @@ public class CacheAddEntryListenerRequest
         }
 
         @Override
-        public void onRegister(CacheService service, String serviceName,
+        public void onRegister(ICacheService service, String serviceName,
                                String topic, EventRegistration registration) {
             CacheContext cacheContext = service.getOrCreateCacheContext(topic);
             cacheContext.increaseCacheEntryListenerCount();
         }
 
         @Override
-        public void onDeregister(CacheService service, String serviceName,
+        public void onDeregister(ICacheService service, String serviceName,
                                  String topic, EventRegistration registration) {
             CacheContext cacheContext = service.getOrCreateCacheContext(topic);
             cacheContext.decreaseCacheEntryListenerCount();
@@ -133,7 +142,7 @@ public class CacheAddEntryListenerRequest
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override
@@ -147,22 +156,35 @@ public class CacheAddEntryListenerRequest
     }
 
     @Override
-    public void write(PortableWriter writer)
-            throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         writer.writeUTF("n", name);
     }
 
     @Override
-    public void read(PortableReader reader)
-            throws IOException {
+    public void read(PortableReader reader) throws IOException {
         super.read(reader);
         name = reader.readUTF("n");
     }
 
     @Override
     public Permission getRequiredPermission() {
+        return new CachePermission(name, ActionConstants.ACTION_LISTEN);
+    }
+
+    @Override
+    public Object[] getParameters() {
         return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "registerCacheEntryListener";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
 }

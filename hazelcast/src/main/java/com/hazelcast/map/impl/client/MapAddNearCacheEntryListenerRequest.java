@@ -16,9 +16,16 @@
 
 package com.hazelcast.map.impl.client;
 
+import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.SyntheticEventFilter;
+import com.hazelcast.map.impl.nearcache.Invalidation;
+import com.hazelcast.map.impl.nearcache.InvalidationListener;
 import com.hazelcast.spi.EventFilter;
+
+import static com.hazelcast.core.EntryEventType.INVALIDATION;
+import static com.hazelcast.map.impl.nearcache.NearCacheInvalidatorImpl.getOrderKey;
+
 
 /**
  * Request for adding {@link com.hazelcast.core.EntryListener} for near cache operations.
@@ -29,7 +36,7 @@ public class MapAddNearCacheEntryListenerRequest extends MapAddEntryListenerRequ
     }
 
     public MapAddNearCacheEntryListenerRequest(String name, boolean includeValue) {
-        super(name, includeValue);
+        super(name, includeValue, INVALIDATION.getType());
     }
 
     @Override
@@ -38,9 +45,38 @@ public class MapAddNearCacheEntryListenerRequest extends MapAddEntryListenerRequ
         return new SyntheticEventFilter(eventFilter);
     }
 
-
     @Override
     public int getClassId() {
         return MapPortableHook.ADD_NEAR_CACHE_ENTRY_LISTENER;
+    }
+
+    @Override
+    protected Object newMapListener(ClientEndpoint endpoint) {
+        return new ClientNearCacheInvalidationListenerImpl(name, endpoint, getCallId());
+    }
+
+    private static class ClientNearCacheInvalidationListenerImpl implements InvalidationListener {
+
+        private final int callId;
+        private final String mapName;
+        private final ClientEndpoint endpoint;
+
+        ClientNearCacheInvalidationListenerImpl(String mapName, ClientEndpoint endpoint, int callId) {
+            this.mapName = mapName;
+            this.endpoint = endpoint;
+            this.callId = callId;
+        }
+
+        @Override
+        public void onInvalidate(Invalidation event) {
+            if (!endpoint.isAlive()
+                    || endpoint.getUuid().equals(event.getSourceUuid())) {
+                return;
+            }
+
+
+            Object partitionKey = getOrderKey(mapName, event);
+            endpoint.sendEvent(partitionKey, event, callId);
+        }
     }
 }

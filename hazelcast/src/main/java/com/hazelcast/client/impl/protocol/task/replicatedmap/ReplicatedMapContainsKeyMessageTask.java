@@ -18,30 +18,27 @@ package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapContainsKeyCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.operation.ContainsKeyOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
+import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 public class ReplicatedMapContainsKeyMessageTask
-        extends AbstractCallableMessageTask<ReplicatedMapContainsKeyCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<ReplicatedMapContainsKeyCodec.RequestParameters> {
 
     public ReplicatedMapContainsKeyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
-        ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        return recordStore.containsKey(serializationService.toObject(parameters.key));
+    protected Operation prepareOperation() {
+        return new ContainsKeyOperation(parameters.name, parameters.key);
     }
-
 
     @Override
     protected ReplicatedMapContainsKeyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {

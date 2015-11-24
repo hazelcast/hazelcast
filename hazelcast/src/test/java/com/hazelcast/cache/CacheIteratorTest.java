@@ -28,7 +28,7 @@ import javax.cache.spi.CachingProvider;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class CacheIteratorTest extends AbstractCacheIteratorTest {
+public class CacheIteratorTest extends CacheIteratorAbstractTest {
 
     @Override
     protected CachingProvider createCachingProvider() {

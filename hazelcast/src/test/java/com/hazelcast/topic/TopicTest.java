@@ -184,7 +184,7 @@ public class TopicTest extends HazelcastTestSupport {
 
                     Member localMember = hz.getCluster().getLocalMember();
                     for (int j = 0; j < count; j++) {
-                        topic.publish(new TestMessage(localMember, UuidUtil.buildRandomUuidString()));
+                        topic.publish(new TestMessage(localMember, UuidUtil.newUnsecureUuidString()));
                         publishLatch.countDown();
                     }
                 }

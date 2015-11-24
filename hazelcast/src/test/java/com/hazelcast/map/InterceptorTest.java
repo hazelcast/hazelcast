@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -43,10 +42,9 @@ public class InterceptorTest extends HazelcastTestSupport {
     @Test
     public void testMapInterceptor() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        Config config = getConfig();
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         final IMap<Object, Object> map = instance1.getMap("testMapInterceptor");
         SimpleInterceptor interceptor = new SimpleInterceptor();
         String id = map.addInterceptor(interceptor);
@@ -67,8 +65,8 @@ public class InterceptorTest extends HazelcastTestSupport {
         } catch (Exception ignore) {
         }
 
-        assertEquals(map.size(), 6);
-        assertEquals(map.get(1), null);
+        assertEquals(6, map.size());
+        assertEquals(null, map.get(1));
         assertEquals(map.get(2), "ISTANBUL:");
         assertEquals(map.get(3), "TOKYO:");
         assertEquals(map.get(4), "LONDON:");
@@ -88,6 +86,44 @@ public class InterceptorTest extends HazelcastTestSupport {
         assertEquals(map.get(6), "CAIRO");
         assertEquals(map.get(7), "HONG KONG");
 
+    }
+
+    @Test
+    public void testMapInterceptorOnNewMember() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config config = getConfig();
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        IMap map = instance1.getMap("map");
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+        }
+        map.addInterceptor(new NegativeInterceptor());
+        for (int i = 0; i < 100; i++) {
+            assertEquals(i * -1, map.get(i));
+        }
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        for (int i = 0; i < 100; i++) {
+            assertEquals(i * -1, map.get(i));
+        }
+    }
+
+    @Test
+    public void testGetAll_withGetInterceptor() throws InterruptedException {
+        HazelcastInstance instance1 = createHazelcastInstance(getConfig());
+        IMap<Integer, String> map = instance1.getMap(randomString());
+        SimpleInterceptor interceptor = new SimpleInterceptor();
+        map.addInterceptor(interceptor);
+
+        Set<Integer> set = new HashSet<Integer>();
+        for (int i = 0; i < 100; i++) {
+            map.put(i, String.valueOf(i));
+            set.add(i);
+        }
+
+        Map<Integer, String> allValues = map.getAll(set);
+        for (int i = 0; i < 100; i++) {
+            assertEquals(String.valueOf(i) + ":", allValues.get(i));
+        }
     }
 
     public static class SimpleInterceptor implements MapInterceptor, Serializable {
@@ -124,27 +160,6 @@ public class InterceptorTest extends HazelcastTestSupport {
         }
     }
 
-
-    @Test
-    public void testMapInterceptorOnNewMember() throws InterruptedException {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        IMap map = instance1.getMap("map");
-        for (int i = 0; i < 100; i++) {
-            map.put(i, i);
-        }
-        map.addInterceptor(new NegativeInterceptor());
-        for (int i = 0; i < 100; i++) {
-            assertEquals(i * -1, map.get(i));
-        }
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        for (int i = 0; i < 100; i++) {
-            assertEquals(i * -1, map.get(i));
-        }
-    }
-
     static class NegativeInterceptor implements MapInterceptor, Serializable {
         @Override
         public Object interceptGet(Object value) {
@@ -171,28 +186,6 @@ public class InterceptorTest extends HazelcastTestSupport {
 
         @Override
         public void afterRemove(Object value) {
-        }
-    }
-
-
-    @Test
-    public void testGetAll_withGetInterceptor() throws InterruptedException {
-        String mapName = randomString();
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
-        IMap<Integer, String> map = instance1.getMap(mapName);
-        SimpleInterceptor interceptor = new SimpleInterceptor();
-        map.addInterceptor(interceptor);
-
-        Set<Integer> set = new HashSet<Integer>();
-        for (int i = 0; i < 100; i++) {
-            map.put(i, String.valueOf(i));
-            set.add(i);
-        }
-
-        Map<Integer, String> allValues = map.getAll(set);
-        for (int i = 0; i < 100; i++) {
-            assertEquals(String.valueOf(i) + ":", allValues.get(i));
         }
     }
 }

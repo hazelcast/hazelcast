@@ -73,13 +73,22 @@ public class ReadManyOperation extends AbstractRingBufferOperation implements Wa
             sequence = startSequence;
         }
 
-        if (resultSet.isMinSizeReached()) {
-            // if the minimum number of items are found, we don't need to wait anymore.
+        RingbufferContainer ringbuffer = getRingBufferContainer();
+        if (minSize == 0) {
+            if (!ringbuffer.shouldWait(sequence)) {
+                sequence = ringbuffer.readMany(sequence, resultSet);
+            }
+
             return false;
         }
 
-        RingbufferContainer ringbuffer = getRingBufferContainer();
+        if (resultSet.isMinSizeReached()) {
+            // enough items have been read, we are done.
+            return false;
+        }
+
         if (ringbuffer.shouldWait(sequence)) {
+            // the sequence is not readable
             return true;
         }
 

@@ -24,7 +24,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.IndexService;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.AbstractOperation;
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -44,10 +44,10 @@ public class PostJoinMapOperation extends AbstractOperation {
     }
 
     public void addMapIndex(MapContainer mapContainer) {
-        final IndexService indexService = mapContainer.getIndexService();
-        if (indexService.hasIndex()) {
+        final Indexes indexes = mapContainer.getIndexes();
+        if (indexes.hasIndex()) {
             MapIndexInfo mapIndexInfo = new MapIndexInfo(mapContainer.getName());
-            for (Index index : indexService.getIndexes()) {
+            for (Index index : indexes.getIndexes()) {
                 mapIndexInfo.addIndexInfo(index.getAttributeName(), index.isOrdered());
             }
             indexInfoList.add(mapIndexInfo);
@@ -112,9 +112,9 @@ public class PostJoinMapOperation extends AbstractOperation {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         for (MapIndexInfo mapIndex : indexInfoList) {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(mapIndex.mapName);
-            final IndexService indexService = mapContainer.getIndexService();
+            final Indexes indexes = mapContainer.getIndexes();
             for (MapIndexInfo.IndexInfo indexInfo : mapIndex.lsIndexes) {
-                indexService.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
+                indexes.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
             }
         }
         for (InterceptorInfo interceptorInfo : interceptorInfoList) {

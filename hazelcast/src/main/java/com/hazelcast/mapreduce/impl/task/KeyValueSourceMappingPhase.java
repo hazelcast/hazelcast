@@ -35,7 +35,7 @@ import java.util.Map;
 public class KeyValueSourceMappingPhase<KeyIn, ValueIn, KeyOut, ValueOut>
         extends MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
 
-    public KeyValueSourceMappingPhase(Collection<KeyIn> keys, KeyPredicate<KeyIn> predicate) {
+    public KeyValueSourceMappingPhase(Collection<? extends KeyIn> keys, KeyPredicate<? super KeyIn> predicate) {
         super(keys, predicate);
     }
 

@@ -25,6 +25,7 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -58,7 +59,7 @@ import static org.junit.Assert.assertTrue;
 public class ClientSortLimitTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-    private final SerializationService ss = new DefaultSerializationServiceBuilder().build();
+    private final SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
     private HazelcastInstance client;
     private HazelcastInstance server;
     private IMap map;
@@ -340,7 +341,7 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
             set = map.entrySet(pagingPredicate);
             for (Map.Entry<Integer, Employee> entry : set) {
                 Employee e = entry.getValue();
-                QueryEntry qe = new QueryEntry(null, ss.toData(e.getId()), e.getId(), e);
+                QueryEntry qe = new QueryEntry(serializationService, serializationService.toData(e.getId()), e, Extractors.empty());
                 assertTrue(predicate.apply(qe));
                 results.add(e);
             }

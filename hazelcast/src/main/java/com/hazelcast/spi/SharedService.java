@@ -17,8 +17,12 @@
 package com.hazelcast.spi;
 
 /**
- * A shared service (not clear what the difference is between shared and unshared though).
+ * Marks a service which exposes its data (e.g. states) or behaviour to other services.
+ * <p/>
+ * If a service needs to share internal data or behaviour it has to implement this interface,
+ * otherwise it will be an isolated service.
+ * <p/>
+ * Shared services are accessible via {@link NodeEngine#getSharedService(String)}.
  */
 public interface SharedService {
-
 }

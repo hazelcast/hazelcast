@@ -23,9 +23,9 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.flatten;
 import static com.hazelcast.internal.metrics.impl.FieldProbe.createFieldProbe;
 import static com.hazelcast.internal.metrics.impl.MethodProbe.createMethodProbe;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.flatten;
 
 /**
  * Contains the metadata for an object with @Probe fields/methods.

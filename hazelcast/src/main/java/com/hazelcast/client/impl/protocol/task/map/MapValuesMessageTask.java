@@ -18,42 +18,45 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapValueCollection;
-import com.hazelcast.map.impl.operation.MapValuesOperationFactory;
+import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.util.IterationType;
 
 import java.security.Permission;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 public class MapValuesMessageTask
-        extends AbstractAllPartitionsMessageTask<MapValuesCodec.RequestParameters> {
+        extends AbstractMapQueryMessageTask<MapValuesCodec.RequestParameters> {
 
     public MapValuesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected OperationFactory createOperationFactory() {
-        return new MapValuesOperationFactory(parameters.name);
+    protected Object reduce(Collection<QueryResultRow> result) {
+        List<Data> values = new ArrayList<Data>(result.size());
+        for (QueryResultRow resultEntry : result) {
+            values.add(resultEntry.getValue());
+        }
+        return values;
     }
 
     @Override
-    protected Object reduce(Map<Integer, Object> results) {
-        List<Data> values = new ArrayList<Data>();
-        MapService mapService = getService(MapService.SERVICE_NAME);
-        for (Object result : results.values()) {
-            values.addAll(((MapValueCollection) mapService.getMapServiceContext().toObject(result)).getValues());
-        }
-        return values;
+    protected Predicate getPredicate() {
+        return TruePredicate.INSTANCE;
+    }
+
+    @Override
+    protected IterationType getIterationType() {
+        return IterationType.VALUE;
     }
 
     @Override
@@ -64,11 +67,6 @@ public class MapValuesMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return MapValuesCodec.encodeResponse((List<Data>) response);
-    }
-
-    @Override
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
     }
 
     @Override

@@ -25,7 +25,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>3.6-SNAPSHOT</version>
+        <version>3.6-RC2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -35,10 +35,11 @@
     </modules>
 
     <properties>
-        <hsqldb.version>2.2.9</hsqldb.version>
-        <javaassist.version>3.12.1.GA</javaassist.version>
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.basedir}</main.basedir>
+
+        <hsqldb.version>2.2.9</hsqldb.version>
+        <javaassist.version>3.12.1.GA</javaassist.version>
     </properties>
 
     <build>
@@ -46,7 +47,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
-                <version>${animal.sniffer.plugin.version}</version>
+                <version>${maven.animal.sniffer.plugin.version}</version>
                 <configuration>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
@@ -147,14 +148,14 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-client</artifactId>
+            <artifactId>hazelcast</artifactId>
             <scope>test</scope>
             <version>${project.parent.version}</version>
             <classifier>tests</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
+            <artifactId>hazelcast-client</artifactId>
             <scope>test</scope>
             <version>${project.parent.version}</version>
             <classifier>tests</classifier>
@@ -188,5 +189,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>

@@ -20,22 +20,29 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.xml.sax.SAXParseException;
 
 import java.io.ByteArrayInputStream;
 import java.util.Properties;
 import java.util.Random;
 
+import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_START_TAG;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class InvalidConfigurationTest {
+    @Rule
+    public ExpectedException rule = ExpectedException.none();
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenTwoJoinMethodEnabled() {
+        expectInvalid("TCP/IP and Multicast join can't be enabled at the same time");
         String xml = getDraftXml();
         Properties properties = getDraftProperties();
         properties.setProperty("multicast-enabled", "true");
@@ -49,8 +56,9 @@ public class InvalidConfigurationTest {
         buildConfig(xml);
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_QueueBackupCount() {
+        expectInvalidBackupCount();
         buildConfig("queue-backup-count", getInvalidBackupCount());
     }
 
@@ -59,8 +67,9 @@ public class InvalidConfigurationTest {
         buildConfig("queue-backup-count", getValidBackupCount());
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_AsyncQueueBackupCount() {
+        expectInvalidBackupCount();
         buildConfig("queue-async-backup-count", getInvalidBackupCount());
     }
 
@@ -74,18 +83,21 @@ public class InvalidConfigurationTest {
         buildConfig("empty-queue-ttl", "10");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInValid_QueueTTL() {
+        expectInvalid("'a' is not a valid value for 'integer'.");
         buildConfig("empty-queue-ttl", "a");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public void testWhenInValid_MapMemoryFormat() {
+    @Test
+    public void testWhenInvalid_MapMemoryFormat() {
+        expectInvalid("Value 'binary' is not facet-valid with respect to enumeration");
         buildConfig("map-in-memory-format", "binary");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_MapBackupCount() {
+        expectInvalidBackupCount();
         buildConfig("map-backup-count", getInvalidBackupCount());
     }
 
@@ -94,28 +106,32 @@ public class InvalidConfigurationTest {
         buildConfig("map-backup-count", getValidBackupCount());
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_MapTTL() {
+        expectInvalid("Value '-1' is not facet-valid with respect to minInclusive '0'");
         buildConfig("map-time-to-live-seconds", "-1");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_MapMaxIdleSeconds() {
+        expectInvalid("Value '-1' is not facet-valid with respect to minInclusive '0'");
         buildConfig("map-max-idle-seconds", "-1");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public void testWhenInvalid_MapEvictionPolicy() {
-        buildConfig("map-eviction-policy", "none");
+    @Test
+    public void testWhenValid_MapEvictionPolicy() {
+        buildConfig("map-eviction-policy", "NONE");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_MapEvictionPercentage() {
+        expectInvalid(" Value '101' is not facet-valid with respect to maxInclusive '100'");
         buildConfig("map-eviction-percentage", "101");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_MultiMapBackupCount() {
+        expectInvalidBackupCount();
         buildConfig("multimap-backup-count", getInvalidBackupCount());
     }
 
@@ -124,13 +140,15 @@ public class InvalidConfigurationTest {
         buildConfig("multimap-backup-count", getValidBackupCount());
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalidValid_MultiMapCollectionType() {
+        expectInvalid("Value 'set' is not facet-valid with respect to enumeration");
         buildConfig("multimap-value-collection-type", "set");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_ListBackupCount() {
+        expectInvalidBackupCount();
         buildConfig("list-backup-count", getInvalidBackupCount());
     }
 
@@ -139,8 +157,9 @@ public class InvalidConfigurationTest {
         buildConfig("list-backup-count", getValidBackupCount());
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_SetBackupCount() {
+        expectInvalidBackupCount();
         buildConfig("list-backup-count", getInvalidBackupCount());
     }
 
@@ -149,13 +168,15 @@ public class InvalidConfigurationTest {
         buildConfig("list-backup-count", getValidBackupCount());
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public void testWhenInvalid_SemaphoreInitialPermits(){
+    @Test
+    public void testWhenInvalid_SemaphoreInitialPermits() {
+        expectInvalid("Value '-1' is not facet-valid with respect to minInclusive '0'");
         buildConfig("semaphore-initial-permits","-1");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_SemaphoreBackupCount() {
+        expectInvalidBackupCount();
         buildConfig("semaphore-backup-count", getInvalidBackupCount());
     }
 
@@ -164,8 +185,9 @@ public class InvalidConfigurationTest {
         buildConfig("semaphore-backup-count", getValidBackupCount());
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_AsyncSemaphoreBackupCount() {
+        expectInvalidBackupCount();
         buildConfig("semaphore-async-backup-count", getInvalidBackupCount());
     }
 
@@ -174,63 +196,66 @@ public class InvalidConfigurationTest {
         buildConfig("semaphore-async-backup-count", getValidBackupCount());
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalidTcpIpConfiguration() {
-        String xml =
-                "<hazelcast  xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
-                    "<network\n>" +
-                        "<join>\n" +
-                            "<tcp-ip enabled=\"true\">\n" +
-                                "<required-member>127.0.0.1</required-member>\n" +
-                            "   <required-member>128.0.0.1</required-member>\n" +
-                            "</tcp-ip>\n" +
-                        "</join>\n" +
-                    "</network>\n" +
-                "</hazelcast>\n";
-        buildConfig(xml);
+        expectInvalid("Duplicate required-member definition found in XML configuration.");
+        buildConfig(HAZELCAST_START_TAG +
+            "<network\n>" +
+                "<join>\n" +
+                    "<tcp-ip enabled=\"true\">\n" +
+                        "<required-member>127.0.0.1</required-member>\n" +
+                        "<required-member>128.0.0.1</required-member>\n" +
+                    "</tcp-ip>\n" +
+                "</join>\n" +
+            "</network>\n" +
+        "</hazelcast>\n");
     }
 
     @Test
     public void invalidConfigurationTest_WhenOrderIsDifferent() {
-        String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
-                        "<list name=\"default\">\n" +
-                            "<statistics-enabled>false</statistics-enabled>\n" +
-                            "<max-size>0</max-size>\n" +
-                            "<backup-count>1</backup-count>\n" +
-                            "<async-backup-count>0</async-backup-count>\n" +
-                        "</list>\n" +
-                "</hazelcast>\n";
-        buildConfig(xml);
-        String xml2 =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
-                        "<list name=\"default\">\n" +
-                            "<backup-count>1</backup-count>\n" +
-                            "<async-backup-count>0</async-backup-count>\n" +
-                            "<statistics-enabled>false</statistics-enabled>\n" +
-                            "<max-size>0</max-size>\n" +
-                        "</list>\n" +
-                "</hazelcast>\n";
-        buildConfig(xml2);
+        buildConfig(HAZELCAST_START_TAG +
+                "<list name=\"default\">\n" +
+                "<statistics-enabled>false</statistics-enabled>\n" +
+                "<max-size>0</max-size>\n" +
+                "<backup-count>1</backup-count>\n" +
+                "<async-backup-count>0</async-backup-count>\n" +
+                "</list>\n" +
+                "</hazelcast>\n");
+        buildConfig(HAZELCAST_START_TAG +
+                "<list name=\"default\">\n" +
+                    "<backup-count>1</backup-count>\n" +
+                    "<async-backup-count>0</async-backup-count>\n" +
+                    "<statistics-enabled>false</statistics-enabled>\n" +
+                    "<max-size>0</max-size>\n" +
+                "</list>\n" +
+        "</hazelcast>\n");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
+    public void testWhenDoctypeAddedToXml() {
+//        expectInvalid("DOCTYPE is disallowed when the feature " +
+//                "\"http://apache.org/xml/features/disallow-doctype-decl\" set to true.");
+        rule.expect(InvalidConfigurationException.class);
+        buildConfig("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<!DOCTYPE hazelcast [ <!ENTITY e1 \"0123456789\"> ] >\n" +
+                HAZELCAST_START_TAG + "</hazelcast>");
+    }
+
+    @Test
     public void testWanConfigSnapshotEnabledForWrongPublisher() {
-        String xml =
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
-                        "<wan-replication name=\"my-wan-cluster\" snapshot-enabled=\"true\">\n" +
-                        "    <target-cluster group-name=\"test-cluster-1\" group-password=\"test-pass\">\n" +
-                        "       <replication-impl>com.hazelcast.wan.impl.WanNoDelayReplication</replication-impl>\n" +
-                        "       <end-points>\n" +
-                        "          <address>20.30.40.50:5701</address>\n" +
-                        "          <address>20.30.40.50:5702</address>\n" +
-                        "       </end-points>\n" +
-                        "    </target-cluster>\n" +
-                        "</wan-replication>\n" +
-                        "</hazelcast>";
-        Config config = buildConfig(xml);
-        WanReplicationConfig wanConfig = config.getWanReplicationConfig("my-wan-cluster");
-        assertNotNull(wanConfig);
+        expectInvalid(
+                "snapshot-enabled property only can be set to true when used with Enterprise Wan Batch Replication");
+        buildConfig(HAZELCAST_START_TAG +
+                "<wan-replication name=\"my-wan-cluster\" snapshot-enabled=\"true\">\n" +
+                "    <target-cluster group-name=\"test-cluster-1\" group-password=\"test-pass\">\n" +
+                "       <replication-impl>com.hazelcast.wan.impl.WanNoDelayReplication</replication-impl>\n" +
+                "       <end-points>\n" +
+                "          <address>20.30.40.50:5701</address>\n" +
+                "          <address>20.30.40.50:5702</address>\n" +
+                "       </end-points>\n" +
+                "    </target-cluster>\n" +
+                "</wan-replication>\n" +
+                "</hazelcast>");
     }
 
     public void testWhenInvalid_CacheBackupCount() {
@@ -242,8 +267,9 @@ public class InvalidConfigurationTest {
         buildConfig("cache-backup-count", getValidBackupCount());
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_CacheAsyncBackupCount() {
+        expectInvalidBackupCount();
         buildConfig("cache-async-backup-count", getInvalidBackupCount());
     }
 
@@ -257,38 +283,45 @@ public class InvalidConfigurationTest {
         buildConfig("cache-in-memory-format", "OBJECT");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_CacheInMemoryFormat() {
+        expectInvalid("Value 'binaryyy' is not facet-valid with respect to enumeration");
         buildConfig("cache-in-memory-format", "binaryyy");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_EmptyDurationTime() {
+        expectInvalid("'' is not a valid value for 'integer'.");
         buildConfig("cache-expiry-policy-duration-amount", "");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_InvalidDurationTime() {
+        expectInvalid("'asd' is not a valid value for 'integer'.");
         buildConfig("cache-expiry-policy-duration-amount", "asd");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_NegativeDurationTime() {
+        expectInvalid("Value '-1' is not facet-valid with respect to minInclusive '0'");
         buildConfig("cache-expiry-policy-duration-amount", "-1");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_EmptyTimeUnit() {
+        expectInvalid("Value '' is not facet-valid with respect to pattern '\\S.*' for type 'time-unit'.");
         buildConfig("cache-expiry-policy-time-unit", "");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_InvalidTimeUnit() {
+        expectInvalid(rule, "Value 'asd' is not facet-valid with respect to enumeration");
         buildConfig("cache-expiry-policy-time-unit", "asd");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
+    @Test
     public void testWhenInvalid_CacheEvictionSize() {
+        expectInvalid("Value '-100' is not facet-valid with respect to minInclusive '0'");
         buildConfig("cache-eviction-size", "-100");
     }
 
@@ -297,86 +330,54 @@ public class InvalidConfigurationTest {
         buildConfig("cache-eviction-size", "100");
     }
 
-    String getDraftXml() {
-        return
-                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
-
-                    " <network>\n" +
-                        "<join>\n" +
-                            "<multicast enabled=\"${multicast-enabled}\">\n" +
-                             "</multicast>\n" +
-                             "<tcp-ip enabled=\"${tcp-ip-enabled}\">\n" +
-                             "</tcp-ip>\n" +
-                        "</join>\n" +
-                    "</network>\n" +
-
-                    "<queue name=\"default\">\n" +
-                        "<max-size>0</max-size>\n" +
-                        "<backup-count>${queue-backup-count}</backup-count>\n" +
-                        "<async-backup-count>${queue-async-backup-count}</async-backup-count>\n" +
-                        "<empty-queue-ttl>${empty-queue-ttl}</empty-queue-ttl>\n" +
-                    "</queue>\n" +
-
-                    "<map name=\"default\">\n" +
-                        "<in-memory-format>${map-in-memory-format}</in-memory-format>\n" +
-                        "<backup-count>${map-backup-count}</backup-count>\n" +
-                        "<async-backup-count>${map-async-backup-count}</async-backup-count>\n" +
-                        "<time-to-live-seconds>${map-time-to-live-seconds}</time-to-live-seconds>\n" +
-                        "<max-idle-seconds>${map-max-idle-seconds}</max-idle-seconds>\n" +
-                        "<eviction-policy>${map-eviction-policy}</eviction-policy>\n" +
-                        "<eviction-percentage>${map-eviction-percentage}</eviction-percentage>\n" +
-                    "</map>\n" +
-
-                    "<cache name=\"default\">\n" +
-                        "<key-type class-name=\"${cache-key-type-class-name}\"/>\n" +
-                        "<value-type class-name=\"${cache-value-type-class-name}\"/>\n" +
-                        "<in-memory-format>${cache-in-memory-format}</in-memory-format>\n" +
-                        "<statistics-enabled>${cache-statistics-enabled}</statistics-enabled>\n" +
-                        "<management-enabled>${cache-management-enabled}</management-enabled>\n" +
-                        "<backup-count>${cache-backup-count}</backup-count>\n" +
-                        "<async-backup-count>${cache-async-backup-count}</async-backup-count>\n" +
-                        "<read-through>${cache-read-through}</read-through>\n" +
-                        "<write-through>${cache-write-through}</write-through>\n" +
-                        "<cache-loader-factory class-name=\"${cache-loader-factory-class-name}\"/>\n" +
-                        "<cache-writer-factory class-name=\"${cache-writer-factory-class-name}\"/>\n" +
-                        "<expiry-policy-factory class-name=\"${expiry-policy-factory-class-name}\"/>\n" +
-                        "<eviction size=\"${cache-eviction-size}\"" +
-                            " max-size-policy=\"${cache-eviction-max-size-policy}\"" +
-                            " eviction-policy=\"${cache-eviction-policy}\"/>\n" +
-                    "</cache>\n" +
-
-                     "<cache name=\"cacheWithTimedExpiryPolicyFactory\">\n" +
-                        "<expiry-policy-factory>\n" +
-                            "<timed-expiry-policy-factory" +
-                                " expiry-policy-type=\"${cache-expiry-policy-type}\"" +
-                                " duration-amount=\"${cache-expiry-policy-duration-amount}\"" +
-                                " time-unit=\"${cache-expiry-policy-time-unit}\"/>" +
-                        "</expiry-policy-factory>\n" +
-                     "</cache>\n" +
-
-                    "<multimap name=\"default\">\n" +
-                        "<backup-count>${multimap-backup-count}</backup-count>\n" +
-                        "<value-collection-type>${multimap-value-collection-type}</value-collection-type>\n" +
-                    "</multimap>\n" +
-
-                    "<list name=\"default\">\n" +
-                        "<backup-count>${list-backup-count}</backup-count>\n" +
-                    "</list>\n" +
-
-                    "<set name=\"default\">\n" +
-                        "<backup-count>${set-backup-count}</backup-count>\n" +
-                    "</set>\n" +
-
-                    "<semaphore name=\"default\">\n" +
-                        "<initial-permits>${semaphore-initial-permits}</initial-permits>\n" +
-                        "<backup-count>${semaphore-backup-count}</backup-count>\n" +
-                        "<async-backup-count>${semaphore-async-backup-count}</async-backup-count>\n" +
-                    "</semaphore>\n" +
-
-                "</hazelcast>\n";
+    @Test
+    public void testWhenInvalid_CacheEvictionPolicy() {
+        expectInvalid("Eviction policy of cache cannot be null or \"NONE\"");
+        buildConfig("cache-eviction-policy", "NONE");
     }
 
-    Properties getDraftProperties() {
+    private static Config buildConfig(String xml) {
+        return buildConfig(xml, getDraftProperties());
+    }
+
+    private static Config buildConfig(String propertyKey, String propertyValue) {
+        String xml = getDraftXml();
+        Properties properties = getDraftProperties();
+        properties.setProperty(propertyKey, propertyValue);
+        return buildConfig(xml, properties);
+    }
+
+    private void expectInvalidBackupCount() {
+        expectInvalid("is not facet-valid with respect to maxInclusive '6' for type 'backup-count'");
+    }
+
+    private void expectInvalid(String message) {
+        expectInvalid(rule, message);
+    }
+
+    private static Config buildConfig(String xml, Properties properties) {
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        configBuilder.setProperties(properties);
+        return configBuilder.build();
+    }
+
+    static void expectInvalid(ExpectedException rule, String message) {
+        rule.expect(InvalidConfigurationException.class);
+        rule.expectMessage(message);
+    }
+
+    private static String getValidBackupCount() {
+        final Random random = new Random();
+        return String.valueOf(random.nextInt(7));
+    }
+
+    private static String getInvalidBackupCount() {
+        final Random random = new Random();
+        return String.valueOf(random.nextInt(1000) + 7);
+    }
+
+    private static Properties getDraftProperties() {
         Properties properties = new Properties();
 
         properties.setProperty("queue-backup-count", "0");
@@ -424,32 +425,80 @@ public class InvalidConfigurationTest {
         return properties;
     }
 
-    Config buildConfig(String xml) {
-        return buildConfig(xml, getDraftProperties());
-    }
+    private static String getDraftXml() {
+        return HAZELCAST_START_TAG +
+                " <network>\n" +
+                "<join>\n" +
+                "<multicast enabled=\"${multicast-enabled}\">\n" +
+                "</multicast>\n" +
+                "<tcp-ip enabled=\"${tcp-ip-enabled}\">\n" +
+                "</tcp-ip>\n" +
+                "</join>\n" +
+                "</network>\n" +
 
-    Config buildConfig(String propertyKey, String propertyValue) {
-        String xml = getDraftXml();
-        Properties properties = getDraftProperties();
-        properties.setProperty(propertyKey, propertyValue);
-        return buildConfig(xml, properties);
-    }
+                "<queue name=\"default\">\n" +
+                "<max-size>0</max-size>\n" +
+                "<backup-count>${queue-backup-count}</backup-count>\n" +
+                "<async-backup-count>${queue-async-backup-count}</async-backup-count>\n" +
+                "<empty-queue-ttl>${empty-queue-ttl}</empty-queue-ttl>\n" +
+                "</queue>\n" +
 
-    Config buildConfig(String xml, Properties properties) {
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.setProperties(properties);
-        return configBuilder.build();
-    }
+                "<map name=\"default\">\n" +
+                "<in-memory-format>${map-in-memory-format}</in-memory-format>\n" +
+                "<backup-count>${map-backup-count}</backup-count>\n" +
+                "<async-backup-count>${map-async-backup-count}</async-backup-count>\n" +
+                "<time-to-live-seconds>${map-time-to-live-seconds}</time-to-live-seconds>\n" +
+                "<max-idle-seconds>${map-max-idle-seconds}</max-idle-seconds>\n" +
+                "<eviction-policy>${map-eviction-policy}</eviction-policy>\n" +
+                "<eviction-percentage>${map-eviction-percentage}</eviction-percentage>\n" +
+                "</map>\n" +
 
-    private static String getValidBackupCount() {
-        final Random random = new Random();
-        return String.valueOf(random.nextInt(7));
-    }
+                "<cache name=\"default\">\n" +
+                "<key-type class-name=\"${cache-key-type-class-name}\"/>\n" +
+                "<value-type class-name=\"${cache-value-type-class-name}\"/>\n" +
+                "<in-memory-format>${cache-in-memory-format}</in-memory-format>\n" +
+                "<statistics-enabled>${cache-statistics-enabled}</statistics-enabled>\n" +
+                "<management-enabled>${cache-management-enabled}</management-enabled>\n" +
+                "<backup-count>${cache-backup-count}</backup-count>\n" +
+                "<async-backup-count>${cache-async-backup-count}</async-backup-count>\n" +
+                "<read-through>${cache-read-through}</read-through>\n" +
+                "<write-through>${cache-write-through}</write-through>\n" +
+                "<cache-loader-factory class-name=\"${cache-loader-factory-class-name}\"/>\n" +
+                "<cache-writer-factory class-name=\"${cache-writer-factory-class-name}\"/>\n" +
+                "<expiry-policy-factory class-name=\"${expiry-policy-factory-class-name}\"/>\n" +
+                "<eviction size=\"${cache-eviction-size}\"" +
+                " max-size-policy=\"${cache-eviction-max-size-policy}\"" +
+                " eviction-policy=\"${cache-eviction-policy}\"/>\n" +
+                "</cache>\n" +
 
-    private static String getInvalidBackupCount() {
-        final Random random = new Random();
-        return String.valueOf(random.nextInt(1000) + 7);
-    }
+                "<cache name=\"cacheWithTimedExpiryPolicyFactory\">\n" +
+                "<expiry-policy-factory>\n" +
+                "<timed-expiry-policy-factory" +
+                " expiry-policy-type=\"${cache-expiry-policy-type}\"" +
+                " duration-amount=\"${cache-expiry-policy-duration-amount}\"" +
+                " time-unit=\"${cache-expiry-policy-time-unit}\"/>" +
+                "</expiry-policy-factory>\n" +
+                "</cache>\n" +
 
+                "<multimap name=\"default\">\n" +
+                "<backup-count>${multimap-backup-count}</backup-count>\n" +
+                "<value-collection-type>${multimap-value-collection-type}</value-collection-type>\n" +
+                "</multimap>\n" +
+
+                "<list name=\"default\">\n" +
+                "<backup-count>${list-backup-count}</backup-count>\n" +
+                "</list>\n" +
+
+                "<set name=\"default\">\n" +
+                "<backup-count>${set-backup-count}</backup-count>\n" +
+                "</set>\n" +
+
+                "<semaphore name=\"default\">\n" +
+                "<initial-permits>${semaphore-initial-permits}</initial-permits>\n" +
+                "<backup-count>${semaphore-backup-count}</backup-count>\n" +
+                "<async-backup-count>${semaphore-async-backup-count}</async-backup-count>\n" +
+                "</semaphore>\n" +
+
+                "</hazelcast>\n";
+    }
 }

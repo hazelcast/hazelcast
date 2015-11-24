@@ -22,13 +22,18 @@ import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheGetAllCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.OperationFactory;
 
 import javax.cache.expiry.ExpiryPolicy;
+import java.security.Permission;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -51,7 +56,7 @@ public class CacheGetAllMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheGetAllCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
+        return CacheGetAllCodec.encodeResponse((List<Map.Entry<Data, Data>>) response);
     }
 
     @Override
@@ -59,16 +64,16 @@ public class CacheGetAllMessageTask
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
         CacheService service = getService(getServiceName());
         ExpiryPolicy expiryPolicy = (ExpiryPolicy) service.toObject(parameters.expiryPolicy);
-        return operationProvider.createGetAllOperationFactory((Set<Data>) parameters.keys, expiryPolicy);
+        Set<Data> keys = new HashSet<Data>(parameters.keys);
+        return operationProvider.createGetAllOperationFactory(keys, expiryPolicy);
     }
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        Set<Map.Entry<Data, Data>> reducedMap = new HashSet<Map.Entry<Data, Data>>(map.size());
+        List<Map.Entry<Data, Data>> reducedMap = new ArrayList<Map.Entry<Data, Data>>(map.size());
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            MapEntrySet mapEntrySet = (MapEntrySet) nodeEngine.toObject(entry.getValue());
-            Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
-            for (Map.Entry<Data, Data> dataEntry : entrySet) {
+            MapEntries mapEntries = (MapEntries) nodeEngine.toObject(entry.getValue());
+            for (Map.Entry<Data, Data> dataEntry : mapEntries) {
                 reducedMap.add(dataEntry);
             }
         }
@@ -76,13 +81,23 @@ public class CacheGetAllMessageTask
     }
 
     @Override
-    public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+    public Permission getRequiredPermission() {
+        return new CachePermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
         return parameters.name;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "getAll";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{parameters.keys};
     }
 
 }

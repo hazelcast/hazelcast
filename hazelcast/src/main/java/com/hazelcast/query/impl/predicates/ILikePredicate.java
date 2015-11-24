@@ -32,13 +32,8 @@ public class ILikePredicate extends LikePredicate {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder(attribute)
-                .append(" ILIKE '")
-                .append(second)
-                .append("'");
-        return builder.toString();
+        return attributeName + " ILIKE '" + expression + "'";
     }
-
 
     @Override
     protected int getFlags() {

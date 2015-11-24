@@ -5,7 +5,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.AssertTask;
@@ -24,13 +26,15 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.LinkedList;
+import java.util.List;
 
-import static com.hazelcast.instance.GroupProperties.PROP_PERFORMANCE_MONITOR_DELAY_SECONDS;
-import static com.hazelcast.instance.GroupProperties.PROP_PERFORMANCE_MONITOR_ENABLED;
-import static com.hazelcast.instance.GroupProperties.PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT;
-import static com.hazelcast.instance.GroupProperties.PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB;
-import static com.hazelcast.instance.GroupProperties.PROP_SLOW_OPERATION_DETECTOR_ENABLED;
-import static com.hazelcast.instance.GroupProperties.PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
+import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_DELAY_SECONDS;
+import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
+import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT;
+import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB;
+import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED;
+import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -48,13 +52,13 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         Config config = new Config();
-        config.setProperty(PROP_PERFORMANCE_MONITOR_ENABLED, "true");
-        config.setProperty(PROP_PERFORMANCE_MONITOR_DELAY_SECONDS, "1");
-        config.setProperty(PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB, "0.2");
-        config.setProperty(PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT, "3");
+        config.setProperty(PERFORMANCE_MONITOR_ENABLED, "true");
+        config.setProperty(PERFORMANCE_MONITOR_DELAY_SECONDS, "1");
+        config.setProperty(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB, "0.2");
+        config.setProperty(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT, "3");
 
-        config.setProperty(PROP_SLOW_OPERATION_DETECTOR_ENABLED, "true");
-        config.setProperty(PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "2000");
+        config.setProperty(SLOW_OPERATION_DETECTOR_ENABLED, "true");
+        config.setProperty(SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "2000");
 
         hz = createHazelcastInstance(config);
 
@@ -68,11 +72,13 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
     public static void afterClass() {
         String userDir = System.getProperty("user.dir");
 
-        for(File file: new File(userDir).listFiles()){
-            String name = file.getName();
-            System.out.println(name);
-            if(name.startsWith("performance-_") && name.endsWith(".log")){
-                file.delete();
+        File[] files = new File(userDir).listFiles();
+        if (files != null) {
+            for (File file : files) {
+                String name = file.getName();
+                if (name.startsWith("performance-") && name.endsWith(".log")) {
+                    file.delete();
+                }
             }
         }
     }
@@ -80,7 +86,7 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
     @Test
     public void testDisabledByDefault() {
         GroupProperties groupProperties = new GroupProperties(new Config());
-        assertFalse(groupProperties.PERFORMANCE_MONITOR_ENABLED.getBoolean());
+        assertFalse(groupProperties.getBoolean(PERFORMANCE_MONITOR_ENABLED));
     }
 
     @Test
@@ -137,24 +143,60 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
         });
     }
 
-//    @Test
-//    public void testRollover() {
-//        StringBuffer sb = new StringBuffer();
-//        for (int k = 0; k < 10000; k++) {
-//            sb.append('a');
-//        }
-//
-//        for (int k = 0; k < 5; k++) {
-//            metricsRegistry.register(this, sb.toString() + k, new LongGauge<PerformanceMonitorTest>() {
-//                @Override
-//                public long get(PerformanceMonitorTest source) throws Exception {
-//                    return 0;
-//                }
-//            });
-//        }
-//
-//        sleepSeconds(600);
-//    }
+    @Test
+    public void testRollover() {
+        String id = generateRandomString(10000);
+
+        final List<File> files = new LinkedList<File>();
+
+        LongProbeFunction f = new LongProbeFunction() {
+            @Override
+            public long get(Object source) throws Exception {
+                return 0;
+            }
+        };
+
+        for (int k = 0; k < 10; k++) {
+            metricsRegistry.register(this, id + k, ProbeLevel.MANDATORY, f);
+        }
+
+        // we run for some time to make sure we get enough rollovers.
+        while (files.size() < 3) {
+            final File file = performanceLogFile.logFile;
+            if (file != null) {
+                if (!files.contains(file)) {
+                    files.add(file);
+                }
+
+                assertTrueEventually(new AssertTask() {
+                    @Override
+                    public void run() throws Exception {
+                        assertExist(file);
+                    }
+                });
+            }
+
+            sleepMillis(100);
+        }
+
+        // eventually all these files should be gone.
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (File file : files) {
+                    assertNotExist(file);
+                }
+            }
+        });
+    }
+
+    private void assertNotExist(File file) {
+        assertFalse("file:" + file + " should not exist", file.exists());
+    }
+
+    private void assertExist(File file) {
+        assertTrue("file:" + file + " should exist", file.exists());
+    }
 
     @Test
     public void testSlowOperationTest() throws InterruptedException {

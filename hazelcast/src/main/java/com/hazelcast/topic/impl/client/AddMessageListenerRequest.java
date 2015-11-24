@@ -17,8 +17,7 @@
 package com.hazelcast.topic.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.client.CallableClientRequest;
-import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.client.impl.client.BaseClientAddListenerRequest;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.nio.serialization.Data;
@@ -33,7 +32,7 @@ import com.hazelcast.topic.impl.TopicService;
 import java.io.IOException;
 import java.security.Permission;
 
-public class AddMessageListenerRequest extends CallableClientRequest implements RetryableRequest {
+public class AddMessageListenerRequest extends BaseClientAddListenerRequest {
 
     private String name;
 
@@ -50,8 +49,8 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
         ClientEndpoint endpoint = getEndpoint();
         Data partitionKey = serializationService.toData(name);
         MessageListener listener = new MessageListenerImpl(endpoint, partitionKey, getCallId());
-        String registrationId = service.addMessageListener(name, listener);
-        endpoint.setListenerRegistration(TopicService.SERVICE_NAME, name, registrationId);
+        String registrationId = service.addMessageListener(name, listener, localOnly);
+        endpoint.addListenerDestroyAction(TopicService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
 
@@ -72,11 +71,13 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
 
     @Override
     public void write(PortableWriter writer) throws IOException {
+        super.write(writer);
         writer.writeUTF("n", name);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
+        super.read(reader);
         name = reader.readUTF("n");
     }
 

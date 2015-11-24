@@ -17,13 +17,13 @@
 package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.ascii.NoOpCommand;
-import com.hazelcast.internal.ascii.TextCommandConstants;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.ascii.SocketTextReader;
+import com.hazelcast.nio.ascii.TextReadHandler;
 import com.hazelcast.util.StringUtil;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_POST;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class HttpPostCommand extends HttpCommand {
@@ -36,12 +36,12 @@ public class HttpPostCommand extends HttpCommand {
     private ByteBuffer data;
     private ByteBuffer line = ByteBuffer.allocate(CAPACITY);
     private String contentType;
-    private final SocketTextReader socketTextRequestReader;
+    private final TextReadHandler readHandler;
     private boolean chunked;
 
-    public HttpPostCommand(SocketTextReader socketTextRequestReader, String uri) {
-        super(TextCommandConstants.TextCommandType.HTTP_POST, uri);
-        this.socketTextRequestReader = socketTextRequestReader;
+    public HttpPostCommand(TextReadHandler readHandler, String uri) {
+        super(HTTP_POST, uri);
+        this.readHandler = readHandler;
     }
 
     /**
@@ -57,6 +57,7 @@ public class HttpPostCommand extends HttpCommand {
      * @param src
      * @return
      */
+    @Override
     public boolean readFrom(ByteBuffer src) {
         boolean complete = doActualRead(src);
         while (!complete && readyToReadData && chunked && src.hasRemaining()) {
@@ -101,7 +102,7 @@ public class HttpPostCommand extends HttpCommand {
             byte b = cb.get();
             char c = (char) b;
             if (c == '\n') {
-                processLine(toStringAndClear(line).toLowerCase());
+                processLine(StringUtil.lowerCaseInternal(toStringAndClear(line)));
                 if (nextLine) {
                     readyToReadData = true;
                 }
@@ -175,7 +176,7 @@ public class HttpPostCommand extends HttpCommand {
         } else if (!chunked && currentLine.startsWith(HEADER_CHUNKED)) {
             chunked = true;
         } else if (currentLine.startsWith(HEADER_EXPECT_100)) {
-            socketTextRequestReader.sendResponse(new NoOpCommand(RES_100));
+            readHandler.sendResponse(new NoOpCommand(RES_100));
         }
     }
 }

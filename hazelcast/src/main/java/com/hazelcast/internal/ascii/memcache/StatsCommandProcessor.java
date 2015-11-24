@@ -25,12 +25,14 @@ public class StatsCommandProcessor extends MemcacheCommandProcessor<StatsCommand
         super(textCommandService);
     }
 
+    @Override
     public void handle(StatsCommand command) {
         Stats stats = textCommandService.getStats();
         command.setResponse(stats);
         textCommandService.sendResponse(command);
     }
 
+    @Override
     public void handleRejection(StatsCommand command) {
         handle(command);
     }

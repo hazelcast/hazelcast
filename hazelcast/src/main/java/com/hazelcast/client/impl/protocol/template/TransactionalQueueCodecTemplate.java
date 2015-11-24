@@ -22,14 +22,16 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.TX_QUEUE_TEMPLATE_ID,
-        name = "TransactionalQueue", ns = "Hazelcast.Client.Protocol.TransactionalQueue")
+        name = "TransactionalQueue", ns = "Hazelcast.Client.Protocol.Codec")
 public interface TransactionalQueueCodecTemplate {
     /**
+     * Inserts the specified element into this queue, waiting up to the specified wait time if necessary for space to
+     * become available.
      *
      * @param name Name of the Transcational Queue
      * @param txnId ID of the transaction
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
-     * @param item The elemet to add
+     * @param item The element to add
      * @param timeout How long to wait before giving up, in milliseconds
      * @return <tt>true</tt> if successful, or <tt>false</tt> if the specified waiting time elapses before space is available
      */
@@ -37,6 +39,7 @@ public interface TransactionalQueueCodecTemplate {
     Object offer(String name, String txnId, long threadId, Data item, long timeout);
 
     /**
+     * Retrieves and removes the head of this queue, waiting if necessary until an element becomes available.
      *
      * @param name Name of the Transactional Queue
      * @param txnId ID of the transaction
@@ -47,17 +50,20 @@ public interface TransactionalQueueCodecTemplate {
     Object take(String name, String txnId, long threadId);
 
     /**
+     * Retrieves and removes the head of this queue, waiting up to the specified wait time if necessary for an element
+     * to become available.
      *
      * @param name Name of the Transactional Queue
      * @param txnId ID of the transaction
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param timeout How long to wait before giving up, in milliseconds
-     * @return The head of this queue, or <tt>null</tt> if the pecified waiting time elapses before an element is available
+     * @return The head of this queue, or <tt>null</tt> if the specified waiting time elapses before an element is available
      */
     @Request(id = 3, retryable = false, response = ResponseMessageConst.DATA)
     Object poll(String name, String txnId, long threadId, long timeout);
 
     /**
+     * Retrieves, but does not remove, the head of this queue, or returns null if this queue is empty.
      *
      * @param name Name of the Transactional Queue
      * @param txnId ID of the transaction
@@ -69,6 +75,8 @@ public interface TransactionalQueueCodecTemplate {
     Object peek(String name, String txnId, long threadId, long timeout);
 
     /**
+     * Returns the number of elements in this collection.If this collection contains more than Integer.MAX_VALUE
+     * elements, returns Integer.MAX_VALUE.
      *
      * @param name Name of the Transactional Queue
      * @param txnId ID of the transaction

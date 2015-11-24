@@ -5,9 +5,9 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.QueryResultSizeLimiter;
+import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -33,21 +33,14 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
 
     protected static final int PRE_CHECK_TRIGGER_LIMIT_INACTIVE = -1;
     protected static final int PRE_CHECK_TRIGGER_LIMIT_ACTIVE = Integer.MAX_VALUE;
-
-    protected enum KeyType {
-        STRING,
-        INTEGER
-    }
-
-    private TestHazelcastInstanceFactory factory;
-    private HazelcastInstance instance;
-    private IMap<Object, Integer> map;
-    private ILogger logger;
-
-    private int configLimit;
-    private int lowerLimit;
-    private int upperLimit;
-    private int checkLimitInterval;
+    protected TestHazelcastInstanceFactory factory;
+    protected HazelcastInstance instance;
+    protected IMap<Object, Integer> map;
+    protected ILogger logger;
+    protected int configLimit;
+    protected int lowerLimit;
+    protected int upperLimit;
+    protected int checkLimitInterval;
 
     /**
      * Extensive test which ensures that the {@link QueryResultSizeExceededException} will not be thrown under the configured
@@ -112,33 +105,11 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
      * @param limit           result size limit which will be configured for the cluster
      * @param preCheckTrigger number of partitions which will be used for local pre-check, <tt>-1</tt> deactivates the pre-check
      */
-    protected void runMapTxnWithExceptionTest(int partitionCount, int clusterSize, int limit, int preCheckTrigger) {
+    protected void runMapTxn(int partitionCount, int clusterSize, int limit, int preCheckTrigger) {
         internalSetUp(partitionCount, clusterSize, limit, preCheckTrigger);
 
         fillToLimit(KeyType.INTEGER, upperLimit);
-        internalRunTxnWithException();
-
-        shutdown(factory, map);
-    }
-
-    /**
-     * Test which calls {@link TransactionalMap} methods which are not expected to throw {@link QueryResultSizeExceededException}.
-     * <p/>
-     * This test fills the map to an amount where the exception is safely triggered. Then all {@link TransactionalMap} methods are
-     * called which should not trigger the exception.
-     * <p/>
-     * This methods fails if any of the called methods triggers the exception.
-     *
-     * @param partitionCount  number of partitions the created cluster
-     * @param clusterSize     number of nodes in the cluster
-     * @param limit           result size limit which will be configured for the cluster
-     * @param preCheckTrigger number of partitions which will be used for local pre-check, <tt>-1</tt> deactivates the pre-check
-     */
-    protected void runMapTxnWithoutExceptionTest(int partitionCount, int clusterSize, int limit, int preCheckTrigger) {
-        internalSetUp(partitionCount, clusterSize, limit, preCheckTrigger);
-
-        fillToLimit(KeyType.INTEGER, upperLimit);
-        internalRunTxnWithoutException();
+        internalRunTxn();
 
         shutdown(factory, map);
     }
@@ -146,7 +117,7 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
     private void internalSetUp(int partitionCount, int clusterSize, int limit, int preCheckTrigger) {
         Config config = createConfig(partitionCount, limit, preCheckTrigger);
         factory = createTestHazelcastInstanceFactory(clusterSize);
-        map = getMapWithNodeCount(clusterSize, config, factory);
+        map = getMapWithNodeCount(config, factory);
 
         configLimit = limit;
         lowerLimit = Math.round(limit * 0.95f);
@@ -155,10 +126,10 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
     }
 
     private Config createConfig(int partitionCount, int limit, int preCheckTrigger) {
-        Config config = new Config();
-        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, String.valueOf(partitionCount));
-        config.setProperty(GroupProperties.PROP_QUERY_RESULT_SIZE_LIMIT, String.valueOf(limit));
-        config.setProperty(GroupProperties.PROP_QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK, String.valueOf(preCheckTrigger));
+        Config config = getConfig();
+        config.setProperty(GroupProperty.PARTITION_COUNT, String.valueOf(partitionCount));
+        config.setProperty(GroupProperty.QUERY_RESULT_SIZE_LIMIT, String.valueOf(limit));
+        config.setProperty(GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK, String.valueOf(preCheckTrigger));
         return config;
     }
 
@@ -169,23 +140,17 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
         return createHazelcastInstanceFactory(nodeCount);
     }
 
-    private <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount, Config config, TestHazelcastInstanceFactory factory) {
-        String mapName = randomMapName();
-
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setName(mapName);
+    protected <K, V> IMap<K, V> getMapWithNodeCount(Config config, TestHazelcastInstanceFactory factory) {
+        String name = randomString();
+        MapConfig mapConfig = config.getMapConfig(name);
+        mapConfig.setName(name);
         mapConfig.setAsyncBackupCount(0);
         mapConfig.setBackupCount(0);
-        config.addMapConfig(mapConfig);
 
-        while (nodeCount > 1) {
-            factory.newHazelcastInstance(config);
-            nodeCount--;
-        }
 
-        instance = factory.newHazelcastInstance(config);
+        instance = factory.newInstances(config)[0];
         logger = instance.getLoggingService().getLogger(getClass());
-        return instance.getMap(mapName);
+        return instance.getMap(name);
     }
 
     private void mapPut(KeyType keyType, int index) {
@@ -217,11 +182,6 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
 
     private void failExpectedException(String methodName) {
         fail(format("Expected QueryResultSizeExceededException while calling %s with limit %d and upperLimit %d",
-                methodName, configLimit, upperLimit));
-    }
-
-    private void failUnwantedException(String methodName) {
-        fail(format("Unwanted QueryResultSizeExceededException was thrown while calling %s with limit %d and upperLimit %d",
                 methodName, configLimit, upperLimit));
     }
 
@@ -351,7 +311,7 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
      * <p/>
      * This methods fails if any of the called methods does not trigger the exception.
      */
-    private void internalRunTxnWithException() {
+    private void internalRunTxn() {
         TransactionContext transactionContext = instance.newTransactionContext();
         transactionContext.beginTransaction();
         TransactionalMap<Object, Integer> txnMap = transactionContext.getMap(map.getName());
@@ -370,32 +330,18 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
             checkException(e);
         }
 
-        transactionContext.rollbackTransaction();
-    }
-
-    /**
-     * Calls {@link TransactionalMap} methods once which are not expected to throw a {@link QueryResultSizeExceededException}.
-     * <p/>
-     * This method requires the map to be filled to an amount where the exception is safely triggered.
-     * <p/>
-     * This methods fails if any of the called methods triggers the exception.
-     */
-    private void internalRunTxnWithoutException() {
-        TransactionContext transactionContext = instance.newTransactionContext();
-        transactionContext.beginTransaction();
-
-        TransactionalMap<Object, Integer> txnMap = transactionContext.getMap(map.getName());
-
         try {
-            assertEquals("TransactionalMap.values()", upperLimit, txnMap.values().size());
+            txnMap.values();
+            failExpectedException("TransactionalMap.values()");
         } catch (QueryResultSizeExceededException e) {
-            failUnwantedException("TransactionalMap.values()");
+            checkException(e);
         }
 
         try {
-            assertEquals("TransactionalMap.keySet()", upperLimit, txnMap.keySet().size());
+            txnMap.keySet();
+            failExpectedException("TransactionalMap.keySet()");
         } catch (QueryResultSizeExceededException e) {
-            failUnwantedException("TransactionalMap.keySet()");
+            checkException(e);
         }
 
         transactionContext.rollbackTransaction();
@@ -404,5 +350,10 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
     private void shutdown(TestHazelcastInstanceFactory factory, IMap map) {
         map.destroy();
         factory.terminateAll();
+    }
+
+    protected enum KeyType {
+        STRING,
+        INTEGER
     }
 }

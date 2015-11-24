@@ -22,10 +22,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.util.IterationType;
 
 import java.io.IOException;
 
+/**
+ * The MapQueryRequest can deal with a null predicate for the sake of security. So it will be processed as a TruePredicate,
+ * but for security purposes the argument is not seen.
+ */
 public final class MapQueryRequest extends AbstractMapQueryRequest {
 
     private Predicate predicate;
@@ -57,12 +62,12 @@ public final class MapQueryRequest extends AbstractMapQueryRequest {
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{predicate};
+        return predicate == null ? null : new Object[]{predicate};
     }
 
     @Override
     protected Predicate getPredicate() {
-        return predicate;
+        return predicate == null ? TruePredicate.INSTANCE : predicate;
     }
 
     @Override

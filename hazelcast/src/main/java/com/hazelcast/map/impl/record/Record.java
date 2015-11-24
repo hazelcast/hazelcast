@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.nio.serialization.Data;
 
 /**
- * @param <V>
+ * @param <V> the type of value which is in the Record
  */
 public interface Record<V> {
 
@@ -76,4 +76,5 @@ public interface Record<V> {
 
     void setCreationTime(long creationTime);
 
+    boolean isTombstone();
 }

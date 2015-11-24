@@ -34,13 +34,13 @@ public class CollectionRemoveListenerRequest extends BaseClientRemoveListenerReq
     public CollectionRemoveListenerRequest() {
     }
 
-    public CollectionRemoveListenerRequest(String name, String registrationId, String serviceName) {
-        super(name, registrationId);
+    public CollectionRemoveListenerRequest(String name, String serviceName) {
+        super(name);
         this.serviceName = serviceName;
     }
 
     @Override
-    public Object call() throws Exception {
+    protected boolean deRegisterListener() {
         final ClientEngine clientEngine = getClientEngine();
         final EventService eventService = clientEngine.getEventService();
         return eventService.deregisterListener(serviceName, name, registrationId);

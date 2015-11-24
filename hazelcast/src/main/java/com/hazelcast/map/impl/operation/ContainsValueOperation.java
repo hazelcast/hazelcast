@@ -27,7 +27,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import java.io.IOException;
 
-public class ContainsValueOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class ContainsValueOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private boolean contains;
     private Data testValue;

@@ -17,8 +17,8 @@
 package com.hazelcast.wm.test.spring;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.wm.test.JettyServer;
+import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.web.spring.SpringAwareWebFilter;
 import com.hazelcast.wm.test.ServletContainer;
 import com.hazelcast.wm.test.TomcatServer;
 import org.apache.http.HttpStatus;
@@ -29,18 +29,20 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.security.core.session.SessionRegistry;
 
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
+@Category(SlowTest.class)
 public class SpringAwareWebFilterTest extends SpringAwareWebFilterTestSupport {
 
     @Override
-    protected ServletContainer getServletContainer(int port, String sourceDir, String serverXml) throws Exception{
-        return new TomcatServer(port,sourceDir,serverXml);
+    protected ServletContainer getServletContainer(int port, String sourceDir, String serverXml) throws Exception {
+        return new TomcatServer(port, sourceDir, serverXml);
     }
 
     @Test
@@ -88,6 +90,23 @@ public class SpringAwareWebFilterTest extends SpringAwareWebFilterTestSupport {
         SpringSecuritySession sss = login(null, true);
         logout(sss);
         assertEquals(HttpStatus.SC_MOVED_TEMPORARILY, sss.lastResponse.getStatusLine().getStatusCode());
+    }
+
+    // https://github.com/hazelcast/hazelcast/issues/6438
+    @Test
+    public void testSpringAwareWebFilterCreationWithProperties() {
+        Set<ApplicationContext> applicationContextSet =
+                SpringApplicationContextProvider.getApplicationContextSet();
+        Iterator<ApplicationContext> i = applicationContextSet.iterator();
+        ApplicationContext applicationContext = i.next();
+
+        SpringAwareWebFilter springAwareWebFilter =
+                (SpringAwareWebFilter) applicationContext.getBean("springAwareWebFilterWithProperties");
+        Properties properties = springAwareWebFilter.getProperties();
+
+        assertNotNull(properties);
+        assertEquals(1, properties.size());
+        assertEquals("propValue", properties.getProperty("propKey"));
     }
 
 }

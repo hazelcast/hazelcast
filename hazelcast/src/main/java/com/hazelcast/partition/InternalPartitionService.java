@@ -60,6 +60,7 @@ public interface InternalPartitionService extends CoreService {
      * @param partitionId  the partitionId
      * @return owner of partition
      * @throws InterruptedException
+     * @throws NoDataMemberInClusterException if all nodes are lite members and partitions can't be assigned
      */
     Address getPartitionOwnerOrWait(int partitionId);
 
@@ -135,6 +136,8 @@ public interface InternalPartitionService extends CoreService {
     boolean removeMigrationListener(String registrationId);
 
     String addPartitionLostListener(PartitionLostListener partitionLostListener);
+
+    String addLocalPartitionLostListener(PartitionLostListener partitionLostListener);
 
     boolean removePartitionLostListener(String registrationId);
 

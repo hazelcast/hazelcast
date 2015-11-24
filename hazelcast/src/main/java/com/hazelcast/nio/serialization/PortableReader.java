@@ -134,6 +134,13 @@ public interface PortableReader {
 
     /**
      * @param fieldName name of the field
+     * @return the boolean array value read
+     * @throws IOException
+     */
+    boolean[] readBooleanArray(String fieldName) throws IOException;
+
+    /**
+     * @param fieldName name of the field
      * @return the char array value read
      * @throws IOException
      */
@@ -176,7 +183,14 @@ public interface PortableReader {
 
     /**
      * @param fieldName name of the field
-     * @return the portabke value read
+     * @return the String array value read
+     * @throws IOException
+     */
+    String[] readUTFArray(String fieldName) throws IOException;
+
+    /**
+     * @param fieldName name of the field
+     * @return the portable value read
      * @throws IOException
      */
     Portable[] readPortableArray(String fieldName) throws IOException;

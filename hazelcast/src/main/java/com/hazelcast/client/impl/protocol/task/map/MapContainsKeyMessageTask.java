@@ -18,10 +18,9 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapContainsKeyCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.ContainsKeyOperation;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -30,7 +29,7 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 public class MapContainsKeyMessageTask
-        extends AbstractPartitionMessageTask<MapContainsKeyCodec.RequestParameters> {
+        extends AbstractMapPartitionMessageTask<MapContainsKeyCodec.RequestParameters> {
 
     public MapContainsKeyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -38,7 +37,8 @@ public class MapContainsKeyMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        ContainsKeyOperation operation = new ContainsKeyOperation(parameters.name, parameters.key);
+        MapOperation operation = getMapOperationProvider(parameters.name)
+                .createContainsKeyOperation(parameters.name, parameters.key);
         operation.setThreadId(parameters.threadId);
         return operation;
     }

@@ -17,6 +17,7 @@
 package com.hazelcast.cluster.impl;
 
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
@@ -47,7 +48,9 @@ public class MulticastJoiner extends AbstractJoiner {
         long maxJoinMillis = getMaxJoinMillis();
         Address thisAddress = node.getThisAddress();
 
-        while (node.isActive() && !node.joined() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+        while (node.isRunning() && !node.joined()
+                && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+
             // clear master node
             node.setMasterAddress(null);
 
@@ -71,13 +74,15 @@ public class MulticastJoiner extends AbstractJoiner {
         long maxMasterJoinTime = getMaxJoinTimeToMasterNode();
         long start = Clock.currentTimeMillis();
 
-        while (node.isActive() && !node.joined() && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
+        while (node.isRunning() && !node.joined()
+                && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
+
             Address master = node.getMasterAddress();
             if (master != null) {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Joining to master " + master);
                 }
-                node.clusterService.sendJoinRequest(master, true);
+                clusterJoinManager.sendJoinRequest(master, true);
             } else {
                 break;
             }
@@ -122,10 +127,9 @@ public class MulticastJoiner extends AbstractJoiner {
                 }
 
                 if (joinInfo.getMemberCount() == 1) {
-                    // if the other cluster has just single member, that may be a newly starting node
-                    // instead of a split node.
-                    // Wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinRequest.
-                    Thread.sleep(node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L * 2);
+                    // if the other cluster has just single member, that may be a newly starting node instead of a split node
+                    // wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinRequest
+                    Thread.sleep(2 * node.groupProperties.getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN));
                 }
 
                 JoinMessage response = sendSplitBrainJoinMessage(joinInfo.getAddress());
@@ -155,7 +159,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 logger.finest("Searching for master node. Max tries: " + maxTryCount.get());
             }
             JoinRequest joinRequest = node.createJoinRequest(false);
-            while (node.isActive() && currentTryCount.incrementAndGet() <= maxTryCount.get()) {
+            while (node.isRunning() && currentTryCount.incrementAndGet() <= maxTryCount.get()) {
                 joinRequest.setTryCount(currentTryCount.get());
                 node.multicastService.send(joinRequest);
                 if (node.getMasterAddress() == null) {

@@ -32,25 +32,29 @@ public class JoinMessage implements DataSerializable {
     protected int buildNumber;
     protected Address address;
     protected String uuid;
+    protected boolean liteMember;
     protected ConfigCheck configCheck;
     protected Collection<Address> memberAddresses;
+    protected int dataMemberCount;
 
     public JoinMessage() {
     }
 
     public JoinMessage(byte packetVersion, int buildNumber, Address address,
-            String uuid, ConfigCheck configCheck) {
-        this(packetVersion, buildNumber, address, uuid, configCheck, Collections.<Address>emptySet());
+                       String uuid, boolean liteMember, ConfigCheck configCheck) {
+        this(packetVersion, buildNumber, address, uuid, liteMember, configCheck, Collections.<Address>emptySet(), 0);
     }
 
-    public JoinMessage(byte packetVersion, int buildNumber, Address address,
-            String uuid, ConfigCheck configCheck, Collection<Address> memberAddresses) {
+    public JoinMessage(byte packetVersion, int buildNumber, Address address, String uuid, boolean liteMember,
+                       ConfigCheck configCheck, Collection<Address> memberAddresses, int dataMemberCount) {
         this.packetVersion = packetVersion;
         this.buildNumber = buildNumber;
         this.address = address;
         this.uuid = uuid;
+        this.liteMember = liteMember;
         this.configCheck = configCheck;
         this.memberAddresses = memberAddresses;
+        this.dataMemberCount = dataMemberCount;
     }
 
     public byte getPacketVersion() {
@@ -69,6 +73,10 @@ public class JoinMessage implements DataSerializable {
         return uuid;
     }
 
+    public boolean isLiteMember() {
+        return liteMember;
+    }
+
     public ConfigCheck getConfigCheck() {
         return configCheck;
     }
@@ -81,6 +89,10 @@ public class JoinMessage implements DataSerializable {
         return memberAddresses != null ? memberAddresses : Collections.<Address>emptySet();
     }
 
+    public int getDataMemberCount() {
+        return dataMemberCount;
+    }
+
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         packetVersion = in.readByte();
@@ -90,6 +102,7 @@ public class JoinMessage implements DataSerializable {
         uuid = in.readUTF();
         configCheck = new ConfigCheck();
         configCheck.readData(in);
+        liteMember = in.readBoolean();
 
         int memberCount = in.readInt();
         memberAddresses = new ArrayList<Address>(memberCount);
@@ -98,7 +111,7 @@ public class JoinMessage implements DataSerializable {
             member.readData(in);
             memberAddresses.add(member);
         }
-
+        dataMemberCount = in.readInt();
     }
 
     @Override
@@ -108,6 +121,7 @@ public class JoinMessage implements DataSerializable {
         address.writeData(out);
         out.writeUTF(uuid);
         configCheck.writeData(out);
+        out.writeBoolean(liteMember);
 
         int memberCount = getMemberCount();
         out.writeInt(memberCount);
@@ -116,18 +130,20 @@ public class JoinMessage implements DataSerializable {
                 member.writeData(out);
             }
         }
+        out.writeInt(dataMemberCount);
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("JoinMessage");
-        sb.append("{packetVersion=").append(packetVersion);
-        sb.append(", buildNumber=").append(buildNumber);
-        sb.append(", address=").append(address);
-        sb.append(", uuid='").append(uuid).append('\'');
-        sb.append(", memberCount=").append(getMemberCount());
-        sb.append('}');
-        return sb.toString();
+        return "JoinMessage{"
+                + "packetVersion=" + packetVersion
+                + ", buildNumber=" + buildNumber
+                + ", address=" + address
+                + ", uuid='" + uuid + '\''
+                + ", liteMember=" + liteMember
+                + ", memberCount=" + getMemberCount()
+                + ", dataMemberCount=" + dataMemberCount
+                + '}';
     }
+
 }

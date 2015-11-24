@@ -22,7 +22,7 @@ package com.hazelcast.client.impl.protocol;
  * <p/>
  * Response classes are defined    {@link com.hazelcast.client.impl.protocol.template.ResponseTemplate}
  * <p/>
- * see {@link   com.hazelcast.client.impl.protocol.template.ClientMessageTemplate#membershipListener()}
+ * see {@link   com.hazelcast.client.impl.protocol.template.ClientMessageTemplate#addMembershipListener(boolean)} ()}
  * for  a sample usage of responses in a request.
  */
 public final class ResponseMessageConst {
@@ -37,11 +37,12 @@ public final class ResponseMessageConst {
     public static final int AUTHENTICATION = 107;
     public static final int PARTITIONS = 108;
     public static final int EXCEPTION = 109;
-    public static final int SET_DISTRIBUTED_OBJECT = 110;
+    public static final int LIST_DISTRIBUTED_OBJECT = 110;
     public static final int ENTRY_VIEW = 111;
     public static final int JOB_PROCESS_INFO = 112;
-    public static final int SET_DATA = 113;
-    public static final int SET_ENTRY = 114;
+//    public static final int SET_DATA = 113;
+//    public static final int SET_ENTRY = 114;
     public static final int READ_RESULT_SET = 115;
     public static final int CACHE_KEY_ITERATOR_RESULT = 116;
+    public static final int LIST_ENTRY = 117;
 }

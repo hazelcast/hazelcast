@@ -48,11 +48,6 @@ public class LocalReplicatedMapStatsImplTest {
         localReplicatedMapStats.incrementReceivedEvents();
         localReplicatedMapStats.incrementReceivedEvents();
 
-        localReplicatedMapStats.incrementReceivedReplicationEvents();
-        localReplicatedMapStats.incrementReceivedReplicationEvents();
-        localReplicatedMapStats.incrementReceivedReplicationEvents();
-        localReplicatedMapStats.incrementReceivedReplicationEvents();
-
         localReplicatedMapStats.setHeapCost(7461762);
     }
 
@@ -62,7 +57,7 @@ public class LocalReplicatedMapStatsImplTest {
         assertEquals(5, localReplicatedMapStats.getOwnedEntryCount());
         assertEquals(0, localReplicatedMapStats.getBackupEntryCount());
         assertEquals(0, localReplicatedMapStats.getBackupCount());
-        assertEquals(0, localReplicatedMapStats.getOwnedEntryMemoryCost());
+        assertEquals(1234, localReplicatedMapStats.getOwnedEntryMemoryCost());
         assertEquals(0, localReplicatedMapStats.getBackupEntryMemoryCost());
         assertEquals(1231241512, localReplicatedMapStats.getLastAccessTime());
         assertEquals(1341412343, localReplicatedMapStats.getLastUpdateTime());
@@ -82,7 +77,6 @@ public class LocalReplicatedMapStatsImplTest {
         assertEquals(1238, localReplicatedMapStats.getMaxRemoveLatency());
         assertEquals(5, localReplicatedMapStats.getOtherOperationCount());
         assertEquals(2, localReplicatedMapStats.getEventOperationCount());
-        assertEquals(4, localReplicatedMapStats.getReplicationEventCount());
 
         assertEquals(0, localReplicatedMapStats.getHeapCost());
         assertNotNull(localReplicatedMapStats.toString());
@@ -98,7 +92,7 @@ public class LocalReplicatedMapStatsImplTest {
         assertEquals(5, deserialized.getOwnedEntryCount());
         assertEquals(0, deserialized.getBackupEntryCount());
         assertEquals(0, deserialized.getBackupCount());
-        assertEquals(0, deserialized.getOwnedEntryMemoryCost());
+        assertEquals(1234, deserialized.getOwnedEntryMemoryCost());
         assertEquals(0, deserialized.getBackupEntryMemoryCost());
         assertEquals(1231241512, deserialized.getLastAccessTime());
         assertEquals(1341412343, deserialized.getLastUpdateTime());
@@ -118,7 +112,6 @@ public class LocalReplicatedMapStatsImplTest {
         assertEquals(1238, deserialized.getMaxRemoveLatency());
         assertEquals(5, deserialized.getOtherOperationCount());
         assertEquals(2, deserialized.getEventOperationCount());
-        assertEquals(4, deserialized.getReplicationEventCount());
 
         assertEquals(0, deserialized.getHeapCost());
         assertNotNull(deserialized.toString());

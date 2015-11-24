@@ -16,15 +16,15 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.query.impl.TypeConverters.TypeConverter;
+import com.hazelcast.query.impl.TypeConverters.BaseTypeConverter;
 
 /**
  * Converts to the same value
  **/
-public class IdentityConverter implements TypeConverter {
+class IdentityConverter extends BaseTypeConverter {
 
     @Override
-    public Comparable convert(final Comparable value) {
+    Comparable convertInternal(final Comparable value) {
         return value;
     }
 

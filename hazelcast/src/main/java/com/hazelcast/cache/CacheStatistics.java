@@ -16,6 +16,8 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.monitor.NearCacheStats;
+
 /**
  * Cache statistics
  * <p>
@@ -36,6 +38,34 @@ package com.hazelcast.cache;
  * @since 3.3.1
  */
 public interface CacheStatistics {
+
+    /**
+     * Gets the cache creation time.
+     *
+     * @return the cache creation time
+     */
+    long getCreationTime();
+
+    /**
+     * Gets the last access time to cache.
+     *
+     * @return the last access time to cache
+     */
+    long getLastAccessTime();
+
+    /**
+     * Gets the last update time to cache.
+     *
+     * @return the last update time to cache
+     */
+    long getLastUpdateTime();
+
+    /**
+     * Returns the owned entry count in the cache.
+     *
+     * @return the owned entry count in the cache
+     */
+    long getOwnedEntryCount();
 
     /**
      * The number of get requests that were satisfied by the cache.
@@ -167,5 +197,12 @@ public interface CacheStatistics {
      * @return the mean time in microseconds to execute removes
      */
     float getAverageRemoveTime();
+
+    /**
+     * Gets the near-cache statistics.
+     *
+     * @return the near-cache statistics
+     */
+    NearCacheStats getNearCacheStatistics();
 
 }

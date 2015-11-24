@@ -17,12 +17,12 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
@@ -44,7 +44,7 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
     }
 
     @Override
-    public void innerBeforeRun() {
+    public void innerBeforeRun() throws Exception {
         super.innerBeforeRun();
         final SerializationService serializationService = getNodeEngine().getSerializationService();
         final ManagedContext managedContext = serializationService.getManagedContext();
@@ -54,13 +54,12 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
     @Override
     public void run() throws Exception {
         final long now = getNow();
-
         final Set<Data> keys = this.keys;
         for (Data dataKey : keys) {
             if (keyNotOwnedByThisPartition(dataKey)) {
                 continue;
             }
-            final Object oldValue = getValueFor(dataKey, now);
+            final Object oldValue = recordStore.get(dataKey, false);
 
             final Map.Entry entry = createMapEntry(dataKey, oldValue);
 
@@ -78,18 +77,13 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
 
             entryAddedOrUpdated(entry, dataKey, oldValue, now);
 
-            evict(false);
+            evict();
         }
     }
 
     @Override
     public Object getResponse() {
         return responses;
-    }
-
-    @Override
-    public String toString() {
-        return "MultipleEntryOperation{}";
     }
 
     @Override

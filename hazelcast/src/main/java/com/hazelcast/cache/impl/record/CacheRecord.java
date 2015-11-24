@@ -16,8 +16,8 @@
 
 package com.hazelcast.cache.impl.record;
 
-import com.hazelcast.cache.impl.eviction.Evictable;
-import com.hazelcast.cache.impl.eviction.Expirable;
+import com.hazelcast.internal.eviction.Evictable;
+import com.hazelcast.internal.eviction.Expirable;
 
 /**
  * <p>
@@ -78,4 +78,25 @@ public interface CacheRecord<V> extends Expirable, Evictable {
      */
     void resetAccessHit();
 
+    /**
+     * Tells whether this record is a tombstone or not.
+     *
+     * @return true if this record is tombstone, false otherwise
+     */
+    boolean isTombstone();
+
+    /**
+     * Returns tombstone sequence associated with this record.
+     * Return value is undefined if this is record is not a tombstone.
+     *
+     * @return tombstone sequence
+     */
+    long getTombstoneSequence();
+
+    /**
+     * Sets tombstone sequence associated with this record.
+     *
+     * @param seq tombstone sequence
+     */
+    void setTombstoneSequence(long seq);
 }

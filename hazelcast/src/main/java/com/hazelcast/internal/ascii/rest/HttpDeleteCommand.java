@@ -16,17 +16,18 @@
 
 package com.hazelcast.internal.ascii.rest;
 
-import com.hazelcast.internal.ascii.TextCommandConstants;
-
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_DELETE;
+
 public class HttpDeleteCommand extends HttpCommand {
-    boolean nextLine;
+    private boolean nextLine;
 
     public HttpDeleteCommand(String uri) {
-        super(TextCommandConstants.TextCommandType.HTTP_DELETE, uri);
+        super(HTTP_DELETE, uri);
     }
 
+    @Override
     public boolean readFrom(ByteBuffer src) {
         while (src.hasRemaining()) {
             char c = (char) src.get();

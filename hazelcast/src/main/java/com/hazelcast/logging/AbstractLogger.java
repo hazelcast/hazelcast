@@ -41,8 +41,18 @@ public abstract class AbstractLogger implements ILogger {
     }
 
     @Override
+    public void fine(String message) {
+        log(Level.FINE, message);
+    }
+
+    @Override
     public boolean isFinestEnabled() {
         return isLoggable(Level.FINEST);
+    }
+
+    @Override
+    public boolean isFineEnabled() {
+        return isLoggable(Level.FINE);
     }
 
     @Override

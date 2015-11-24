@@ -31,11 +31,13 @@ public class VersionCommand extends AbstractTextCommand {
         super(type);
     }
 
+    @Override
     public boolean writeTo(ByteBuffer dst) {
         dst.put(VERSION);
         return true;
     }
 
+    @Override
     public boolean readFrom(ByteBuffer src) {
         return true;
     }

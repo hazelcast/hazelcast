@@ -56,12 +56,6 @@ public class ErrorResponse extends Response {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("ErrorResponse");
-        sb.append("{callId=").append(callId);
-        sb.append(", urgent=").append(urgent);
-        sb.append(", cause=").append(cause);
-        sb.append('}');
-        return sb.toString();
+        return "ErrorResponse{callId=" + callId + ", urgent=" + urgent + ", cause=" + cause + '}';
     }
 }

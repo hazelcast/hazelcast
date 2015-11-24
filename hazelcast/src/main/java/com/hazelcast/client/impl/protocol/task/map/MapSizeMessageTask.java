@@ -18,10 +18,8 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapSizeCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.SizeOperationFactory;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -31,7 +29,7 @@ import java.security.Permission;
 import java.util.Map;
 
 public class MapSizeMessageTask
-        extends AbstractAllPartitionsMessageTask<MapSizeCodec.RequestParameters> {
+        extends AbstractMapAllPartitionsMessageTask<MapSizeCodec.RequestParameters> {
 
     public MapSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -39,7 +37,8 @@ public class MapSizeMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new SizeOperationFactory(parameters.name);
+        String mapName = parameters.name;
+        return getOperationProvider(mapName).createMapSizeOperationFactory(mapName);
     }
 
     @Override

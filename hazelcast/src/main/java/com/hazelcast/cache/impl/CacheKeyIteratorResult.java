@@ -91,10 +91,7 @@ public class CacheKeyIteratorResult
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("CacheKeyIteratorResult{");
-        sb.append(", tableIndex=").append(tableIndex);
-        sb.append('}');
-        return sb.toString();
+        return "CacheKeyIteratorResult{tableIndex=" + tableIndex + '}';
     }
 
     public int getCount() {

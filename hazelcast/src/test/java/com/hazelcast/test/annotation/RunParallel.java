@@ -21,9 +21,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-
 /**
- *  Annotation to mark tests to be run in parallel. Used with {@link com.hazelcast.test.HazelcastTestRunner}
+ * Annotation to mark tests to be run in parallel.
+ * <p/>
+ * Used with {@link com.hazelcast.test.HazelcastTestRunner}.
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

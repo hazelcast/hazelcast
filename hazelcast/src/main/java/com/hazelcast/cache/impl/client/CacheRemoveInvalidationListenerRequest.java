@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CachePortableHook;
-import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 
 import java.security.Permission;
@@ -25,7 +25,6 @@ import java.security.Permission;
 /**
  * Client request which unregisters the invalidation listener on behalf of the client.
  *
- * @see com.hazelcast.cache.impl.CacheService#deregisterListener(String, String)
  */
 public class CacheRemoveInvalidationListenerRequest
         extends BaseClientRemoveListenerRequest {
@@ -33,20 +32,19 @@ public class CacheRemoveInvalidationListenerRequest
     public CacheRemoveInvalidationListenerRequest() {
     }
 
-    public CacheRemoveInvalidationListenerRequest(String name, String registrationId) {
-        super(name, registrationId);
+    public CacheRemoveInvalidationListenerRequest(String name) {
+        super(name);
     }
 
     @Override
-    public Object call()
-            throws Exception {
-        final CacheService service = getService();
+    protected boolean deRegisterListener() {
+        final ICacheService service = getService();
         return service.deregisterListener(name, registrationId);
     }
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override

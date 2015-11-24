@@ -24,14 +24,17 @@ import com.hazelcast.quorum.QuorumEvent;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumFunction;
 import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 
 /**
  * {@link QuorumImpl} can be used to notify quorum service for a particular quorum result that originated externally.
@@ -119,7 +122,7 @@ public class QuorumImpl implements Quorum {
         if (!isQuorumNeeded(op)) {
             return;
         }
-        Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
+        Collection<Member> memberList = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
         if (!isInitialized()) {
             update(memberList);
         }

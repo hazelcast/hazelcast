@@ -47,10 +47,6 @@ public final class HazelcastCollectionRegion<Cache extends RegionCache> extends 
 
     @Override
     public CollectionRegionAccessStrategy buildAccessStrategy(final AccessType accessType) throws CacheException {
-        if (null == accessType) {
-            throw new CacheException(
-                    "Got null AccessType while attempting to build CollectionRegionAccessStrategy. This can't happen!");
-        }
         if (AccessType.READ_ONLY.equals(accessType)) {
             return new CollectionRegionAccessStrategyAdapter(
                     new ReadOnlyAccessDelegate<HazelcastCollectionRegion>(this, props));
@@ -63,10 +59,6 @@ public final class HazelcastCollectionRegion<Cache extends RegionCache> extends 
             return new CollectionRegionAccessStrategyAdapter(
                     new ReadWriteAccessDelegate<HazelcastCollectionRegion>(this, props));
         }
-        if (AccessType.TRANSACTIONAL.equals(accessType)) {
-            throw new CacheException("Transactional access is not currently supported by Hazelcast.");
-        }
-        throw new CacheException("Got unknown AccessType " + accessType
-                                 + " while attempting to build CollectionRegionAccessStrategy.");
+        throw new CacheException("AccessType \"" + accessType + "\" is not currently supported by Hazelcast.");
     }
 }

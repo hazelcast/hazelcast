@@ -16,6 +16,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 import static org.junit.Assert.assertEquals;
 
@@ -27,7 +28,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
     }
 
     @Test

@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -105,8 +106,17 @@ public final class ClassicOperationExecutor implements OperationExecutor {
                 + partitionOperationThreads.length + " partition operation threads.");
     }
 
+    public void start() {
+        for (Thread t : partitionOperationThreads) {
+            t.start();
+        }
+        for (Thread t : genericOperationThreads) {
+            t.start();
+        }
+    }
+
     private OperationRunner[] initPartitionOperationRunners(GroupProperties properties, OperationRunnerFactory handlerFactory) {
-        OperationRunner[] operationRunners = new OperationRunner[properties.PARTITION_COUNT.getInteger()];
+        OperationRunner[] operationRunners = new OperationRunner[properties.getInteger(GroupProperty.PARTITION_COUNT)];
         for (int partitionId = 0; partitionId < operationRunners.length; partitionId++) {
             operationRunners[partitionId] = handlerFactory.createPartitionRunner(partitionId);
         }
@@ -114,7 +124,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     }
 
     private OperationRunner[] initGenericOperationRunners(GroupProperties properties, OperationRunnerFactory runnerFactory) {
-        int genericThreadCount = properties.GENERIC_OPERATION_THREAD_COUNT.getInteger();
+        int genericThreadCount = properties.getInteger(GroupProperty.GENERIC_OPERATION_THREAD_COUNT);
         if (genericThreadCount <= 0) {
             // default generic operation thread count
             int coreSize = Runtime.getRuntime().availableProcessors();
@@ -129,7 +139,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     }
 
     private PartitionOperationThread[] initPartitionThreads(GroupProperties properties) {
-        int threadCount = properties.PARTITION_OPERATION_THREAD_COUNT.getInteger();
+        int threadCount = properties.getInteger(GroupProperty.PARTITION_OPERATION_THREAD_COUNT);
         if (threadCount <= 0) {
             // default partition operation thread count
             int coreSize = Runtime.getRuntime().availableProcessors();
@@ -145,7 +155,6 @@ public final class ClassicOperationExecutor implements OperationExecutor {
                     threadGroup, nodeExtension, partitionOperationRunners);
 
             threads[threadId] = operationThread;
-            operationThread.start();
 
             metricsRegistry.scanAndRegister(operationThread, "operation." + operationThread.getName());
         }
@@ -175,23 +184,20 @@ public final class ClassicOperationExecutor implements OperationExecutor {
                     logger, threadGroup, nodeExtension, operationRunner);
 
             threads[threadId] = operationThread;
-            operationThread.start();
-
             operationRunner.setCurrentThread(operationThread);
-
             metricsRegistry.scanAndRegister(operationThread, "operation." + operationThread.getName());
         }
 
         return threads;
     }
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP" })
+    @SuppressFBWarnings({ "EI_EXPOSE_REP" })
     @Override
     public OperationRunner[] getPartitionOperationRunners() {
         return partitionOperationRunners;
     }
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP" })
+    @SuppressFBWarnings({ "EI_EXPOSE_REP" })
     @Override
     public OperationRunner[] getGenericOperationRunners() {
         return genericOperationRunners;
@@ -247,18 +253,24 @@ public final class ClassicOperationExecutor implements OperationExecutor {
             return true;
         }
 
+        // allowed to invoke non partition specific task
         if (op.getPartitionId() < 0) {
             return true;
         }
 
-        // we are allowed to invoke from non PartitionOperationThreads (including GenericOperationThread)
+        // allowed to invoke from non PartitionOperationThreads (including GenericOperationThread)
         if (!(currentThread instanceof PartitionOperationThread)) {
             return true;
         }
 
-        // we are only allowed to invoke from a PartitionOperationThread if the operation belongs to that
-        // PartitionOperationThread.
         PartitionOperationThread partitionThread = (PartitionOperationThread) currentThread;
+        OperationRunner runner = partitionThread.getCurrentOperationRunner();
+        if (runner != null) {
+            // non null runner means it's a nested call
+            // in this case partitionId of both inner and outer operations have to match
+            return runner.getPartitionId() == op.getPartitionId();
+        }
+
         return toPartitionThreadIndex(op.getPartitionId()) == partitionThread.threadId;
     }
 
@@ -333,6 +345,14 @@ public final class ClassicOperationExecutor implements OperationExecutor {
             runOnCallingThread(op);
         } else {
             execute(op);
+        }
+    }
+
+    @Override public void runOnAllPartitionThreads(Runnable task) {
+        checkNotNull(task, "task can't be null");
+
+        for (OperationThread partitionOperationThread : partitionOperationThreads) {
+            partitionOperationThread.scheduleQueue.addUrgent(task);
         }
     }
 

@@ -31,9 +31,6 @@ import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * @author mdogan 7/4/13
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class DateHelperTest {
@@ -44,10 +41,10 @@ public class DateHelperTest {
 
     @Test
     public void testSqlDate() {
-        final long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
 
-        final java.sql.Date date1 = new java.sql.Date(now);
-        final java.sql.Date date2 = DateHelper.parseSqlDate(date1.toString());
+        java.sql.Date date1 = new java.sql.Date(now);
+        java.sql.Date date2 = DateHelper.parseSqlDate(date1.toString());
 
         Calendar cal1 = Calendar.getInstance(Locale.US);
         cal1.setTimeInMillis(date1.getTime());
@@ -61,10 +58,10 @@ public class DateHelperTest {
 
     @Test
     public void testUtilDate() {
-        final long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
 
-        final Date date1 = new Date(now);
-        final Date date2 = DateHelper.parseDate(new SimpleDateFormat(DateHelperTest.DATE_FORMAT, Locale.US).format(date1));
+        Date date1 = new Date(now);
+        Date date2 = DateHelper.parseDate(new SimpleDateFormat(DateHelperTest.DATE_FORMAT, Locale.US).format(date1));
 
         Calendar cal1 = Calendar.getInstance(Locale.US);
         cal1.setTimeInMillis(date1.getTime());
@@ -81,10 +78,10 @@ public class DateHelperTest {
 
     @Test
     public void testTimestamp() {
-        final long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
 
-        final Timestamp date1 = new Timestamp(now);
-        final Timestamp date2 = DateHelper.parseTimeStamp(date1.toString());
+        Timestamp date1 = new Timestamp(now);
+        Timestamp date2 = DateHelper.parseTimeStamp(date1.toString());
 
         Calendar cal1 = Calendar.getInstance(Locale.US);
         cal1.setTimeInMillis(date1.getTime());
@@ -101,10 +98,10 @@ public class DateHelperTest {
 
     @Test
     public void testTime() {
-        final long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
 
-        final Time time1 = new Time(now);
-        final Time time2 = DateHelper.parseSqlTime(time1.toString());
+        Time time1 = new Time(now);
+        Time time2 = DateHelper.parseSqlTime(time1.toString());
 
         Calendar cal1 = Calendar.getInstance(Locale.US);
         cal1.setTimeInMillis(time1.getTime());
@@ -116,4 +113,3 @@ public class DateHelperTest {
         assertEquals(cal1.get(Calendar.SECOND), cal2.get(Calendar.SECOND));
     }
 }
-

@@ -33,7 +33,7 @@ public class Log4j2Factory extends LoggerFactorySupport {
         return new Log4j2Logger(LogManager.getContext().getLogger(name));
     }
 
-    class Log4j2Logger extends AbstractLogger {
+    static class Log4j2Logger extends AbstractLogger {
         private final ExtendedLogger logger;
 
         public Log4j2Logger(ExtendedLogger logger) {
@@ -51,57 +51,40 @@ public class Log4j2Factory extends LoggerFactorySupport {
 
         @Override
         public void log(Level level, String message) {
-            logger.logIfEnabled(FQCN, getLevel(level), null, message);
+            logger.logIfEnabled(FQCN, toLog4j2Level(level), null, message);
         }
 
         @Override
         public void log(Level level, String message, Throwable thrown) {
-            logger.logIfEnabled(FQCN, getLevel(level), null, message, thrown);
+            logger.logIfEnabled(FQCN, toLog4j2Level(level), null, message, thrown);
         }
 
         @Override
         public Level getLevel() {
-            if (logger.isDebugEnabled()) {
-                return Level.FINEST;
-            } else if (logger.isInfoEnabled()) {
-                return Level.INFO;
-            } else if (logger.isWarnEnabled()) {
-                return Level.WARNING;
-            } else {
-                return Level.SEVERE;
-            }
+            return logger.isTraceEnabled() ? Level.FINEST
+                 : logger.isDebugEnabled() ? Level.FINE
+                 : logger.isInfoEnabled()  ? Level.INFO
+                 : logger.isWarnEnabled()  ? Level.WARNING
+                 : logger.isErrorEnabled() ? Level.SEVERE
+                 : logger.isFatalEnabled() ? Level.SEVERE
+                 : Level.OFF;
         }
 
         @Override
         public boolean isLoggable(Level level) {
-            if (Level.OFF == level) {
-                return false;
-            } else {
-                return logger.isEnabled(getLevel(level), null);
-            }
+            return level != Level.OFF && logger.isEnabled(toLog4j2Level(level), null);
         }
 
-        // need more than 5 returns from this method
-        //CHECKSTYLE:OFF
-        private org.apache.logging.log4j.Level getLevel(Level level) {
-            if (Level.SEVERE == level) {
-                return org.apache.logging.log4j.Level.ERROR;
-            } else if (Level.WARNING == level) {
-                return org.apache.logging.log4j.Level.WARN;
-            } else if (Level.INFO == level) {
-                return org.apache.logging.log4j.Level.INFO;
-            } else if (Level.CONFIG == level) {
-                return org.apache.logging.log4j.Level.INFO;
-            } else if (Level.FINE == level) {
-                return org.apache.logging.log4j.Level.DEBUG;
-            } else if (Level.FINER == level) {
-                return org.apache.logging.log4j.Level.DEBUG;
-            } else if (Level.FINEST == level) {
-                return org.apache.logging.log4j.Level.DEBUG;
-            } else {
-                return org.apache.logging.log4j.Level.INFO;
-            }
+        private static org.apache.logging.log4j.Level toLog4j2Level(Level level) {
+            return level == Level.FINEST  ? org.apache.logging.log4j.Level.TRACE
+                 : level == Level.FINE    ? org.apache.logging.log4j.Level.DEBUG
+                 : level == Level.INFO    ? org.apache.logging.log4j.Level.INFO
+                 : level == Level.WARNING ? org.apache.logging.log4j.Level.WARN
+                 : level == Level.SEVERE  ? org.apache.logging.log4j.Level.ERROR
+                 : level == Level.FINER   ? org.apache.logging.log4j.Level.DEBUG
+                 : level == Level.CONFIG  ? org.apache.logging.log4j.Level.INFO
+                 : level == Level.OFF     ? org.apache.logging.log4j.Level.OFF
+                 : org.apache.logging.log4j.Level.INFO;
         }
-        //CHECKSTYLE:ON
     }
 }

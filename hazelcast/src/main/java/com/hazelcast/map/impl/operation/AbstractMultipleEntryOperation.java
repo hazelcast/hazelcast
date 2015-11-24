@@ -24,32 +24,35 @@ import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
-import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapEntrySet;
-import com.hazelcast.map.impl.MapEventPublisher;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
-import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
+
 import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
-abstract class AbstractMultipleEntryOperation extends AbstractMapOperation implements MutatingOperation {
+abstract class AbstractMultipleEntryOperation extends MapOperation implements MutatingOperation {
 
-    protected MapEntrySet responses;
+    protected MapEntries responses;
     protected EntryProcessor entryProcessor;
     protected EntryBackupProcessor backupProcessor;
     protected transient RecordStore recordStore;
+    protected List<WanEventWrapper> wanEventList = new ArrayList<WanEventWrapper>();
 
     protected AbstractMultipleEntryOperation() {
     }
@@ -65,7 +68,7 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
     }
 
     @Override
-    public void innerBeforeRun() {
+    public void innerBeforeRun() throws Exception {
         super.innerBeforeRun();
         this.recordStore = getRecordStore();
     }
@@ -165,7 +168,7 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
         }
 
         Object newValue = entry.getValue();
-        invalidateNearCaches(key);
+        invalidateNearCache(key);
         // assign it again since we don't want to serialize newValue every time.
         newValue = publishEntryEvent(key, newValue, oldValue, eventType);
         publishWanReplicationEvent(key, newValue, eventType);
@@ -190,7 +193,7 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
     }
 
     protected void put(Data key, Object value) {
-        recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(key, value));
+        recordStore.put(key, value, DEFAULT_TTL);
     }
 
 
@@ -208,15 +211,6 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
         return Clock.currentTimeMillis();
     }
 
-    protected void invalidateNearCaches(Data key) {
-        final String mapName = name;
-        final MapServiceContext mapServiceContext = getMapServiceContext();
-        final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        if (nearCacheProvider.isNearCacheAndInvalidationEnabled(mapName)) {
-            nearCacheProvider.invalidateAllNearCaches(mapName, key);
-        }
-    }
-
     protected Object publishEntryEvent(Data key, Object value, Object oldValue, EntryEventType eventType) {
         if (hasRegisteredListenerForThisMap()) {
             oldValue = nullifyOldValueIfNecessary(oldValue, eventType);
@@ -229,30 +223,27 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
     }
 
     protected void publishWanReplicationEvent(Data key, Object value, EntryEventType eventType) {
-        final MapContainer mapContainer = this.mapContainer;
-        if (mapContainer.getWanReplicationPublisher() == null
-                && mapContainer.getWanMergePolicy() == null) {
-            return;
-        }
-        final MapEventPublisher mapEventPublisher = getMapEventPublisher();
-        if (EntryEventType.REMOVED.equals(eventType)) {
-            mapEventPublisher.publishWanReplicationRemove(name, key, getNow());
-        } else {
-            final Record record = recordStore.getRecord(key);
-            if (record != null) {
-                final Data dataValueAsData = toData(value);
-                final EntryView entryView = createSimpleEntryView(key, dataValueAsData, record);
-                mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+        if (mapContainer.isWanReplicationEnabled()) {
+            final MapEventPublisher mapEventPublisher = getMapEventPublisher();
+            if (EntryEventType.REMOVED == eventType) {
+                mapEventPublisher.publishWanReplicationRemove(name, key, getNow());
+                wanEventList.add(new WanEventWrapper(key, null, EntryEventType.REMOVED));
+            } else {
+                final Record record = recordStore.getRecord(key);
+                if (record != null) {
+                    final Data dataValueAsData = toData(value);
+                    final EntryView entryView = createSimpleEntryView(key, dataValueAsData, record);
+                    mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+                    wanEventList.add(new WanEventWrapper(key, value, EntryEventType.UPDATED));
+                }
             }
         }
     }
-
 
     protected MapServiceContext getMapServiceContext() {
         final MapService mapService = getService();
         return mapService.getMapServiceContext();
     }
-
 
     protected long getLatencyFrom(long begin) {
         return Clock.currentTimeMillis() - begin;
@@ -263,7 +254,7 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
             return;
         }
         if (responses == null) {
-            responses = new MapEntrySet();
+            responses = new MapEntries();
         }
         responses.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(key, response));
     }
@@ -277,19 +268,50 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
         backupProcessor.processBackup(entry);
     }
 
-    protected Object getValueFor(Data dataKey, long now) {
-        final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(dataKey, now);
-        return mapEntry.getValue();
-    }
-
     protected boolean keyNotOwnedByThisPartition(Data key) {
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         return partitionService.getPartitionId(key) != getPartitionId();
     }
 
-    protected void evict(boolean backup) {
+    protected void evict() {
         final long now = Clock.currentTimeMillis();
-        recordStore.evictEntries(now, backup);
+        recordStore.evictEntries(now);
     }
 
+    protected static class WanEventWrapper {
+
+        Data key;
+        Object value;
+        EntryEventType eventType;
+
+        public WanEventWrapper(Data key, Object value, EntryEventType eventType) {
+            this.key = key;
+            this.value = value;
+            this.eventType = eventType;
+        }
+
+        public Data getKey() {
+            return key;
+        }
+
+        public void setKey(Data key) {
+            this.key = key;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+
+        public void setValue(Object value) {
+            this.value = value;
+        }
+
+        public EntryEventType getEventType() {
+            return eventType;
+        }
+
+        public void setEventType(EntryEventType eventType) {
+            this.eventType = eventType;
+        }
+    }
 }

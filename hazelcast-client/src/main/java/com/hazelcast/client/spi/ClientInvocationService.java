@@ -17,17 +17,19 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.Connection;
+
 import java.io.IOException;
 
 /**
  * @author mdogan 5/16/13
  */
 public interface ClientInvocationService {
+
+    void start();
 
     void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) throws IOException;
 
@@ -39,22 +41,10 @@ public interface ClientInvocationService {
 
     boolean isRedoOperation();
 
-    /**
-     * Removes event handler corresponding to callId
-     *
-     * @param callId of event handler registration request
-     * @return true if found and removed, false otherwise
-     */
-    boolean removeEventHandler(Integer callId);
-
     void shutdown();
 
-    void handlePacket(Packet packet);
+    void handleClientMessage(ClientMessage message, Connection connection);
 
     void cleanConnectionResources(ClientConnection connection);
 
-    EventHandler getEventHandler(int callId);
-
-    //TODO just to be called by stabilizer at the moment
-    <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target) throws Exception;
 }

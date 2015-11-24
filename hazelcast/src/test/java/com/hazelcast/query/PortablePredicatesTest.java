@@ -16,13 +16,15 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.serialization.*;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -43,8 +45,10 @@ import static org.junit.Assert.assertTrue;
 public class PortablePredicatesTest {
 
     private static final short FACTORY_ID = 1;
-    private final SerializationService ss = new DefaultSerializationServiceBuilder()
-            .addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
+
+    private final SerializationService serializationService = new DefaultSerializationServiceBuilder()
+            .addPortableFactory(FACTORY_ID, new TestPortableFactory())
+            .build();
 
     @Test
     public void testPortablePredicate() {
@@ -54,11 +58,7 @@ public class PortablePredicatesTest {
         assertFalse(new SqlPredicate("character == 'Bizarro'").apply(toQueryEntry("1", data)));
     }
 
-    private PortableData createData(String id,
-                                    String firstName,
-                                    String lastName,
-                                    String character,
-                                    long strength) {
+    private PortableData createData(String id, String firstName, String lastName, String character, long strength) {
         PortableData modelData = new PortableData();
         modelData.put("id", id);
         modelData.put("firstName", firstName);
@@ -69,7 +69,7 @@ public class PortablePredicatesTest {
     }
 
     private QueryEntry toQueryEntry(Object key, Object value) {
-        return new QueryEntry(ss, ss.toData(key), key, value);
+        return new QueryEntry(serializationService, serializationService.toData(key), value, Extractors.empty());
     }
 
     class TestPortableFactory implements PortableFactory {
@@ -147,6 +147,5 @@ public class PortablePredicatesTest {
                 }
             }
         }
-
     }
 }

@@ -27,11 +27,11 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Member;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
@@ -41,6 +41,7 @@ import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.impl.LocalCacheStatsImpl;
 import com.hazelcast.monitor.impl.LocalMemoryStatsImpl;
@@ -54,6 +55,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.wan.WanReplicationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -74,16 +76,14 @@ public class TimedMemberStateFactory {
     private final HazelcastInstanceImpl instance;
     private final int maxVisibleInstanceCount;
     private final boolean cacheServiceEnabled;
-    private final ILogger logger;
 
     private volatile boolean memberStateSafe = true;
 
     public TimedMemberStateFactory(HazelcastInstanceImpl instance) {
         this.instance = instance;
         Node node = instance.node;
-        maxVisibleInstanceCount = node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
+        maxVisibleInstanceCount = node.groupProperties.getInteger(GroupProperty.MC_MAX_VISIBLE_INSTANCE_COUNT);
         cacheServiceEnabled = node.nodeEngine.getService(CacheService.SERVICE_NAME) != null;
-        logger = node.getLogger(TimedMemberStateFactory.class);
     }
 
     public void init() {
@@ -182,6 +182,12 @@ public class TimedMemberStateFactory {
                             longInstanceNames);
                 }
             }
+        }
+
+        WanReplicationService wanReplicationService = instance.node.nodeEngine.getWanReplicationService();
+        Map<String, LocalWanStats> wanStats = wanReplicationService.getStats();
+        if (wanStats != null) {
+            count = handleWan(memberState, count, wanStats, longInstanceNames);
         }
 
         if (cacheServiceEnabled) {
@@ -290,6 +296,18 @@ public class TimedMemberStateFactory {
                 longInstanceNames.add("c:" + name);
                 ++count;
             }
+        }
+        return count;
+    }
+
+    private int handleWan(MemberStateImpl memberState, int count, Map<String, LocalWanStats> wans,
+                          Set<String> longInstanceNames) {
+        for (Map.Entry<String, LocalWanStats> entry : wans.entrySet()) {
+            String schemeName = entry.getKey();
+            LocalWanStats stats = entry.getValue();
+            memberState.putLocalWanStats(schemeName, stats);
+            longInstanceNames.add("w:" + schemeName);
+            count++;
         }
         return count;
     }

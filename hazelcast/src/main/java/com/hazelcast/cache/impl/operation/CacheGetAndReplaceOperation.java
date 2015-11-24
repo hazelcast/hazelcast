@@ -16,7 +16,9 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheEntryViews;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -53,8 +55,21 @@ public class CacheGetAndReplaceOperation
     }
 
     @Override
+    public void afterRun() throws Exception {
+        if (cache.isWanReplicationEnabled()) {
+            CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key,
+                    getNodeEngine().getSerializationService().toData(backupRecord.getValue()), backupRecord);
+            wanEventPublisher.publishWanReplicationUpdate(name, entryView);
+        }
+    }
+
+    @Override
     public boolean shouldBackup() {
-        return response != null;
+        // Backup record may be null since record store might be cleared by destroy operation at the same time
+        // because destroy operation is not called from partition thread pool.
+        // In this case, we simply ignore backup operation
+        // because record store on backup will be cleared also by destroy operation.
+        return response != null && backupRecord != null;
     }
 
     @Override

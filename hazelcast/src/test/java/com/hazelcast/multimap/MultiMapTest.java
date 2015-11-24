@@ -45,9 +45,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-/**
- * @author ali 1/17/13
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MultiMapTest extends HazelcastTestSupport {
@@ -157,7 +154,6 @@ public class MultiMapTest extends HazelcastTestSupport {
         assertFalse(getMultiMap(instances, name).remove("key1", "key1_value1"));
         assertTrue(getMultiMap(instances, name).remove("key1", "key1_value2"));
 
-
         coll = getMultiMap(instances, name).get("key1");
         assertEquals(coll.size(), 0);
 
@@ -166,21 +162,20 @@ public class MultiMapTest extends HazelcastTestSupport {
         iter = coll.iterator();
         o = iter.next();
         assertEquals(o, "key2_value1");
-
     }
-
 
     @Test
     public void testContainsKey() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
-        System.out.println("test = " + multiMap.containsKey("test"));
+
+        assertFalse(multiMap.containsKey("test"));
+
         multiMap.put("test", "test");
-        System.out.println("test = " + multiMap.containsKey("test"));
+        assertTrue(multiMap.containsKey("test"));
+
         multiMap.remove("test");
-        System.out.println("test = " + multiMap.containsKey("test"));
-
-
+        assertFalse(multiMap.containsKey("test"));
     }
 
     @Test(expected = NullPointerException.class)

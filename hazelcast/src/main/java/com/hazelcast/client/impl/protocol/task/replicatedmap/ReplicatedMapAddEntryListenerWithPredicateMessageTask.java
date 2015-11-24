@@ -42,6 +42,11 @@ public class ReplicatedMapAddEntryListenerWithPredicateMessageTask
     }
 
     @Override
+    protected boolean isLocalOnly() {
+        return parameters.localOnly;
+    }
+
+    @Override
     protected ClientMessage encodeEvent(Data key, Data newValue, Data oldValue, Data mergingValue,
                                         int type, String uuid, int numberOfAffectedEntries) {
         return ReplicatedMapAddEntryListenerWithPredicateCodec.encodeEntryEvent(key, newValue,

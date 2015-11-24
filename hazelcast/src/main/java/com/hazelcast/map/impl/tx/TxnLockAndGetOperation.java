@@ -33,13 +33,15 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
 
     private VersionedValue response;
     private String ownerUuid;
+    private boolean shouldLoad;
 
     public TxnLockAndGetOperation() {
     }
 
-    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String ownerUuid) {
+    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String ownerUuid, boolean shouldLoad) {
         super(name, dataKey, ttl);
         this.ownerUuid = ownerUuid;
+        this.shouldLoad = shouldLoad;
         setWaitTimeout(timeout);
     }
 
@@ -49,6 +51,9 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
             throw new TransactionException("Transaction couldn't obtain lock.");
         }
         Record record = recordStore.getRecordOrNull(dataKey);
+        if (record == null && shouldLoad) {
+            record = recordStore.loadRecordOrNull(dataKey, false);
+        }
         Data value = record == null ? null : mapService.getMapServiceContext().toData(record.getValue());
         response = new VersionedValue(value, record == null ? 0 : record.getVersion());
     }
@@ -71,21 +76,21 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(ownerUuid);
+        out.writeBoolean(shouldLoad);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         ownerUuid = in.readUTF();
+        shouldLoad = in.readBoolean();
     }
-
 
     @Override
-    public String toString() {
-        return "TxnLockAndGetOperation{"
-                + "timeout=" + getWaitTimeout()
-                + ", thread=" + getThreadId()
-                + '}';
-    }
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
 
+        sb.append(", timeout=").append(getWaitTimeout());
+        sb.append(", thread=").append(getThreadId());
+    }
 }

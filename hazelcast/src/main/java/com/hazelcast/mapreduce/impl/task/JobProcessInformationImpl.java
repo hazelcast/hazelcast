@@ -36,9 +36,9 @@ public class JobProcessInformationImpl
         implements JobProcessInformation {
 
     private static final AtomicReferenceFieldUpdater<JobProcessInformationImpl, JobPartitionState[]>
-            PARTITION_STATE_UPDATER = AtomicReferenceFieldUpdater.newUpdater(JobProcessInformationImpl.class,
+            PARTITION_STATE = AtomicReferenceFieldUpdater.newUpdater(JobProcessInformationImpl.class,
             JobPartitionState[].class, "partitionStates");
-    private static final AtomicIntegerFieldUpdater<JobProcessInformationImpl> PROCESSED_RECORDS_UPDATER =
+    private static final AtomicIntegerFieldUpdater<JobProcessInformationImpl> PROCESSED_RECORDS =
             AtomicIntegerFieldUpdater.newUpdater(JobProcessInformationImpl.class, "processedRecords");
 
     private final JobSupervisor supervisor;
@@ -68,7 +68,7 @@ public class JobProcessInformationImpl
     }
 
     public void addProcessedRecords(int records) {
-        PROCESSED_RECORDS_UPDATER.addAndGet(this, records);
+        PROCESSED_RECORDS.addAndGet(this, records);
     }
 
     public void cancelPartitionState() {
@@ -77,16 +77,6 @@ public class JobProcessInformationImpl
         for (int i = 0; i < newPartitionStates.length; i++) {
             Address owner = oldPartitionStates[i] != null ? oldPartitionStates[i].getOwner() : null;
             newPartitionStates[i] = new JobPartitionStateImpl(owner, CANCELLED);
-        }
-
-        this.partitionStates = newPartitionStates;
-    }
-
-    public void resetPartitionState() {
-        JobPartitionState[] oldPartitionStates = this.partitionStates;
-        JobPartitionState[] newPartitionStates = new JobPartitionState[oldPartitionStates.length];
-        for (int i = 0; i < newPartitionStates.length; i++) {
-            newPartitionStates[i] = null;
         }
 
         this.partitionStates = newPartitionStates;
@@ -114,7 +104,7 @@ public class JobProcessInformationImpl
         if (oldPartitionStates.length != newPartitionStates.length) {
             throw new IllegalArgumentException("partitionStates need to have same length");
         }
-        if (PARTITION_STATE_UPDATER.compareAndSet(this, oldPartitionStates, newPartitionStates)) {
+        if (PARTITION_STATE.compareAndSet(this, oldPartitionStates, newPartitionStates)) {
             supervisor.checkFullyProcessed(this);
             return true;
         }

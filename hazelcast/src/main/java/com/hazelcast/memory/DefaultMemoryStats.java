@@ -84,17 +84,14 @@ public class DefaultMemoryStats implements MemoryStats {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("MemoryStats {");
-        sb.append("Total Physical: ").append(MemorySize.toPrettyString(getTotalPhysical()));
-        sb.append(", Free Physical: ").append(MemorySize.toPrettyString(getFreePhysical()));
-        sb.append(", Max Heap: ").append(MemorySize.toPrettyString(getMaxHeap()));
-        sb.append(", Committed Heap: ").append(MemorySize.toPrettyString(getCommittedHeap()));
-        sb.append(", Used Heap: ").append(MemorySize.toPrettyString(getUsedHeap()));
-        sb.append(", Free Heap: ").append(MemorySize.toPrettyString(getFreeHeap()));
-        sb.append(", ");
-        sb.append(getGCStats());
-        sb.append('}');
-        return sb.toString();
+        return "MemoryStats{"
+                + "Total Physical: " + MemorySize.toPrettyString(getTotalPhysical())
+                + ", Free Physical: " + MemorySize.toPrettyString(getFreePhysical())
+                + ", Max Heap: " + MemorySize.toPrettyString(getMaxHeap())
+                + ", Committed Heap: " + MemorySize.toPrettyString(getCommittedHeap())
+                + ", Used Heap: " + MemorySize.toPrettyString(getUsedHeap())
+                + ", Free Heap: " + MemorySize.toPrettyString(getFreeHeap())
+                + ", " + getGCStats()
+                + '}';
     }
 }

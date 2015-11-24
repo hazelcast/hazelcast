@@ -16,6 +16,10 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionOptions;
+
 import java.util.Set;
 
 /**
@@ -86,4 +90,131 @@ public interface Cluster {
      */
     long getClusterTime();
 
+    /**
+     * Returns the state of the cluster.
+     * <p/>
+     * If cluster state change is in process, {@link ClusterState#IN_TRANSITION} will be returned.
+     * <p/>
+     * This is a local operation, state will be read directly from local member.
+     *
+     * @return state of the cluster
+     * @since 3.6
+     */
+    ClusterState getClusterState();
+
+    /**
+     * Changes state of the cluster to the given state transactionally. Transaction will be
+     * {@code TWO_PHASE} and will have 1 durability by default. If you want to override
+     * transaction options, use {@link #changeClusterState(ClusterState, TransactionOptions)}.
+     * <p/>
+     * If the given state is already same as
+     * current state of the cluster, then this method will have no effect.
+     * <p/>
+     * If there's an ongoing state change transaction in the cluster, this method will fail
+     * immediately with a {@code TransactionException}.
+     * <p/>
+     * If a membership change occurs in the cluster during state change, a new member joins or
+     * an existing member leaves, then this method will fail with an {@code IllegalStateException}.
+     * <p/>
+     * If there are ongoing/pending migration/replication operations, because of re-balancing due to
+     * member join or leave, then trying to change from {@code ACTIVE} to {@code FROZEN}
+     * or {@code PASSIVE} will fail with an {@code IllegalStateException}.
+     * <p/>
+     * If transaction timeouts during state change, then this method will fail with a {@code TransactionException}.
+     *
+     * @param newState new state of the cluster
+     * @throws NullPointerException     if newState is null
+     * @throws IllegalArgumentException if newState is {@link ClusterState#IN_TRANSITION}
+     * @throws IllegalStateException    if member-list changes during the transaction
+     *                                  or there are ongoing/pending migration operations
+     * @throws TransactionException     if there's already an ongoing transaction
+     *                                  or this transaction fails
+     *                                  or this transaction timeouts
+     * @since 3.6
+     */
+    void changeClusterState(ClusterState newState);
+
+    /**
+     * Changes state of the cluster to the given state transactionally. Transaction must be a
+     * {@code TWO_PHASE} transaction.
+     * <p/>
+     * If the given state is already same as
+     * current state of the cluster, then this method will have no effect.
+     * <p/>
+     * If there's an ongoing state change transaction in the cluster, this method will fail
+     * immediately with a {@code TransactionException}.
+     * <p/>
+     * If a membership change occurs in the cluster during state change, a new member joins or
+     * an existing member leaves, then this method will fail with an {@code IllegalStateException}.
+     * <p/>
+     * If there are ongoing/pending migration/replication operations, because of re-balancing due to
+     * member join or leave, then trying to change from {@code ACTIVE} to {@code FROZEN}
+     * or {@code PASSIVE} will fail with an {@code IllegalStateException}.
+     * <p/>
+     * If transaction timeouts during state change, then this method will fail with a {@code TransactionException}.
+     *
+     * @param newState           new state of the cluster
+     * @param transactionOptions transaction options
+     * @throws NullPointerException     if newState is null
+     * @throws IllegalArgumentException if newState is {@link ClusterState#IN_TRANSITION}
+     *                                  or transaction type is not {@code TWO_PHASE}
+     * @throws IllegalStateException    if member-list changes during the transaction
+     *                                  or there are ongoing/pending migration operations
+     * @throws TransactionException     if there's already an ongoing transaction
+     *                                  or this transaction fails
+     *                                  or this transaction timeouts
+     * @since 3.6
+     */
+    void changeClusterState(ClusterState newState, TransactionOptions transactionOptions);
+
+    /**
+     * Changes state of the cluster to the {@link ClusterState#PASSIVE} transactionally,
+     * then triggers the shutdown process on each node. Transaction will be {@code TWO_PHASE}
+     * and will have 1 durability by default. If you want to override transaction options,
+     * use {@link #shutdown(TransactionOptions)}.
+     * <p/>
+     * If the cluster is already in {@link ClusterState#PASSIVE}, shutdown process begins immediately.
+     * All the node join / leave rules described in {@link ClusterState#PASSIVE} state also applies here.
+     * <p/>
+     * Any node can start the shutdown process. A shutdown command is sent to other nodes periodically until
+     * either all other nodes leave the cluster or a configurable timeout occurs. If some of the nodes do not
+     * shutdown before the timeout duration, shutdown can be also invoked on them.
+     * @see {@link com.hazelcast.instance.GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}
+     *
+     * @throws IllegalStateException    if member-list changes during the transaction
+     *                                  or there are ongoing/pending migration operations
+     * @throws TransactionException     if there's already an ongoing transaction
+     *                                  or this transaction fails
+     *                                  or this transaction timeouts
+     *
+     * @see {@link #changeClusterState(ClusterState)}
+     * @see {@link ClusterState#PASSIVE}
+     * @since 3.6
+     */
+    void shutdown();
+
+    /**
+     * Changes state of the cluster to the {@link ClusterState#PASSIVE} transactionally, then
+     * triggers the shutdown process on each node. Transaction must be a {@code TWO_PHASE} transaction.
+     * <p/>
+     * If the cluster is already in {@link ClusterState#PASSIVE}, shutdown process begins immediately.
+     * All the node join / leave rules described in {@link ClusterState#PASSIVE} state also applies here.
+     * <p/>
+     * Any node can start the shutdown process. A shutdown command is sent to other nodes periodically until
+     * either all other nodes leave the cluster or a configurable timeout occurs. If some of the nodes do not
+     * shutdown before the timeout duration, shutdown can be also invoked on them.
+     * @see {@link com.hazelcast.instance.GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}
+     *
+     * @param transactionOptions transaction options
+     * @throws IllegalStateException    if member-list changes during the transaction
+     *                                  or there are ongoing/pending migration operations
+     * @throws TransactionException     if there's already an ongoing transaction
+     *                                  or this transaction fails
+     *                                  or this transaction timeouts
+     *
+     * @see {@link #changeClusterState(ClusterState)}
+     * @see {@link ClusterState#PASSIVE}
+     * @since 3.6
+     */
+    void shutdown(TransactionOptions transactionOptions);
 }

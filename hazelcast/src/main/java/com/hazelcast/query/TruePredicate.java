@@ -28,6 +28,10 @@ import java.util.Map;
  */
 public class TruePredicate implements DataSerializable, Predicate {
 
+    //reminder:
+    //when TruePredicate is going to implement IdentifiedDataSerializable, make sure no new instance
+    // is created, but the INSTANCE is returned. No need to create new objects.
+
     /**
      * An instance of the TruePredicate.
      */

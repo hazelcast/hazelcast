@@ -17,13 +17,11 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.replicatedmap.impl.record.LazySet.IteratorFactory;
-
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-class KeySetIteratorFactory<K, V>
-        implements IteratorFactory<K, V, K> {
+class KeySetIteratorFactory<K, V> implements IteratorFactory<K, V, K> {
 
     private final ReplicatedRecordStore recordStore;
 
@@ -78,7 +76,7 @@ class KeySetIteratorFactory<K, V>
                 throw new NoSuchElementException();
             }
 
-            key = recordStore.unmarshallKey(key);
+            key = recordStore.unmarshall(key);
             return (K) key;
         }
 

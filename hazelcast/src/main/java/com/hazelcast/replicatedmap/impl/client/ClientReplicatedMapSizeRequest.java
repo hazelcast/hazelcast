@@ -16,31 +16,28 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.operation.SizeOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
+import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 /**
  * Client request class for {@link java.util.Map#size()} implementation
  */
-public class ClientReplicatedMapSizeRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapSizeRequest extends AbstractReplicatedMapClientRequest {
 
     ClientReplicatedMapSizeRequest() {
         super(null);
     }
 
-    public ClientReplicatedMapSizeRequest(String mapName) {
-        super(mapName);
+    public ClientReplicatedMapSizeRequest(String mapName, int partitionId) {
+        super(mapName, partitionId);
     }
 
     @Override
-    public Object call()
-            throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return recordStore.size();
+    protected Operation prepareOperation() {
+        return new SizeOperation(getMapName());
     }
 
     @Override

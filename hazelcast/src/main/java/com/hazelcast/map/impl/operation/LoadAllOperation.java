@@ -34,7 +34,7 @@ import java.util.List;
 /**
  * Triggers map store load of all given keys.
  */
-public class LoadAllOperation extends AbstractMapOperation implements PartitionAwareOperation, MutatingOperation {
+public class LoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
 
     private List<Data> keys;
 

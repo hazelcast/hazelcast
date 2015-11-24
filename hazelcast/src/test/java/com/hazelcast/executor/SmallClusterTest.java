@@ -49,10 +49,10 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class SmallClusterTest
-        extends ExecutorServiceTestSupport {
+public class SmallClusterTest extends ExecutorServiceTestSupport {
 
-    public static final int NODE_COUNT = 3;
+    private static final int TEST_TIMEOUT = 60000;
+    private static final int NODE_COUNT = 3;
 
     private HazelcastInstance[] instances;
 
@@ -62,47 +62,42 @@ public class SmallClusterTest
     }
 
     @Test
-    public void executionCallback_notified()
-            throws Exception {
+    public void executionCallback_notified() throws Exception {
         IExecutorService executorService = instances[1].getExecutorService(randomString());
         BasicTestCallable task = new BasicTestCallable();
         String key = generateKeyOwnedBy(instances[0]);
         ICompletableFuture<String> future = (ICompletableFuture<String>) executorService.submitToKeyOwner(task, key);
-        final CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
+        CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
         future.andThen(callback);
         future.get();
         assertOpenEventually(callback.getLatch(), 10);
     }
 
     @Test
-    public void submitToSeveralNodes_runnable()
-            throws Exception {
+    public void submitToSeveralNodes_runnable() throws Exception {
         for (HazelcastInstance instance : instances) {
-            final IExecutorService service = instance.getExecutorService("testExecuteMultipleNode");
-
-            final int rand = new Random().nextInt(100);
-            final Future<Integer> future = service.submit(new IncrementAtomicLongRunnable("count"), rand);
+            IExecutorService service = instance.getExecutorService("testExecuteMultipleNode");
+            int rand = new Random().nextInt(100);
+            Future<Integer> future = service.submit(new IncrementAtomicLongRunnable("count"), rand);
             assertEquals(Integer.valueOf(rand), future.get());
         }
-        final IAtomicLong count = instances[0].getAtomicLong("count");
+
+        IAtomicLong count = instances[0].getAtomicLong("count");
         assertEquals(instances.length, count.get());
     }
 
     @Test
-    public void submitToKeyOwner_runnable()
-            throws Exception {
-        final NullResponseCountingCallback callback = new NullResponseCountingCallback(instances.length);
+    public void submitToKeyOwner_runnable() throws Exception {
+        NullResponseCountingCallback callback = new NullResponseCountingCallback(instances.length);
 
-        for (final HazelcastInstance instance : instances) {
-            final IExecutorService service = instance.getExecutorService("testSubmitToKeyOwnerRunnable");
-            final Member localMember = instance.getCluster().getLocalMember();
-            final int key = findNextKeyForMember(instance, localMember);
-
+        for (HazelcastInstance instance : instances) {
+            IExecutorService service = instance.getExecutorService("testSubmitToKeyOwnerRunnable");
+            Member localMember = instance.getCluster().getLocalMember();
+            int key = findNextKeyForMember(instance, localMember);
             service.submitToKeyOwner(
                     new IncrementAtomicLongIfMemberUUIDNotMatchRunnable(localMember.getUuid(), "testSubmitToKeyOwnerRunnable"),
                     key, callback);
         }
-
 
         assertOpenEventually(callback.getResponseLatch());
         assertEquals(0, instances[0].getAtomicLong("testSubmitToKeyOwnerRunnable").get());
@@ -110,65 +105,62 @@ public class SmallClusterTest
     }
 
     @Test
-    public void submitToMember_runnable()
-            throws Exception {
-        final NullResponseCountingCallback callback = new NullResponseCountingCallback(instances.length);
+    public void submitToMember_runnable() throws Exception {
+        NullResponseCountingCallback callback = new NullResponseCountingCallback(instances.length);
 
-        for (final HazelcastInstance instance : instances) {
-            final IExecutorService service = instance.getExecutorService("testSubmitToMemberRunnable");
-            final Member localMember = instance.getCluster().getLocalMember();
-
+        for (HazelcastInstance instance : instances) {
+            IExecutorService service = instance.getExecutorService("testSubmitToMemberRunnable");
+            Member localMember = instance.getCluster().getLocalMember();
             service.submitToMember(
                     new IncrementAtomicLongIfMemberUUIDNotMatchRunnable(localMember.getUuid(), "testSubmitToMemberRunnable"),
                     localMember, callback);
         }
+
         assertOpenEventually(callback.getResponseLatch());
         assertEquals(0, instances[0].getAtomicLong("testSubmitToMemberRunnable").get());
         assertEquals(instances.length, callback.getNullResponseCount());
     }
 
     @Test
-    public void submitToMembers_runnable()
-            throws Exception {
+    public void submitToMembers_runnable() throws Exception {
         int sum = 0;
-        final Set<Member> membersSet = instances[0].getCluster().getMembers();
-        final Member[] members = membersSet.toArray(new Member[membersSet.size()]);
-        final Random random = new Random();
+        Set<Member> membersSet = instances[0].getCluster().getMembers();
+        Member[] members = membersSet.toArray(new Member[membersSet.size()]);
+        Random random = new Random();
 
-        final ResponseCountingMultiExecutionCallback callback = new ResponseCountingMultiExecutionCallback(instances.length);
+        ResponseCountingMultiExecutionCallback callback = new ResponseCountingMultiExecutionCallback(instances.length);
         for (HazelcastInstance instance : instances) {
-            final IExecutorService service = instance.getExecutorService("testSubmitToMembersRunnable");
-            final int n = random.nextInt(instances.length) + 1;
+            IExecutorService service = instance.getExecutorService("testSubmitToMembersRunnable");
+            int n = random.nextInt(instances.length) + 1;
             sum += n;
             Member[] m = new Member[n];
             System.arraycopy(members, 0, m, 0, n);
             service.submitToMembers(new IncrementAtomicLongRunnable("testSubmitToMembersRunnable"), Arrays.asList(m), callback);
         }
-
         assertOpenEventually(callback.getLatch());
-        final IAtomicLong result = instances[0].getAtomicLong("testSubmitToMembersRunnable");
+
+        IAtomicLong result = instances[0].getAtomicLong("testSubmitToMembersRunnable");
         assertEquals(sum, result.get());
         assertEquals(sum, callback.getCount());
     }
 
     @Test
-    public void submitToAllMembers_runnable()
-            throws Exception {
-        final ResponseCountingMultiExecutionCallback callback = new ResponseCountingMultiExecutionCallback(instances.length);
+    public void submitToAllMembers_runnable() throws Exception {
+        ResponseCountingMultiExecutionCallback callback = new ResponseCountingMultiExecutionCallback(instances.length);
 
         for (HazelcastInstance instance : instances) {
-            final IExecutorService service = instance.getExecutorService("testSubmitToAllMembersRunnable");
+            IExecutorService service = instance.getExecutorService("testSubmitToAllMembersRunnable");
             service.submitToAllMembers(new IncrementAtomicLongRunnable("testSubmitToAllMembersRunnable"), callback);
         }
         assertOpenEventually(callback.getLatch());
-        final IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersRunnable");
+
+        IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersRunnable");
         assertEquals(instances.length * instances.length, result.get());
         assertEquals(instances.length * instances.length, callback.getCount());
     }
 
     @Test
-    public void submitToSeveralNodes_callable()
-            throws Exception {
+    public void submitToSeveralNodes_callable() throws Exception {
         for (int i = 0; i < instances.length; i++) {
             final IExecutorService service = instances[i].getExecutorService("testSubmitMultipleNode");
             final Future future = service.submit(new IncrementAtomicLongCallable("testSubmitMultipleNode"));
@@ -176,19 +168,17 @@ public class SmallClusterTest
         }
     }
 
-    @Test(timeout = 30000)
-    public void submitToKeyOwner_callable()
-            throws Exception {
-        final List<Future> futures = new ArrayList<Future>();
+    @Test(timeout = TEST_TIMEOUT)
+    public void submitToKeyOwner_callable() throws Exception {
+        List<Future> futures = new ArrayList<Future>();
 
-        for (int i = 0; i < instances.length; i++) {
-            final HazelcastInstance instance = instances[i];
-            final IExecutorService service = instance.getExecutorService("testSubmitToKeyOwnerCallable");
-            final Member localMember = instance.getCluster().getLocalMember();
-            final int key = findNextKeyForMember(instance, localMember);
+        for (HazelcastInstance instance : instances) {
+            IExecutorService service = instance.getExecutorService("testSubmitToKeyOwnerCallable");
+            Member localMember = instance.getCluster().getLocalMember();
+            int key = findNextKeyForMember(instance, localMember);
 
-            final Future f = service.submitToKeyOwner(new MemberUUIDCheckCallable(localMember.getUuid()), key);
-            futures.add(f);
+            Future future = service.submitToKeyOwner(new MemberUUIDCheckCallable(localMember.getUuid()), key);
+            futures.add(future);
         }
 
         for (Future future : futures) {
@@ -196,37 +186,31 @@ public class SmallClusterTest
         }
     }
 
-    @Test(timeout = 30000)
-    public void submitToKeyOwner_callable_withCallback()
-            throws Exception {
-        final BooleanSuccessResponseCountingCallback callback = new BooleanSuccessResponseCountingCallback(instances.length);
+    @Test(timeout = TEST_TIMEOUT)
+    public void submitToKeyOwner_callable_withCallback() throws Exception {
+        BooleanSuccessResponseCountingCallback callback = new BooleanSuccessResponseCountingCallback(instances.length);
 
-        for (int i = 0; i < instances.length; i++) {
-            final HazelcastInstance instance = instances[i];
-            final IExecutorService service = instance.getExecutorService("testSubmitToKeyOwnerCallable");
-            final Member localMember = instance.getCluster().getLocalMember();
-            final int key = findNextKeyForMember(instance, localMember);
-
+        for (HazelcastInstance instance : instances) {
+            IExecutorService service = instance.getExecutorService("testSubmitToKeyOwnerCallable");
+            Member localMember = instance.getCluster().getLocalMember();
+            int key = findNextKeyForMember(instance, localMember);
             service.submitToKeyOwner(new MemberUUIDCheckCallable(localMember.getUuid()), key, callback);
-
         }
 
         assertOpenEventually(callback.getResponseLatch());
         assertEquals(instances.length, callback.getSuccessResponseCount());
     }
 
-    @Test(timeout = 30000)
-    public void submitToMember_callable()
-            throws Exception {
-        final List<Future> futures = new ArrayList<Future>();
+    @Test(timeout = TEST_TIMEOUT)
+    public void submitToMember_callable() throws Exception {
+        List<Future> futures = new ArrayList<Future>();
 
-        for (int i = 0; i < instances.length; i++) {
-            final HazelcastInstance instance = instances[i];
-            final IExecutorService service = instance.getExecutorService("testSubmitToMemberCallable");
-            final Member localMember = instance.getCluster().getLocalMember();
+        for (HazelcastInstance instance : instances) {
+            IExecutorService service = instance.getExecutorService("testSubmitToMemberCallable");
+            Member localMember = instance.getCluster().getLocalMember();
 
-            final Future f = service.submitToMember(new MemberUUIDCheckCallable(localMember.getUuid()), localMember);
-            futures.add(f);
+            Future future = service.submitToMember(new MemberUUIDCheckCallable(localMember.getUuid()), localMember);
+            futures.add(future);
         }
 
         for (Future future : futures) {
@@ -234,73 +218,67 @@ public class SmallClusterTest
         }
     }
 
-    @Test(timeout = 30000)
-    public void submitToMember_callable_withCallback()
-            throws Exception {
-        final BooleanSuccessResponseCountingCallback callback = new BooleanSuccessResponseCountingCallback(instances.length);
+    @Test(timeout = TEST_TIMEOUT)
+    public void submitToMember_callable_withCallback() throws Exception {
+        BooleanSuccessResponseCountingCallback callback = new BooleanSuccessResponseCountingCallback(instances.length);
 
-        for (int i = 0; i < instances.length; i++) {
-            final HazelcastInstance instance = instances[i];
-            final IExecutorService service = instance.getExecutorService("testSubmitToMemberCallable");
-            final Member localMember = instance.getCluster().getLocalMember();
-
+        for (HazelcastInstance instance : instances) {
+            IExecutorService service = instance.getExecutorService("testSubmitToMemberCallable");
+            Member localMember = instance.getCluster().getLocalMember();
             service.submitToMember(new MemberUUIDCheckCallable(localMember.getUuid()), localMember, callback);
-
         }
+
         assertOpenEventually(callback.getResponseLatch());
         assertEquals(instances.length, callback.getSuccessResponseCount());
     }
 
     @Test
-    public void submitToMembers_callable()
-            throws Exception {
+    public void submitToMembers_callable() throws Exception {
         int sum = 0;
-        final ResponseCountingMultiExecutionCallback callback = new ResponseCountingMultiExecutionCallback(instances.length);
+        ResponseCountingMultiExecutionCallback callback = new ResponseCountingMultiExecutionCallback(instances.length);
 
-        final Set<Member> membersSet = instances[0].getCluster().getMembers();
-        final Member[] members = membersSet.toArray(new Member[membersSet.size()]);
-        final Random random = new Random();
-        final String name = "testSubmitToMembersCallable";
+        Set<Member> membersSet = instances[0].getCluster().getMembers();
+        Member[] members = membersSet.toArray(new Member[membersSet.size()]);
+        Random random = new Random();
+        String name = "testSubmitToMembersCallable";
         for (HazelcastInstance instance : instances) {
-            final IExecutorService service = instance.getExecutorService(name);
-            final int n = random.nextInt(instances.length) + 1;
+            IExecutorService service = instance.getExecutorService(name);
+            int n = random.nextInt(instances.length) + 1;
             sum += n;
             Member[] m = new Member[n];
             System.arraycopy(members, 0, m, 0, n);
             service.submitToMembers(new IncrementAtomicLongCallable(name), Arrays.asList(m), callback);
         }
-
         assertOpenEventually(callback.getLatch());
-        final IAtomicLong result = instances[0].getAtomicLong(name);
+
+        IAtomicLong result = instances[0].getAtomicLong(name);
         assertEquals(sum, result.get());
         assertEquals(sum, callback.getCount());
     }
 
     @Test
-    public void submitToAllMembers_callable()
-            throws Exception {
-
-        final ResponseCountingMultiExecutionCallback callback = new ResponseCountingMultiExecutionCallback(instances.length);
+    public void submitToAllMembers_callable() throws Exception {
+        ResponseCountingMultiExecutionCallback callback = new ResponseCountingMultiExecutionCallback(instances.length);
 
         for (HazelcastInstance instance : instances) {
-            final IExecutorService service = instance.getExecutorService("testSubmitToAllMembersCallable");
+            IExecutorService service = instance.getExecutorService("testSubmitToAllMembersCallable");
             service.submitToAllMembers(new IncrementAtomicLongCallable("testSubmitToAllMembersCallable"), callback);
         }
-
         assertOpenEventually(callback.getLatch());
-        final IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersCallable");
+
+        IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersCallable");
         assertEquals(instances.length * instances.length, result.get());
         assertEquals(instances.length * instances.length, callback.getCount());
     }
 
     @Test
-    public void submitToAllMembers_statefulCallable()
-            throws Exception {
+    public void submitToAllMembers_statefulCallable() throws Exception {
         IExecutorService executorService = instances[0].getExecutorService(randomString());
         InternallyCountingCallable internallyCountingCallable = new InternallyCountingCallable();
+
         final CountDownLatch completedLatch = new CountDownLatch(1);
         final AtomicBoolean failed = new AtomicBoolean();
-        // Local execution of callable may change the state of callable before sent to other members
+        // local execution of callable may change the state of callable before sent to other members
         // we avoid this by serializing beforehand
         executorService.submitToAllMembers(internallyCountingCallable, new MultiExecutionCallback() {
             @Override
@@ -315,17 +293,17 @@ public class SmallClusterTest
                 completedLatch.countDown();
             }
         });
+
         assertOpenEventually(completedLatch);
         assertFalse(failed.get());
     }
 
-    private static class InternallyCountingCallable
-            implements Callable<Integer>, Serializable {
+    private static class InternallyCountingCallable implements Callable<Integer>, Serializable {
+
         private int state;
 
         @Override
-        public Integer call()
-                throws Exception {
+        public Integer call() throws Exception {
             return ++state;
         }
     }

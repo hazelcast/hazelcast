@@ -16,11 +16,13 @@
 
 package com.hazelcast.test;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.nio.Address;
@@ -32,11 +34,10 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-
 public class TestHazelcastInstanceFactory {
 
-    private static final AtomicInteger ports = new AtomicInteger(5000);
+    private static final AtomicInteger PORTS = new AtomicInteger(5000);
+
     private final boolean mockNetwork = TestEnvironment.isMockNetwork();
     private final AtomicInteger nodeIndex = new AtomicInteger();
 
@@ -48,7 +49,7 @@ public class TestHazelcastInstanceFactory {
         this.count = count;
         if (mockNetwork) {
             this.addresses = new CopyOnWriteArrayList<Address>();
-            this.addresses.addAll(createAddresses(ports, count));
+            this.addresses.addAll(createAddresses(PORTS, count));
             this.registry = new TestNodeRegistry(addresses);
         }
     }
@@ -59,11 +60,20 @@ public class TestHazelcastInstanceFactory {
         this.registry = new TestNodeRegistry(addresses);
     }
 
+    public TestHazelcastInstanceFactory(int initialPort, String... addresses) {
+        this.count = addresses.length;
+        if (mockNetwork) {
+            this.addresses = new CopyOnWriteArrayList<Address>();
+            this.addresses.addAll(createAddresses(initialPort, PORTS, addresses));
+            this.registry = new TestNodeRegistry(this.addresses);
+        }
+    }
+
     public TestHazelcastInstanceFactory(String... addresses) {
         this.count = addresses.length;
         if (mockNetwork) {
             this.addresses = new CopyOnWriteArrayList<Address>();
-            this.addresses.addAll(createAddresses(ports, addresses));
+            this.addresses.addAll(createAddresses(-1, PORTS, addresses));
             this.registry = new TestNodeRegistry(this.addresses);
         }
     }
@@ -72,15 +82,16 @@ public class TestHazelcastInstanceFactory {
      * Delegates to {@link #newHazelcastInstance(Config) <code>newHazelcastInstance(null)</code>}.
      */
     public HazelcastInstance newHazelcastInstance() {
-        return newHazelcastInstance(null);
+        return newHazelcastInstance((Config) null);
     }
 
     /**
      * Creates a new test Hazelcast instance.
+     *
      * @param config the config to use; use <code>null</code> to get the default config.
      */
     public HazelcastInstance newHazelcastInstance(Config config) {
-        final String instanceName = config != null? config.getInstanceName() : null;
+        String instanceName = config != null ? config.getInstanceName() : null;
         if (mockNetwork) {
             init(config);
             NodeContext nodeContext = registry.createNodeContext(pickAddress());
@@ -89,12 +100,35 @@ public class TestHazelcastInstanceFactory {
         return HazelcastInstanceFactory.newHazelcastInstance(config);
     }
 
+    /**
+     * Creates a new test Hazelcast instance.
+     * @param address the address to use as Member's address instead of picking the next address
+     */
+    public HazelcastInstance newHazelcastInstance(Address address) {
+        return newHazelcastInstance(address, null);
+    }
+
+    /**
+     * Creates a new test Hazelcast instance.
+     * @param address the address to use as Member's address instead of picking the next address
+     * @param config the config to use; use <code>null</code> to get the default config.
+     */
+    public HazelcastInstance newHazelcastInstance(Address address, Config config) {
+        final String instanceName = config != null? config.getInstanceName() : null;
+        if (mockNetwork) {
+            init(config);
+            NodeContext nodeContext = registry.createNodeContext(address);
+            return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+        }
+        throw new UnsupportedOperationException("Explicit address is only available for mock network setup!");
+    }
+
     private Address pickAddress() {
         int id = nodeIndex.getAndIncrement();
         if (addresses.size() > id) {
             return addresses.get(id);
         }
-        Address address = createAddress("127.0.0.1", ports.incrementAndGet());
+        Address address = createAddress("127.0.0.1", PORTS.incrementAndGet());
         addresses.add(address);
         return address;
     }
@@ -104,7 +138,7 @@ public class TestHazelcastInstanceFactory {
     }
 
     public HazelcastInstance[] newInstances(Config config, int nodeCount) {
-        final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
+        HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
         for (int i = 0; i < nodeCount; i++) {
             instances[i] = newHazelcastInstance(config);
         }
@@ -146,13 +180,14 @@ public class TestHazelcastInstanceFactory {
         return addresses;
     }
 
-    private static List<Address> createAddresses(AtomicInteger ports, String... addressArray) {
+    private static List<Address> createAddresses(int initialPort, AtomicInteger ports, String... addressArray) {
         checkElementsNotNull(addressArray);
 
-        final int count = addressArray.length;
+        int count = addressArray.length;
         List<Address> addresses = new ArrayList<Address>(count);
-        for (int i = 0; i < count; i++) {
-            addresses.add(createAddress(addressArray[i], ports.incrementAndGet()));
+        for (String address : addressArray) {
+            int port = initialPort == -1 ? ports.incrementAndGet() : initialPort++;
+            addresses.add(createAddress(address, port));
         }
         return addresses;
     }
@@ -177,18 +212,15 @@ public class TestHazelcastInstanceFactory {
         if (config == null) {
             config = new XmlConfigBuilder().build();
         }
-        config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-        config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "120");
-        config.setProperty(GroupProperties.PROP_PARTITION_BACKUP_SYNC_INTERVAL, "1");
+        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
+        config.setProperty(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT, "120");
+        config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL, "1");
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         return config;
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("TestHazelcastInstanceFactory{");
-        sb.append("addresses=").append(addresses);
-        sb.append('}');
-        return sb.toString();
+        return "TestHazelcastInstanceFactory{addresses=" + addresses + '}';
     }
 }

@@ -55,7 +55,7 @@ public final class SimpleMapTest {
     private final boolean load;
 
     static {
-        System.setProperty("hazelcast.version.check.enabled", "false");
+        System.setProperty("hazelcast.phone.home.enabled", "false");
         System.setProperty("java.net.preferIPv4Stack", "true");
     }
 
@@ -70,8 +70,6 @@ public final class SimpleMapTest {
         Config cfg = new XmlConfigBuilder().build();
 
         instance = Hazelcast.newHazelcastInstance(cfg);
-
-        Hazelcast.newHazelcastInstance(cfg);
         logger = instance.getLoggingService().getLogger("SimpleMapTest");
         random = new Random();
     }

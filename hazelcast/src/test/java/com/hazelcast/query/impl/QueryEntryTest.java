@@ -1,15 +1,15 @@
 package com.hazelcast.query.impl;
 
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.QueryConstants;
 import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -45,104 +45,77 @@ public class QueryEntryTest extends HazelcastTestSupport {
 
     @Test
     public void getAttribute_whenValueIsPortableObject_thenConvertedToData() {
-        Data indexedKey = serializationService.toData("indexedKey");
+        Data key = serializationService.toData("indexedKey");
 
-        SerializableObject key = new SerializableObject();
         Portable value = new SampleObjects.PortableEmployee(30, "peter");
-        QueryEntry queryEntry = new QueryEntry(serializationService, indexedKey, key, value);
+        QueryEntry queryEntry = new QueryEntry(serializationService, key, value, Extractors.empty());
 
         // in the portable-data, the attribute 'name' is called 'n'. So if we can retrieve on n
         // correctly it shows that we have used the Portable data, not the actual Portable object
-        Object result = queryEntry.getAttribute("n");
+        Object result = queryEntry.getAttributeValue("n");
 
         assertEquals("peter", result);
     }
 
     @Test
     public void getAttribute_whenKeyIsPortableObject_thenConvertedToData() {
-        Data indexedKey = serializationService.toData("indexedKey");
+        Data key = serializationService.toData(new SampleObjects.PortableEmployee(30, "peter"));
 
-        Portable key = new SampleObjects.PortableEmployee(30, "peter");
         SerializableObject value = new SerializableObject();
-        QueryEntry queryEntry = new QueryEntry(serializationService, indexedKey, key, value);
+        QueryEntry queryEntry = new QueryEntry(serializationService, key, value, Extractors.empty());
 
         // in the portable-data, the attribute 'name' is called 'n'. So if we can retrieve on n
         // correctly it shows that we have used the Portable data, not the actual Portable object
-        Object result = queryEntry.getAttribute(QueryConstants.KEY_ATTRIBUTE_NAME + ".n");
+        Object result = queryEntry.getAttributeValue(QueryConstants.KEY_ATTRIBUTE_NAME.value() + ".n");
 
         assertEquals("peter", result);
     }
 
     @Test
     public void getAttribute_whenKeyPortableObjectThenConvertedToData() {
-        Data indexedKey = serializationService.toData("indexedKey");
+        Data key = serializationService.toData(new SampleObjects.PortableEmployee(30, "peter"));
 
-        Portable key = new SampleObjects.PortableEmployee(30, "peter");
         SerializableObject value = new SerializableObject();
-        QueryEntry queryEntry = new QueryEntry(serializationService, indexedKey, key, value);
+        QueryEntry queryEntry = new QueryEntry(serializationService, key, value, Extractors.empty());
 
-        Object result = queryEntry.getAttribute(QueryConstants.KEY_ATTRIBUTE_NAME + ".n");
+        Object result = queryEntry.getAttributeValue(QueryConstants.KEY_ATTRIBUTE_NAME.value() + ".n");
 
         assertEquals("peter", result);
     }
 
     @Test
     public void getAttribute_whenValueInObjectFormatThenNoSerialization() {
-        Data indexedKey = serializationService.toData("indexedKey");
-
-        SerializableObject key = new SerializableObject();
+        Data key = serializationService.toData(new SerializableObject());
         SerializableObject value = new SerializableObject();
         value.name = "somename";
-        QueryEntry queryEntry = new QueryEntry(serializationService, indexedKey, key, value);
+        QueryEntry queryEntry = new QueryEntry(serializationService, key, value, Extractors.empty());
 
-        Object result = queryEntry.getAttribute("name");
+        Object result = queryEntry.getAttributeValue("name");
 
         assertEquals("somename", result);
         assertEquals(0, value.deserializationCount);
         assertEquals(0, value.serializationCount);
-        assertEquals(0, key.deserializationCount);
-        assertEquals(0, key.serializationCount);
     }
-
-    @Test
-    public void getAttribute_whenKeyInObjectFormatThenNoSerialization() {
-        Data indexedKey = serializationService.toData("indexedKey");
-
-        SerializableObject key = new SerializableObject();
-        SerializableObject value = new SerializableObject();
-        value.name = "somename";
-        key.name = "somekey";
-        QueryEntry queryEntry = new QueryEntry(serializationService, indexedKey, key, value);
-
-        Object result = queryEntry.getAttribute(QueryConstants.KEY_ATTRIBUTE_NAME + ".name");
-
-        assertEquals(result, "somekey");
-        assertEquals(0, value.deserializationCount);
-        assertEquals(0, value.serializationCount);
-        assertEquals(0, key.deserializationCount);
-        assertEquals(0, key.serializationCount);
-    }
-
 
     @Test
     public void test_init() throws Exception {
-        Data indexedKey = new HeapData();
-
         Data dataKey = serializationService.toData("dataKey");
         Data dataValue = serializationService.toData("dataValue");
-        QueryEntry queryEntry = new QueryEntry(serializationService, indexedKey, dataKey, dataValue);
+        QueryEntry queryEntry = new QueryEntry(serializationService, dataKey, dataValue, Extractors.empty());
 
         Object objectValue = queryEntry.getValue();
         Object objectKey = queryEntry.getKey();
 
-        queryEntry.init(serializationService, indexedKey, objectKey, objectValue);
+        queryEntry.init(serializationService, serializationService.toData(objectKey), objectValue, Extractors.empty());
 
         // compare references of objects since they should be cloned after QueryEntry#init call.
         assertTrue("Old dataKey should not be here", dataKey != queryEntry.getKeyData());
         assertTrue("Old dataValue should not be here", dataValue != queryEntry.getValueData());
     }
 
+    @SuppressWarnings("unused")
     private static class SerializableObject implements DataSerializable {
+
         private int serializationCount;
         private int deserializationCount;
         private String name;

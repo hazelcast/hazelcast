@@ -75,7 +75,7 @@ public class RingbufferAddReadOneStressTest extends HazelcastTestSupport {
 
         long startMs = System.currentTimeMillis();
 
-        sleepAndStop(stop, 5 * 60);
+        sleepAndStop(stop, 3 * 60);
         System.out.println("Waiting for completion");
 
         producer.assertSucceedsEventually();

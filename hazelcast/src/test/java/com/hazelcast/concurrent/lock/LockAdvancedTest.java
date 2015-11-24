@@ -4,7 +4,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ILock;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -205,7 +205,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
     @Test(timeout = 60000)
     public void testLockInterruption() throws InterruptedException {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "5000");
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, "5000");
         final HazelcastInstance hz = createHazelcastInstance(config);
 
         final Lock lock = hz.getLock("testLockInterruption2");
@@ -324,7 +324,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
     @Test
     public void testLockInterruptibly() throws Exception {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "5000");
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, "5000");
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         final ILock lock = h1.getLock(randomString());
@@ -369,7 +369,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
     @Test
     public void testMaxLockLeaseTime() {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_LOCK_MAX_LEASE_TIME_SECONDS, "1");
+        config.setProperty(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS, "1");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance hz = factory.newHazelcastInstance(config);
@@ -388,7 +388,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void testLockFail_whenGreaterThanMaxLeaseTimeUsed() {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_LOCK_MAX_LEASE_TIME_SECONDS, "1");
+        config.setProperty(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS, "1");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance hz = factory.newHazelcastInstance(config);

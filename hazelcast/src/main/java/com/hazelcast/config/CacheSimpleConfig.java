@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.cache.BuiltInCacheMergePolicies;
+import com.hazelcast.cache.merge.PassThroughCacheMergePolicy;
 import com.hazelcast.partition.InternalPartition;
 
 import java.util.ArrayList;
@@ -58,6 +60,11 @@ public class CacheSimpleConfig {
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionConfig.DEFAULT_EVICTION_POLICY;
 
+    /**
+     * Default policy for merging
+     */
+    public static final String DEFAULT_CACHE_MERGE_POLICY = PassThroughCacheMergePolicy.class.getName();
+
     private String name;
 
     private String keyType;
@@ -90,6 +97,11 @@ public class CacheSimpleConfig {
 
     private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
 
+    private String mergePolicy = BuiltInCacheMergePolicies.getDefault().getImplementationClassName();
+
+    private boolean hotRestartEnabled;
+
+    @SuppressWarnings("checkstyle:executablestatementcount")
     public CacheSimpleConfig(CacheSimpleConfig cacheSimpleConfig) {
         this.name = cacheSimpleConfig.name;
         this.keyType = cacheSimpleConfig.keyType;
@@ -113,6 +125,8 @@ public class CacheSimpleConfig {
         this.partitionLostListenerConfigs =
                 new ArrayList<CachePartitionLostListenerConfig>(cacheSimpleConfig.getPartitionLostListenerConfigs());
         this.quorumName = cacheSimpleConfig.quorumName;
+        this.mergePolicy = cacheSimpleConfig.mergePolicy;
+        this.hotRestartEnabled = cacheSimpleConfig.hotRestartEnabled;
     }
 
     public CacheSimpleConfig() {
@@ -487,27 +501,6 @@ public class CacheSimpleConfig {
     }
 
     /**
-     * Gets name of the associated quorum if any.
-     *
-     * @return
-     */
-    public String getQuorumName() {
-        return quorumName;
-    }
-
-    /**
-     * Associates this cache configuration to a quorum.
-     *
-     * @param quorumName name of the desired quorum.
-     *
-     * @return the updated CacheSimpleConfig.
-     */
-    public CacheSimpleConfig setQuorumName(String quorumName) {
-        this.quorumName = quorumName;
-        return this;
-    }
-
-    /**
      * Gets the partition lost listener references added to cache configuration.
      *
      * @return List of CachePartitionLostListenerConfig.
@@ -538,6 +531,67 @@ public class CacheSimpleConfig {
     public CacheSimpleConfig addCachePartitionLostListenerConfig(CachePartitionLostListenerConfig listenerConfig) {
         getPartitionLostListenerConfigs().add(listenerConfig);
         return this;
+    }
+
+    /**
+     * Gets the name of the associated quorum if any.
+     *
+     * @return the name of the associated quorum if any
+     */
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    /**
+     * Associates this cache configuration to a quorum.
+     *
+     * @param quorumName name of the desired quorum.
+     *
+     * @return the updated CacheSimpleConfig.
+     */
+    public CacheSimpleConfig setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
+        return this;
+    }
+
+    /**
+     * Sets whether hot restart is enabled on this cache.
+     * @return this
+     */
+    public CacheSimpleConfig setHotRestartEnabled(boolean hotRestart) {
+        this.hotRestartEnabled = hotRestart;
+        return this;
+    }
+
+    /**
+     * Returns whether hot restart enabled on this cache.
+     *
+     * @return true if hot restart enabled, false otherwise
+     */
+    public boolean isHotRestartEnabled() {
+        return hotRestartEnabled;
+    }
+
+    /**
+     * Gets the class name of {@link com.hazelcast.cache.CacheMergePolicy}
+     * implementation of this cache config.
+     *
+     * @return the class name of {@link com.hazelcast.cache.CacheMergePolicy}
+     *         implementation of this cache config
+     */
+    public String getMergePolicy() {
+        return mergePolicy;
+    }
+
+    /**
+     * Sets the class name of {@link com.hazelcast.cache.CacheMergePolicy}
+     * implementation to this cache config.
+     *
+     * @param mergePolicy the class name of {@link com.hazelcast.cache.CacheMergePolicy}
+     *                    implementation to be set to this cache config
+     */
+    public void setMergePolicy(String mergePolicy) {
+        this.mergePolicy = mergePolicy;
     }
 
     /**

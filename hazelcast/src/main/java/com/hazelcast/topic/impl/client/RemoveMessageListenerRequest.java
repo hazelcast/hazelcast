@@ -29,12 +29,12 @@ public class RemoveMessageListenerRequest extends BaseClientRemoveListenerReques
     public RemoveMessageListenerRequest() {
     }
 
-    public RemoveMessageListenerRequest(String name, String registrationId) {
-        super(name, registrationId);
+    public RemoveMessageListenerRequest(String name) {
+        super(name);
     }
 
     @Override
-    public Boolean call() throws Exception {
+    protected boolean deRegisterListener() {
         TopicService service = getService();
         return service.removeMessageListener(name, registrationId);
     }

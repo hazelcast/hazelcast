@@ -16,6 +16,7 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.map.impl.query.SortedQueryResultSet;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.impl.QueryableEntry;

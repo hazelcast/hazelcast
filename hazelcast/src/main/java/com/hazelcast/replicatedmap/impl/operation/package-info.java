@@ -15,6 +15,6 @@
  */
 
 /**
- * This package contains some remote operations to execute on remote nodes
+ * This package contains replicated map operations which are executed on remote nodes
  */
 package com.hazelcast.replicatedmap.impl.operation;

@@ -21,7 +21,7 @@ import com.hazelcast.client.SimpleClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapValueCollection;
 import com.hazelcast.map.impl.client.MapContainsKeyRequest;
@@ -32,7 +32,6 @@ import com.hazelcast.map.impl.client.MapEvictRequest;
 import com.hazelcast.map.impl.client.MapExecuteWithPredicateRequest;
 import com.hazelcast.map.impl.client.MapGetRequest;
 import com.hazelcast.map.impl.client.MapIsLockedRequest;
-import com.hazelcast.map.impl.client.MapKeySetRequest;
 import com.hazelcast.map.impl.client.MapLockRequest;
 import com.hazelcast.map.impl.client.MapPutIfAbsentRequest;
 import com.hazelcast.map.impl.client.MapPutRequest;
@@ -47,17 +46,17 @@ import com.hazelcast.map.impl.client.MapSizeRequest;
 import com.hazelcast.map.impl.client.MapTryPutRequest;
 import com.hazelcast.map.impl.client.MapTryRemoveRequest;
 import com.hazelcast.map.impl.client.MapUnlockRequest;
-import com.hazelcast.map.impl.client.MapValuesRequest;
+import com.hazelcast.map.impl.query.QueryResultSet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -134,7 +133,7 @@ public class MapClientRequestTest extends ClientTestSupport {
             testSet.add(i);
         }
         final SimpleClient client = getClient();
-        client.send(new MapKeySetRequest(mapName));
+        client.send(new MapQueryRequest(mapName, TruePredicate.INSTANCE, IterationType.KEY));
         MapKeySet keyset = (MapKeySet) client.receive();
         for (Data o : keyset.getKeySet()) {
             Object x = TestUtil.toObject(o);
@@ -153,7 +152,7 @@ public class MapClientRequestTest extends ClientTestSupport {
             testSet.add("v" + i);
         }
         final SimpleClient client = getClient();
-        client.send(new MapValuesRequest(mapName));
+        client.send(new MapQueryRequest(mapName, TruePredicate.INSTANCE, IterationType.VALUE));
         MapValueCollection values = (MapValueCollection) client.receive();
         for (Data o : values.getValues()) {
             Object x = TestUtil.toObject(o);
@@ -337,17 +336,17 @@ public class MapClientRequestTest extends ClientTestSupport {
         MapExecuteWithPredicateRequest request = new MapExecuteWithPredicateRequest(map.getName(), entryProcessor, p);
         final SimpleClient client = getClient();
         client.send(request);
-        MapEntrySet entrySet = (MapEntrySet) client.receive();
+        MapEntries mapEntries = (MapEntries) client.receive();
 
         Map<Integer, Employee> result = new HashMap<Integer, Employee>();
-        for (Map.Entry<Data, Data> dataEntry : entrySet.getEntrySet()) {
+        for (Map.Entry<Data, Data> dataEntry : mapEntries) {
             final Data keyData = dataEntry.getKey();
             final Data valueData = dataEntry.getValue();
             Integer key = (Integer) TestUtil.toObject(keyData);
             result.put(key, (Employee) TestUtil.toObject(valueData));
         }
 
-        assertEquals(5, entrySet.getEntrySet().size());
+        assertEquals(5, mapEntries.size());
 
         for (int i = 0; i < 5; i++) {
             assertEquals(SampleObjects.State.STATE2, ((Employee) map.get(i)).getState());

@@ -91,11 +91,6 @@ public final class DefaultObjectNamespace implements ObjectNamespace {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("DefaultObjectNamespace");
-        sb.append("{service='").append(service).append('\'');
-        sb.append(", objectName=").append(objectName);
-        sb.append('}');
-        return sb.toString();
+        return "DefaultObjectNamespace{service='" + service + '\'' + ", objectName=" + objectName + '}';
     }
 }

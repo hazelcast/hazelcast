@@ -29,12 +29,12 @@ public class RemoveEntryListenerRequest extends BaseClientRemoveListenerRequest 
     public RemoveEntryListenerRequest() {
     }
 
-    public RemoveEntryListenerRequest(String name, String registrationId) {
-        super(name, registrationId);
+    public RemoveEntryListenerRequest(String name) {
+        super(name);
     }
 
     @Override
-    public Object call() throws Exception {
+    protected boolean deRegisterListener() {
         final MultiMapService service = getService();
         return service.removeListener(name, registrationId);
     }

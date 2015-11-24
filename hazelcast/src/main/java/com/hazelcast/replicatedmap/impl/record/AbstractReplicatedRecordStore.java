@@ -16,24 +16,29 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.query.Predicate;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.core.Member;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.messages.ReplicationMessage;
-import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.replicatedmap.impl.operation.ReplicateUpdateOperation;
+import com.hazelcast.replicatedmap.impl.operation.VersionResponsePair;
+import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
-
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.core.EntryEventType.EVICTED;
+import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -42,62 +47,29 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * @param <K> key type
  * @param <V> value type
  */
-public abstract class AbstractReplicatedRecordStore<K, V>
-        extends AbstractBaseReplicatedRecordStore<K, V> {
-    static final String CLEAR_REPLICATION_MAGIC_KEY = ReplicatedMapService.SERVICE_NAME + "$CLEAR$MESSAGE$";
+public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseReplicatedRecordStore<K, V> {
 
-    // entries are not removed on replicatedMap.remove() as it would reset a vector clock and we wouldn't be able to
-    // order subsequent events related to the entry. a tombstone is created instead. this constant says how long we
-    // keep the tombstone alive. if there is no event in this period then the tombstone is removed.
-    static final int TOMBSTONE_REMOVAL_PERIOD_MS = 5 * 60 * 1000;
+    public AbstractReplicatedRecordStore(String name, ReplicatedMapService replicatedMapService, int partitionId) {
 
-    public AbstractReplicatedRecordStore(String name, NodeEngine nodeEngine, ReplicatedMapService replicatedMapService) {
-
-        super(name, nodeEngine, replicatedMapService);
-    }
-
-    @Override
-    public void removeTombstone(Object key) {
-        isNotNull(key, "key");
-        storage.checkState();
-        K marshalledKey = (K) marshallKey(key);
-        synchronized (getMutex(marshalledKey)) {
-            ReplicatedRecord<K, V> current = storage.get(marshalledKey);
-            if (current == null || current.getValueInternal() != null) {
-                return;
-            }
-            storage.remove(marshalledKey, current);
-        }
+        super(name, replicatedMapService, partitionId);
     }
 
     @Override
     public Object remove(Object key) {
         isNotNull(key, "key");
         long time = Clock.currentTimeMillis();
-        storage.checkState();
         V oldValue;
-        K marshalledKey = (K) marshallKey(key);
-        synchronized (getMutex(marshalledKey)) {
-            final ReplicatedRecord current = storage.get(marshalledKey);
-            final VectorClockTimestamp vectorClockTimestamp;
-            if (current == null) {
-                oldValue = null;
-            } else {
-                oldValue = (V) current.getValueInternal();
-                if (oldValue != null) {
-                    current.setValue(null, localMemberHash, TOMBSTONE_REMOVAL_PERIOD_MS);
-                    scheduleTtlEntry(TOMBSTONE_REMOVAL_PERIOD_MS, marshalledKey, null);
-                    vectorClockTimestamp = current.incrementVectorClock(localMember);
-                    ReplicationMessage message = buildReplicationMessage(key, null, vectorClockTimestamp,
-                            TOMBSTONE_REMOVAL_PERIOD_MS);
-                    replicationPublisher.publishReplicatedMessage(message);
-                }
-            }
+        K marshalledKey = (K) marshall(key);
+        final ReplicatedRecord current = getStorage().get(marshalledKey);
+        if (current == null) {
+            oldValue = null;
+        } else {
+            oldValue = (V) current.getValueInternal();
+            getStorage().remove(marshalledKey, current);
         }
-        Object unmarshalledOldValue = unmarshallValue(oldValue);
-        fireEntryListenerEvent(key, unmarshalledOldValue, null);
+        Object unmarshalledOldValue = unmarshall(oldValue);
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            mapStats.incrementRemoves(Clock.currentTimeMillis() - time);
+            getStats().incrementRemoves(Clock.currentTimeMillis() - time);
         }
         return unmarshalledOldValue;
     }
@@ -106,26 +78,21 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     public void evict(Object key) {
         isNotNull(key, "key");
         long time = Clock.currentTimeMillis();
-        storage.checkState();
         V oldValue;
-        K marshalledKey = (K) marshallKey(key);
-        synchronized (getMutex(marshalledKey)) {
-            final ReplicatedRecord current = storage.get(marshalledKey);
-            if (current == null) {
-                oldValue = null;
-            } else {
-                oldValue = (V) current.getValueInternal();
-                if (oldValue != null) {
-                    current.setValueInternal(null, localMemberHash, TOMBSTONE_REMOVAL_PERIOD_MS);
-                    scheduleTtlEntry(TOMBSTONE_REMOVAL_PERIOD_MS, marshalledKey, null);
-                    current.incrementVectorClock(localMember);
-                }
-            }
+        K marshalledKey = (K) marshall(key);
+        final ReplicatedRecord current = getStorage().get(marshalledKey);
+        if (current == null) {
+            oldValue = null;
+        } else {
+            oldValue = (V) current.getValueInternal();
+            getStorage().remove(marshalledKey, current);
         }
-        Object unmarshalledOldValue = unmarshallValue(oldValue);
-        fireEntryListenerEvent(key, unmarshalledOldValue, null, EntryEventType.EVICTED);
+        Data dataKey = nodeEngine.toData(key);
+        Data dataOldValue = nodeEngine.toData(oldValue);
+        ReplicatedMapEventPublishingService eventPublishingService = replicatedMapService.getEventPublishingService();
+        eventPublishingService.fireEntryListenerEvent(dataKey, dataOldValue, null, EVICTED, name, nodeEngine.getThisAddress());
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            mapStats.incrementRemoves(Clock.currentTimeMillis() - time);
+            getStats().incrementRemoves(Clock.currentTimeMillis() - time);
         }
     }
 
@@ -133,8 +100,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     public Object get(Object key) {
         isNotNull(key, "key");
         long time = Clock.currentTimeMillis();
-        storage.checkState();
-        ReplicatedRecord replicatedRecord = storage.get(marshallKey(key));
+        ReplicatedRecord replicatedRecord = getStorage().get(marshall(key));
 
         // Force return null on ttl expiration (but before cleanup thread run)
         long ttlMillis = replicatedRecord == null ? 0 : replicatedRecord.getTtlMillis();
@@ -142,9 +108,9 @@ public abstract class AbstractReplicatedRecordStore<K, V>
             replicatedRecord = null;
         }
 
-        Object value = replicatedRecord == null ? null : unmarshallValue(replicatedRecord.getValue());
+        Object value = replicatedRecord == null ? null : unmarshall(replicatedRecord.getValue());
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            mapStats.incrementGets(Clock.currentTimeMillis() - time);
+            getStats().incrementGets(Clock.currentTimeMillis() - time);
         }
         return value;
     }
@@ -153,12 +119,11 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     public Object put(Object key, Object value) {
         isNotNull(key, "key");
         isNotNull(value, "value");
-        storage.checkState();
-        return put(key, value, 0, TimeUnit.MILLISECONDS);
+        return put(key, value, 0, TimeUnit.MILLISECONDS, true);
     }
 
     @Override
-    public Object put(Object key, Object value, long ttl, TimeUnit timeUnit) {
+    public Object put(Object key, Object value, long ttl, TimeUnit timeUnit, boolean incrementHits) {
         isNotNull(key, "key");
         isNotNull(value, "value");
         isNotNull(timeUnit, "timeUnit");
@@ -166,35 +131,32 @@ public abstract class AbstractReplicatedRecordStore<K, V>
             throw new IllegalArgumentException("ttl must be a positive integer");
         }
         long time = Clock.currentTimeMillis();
-        storage.checkState();
         V oldValue = null;
-        K marshalledKey = (K) marshallKey(key);
-        V marshalledValue = (V) marshallValue(value);
-        synchronized (getMutex(marshalledKey)) {
-            final long ttlMillis = ttl == 0 ? 0 : timeUnit.toMillis(ttl);
-            final ReplicatedRecord old = storage.get(marshalledKey);
-            ReplicatedRecord<K, V> record = old;
-            if (old == null) {
-                record = buildReplicatedRecord(marshalledKey, marshalledValue, new VectorClockTimestamp(), ttlMillis);
-                storage.put(marshalledKey, record);
+        K marshalledKey = (K) marshall(key);
+        V marshalledValue = (V) marshall(value);
+        final long ttlMillis = ttl == 0 ? 0 : timeUnit.toMillis(ttl);
+        final ReplicatedRecord<K, V> old = getStorage().get(marshalledKey);
+        ReplicatedRecord<K, V> record = old;
+        if (old == null) {
+            record = buildReplicatedRecord(marshalledKey, marshalledValue, ttlMillis);
+            getStorage().put(marshalledKey, record);
+        } else {
+            oldValue = old.getValueInternal();
+            if (incrementHits) {
+                old.setValue(marshalledValue, ttlMillis);
             } else {
-                oldValue = (V) old.getValueInternal();
-                storage.get(marshalledKey).setValue(marshalledValue, localMemberHash, ttlMillis);
+                old.setValueInternal(marshalledValue, ttlMillis);
             }
-            if (ttlMillis > 0) {
-                scheduleTtlEntry(ttlMillis, marshalledKey, marshalledValue);
-            } else {
-                cancelTtlEntry(marshalledKey);
-            }
-
-            VectorClockTimestamp vectorClockTimestamp = record.incrementVectorClock(localMember);
-            ReplicationMessage message = buildReplicationMessage(key, value, vectorClockTimestamp, ttlMillis);
-            replicationPublisher.publishReplicatedMessage(message);
+            getStorage().put(marshalledKey, old);
         }
-        Object unmarshalledOldValue = unmarshallValue(oldValue);
-        fireEntryListenerEvent(key, unmarshalledOldValue, value);
+        if (ttlMillis > 0) {
+            scheduleTtlEntry(ttlMillis, marshalledKey, marshalledValue);
+        } else {
+            cancelTtlEntry(marshalledKey);
+        }
+        Object unmarshalledOldValue = unmarshall(oldValue);
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            mapStats.incrementPuts(Clock.currentTimeMillis() - time);
+            getStats().incrementPuts(Clock.currentTimeMillis() - time);
         }
         return unmarshalledOldValue;
     }
@@ -202,26 +164,24 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     @Override
     public boolean containsKey(Object key) {
         isNotNull(key, "key");
-        storage.checkState();
-        mapStats.incrementOtherOperations();
-
+        getStats().incrementOtherOperations();
         return containsKeyAndValue(key);
     }
 
     // IMPORTANT >> Increments hit counter
     private boolean containsKeyAndValue(Object key) {
-        ReplicatedRecord replicatedRecord = storage.get(marshallKey(key));
+        ReplicatedRecord replicatedRecord = getStorage().get(marshall(key));
         return replicatedRecord != null && replicatedRecord.getValue() != null;
     }
 
     @Override
     public boolean containsValue(Object value) {
         isNotNull(value, "value");
-        storage.checkState();
-        mapStats.incrementOtherOperations();
-        for (Map.Entry<K, ReplicatedRecord<K, V>> entry : storage.entrySet()) {
+        getStats().incrementOtherOperations();
+        Object v = unmarshall(value);
+        for (Map.Entry<K, ReplicatedRecord<K, V>> entry : getStorage().entrySet()) {
             V entryValue = entry.getValue().getValue();
-            if (value == entryValue || (entryValue != null && unmarshallValue(entryValue).equals(value))) {
+            if (v == entryValue || (entryValue != null && unmarshall(entryValue).equals(v))) {
                 return true;
             }
         }
@@ -229,105 +189,227 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     }
 
     @Override
-    public Set keySet() {
-        storage.checkState();
-        mapStats.incrementOtherOperations();
+    public Set keySet(boolean lazy) {
+        getStats().incrementOtherOperations();
 
-        // Lazy evaluation to prevent to much copying
-        return new LazySet<K, V, K>(new KeySetIteratorFactory<K, V>(this), storage);
+        if (lazy) {
+            // Lazy evaluation to prevent to much copying
+            return new LazySet<K, V, K>(new KeySetIteratorFactory<K, V>(this), getStorage());
+        }
+        return getStorage().keySet();
     }
 
     @Override
-    public Collection values() {
-        storage.checkState();
-        mapStats.incrementOtherOperations();
+    public Collection values(boolean lazy) {
+        getStats().incrementOtherOperations();
 
-        // Lazy evaluation to prevent to much copying
-        return new LazyCollection<K, V>(new ValuesIteratorFactory<K, V>(this), storage);
+        if (lazy) {
+            // Lazy evaluation to prevent to much copying
+            return new LazyCollection<K, V>(new ValuesIteratorFactory<K, V>(this), getStorage());
+        }
+        return getStorage().values();
     }
 
     @Override
     public Collection values(Comparator comparator) {
-        storage.checkState();
-        List values = new ArrayList(storage.size());
-        for (ReplicatedRecord record : storage.values()) {
-            values.add(unmarshallValue(record.getValue()));
+        List values = new ArrayList(getStorage().size());
+        for (ReplicatedRecord record : getStorage().values()) {
+            values.add(unmarshall(record.getValue()));
         }
-        Collections.sort(values, comparator);
-        mapStats.incrementOtherOperations();
+        getStats().incrementOtherOperations();
         return values;
     }
 
     @Override
-    public Set entrySet() {
-        storage.checkState();
-        mapStats.incrementOtherOperations();
+    public Set entrySet(boolean lazy) {
+        getStats().incrementOtherOperations();
 
-        // Lazy evaluation to prevent to much copying
-        return new LazySet<K, V, Map.Entry<K, V>>(new EntrySetIteratorFactory<K, V>(this), storage);
+        if (lazy) {
+            // Lazy evaluation to prevent to much copying
+            return new LazySet<K, V, Map.Entry<K, V>>(new EntrySetIteratorFactory<K, V>(this), getStorage());
+        }
+        return getStorage().entrySet();
     }
 
     @Override
     public ReplicatedRecord getReplicatedRecord(Object key) {
         isNotNull(key, "key");
-        storage.checkState();
-        return storage.get(marshallKey(key));
+        return getStorage().get(marshall(key));
     }
 
     @Override
     public boolean isEmpty() {
-        mapStats.incrementOtherOperations();
-        return storage.isEmpty();
+        getStats().incrementOtherOperations();
+        return getStorage().isEmpty();
     }
 
     @Override
     public int size() {
-        mapStats.incrementOtherOperations();
-        return storage.size();
+        getStats().incrementOtherOperations();
+        return getStorage().size();
     }
 
     @Override
-    public void clear(boolean distribute, boolean emptyReplicationQueue) {
-        storage.checkState();
-        if (emptyReplicationQueue) {
-            replicationPublisher.emptyReplicationQueue();
+    public void clear() {
+        getStorage().clear();
+        getStats().incrementOtherOperations();
+    }
+
+    @Override
+    public void reset() {
+        getStorage().reset();
+    }
+
+    @Override
+    public Iterator recordIterator() {
+        return new RecordIterator(getStorage().entrySet().iterator());
+    }
+
+    @Override
+    public void putRecord(RecordMigrationInfo record) {
+        K key = (K) marshall(record.getKey());
+        V value = (V) marshall(record.getValue());
+        ReplicatedRecord newRecord = buildReplicatedRecord(key, value, record.getTtl());
+        newRecord.setHits(record.getHits());
+        newRecord.setCreationTime(record.getCreationTime());
+        newRecord.setLastAccessTime(record.getLastAccessTime());
+        newRecord.setUpdateTime(record.getLastUpdateTime());
+        if (record.getTtl() > 0) {
+            scheduleTtlEntry(record.getTtl(), key, value);
         }
-        storage.clear();
-        if (distribute) {
-            replicationPublisher.distributeClear(emptyReplicationQueue);
+        getStorage().putInternal(key, newRecord);
+    }
+
+    private ReplicatedRecord buildReplicatedRecord(Object key, Object value, long ttlMillis) {
+        int partitionId = partitionService.getPartitionId(key);
+        return new ReplicatedRecord(key, value, ttlMillis, partitionId);
+    }
+
+
+    @Override
+    public boolean merge(Object key, ReplicatedMapEntryView mergingEntry, ReplicatedMapMergePolicy policy) {
+        Object marshalledKey = marshall(key);
+        ReplicatedRecord<K, V> record = getStorage().get(marshalledKey);
+        Object newValue;
+        if (record == null) {
+            ReplicatedMapEntryView nullEntryView = new ReplicatedMapEntryView(unmarshall(key), null);
+            newValue = policy.merge(getName(), mergingEntry, nullEntryView);
+            if (newValue == null) {
+                return false;
+            }
+            record = buildReplicatedRecord(marshalledKey, newValue, 0);
+            getStorage().put((K) marshalledKey, record);
+            Data dataKey = serializationService.toData(marshalledKey);
+            Data dataValue = serializationService.toData(newValue);
+            VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
+            sendReplicationOperation(false, getName(), dataKey, dataValue, record.getTtlMillis(), responsePair);
+        } else {
+            Object oldValue = record.getValueInternal();
+            ReplicatedMapEntryView existingEntry = new ReplicatedMapEntryView(unmarshall(key), unmarshall(oldValue));
+            existingEntry.setCreationTime(record.getCreationTime());
+            existingEntry.setLastUpdateTime(record.getUpdateTime());
+            existingEntry.setLastAccessTime(record.getLastAccessTime());
+            existingEntry.setHits(record.getHits());
+            existingEntry.setTtl(record.getTtlMillis());
+            newValue = policy.merge(getName(), mergingEntry, existingEntry);
+            if (newValue == null) {
+                getStorage().remove((K) marshalledKey, record);
+                Data dataKey = serializationService.toData(marshalledKey);
+                VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
+                sendReplicationOperation(true, getName(), dataKey, null, record.getTtlMillis(), responsePair);
+                return false;
+            }
+            getStorage().incrementVersion();
+            record.setValueInternal((V) newValue, record.getTtlMillis());
+            Data dataKey = serializationService.toData(marshalledKey);
+            Data dataValue = serializationService.toData(newValue);
+            VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
+            sendReplicationOperation(false, getName(), dataKey, dataValue, record.getTtlMillis(), responsePair);
+
         }
-        mapStats.incrementOtherOperations();
+        return true;
     }
 
-    @Override
-    public String addEntryListener(EntryListener listener, Object key) {
-        isNotNull(listener, "listener");
-        Object dataKey = marshallKey(key);
-        EventFilter eventFilter = new ReplicatedEntryEventFilter(dataKey);
-        mapStats.incrementOtherOperations();
-        return replicatedMapService.addEventListener(listener, eventFilter, getName());
+    protected void sendReplicationOperation(final boolean isRemove, String name, Data key, Data value, long ttl,
+                                            VersionResponsePair response) {
+        Collection<Member> members = nodeEngine.getClusterService().getMembers(MemberSelectors.DATA_MEMBER_SELECTOR);
+        for (Member member : members) {
+            invoke(isRemove, member.getAddress(), name, key, value, ttl, response);
+        }
     }
 
-    @Override
-    public String addEntryListener(EntryListener listener, Predicate predicate, Object key) {
-        isNotNull(listener, "listener");
-        EventFilter eventFilter = new ReplicatedQueryEventFilter(marshallKey(key), predicate);
-        mapStats.incrementOtherOperations();
-        return replicatedMapService.addEventListener(listener, eventFilter, getName());
+    private void invoke(boolean isRemove, Address address, String name, Data key, Data value, long ttl,
+                        VersionResponsePair response) {
+        OperationService operationService = nodeEngine.getOperationService();
+        ReplicateUpdateOperation updateOperation = new ReplicateUpdateOperation(name, key, value, ttl,
+                response, isRemove, nodeEngine.getThisAddress());
+        updateOperation.setPartitionId(partitionId);
+        updateOperation.setValidateTarget(false);
+        operationService.invokeOnTarget(SERVICE_NAME, updateOperation, address);
     }
 
-    @Override
-    public boolean removeEntryListenerInternal(String id) {
-        isNotNull(id, "id");
-        mapStats.incrementOtherOperations();
-        return replicatedMapService.removeEventListener(getName(), id);
+    private final class RecordIterator implements Iterator<ReplicatedRecord<K, V>> {
+
+        private final Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator;
+
+        private Map.Entry<K, ReplicatedRecord<K, V>> entry;
+
+        private RecordIterator(Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator) {
+            this.iterator = iterator;
+        }
+
+        @Override
+        public boolean hasNext() {
+            while (iterator.hasNext()) {
+                entry = iterator.next();
+                if (testEntry(entry)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public ReplicatedRecord<K, V> next() {
+            Map.Entry<K, ReplicatedRecord<K, V>> entry = this.entry;
+            ReplicatedRecord<K, V> record = entry != null ? entry.getValue() : null;
+            while (entry == null) {
+                entry = findNextEntry();
+                Object key = entry.getKey();
+                record = entry.getValue();
+                Object value = record != null ? record.getValue() : null;
+                if (key != null && value != null) {
+                    break;
+                }
+            }
+            this.entry = null;
+            return record;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("Lazy structures are not modifiable");
+        }
+
+        private boolean testEntry(Map.Entry<K, ReplicatedRecord<K, V>> entry) {
+            return entry.getKey() != null && entry.getValue() != null && !entry.getValue().isTombstone();
+        }
+
+        private Map.Entry<K, ReplicatedRecord<K, V>> findNextEntry() {
+            Map.Entry<K, ReplicatedRecord<K, V>> entry = null;
+            while (iterator.hasNext()) {
+                entry = iterator.next();
+                if (testEntry(entry)) {
+                    break;
+                }
+                entry = null;
+            }
+            if (entry == null) {
+                throw new NoSuchElementException();
+            }
+            return entry;
+        }
     }
 
-    private ReplicationMessage buildReplicationMessage(Object key, Object value, VectorClockTimestamp timestamp, long ttlMillis) {
-        return new ReplicationMessage(getName(), key, value, timestamp, localMember, localMemberHash, ttlMillis);
-    }
 
-    private ReplicatedRecord buildReplicatedRecord(Object key, Object value, VectorClockTimestamp timestamp, long ttlMillis) {
-        return new ReplicatedRecord(key, value, timestamp, localMemberHash, ttlMillis);
-    }
 }

@@ -16,39 +16,56 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.client.InvocationClientRequest;
+import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.MapReduceCancelCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForCustomCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForListCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForMapCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForMultiMapCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForSetCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceJobProcessInformationCodec;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.mapreduce.Collator;
+import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.JobCompletableFuture;
+import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.mapreduce.KeyValueSource;
+import com.hazelcast.mapreduce.Mapper;
+import com.hazelcast.mapreduce.ReducerFactory;
+import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.mapreduce.TrackableJob;
 import com.hazelcast.mapreduce.impl.AbstractJob;
-import com.hazelcast.mapreduce.impl.client.ClientCancellationRequest;
-import com.hazelcast.mapreduce.impl.client.ClientJobProcessInformationRequest;
-import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
+import com.hazelcast.mapreduce.impl.ListKeyValueSource;
+import com.hazelcast.mapreduce.impl.MapKeyValueSource;
+import com.hazelcast.mapreduce.impl.MultiMapKeyValueSource;
+import com.hazelcast.mapreduce.impl.SetKeyValueSource;
+import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class ClientMapReduceProxy
         extends ClientProxy
@@ -69,7 +86,7 @@ public class ClientMapReduceProxy
 
     @Override
     public <K, V> Job<K, V> newJob(KeyValueSource<K, V> source) {
-        return new ClientJob<K, V>(getName(), source);
+        return new ClientJob<K, V>(name, source);
     }
 
     @Override
@@ -79,29 +96,23 @@ public class ClientMapReduceProxy
 
     @Override
     public String toString() {
-        return "JobTracker{" + "name='" + getName() + '\'' + '}';
+        return "JobTracker{" + "name='" + name + '\'' + '}';
     }
 
-    /*
-     * Removed for now since it is moved to Hazelcast 3.3
-    @Override
-    public <K, V> ProcessJob<K, V> newProcessJob(KeyValueSource<K, V> source) {
-        // TODO
-        return null;
-    }*/
-
-    private <T> T invoke(InvocationClientRequest request, String jobId) throws Exception {
+    private ClientMessage invoke(ClientMessage request, String jobId) throws Exception {
         ClientTrackableJob trackableJob = trackableJobs.get(jobId);
         if (trackableJob != null) {
-            Address runningMember = trackableJob.jobOwner;
+            ClientConnection sendConnection = trackableJob.clientInvocation.getSendConnectionOrWait();
+            Address runningMember = sendConnection.getEndPoint();
             final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, runningMember);
-            final ICompletableFuture<T> future = clientInvocation.invoke();
+            ClientInvocationFuture future = clientInvocation.invoke();
             return future.get();
         }
         return null;
     }
 
-    private class ClientJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
+    private class ClientJob<KeyIn, ValueIn>
+            extends AbstractJob<KeyIn, ValueIn> {
 
         public ClientJob(String name, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
             super(name, ClientMapReduceProxy.this, keyValueSource);
@@ -110,11 +121,10 @@ public class ClientMapReduceProxy
         @Override
         protected <T> JobCompletableFuture<T> invoke(final Collator collator) {
             try {
-                final String jobId = UuidUtil.buildRandomUuidString();
+                final String jobId = UuidUtil.newUnsecureUuidString();
 
-                ClientMapReduceRequest request = new ClientMapReduceRequest(name, jobId, keys,
-                        predicate, mapper, combinerFactory, reducerFactory, keyValueSource,
-                        chunkSize, topologyChangedStrategy);
+                ClientMessage request = getRequest(name, jobId, keys, predicate, mapper, combinerFactory, reducerFactory,
+                        keyValueSource, chunkSize, topologyChangedStrategy);
 
                 final ClientCompletableFuture completableFuture = new ClientCompletableFuture(jobId);
 
@@ -124,7 +134,9 @@ public class ClientMapReduceProxy
                 future.andThen(new ExecutionCallback() {
                     @Override
                     public void onResponse(Object res) {
-                        Object response = res;
+                        Map map = toObjectMap((ClientMessage) res);
+
+                        Object response = map;
                         try {
                             if (collator != null) {
                                 response = collator.collate(((Map) response).entrySet());
@@ -139,8 +151,7 @@ public class ClientMapReduceProxy
                     public void onFailure(Throwable throwable) {
                         Throwable t = throwable;
                         try {
-                            if (t instanceof ExecutionException
-                                    && t.getCause() instanceof CancellationException) {
+                            if (t instanceof ExecutionException && t.getCause() instanceof CancellationException) {
                                 t = t.getCause();
                             }
                             completableFuture.setResult(t);
@@ -150,8 +161,7 @@ public class ClientMapReduceProxy
                     }
                 });
 
-                Address runningMember = clientInvocation.getSendConnection().getRemoteEndpoint();
-                trackableJobs.putIfAbsent(jobId, new ClientTrackableJob<T>(jobId, runningMember, completableFuture));
+                trackableJobs.putIfAbsent(jobId, new ClientTrackableJob<T>(jobId, clientInvocation, completableFuture));
                 return completableFuture;
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -160,19 +170,75 @@ public class ClientMapReduceProxy
 
     }
 
+    private Map toObjectMap(ClientMessage res) {
+        SerializationService serializationService = getContext().getSerializationService();
+        Collection<Map.Entry<Data, Data>> entries = MapReduceForCustomCodec.decodeResponse(res).entries;
+        HashMap hashMap = new HashMap();
+        for (Map.Entry<Data, Data> entry : entries) {
+            Object key = serializationService.toObject(entry.getKey());
+            Object value = serializationService.toObject(entry.getValue());
+            hashMap.put(key, value);
+        }
+        return hashMap;
+    }
+
+    private ClientMessage getRequest(String name, String jobId, Collection keys, KeyPredicate predicate, Mapper mapper,
+                                     CombinerFactory combinerFactory, ReducerFactory reducerFactory,
+                                     KeyValueSource keyValueSource, int chunkSize,
+                                     TopologyChangedStrategy topologyChangedStrategy) {
+        Data predicateData = toData(predicate);
+        Data mapperData = toData(mapper);
+        Data combinerFactoryData = toData(combinerFactory);
+        Data reducerFactoryData = toData(reducerFactory);
+        List<Data> list = null;
+        if (keys != null) {
+            list = new ArrayList<Data>(keys.size());
+            for (Object key : keys) {
+                list.add(toData(key));
+            }
+        }
+
+        String topologyChangedStrategyName = null;
+        if (topologyChangedStrategy != null) {
+            topologyChangedStrategyName = topologyChangedStrategy.name();
+        }
+
+        if (keyValueSource instanceof MapKeyValueSource) {
+            MapKeyValueSource source = (MapKeyValueSource) keyValueSource;
+            return MapReduceForMapCodec
+                    .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
+                            source.getMapName(), chunkSize, list, topologyChangedStrategyName);
+        } else if (keyValueSource instanceof ListKeyValueSource) {
+            ListKeyValueSource source = (ListKeyValueSource) keyValueSource;
+            return MapReduceForListCodec
+                    .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
+                            source.getListName(), chunkSize, list, topologyChangedStrategyName);
+        } else if (keyValueSource instanceof SetKeyValueSource) {
+            SetKeyValueSource source = (SetKeyValueSource) keyValueSource;
+            return MapReduceForSetCodec
+                    .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
+                            source.getSetName(), chunkSize, list, topologyChangedStrategyName);
+        } else if (keyValueSource instanceof MultiMapKeyValueSource) {
+            MultiMapKeyValueSource source = (MultiMapKeyValueSource) keyValueSource;
+            return MapReduceForMultiMapCodec
+                    .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
+                            source.getMultiMapName(), chunkSize, list, topologyChangedStrategyName);
+        }
+        return MapReduceForCustomCodec
+                .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
+                        toData(keyValueSource), chunkSize, list, topologyChangedStrategyName);
+
+    }
+
     private class ClientCompletableFuture<V>
             extends AbstractCompletableFuture<V>
             implements JobCompletableFuture<V> {
 
         private final String jobId;
-        private final CountDownLatch latch;
-
-        private volatile boolean cancelled;
 
         protected ClientCompletableFuture(String jobId) {
             super(getContext().getExecutionService().getAsyncExecutor(), Logger.getLogger(ClientCompletableFuture.class));
             this.jobId = jobId;
-            this.latch = new CountDownLatch(1);
         }
 
         @Override
@@ -181,9 +247,12 @@ public class ClientMapReduceProxy
         }
 
         @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
+        protected boolean shouldCancel(boolean mayInterruptIfRunning) {
+            boolean cancelled = false;
             try {
-                cancelled = (Boolean) invoke(new ClientCancellationRequest(getName(), jobId), jobId);
+                ClientMessage request = MapReduceCancelCodec.encodeRequest(name, jobId);
+                ClientMessage response = invoke(request, jobId);
+                cancelled = MapReduceCancelCodec.decodeResponse(response).response;
             } catch (Exception ignore) {
                 EmptyStatement.ignore(ignore);
             }
@@ -191,37 +260,23 @@ public class ClientMapReduceProxy
         }
 
         @Override
-        public boolean isCancelled() {
-            return cancelled;
-        }
-
-        @Override
-        public void setResult(Object result) {
+        protected void setResult(Object result) {
             super.setResult(result);
-            latch.countDown();
         }
 
-        @Override
-        public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            isNotNull(unit, "unit");
-            if (!latch.await(timeout, unit) || !isDone()) {
-                throw new TimeoutException("timeout reached");
-            }
-            return getResult();
-        }
     }
 
     private final class ClientTrackableJob<V>
             implements TrackableJob<V> {
 
         private final String jobId;
-        private final Address jobOwner;
+        private final ClientInvocation clientInvocation;
         private final AbstractCompletableFuture<V> completableFuture;
 
-        private ClientTrackableJob(String jobId, Address jobOwner,
+        private ClientTrackableJob(String jobId, ClientInvocation clientInvocation,
                                    AbstractCompletableFuture<V> completableFuture) {
             this.jobId = jobId;
-            this.jobOwner = jobOwner;
+            this.clientInvocation = clientInvocation;
             this.completableFuture = completableFuture;
         }
 
@@ -232,7 +287,7 @@ public class ClientMapReduceProxy
 
         @Override
         public String getName() {
-            return ClientMapReduceProxy.this.getName();
+            return ClientMapReduceProxy.this.name;
         }
 
         @Override
@@ -248,7 +303,12 @@ public class ClientMapReduceProxy
         @Override
         public JobProcessInformation getJobProcessInformation() {
             try {
-                return invoke(new ClientJobProcessInformationRequest(getName(), jobId), jobId);
+                ClientMessage request = MapReduceJobProcessInformationCodec.encodeRequest(name, jobId);
+
+                MapReduceJobProcessInformationCodec.ResponseParameters responseParameters = MapReduceJobProcessInformationCodec
+                        .decodeResponse(invoke(request, jobId));
+                JobPartitionState[] partitionStates = responseParameters.jobPartitionStates.toArray(new JobPartitionState[0]);
+                return new TransferableJobProcessInformation(partitionStates, responseParameters.processRecords);
             } catch (Exception ignore) {
                 EmptyStatement.ignore(ignore);
             }

@@ -18,53 +18,49 @@ package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.operation.ContainsValueOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
+import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
 /**
  * Client request class for {@link java.util.Map#containsValue(Object)} implementation
  */
-public class ClientReplicatedMapContainsValueRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapContainsValueRequest extends AbstractReplicatedMapClientRequest {
 
-    private Object value;
+    private Data value;
 
     ClientReplicatedMapContainsValueRequest() {
         super(null);
     }
 
-    public ClientReplicatedMapContainsValueRequest(String mapName, Object value) {
-        super(mapName);
+    public ClientReplicatedMapContainsValueRequest(String mapName, Data value, int partitionId) {
+        super(mapName, partitionId);
         this.value = value;
     }
 
     @Override
-    public Object call()
-            throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return recordStore.containsValue(value);
+    protected Operation prepareOperation() {
+        return new ContainsValueOperation(getMapName(), value);
     }
 
     @Override
-    public void write(PortableWriter writer)
-            throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(value);
+        out.writeData(value);
     }
 
     @Override
-    public void read(PortableReader reader)
-            throws IOException {
+    public void read(PortableReader reader) throws IOException {
         super.read(reader);
         ObjectDataInput in = reader.getRawDataInput();
-        value = in.readObject();
+        value = in.readData();
     }
 
     @Override

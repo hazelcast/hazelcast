@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -90,7 +90,6 @@ public class ClientMapReadWriteQuorumTest {
         c4 = factory.newHazelcastClient(getClientConfig(cluster.h4));
         c5 = factory.newHazelcastClient(getClientConfig(cluster.h5));
     }
-
     private static ClientConfig getClientConfig(HazelcastInstance instance) {
         ClientConfig clientConfig = new ClientConfig();
         Address address = getNode(instance).address;

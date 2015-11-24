@@ -46,6 +46,7 @@ import org.junit.runners.Parameterized;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.LOCAL;
+import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 
 @RunParallel
@@ -72,7 +73,7 @@ public class ClientTransactionalMapQuorumTest {
     public static Collection<Object[]> parameters() {
 
         TransactionOptions localOption = TransactionOptions.getDefault();
-        localOption.setTransactionType(LOCAL);
+        localOption.setTransactionType(ONE_PHASE);
 
         TransactionOptions twoPhaseOption = TransactionOptions.getDefault();
         twoPhaseOption.setTransactionType(TWO_PHASE);
@@ -104,7 +105,6 @@ public class ClientTransactionalMapQuorumTest {
         c4 = factory.newHazelcastClient(getClientConfig(cluster.h4));
         c5 = factory.newHazelcastClient(getClientConfig(cluster.h5));
     }
-
     private static ClientConfig getClientConfig(HazelcastInstance instance) {
         ClientConfig clientConfig = new ClientConfig();
         Address address = getNode(instance).address;

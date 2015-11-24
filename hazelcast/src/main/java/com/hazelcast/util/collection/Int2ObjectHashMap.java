@@ -32,6 +32,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.collection.Hashing.intHash;
 
 /**
  * {@link java.util.Map} implementation specialised for int keys using open addressing and
@@ -132,7 +133,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
      * @return true if the key is found otherwise false.
      */
     public boolean containsKey(final int key) {
-        int index = hash(key);
+        int index = intHash(key, mask);
 
         while (null != values[index]) {
             if (key == keys[index]) {
@@ -175,7 +176,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
      */
     @SuppressWarnings("unchecked")
     public V get(final int key) {
-        int index = hash(key);
+        int index = intHash(key, mask);
 
         Object value;
         while (null != (value = values[index])) {
@@ -229,7 +230,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     public V put(final int key, final V value) {
         checkNotNull(value, "Value cannot be null");
         V oldValue = null;
-        int index = hash(key);
+        int index = intHash(key, mask);
         while (null != values[index]) {
             if (key == keys[index]) {
                 oldValue = (V) values[index];
@@ -263,7 +264,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
      */
     @SuppressWarnings("unchecked")
     public V remove(final int key) {
-        int index = hash(key);
+        int index = intHash(key, mask);
         Object value;
         while (null != (value = values[index])) {
             if (key == keys[index]) {
@@ -377,7 +378,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
             final Object value = values[i];
             if (null != value) {
                 final int key = keys[i];
-                int newHash = hash(key);
+                int newHash = intHash(key, mask);
                 while (null != tempValues[newHash]) {
                     newHash = ++newHash & mask;
                 }
@@ -396,7 +397,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
             if (null == values[index]) {
                 return;
             }
-            final int hash = hash(keys[index]);
+            final int hash = intHash(keys[index], mask);
             if ((index < hash && (hash <= deleteIndex || deleteIndex <= index))
                     || (hash <= deleteIndex && deleteIndex <= index)) {
                 keys[deleteIndex] = keys[index];
@@ -405,11 +406,6 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
                 deleteIndex = index;
             }
         }
-    }
-
-    private int hash(final int key) {
-        final int hash = (key << 1) - (key << 8);
-        return hash & mask;
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

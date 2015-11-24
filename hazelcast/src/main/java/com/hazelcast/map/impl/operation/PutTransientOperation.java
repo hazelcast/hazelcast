@@ -42,10 +42,4 @@ public class PutTransientOperation extends BasePutOperation {
     public void onWaitExpire() {
         sendResponse(null);
     }
-
-    @Override
-    public String toString() {
-        return "PutTransientOperation{" + name + "}";
-    }
-
 }

@@ -16,12 +16,10 @@
 
 package com.hazelcast.map.impl.client;
 
-import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.MapLoadAllOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -42,9 +40,7 @@ import java.util.Map;
 /**
  * Loads all given keys from a map store.
  */
-public class MapLoadGivenKeysRequest extends AllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
-
-    private String name;
+public class MapLoadGivenKeysRequest extends MapAllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
 
     private List<Data> keys;
 
@@ -62,7 +58,7 @@ public class MapLoadGivenKeysRequest extends AllPartitionsClientRequest implemen
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new MapLoadAllOperationFactory(name, keys, replaceExistingValues);
+        return getOperationProvider().createLoadAllOperationFactory(name, keys, replaceExistingValues);
     }
 
     @Override

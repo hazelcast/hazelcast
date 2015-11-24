@@ -19,20 +19,17 @@ package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 
-/**
- * User: sancar
- * Date: 3/7/13
- * Time: 10:31 AM
- */
 public class VersionCommandProcessor extends MemcacheCommandProcessor<VersionCommand> {
     public VersionCommandProcessor(TextCommandServiceImpl textCommandService) {
         super(textCommandService);
     }
 
+    @Override
     public void handle(VersionCommand request) {
         textCommandService.sendResponse(request);
     }
 
+    @Override
     public void handleRejection(VersionCommand request) {
         handle(request);
     }

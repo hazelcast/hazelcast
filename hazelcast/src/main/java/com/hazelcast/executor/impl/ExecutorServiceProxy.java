@@ -62,7 +62,7 @@ import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.UuidUtil.buildRandomUuidString;
+import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 
 public class ExecutorServiceProxy
         extends AbstractDistributedObject<DistributedExecutorService>
@@ -71,7 +71,7 @@ public class ExecutorServiceProxy
     public static final int SYNC_FREQUENCY = 100;
     public static final int SYNC_DELAY_MS = 10;
 
-    private static final AtomicIntegerFieldUpdater<ExecutorServiceProxy> CONSECUTIVE_SUBMITS_UPDATER = AtomicIntegerFieldUpdater
+    private static final AtomicIntegerFieldUpdater<ExecutorServiceProxy> CONSECUTIVE_SUBMITS = AtomicIntegerFieldUpdater
             .newUpdater(ExecutorServiceProxy.class, "consecutiveSubmits");
 
     private static final ExceptionHandler WHILE_SHUTDOWN_EXCEPTION_HANDLER =
@@ -82,7 +82,7 @@ public class ExecutorServiceProxy
     private final int partitionCount;
     private final ILogger logger;
 
-    // This field is never accessed directly but by the CONSECUTIVE_SUBMITS_UPDATER above
+    // This field is never accessed directly but by the CONSECUTIVE_SUBMITS above
     private volatile int consecutiveSubmits;
 
     private volatile long lastSubmitTime;
@@ -197,7 +197,7 @@ public class ExecutorServiceProxy
         NodeEngine nodeEngine = getNodeEngine();
         Callable<T> callable = createRunnableAdapter(task);
         Data callableData = nodeEngine.toData(callable);
-        String uuid = buildRandomUuidString();
+        String uuid = newUnsecureUuidString();
         int partitionId = getTaskPartitionId(callable);
 
         CallableTaskOperation op = new CallableTaskOperation(name, uuid, callableData);
@@ -238,7 +238,7 @@ public class ExecutorServiceProxy
 
         NodeEngine nodeEngine = getNodeEngine();
         Data taskData = nodeEngine.toData(task);
-        String uuid = buildRandomUuidString();
+        String uuid = newUnsecureUuidString();
 
         boolean sync = !preventSync && checkSync();
         CallableTaskOperation op = new CallableTaskOperation(name, uuid, taskData);
@@ -264,8 +264,8 @@ public class ExecutorServiceProxy
         long last = lastSubmitTime;
         long now = Clock.currentTimeMillis();
         if (last + SYNC_DELAY_MS < now) {
-            CONSECUTIVE_SUBMITS_UPDATER.set(this, 0);
-        } else if (CONSECUTIVE_SUBMITS_UPDATER.incrementAndGet(this) % SYNC_FREQUENCY == 0) {
+            CONSECUTIVE_SUBMITS.set(this, 0);
+        } else if (CONSECUTIVE_SUBMITS.incrementAndGet(this) % SYNC_FREQUENCY == 0) {
             sync = true;
         }
         lastSubmitTime = now;
@@ -295,7 +295,7 @@ public class ExecutorServiceProxy
 
         NodeEngine nodeEngine = getNodeEngine();
         Data taskData = nodeEngine.toData(task);
-        String uuid = buildRandomUuidString();
+        String uuid = newUnsecureUuidString();
         Address target = ((MemberImpl) member).getAddress();
 
         boolean sync = checkSync();
@@ -388,7 +388,8 @@ public class ExecutorServiceProxy
 
         NodeEngine nodeEngine = getNodeEngine();
         Data taskData = nodeEngine.toData(task);
-        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, null, taskData);
+        String uuid = newUnsecureUuidString();
+        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, taskData);
         OperationService operationService = nodeEngine.getOperationService();
         Address address = ((MemberImpl) member).getAddress();
         operationService

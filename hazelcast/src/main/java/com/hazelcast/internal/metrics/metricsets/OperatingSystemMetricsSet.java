@@ -16,14 +16,15 @@
 
 package com.hazelcast.internal.metrics.metricsets;
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -57,7 +58,7 @@ public final class OperatingSystemMetricsSet {
         registerMethod(metricsRegistry, mxBean, "getProcessCpuLoad", "os.processCpuLoad");
         registerMethod(metricsRegistry, mxBean, "getSystemCpuLoad", "os.systemCpuLoad");
 
-        metricsRegistry.register(mxBean, "os.systemLoadAverage",
+        metricsRegistry.register(mxBean, "os.systemLoadAverage", MANDATORY,
                 new DoubleProbeFunction<OperatingSystemMXBean>() {
                     @Override
                     public double get(OperatingSystemMXBean bean) {
@@ -78,7 +79,7 @@ public final class OperatingSystemMetricsSet {
         }
 
         if (long.class.equals(method.getReturnType())) {
-            metricsRegistry.register(osBean, name,
+            metricsRegistry.register(osBean, name, MANDATORY,
                     new LongProbeFunction() {
                         @Override
                         public long get(Object bean) throws Exception {
@@ -86,7 +87,7 @@ public final class OperatingSystemMetricsSet {
                         }
                     });
         } else {
-            metricsRegistry.register(osBean, name,
+            metricsRegistry.register(osBean, name, MANDATORY,
                     new DoubleProbeFunction() {
                         @Override
                         public double get(Object bean) throws Exception {
@@ -99,7 +100,7 @@ public final class OperatingSystemMetricsSet {
     /**
      * Returns a method from the given source object.
      *
-     * @param source the source object.
+     * @param source     the source object.
      * @param methodName the name of the method to retrieve.
      * @return the method
      */

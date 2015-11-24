@@ -18,6 +18,7 @@ package com.hazelcast.client.spi;
 
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.nio.Address;
 
@@ -29,72 +30,88 @@ import java.util.Collection;
 public interface ClientClusterService {
 
     /**
-     * @return Client interface representing local client
+     * @return The client interface representing the local client.
      */
     Client getLocalClient();
 
     /**
      * Gets the member for the given address.
      *
-     * @param address the address of the member to lookup.
-     * @return the found member, or null if not found. If address is null, null is returned.
+     * @param address The address of the member to look up.
+     * @return The member that was found, or null if not found. If address is null, null is returned.
      */
     Member getMember(Address address);
 
     /**
      * Gets the member with the given uuid.
      *
-     * @param uuid the uuid of the member
-     * @return the found member, or null if not found. If uuid is null, null is returned.
+     * @param uuid The uuid of the member.
+     * @return The member that was found, or null if not found. If uuid is null, null is returned.
      */
     Member getMember(String uuid);
 
     /**
      * Gets the collection of members.
      *
-     * @return the collection of member. Null will never be returned.
+     * @return The collection of members. Null will never be returned.
      */
     Collection<Member> getMemberList();
 
     /**
+     * Returns a collection of the members that satisfy the given {@link com.hazelcast.core.MemberSelector}.
+     *
+     * @param selector {@link com.hazelcast.core.MemberSelector} instance to filter members to return
+     * @return members that satisfy the given {@link com.hazelcast.core.MemberSelector}.
+     */
+    Collection<Member> getMembers(MemberSelector selector);
+
+    /**
      * Returns the address of the master member.
      *
-     * @return the address of the master member. Could be null if the master is not yet known.
+     * @return The address of the master member. Could be null if the master is not yet known.
      */
     Address getMasterAddress();
 
     /**
      * Gets the current number of members.
      *
-     * @return the current number of members.
+     * @return The current number of members.
      */
     int getSize();
+
+    /**
+     * Gets the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance.
+     * @param selector {@link com.hazelcast.core.MemberSelector} instance that filters members to be counted.
+     * @return the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance.
+     */
+    int getSize(MemberSelector selector);
 
     /**
      * Returns the cluster-time.
      * <p/>
      *
-     * @return the cluster-time.
+     * @return The cluster-time.
      */
     long getClusterTime();
 
     /**
-     * @param listener to be registered
-     * @return registration id
+     * @param listener The listener to be registered.
+     * @return The registration id.
      */
     String addMembershipListener(MembershipListener listener);
 
     /**
-     * @param registrationId of listener
-     * @return true if successfully removed, false otherwise
+     * @param registrationId The registrationId of the listener to be removed.
+     * @return true if successfully removed, false otherwise.
      */
     boolean removeMembershipListener(String registrationId);
 
     /**
-     * Owner connection is opened to owner member of the client in the cluster.
-     * If owner member dies, other members of the cluster assumes this client dead.
+     * The owner connection is opened to owner member of the client in the cluster.
+     * If the owner member dies, other members of the cluster assumes this client is dead.
      *
-     * @return address of owner connection
+     * @return The address of the owner connection.
      */
     Address getOwnerConnectionAddress();
+
 }

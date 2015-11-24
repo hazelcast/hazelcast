@@ -118,11 +118,6 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("PredicateBuilder");
-        sb.append("{\n");
-        sb.append(lsPredicates.size() == 0 ? "" : lsPredicates.get(0));
-        sb.append("\n}");
-        return sb.toString();
+        return "PredicateBuilder{\n" + (lsPredicates.size() == 0 ? "" : lsPredicates.get(0)) + "\n}";
     }
 }

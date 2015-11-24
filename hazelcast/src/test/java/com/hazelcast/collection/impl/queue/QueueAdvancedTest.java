@@ -24,12 +24,13 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,9 +41,10 @@ import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -56,14 +58,14 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
     @Test
     public void testOffer() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance[] instances = factory.newInstances();
         HazelcastInstance h1 = instances[0];
         HazelcastInstance h2 = instances[1];
-        final IQueue q1 = h1.getQueue("default");
-        final IQueue q2 = h2.getQueue("default");
+        IQueue<String> q1 = h1.getQueue("default");
+        IQueue<String> q2 = h2.getQueue("default");
         for (int i = 0; i < 100; i++) {
-            assertTrue(q1.offer("item" + i, 100, TimeUnit.SECONDS));
-            assertTrue(q2.offer("item" + i, 100, TimeUnit.SECONDS));
+            assertTrue("Expected q1.offer() to succeed", q1.offer("item" + i, 100, SECONDS));
+            assertTrue("Expected q2.offer() to succeed", q2.offer("item" + i, 100, SECONDS));
         }
         assertEquals("item0", q1.peek());
         assertEquals("item0", q2.peek());
@@ -74,38 +76,42 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
     }
 
     /**
-     * Test for issue 730. (google)
+     * Test for issue 730 (Google).
      */
     @Test
     public void testDeadTaker() throws Exception {
         Config config = new Config();
         final CountDownLatch shutdownLatch = new CountDownLatch(1);
         config.addListenerConfig(new ListenerConfig().setImplementation(new MembershipListener() {
+            @Override
             public void memberAdded(MembershipEvent membershipEvent) {
             }
 
+            @Override
             public void memberRemoved(MembershipEvent membershipEvent) {
                 shutdownLatch.countDown();
             }
 
+            @Override
             public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
             }
         }));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances(config);
+        HazelcastInstance[] instances = factory.newInstances(config);
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
         warmUpPartitions(h1, h2);
 
-        final IQueue q1 = h1.getQueue("default");
-        final IQueue q2 = h2.getQueue("default");
+        final IQueue<String> q1 = h1.getQueue("default");
+        final IQueue<String> q2 = h2.getQueue("default");
 
         final CountDownLatch startLatch = new CountDownLatch(1);
         new Thread(new Runnable() {
+            @Override
             public void run() {
                 try {
-                    assertTrue(startLatch.await(10, TimeUnit.SECONDS)); // fail shutdown if await fails.
+                    assertTrue("Expected startLatch.await() to succeed within 10 seconds", startLatch.await(10, SECONDS));
                     Thread.sleep(5000);
                     h2.getLifecycleService().terminate();
                 } catch (InterruptedException e) {
@@ -115,41 +121,43 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         }).start();
 
         new Thread(new Runnable() {
+            @Override
             public void run() {
                 try {
                     startLatch.countDown();
-                    final Object o = q2.take();
-                    fail("Should not be able to take: " + o);
-                } catch (HazelcastInstanceNotActiveException ignored) {
+                    String value = q2.take();
+                    fail("Should not be able to take value from queue, but got: " + value);
+                } catch (HazelcastInstanceNotActiveException e) {
+                    EmptyStatement.ignore(e);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
         }).start();
 
-        assertTrue(shutdownLatch.await(1, TimeUnit.MINUTES));
+        assertTrue("Expected shutdownLatch.await() to succeed within 1 minute", shutdownLatch.await(1, MINUTES));
 
         q1.offer("item");
-        assertEquals(1, q1.size());   // 0
+        assertEquals(1, q1.size());
         assertEquals("item", q1.poll());
     }
 
     @Test
     public void testShutdown() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances();
-        final HazelcastInstance h1 = instances[0];
-        final HazelcastInstance h2 = instances[1];
+        HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance h1 = instances[0];
+        HazelcastInstance h2 = instances[1];
         warmUpPartitions(h2, h1);
 
-        final IQueue q1 = h1.getQueue("default");
-        final IQueue q2 = h2.getQueue("default");
+        IQueue<String> q1 = h1.getQueue("default");
+        IQueue<String> q2 = h2.getQueue("default");
         for (int i = 0; i < 40; i++) {
-            assertTrue(q1.offer("item" + i, 100, TimeUnit.SECONDS));
+            assertTrue("Expected q1.offer() to succeed", q1.offer("item" + i, 100, SECONDS));
         }
         h1.getLifecycleService().shutdown();
         for (int i = 40; i < 100; i++) {
-            assertTrue(q2.offer("item" + i, 100, TimeUnit.SECONDS));
+            assertTrue("Expected q2.offer() to succeed", q2.offer("item" + i, 100, SECONDS));
         }
         for (int i = 0; i < 100; i++) {
             assertEquals("item" + i, q2.poll());
@@ -159,29 +167,33 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
     @Test
     public void testPollNull() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances();
-        final HazelcastInstance h1 = instances[0];
-        final HazelcastInstance h2 = instances[1];
-        final IQueue q1 = h1.getQueue("default");
-        final IQueue q2 = h2.getQueue("default");
+        HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance h1 = instances[0];
+        HazelcastInstance h2 = instances[1];
+
+        IQueue q1 = h1.getQueue("default");
+        IQueue q2 = h2.getQueue("default");
         for (int i = 0; i < 100; i++) {
             assertNull(q1.poll());
             assertNull(q2.poll());
         }
-        assertNull(q1.poll(2, TimeUnit.SECONDS));
-        assertNull(q2.poll(2, TimeUnit.SECONDS));
+        assertNull(q1.poll(2, SECONDS));
+        assertNull(q2.poll(2, SECONDS));
     }
 
     @Test
     public void testTake() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances();
-        final HazelcastInstance h1 = instances[0];
-        final HazelcastInstance h2 = instances[1];
-        final IQueue q1 = h1.getQueue("default");
-        final IQueue q2 = h2.getQueue("default");
+        HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance h1 = instances[0];
+        HazelcastInstance h2 = instances[1];
+
+        final IQueue<String> q1 = h1.getQueue("default");
+        final IQueue<String> q2 = h2.getQueue("default");
+
         final CountDownLatch offerLatch = new CountDownLatch(2 * 100);
         new Thread(new Runnable() {
+            @Override
             public void run() {
                 try {
                     Thread.sleep(3000);
@@ -201,10 +213,11 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
 
         assertOpenEventually(offerLatch);
 
-        final ExecutorService es = Executors.newFixedThreadPool(50);
+        ExecutorService es = Executors.newFixedThreadPool(50);
         final CountDownLatch latch = new CountDownLatch(200);
         for (int i = 0; i < 100; i++) {
             es.execute(new Runnable() {
+                @Override
                 public void run() {
                     try {
                         if ("item".equals(q1.take())) {
@@ -216,6 +229,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
                 }
             });
             es.execute(new Runnable() {
+                @Override
                 public void run() {
                     try {
                         if ("item".equals(q2.take())) {
@@ -235,14 +249,17 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
     @Test
     public void testPollLong() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances();
-        final HazelcastInstance h1 = instances[0];
-        final HazelcastInstance h2 = instances[1];
-        final IQueue q1 = h1.getQueue("default");
-        final IQueue q2 = h2.getQueue("default");
+        HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance h1 = instances[0];
+        HazelcastInstance h2 = instances[1];
+
+        final IQueue<String> q1 = h1.getQueue("default");
+        final IQueue<String> q2 = h2.getQueue("default");
+
         final CountDownLatch offerLatch = new CountDownLatch(2 * 100);
         Thread.sleep(1000);
         new Thread(new Runnable() {
+            @Override
             public void run() {
                 for (int i = 0; i < 100; i++) {
                     if (q1.offer("item")) {
@@ -255,14 +272,16 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
             }
         }).start();
         assertOpenEventually(offerLatch);
-        final ExecutorService es = Executors.newFixedThreadPool(50);
+
+        ExecutorService es = Executors.newFixedThreadPool(50);
         final CountDownLatch latch = new CountDownLatch(200);
         Thread.sleep(3000);
         for (int i = 0; i < 100; i++) {
             es.execute(new Runnable() {
+                @Override
                 public void run() {
                     try {
-                        if ("item".equals(q1.poll(5, TimeUnit.SECONDS))) {
+                        if ("item".equals(q1.poll(5, SECONDS))) {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
@@ -271,9 +290,10 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
                 }
             });
             es.execute(new Runnable() {
+                @Override
                 public void run() {
                     try {
-                        if ("item".equals(q2.poll(5, TimeUnit.SECONDS))) {
+                        if ("item".equals(q2.poll(5, SECONDS))) {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
@@ -291,29 +311,32 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getQueueConfig("default").setMaxSize(200);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances(config);
-        final HazelcastInstance h1 = instances[0];
-        final HazelcastInstance h2 = instances[1];
-        final IQueue q1 = h1.getQueue("default");
-        final IQueue q2 = h2.getQueue("default");
+        HazelcastInstance[] instances = factory.newInstances(config);
+        HazelcastInstance h1 = instances[0];
+        HazelcastInstance h2 = instances[1];
+
+        final IQueue<String> q1 = h1.getQueue("default");
+        final IQueue<String> q2 = h2.getQueue("default");
         for (int i = 0; i < 100; i++) {
-            assertTrue(q1.offer("item" + i, 100, TimeUnit.SECONDS));
-            assertTrue(q2.offer("item" + i, 100, TimeUnit.SECONDS));
+            assertTrue("Expected q1.offer() to succeed", q1.offer("item" + i, 100, SECONDS));
+            assertTrue("Expected q2.offer() to succeed", q2.offer("item" + i, 100, SECONDS));
         }
         assertFalse(q1.offer("item"));
         assertFalse(q2.offer("item"));
-        assertFalse(q1.offer("item", 2, TimeUnit.SECONDS));
-        assertFalse(q2.offer("item", 2, TimeUnit.SECONDS));
+        assertFalse(q1.offer("item", 2, SECONDS));
+        assertFalse(q2.offer("item", 2, SECONDS));
+
         final CountDownLatch pollLatch = new CountDownLatch(200);
         new Thread(new Runnable() {
+            @Override
             public void run() {
                 try {
                     Thread.sleep(3000);
                     for (int i = 0; i < 100; i++) {
-                        if (("item" + i).equals(q1.poll(2, TimeUnit.SECONDS))) {
+                        if (("item" + i).equals(q1.poll(2, SECONDS))) {
                             pollLatch.countDown();
                         }
-                        if (("item" + i).equals(q2.poll(2, TimeUnit.SECONDS))) {
+                        if (("item" + i).equals(q2.poll(2, SECONDS))) {
                             pollLatch.countDown();
                         }
                     }
@@ -323,13 +346,15 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
             }
         }).start();
         assertOpenEventually(pollLatch);
-        final ExecutorService es = Executors.newFixedThreadPool(50);
+
+        ExecutorService es = Executors.newFixedThreadPool(50);
         final CountDownLatch latch = new CountDownLatch(200);
         for (int i = 0; i < 100; i++) {
             es.execute(new Runnable() {
+                @Override
                 public void run() {
                     try {
-                        if (q1.offer("item", 30, TimeUnit.SECONDS)) {
+                        if (q1.offer("item", 30, SECONDS)) {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
@@ -338,9 +363,10 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
                 }
             });
             es.execute(new Runnable() {
+                @Override
                 public void run() {
                     try {
-                        if (q2.offer("item", 30, TimeUnit.SECONDS)) {
+                        if (q2.offer("item", 30, SECONDS)) {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
@@ -356,48 +382,51 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
     /**
      * Test case for issue 289.
      * <p/>
-     * 1. Create instanceA then instanceB, and then a queue on each (same queue name)
-     * 2. put a message on queue from instanceB
-     * 3. take message off on instanceA
-     * 4. shutdown instanceA, then check if queue is still empty on instanceB
-     *
-     * @throws Exception
+     * 1. Create HazelcastInstance h1 and h2, then get a queue from each (same queue name)
+     * 2. Put a message on queue from h2
+     * 3. Take a message off on queue from h1
+     * 4. Shutdown h1, then check if queue is still empty on h2
      */
     @Test
     public void testQueueAfterShutdown() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances();
-        final HazelcastInstance h1 = instances[0];
-        final HazelcastInstance h2 = instances[1];
-        IQueue q1 = h1.getQueue("default");
-        IQueue q2 = h2.getQueue("default");
+        HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance h1 = instances[0];
+        HazelcastInstance h2 = instances[1];
+
+        IQueue<String> q1 = h1.getQueue("default");
+        IQueue<String> q2 = h2.getQueue("default");
+
         q2.offer("item");
         assertEquals(1, q1.size());
         assertEquals(1, q2.size());
+
         assertEquals("item", q1.take());
         assertEquals(0, q1.size());
         assertEquals(0, q2.size());
+
         h1.getLifecycleService().shutdown();
         assertEquals(0, q2.size());
     }
 
-    /**
-     * @throws Exception
-     */
     @Test
-    public void testQueueAfterShutdown2() throws Exception {
+    public void testQueueAfterShutdown_switchedInstanceOrder() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances();
-        final HazelcastInstance h1 = instances[0];
-        final HazelcastInstance h2 = instances[1];
-        IQueue q1 = h1.getQueue("default");
-        IQueue q2 = h2.getQueue("default");
+        HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance h1 = instances[0];
+        HazelcastInstance h2 = instances[1];
+
+        IQueue<String> q1 = h1.getQueue("default");
+        IQueue<String> q2 = h2.getQueue("default");
+
         q1.offer("item");
         assertEquals(1, q1.size());
         assertEquals(1, q2.size());
+
         assertEquals("item", q2.take());
         assertEquals(0, q1.size());
         assertEquals(0, q2.size());
+
         h2.getLifecycleService().shutdown();
         assertEquals(0, q1.size());
     }
@@ -405,51 +434,53 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
     @Test
     public void queueEntriesShouldBeConsistentAfterShutdown() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances();
-        final HazelcastInstance h1 = instances[0];
-        final HazelcastInstance h2 = instances[1];
-        final Queue<String> q1 = h1.getQueue("q");
-        final Queue<String> q2 = h2.getQueue("q");
+        HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance h1 = instances[0];
+        HazelcastInstance h2 = instances[1];
+
+        Queue<String> q1 = h1.getQueue("q");
+        Queue<String> q2 = h2.getQueue("q");
+
         for (int i = 0; i < 5; i++) {
             q1.offer("item" + i);
         }
         assertEquals(5, q1.size());
         assertEquals(5, q2.size());
+
         assertEquals("item0", q2.poll());
         assertEquals("item1", q2.poll());
         assertEquals("item2", q2.poll());
-
         assertSizeEventually(2, q1);
         assertSizeEventually(2, q2);
 
         h1.getLifecycleService().shutdown();
-
         assertSizeEventually(2, q2);
     }
 
     @Test
-    public void queueEntriesShouldBeConsistentAfterShutdown2() throws Exception {
+    public void queueEntriesShouldBeConsistentAfterShutdown_switchedInstanceOrder() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances();
-        final HazelcastInstance h1 = instances[0];
-        final HazelcastInstance h2 = instances[1];
-        final Queue<String> q1 = h1.getQueue("q");
-        final Queue<String> q2 = h2.getQueue("q");
+        HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance h1 = instances[0];
+        HazelcastInstance h2 = instances[1];
+
+        Queue<String> q1 = h1.getQueue("q");
+        Queue<String> q2 = h2.getQueue("q");
+
         for (int i = 0; i < 5; i++) {
-            q1.offer("item" + i);
+            q2.offer("item" + i);
         }
         assertEquals(5, q1.size());
         assertEquals(5, q2.size());
+
         assertEquals("item0", q1.poll());
         assertEquals("item1", q1.poll());
         assertEquals("item2", q1.poll());
-
         assertSizeEventually(2, q1);
         assertSizeEventually(2, q2);
 
-        h1.getLifecycleService().shutdown();
-
-        assertSizeEventually(2, q2);
+        h2.getLifecycleService().shutdown();
+        assertSizeEventually(2, q1);
     }
 
     @Test
@@ -458,13 +489,15 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
         String name = generateKeyOwnedBy(instance1);
-        IQueue<Object> queue1 = instance1.getQueue(name);
-        IQueue<Object> queue2 = instance2.getQueue(name);
+
+        IQueue<String> queue1 = instance1.getQueue(name);
+        IQueue<String> queue2 = instance2.getQueue(name);
+
         List<String> list = new ArrayList<String>();
         for (int i = 0; i < 4; i++) {
             list.add("item" + i);
         }
-        assertTrue(queue1.addAll(list));
+        assertTrue("Expected queue1.addAll() to succeed", queue1.addAll(list));
 
         instance1.shutdown();
 
@@ -478,13 +511,15 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
         String name = generateKeyOwnedBy(instance1);
-        IQueue<Object> queue1 = instance1.getQueue(name);
-        IQueue<Object> queue2 = instance2.getQueue(name);
+
+        IQueue<String> queue1 = instance1.getQueue(name);
+        IQueue<String> queue2 = instance2.getQueue(name);
+
         for (int i = 0; i < 4; i++) {
             queue1.offer("item" + i);
         }
         assertSizeEventually(4, queue2);
-        assertIterableEquals(queue2, "item0", "item1","item2","item3");
+        assertIterableEquals(queue2, "item0", "item1", "item2", "item3");
         queue1.clear();
 
         instance1.shutdown();
@@ -498,8 +533,10 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
         String name = generateKeyOwnedBy(instance1);
-        IQueue<Object> queue1 = instance1.getQueue(name);
-        IQueue<Object> queue2 = instance2.getQueue(name);
+
+        IQueue<String> queue1 = instance1.getQueue(name);
+        IQueue<String> queue2 = instance2.getQueue(name);
+
         for (int i = 0; i < 4; i++) {
             queue1.offer("item" + i);
         }
@@ -521,8 +558,10 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
         String name = generateKeyOwnedBy(instance1);
-        IQueue<Object> queue1 = instance1.getQueue(name);
-        IQueue<Object> queue2 = instance2.getQueue(name);
+
+        IQueue<String> queue1 = instance1.getQueue(name);
+        IQueue<String> queue2 = instance2.getQueue(name);
+
         for (int i = 0; i < 4; i++) {
             queue1.offer("item" + i);
         }
@@ -534,7 +573,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         list.add("item1");
         list.add("item2");
 
-        assertTrue(queue1.removeAll(list));
+        assertTrue("Expected queue1.removeAll() to succeed", queue1.removeAll(list));
         instance1.shutdown();
         assertSizeEventually(1, queue2);
         assertIterableEquals(queue2, "item3");
@@ -546,15 +585,18 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
         String name = generateKeyOwnedBy(instance1);
-        IQueue<Object> queue1 = instance1.getQueue(name);
-        IQueue<Object> queue2 = instance2.getQueue(name);
+
+        IQueue<String> queue1 = instance1.getQueue(name);
+        IQueue<String> queue2 = instance2.getQueue(name);
+
         for (int i = 0; i < 4; i++) {
             queue1.offer("item" + i);
         }
-        List list = new ArrayList<String>();
 
         assertSizeEventually(4, queue2);
         assertIterableEquals(queue2, "item0", "item1", "item2", "item3");
+
+        List<String> list = new ArrayList<String>();
         queue1.drainTo(list, 2);
 
         instance1.shutdown();
@@ -563,70 +605,75 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         assertIterableEquals(queue2, "item2", "item3");
     }
 
-    private HazelcastInstance[] createHazelcastInstances() {
-        Config config = new Config();
-        final String configName = randomString();
-        config.getQueueConfig(configName).setMaxSize(100);
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        return factory.newInstances(config);
-    }
-
     @Test
     public void testTakeInterruption() throws InterruptedException {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "1000");
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, "1000");
 
         HazelcastInstance instance = createHazelcastInstance(config);
-        final IQueue<Object> queue = instance.getQueue(randomName());
-
+        final IQueue<Thread> queue = instance.getQueue(randomName());
         final AtomicBoolean interrupted = new AtomicBoolean();
 
-        Thread t = new Thread() {
+        final CountDownLatch latch = new CountDownLatch(1);
+        Thread thread = new Thread() {
+            @Override
             public void run() {
                 try {
+                    latch.countDown();
                     queue.take();
                 } catch (InterruptedException e) {
                     interrupted.set(true);
                 }
             }
         };
-        t.start();
+        thread.start();
 
-        sleepSeconds(1);
-        t.interrupt();
-        t.join(5000);
+        latch.await(10, SECONDS);
+        thread.interrupt();
+        thread.join(5000);
 
-        assertTrue(interrupted.get());
+        assertTrue("Expected queue.take() to be interrupted, but interrupted state is: " + interrupted, interrupted.get());
     }
 
     @Test
     public void testPutInterruption() throws InterruptedException {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "1000");
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, "1000");
         config.getQueueConfig("default").setMaxSize(1);
 
         HazelcastInstance instance = createHazelcastInstance(config);
-        final IQueue<Object> queue = instance.getQueue(randomName());
+        final IQueue<String> queue = instance.getQueue(randomName());
         final AtomicBoolean interrupted = new AtomicBoolean();
 
-        assertTrue(queue.offer("item"));
+        assertTrue("Expected queue.offer() to succeed", queue.offer("item"));
 
-        Thread t = new Thread() {
+        final CountDownLatch latch = new CountDownLatch(1);
+        Thread thread = new Thread() {
+            @Override
             public void run() {
                 try {
+                    latch.countDown();
                     queue.put("item");
                 } catch (InterruptedException e) {
                     interrupted.set(true);
                 }
             }
         };
-        t.start();
+        thread.start();
 
-        sleepSeconds(1);
-        t.interrupt();
-        t.join(5000);
+        latch.await(10, SECONDS);
+        thread.interrupt();
+        thread.join(5000);
 
-        assertTrue(interrupted.get());
+        assertTrue("Expected queue.put() to be interrupted, but interrupted state is: " + interrupted, interrupted.get());
     }
 
+    private HazelcastInstance[] createHazelcastInstances() {
+        String configName = randomString();
+        Config config = new Config();
+        config.getQueueConfig(configName).setMaxSize(100);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        return factory.newInstances(config);
+    }
 }
