@@ -96,7 +96,7 @@ public class TopicStressTest extends HazelcastTestSupport {
                     String topicName = getTopicName(topicIndex);
                     long expected = getExpectedCount(topicName);
                     long actual = getActualCount(topicName);
-                    assertEquals("Count for topic " + topicName + " is not the same", expected,actual);
+                    assertEquals("Count for topic " + topicName + " is not the same", expected, actual);
                 }
             }
         });
@@ -169,7 +169,7 @@ public class TopicStressTest extends HazelcastTestSupport {
             String topicName = topic.getName();
             Long count = messageCount.get(topicName);
             if (count == null) {
-                count = 0l;
+                count = 0L;
             }
             count += inc;
             messageCount.put(topicName, count);

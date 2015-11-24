@@ -1,6 +1,5 @@
 package com.hazelcast.topic.impl.reliable;
 
-
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.TopicConfig;
@@ -14,12 +13,10 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.concurrent.TimeUnit.MINUTES;

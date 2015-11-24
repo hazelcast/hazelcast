@@ -4,7 +4,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Message;
-import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -12,6 +11,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.log4j.Level;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -25,19 +25,24 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class ErrorHandlingTest extends HazelcastTestSupport {
 
-    private HazelcastInstance hz;
     private ReliableTopicProxy<String> topic;
-    private Ringbuffer<ReliableTopicMessage> ringbuffer;
 
     @Before
     public void setup() {
+        setLoggingLog4j();
+        setLogLevel(Level.TRACE);
+
         Config config = new Config();
         config.addRingBufferConfig(new RingbufferConfig("foo")
                 .setCapacity(100)
                 .setTimeToLiveSeconds(0));
-        hz = createHazelcastInstance(config);
-        topic = (ReliableTopicProxy) hz.getReliableTopic("foo");
-        ringbuffer = topic.ringbuffer;
+        HazelcastInstance hz = createHazelcastInstance(config);
+        topic = (ReliableTopicProxy<String>) hz.<String>getReliableTopic("foo");
+    }
+
+    @After
+    public void tearDown() {
+        resetLogLevel();
     }
 
     @Test
@@ -59,7 +64,7 @@ public class ErrorHandlingTest extends HazelcastTestSupport {
 
         topic.publish("item2");
 
-        // we need to make sure we don't receive item 2 since the listener is terminated.
+        // we need to make sure we don't receive item 2 since the listener is terminated
         assertTrueFiveSeconds(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -86,7 +91,7 @@ public class ErrorHandlingTest extends HazelcastTestSupport {
 
         topic.publish("item2");
 
-        // we need to make sure we don't receive item 2 since the listener is terminated.
+        // we need to make sure we don't receive item 2 since the listener is terminated
         assertTrueFiveSeconds(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -121,7 +126,6 @@ public class ErrorHandlingTest extends HazelcastTestSupport {
             }
         });
     }
-
 
     public class ErrorListenerMock extends ReliableMessageListenerMock {
 

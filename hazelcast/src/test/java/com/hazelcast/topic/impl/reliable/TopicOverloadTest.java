@@ -6,8 +6,6 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.ringbuffer.impl.RingbufferContainer;
-import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -15,6 +13,7 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,13 +33,10 @@ public class TopicOverloadTest extends HazelcastTestSupport {
     private ReliableTopicProxy<String> topic;
     private Ringbuffer<ReliableTopicMessage> ringbuffer;
     private SerializationService serializationService;
-    private RingbufferService ringbufferService;
-    private RingbufferContainer ringbufferContainer;
 
     @Before
     public void setup() {
         Config config = new Config();
-
         config.addRingBufferConfig(new RingbufferConfig("when*")
                 .setCapacity(100).setTimeToLiveSeconds(5));
         config.addReliableTopicConfig(new ReliableTopicConfig("whenError_*")
@@ -57,12 +53,9 @@ public class TopicOverloadTest extends HazelcastTestSupport {
         serializationService = getSerializationService(hz);
 
         String topicName = getTestMethodName();
-        topic = (ReliableTopicProxy)hz.getReliableTopic(topicName);
+        topic = (ReliableTopicProxy<String>) hz.<String>getReliableTopic(topicName);
 
         ringbuffer = topic.ringbuffer;
-
-        ringbufferService = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
-        ringbufferContainer = ringbufferService.getContainer(ringbuffer.getName());
     }
 
     @Test
@@ -100,6 +93,7 @@ public class TopicOverloadTest extends HazelcastTestSupport {
             topic.publish("new");
             fail();
         } catch (TopicOverloadException expected) {
+            EmptyStatement.ignore(expected);
         }
 
         assertEquals(tail, ringbuffer.tailSequence());
@@ -117,7 +111,7 @@ public class TopicOverloadTest extends HazelcastTestSupport {
 
         topic.publish("new");
 
-        // check that an item has been added.
+        // check that an item has been added
         assertEquals(tail + 1, ringbuffer.tailSequence());
         assertEquals(head + 1, ringbuffer.headSequence());
     }
@@ -140,8 +134,6 @@ public class TopicOverloadTest extends HazelcastTestSupport {
 
     @Test
     public void whenBlock_whenNoSpace() {
-
-
         for (int k = 0; k < ringbuffer.capacity(); k++) {
             topic.publish("old");
         }
@@ -149,7 +141,7 @@ public class TopicOverloadTest extends HazelcastTestSupport {
         final long tail = ringbuffer.tailSequence();
         final long head = ringbuffer.headSequence();
 
-        // add the item.
+        // add the item
         final Future f = spawn(new Runnable() {
             @Override
             public void run() {

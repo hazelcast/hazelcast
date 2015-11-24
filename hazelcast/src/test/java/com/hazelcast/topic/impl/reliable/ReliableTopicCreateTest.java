@@ -10,7 +10,6 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
-import com.hazelcast.ringbuffer.impl.RingbufferProxy;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -40,7 +39,7 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance();
         RingbufferService ringbufferService = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
 
-        ReliableTopicProxy topic = (ReliableTopicProxy) hz.getReliableTopic("foo");
+        ReliableTopicProxy<String> topic = (ReliableTopicProxy<String>) hz.<String>getReliableTopic("foo");
 
         Ringbuffer ringbuffer = hz.getRingbuffer(RingbufferService.TOPIC_RB_PREFIX + "foo");
         assertSame(ringbuffer, topic.ringbuffer);
@@ -91,7 +90,7 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
         RingbufferService ringbufferService = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
 
-        ReliableTopicProxy topic = (ReliableTopicProxy) hz.getReliableTopic("foo");
+        ReliableTopicProxy<String> topic = (ReliableTopicProxy<String>) hz.<String>getReliableTopic("foo");
         Ringbuffer ringbuffer = topic.ringbuffer;
 
         topic.publish("foo");
@@ -115,8 +114,8 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
-        ITopic topic = hz.getReliableTopic("foo");
-        final ReliableTopicProxy proxy = assertInstanceOf(ReliableTopicProxy.class, topic);
+        ITopic<String> topic = hz.getReliableTopic("foo");
+        ReliableTopicProxy proxy = assertInstanceOf(ReliableTopicProxy.class, topic);
         assertEquals(1, proxy.runnersMap.size());
 
         topic.publish("item");
@@ -138,8 +137,8 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
-        ITopic topic = hz.getReliableTopic("foo");
-        final ReliableTopicProxy proxy = assertInstanceOf(ReliableTopicProxy.class, topic);
+        ITopic<String> topic = hz.getReliableTopic("foo");
+        ReliableTopicProxy proxy = assertInstanceOf(ReliableTopicProxy.class, topic);
         assertEquals(1, proxy.runnersMap.size());
         assertNotNull(messageListener.hz);
 

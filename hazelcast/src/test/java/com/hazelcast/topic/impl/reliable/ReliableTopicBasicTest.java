@@ -7,18 +7,16 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.Clock;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-
-import org.apache.log4j.Level;
-import org.junit.Before;
-import org.junit.Test;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -31,7 +29,6 @@ public abstract class ReliableTopicBasicTest extends HazelcastTestSupport {
     public static final int CAPACITY = 10;
 
     private ReliableTopicProxy<String> topic;
-    private Ringbuffer<ReliableTopicMessage> ringbuffer;
     private HazelcastInstance local;
 
     @Before
@@ -50,8 +47,7 @@ public abstract class ReliableTopicBasicTest extends HazelcastTestSupport {
         HazelcastInstance target = instances[instances.length - 1];
 
         String name = randomNameOwnedBy(target, "reliableTopic");
-        topic = (ReliableTopicProxy) local.getReliableTopic(name);
-        ringbuffer = topic.ringbuffer;
+        topic = (ReliableTopicProxy<String>) local.<String>getReliableTopic(name);
     }
 
     protected abstract HazelcastInstance[] newInstances(Config config);

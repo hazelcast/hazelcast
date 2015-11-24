@@ -9,14 +9,10 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ReliableMessageListener;
-import org.apache.log4j.Level;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -47,7 +43,7 @@ public class DurableSubscriptionTest extends HazelcastTestSupport {
 
         topic.removeMessageListener(id);
 
-        // todo: this part is still racy because we don't know when the listener is terminated.
+        // TODO: this part is still racy because we don't know when the listener is terminated
         topic.publish("item2");
         topic.publish("item3");
 
@@ -57,18 +53,18 @@ public class DurableSubscriptionTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 assertEquals(asList("item1", "item2", "item3"), listener.objects);
-                assertEquals(asList(0l, 1l, 2l), listener.sequences);
+                assertEquals(asList(0L, 1L, 2L), listener.sequences);
             }
         });
     }
 
     @Test
     public void beginFromStart() {
-
     }
 
-    public class DurableMessageListener<String> implements ReliableMessageListener<String> {
-        public final List<String> objects = new CopyOnWriteArrayList<String>();
+    public class DurableMessageListener<V> implements ReliableMessageListener<V> {
+
+        public final List<V> objects = new CopyOnWriteArrayList<V>();
         public final List<Long> sequences = new CopyOnWriteArrayList<Long>();
         public volatile long sequence = -1;
 
@@ -99,7 +95,7 @@ public class DurableSubscriptionTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void onMessage(Message<String> message) {
+        public void onMessage(Message<V> message) {
             objects.add(message.getMessageObject());
         }
     }
