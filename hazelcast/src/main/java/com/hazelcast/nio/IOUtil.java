@@ -330,4 +330,8 @@ public final class IOUtil {
             throw new HazelcastException("Failed to delete " + f);
         }
     }
+
+    public static String toFileName(String name) {
+        return name.replaceAll("[:\\\\/*\"?|<>',]", "_");
+    }
 }

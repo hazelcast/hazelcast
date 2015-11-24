@@ -36,6 +36,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
     protected long lastAccessTime;
     protected long lastUpdateTime;
     protected long creationTime;
+    protected long tombstoneSequence;
 
     AbstractRecord() {
         version = 0L;
@@ -155,9 +156,28 @@ public abstract class AbstractRecord<V> implements Record<V> {
         this.key = key;
     }
 
-
     @Override
     public boolean isTombstone() {
         return getValue() == null;
+    }
+
+    @Override
+    public long getTombstoneSequence() {
+        return tombstoneSequence;
+    }
+
+    @Override
+    public void setTombstoneSequence(long tombstoneSequence) {
+        this.tombstoneSequence = tombstoneSequence;
+    }
+
+    @Override
+    public final long getSequence() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final void setSequence(long sequence) {
+        throw new UnsupportedOperationException();
     }
 }
