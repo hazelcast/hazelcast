@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 import javax.cache.Cache;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,7 +46,8 @@ public class CacheCreationTest {
     @BeforeClass
     public static void init() throws Exception{
         final URL configUrl1 = CacheCreationTest.class.getClassLoader().getResource("test-hazelcast-real-jcache.xml");
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(configUrl1.getFile());
+        String decodedURL = URLDecoder.decode(configUrl1.getFile(), "UTF-8");
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(decodedURL);
         hzConfig = configBuilder.build();
     }
 

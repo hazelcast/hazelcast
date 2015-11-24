@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.Iterator;
 import java.util.List;
 
@@ -74,9 +75,13 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testConfigurationWithFile() throws Exception{
         URL url = getClass().getClassLoader().getResource("hazelcast-default.xml");
-        System.setProperty("hazelcast.config", url.getFile());
+        assertNotNull(url);
+        String decodedURL = URLDecoder.decode(url.getFile(), "UTF-8");
+        System.setProperty("hazelcast.config", decodedURL);
         Config config = new XmlConfigBuilder().build();
-        assertEquals(url,config.getConfigurationUrl());
+        URL file = new URL("file:");
+        URL encodedURL = new URL(file, decodedURL);
+        assertEquals(encodedURL, config.getConfigurationUrl());
     }
 
     @Test
