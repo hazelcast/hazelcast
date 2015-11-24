@@ -282,7 +282,7 @@ public class Long2ObjectHashMapTest {
             longToObjectMap.put(testEntry, String.valueOf(testEntry));
         }
 
-        final String mapAsAString = "{12=12, 11=11, 7=7, 19=19, 3=3, 1=1}";
+        final String mapAsAString = "{11=11, 7=7, 3=3, 12=12, 19=19, 1=1}";
         assertThat(longToObjectMap.toString(), equalTo(mapAsAString));
     }
 

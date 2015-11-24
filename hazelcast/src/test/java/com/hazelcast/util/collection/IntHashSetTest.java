@@ -173,7 +173,7 @@ public class IntHashSetTest {
         final IntHashSet other = new IntHashSet(1000, -1);
         other.copy(set);
 
-        assertThat(other, contains(1, 2));
+        assertThat(other, contains(2, 1));
     }
 
     @Test public void twoEmptySetsAreEqual() {
@@ -275,9 +275,9 @@ public class IntHashSetTest {
         final Iterator<Integer> iter = set.iterator();
 
         assertTrue(iter.hasNext());
-        assertEquals(Integer.valueOf(1), iter.next());
-        assertTrue(iter.hasNext());
         assertEquals(Integer.valueOf(2), iter.next());
+        assertTrue(iter.hasNext());
+        assertEquals(Integer.valueOf(1), iter.next());
         assertFalse(iter.hasNext());
     }
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Portions Copyright 2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -408,6 +409,21 @@ public final class HashUtil {
         k *= 0xc4ceb9fe1a85ec53L;
         k ^= k >>> 33;
         return k;
+    }
+
+    public static long fastLongMix(long k) {
+        // phi = 2^64 / goldenRatio
+        final long phi = 0x9E3779B97F4A7C15L;
+        long h = k * phi;
+        h ^= h >>> 32;
+        return h ^ (h >>> 16);
+    }
+
+    public static int fastIntMix(int k) {
+        // phi = 2^32 / goldenRatio
+        final int phi = 0x9E3779B9;
+        final int h = k * phi;
+        return h ^ (h >>> 16);
     }
 
     /**
