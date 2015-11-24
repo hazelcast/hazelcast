@@ -591,7 +591,8 @@ public class Node {
         if (groupProperties.getBoolean(GroupProperty.DISCOVERY_SPI_ENABLED)) {
             //TODO: Auto-Upgrade Multicast+AWS configuration!
             logger.info("Activating Discovery SPI Joiner");
-            return new DiscoveryJoiner(this, discoveryService);
+            return new DiscoveryJoiner(this, discoveryService,
+                    groupProperties.getBoolean(GroupProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED));
         } else {
             if (join.getMulticastConfig().isEnabled() && multicastService != null) {
                 logger.info("Creating MulticastJoiner");

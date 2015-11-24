@@ -118,16 +118,27 @@ public class JoinConfig {
         if (getMulticastConfig().isEnabled() && getAwsConfig().isEnabled()) {
             throw new InvalidConfigurationException("Multicast and AWS join can't be enabled at the same time");
         }
+        verifyDiscoveryProviderConfig();
+    }
 
+    /**
+     * Verifies this JoinConfig is valid. When Discovery SPI enabled other discovery
+     * methods should be disabled
+     *
+     * @throws IllegalStateException when the join config is not valid.
+     */
+    private void verifyDiscoveryProviderConfig() {
         Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = discoveryConfig.getDiscoveryStrategyConfigs();
-        if (getMulticastConfig().isEnabled() && discoveryStrategyConfigs.size() > 0) {
-            throw new InvalidConfigurationException(
-                    "Multicast and DiscoveryProviders join can't be enabled at the same time");
-        }
+        if (discoveryStrategyConfigs.size() > 0) {
+            if (getMulticastConfig().isEnabled()) {
+                throw new InvalidConfigurationException(
+                        "Multicast and DiscoveryProviders join can't be enabled at the same time");
+            }
 
-        if (getAwsConfig().isEnabled() && discoveryStrategyConfigs.size() > 0) {
-            throw new InvalidConfigurationException(
-                    "Multicast and DiscoveryProviders join can't be enabled at the same time");
+            if (getAwsConfig().isEnabled()) {
+                throw new InvalidConfigurationException(
+                        "AWS and DiscoveryProviders join can't be enabled at the same time");
+            }
         }
     }
 
