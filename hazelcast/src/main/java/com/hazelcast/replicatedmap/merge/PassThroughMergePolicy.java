@@ -16,10 +16,7 @@
 
 package com.hazelcast.replicatedmap.merge;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
-import java.io.IOException;
 
 
 /**
@@ -33,11 +30,4 @@ public class PassThroughMergePolicy implements ReplicatedMapMergePolicy {
         return mergingEntry == null ? existingEntry.getValue() : mergingEntry.getValue();
     }
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-    }
 }

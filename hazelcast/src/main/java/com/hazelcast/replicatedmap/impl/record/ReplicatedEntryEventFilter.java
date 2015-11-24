@@ -30,10 +30,6 @@ public class ReplicatedEntryEventFilter implements EventFilter {
         this.key = key;
     }
 
-    public Data getKey() {
-        return key;
-    }
-
     public boolean eval(Object arg) {
         return key == null || key.equals(arg);
     }

@@ -280,9 +280,8 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         getStorage().putInternal(key, newRecord);
     }
 
-    private ReplicatedRecord buildReplicatedRecord(Object key, Object value, long ttlMillis) {
-        int partitionId = partitionService.getPartitionId(key);
-        return new ReplicatedRecord(key, value, ttlMillis, partitionId);
+    private ReplicatedRecord<K, V> buildReplicatedRecord(K key, V value, long ttlMillis) {
+        return new ReplicatedRecord<K, V>(key, value, ttlMillis);
     }
 
 
@@ -297,7 +296,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             if (newValue == null) {
                 return false;
             }
-            record = buildReplicatedRecord(marshalledKey, newValue, 0);
+            record = buildReplicatedRecord((K) marshalledKey, (V) newValue, 0);
             getStorage().put((K) marshalledKey, record);
             Data dataKey = serializationService.toData(marshalledKey);
             Data dataValue = serializationService.toData(newValue);

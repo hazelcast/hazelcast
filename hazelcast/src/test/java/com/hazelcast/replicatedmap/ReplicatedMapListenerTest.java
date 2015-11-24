@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.impl.predicates.InstanceOfPredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -167,6 +168,23 @@ public class ReplicatedMapListenerTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 assertEquals(0, listener.addCount.get());
+            }
+        });
+    }
+
+    @Test
+    public void testListenToKeyWithPredicate() throws Exception {
+        ReplicatedMap<Object, Object> replicatedMap = createClusterAndGetRandomReplicatedMap();
+        final EventCountingListener listener = new EventCountingListener();
+        replicatedMap.addEntryListener(listener, new InstanceOfPredicate(Integer.class), 2);
+        replicatedMap.put(1, 1);
+        replicatedMap.put(2, 2);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, listener.keys.size());
+                assertEquals(2, listener.keys.peek());
+                assertEquals(1, listener.addCount.get());
             }
         });
     }

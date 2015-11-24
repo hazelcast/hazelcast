@@ -16,10 +16,7 @@
 
 package com.hazelcast.replicatedmap.merge;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
-import java.io.IOException;
 
 /**
  * LatestUpdateMapMergePolicy causes the merging entry to be merged from source to destination map
@@ -35,13 +32,5 @@ public class LatestUpdateMapMergePolicy implements ReplicatedMapMergePolicy {
             return mergingEntry.getValue();
         }
         return existingEntry.getValue();
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
     }
 }
