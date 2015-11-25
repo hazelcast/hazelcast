@@ -375,10 +375,6 @@ public final class TestNodeRegistry {
             return remoteEndpoint;
         }
 
-        public boolean live() {
-            return live;
-        }
-
         public boolean write(SocketWritable socketWritable) {
             final Packet packet = (Packet) socketWritable;
             if (nodeEngine.getNode().isActive()) {
@@ -459,7 +455,7 @@ public final class TestNodeRegistry {
 
         @Override
         public boolean isAlive() {
-            return true;
+            return live;
         }
 
         @Override
