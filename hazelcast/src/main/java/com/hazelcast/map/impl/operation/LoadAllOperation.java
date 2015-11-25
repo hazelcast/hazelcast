@@ -21,18 +21,16 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * Triggers map store load of all given keys.
+ * Triggers map store load of all given keys for a given partition.
  */
 public class LoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
 
@@ -52,30 +50,9 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
 
     @Override
     public void run() throws Exception {
-        final int partitionId = getPartitionId();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, name);
-        keys = selectThisPartitionsKeys(this.keys);
+        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         recordStore.loadAllFromStore(keys, replaceExistingValues);
-    }
-
-    private List<Data> selectThisPartitionsKeys(Collection<Data> keys) {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final InternalPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
-        final int partitionId = getPartitionId();
-        List<Data> dataKeys = null;
-        for (Data key : keys) {
-            if (partitionId == partitionService.getPartitionId(key)) {
-                if (dataKeys == null) {
-                    dataKeys = new ArrayList<Data>();
-                }
-                dataKeys.add(key);
-            }
-        }
-        if (dataKeys == null) {
-            return Collections.emptyList();
-        }
-        return dataKeys;
     }
 
     @Override
