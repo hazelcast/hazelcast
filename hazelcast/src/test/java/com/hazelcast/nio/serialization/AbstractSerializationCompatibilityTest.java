@@ -32,21 +32,14 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class AbstractSerializationCompatibilityTest {
+public abstract class AbstractSerializationCompatibilityTest {
 
     protected SerializationService serializationService;
 
@@ -83,12 +76,9 @@ public class AbstractSerializationCompatibilityTest {
         serializationService.toData(testDataw);
 
         SerializationV1Portable testData = new SerializationV1Portable();
-
         Data data = serializationService.toData(testData);
-
         SerializationV1Portable testDataFromSerializer = serializationService.toObject(data);
 
         assertEquals(testData, testDataFromSerializer);
     }
-
 }
