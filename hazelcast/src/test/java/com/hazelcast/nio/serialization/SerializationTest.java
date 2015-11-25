@@ -28,6 +28,7 @@ import com.hazelcast.instance.SimpleMemberImpl;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.serialization.impl.JavaDefaultSerializers;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -56,6 +57,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -73,15 +75,32 @@ public class SerializationTest
         extends HazelcastTestSupport {
 
     @Test
-    public void testGlobalSerializer() {
+    public void testGlobalSerializer_withOverrideJavaSerializable() {
+        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
+        globalSerializerConfig.setOverrideJavaSerialization(true);
+        final AtomicInteger writeCounter = new AtomicInteger();
+        final AtomicInteger readCounter = new AtomicInteger();
+        final JavaDefaultSerializers.JavaSerializer javaSerializer = new JavaDefaultSerializers.JavaSerializer(true,false);
         SerializationConfig serializationConfig = new SerializationConfig().setGlobalSerializerConfig(
-                new GlobalSerializerConfig().setImplementation(new StreamSerializer<DummyValue>() {
-                    public void write(ObjectDataOutput out, DummyValue v) throws IOException {
-                        out.writeUTF(v.s);
-                        out.writeInt(v.k);
+                globalSerializerConfig.setImplementation(new StreamSerializer<Object>() {
+                    public void write(ObjectDataOutput out, Object v) throws IOException {
+                        writeCounter.incrementAndGet();
+                        if(v instanceof Serializable){
+                            out.writeBoolean(true);
+                            javaSerializer.write(out, v);
+                        } else if(v instanceof DummyValue){
+                            out.writeBoolean(false);
+                            out.writeUTF(((DummyValue)v).s);
+                            out.writeInt(((DummyValue)v).k);
+                        }
                     }
 
-                    public DummyValue read(ObjectDataInput in) throws IOException {
+                    public Object read(ObjectDataInput in) throws IOException {
+                        readCounter.incrementAndGet();
+                        boolean java = in.readBoolean();
+                        if(java) {
+                            return javaSerializer.read(in);
+                        }
                         return new DummyValue(in.readUTF(), in.readInt());
                     }
 
@@ -95,12 +114,61 @@ public class SerializationTest
 
         SerializationService ss1 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
         DummyValue value = new DummyValue("test", 111);
-        Data data = ss1.toData(value);
-        Assert.assertNotNull(data);
+        Data data1 = ss1.toData(value);
+        Data data2 = ss1.toData(new Foo());
+        Assert.assertNotNull(data1);
+        Assert.assertNotNull(data2);
+        assertEquals(2, writeCounter.get());
 
         SerializationService ss2 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
-        Object o = ss2.toObject(data);
-        Assert.assertEquals(value, o);
+        Object o1 = ss2.toObject(data1);
+        Object o2 = ss2.toObject(data2);
+        Assert.assertEquals(value, o1);
+        Assert.assertNotNull(o2);
+        assertEquals(2, readCounter.get());
+    }
+
+    @Test
+    public void testGlobalSerializer_withoutOverrideJavaSerializable() {
+        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
+        globalSerializerConfig.setOverrideJavaSerialization(false);
+        final AtomicInteger writeCounter = new AtomicInteger();
+        final AtomicInteger readCounter = new AtomicInteger();
+        SerializationConfig serializationConfig = new SerializationConfig().setGlobalSerializerConfig(
+                globalSerializerConfig.setImplementation(new StreamSerializer<Object>() {
+                    public void write(ObjectDataOutput out, Object v) throws IOException {
+                        writeCounter.incrementAndGet();
+                        out.writeUTF(((DummyValue) v).s);
+                        out.writeInt(((DummyValue) v).k);
+                    }
+
+                    public Object read(ObjectDataInput in) throws IOException {
+                        readCounter.incrementAndGet();
+                        return new DummyValue(in.readUTF(), in.readInt());
+                    }
+
+                    public int getTypeId() {
+                        return 123;
+                    }
+
+                    public void destroy() {
+                    }
+                }));
+
+        SerializationService ss1 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
+        DummyValue value = new DummyValue("test", 111);
+        Data data1 = ss1.toData(value);
+        Data data2 = ss1.toData(new Foo());
+        Assert.assertNotNull(data1);
+        Assert.assertNotNull(data2);
+        assertEquals(1, writeCounter.get());
+
+        SerializationService ss2 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
+        Object o1 = ss2.toObject(data1);
+        Object o2 = ss2.toObject(data2);
+        Assert.assertEquals(value, o1);
+        Assert.assertNotNull(o2);
+        assertEquals(1, readCounter.get());
     }
 
     @Test

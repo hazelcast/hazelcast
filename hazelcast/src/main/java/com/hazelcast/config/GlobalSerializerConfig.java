@@ -26,6 +26,8 @@ public class GlobalSerializerConfig {
 
     private Serializer implementation;
 
+    private boolean overrideJavaSerialization;
+
     public GlobalSerializerConfig() {
     }
 
@@ -47,11 +49,21 @@ public class GlobalSerializerConfig {
         return this;
     }
 
+    public boolean isOverrideJavaSerialization() {
+        return overrideJavaSerialization;
+    }
+
+    public GlobalSerializerConfig setOverrideJavaSerialization(boolean overrideJavaSerialization) {
+        this.overrideJavaSerialization = overrideJavaSerialization;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "GlobalSerializerConfig{"
                 + "className='" + className + '\''
                 + ", implementation=" + implementation
+                + ", overrideJavaSerialization=" + overrideJavaSerialization
                 + '}';
     }
 }

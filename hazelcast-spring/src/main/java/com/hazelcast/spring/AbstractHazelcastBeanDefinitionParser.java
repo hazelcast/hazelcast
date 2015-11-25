@@ -210,13 +210,14 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             String implementation = "implementation";
             String className = "class-name";
             String typeClassName = "type-class";
+            String overrideJavaSerializationName = "override-java-serialization";
 
             ManagedList serializers = new ManagedList();
             for (Node child : childElements(node)) {
                 final String name = cleanNodeName(child);
                 if ("global-serializer".equals(name)) {
-                    globalSerializerConfigBuilder =
-                            createGSConfigBuilder(GlobalSerializerConfig.class, child, implementation, className);
+                    globalSerializerConfigBuilder = createGSConfigBuilder(GlobalSerializerConfig.class, child, implementation,
+                            className, overrideJavaSerializationName);
                 }
                 if ("serializer".equals(name)) {
                     BeanDefinitionBuilder serializerConfigBuilder = createBeanBuilder(SerializerConfig.class);
@@ -247,22 +248,25 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             serializationConfigBuilder.addPropertyValue("serializerConfigs", serializers);
         }
 
-        private BeanDefinitionBuilder createGSConfigBuilder(Class<GlobalSerializerConfig> globalSerializerConfigClass,
-                                                            Node child, String implementation, String className) {
+        private BeanDefinitionBuilder createGSConfigBuilder(Class<GlobalSerializerConfig> globalSerializerConfigClass, Node child,
+                                                            String implementation, String className,
+                                                            String overrideJavaSerializationName) {
             BeanDefinitionBuilder globalSerializerConfigBuilder = createBeanBuilder(globalSerializerConfigClass);
             final NamedNodeMap attrs = child.getAttributes();
             final Node implRef = attrs.getNamedItem(implementation);
             final Node classNode = attrs.getNamedItem(className);
+            final Node overrideJavaSerializationNode = attrs.getNamedItem(overrideJavaSerializationName);
             if (implRef != null) {
-                globalSerializerConfigBuilder.addPropertyReference(xmlToJavaName(implementation)
-                        , getTextContent(implRef));
+                globalSerializerConfigBuilder.addPropertyReference(xmlToJavaName(implementation), getTextContent(implRef));
             }
             if (classNode != null) {
                 globalSerializerConfigBuilder.addPropertyValue(xmlToJavaName(className), getTextContent(classNode));
             }
-
+            if (overrideJavaSerializationNode != null) {
+                boolean value = getBooleanValue(getTextContent(overrideJavaSerializationNode));
+                globalSerializerConfigBuilder.addPropertyValue(xmlToJavaName(overrideJavaSerializationName), value);
+            }
             return globalSerializerConfigBuilder;
-
         }
 
         protected void handlePortableFactories(final Node node, final BeanDefinitionBuilder serializationConfigBuilder) {

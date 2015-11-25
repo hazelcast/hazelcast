@@ -456,6 +456,9 @@ public abstract class AbstractXmlConfigHelper {
             } else if ("global-serializer".equals(name)) {
                 GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
                 globalSerializerConfig.setClassName(value);
+                String attrValue = getAttribute(child, "override-java-serialization");
+                boolean overrideJavaSerialization = attrValue != null && getBooleanValue(attrValue.trim());
+                globalSerializerConfig.setOverrideJavaSerialization(overrideJavaSerialization);
                 serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
             }
         }

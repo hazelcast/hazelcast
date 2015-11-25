@@ -1057,6 +1057,7 @@
     <xs:complexType name="global-serializer">
         <xs:attribute name="class-name" type="xs:string" use="optional"/>
         <xs:attribute name="implementation" type="xs:string" use="optional"/>
+        <xs:attribute name="override-java-serialization" type="parameterized-boolean" default="false" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="serializer">
