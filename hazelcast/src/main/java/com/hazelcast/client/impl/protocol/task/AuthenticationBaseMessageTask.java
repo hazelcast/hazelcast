@@ -132,10 +132,10 @@ public abstract class AuthenticationBaseMessageTask<P>
         ILogger logger = clientEngine.getLogger(getClass());
         logger.log(Level.WARNING, "Received auth from " + connection
                 + " with principal " + principal + " , authentication failed");
-        return new AuthenticationException("Invalid credentials!");
+        throw new AuthenticationException("Invalid credentials!");
     }
 
-    private Object handleAuthenticated() {
+    private ClientMessage handleAuthenticated() {
         if (isOwnerConnection()) {
             final String uuid = getUuid();
             final String localMemberUUID = clientEngine.getLocalMember().getUuid();
@@ -161,7 +161,7 @@ public abstract class AuthenticationBaseMessageTask<P>
         Connection connection = endpoint.getConnection();
         ILogger logger = clientEngine.getLogger(getClass());
         logger.log(Level.INFO, "Received auth from " + connection + ", successfully authenticated"
-        + ", principal : " + principal + ", owner connection : " + isOwnerConnection());
+                + ", principal : " + principal + ", owner connection : " + isOwnerConnection());
 
         endpoint.authenticated(principal, credentials, isOwnerConnection());
         endpointManager.registerEndpoint(endpoint);
