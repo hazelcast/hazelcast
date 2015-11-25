@@ -29,12 +29,11 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
+import com.hazelcast.internal.management.request.AsyncConsoleRequest;
 import com.hazelcast.internal.management.request.ChangeClusterStateRequest;
 import com.hazelcast.internal.management.request.ChangeWanStateRequest;
-import com.hazelcast.internal.management.request.AsyncConsoleRequest;
 import com.hazelcast.internal.management.request.ClusterPropsRequest;
 import com.hazelcast.internal.management.request.ConsoleCommandRequest;
 import com.hazelcast.internal.management.request.ConsoleRequest;
@@ -59,14 +58,13 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -118,15 +116,16 @@ public class ManagementCenterService {
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
         this.threadGroup = instance.node.getHazelcastThreadGroup();
-        logger = instance.node.getLogger(ManagementCenterService.class);
-        managementCenterConfig = getManagementCenterConfig();
-        managementCenterUrl = getManagementCenterUrl();
-        commandHandler = new ConsoleCommandHandler(instance);
-        taskPollThread = new TaskPollThread();
-        stateSendThread = new StateSendThread();
-        prepareStateThread = new PrepareStateThread();
-        timedMemberStateFactory = new TimedMemberStateFactory(instance);
-        identifier = newManagementCenterIdentifier();
+        this.logger = instance.node.getLogger(ManagementCenterService.class);
+        this.managementCenterConfig = getManagementCenterConfig();
+        this.managementCenterUrl = getManagementCenterUrl();
+        this.commandHandler = new ConsoleCommandHandler(instance);
+        this.taskPollThread = new TaskPollThread();
+        this.stateSendThread = new StateSendThread();
+        this.prepareStateThread = new PrepareStateThread();
+        this.timedMemberStateFactory = new TimedMemberStateFactory(instance);
+        this.identifier = newManagementCenterIdentifier();
+
         registerListeners();
     }
 
@@ -157,7 +156,7 @@ public class ManagementCenterService {
         return new ManagementCenterIdentifier(version, groupName, address.getHost() + ":" + address.getPort());
     }
 
-    private static String cleanupUrl(String url) {
+    static String cleanupUrl(String url) {
         if (url == null) {
             return null;
         }
@@ -171,7 +170,7 @@ public class ManagementCenterService {
         }
 
         if (!isRunning.compareAndSet(false, true)) {
-            //it is already started
+            // it is already started
             return;
         }
 
@@ -232,26 +231,24 @@ public class ManagementCenterService {
         }
 
         urlChanged = true;
-        logger.info("Management Center URL has changed. "
-                + "Hazelcast will connect to Management Center on address:\n" + managementCenterUrl);
+        logger.info("Management Center URL has changed. Hazelcast will connect to Management Center on address:\n"
+                + managementCenterUrl);
     }
 
-    private void interruptThread(Thread t) {
-        if (t != null) {
-            t.interrupt();
+    private void interruptThread(Thread thread) {
+        if (thread != null) {
+            thread.interrupt();
         }
     }
 
     public Object callOnAddress(Address address, Operation operation) {
-        //todo: why are we always executing on the mapservice??
+        // TODO: why are we always executing on the MapService?
         OperationService operationService = instance.node.nodeEngine.getOperationService();
         Future future = operationService.invokeOnTarget(MapService.SERVICE_NAME, operation, address);
         try {
             return future.get();
         } catch (Throwable t) {
-            StringWriter s = new StringWriter();
-            t.printStackTrace(new PrintWriter(s));
-            return s.toString();
+            return ExceptionUtil.toString(t);
         }
     }
 
@@ -260,7 +257,7 @@ public class ManagementCenterService {
     }
 
     public Object callOnMember(Member member, Operation operation) {
-        Address address = ((MemberImpl) member).getAddress();
+        Address address = member.getAddress();
         return callOnAddress(address, operation);
     }
 
@@ -290,6 +287,7 @@ public class ManagementCenterService {
     }
 
     private final class PrepareStateThread extends Thread {
+
         private final long updateIntervalMs;
 
         private PrepareStateThread() {
@@ -299,7 +297,7 @@ public class ManagementCenterService {
 
         private long calcUpdateInterval() {
             long updateInterval = managementCenterConfig.getUpdateInterval();
-            return updateInterval > 0 ? TimeUnit.SECONDS.toMillis(updateInterval) : DEFAULT_UPDATE_INTERVAL;
+            return (updateInterval > 0) ? TimeUnit.SECONDS.toMillis(updateInterval) : DEFAULT_UPDATE_INTERVAL;
         }
 
         @Override
@@ -327,6 +325,7 @@ public class ManagementCenterService {
      * Thread for sending cluster state to the Management Center.
      */
     private final class StateSendThread extends Thread {
+
         private final long updateIntervalMs;
 
         private StateSendThread() {
@@ -336,7 +335,7 @@ public class ManagementCenterService {
 
         private long calcUpdateInterval() {
             long updateInterval = managementCenterConfig.getUpdateInterval();
-            return updateInterval > 0 ? TimeUnit.SECONDS.toMillis(updateInterval) : DEFAULT_UPDATE_INTERVAL;
+            return (updateInterval > 0) ? TimeUnit.SECONDS.toMillis(updateInterval) : DEFAULT_UPDATE_INTERVAL;
         }
 
         @Override
@@ -426,11 +425,11 @@ public class ManagementCenterService {
      * Thread for polling tasks/requests from Management Center.
      */
     private final class TaskPollThread extends Thread {
+
         private final Map<Integer, Class<? extends ConsoleRequest>> consoleRequests
                 = new HashMap<Integer, Class<? extends ConsoleRequest>>();
 
-        private final ExecutionService executionService = instance.node.getNodeEngine()
-                .getExecutionService();
+        private final ExecutionService executionService = instance.node.getNodeEngine().getExecutionService();
 
         TaskPollThread() {
             super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("MC.Task.Poller"));
@@ -571,7 +570,7 @@ public class ManagementCenterService {
         private URL newGetTaskUrl() throws MalformedURLException {
             GroupConfig groupConfig = instance.getConfig().getGroupConfig();
 
-            Address localAddress = ((MemberImpl) instance.node.getClusterService().getLocalMember()).getAddress();
+            Address localAddress = instance.node.getClusterService().getLocalMember().getAddress();
 
             String urlString = cleanupUrl(managementCenterUrl) + "getTask.do?member=" + localAddress.getHost()
                     + ":" + localAddress.getPort() + "&cluster=" + groupConfig.getName();
