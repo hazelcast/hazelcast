@@ -20,14 +20,12 @@ import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 
 import java.io.Serializable;
 
-;
-
 /**
  * Configuration for CachePartitionLostListener
+ *
  * @see CachePartitionLostListener
  */
-public class CachePartitionLostListenerConfig
-        extends ListenerConfig  implements  Serializable {
+public class CachePartitionLostListenerConfig extends ListenerConfig implements Serializable {
 
     private CachePartitionLostListenerConfigReadOnly readOnly;
 
