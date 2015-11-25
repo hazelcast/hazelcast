@@ -1,10 +1,10 @@
 package com.hazelcast.cache;
 
+import com.hazelcast.cache.CachePartitionLostListenerTest.EventCollectingCachePartitionLostListener;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cache.CachePartitionLostListenerTest.EventCollectingCachePartitionLostListener;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -16,7 +16,6 @@ import org.junit.runner.RunWith;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import java.util.ArrayList;
-
 import java.util.List;
 import java.util.Map;
 
@@ -26,8 +25,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-    public class CachePartitionLostListenerStressTest
-        extends AbstractPartitionLostListenerTest {
+public class CachePartitionLostListenerStressTest extends AbstractPartitionLostListenerTest {
 
     protected int getNodeCount() {
         return 5;
@@ -38,82 +36,74 @@ import static org.junit.Assert.assertTrue;
     }
 
     @Test
-    public void test_cachePartitionLostListenerInvoked_when1NodeCrashed_withoutData()
-            throws InterruptedException {
+    public void test_cachePartitionLostListenerInvoked_when1NodeCrashed_withoutData() {
         testCachePartitionLostListener(1, false);
     }
 
     @Test
-    public void test_cachePartitionLostListenerInvoked_when1NodeCrashed_withData()
-            throws InterruptedException {
+    public void test_cachePartitionLostListenerInvoked_when1NodeCrashed_withData() {
         testCachePartitionLostListener(1, true);
     }
 
     @Test
-    public void test_cachePartitionLostListenerInvoked_when2NodesCrashed_withoutData()
-            throws InterruptedException {
+    public void test_cachePartitionLostListenerInvoked_when2NodesCrashed_withoutData() {
         testCachePartitionLostListener(2, false);
     }
 
     @Test
-    public void test_cachePartitionLostListenerInvoked_when2NodesCrashed_withData()
-            throws InterruptedException {
+    public void test_cachePartitionLostListenerInvoked_when2NodesCrashed_withData() {
         testCachePartitionLostListener(2, true);
     }
 
     @Test
-    public void test_cachePartitionLostListenerInvoked_when3NodesCrashed_withoutData()
-            throws InterruptedException {
+    public void test_cachePartitionLostListenerInvoked_when3NodesCrashed_withoutData() {
         testCachePartitionLostListener(3, false);
     }
 
     @Test
-    public void test_cachePartitionLostListenerInvoked_when3NodesCrashed_withData()
-            throws InterruptedException {
+    public void test_cachePartitionLostListenerInvoked_when3NodesCrashed_withData() {
         testCachePartitionLostListener(3, true);
     }
 
     @Test
-    public void test_cachePartitionLostListenerInvoked_when4NodesCrashed_withoutData()
-            throws InterruptedException {
+    public void test_cachePartitionLostListenerInvoked_when4NodesCrashed_withoutData() {
         testCachePartitionLostListener(4, false);
     }
 
     @Test
-    public void test_cachePartitionLostListenerInvoked_when4NodesCrashed_withData()
-            throws InterruptedException {
+    public void test_cachePartitionLostListenerInvoked_when4NodesCrashed_withData() {
         testCachePartitionLostListener(4, true);
     }
 
-    private void testCachePartitionLostListener(final int numberOfNodesToCrash, final boolean withData) {
-        final List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
+    private void testCachePartitionLostListener(int numberOfNodesToCrash, boolean withData) {
+        List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
 
         List<HazelcastInstance> survivingInstances = new ArrayList<HazelcastInstance>(instances);
-        final List<HazelcastInstance> terminatingInstances = survivingInstances.subList(0, numberOfNodesToCrash);
+        List<HazelcastInstance> terminatingInstances = survivingInstances.subList(0, numberOfNodesToCrash);
         survivingInstances = survivingInstances.subList(numberOfNodesToCrash, instances.size());
 
-        final HazelcastInstance instance = survivingInstances.get(0);
-        final HazelcastServerCachingProvider cachingProvider = createCachingProvider(instance);
-        final CacheManager cacheManager = cachingProvider.getCacheManager();
-        final List<EventCollectingCachePartitionLostListener> listeners = registerListeners(cacheManager);
+        HazelcastInstance instance = survivingInstances.get(0);
+        HazelcastServerCachingProvider cachingProvider = createCachingProvider(instance);
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+        List<EventCollectingCachePartitionLostListener> listeners = registerListeners(cacheManager);
 
         if (withData) {
             for (int i = 0; i < getNodeCount(); i++) {
-                final Cache<Integer, Integer> cache = cacheManager.getCache(getIthCacheName(i));
+                Cache<Integer, Integer> cache = cacheManager.getCache(getIthCacheName(i));
                 for (int j = 0; j < getCacheEntryCount(); j++) {
                     cache.put(j, j);
                 }
             }
         }
 
-        final String log = "Surviving: " + survivingInstances + " Terminating: " + terminatingInstances;
-        final Map<Integer, Integer> survivingPartitions = getMinReplicaIndicesByPartitionId(survivingInstances);
+        String log = "Surviving: " + survivingInstances + " Terminating: " + terminatingInstances;
+        Map<Integer, Integer> survivingPartitions = getMinReplicaIndicesByPartitionId(survivingInstances);
 
         terminateInstances(terminatingInstances);
         waitAllForSafeState(survivingInstances);
 
         for (int i = 0; i < getNodeCount(); i++) {
-            assertListenerInvocationsEventually(numberOfNodesToCrash, log, survivingPartitions, listeners.get(i), i);
+            assertListenerInvocationsEventually(log, i, numberOfNodesToCrash, listeners.get(i), survivingPartitions);
         }
 
         for (int i = 0; i < getNodeCount(); i++) {
@@ -123,9 +113,23 @@ import static org.junit.Assert.assertTrue;
         cachingProvider.close();
     }
 
-    private void assertListenerInvocationsEventually(final int numberOfNodesToCrash, final String log,
-                                                     final Map<Integer, Integer> survivingPartitions,
-                                                     final EventCollectingCachePartitionLostListener listener, final int index) {
+    private List<EventCollectingCachePartitionLostListener> registerListeners(CacheManager cacheManager) {
+        CacheConfig<Integer, Integer> config = new CacheConfig<Integer, Integer>();
+        List<EventCollectingCachePartitionLostListener> listeners = new ArrayList<EventCollectingCachePartitionLostListener>();
+        for (int i = 0; i < getNodeCount(); i++) {
+            EventCollectingCachePartitionLostListener listener = new EventCollectingCachePartitionLostListener(i);
+            listeners.add(listener);
+            config.setBackupCount(i);
+            Cache<Integer, Integer> cache = cacheManager.createCache(getIthCacheName(i), config);
+            ICache iCache = cache.unwrap(ICache.class);
+            iCache.addPartitionLostListener(listener);
+        }
+        return listeners;
+    }
+
+    private void assertListenerInvocationsEventually(final String log, final int index, final int numberOfNodesToCrash,
+                                                     final EventCollectingCachePartitionLostListener listener,
+                                                     final Map<Integer, Integer> survivingPartitions) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
@@ -133,43 +137,26 @@ import static org.junit.Assert.assertTrue;
                 if (index < numberOfNodesToCrash) {
                     assertLostPartitions(log, listener, survivingPartitions);
                 } else {
-                    final String message = log + " listener-" + index + " should not be invoked!";
+                    String message = log + " listener-" + index + " should not be invoked!";
                     assertTrue(message, listener.getEvents().isEmpty());
                 }
             }
         });
     }
 
-    private void assertLostPartitions(final String log, final CachePartitionLostListenerTest.EventCollectingCachePartitionLostListener listener,
-                                      final Map<Integer, Integer> survivingPartitions) {
-        final List<CachePartitionLostEvent> events = listener.getEvents();
-
+    private void assertLostPartitions(String log, EventCollectingCachePartitionLostListener listener,
+                                      Map<Integer, Integer> survivingPartitions) {
+        List<CachePartitionLostEvent> events = listener.getEvents();
         assertFalse(survivingPartitions.isEmpty());
 
         for (CachePartitionLostEvent event : events) {
-            final int failedPartitionId = event.getPartitionId();
-            final Integer survivingReplicaIndex = survivingPartitions.get(failedPartitionId);
+            int failedPartitionId = event.getPartitionId();
+            Integer survivingReplicaIndex = survivingPartitions.get(failedPartitionId);
             if (survivingReplicaIndex != null) {
-                final String message =
-                        log + ", PartitionId: " + failedPartitionId + " SurvivingReplicaIndex: " + survivingReplicaIndex
-                                + " Cache Name: " + event.getName();
+                String message = log + ", PartitionId: " + failedPartitionId
+                        + " SurvivingReplicaIndex: " + survivingReplicaIndex + " Event: " + event.toString();
                 assertTrue(message, survivingReplicaIndex > listener.getBackupCount());
             }
         }
     }
-
-    private List<CachePartitionLostListenerTest.EventCollectingCachePartitionLostListener> registerListeners(final CacheManager cacheManager) {
-        final CacheConfig<Integer, Integer> config = new CacheConfig<Integer, Integer>();
-        final List<EventCollectingCachePartitionLostListener> listeners = new ArrayList<EventCollectingCachePartitionLostListener>();
-        for (int i = 0; i < getNodeCount(); i++) {
-            final EventCollectingCachePartitionLostListener listener = new EventCollectingCachePartitionLostListener(i);
-            listeners.add(listener);
-            config.setBackupCount(i);
-            final Cache<Integer, Integer> cache = cacheManager.createCache(getIthCacheName(i), config);
-            final ICache iCache = cache.unwrap(ICache.class);
-            iCache.addPartitionLostListener(listener);
-        }
-        return listeners;
-    }
-
 }

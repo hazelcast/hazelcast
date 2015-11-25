@@ -43,18 +43,17 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class CachePartitionLostListenerTest
-        extends AbstractPartitionLostListenerTest {
+public class CachePartitionLostListenerTest extends AbstractPartitionLostListenerTest {
 
     @Override
     public int getNodeCount() {
         return 2;
     }
 
-    public static class EventCollectingCachePartitionLostListener
-            implements CachePartitionLostListener {
+    public static class EventCollectingCachePartitionLostListener implements CachePartitionLostListener {
 
-        private final List<CachePartitionLostEvent> events = Collections.synchronizedList(new LinkedList<CachePartitionLostEvent>());
+        private final List<CachePartitionLostEvent> events
+                = Collections.synchronizedList(new LinkedList<CachePartitionLostEvent>());
 
         private final int backupCount;
 
@@ -79,29 +78,31 @@ public class CachePartitionLostListenerTest
     }
 
     @Test
-    public void test_partitionLostListenerInvoked(){
-        final List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp(1);
+    public void test_partitionLostListenerInvoked() {
+        List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp(1);
         final HazelcastInstance instance = instances.get(0);
-        final EventCollectingCachePartitionLostListener listener = new EventCollectingCachePartitionLostListener(0);
-        final HazelcastServerCachingProvider cachingProvider = createCachingProvider(instance);
-        final CacheManager cacheManager = cachingProvider.getCacheManager();
-        final CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
-        final Cache<Integer, String> cache = cacheManager.createCache(getIthCacheName(0), config);
-        final ICache iCache = cache.unwrap(ICache.class);
 
+        HazelcastServerCachingProvider cachingProvider = createCachingProvider(instance);
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        Cache<Integer, String> cache = cacheManager.createCache(getIthCacheName(0), config);
+        ICache iCache = cache.unwrap(ICache.class);
+
+        final EventCollectingCachePartitionLostListener listener = new EventCollectingCachePartitionLostListener(0);
         iCache.addPartitionLostListener(listener);
 
         final InternalPartitionLostEvent internalEvent = new InternalPartitionLostEvent(1, 1, null);
-        final CacheService cacheService = getNode(instance).getNodeEngine().getService(CacheService.SERVICE_NAME);
+        CacheService cacheService = getNode(instance).getNodeEngine().getService(CacheService.SERVICE_NAME);
         cacheService.onPartitionLost(internalEvent);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                final List<CachePartitionLostEvent> events = listener.getEvents();
+                List<CachePartitionLostEvent> events = listener.getEvents();
+
                 assertEquals(1, events.size());
-                final CachePartitionLostEvent event = events.get(0);
+                CachePartitionLostEvent event = events.get(0);
                 assertEquals(internalEvent.getPartitionId(), event.getPartitionId());
                 assertEquals(getIthCacheName(0), event.getSource());
                 assertEquals(getIthCacheName(0), event.getName());
@@ -117,23 +118,23 @@ public class CachePartitionLostListenerTest
 
     @Test
     public void test_partitionLostListenerInvoked_whenNodeCrashed() {
+        List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp(2);
+        HazelcastInstance survivingInstance = instances.get(0);
+        HazelcastInstance terminatingInstance = instances.get(1);
 
-        final List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp(2);
-        final HazelcastInstance survivingInstance = instances.get(0);
-        final HazelcastInstance terminatingInstance = instances.get(1);
-        final EventCollectingCachePartitionLostListener listener = new EventCollectingCachePartitionLostListener(0);
-        final HazelcastServerCachingProvider cachingProvider = createCachingProvider(survivingInstance);
-        final CacheManager cacheManager = cachingProvider.getCacheManager();
-        final CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        HazelcastServerCachingProvider cachingProvider = createCachingProvider(survivingInstance);
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
         config.setBackupCount(0);
-        final Cache<Integer, String> cache = cacheManager.createCache(getIthCacheName(0), config);
-        final ICache iCache = cache.unwrap(ICache.class);
+        Cache<Integer, String> cache = cacheManager.createCache(getIthCacheName(0), config);
+        ICache iCache = cache.unwrap(ICache.class);
 
+        final EventCollectingCachePartitionLostListener listener = new EventCollectingCachePartitionLostListener(0);
         iCache.addPartitionLostListener(listener);
 
         final Set<Integer> survivingPartitionIds = new HashSet<Integer>();
-        final Node survivingNode = getNode(survivingInstance);
-        final Address survivingAddress = survivingNode.getThisAddress();
+        Node survivingNode = getNode(survivingInstance);
+        Address survivingAddress = survivingNode.getThisAddress();
 
         for (InternalPartition partition : survivingNode.getPartitionService().getPartitions()) {
             if (survivingAddress.equals(partition.getReplicaAddress(0))) {
@@ -159,16 +160,12 @@ public class CachePartitionLostListenerTest
         cacheManager.destroyCache(getIthCacheName(0));
         cacheManager.close();
         cachingProvider.close();
-
     }
 
     @Test
-    public void test_cachePartitionEventData_serialization()
-            throws IOException {
-        final Address address = new Address();
-        final CachePartitionEventData cachePartitionEventData = new CachePartitionEventData("cacheName", 1, null);
-
-        final ObjectDataOutput output = mock(ObjectDataOutput.class);
+    public void test_cachePartitionEventData_serialization() throws IOException {
+        CachePartitionEventData cachePartitionEventData = new CachePartitionEventData("cacheName", 1, null);
+        ObjectDataOutput output = mock(ObjectDataOutput.class);
         cachePartitionEventData.writeData(output);
 
         verify(output).writeUTF("cacheName");
@@ -176,11 +173,10 @@ public class CachePartitionLostListenerTest
     }
 
     @Test
-    public void test_cachePartitionEventData_deserialization()
-            throws IOException {
-        final CachePartitionEventData cachePartitionEventData = new CachePartitionEventData("", 0, null);
+    public void test_cachePartitionEventData_deserialization() throws IOException {
+        CachePartitionEventData cachePartitionEventData = new CachePartitionEventData("", 0, null);
 
-        final ObjectDataInput input = mock(ObjectDataInput.class);
+        ObjectDataInput input = mock(ObjectDataInput.class);
         when(input.readUTF()).thenReturn("cacheName");
         when(input.readInt()).thenReturn(1);
 
@@ -192,7 +188,7 @@ public class CachePartitionLostListenerTest
 
     @Test
     public void testCachePartitionLostEventFilter() {
-        final CachePartitionLostEventFilter filter = new CachePartitionLostEventFilter();
+        CachePartitionLostEventFilter filter = new CachePartitionLostEventFilter();
         assertEquals(new CachePartitionLostEventFilter(), filter);
         assertFalse(filter.eval(null));
     }

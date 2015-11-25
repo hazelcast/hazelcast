@@ -21,11 +21,9 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class MapPartitionLostListenerStressTest
-        extends AbstractPartitionLostListenerTest {
+public class MapPartitionLostListenerStressTest extends AbstractPartitionLostListenerTest {
 
-    public static class EventCollectingMapPartitionLostListener
-            implements MapPartitionLostListener {
+    public static class EventCollectingMapPartitionLostListener implements MapPartitionLostListener {
 
         private final List<MapPartitionLostEvent> events = Collections.synchronizedList(new LinkedList<MapPartitionLostEvent>());
 
@@ -60,81 +58,72 @@ public class MapPartitionLostListenerStressTest
     }
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when1NodeCrashed_withoutData()
-            throws InterruptedException {
+    public void test_mapPartitionLostListenerInvoked_when1NodeCrashed_withoutData() throws InterruptedException {
         testMapPartitionLostListener(1, false);
     }
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when1NodeCrashed_withData()
-            throws InterruptedException {
+    public void test_mapPartitionLostListenerInvoked_when1NodeCrashed_withData() throws InterruptedException {
         testMapPartitionLostListener(1, true);
     }
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when2NodesCrashed_withoutData()
-            throws InterruptedException {
+    public void test_mapPartitionLostListenerInvoked_when2NodesCrashed_withoutData() throws InterruptedException {
         testMapPartitionLostListener(2, false);
     }
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when2NodesCrashed_withData()
-            throws InterruptedException {
+    public void test_mapPartitionLostListenerInvoked_when2NodesCrashed_withData() throws InterruptedException {
         testMapPartitionLostListener(2, true);
     }
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when3NodesCrashed_withoutData()
-            throws InterruptedException {
+    public void test_mapPartitionLostListenerInvoked_when3NodesCrashed_withoutData() throws InterruptedException {
         testMapPartitionLostListener(3, false);
     }
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when3NodesCrashed_withData()
-            throws InterruptedException {
+    public void test_mapPartitionLostListenerInvoked_when3NodesCrashed_withData() throws InterruptedException {
         testMapPartitionLostListener(3, true);
     }
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when4NodesCrashed_withoutData()
-            throws InterruptedException {
+    public void test_mapPartitionLostListenerInvoked_when4NodesCrashed_withoutData() throws InterruptedException {
         testMapPartitionLostListener(4, false);
     }
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when4NodesCrashed_withData()
-            throws InterruptedException {
+    public void test_mapPartitionLostListenerInvoked_when4NodesCrashed_withData() throws InterruptedException {
         testMapPartitionLostListener(4, true);
     }
 
-    private void testMapPartitionLostListener(final int numberOfNodesToCrash, final boolean withData)
-            throws InterruptedException {
-        final List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
+    private void testMapPartitionLostListener(int numberOfNodesToCrash, boolean withData) throws InterruptedException {
+        List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
 
         List<HazelcastInstance> survivingInstances = new ArrayList<HazelcastInstance>(instances);
-        final List<HazelcastInstance> terminatingInstances = survivingInstances.subList(0, numberOfNodesToCrash);
+        List<HazelcastInstance> terminatingInstances = survivingInstances.subList(0, numberOfNodesToCrash);
         survivingInstances = survivingInstances.subList(numberOfNodesToCrash, instances.size());
 
-        final List<EventCollectingMapPartitionLostListener> listeners = registerListeners(survivingInstances.get(0));
+        List<EventCollectingMapPartitionLostListener> listeners = registerListeners(survivingInstances.get(0));
 
         if (withData) {
             populateMaps(survivingInstances.get(0));
         }
 
-        final String log = "Surviving: " + survivingInstances + " Terminating: " + terminatingInstances;
-        final Map<Integer, Integer> survivingPartitions = getMinReplicaIndicesByPartitionId(survivingInstances);
+        String log = "Surviving: " + survivingInstances + " Terminating: " + terminatingInstances;
+        Map<Integer, Integer> survivingPartitions = getMinReplicaIndicesByPartitionId(survivingInstances);
 
         terminateInstances(terminatingInstances);
         waitAllForSafeStateAndDumpPartitionServiceOnFailure(survivingInstances, 300);
 
         for (int i = 0; i < getNodeCount(); i++) {
-            assertListenerInvocationsEventually(numberOfNodesToCrash, log, survivingPartitions, listeners.get(i), i);
+            assertListenerInvocationsEventually(log, i, numberOfNodesToCrash, listeners.get(i), survivingPartitions);
         }
     }
 
-    private void assertListenerInvocationsEventually(final int numberOfNodesToCrash, final String log,
-                                                     final Map<Integer, Integer> survivingPartitions,
-                                                     final EventCollectingMapPartitionLostListener listener, final int index) {
+    private void assertListenerInvocationsEventually(final String log, final int index, final int numberOfNodesToCrash,
+                                                     final EventCollectingMapPartitionLostListener listener,
+                                                     final Map<Integer, Integer> survivingPartitions) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
@@ -142,40 +131,36 @@ public class MapPartitionLostListenerStressTest
                 if (index < numberOfNodesToCrash) {
                     assertLostPartitions(log, listener, survivingPartitions);
                 } else {
-                    final String message = log + " listener-" + index + " should not be invoked!";
+                    String message = log + " listener-" + index + " should not be invoked!";
                     assertTrue(message, listener.getEvents().isEmpty());
                 }
             }
         });
     }
 
-    private void assertLostPartitions(final String log, final EventCollectingMapPartitionLostListener listener,
-                                      final Map<Integer, Integer> survivingPartitions) {
-        final List<MapPartitionLostEvent> events = listener.getEvents();
+    private List<EventCollectingMapPartitionLostListener> registerListeners(HazelcastInstance instance) {
+        List<EventCollectingMapPartitionLostListener> listeners = new ArrayList<EventCollectingMapPartitionLostListener>();
+        for (int i = 0; i < getNodeCount(); i++) {
+            EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(i);
+            instance.getMap(getIthMapName(i)).addPartitionLostListener(listener);
+            listeners.add(listener);
+        }
+        return listeners;
+    }
 
+    private void assertLostPartitions(String log, EventCollectingMapPartitionLostListener listener,
+                                      Map<Integer, Integer> survivingPartitions) {
+        List<MapPartitionLostEvent> events = listener.getEvents();
         assertFalse(survivingPartitions.isEmpty());
 
         for (MapPartitionLostEvent event : events) {
-            final int failedPartitionId = event.getPartitionId();
-            final Integer survivingReplicaIndex = survivingPartitions.get(failedPartitionId);
+            int failedPartitionId = event.getPartitionId();
+            Integer survivingReplicaIndex = survivingPartitions.get(failedPartitionId);
             if (survivingReplicaIndex != null) {
-                final String message =
-                        log + ", PartitionId: " + failedPartitionId + " SurvivingReplicaIndex: " + survivingReplicaIndex
-                                + " Map Name: " + event.getName();
+                String message = log + ", PartitionId: " + failedPartitionId
+                        + " SurvivingReplicaIndex: " + survivingReplicaIndex + " Event: " + event.toString();
                 assertTrue(message, survivingReplicaIndex > listener.getBackupCount());
             }
         }
     }
-
-    private List<EventCollectingMapPartitionLostListener> registerListeners(final HazelcastInstance instance) {
-        final List<EventCollectingMapPartitionLostListener> listeners = new ArrayList<EventCollectingMapPartitionLostListener>();
-        for (int i = 0; i < getNodeCount(); i++) {
-            final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(i);
-            instance.getMap(getIthMapName(i)).addPartitionLostListener(listener);
-            listeners.add(listener);
-        }
-
-        return listeners;
-    }
-
 }

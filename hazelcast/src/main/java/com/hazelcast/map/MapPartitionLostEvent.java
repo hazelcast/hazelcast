@@ -28,7 +28,6 @@ public class MapPartitionLostEvent extends AbstractIMapEvent {
 
     private static final long serialVersionUID = -7445734640964238109L;
 
-
     private final int partitionId;
 
     public MapPartitionLostEvent(Object source, Member member, int eventType, int partitionId) {

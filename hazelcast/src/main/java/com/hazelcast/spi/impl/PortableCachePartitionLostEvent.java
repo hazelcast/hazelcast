@@ -55,16 +55,14 @@ public class PortableCachePartitionLostEvent implements Portable {
     }
 
     @Override
-    public void writePortable(PortableWriter writer)
-            throws IOException {
+    public void writePortable(PortableWriter writer) throws IOException {
         writer.writeInt("p", partitionId);
         writer.writeUTF("u", uuid);
 
     }
 
     @Override
-    public void readPortable(PortableReader reader)
-            throws IOException {
+    public void readPortable(PortableReader reader) throws IOException {
         partitionId = reader.readInt("p");
         uuid = reader.readUTF("u");
     }
