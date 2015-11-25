@@ -3,6 +3,7 @@ Document Revision History
 
 Chapter 3 - Getting Started
 - Phoning Home: Added as a new section to explain phone home data.
+- Deploying using Docker: Added as a new section to describe how you can deploy your Hazelcast projects using the Docker platform.
 
 Chapter 5 - Hazelcast Clusters
 - Discovering Members with jclouds:Added as a new section to explain how you can enable Hazelcast to discover your members with jclouds.
@@ -10,6 +11,13 @@ Chapter 5 - Hazelcast Clusters
 Chapter 6 - Distributed Data Structures
 - Map: Map Eviction section updated by adding the definition for the `min-eviction-check-millis` property. The section Understanding Map Eviction  added for a more clearer explanation of the eviction mechanism.
 - Setting In Memory Format section updated by adding the information on how to configure Hazelcast Map to use High-Density Memory Store.
+- Creating Near Cache for Map section updated by adding a note related to enabling near caches on a lite member.
+- Lock: Added the explanation for the method `tryLock` with lease.
+- Replicated Map: Replicating instead of Partitioning section updated by adding a note related to replicated map usage in a lite member. 
+
+Chapter 8 - Distributed Computing
+- Selecting Members for Task Execution: Added a paragraph on how to select a lite member.
+
 
 Chapter 9 - Distributed Query
 - Filtering with Paging Predicates: The note stating that the random page accessing is not supported removed, since it is now supported with this release.
@@ -26,6 +34,10 @@ Chapter 12 - Integrated Clustering
 - Web Session Replication: Marking Transient Attributes added as a new section.
 - Spring Integration: Declarative Hazelcast JCache Based Caching Configuration added as a new section.
 - Hibernate Second Level Cache: Added additional information related to Hibernate Native Client mode to the introduction paragraph of the Setting Client/Server for Hibernate section.
+
+Chapter 13 - Storage
+- Hot Restart Store section added as a new section to explain how Hazelcast's Hot Restart feature works and its design details.|
+
 
 Chapter 14 - Hazelcast Java Client
 - Hazelcast Clients Feature Comparison: Added as a new section.
@@ -45,19 +57,23 @@ Chapter 17 - Management
 
 Chapter 21 - WAN
 - WAN Replication Event Filtering API section and WAN Replication Acknowledge Types section added as new sections to explain the improvements performed for Hazelcast WAN replication feature.
+- A note related to the methods `clear`, `destroy` and `evictAll` added to the WAN Replication Additional Information section.
 
-Chapter 22 - Hazelcast Configuration
+Chapter 22 - OSGI
+- Added as a new chapter.
+
+Chapter 23 - Hazelcast Configuration
 - Improved by adding missing configuration elements and attributes. Added Quorum Configuration section.
 - Network Configuration: Join section updated by adding the explanation for `discovery-strategies` element.
 - System Properties: Added the new system properties `hazelcast.unsafe.mode`,  `hazelcast.io.input.thread.count`, `hazelcast.io.output.thread.count` and `hazelcast.query.optimizer.type`. Updated the definition of `hazelcast.io.thread.count`.
 
-Chapter 23 - Extending Hazelcast
+Chapter 24 - Extending Hazelcast
 - This title added as a chapter to include the section previously present as "User Defined Services".
 - Discovery SPI: Added as a new section.
 - Config Properties SPI: Added as a new section.
 
-Chapter 27 - FAQ
+Chapter 28 - FAQ
 - Added new questions/answers.
 
-Chapter 28 - Glossary
+Chapter 29 - Glossary
 - Added new glossary items.
