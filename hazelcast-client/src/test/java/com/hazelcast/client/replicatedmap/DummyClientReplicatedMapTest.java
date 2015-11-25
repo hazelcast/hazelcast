@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -83,6 +84,7 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void testKeySet() throws Exception {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
