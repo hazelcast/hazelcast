@@ -43,7 +43,6 @@ import java.util.logging.Level;
 public abstract class AbstractMessageTask<P>
         implements MessageTask, SecureRequest {
 
-    protected final P parameters;
     protected final ClientMessage clientMessage;
 
     protected final Connection connection;
@@ -53,6 +52,7 @@ public abstract class AbstractMessageTask<P>
     protected final ILogger logger;
     protected final ClientEndpointManager endpointManager;
     protected final ClientEngineImpl clientEngine;
+    protected P parameters;
 
     private final Node node;
 
@@ -63,7 +63,6 @@ public abstract class AbstractMessageTask<P>
         this.nodeEngine = node.nodeEngine;
         this.serializationService = node.getSerializationService();
         this.connection = connection;
-        this.parameters = decodeClientMessage(clientMessage);
         this.clientEngine = node.clientEngine;
         this.endpointManager = clientEngine.getEndpointManager();
         this.endpoint = getEndpoint();
@@ -114,6 +113,7 @@ public abstract class AbstractMessageTask<P>
         if (!node.joined()) {
             throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
         }
+        parameters = decodeClientMessage(clientMessage);
         Credentials credentials = endpoint.getCredentials();
         interceptBefore(credentials);
         checkPermissions(endpoint);

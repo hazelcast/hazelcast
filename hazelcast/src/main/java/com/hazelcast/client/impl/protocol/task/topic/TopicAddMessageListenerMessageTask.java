@@ -36,15 +36,15 @@ public class TopicAddMessageListenerMessageTask
         extends AbstractCallableMessageTask<TopicAddMessageListenerCodec.RequestParameters>
         implements MessageListener {
 
-    private final Data partitionKey;
+    private Data partitionKey;
 
     public TopicAddMessageListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
-        partitionKey = serializationService.toData(parameters.name);
     }
 
     @Override
     protected Object call() throws Exception {
+        partitionKey = serializationService.toData(parameters.name);
         TopicService service = getService(TopicService.SERVICE_NAME);
         ClientEndpoint endpoint = getEndpoint();
         String registrationId = service.addMessageListener(parameters.name, this, parameters.localOnly);
