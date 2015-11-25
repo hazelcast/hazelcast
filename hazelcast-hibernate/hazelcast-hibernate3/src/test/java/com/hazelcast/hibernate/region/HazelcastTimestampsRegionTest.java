@@ -5,9 +5,9 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.hibernate.local.LocalRegionCache;
-import com.hazelcast.hibernate.local.LocalRegionCacheTest;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.hibernate.RegionCache;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -21,37 +21,39 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.anyString;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class HazelcastQueryResultsRegionTest {
+public class HazelcastTimestampsRegionTest {
 
     private static final String REGION_NAME = "query.test";
 
-    private int maxSize = 50;
     private int timeout = 60;
 
     private MapConfig mapConfig;
     private Config config;
 
     private HazelcastInstance instance;
-    private HazelcastQueryResultsRegion region;
+    private RegionCache cache;
+    private HazelcastTimestampsRegion<RegionCache> region;
 
     @Before
     public void setUp() throws Exception {
         mapConfig = mock(MapConfig.class);
-        when(mapConfig.getMaxSizeConfig()).thenReturn(new MaxSizeConfig(maxSize, MaxSizeConfig.MaxSizePolicy.PER_NODE));
+        when(mapConfig.getMaxSizeConfig()).thenReturn(new MaxSizeConfig(50, MaxSizeConfig.MaxSizePolicy.PER_NODE));
         when(mapConfig.getTimeToLiveSeconds()).thenReturn(timeout);
 
         config = mock(Config.class);
@@ -69,7 +71,9 @@ public class HazelcastQueryResultsRegionTest {
         when(instance.getConfig()).thenReturn(config);
         when(instance.getCluster()).thenReturn(cluster);
 
-        region = new HazelcastQueryResultsRegion(instance, REGION_NAME, new Properties());
+        cache = mock(RegionCache.class);
+
+        region = new HazelcastTimestampsRegion<RegionCache>(instance, REGION_NAME, new Properties(), cache);
     }
 
     /**
@@ -79,6 +83,8 @@ public class HazelcastQueryResultsRegionTest {
      */
     @Test
     public void testCacheHonorsConfiguration() {
+        assertEquals(cache, region.getCache());
+
         assertEquals(TimeUnit.SECONDS.toMillis(timeout), region.getTimeout());
         verify(instance, atLeastOnce()).getConfig();
         // ensure a topic is not requested
@@ -86,44 +92,63 @@ public class HazelcastQueryResultsRegionTest {
         verify(config, atLeastOnce()).findMapConfig(eq(REGION_NAME));
         // should have been retrieved by the region itself
         verify(mapConfig, times(2)).getTimeToLiveSeconds();
-
-        // load the cache with more entries than the configured max size
-        LocalRegionCache regionCache = region.getCache();
-        assertNotNull(regionCache);
-
-        int overSized = maxSize * 2;
-        for (int i = 0; i < overSized; ++i) {
-            regionCache.put(i, i, System.currentTimeMillis(), i);
-        }
-        assertEquals(overSized, regionCache.size());
-
-        // run cleanup to apply the configured limits (the TTL is not tested here for simplicity and speed of this test)
-        LocalRegionCacheTest.runCleanup(regionCache);
-        // the default size is 100,000, so if the configuration is ignored no elements will be removed.
-        // But if the configuration is applied as expected
-        assertTrue(regionCache.size() <= 50);
-        verify(mapConfig).getMaxSizeConfig();
-        verify(mapConfig, times(3)).getTimeToLiveSeconds(); // Should have been retrieved a second time by the cache
     }
 
     @Test
     public void testEvict() {
         region.evict("evictionKey");
+        verify(cache).remove(eq("evictionKey"));
+    }
+
+    @Test
+    public void testEvict_withException() {
+        doThrow(new OperationTimeoutException("expected exception")).when(cache).remove(eq("evictionKey"));
+        region.evict("evictionKey");
+        verify(cache).remove(eq("evictionKey"));
     }
 
     @Test
     public void testEvictAll() {
         region.evictAll();
+        verify(cache).clear();
+    }
+
+    @Test
+    public void testEvictAll_withException() {
+        doThrow(new OperationTimeoutException("expected exception")).when(cache).clear();
+        region.evictAll();
+        verify(cache).clear();
     }
 
     @Test
     public void testGet() {
+        doReturn("getValue").when(cache).get(eq("getKey"), anyLong());
+        assertEquals("getValue", region.get("getKey"));
+    }
+
+    @Test
+    public void testGet_withException() {
+        doThrow(new OperationTimeoutException("expected exception")).when(cache).get(eq("getKey"), anyLong());
         assertNull(region.get("getKey"));
+        verify(cache).get(eq("getKey"), anyLong());
     }
 
     @Test
     public void testPut() {
         region.put("putKey", "putValue");
-        assertEquals("putValue", region.get("putKey"));
+        verify(cache).put(eq("putKey"), eq("putValue"), anyLong(), any());
+    }
+
+    @Test
+    public void testPut_withException() {
+        doThrow(new OperationTimeoutException("expected exception"))
+                .when(cache).put(eq("putKey"), eq("putValue"), anyLong(), any());
+        region.put("putKey", "putValue");
+        verify(cache).put(eq("putKey"), eq("putValue"), anyLong(), any());
+    }
+
+    @Test
+    public void testCache() {
+        assertEquals(cache, region.getCache());
     }
 }
