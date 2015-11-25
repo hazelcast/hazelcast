@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -28,7 +29,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -74,30 +74,40 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(dummyClientConfig);
-        ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
+        final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
 
         String key = generateKeyOwnedBy(instance2);
         String value = randomString();
         map.put(key, value);
 
-        assertFalse(map.isEmpty());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse(map.isEmpty());
+            }
+        });
     }
 
     @Test
-    @Ignore
     public void testKeySet() throws Exception {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(dummyClientConfig);
-        ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
+        final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
 
-        String key = generateKeyOwnedBy(instance2);
+        final String key = generateKeyOwnedBy(instance2);
         String value = randomString();
         map.put(key, value);
 
-        Collection<String> keySet = map.keySet();
-        assertEquals(1, keySet.size());
-        assertEquals(key, keySet.iterator().next());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Collection<String> keySet = map.keySet();
+                assertEquals(1, keySet.size());
+                assertEquals(key, keySet.iterator().next());
+
+            }
+        });
     }
 
     @Test
@@ -105,16 +115,20 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(dummyClientConfig);
-        ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
-
-        String key = generateKeyOwnedBy(instance2);
-        String value = randomString();
+        final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
+        final String key = generateKeyOwnedBy(instance2);
+        final String value = randomString();
         map.put(key, value);
 
-        Set<Map.Entry<String, String>> entries = map.entrySet();
-        assertEquals(1, entries.size());
-        assertEquals(key, entries.iterator().next().getKey());
-        assertEquals(value, entries.iterator().next().getValue());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Set<Map.Entry<String, String>> entries = map.entrySet();
+                assertEquals(1, entries.size());
+                assertEquals(key, entries.iterator().next().getKey());
+                assertEquals(value, entries.iterator().next().getValue());
+            }
+        });
     }
 
     @Test
@@ -122,15 +136,19 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(dummyClientConfig);
-        ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
-
-        String key = generateKeyOwnedBy(instance2);
-        String value = randomString();
+        final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
+        final String key = generateKeyOwnedBy(instance2);
+        final String value = randomString();
         map.put(key, value);
 
-        Collection<String> values = map.values();
-        assertEquals(1, values.size());
-        assertEquals(value, values.iterator().next());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Collection<String> values = map.values();
+                assertEquals(1, values.size());
+                assertEquals(value, values.iterator().next());
+            }
+        });
     }
 
 
@@ -153,13 +171,18 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(dummyClientConfig);
-        ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
+        final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
 
         String key = generateKeyOwnedBy(instance2);
-        String value = randomString();
+        final String value = randomString();
         map.put(key, value);
 
-        assertTrue(map.containsValue(value));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(map.containsValue(value));
+            }
+        });
     }
 
     @Test
@@ -167,13 +190,18 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(dummyClientConfig);
-        ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
+        final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
 
         String key = generateKeyOwnedBy(instance2);
         String value = randomString();
         map.put(key, value);
 
-        assertEquals(1, map.size());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, map.size());
+            }
+        });
     }
 
     @Test
@@ -181,15 +209,19 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(dummyClientConfig);
-        ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
+        final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
 
         String key = generateKeyOwnedBy(instance2);
         String value = randomString();
         map.put(key, value);
-
-        assertEquals(1, map.size());
         map.clear();
-        assertEquals(0, map.size());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, map.size());
+            }
+        });
     }
 
 
