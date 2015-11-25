@@ -388,6 +388,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             final InvocationBuilder invocationBuilder
                     = operationService.createInvocationBuilder(SERVICE_NAME,
                     operation, partitionId).setResultDeserialized(false);
+            final long startTime = System.currentTimeMillis();
             final InternalCompletableFuture<Data> future = invocationBuilder.invoke();
             future.andThen(new ExecutionCallback<Data>() {
                 @Override
@@ -406,6 +407,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 public void onFailure(Throwable t) {
                 }
             });
+            if (getMapConfig().isStatisticsEnabled()) {
+                future.andThen(new IncrementStatsExecutionCallback(operation, startTime));
+            }
             return future;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -454,14 +458,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                         .setResultDeserialized(false)
                         .invoke();
                 o = f.get();
-                if (operation instanceof BasePutOperation) {
-                    localMapStats.incrementPuts(System.currentTimeMillis() - time);
-                } else if (operation instanceof BaseRemoveOperation) {
-                    localMapStats.incrementRemoves(System.currentTimeMillis() - time);
-                } else if (operation instanceof GetOperation) {
-                    localMapStats.incrementGets(System.currentTimeMillis() - time);
-                }
-
+                incrementStats(operation, System.currentTimeMillis() - time);
             } else {
                 f = operationService.createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                         .setResultDeserialized(false).invoke();
@@ -473,6 +470,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
+    private void incrementStats(KeyBasedMapOperation operation, long duration) {
+        if (operation instanceof BasePutOperation) {
+            localMapStats.incrementPuts(duration);
+        } else if (operation instanceof BaseRemoveOperation) {
+            localMapStats.incrementRemoves(duration);
+        } else if (operation instanceof GetOperation) {
+            localMapStats.incrementGets(duration);
+        }
+    }
+
     protected ICompletableFuture<Data> putAsyncInternal(final Data key, final Data value,
                                                         final long ttl, final TimeUnit timeunit) {
         final NodeEngine nodeEngine = getNodeEngine();
@@ -480,8 +487,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         PutOperation operation = new PutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
+            long startTime = System.currentTimeMillis();
             ICompletableFuture<Data> future
                     = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            if (getMapConfig().isStatisticsEnabled()) {
+                future.andThen(new IncrementStatsExecutionCallback(operation, startTime));
+            }
             invalidateNearCache(key);
             return future;
         } catch (Throwable t) {
@@ -623,8 +634,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         RemoveOperation operation = new RemoveOperation(name, key);
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
+            long startTime = System.currentTimeMillis();
             ICompletableFuture<Data> future
                     = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            if (getMapConfig().isStatisticsEnabled()) {
+                future.andThen(new IncrementStatsExecutionCallback(operation, startTime));
+            }
             invalidateNearCache(key);
             return future;
         } catch (Throwable t) {
@@ -1269,6 +1284,29 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     public PartitioningStrategy getPartitionStrategy() {
         return partitionStrategy;
+    }
+
+    public class  IncrementStatsExecutionCallback<T> implements ExecutionCallback<T> {
+
+        private final KeyBasedMapOperation operation;
+
+        private final long startTime;
+
+        public IncrementStatsExecutionCallback(KeyBasedMapOperation operation, long startTime) {
+            this.operation = operation;
+            this.startTime = startTime;
+        }
+
+        @Override
+        public void onResponse(T response) {
+            final long duration = System.currentTimeMillis() - startTime;
+            incrementStats(operation, duration);
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+        }
+
     }
 }
 
