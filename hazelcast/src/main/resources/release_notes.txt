@@ -75,15 +75,35 @@ a `SAXParse` exception is thrown. [5528]
 
 3. Fixes
 
-*3.6 Fixes*
+The following are the issues solved for Hazelcast 3.6 release.
 
-This section lists issues solved for  Hazelcast 3.6  release.
+**3.6-EA2 Fixes**
 
-- There is no need to use `CacheLoader` inside the client/server side cache proxies.
-- There are broken XML configuration tests in the Hazelcast client package. 
-- There is a memory leak since the method `publishBathcedEvents` does not remove the events from `batchEvent`. 
-- Lite member element should be added to the Hazelcast Spring configuration. 
-- `EntryListener` shows the unprocessed value in combination with `PostProcessingMapStore`. 
+
+- MapLoader may insert null values into IMap causing memory leak. [6830]
+- When replicated map entries are migrated to a new destination; TTL eviction should be scheduled, eviction should be retried when a failure caused by the migration happens and the sync interval should be increased. [6799]
+- There is a logical error in the method `Ringbuffer.readManyAsync()` when `minSize = 0`. In this case, the Ringbuffer is not read and nothing is returned. [6787]
+- When a listener's registration is made from the listener configuration, an error occurs during the listener initialization. [6784]
+- Remaining cache invalidation messages should be flushed on the `ICacheService` while the member is in the  `SHUTTING_DOWN` state. [6778]
+- When a client cannot send a request to one of the connections, `TargetNotMemberException` is thrown. This name is confusing the Hazelcast users. [6766]
+- `ClassCastException` is thrown when using `Timestamp` within `DataSerializable`. [6759]
+- The method `destroyDistributedObject()` of `ReplicatedMapService` iterates over partition containers and record stores and destroys them. While destroying, record store calls `destroyDistributedObject()` which leads to an infinite loop. [6754]
+- Hazelcast does not inject its instance into `HazelcastInstanceAware` registered via classname. [6697]
+- There is a sporadic startup failure in 3.6-EA. [6684]
+- There is no need to use `CacheLoader` inside the client/server side cache proxies. [6676]
+- Fixed wrong calculation of eviction removal size when `PER_NODE` `max-size` policy is used. [6675]
+- If the cluster state is not active `RepartitioningTask` should not be triggered. Otherwise, it causes infinite retries and prevents the member from shtutdown. [6663]
+- There are broken XML configuration tests in the Hazelcast client package. [6633]
+- There is a memory leak since the method `publishBathcedEvents` does not remove the events from `batchEvent`. [6618]
+- Custom credentials class is not de-serialized on the server side. [6615]
+- Lite member element should be added to the Hazelcast Spring configuration. [6605]
+- `EntryListener` shows the unprocessed value in combination with `PostProcessingMapStore`. [6588]
+- Clients cannot submit `HazelcastInstanceAware` callables. [6570]
+
+
+**3.6-EA1 Fixes**
+
+
 - The method `map.size()` waits indefinitely after the shutdown of a node. [6538]
 - `HazelcastCachingProvider` does not use the specified instance (by the object) when `instance-name` is not specified. [6454]
 - `onExecutionFailure` should be called before returning from `run`, if backup is not valid. [6420]
@@ -115,10 +135,12 @@ listeners when client is disconnected, it should be removed too after the listen
 - The method `keySet()` relies on `QueryOperation`. The `QueryOperation` does not accept `IterationType` - it always returns both keys and values. This can lead to unnecessary load and potentially even an OOM exception. [4642]
 - Hazelcast is stuck in TIMED_WAITING when used as 2nd level cache for Hibernate. [4406]
 - Management Center license loading problem when REST API is used. [189]
-- Executor monitoring in Management Center does not show the "cancelled" operations" [177]
+- Executor monitoring in Management Center does not show the "cancelled" operations". [177]
 - When an alert for a data structure (map, queue, etc.) with its specific name is created, a `NullPointerException` is thrown after the cluster is reset. [175]
 - Default directory name is hardcoded as "mancenter3.5" and it needs to be maintained for every major release. This process should be dynamic. [174]
 - Throughput statistics for Map shows nothing when the `putAll()` method is used. [159]
+
+
 
 
 
