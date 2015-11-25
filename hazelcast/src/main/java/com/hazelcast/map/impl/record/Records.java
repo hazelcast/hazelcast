@@ -34,6 +34,7 @@ public final class Records {
         record.setVersion(replicationInfo.getVersion());
         record.setEvictionCriteriaNumber(replicationInfo.getEvictionCriteriaNumber());
         record.setTtl(replicationInfo.getTtl());
+        record.setCreationTime(replicationInfo.getCreationTime());
         record.setLastAccessTime(replicationInfo.getLastAccessTime());
         record.setLastUpdateTime(replicationInfo.getLastUpdateTime());
     }
@@ -43,6 +44,7 @@ public final class Records {
         info.setStatistics(record.getStatistics());
         info.setVersion(record.getVersion());
         info.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
+        info.setCreationTime(record.getCreationTime());
         info.setLastAccessTime(record.getLastAccessTime());
         info.setLastUpdateTime(record.getLastUpdateTime());
         info.setTtl(record.getTtl());

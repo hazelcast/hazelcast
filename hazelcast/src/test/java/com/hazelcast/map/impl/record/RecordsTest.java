@@ -23,16 +23,19 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.Clock;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -77,4 +80,76 @@ public class RecordsTest extends HazelcastTestSupport {
         Records.getValueOrCachedValue(record, serializationService);
         verify(record, times(1)).setCachedValue(objectPayload);
     }
+
+
+    @Test
+    public void applyRecordInfo() throws Exception {
+        long now = Clock.currentTimeMillis();
+        RecordInfo recordInfo = newRecordInfo(now);
+
+        Record record = new DataRecordWithStats();
+        Records.applyRecordInfo(record, recordInfo);
+
+        assertEquals(now, record.getCreationTime());
+        assertEquals(now, record.getCreationTime());
+        assertEquals(now, record.getLastAccessTime());
+        assertEquals(now, record.getLastUpdateTime());
+        assertEquals(12, record.getEvictionCriteriaNumber());
+        assertEquals(123, record.getVersion());
+        assertEquals(1234, record.getStatistics().getHits());
+        assertEquals(now, record.getStatistics().getExpirationTime());
+        assertEquals(now, record.getStatistics().getLastStoredTime());
+    }
+
+    protected RecordInfo newRecordInfo(long now) {
+        RecordInfo recordInfo = mock(RecordInfo.class);
+
+        when(recordInfo.getCreationTime()).thenReturn(now);
+        when(recordInfo.getLastAccessTime()).thenReturn(now);
+        when(recordInfo.getLastUpdateTime()).thenReturn(now);
+        when(recordInfo.getEvictionCriteriaNumber()).thenReturn(12L);
+        when(recordInfo.getVersion()).thenReturn(123L);
+
+        RecordStatistics statistics = mock(RecordStatistics.class);
+        when(statistics.getExpirationTime()).thenReturn(now);
+        when(statistics.getLastStoredTime()).thenReturn(now);
+        when(statistics.getHits()).thenReturn(1234);
+        when(recordInfo.getStatistics()).thenReturn(statistics);
+        return recordInfo;
+    }
+
+    @Test
+    public void buildRecordInfo() throws Exception {
+        long now = Clock.currentTimeMillis();
+
+        Record record = newRecord(now);
+
+        RecordInfo recordInfo = Records.buildRecordInfo(record);
+
+        assertEquals(now, recordInfo.getCreationTime());
+        assertEquals(now, recordInfo.getLastAccessTime());
+        assertEquals(now, recordInfo.getLastUpdateTime());
+        assertEquals(12, recordInfo.getEvictionCriteriaNumber());
+        assertEquals(123, recordInfo.getVersion());
+        assertEquals(1234, recordInfo.getStatistics().getHits());
+        assertEquals(now, recordInfo.getStatistics().getExpirationTime());
+        assertEquals(now, recordInfo.getStatistics().getLastStoredTime());
+    }
+
+    protected Record newRecord(long now) {
+        Record record = mock(Record.class, withSettings().extraInterfaces(RecordStatistics.class));
+
+        when(record.getCreationTime()).thenReturn(now);
+        when(record.getLastAccessTime()).thenReturn(now);
+        when(record.getLastUpdateTime()).thenReturn(now);
+        when(record.getEvictionCriteriaNumber()).thenReturn(12L);
+        when(record.getVersion()).thenReturn(123L);
+        when(record.getStatistics()).thenReturn(((RecordStatistics) record));
+        when(((RecordStatistics) record).getExpirationTime()).thenReturn(now);
+        when(((RecordStatistics) record).getLastStoredTime()).thenReturn(now);
+        when(((RecordStatistics) record).getHits()).thenReturn(1234);
+        return record;
+    }
+
+
 }
