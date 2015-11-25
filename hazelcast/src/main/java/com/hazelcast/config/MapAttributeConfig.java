@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.hazelcast.query.QueryConstants;
 
+import java.util.regex.Pattern;
+
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static java.lang.String.format;
 
@@ -28,6 +30,8 @@ import static java.lang.String.format;
  * @see com.hazelcast.query.extractor.ValueExtractor
  */
 public class MapAttributeConfig {
+
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9][a-zA-Z0-9_]*$");
 
     private String name;
     private String extractor;
@@ -42,6 +46,9 @@ public class MapAttributeConfig {
 
     /**
      * Creates a MapAttributeConfig with the given attribute and ordered setting.
+     *
+     * Name may begin with an ascii letter [A-Za-z] or digit [0-9] and may contain ascii letters [A-Za-z], digits [0-9]
+     * or underscores later on.
      *
      * @param name      the name given to an attribute that is going to be extracted.
      * @param extractor full class name of the extractor used to extract the value of the attribute.
@@ -91,21 +98,15 @@ public class MapAttributeConfig {
 
     private static String checkName(String name) {
         checkHasText(name, "Map attribute name must contain text");
-        checkNoSquareBracketsInName(name);
-        checkNoDotInName(name);
+        checkNameValid(name);
         checkNotQueryConstant(name);
         return name;
     }
 
-    private static void checkNoDotInName(String name) {
-        if (name.contains(".")) {
-            throw new IllegalArgumentException("Map attribute name must not contain . (dot) char");
-        }
-    }
-
-    private static void checkNoSquareBracketsInName(String name) {
-        if (name.contains("[") || name.contains("]")) {
-            throw new IllegalArgumentException("Map attribute name must not contain [] (square brackets) chars");
+    private static void checkNameValid(String name) {
+        if (!NAME_PATTERN.matcher(name).matches()) {
+            throw new IllegalArgumentException("Map attribute name is invalid. It may contain upper-case and lower-case"
+                    + " letters, digits and underscores but an underscore may not be located at the first position).");
         }
     }
 

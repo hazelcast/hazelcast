@@ -48,27 +48,42 @@ public class MapAttributeConfigTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void queryConstantAsName() {
-        new MapAttributeConfig(QueryConstants.KEY_ATTRIBUTE_NAME.value(), "com.class");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
     public void openingSquareBracketInName() {
-        new MapAttributeConfig(QueryConstants.KEY_ATTRIBUTE_NAME.value(), "co[m");
+        new MapAttributeConfig("co[m", "com.test.Extractor");
     }
 
     public void closingSquareBracketInName() {
-        new MapAttributeConfig(QueryConstants.KEY_ATTRIBUTE_NAME.value(), "co]m");
+        new MapAttributeConfig("co]m", "com.test.Extractor");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void emptySquareBracketInName() {
-        new MapAttributeConfig(QueryConstants.KEY_ATTRIBUTE_NAME.value(), "com[]");
+        new MapAttributeConfig("com[]", "com.test.Extractor");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void bothSquareBracketInName() {
-        new MapAttributeConfig(QueryConstants.KEY_ATTRIBUTE_NAME.value(), "com[007]");
+        new MapAttributeConfig("com[007]", "com.test.Extractor");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void diactricsInName() {
+        new MapAttributeConfig("ąćżźć^∆Ō∑ęĺłęŌ", "com.test.Extractor");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void spaceInName() {
+        new MapAttributeConfig("cool attribute", "com.test.Extractor");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void queryConstantKeyAsName() {
+        new MapAttributeConfig(QueryConstants.KEY_ATTRIBUTE_NAME.value(), "com.test.Extractor");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void queryConstantThisAsName() {
+        new MapAttributeConfig(QueryConstants.THIS_ATTRIBUTE_NAME.value(), "com.test.Extractor");
     }
 
     @Test(expected = IllegalArgumentException.class)
