@@ -202,7 +202,7 @@ public class ClientInvocation implements Runnable {
             if (LOGGER.isFinestEnabled()) {
                 LOGGER.finest("Retry could not be scheduled ", e);
             }
-            clientInvocationFuture.setResponse(e);
+            notifyException(e);
         }
         return true;
     }
@@ -211,21 +211,28 @@ public class ClientInvocation implements Runnable {
         executionService.schedule(new Runnable() {
             @Override
             public void run() {
-                ICompletableFuture<?> future = ((ClientExecutionServiceImpl) executionService)
-                        .submitInternal(ClientInvocation.this);
-                future.andThen(new ExecutionCallback() {
-                    @Override
-                    public void onResponse(Object response) {
-                    }
-
-                    @Override
-                    public void onFailure(Throwable t) {
-                        if (LOGGER.isFinestEnabled()) {
-                            LOGGER.finest("Failure during retry ", t);
+                try {
+                    ICompletableFuture<?> future = ((ClientExecutionServiceImpl) executionService)
+                            .submitInternal(ClientInvocation.this);
+                    future.andThen(new ExecutionCallback() {
+                        @Override
+                        public void onResponse(Object response) {
                         }
-                        clientInvocationFuture.setResponse(t);
+
+                        @Override
+                        public void onFailure(Throwable t) {
+                            if (LOGGER.isFinestEnabled()) {
+                                LOGGER.finest("Failure during retry ", t);
+                            }
+                            clientInvocationFuture.setResponse(t);
+                        }
+                    });
+                } catch (RejectedExecutionException e) {
+                    if (LOGGER.isFinestEnabled()) {
+                        LOGGER.finest("Could not reschedule invocation.", e);
                     }
-                });
+                    notifyException(e);
+                }
             }
         }, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
     }
