@@ -23,8 +23,8 @@ import java.util.Arrays;
  *
  */
 public final class ArrayUtils {
-    private ArrayUtils() {
 
+    private ArrayUtils() {
     }
 
     /**

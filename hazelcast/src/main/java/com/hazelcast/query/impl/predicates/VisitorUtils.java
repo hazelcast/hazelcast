@@ -23,8 +23,8 @@ import com.hazelcast.query.impl.Indexes;
 import static com.hazelcast.util.collection.ArrayUtils.createCopy;
 
 public final class VisitorUtils {
-    private VisitorUtils() {
 
+    private VisitorUtils() {
     }
 
     /**

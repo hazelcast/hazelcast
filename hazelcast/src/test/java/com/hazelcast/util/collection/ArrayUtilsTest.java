@@ -17,6 +17,7 @@
 package com.hazelcast.util.collection;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -27,13 +28,20 @@ import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.emptyArray;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ArrayUtilsTest {
+public class ArrayUtilsTest extends HazelcastTestSupport {
+
+    @Test
+    public void testConstructor() {
+        assertUtilityConstructor(ArrayUtils.class);
+    }
 
     @Test
     public void createCopy_whenZeroLengthArray_thenReturnDifferentZeroLengthArray() {
@@ -67,7 +75,6 @@ public class ArrayUtilsTest {
         assertThat(dst, emptyArray());
     }
 
-
     @Test
     public void copyWithoutNulls_whenSrcHasNonNullItem_thenCopyItIntoTarget() {
         Object[] src = new Object[1];
@@ -78,6 +85,40 @@ public class ArrayUtilsTest {
         ArrayUtils.copyWithoutNulls(src, dst);
         assertThat(dst, arrayWithSize(1));
         assertThat(dst[0], sameInstance(o));
+    }
+
+    @Test
+    public void contains() {
+        Object[] array = new Object[1];
+        Object object = new Object();
+        array[0] = object;
+
+        assertTrue(ArrayUtils.contains(array, object));
+    }
+
+    @Test
+    public void contains_returnsFalse() {
+        Object[] array = new Object[1];
+        Object object = new Object();
+        array[0] = object;
+
+        assertFalse(ArrayUtils.contains(array, new Object()));
+    }
+
+    @Test
+    public void contains_nullValue() {
+        Object[] array = new Object[1];
+        array[0] = null;
+
+        assertTrue(ArrayUtils.contains(array, null));
+    }
+
+    @Test
+    public void contains_nullValue_returnsFalse() {
+        Object[] array = new Object[1];
+        array[0] = new Object();
+
+        assertFalse(ArrayUtils.contains(array, null));
     }
 
     @Test

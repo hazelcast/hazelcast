@@ -17,9 +17,9 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -37,7 +37,7 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class VisitorUtilsTest {
+public class VisitorUtilsTest extends HazelcastTestSupport {
 
     private Indexes mockIndexes;
 
@@ -47,13 +47,17 @@ public class VisitorUtilsTest {
     }
 
     @Test
+    public void testConstructor() {
+        assertUtilityConstructor(VisitorUtils.class);
+    }
+
+    @Test
     public void acceptVisitor_whenEmptyInputArray_thenReturnOriginalArray() {
         Visitor mockVisitor = mock(Visitor.class);
         Predicate[] predicates = new Predicate[0];
         Predicate[] result = VisitorUtils.acceptVisitor(predicates, mockVisitor, mockIndexes);
 
         assertThat(result, sameInstance(predicates));
-
     }
 
     @Test
@@ -106,5 +110,4 @@ public class VisitorUtilsTest {
         assertThat(result, arrayWithSize(3));
         assertThat(result, arrayContainingInAnyOrder(p1, transformed, p3));
     }
-
 }
