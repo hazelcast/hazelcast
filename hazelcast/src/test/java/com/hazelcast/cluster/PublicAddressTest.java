@@ -24,6 +24,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,6 +33,7 @@ import java.net.UnknownHostException;
 
 import static org.junit.Assert.assertEquals;
 
+@Ignore
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class PublicAddressTest {
