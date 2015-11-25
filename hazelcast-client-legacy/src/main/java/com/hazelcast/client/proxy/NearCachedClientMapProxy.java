@@ -389,6 +389,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
             if (event instanceof CleaningNearCacheInvalidation) {
                 nearCache.clear();
+                return;
             }
 
             throw new IllegalArgumentException("Unexpected event received [" + event + ']');
