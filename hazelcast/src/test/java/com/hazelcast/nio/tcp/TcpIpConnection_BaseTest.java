@@ -18,7 +18,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
-public abstract class TcpIpConnection_BasicTest extends TcpIpConnection_AbstractTest {
+public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractTest {
 
     // sleep time for lastWrite and lastRead tests
     private static final int LAST_READ_WRITE_SLEEP_SECONDS = 5;
@@ -110,7 +110,8 @@ public abstract class TcpIpConnection_BasicTest extends TcpIpConnection_Abstract
         // last write time should be equal or smaller than now
         assertTrue("nowMs = " + nowMs + ", lastWriteTimeMs = " + lastWriteTimeMs, lastWriteTimeMs <= nowMs);
         // last write time should be larger or equal than the now - MARGIN_OF_ERROR_MS
-        assertTrue("nowMs = " + nowMs + ", lastWriteTimeMs = " + lastWriteTimeMs, lastWriteTimeMs >= nowMs - MARGIN_OF_ERROR_MS);
+        assertTrue("nowMs = " + nowMs + ", lastWriteTimeMs = " + lastWriteTimeMs,
+                lastWriteTimeMs >= nowMs - MARGIN_OF_ERROR_MS);
     }
 
     @Test

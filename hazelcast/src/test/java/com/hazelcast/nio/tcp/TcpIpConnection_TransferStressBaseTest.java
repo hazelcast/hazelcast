@@ -19,13 +19,13 @@ import static org.junit.Assert.assertEquals;
  * In the past we had some issues with packet not getting written. So this test will write various size packets (from small
  * to very large).
  */
-public abstract class TcpIpConnection_TransferStressTest extends TcpIpConnection_AbstractTest {
+public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnection_AbstractTest {
 
-    // total running time.
+    // total running time
     private static final long DURATION_SECONDS = TimeUnit.MINUTES.toSeconds(2);
     // maximum number of pending packets
     private static final int maxPendingPacketCount = 10000;
-    // we create the payloads up front and select randomly from them. This is the number of payloads we are creating.
+    // we create the payloads up front and select randomly from them. This is the number of payloads we are creating
     private static final int payloadCount = 10000;
 
     private final AtomicBoolean stop = new AtomicBoolean();
@@ -99,7 +99,6 @@ public abstract class TcpIpConnection_TransferStressTest extends TcpIpConnection
                 assertEquals(expectedUrgentPackets, XReadHandler.getPriorityFramesReadCounter().get());
             }
         });
-
     }
 
     private void makePayloads(int maxSize) {
