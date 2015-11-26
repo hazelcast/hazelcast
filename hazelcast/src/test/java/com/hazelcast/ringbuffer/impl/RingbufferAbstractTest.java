@@ -20,7 +20,6 @@ import org.junit.runners.model.FrameworkMethod;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -41,7 +40,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-public abstract class RingbufferBasicTest extends HazelcastTestSupport {
+public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
     protected HazelcastInstance[] instances;
     protected IAtomicLong atomicLong;
@@ -337,7 +336,7 @@ public abstract class RingbufferBasicTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void addAllAsync_whenCollectionContainsNullElement() {
-        List list = new LinkedList();
+        List<String> list = new LinkedList<String>();
         list.add(null);
         ringbuffer.addAllAsync(list, OVERWRITE);
     }
@@ -560,7 +559,7 @@ public abstract class RingbufferBasicTest extends HazelcastTestSupport {
 
         ReadResultSet<String> resultSet = f.get();
 
-        assertEquals(asList("1"), resultSet);
+        assertEquals(singletonList("1"), resultSet);
         assertEquals(1, resultSet.readCount());
     }
 
