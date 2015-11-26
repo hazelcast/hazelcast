@@ -39,7 +39,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -73,17 +72,6 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
         @Override
         public InvalidationQueue createNew(String mapName) {
             return new InvalidationQueue();
-        }
-    };
-
-    /**
-     * Creates client-invalidation-listener-set for a map.
-     */
-    private final ConstructorFunction<String, Set<String>> registryConstructor
-            = new ConstructorFunction<String, Set<String>>() {
-        @Override
-        public Set<String> createNew(String mapName) {
-            return Collections.newSetFromMap(new ConcurrentHashMap());
         }
     };
 
