@@ -270,7 +270,7 @@ public class TestClientRegistry {
         @Override
         public boolean write(SocketWritable socketWritable) {
             final Packet packet = (Packet) socketWritable;
-            if (nodeEngine.getNode().isActive()) {
+            if (isAlive()) {
                 Packet newPacket = readFromPacket(packet);
                 MemberImpl member = nodeEngine.getClusterService().getMember(localEndpoint);
                 if (member != null) {
