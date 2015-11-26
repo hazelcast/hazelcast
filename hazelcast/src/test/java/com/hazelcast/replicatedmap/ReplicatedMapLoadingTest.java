@@ -34,7 +34,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(value = {QuickTest.class, ParallelTest.class})
-public class ReplicatedMapLoadingTest extends ReplicatedMapBaseTest {
+public class ReplicatedMapLoadingTest extends ReplicatedMapAbstractTest {
 
     @Test
     public void testAsyncFillUp() throws Exception {

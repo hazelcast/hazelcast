@@ -44,7 +44,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(value = {QuickTest.class, ParallelTest.class})
-public class ReplicatedMapAntiEntropyTest extends ReplicatedMapBaseTest {
+public class ReplicatedMapAntiEntropyTest extends ReplicatedMapAbstractTest {
 
     @After
     public void cleanup() {

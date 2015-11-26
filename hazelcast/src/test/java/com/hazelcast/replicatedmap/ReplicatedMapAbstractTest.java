@@ -22,7 +22,7 @@ import java.util.Set;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public abstract class ReplicatedMapBaseTest extends HazelcastTestSupport {
+public abstract class ReplicatedMapAbstractTest extends HazelcastTestSupport {
 
     protected static Field REPLICATED_MAP_SERVICE;
 
@@ -87,8 +87,8 @@ public abstract class ReplicatedMapBaseTest extends HazelcastTestSupport {
 
     public List<ReplicatedMap> createMapOnEachInstance(HazelcastInstance[] instances, String replicatedMapName) {
         ArrayList<ReplicatedMap> maps = new ArrayList<ReplicatedMap>();
-        for (int i = 0; i < instances.length; i++) {
-            ReplicatedMap<Object, Object> replicatedMap = instances[i].getReplicatedMap(replicatedMapName);
+        for (HazelcastInstance instance : instances) {
+            ReplicatedMap<Object, Object> replicatedMap = instance.getReplicatedMap(replicatedMapName);
             maps.add(replicatedMap);
         }
         return maps;

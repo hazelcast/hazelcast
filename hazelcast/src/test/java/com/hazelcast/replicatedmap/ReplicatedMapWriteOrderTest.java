@@ -37,7 +37,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(Parameterized.class)
-public class ReplicatedMapWriteOrderTest extends ReplicatedMapBaseTest {
+public class ReplicatedMapWriteOrderTest extends ReplicatedMapAbstractTest {
 
     int nodeCount;
     int operations;

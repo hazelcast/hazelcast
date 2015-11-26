@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class ReplicatedMapTtlTest extends ReplicatedMapBaseTest {
+public class ReplicatedMapTtlTest extends ReplicatedMapAbstractTest {
 
     @Test
     public void testPutWithTTL_withMigration() throws Exception {
