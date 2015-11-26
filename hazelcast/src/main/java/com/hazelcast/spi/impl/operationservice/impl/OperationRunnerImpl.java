@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -131,7 +133,9 @@ class OperationRunnerImpl extends OperationRunner {
     }
 
     private boolean publishCurrentTask() {
-        return (getPartitionId() != AD_HOC_PARTITION_ID && currentTask == null);
+        boolean isClientRunnable = currentTask instanceof MessageTask
+                || currentTask instanceof ClientEngineImpl.ClientPacketProcessor;
+        return (getPartitionId() != AD_HOC_PARTITION_ID && (currentTask == null || isClientRunnable));
     }
 
     @Override
