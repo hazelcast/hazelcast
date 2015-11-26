@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
  * Tests the NonBlockingIOThread. A lot of the internal are tested using a mock-selector. This gives us full
  * control on testing the edge cases which are extremely hard to realize with a real selector.
  */
-public abstract class NonBlockingIOThreadTest extends HazelcastTestSupport {
+public abstract class NonBlockingIOThreadAbstractTest extends HazelcastTestSupport {
 
     private NonBlockingIOThreadOutOfMemoryHandler oomeHandler;
     private ILogger logger;

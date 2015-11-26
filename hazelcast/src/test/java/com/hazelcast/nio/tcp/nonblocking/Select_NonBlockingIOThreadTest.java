@@ -8,7 +8,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class Select_NonBlockingIOThreadTest extends NonBlockingIOThreadTest {
+public class Select_NonBlockingIOThreadTest extends NonBlockingIOThreadAbstractTest {
 
     @Override
     protected boolean selectNow() {
