@@ -45,16 +45,18 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
@@ -648,7 +650,6 @@ public class MapStoreTest extends AbstractMapStoreTest {
     }
 
     @Test(timeout = 120000)
-    @Ignore // see https://github.com/hazelcast/hazelcast/issues/2409
     public void testIssue1019() throws InterruptedException {
         final String keyWithNullValue = "keyWithNullValue";
 
@@ -675,7 +676,13 @@ public class MapStoreTest extends AbstractMapStoreTest {
         Set expected = map.keySet();
         Set actual = mapForStore.keySet();
         assertEquals(expected, actual);
-        assertEquals(map.values(), mapForStore.values());
+
+        List actualList = new ArrayList(map.values());
+        List expectedList = new ArrayList(mapForStore.values());
+        Collections.sort(actualList);
+        Collections.sort(expectedList);
+
+        assertEquals(expectedList, actualList);
         assertEquals(map.entrySet(), mapForStore.entrySet());
 
         assertFalse(map.containsKey(keyWithNullValue));
