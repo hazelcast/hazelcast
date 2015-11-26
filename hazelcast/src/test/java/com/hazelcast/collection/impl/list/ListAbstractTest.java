@@ -36,7 +36,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public abstract class ListBasicTest extends HazelcastTestSupport {
+public abstract class ListAbstractTest extends HazelcastTestSupport {
 
     protected HazelcastInstance[] instances;
     protected IAtomicLong atomicLong;
@@ -537,4 +537,3 @@ public abstract class ListBasicTest extends HazelcastTestSupport {
         }
     }
 }
-
