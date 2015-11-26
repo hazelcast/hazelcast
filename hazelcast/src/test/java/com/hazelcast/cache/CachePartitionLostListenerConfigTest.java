@@ -1,5 +1,6 @@
 package com.hazelcast.cache;
 
+import com.hazelcast.cache.CachePartitionLostListenerTest.EventCollectingCachePartitionLostListener;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
@@ -31,6 +32,7 @@ import java.util.List;
 import static com.hazelcast.cache.impl.HazelcastServerCachingProvider.createCachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -41,28 +43,26 @@ public class CachePartitionLostListenerConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testCachePartitionLostListener_registeredViaImplementationInConfigObject() {
-
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        final Config config = new Config();
         final String cacheName = "myCache";
-        final CacheSimpleConfig cacheConfig = config.getCacheConfig(cacheName);
-        final CachePartitionLostListener listener = mock(CachePartitionLostListener.class);
-        cacheConfig.addCachePartitionLostListenerConfig(new CachePartitionLostListenerConfig(listener));
-        final int backupCount = 0;
-        cacheConfig.setBackupCount(backupCount);
 
-        final HazelcastInstance instance = factory.newHazelcastInstance(config);
-        final HazelcastServerCachingProvider cachingProvider = createCachingProvider(instance);
-        final CacheManager cacheManager = cachingProvider.getCacheManager();
+        Config config = new Config();
+        CacheSimpleConfig cacheConfig = config.getCacheConfig(cacheName);
+        CachePartitionLostListener listener = mock(CachePartitionLostListener.class);
+        cacheConfig.addCachePartitionLostListenerConfig(new CachePartitionLostListenerConfig(listener));
+        cacheConfig.setBackupCount(0);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastServerCachingProvider cachingProvider = createCachingProvider(instance);
+        CacheManager cacheManager = cachingProvider.getCacheManager();
         cacheManager.getCache(cacheName);
 
         final EventService eventService = getNode(instance).getNodeEngine().getEventService();
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
-                final Collection<EventRegistration> registrations = eventService.getRegistrations(CacheService.SERVICE_NAME, cacheName);
+            public void run() throws Exception {
+                Collection<EventRegistration> registrations = eventService.getRegistrations(CacheService.SERVICE_NAME, cacheName);
                 assertFalse(registrations.isEmpty());
             }
         });
@@ -70,9 +70,10 @@ public class CachePartitionLostListenerConfigTest extends HazelcastTestSupport {
 
     @Test
     public void cacheConfigXmlTest() throws IOException {
-        final String cacheName = "cacheWithPartitionLostListener";
+        String cacheName = "cacheWithPartitionLostListener";
         Config config = new XmlConfigBuilder(configUrl).build();
         CacheSimpleConfig cacheConfig = config.getCacheConfig(cacheName);
+
         List<CachePartitionLostListenerConfig> configs = cacheConfig.getPartitionLostListenerConfigs();
         assertEquals(1, configs.size());
         assertEquals("DummyCachePartitionLostListenerImpl", configs.get(0).getClassName());
@@ -80,7 +81,7 @@ public class CachePartitionLostListenerConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testCachePartitionLostListenerConfig_setImplementation() {
-        final CachePartitionLostListener listener = mock(CachePartitionLostListener.class);
+        CachePartitionLostListener listener = mock(CachePartitionLostListener.class);
         CachePartitionLostListenerConfig listenerConfig = new CachePartitionLostListenerConfig();
         listenerConfig.setImplementation(listener);
 
@@ -89,22 +90,66 @@ public class CachePartitionLostListenerConfigTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testCachePartitionLostListenerReadOnlyConfig_withClassName() {
-        final CachePartitionLostListenerConfigReadOnly readOnly = new CachePartitionLostListenerConfig().getAsReadOnly();
+        CachePartitionLostListenerConfigReadOnly readOnly = new CachePartitionLostListenerConfig().getAsReadOnly();
         readOnly.setClassName("com.hz");
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testCachePartitionLostListenerReadOnlyConfig_withImplementation() {
-        final CachePartitionLostListener listener = mock(CachePartitionLostListener.class);
-        final CachePartitionLostListenerConfig listenerConfig = new CachePartitionLostListenerConfig(listener);
-        final CachePartitionLostListenerConfigReadOnly readOnly = listenerConfig.getAsReadOnly();
+        CachePartitionLostListener listener = mock(CachePartitionLostListener.class);
+        CachePartitionLostListenerConfig listenerConfig = new CachePartitionLostListenerConfig(listener);
+        CachePartitionLostListenerConfigReadOnly readOnly = listenerConfig.getAsReadOnly();
         assertEquals(listener, readOnly.getImplementation());
         readOnly.setImplementation(mock(CachePartitionLostListener.class));
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testCachePartitionLostListenerReadOnlyConfig_withEventListenerImplementation() {
-        final CachePartitionLostListenerConfigReadOnly readOnly = new CachePartitionLostListenerConfig().getAsReadOnly();
+        CachePartitionLostListenerConfigReadOnly readOnly = new CachePartitionLostListenerConfig().getAsReadOnly();
         readOnly.setImplementation(mock(EventListener.class));
+    }
+
+    @Test
+    public void testGetImplementation() {
+        CachePartitionLostListener listener = new EventCollectingCachePartitionLostListener(0);
+        CachePartitionLostListenerConfig listenerConfig = new CachePartitionLostListenerConfig(listener);
+        assertEquals(listener, listenerConfig.getImplementation());
+    }
+
+    @Test
+    public void testGetClassName() {
+        String className = "EventCollectingCachePartitionLostListener";
+        CachePartitionLostListenerConfig listenerConfig = new CachePartitionLostListenerConfig(className);
+        assertEquals(className, listenerConfig.getClassName());
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        CachePartitionLostListener listener = new EventCollectingCachePartitionLostListener(0);
+
+        CachePartitionLostListenerConfig listenerConfig1 = new CachePartitionLostListenerConfig();
+        CachePartitionLostListenerConfig listenerConfig2 = new CachePartitionLostListenerConfig();
+
+        assertEquals(listenerConfig1, listenerConfig1);
+        assertEquals(listenerConfig1, new CachePartitionLostListenerConfig());
+        assertNotEquals(listenerConfig1, null);
+        assertNotEquals(listenerConfig1, new Object());
+
+        listenerConfig1.setImplementation(listener);
+        assertNotEquals(listenerConfig1, listenerConfig2);
+        assertNotEquals(listenerConfig1.hashCode(), listenerConfig2.hashCode());
+
+        listenerConfig2.setImplementation(listener);
+        assertEquals(listenerConfig1, listenerConfig2);
+        assertEquals(listenerConfig1.hashCode(), listenerConfig2.hashCode());
+
+        listenerConfig1.setClassName("EventCollectingCachePartitionLostListener");
+        listenerConfig2.setClassName("CachePartitionLostListenerConfig");
+        assertNotEquals(listenerConfig1, listenerConfig2);
+        assertNotEquals(listenerConfig1.hashCode(), listenerConfig2.hashCode());
+
+        listenerConfig2.setClassName("EventCollectingCachePartitionLostListener");
+        assertEquals(listenerConfig1, listenerConfig2);
+        assertEquals(listenerConfig1.hashCode(), listenerConfig2.hashCode());
     }
 }

@@ -74,12 +74,7 @@ public class CachePartitionLostListenerConfig extends ListenerConfig implements 
         }
 
         CachePartitionLostListenerConfig that = (CachePartitionLostListenerConfig) o;
-
-        if (className != null ? !className.equals(that.className) : that.className != null) {
-            return false;
-        }
         return !(implementation != null ? !implementation.equals(that.implementation) : that.implementation != null);
-
     }
 
     @Override
