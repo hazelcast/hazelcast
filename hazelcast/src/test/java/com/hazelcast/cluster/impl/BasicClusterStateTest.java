@@ -20,7 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.Address;
@@ -205,7 +205,7 @@ public class BasicClusterStateTest
     @Test(expected = IllegalStateException.class)
     public void changeClusterState_toFrozen_shouldFail_whilePartitionsMigrating() {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "10");
+        config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL, "10");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance(config);
@@ -218,7 +218,7 @@ public class BasicClusterStateTest
     @Test(expected = IllegalStateException.class)
     public void changeClusterState_toPassive_shouldFail_whilePartitionsMigrating() {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "10");
+        config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL, "10");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance(config);
@@ -232,8 +232,8 @@ public class BasicClusterStateTest
     @Test
     public void changeClusterState_toActive_isAllowed_whileReplicationInProgress() {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "10");
-        config.setProperty(GroupProperties.PROP_PARTITION_MAX_PARALLEL_REPLICATIONS, "1");
+        config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL, "10");
+        config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS, "1");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances(config);
@@ -255,8 +255,8 @@ public class BasicClusterStateTest
     @Test
     public void changeClusterState_toPassive_isAllowed_whileReplicationInProgress() {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_PARTITION_MIGRATION_INTERVAL, "10");
-        config.setProperty(GroupProperties.PROP_PARTITION_MAX_PARALLEL_REPLICATIONS, "1");
+        config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL, "10");
+        config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS, "1");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances(config);

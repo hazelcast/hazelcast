@@ -160,19 +160,16 @@ public class ClusterStateManager {
     }
 
     private void checkMigrationsAndPartitionStateVersion(ClusterState newState, int partitionStateVersion) {
-        if (newState != ClusterState.ACTIVE) {
-            final InternalPartitionService partitionService = node.getPartitionService();
-            final int thisPartitionStateVersion = partitionService.getPartitionStateVersion();
+        final InternalPartitionService partitionService = node.getPartitionService();
+        final int thisPartitionStateVersion = partitionService.getPartitionStateVersion();
 
-            if (partitionService.hasOnGoingMigrationLocal()) {
-                throw new IllegalStateException("Still have pending migration/replication tasks, "
-                        + "cannot lock cluster state! New state: " + newState
-                        + ", current state: " + getState());
-            } else  if (partitionStateVersion != thisPartitionStateVersion) {
-                throw new IllegalStateException("Can not lock cluster state! Partition tables have different versions! "
-                        + "Expected version: " + partitionStateVersion + " Current version: " + thisPartitionStateVersion);
-            }
-
+        if (partitionService.hasOnGoingMigrationLocal()) {
+            throw new IllegalStateException("Still have pending migration tasks, "
+                    + "cannot lock cluster state! New state: " + newState
+                    + ", current state: " + getState());
+        } else  if (partitionStateVersion != thisPartitionStateVersion) {
+            throw new IllegalStateException("Can not lock cluster state! Partition tables have different versions! "
+                    + "Expected version: " + partitionStateVersion + " Current version: " + thisPartitionStateVersion);
         }
     }
 

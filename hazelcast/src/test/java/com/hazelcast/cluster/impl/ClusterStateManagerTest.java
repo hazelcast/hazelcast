@@ -156,13 +156,25 @@ public class ClusterStateManagerTest {
         clusterStateManager.lockClusterState(newState, initiator, TXN, 1000, 0);
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void test_lockClusterState_forActiveState_whenHasOnGoingMigration() throws Exception {
         when(partitionService.hasOnGoingMigrationLocal()).thenReturn(true);
         clusterStateManager.initialClusterState(FROZEN);
 
         Address initiator = newAddress();
         final ClusterState newState = ACTIVE;
+        clusterStateManager.lockClusterState(newState, initiator, TXN, 1000, 0);
+
+        assertLockedBy(initiator);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void test_lockClusterState_forPassiveState_whenHasOnGoingMigration() throws Exception {
+        when(partitionService.hasOnGoingMigrationLocal()).thenReturn(true);
+        clusterStateManager.initialClusterState(FROZEN);
+
+        Address initiator = newAddress();
+        final ClusterState newState = PASSIVE;
         clusterStateManager.lockClusterState(newState, initiator, TXN, 1000, 0);
 
         assertLockedBy(initiator);
