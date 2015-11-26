@@ -112,13 +112,6 @@ public interface InternalPartitionService extends CoreService {
      */
     int getPartitionCount();
 
-    /**
-     * Checks if there currently are any migrations.
-     *
-     * @return true if there are migrations, false otherwise.
-     */
-    boolean hasOnGoingMigration();
-
     List<Integer> getMemberPartitions(Address target);
 
     /**
@@ -183,6 +176,18 @@ public interface InternalPartitionService extends CoreService {
 
     int getPartitionStateVersion();
 
+    /**
+     * Checks if there are any cluster-wide migrations.
+     *
+     * @return true if there are migrations, false otherwise.
+     */
+    boolean hasOnGoingMigration();
+
+    /**
+     * Checks if there are any local migrations.
+     *
+     * @return true if there are migrations, false otherwise.
+     */
     boolean hasOnGoingMigrationLocal();
 
     /**
