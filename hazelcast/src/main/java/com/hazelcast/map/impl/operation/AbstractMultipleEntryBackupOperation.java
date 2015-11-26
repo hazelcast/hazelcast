@@ -37,10 +37,9 @@ import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
  * extend this class.
  *
  * Common functions for these classes can be moved to this class. For now, it only overrides
- * {@alink AbstractMultipleEntryOperation#afterRun} method to publish backups of wan replication events.
+ * {@link AbstractMultipleEntryOperation#afterRun} method to publish backups of wan replication events.
  */
 abstract class AbstractMultipleEntryBackupOperation extends AbstractMultipleEntryOperation {
-
 
     protected AbstractMultipleEntryBackupOperation() {
     }
