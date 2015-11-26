@@ -6,8 +6,13 @@ import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import javax.cache.Cache;
 import javax.cache.configuration.FactoryBuilder;
@@ -16,6 +21,8 @@ import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class InternalCacheRecordStoreTest extends CacheTestSupport {
 
     private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
