@@ -250,7 +250,7 @@ public class TestClientRegistry {
         @Override
         public boolean write(OutboundFrame frame) {
             final ClientMessage packet = (ClientMessage) frame;
-            if (nodeEngine.isRunning()) {
+            if (isAlive()) {
                 ClientMessage newPacket = readFromPacket(packet);
                 responseConnection.handleClientMessage(newPacket);
                 return true;
