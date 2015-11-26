@@ -28,7 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
-@Ignore("not a JUnit test")
+@Ignore("Not a JUnit test")
 public class SimpleMapTestFromClient {
 
     static {

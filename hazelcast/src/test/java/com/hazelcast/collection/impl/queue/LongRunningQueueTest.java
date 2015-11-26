@@ -29,7 +29,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-@Ignore("not a JUnit test")
+@Ignore("Not a JUnit test")
 public class LongRunningQueueTest {
 
     static final int minNode = 2;

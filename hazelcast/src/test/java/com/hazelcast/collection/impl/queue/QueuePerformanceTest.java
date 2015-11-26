@@ -25,7 +25,7 @@ import org.junit.Ignore;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
-@Ignore("not a JUnit test")
+@Ignore("Not a JUnit test")
 public class QueuePerformanceTest {
 
     final AtomicLong totalOffer = new AtomicLong();

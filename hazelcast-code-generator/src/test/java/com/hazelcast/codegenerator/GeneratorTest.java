@@ -21,17 +21,19 @@ import com.hazelcast.client.protocol.generator.CodecModel;
 import freemarker.cache.ClassTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
+import org.junit.Ignore;
 
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+@Ignore("Not a JUnit test")
 public class GeneratorTest {
+
     private Template template;
 
     public static void main(String[] args) {
         new GeneratorTest().generate();
-
     }
 
     public GeneratorTest() {
@@ -43,13 +45,12 @@ public class GeneratorTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     public void generate() {
         try {
             CodecModel model = new CodecModel(true);
-            Map<String, Object> data = new HashMap();
+            Map<String, Object> data = new HashMap<String, Object>();
             CodecCodeGenerator.setUtilModel(data);
             data.put("model", model);
             StringWriter writer = new StringWriter();
@@ -58,7 +59,6 @@ public class GeneratorTest {
 
             if( content == null || content.length() == 0) {
                 content = ">>>>>>>>CONTENT EMPTY<<<<<<<<<<";
-
             }
             System.out.println(content);
 
@@ -66,5 +66,4 @@ public class GeneratorTest {
             e.printStackTrace();
         }
     }
-
 }

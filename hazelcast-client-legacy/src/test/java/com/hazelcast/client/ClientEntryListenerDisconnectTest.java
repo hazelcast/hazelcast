@@ -20,10 +20,12 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
+import org.junit.Ignore;
 
 import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 
+@Ignore("Not a JUnit test")
 public class ClientEntryListenerDisconnectTest {
 
     private static int adds = 0;
