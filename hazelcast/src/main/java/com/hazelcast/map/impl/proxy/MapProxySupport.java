@@ -1013,7 +1013,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
         @Override
         public void onResponse(T response) {
-            final long duration = System.currentTimeMillis() - startTime;
             mapServiceContext.incrementOperationStats(startTime, localMapStats, name, operation);
         }
 
