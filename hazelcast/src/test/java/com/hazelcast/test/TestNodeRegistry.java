@@ -259,11 +259,13 @@ public final class TestNodeRegistry {
             MockConnection conn = mapConnections.get(address);
             if (conn == null) {
                 NodeEngineImpl nodeEngine = nodes.get(address);
-                MockConnection thisConnection = new MockConnection(address, node.getThisAddress(), node.nodeEngine);
-                conn = new MockConnection(node.getThisAddress(), address, nodeEngine);
-                conn.localConnection = thisConnection;
-                thisConnection.localConnection = conn;
-                mapConnections.put(address, conn);
+                if (nodeEngine != null) {
+                    MockConnection thisConnection = new MockConnection(address, node.getThisAddress(), node.nodeEngine);
+                    conn = new MockConnection(node.getThisAddress(), address, nodeEngine);
+                    conn.localConnection = thisConnection;
+                    thisConnection.localConnection = conn;
+                    mapConnections.put(address, conn);
+                }
             }
             return conn;
         }
