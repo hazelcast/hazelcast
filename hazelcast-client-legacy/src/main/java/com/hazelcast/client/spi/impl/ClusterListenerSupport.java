@@ -62,7 +62,6 @@ import static com.hazelcast.client.config.ClientProperty.SHUFFLE_MEMBER_LIST;
 public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener, ClientClusterService {
 
     private static final ILogger LOGGER = Logger.getLogger(ClusterListenerSupport.class);
-    private static final long TERMINATE_TIMEOUT_SECONDS = 30;
 
     protected final HazelcastClientInstanceImpl client;
     private final Collection<AddressProvider> addressProviders;

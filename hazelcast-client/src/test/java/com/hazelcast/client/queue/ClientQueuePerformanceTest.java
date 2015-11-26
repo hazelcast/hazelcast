@@ -26,10 +26,7 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * @author ali 5/21/13
- */
-@Ignore("not a JUnit test")
+@Ignore("Not a JUnit test")
 public class ClientQueuePerformanceTest {
 
     static final AtomicLong totalOffer = new AtomicLong();
