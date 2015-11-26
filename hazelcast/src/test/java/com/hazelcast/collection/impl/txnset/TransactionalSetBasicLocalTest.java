@@ -11,7 +11,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class TransactionalSetBasicLocalTest extends TransactionalSetBasicTest{
+public class TransactionalSetBasicLocalTest extends TransactionalSetAbstractTest {
 
     @Override
     protected HazelcastInstance[] newInstances(Config config) {
