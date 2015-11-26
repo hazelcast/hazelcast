@@ -440,7 +440,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         assertFalse(condition.awaitUntil(currentTimeAfterGivenMillis(1000)));
     }
 
-    // See #3262
+    // https://github.com/hazelcast/hazelcast/issues/3262
     @Test(timeout = 60000)
     @Ignore
     public void testAwait_whenNegativeTimeout() throws InterruptedException {

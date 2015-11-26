@@ -33,9 +33,9 @@ import java.net.UnknownHostException;
 
 import static org.junit.Assert.assertEquals;
 
-@Ignore
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
+@Ignore
 public class PublicAddressTest {
 
     public static final int DEFAULT_PORT = 5701;

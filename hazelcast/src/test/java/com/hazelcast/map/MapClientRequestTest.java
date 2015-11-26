@@ -77,7 +77,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class MapClientRequestTest extends ClientTestSupport {
 
     static final String mapName = "test";
@@ -124,6 +123,7 @@ public class MapClientRequestTest extends ClientTestSupport {
     }
 
     @Test
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/6881
     public void testMapKeyset() throws IOException {
         int size = 100;
         Set testSet = new HashSet();
@@ -143,6 +143,7 @@ public class MapClientRequestTest extends ClientTestSupport {
     }
 
     @Test
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/6881
     public void testMapValues() throws IOException {
         int size = 100;
         Set testSet = new HashSet();
@@ -301,6 +302,7 @@ public class MapClientRequestTest extends ClientTestSupport {
     }
 
     @Test
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/6881
     public void testMapQuery() throws IOException {
         Set testSet = new HashSet();
         testSet.add("serra");

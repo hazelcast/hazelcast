@@ -65,7 +65,7 @@ public class ConnectionTest {
     }
 
     @Test
-    @Ignore
+//    @Ignore
     public void testBlockedClientSockets() throws IOException, InterruptedException {
         final ServerSocket serverSocket = new ServerSocket(13131, 1);
         final int count = 100;
@@ -128,7 +128,7 @@ public class ConnectionTest {
     }
 
     @Test
-    @Ignore
+//    @Ignore
     public void testBlockedClientSockets2() throws IOException, InterruptedException {
         final ServerSocket serverSocket = new ServerSocket(13131);
         final int count = 100;

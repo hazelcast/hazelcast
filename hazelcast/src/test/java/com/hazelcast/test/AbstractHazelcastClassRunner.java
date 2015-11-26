@@ -47,9 +47,9 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
 
     static {
         String logging = "hazelcast.logging.type";
-        if (System.getProperty(logging) == null) {
+//        if (System.getProperty(logging) == null) {
             System.setProperty(logging, "log4j");
-        }
+//        }
         if (System.getProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK) == null) {
             System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
         }
