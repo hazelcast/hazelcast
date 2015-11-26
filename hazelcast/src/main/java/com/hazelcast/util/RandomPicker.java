@@ -51,4 +51,18 @@ public final class RandomPicker {
         return randomNumberGenerator.nextInt(n);
     }
 
+
+    /**
+     * Return a pseudorandom, uniformly distributed in value between the low value (inclusive) and
+     * the high value (exclusive), drawn from this random number generator's sequence.
+     * Starts the random number generator sequence if it has not been initialized.
+     *
+     * @param low lowest value of the range (inclusive)
+     * @param high highest value of the range (exclusive)
+     * @return a value between the specified low (inclusive) and high value (exclusive).
+     */
+    public static int getInt(int low, int high) {
+        return getInt(high - low) + low;
+    }
+
 }
