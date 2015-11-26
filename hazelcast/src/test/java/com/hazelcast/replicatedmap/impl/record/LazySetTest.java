@@ -3,13 +3,12 @@ package com.hazelcast.replicatedmap.impl.record;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.mockito.Matchers.anyCollection;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -27,37 +26,37 @@ public class LazySetTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void test_add_throws_exception() throws Exception {
-        set.add(anyObject());
+        set.add(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void test_add_all_throws_exception() throws Exception {
-        set.addAll(anyCollection());
+        set.addAll(Collections.EMPTY_LIST);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void test_remove_throws_exception() throws Exception {
-        set.remove(anyObject());
+        set.remove(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void test_removeAll_throws_exception() throws Exception {
-        set.removeAll(anyCollection());
+        set.removeAll(Collections.EMPTY_LIST);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void test_contains_throws_exception() throws Exception {
-        set.contains(anyObject());
+        set.contains(null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void test_contains_all_throws_exception() throws Exception {
-        set.containsAll(anyCollection());
+        set.containsAll(Collections.EMPTY_LIST);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void test_retain_all_throws_exception() throws Exception {
-        set.retainAll(anyCollection());
+        set.retainAll(Collections.EMPTY_LIST);
     }
 
     @Test(expected = UnsupportedOperationException.class)
