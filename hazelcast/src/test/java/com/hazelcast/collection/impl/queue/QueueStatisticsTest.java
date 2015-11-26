@@ -23,22 +23,9 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class QueueStatisticsTest extends HazelcastTestSupport {
 
-    protected IQueue newQueue() {
-        HazelcastInstance instance = createHazelcastInstance();
-        return instance.getQueue(randomString());
-    }
-
-    protected IQueue newQueue_WithMaxSizeConfig(int maxSize) {
-        Config config = new Config();
-        final String name = randomString();
-        config.getQueueConfig(name).setMaxSize(maxSize);
-        HazelcastInstance instance = createHazelcastInstance(config);
-        return instance.getQueue(name);
-    }
-
     @Test
     public void testItemCount() {
-        IQueue queue = newQueue();
+        IQueue<String> queue = newQueue();
         int items = 20;
         for (int i = 0; i < items; i++) {
             queue.offer("item" + i);
@@ -49,8 +36,8 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testOfferOperationCount() throws InterruptedException {
-        IQueue queue = newQueue();
+    public void testOfferOperationCount() throws Exception {
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -62,18 +49,17 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
         }
 
         final LocalQueueStats stats = queue.getLocalQueueStats();
-        AssertTask task = new AssertTask() {
+        assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 assertEquals(30, stats.getOfferOperationCount());
             }
-        };
-        assertTrueEventually(task);
+        });
     }
 
     @Test
     public void testRejectedOfferOperationCount() {
-        IQueue queue = newQueue_WithMaxSizeConfig(30);
+        IQueue<String> queue = newQueue_WithMaxSizeConfig(30);
         for (int i = 0; i < 30; i++) {
             queue.offer("item" + i);
         }
@@ -83,20 +69,17 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
         }
 
         final LocalQueueStats stats = queue.getLocalQueueStats();
-        AssertTask task = new AssertTask() {
+        assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 assertEquals(10, stats.getRejectedOfferOperationCount());
             }
-        };
-        assertTrueEventually(task);
-
+        });
     }
 
-
     @Test
-    public void testPollOperationCount() throws InterruptedException {
-        IQueue queue = newQueue();
+    public void testPollOperationCount() throws Exception {
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 30; i++) {
             queue.offer("item" + i);
         }
@@ -111,38 +94,35 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
             queue.poll();
         }
 
-
         final LocalQueueStats stats = queue.getLocalQueueStats();
-        AssertTask task = new AssertTask() {
+        assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 assertEquals(30, stats.getPollOperationCount());
             }
-        };
-        assertTrueEventually(task);
+        });
     }
 
     @Test
     public void testEmptyPollOperationCount() {
-        IQueue queue = newQueue();
+        IQueue<String> queue = newQueue();
 
         for (int i = 0; i < 10; i++) {
             queue.poll();
         }
 
         final LocalQueueStats stats = queue.getLocalQueueStats();
-        AssertTask task = new AssertTask() {
+        assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 assertEquals(10, stats.getEmptyPollOperationCount());
             }
-        };
-        assertTrueEventually(task);
+        });
     }
 
     @Test
     public void testOtherOperationCount() {
-        IQueue queue = newQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 30; i++) {
             queue.offer("item" + i);
         }
@@ -152,18 +132,17 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
         queue.removeAll(list);
 
         final LocalQueueStats stats = queue.getLocalQueueStats();
-        AssertTask task = new AssertTask() {
+        assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 assertEquals(3, stats.getOtherOperationsCount());
             }
-        };
-        assertTrueEventually(task);
+        });
     }
 
     @Test
     public void testAge() {
-        IQueue queue = newQueue();
+        IQueue<String> queue = newQueue();
         queue.offer("maxAgeItem");
         queue.offer("minAgeItem");
 
@@ -177,15 +156,17 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
 
     @Test
     public void testEventOperationCount() {
-        IQueue queue = newQueue();
+        IQueue<String> queue = newQueue();
         TestListener listener = new TestListener(30);
         queue.addItemListener(listener, true);
+
         for (int i = 0; i < 30; i++) {
             queue.offer("item" + i);
         }
         for (int i = 0; i < 30; i++) {
             queue.poll();
         }
+
         final LocalQueueStats stats = queue.getLocalQueueStats();
         assertOpenEventually(listener.addedLatch);
         assertOpenEventually(listener.removedLatch);
@@ -197,12 +178,25 @@ public class QueueStatisticsTest extends HazelcastTestSupport {
         });
     }
 
-    private static class TestListener implements ItemListener {
+    private IQueue<String> newQueue() {
+        HazelcastInstance instance = createHazelcastInstance();
+        return instance.getQueue(randomString());
+    }
 
-        public final CountDownLatch addedLatch;
-        public final CountDownLatch removedLatch;
+    private IQueue<String> newQueue_WithMaxSizeConfig(int maxSize) {
+        String name = randomString();
+        Config config = new Config();
+        config.getQueueConfig(name).setMaxSize(maxSize);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        return instance.getQueue(name);
+    }
 
-        public TestListener(int latchCount) {
+    private static class TestListener implements ItemListener<String> {
+
+        final CountDownLatch addedLatch;
+        final CountDownLatch removedLatch;
+
+        TestListener(int latchCount) {
             addedLatch = new CountDownLatch(latchCount);
             removedLatch = new CountDownLatch(latchCount);
         }

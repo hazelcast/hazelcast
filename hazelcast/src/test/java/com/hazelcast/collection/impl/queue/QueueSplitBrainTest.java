@@ -20,7 +20,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertFalse;
@@ -32,17 +31,18 @@ public class QueueSplitBrainTest extends HazelcastTestSupport {
 
     @Before
     @After
-    public void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() {
         HazelcastInstanceFactory.shutdownAll();
     }
 
     @Test
-    public void testQueueSplitBrain() throws InterruptedException {
+    public void testQueueSplitBrain() {
         Config config = newConfig();
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
-        final String name = generateKeyOwnedBy(h1);
+
+        String name = generateKeyOwnedBy(h1);
         IQueue<Object> queue = h1.getQueue(name);
 
         TestMemberShipListener memberShipListener = new TestMemberShipListener(2);
@@ -120,7 +120,6 @@ public class QueueSplitBrainTest extends HazelcastTestSupport {
 
         @Override
         public void memberAdded(MembershipEvent membershipEvent) {
-
         }
 
         @Override
@@ -130,7 +129,6 @@ public class QueueSplitBrainTest extends HazelcastTestSupport {
 
         @Override
         public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-
         }
     }
 }

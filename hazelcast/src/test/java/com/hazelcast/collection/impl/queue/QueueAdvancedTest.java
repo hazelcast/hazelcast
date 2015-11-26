@@ -24,16 +24,13 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.util.EmptyStatement;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -609,7 +606,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTakeInterruption() throws InterruptedException {
+    public void testTakeInterruption() {
         Config config = new Config()
                 .setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "10000");
 
@@ -634,7 +631,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutInterruption() throws InterruptedException {
+    public void testPutInterruption() {
         Config config = new Config()
                 .setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "10000");
         config.getQueueConfig("default").setMaxSize(1);

@@ -21,10 +21,6 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class QueueIteratorTest extends HazelcastTestSupport {
-    protected IQueue newQueue() {
-        HazelcastInstance instance = createHazelcastInstance();
-        return instance.getQueue(randomString());
-    }
 
     @Test
     public void testIterator() {
@@ -50,6 +46,7 @@ public class QueueIteratorTest extends HazelcastTestSupport {
             assertNull(iterator.next());
             fail();
         } catch (NoSuchElementException e) {
+            ignore(e);
         }
     }
 
@@ -66,8 +63,14 @@ public class QueueIteratorTest extends HazelcastTestSupport {
             iterator.remove();
             fail();
         } catch (UnsupportedOperationException e) {
+            ignore(e);
         }
 
         assertEquals(10, queue.size());
+    }
+
+    private IQueue<String> newQueue() {
+        HazelcastInstance instance = createHazelcastInstance();
+        return instance.getQueue(randomString());
     }
 }
