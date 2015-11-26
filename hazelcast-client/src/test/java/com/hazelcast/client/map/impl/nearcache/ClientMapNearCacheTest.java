@@ -63,27 +63,27 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientMapNearCacheTest {
 
-    private static final int MAX_CACHE_SIZE = 100;
-    private static final int MAX_TTL_SECONDS = 3;
-    private static final int MAX_IDLE_SECONDS = 1;
-    private static final int LONG_MAX_IDLE_SECONDS = 60 * 60;
+    protected static final int MAX_TTL_SECONDS = 3;
+    protected static final int MAX_IDLE_SECONDS = 1;
+    protected static final int LONG_MAX_IDLE_SECONDS = 60 * 60;
+    protected static final String NEAR_CACHE_WITH_NO_INVALIDATION = "NEAR_CACHE_WITH_NO_INVALIDATION";
 
-    private static final String NEAR_CACHE_WITH_NO_INVALIDATION = "NEAR_CACHE_WITH_NO_INVALIDATION";
-    private static final String NEAR_CACHE_WITH_MAX_SIZE = "NEAR_CACHE_WITH_MAX_SIZE";
-    private static final String NEAR_CACHE_WITH_TTL = "NEAR_CACHE_WITH_TTL";
-    private static final String NEAR_CACHE_WITH_IDLE = "NEAR_CACHE_WITH_IDLE";
-    private static final String NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME = "NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME";
-    private static final String NEAR_CACHE_WITH_INVALIDATION = "NEAR_CACHE_WITH_INVALIDATION";
-    private static final String NEAR_CACHE_LFU_WITH_MAX_SIZE = "NEAR_CACHE_LFU_WITH_MAX_SIZE";
-    private static final String NEAR_CACHE_LRU_WITH_MAX_SIZE = "NEAR_CACHE_LRU_WITH_MAX_SIZE";
-    private static final String NEAR_CACHE_RANDOM_WITH_MAX_SIZE = "NEAR_CACHE_RANDOM_WITH_MAX_SIZE";
-    private static final String NEAR_CACHE_NONE_WITH_MAX_SIZE = "NEAR_CACHE_NONE_WITH_MAX_SIZE";
+    protected static int MAX_CACHE_SIZE = 100;
+    protected static final String NEAR_CACHE_WITH_MAX_SIZE = "NEAR_CACHE_WITH_MAX_SIZE";
+    protected static final String NEAR_CACHE_WITH_TTL = "NEAR_CACHE_WITH_TTL";
+    protected static final String NEAR_CACHE_WITH_IDLE = "NEAR_CACHE_WITH_IDLE";
+    protected static final String NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME = "NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME";
+    protected static final String NEAR_CACHE_WITH_INVALIDATION = "NEAR_CACHE_WITH_INVALIDATION";
+    protected static final String NEAR_CACHE_LFU_WITH_MAX_SIZE = "NEAR_CACHE_LFU_WITH_MAX_SIZE";
+    protected static final String NEAR_CACHE_LRU_WITH_MAX_SIZE = "NEAR_CACHE_LRU_WITH_MAX_SIZE";
+    protected static final String NEAR_CACHE_RANDOM_WITH_MAX_SIZE = "NEAR_CACHE_RANDOM_WITH_MAX_SIZE";
+    protected static final String NEAR_CACHE_NONE_WITH_MAX_SIZE = "NEAR_CACHE_NONE_WITH_MAX_SIZE";
 
-    private static final ClientConfig clientConfig = new ClientConfig();
-    private static final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    protected static final ClientConfig clientConfig = new ClientConfig();
+    protected static final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    private static HazelcastInstance server;
-    private static HazelcastInstance client;
+    protected static HazelcastInstance server;
+    protected static HazelcastInstance client;
 
     @BeforeClass
     public static void setup() throws Exception {
@@ -666,7 +666,7 @@ public class ClientMapNearCacheTest {
         assertThatOwnedEntryCountEquals(clientMap, 1);
     }
 
-    private void populateNearCache(IMap<Integer, Integer> map, int size) {
+    protected void populateNearCache(IMap<Integer, Integer> map, int size) {
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
@@ -676,39 +676,39 @@ public class ClientMapNearCacheTest {
         }
     }
 
-    private void assertThatOwnedEntryCountEquals(IMap<Integer, Integer> clientMap, long expected) {
+    protected void assertThatOwnedEntryCountEquals(IMap<Integer, Integer> clientMap, long expected) {
         long ownedEntryCount = getOwnedEntryCount(clientMap);
         assertEquals(expected, ownedEntryCount);
     }
 
-    private void assertThatOwnedEntryCountIsSmallerThan(IMap<Integer, Integer> clientMap, long expected) {
+    protected void assertThatOwnedEntryCountIsSmallerThan(IMap<Integer, Integer> clientMap, long expected) {
         long ownedEntryCount = getOwnedEntryCount(clientMap);
         assertTrue(format("ownedEntryCount should be smaller than %d, but was %d", expected, ownedEntryCount),
                 ownedEntryCount < expected);
     }
 
-    private long getOwnedEntryCount(IMap<Integer, Integer> map) {
+    protected long getOwnedEntryCount(IMap<Integer, Integer> map) {
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         return stats.getOwnedEntryCount();
     }
 
-    private void triggerEviction(IMap<Integer, Integer> map) {
+    protected void triggerEviction(IMap<Integer, Integer> map) {
         populateNearCache(map, 1);
     }
 
-    private void addNearCacheInvalidateListener(IMap clientMap, CountDownLatch eventAddedLatch) {
+    protected void addNearCacheInvalidateListener(IMap clientMap, CountDownLatch eventAddedLatch) {
         NearCacheEventListener listener = new NearCacheEventListener(eventAddedLatch);
 
         NearCachedClientMapProxy mapProxy = (NearCachedClientMapProxy) clientMap;
         mapProxy.addNearCacheInvalidateListener(listener);
     }
 
-    private static class NearCacheEventListener extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler
+    protected static class NearCacheEventListener extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
-        private final CountDownLatch eventAddedLatch;
+        protected final CountDownLatch eventAddedLatch;
 
-        private NearCacheEventListener(CountDownLatch eventAddedLatch) {
+        protected NearCacheEventListener(CountDownLatch eventAddedLatch) {
             this.eventAddedLatch = eventAddedLatch;
         }
 
