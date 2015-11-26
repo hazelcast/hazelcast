@@ -33,8 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class AbstractMember
-        implements Member {
+public abstract class AbstractMember implements Member {
 
     protected final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
     protected Address address;
@@ -147,8 +146,7 @@ public abstract class AbstractMember
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
         uuid = in.readUTF();
@@ -162,8 +160,7 @@ public abstract class AbstractMember
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
         out.writeUTF(uuid);
         out.writeBoolean(liteMember);
@@ -220,5 +217,4 @@ public abstract class AbstractMember
         }
         return true;
     }
-
 }
