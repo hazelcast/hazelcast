@@ -38,7 +38,6 @@ import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.ringbuffer.impl.client.HeadSequenceRequest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -71,7 +70,7 @@ public class StringSerializationTest {
 
     private final static byte[] TEST_DATA_BYTES_ALL = TEST_DATA_ALL.getBytes(Charset.forName("utf8"));
 
-    private static char[] allChars;
+    private static final char[] allChars;
 
     static {
         CharBuffer cb = CharBuffer.allocate(Character.MAX_VALUE);
@@ -177,9 +176,9 @@ public class StringSerializationTest {
     @Test
     public void testStringArrayEncodeDecode()
             throws IOException {
-        String[] stringArray = new String[TEST_STR_SIZE];
+        String[] stringArray = new String[100];
         for (int i = 0; i < stringArray.length; i++) {
-            stringArray[i] = TEST_DATA_ALL;
+            stringArray[i] = TEST_DATA_ALL + i;
         }
         Data dataStrArray = serializationService.toData(stringArray);
         String[] actualStr = serializationService.toObject(dataStrArray);
