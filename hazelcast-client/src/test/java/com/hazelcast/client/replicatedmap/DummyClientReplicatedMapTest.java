@@ -214,14 +214,8 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
         String key = generateKeyOwnedBy(instance2);
         String value = randomString();
         map.put(key, value);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(1, map.size());
-            }
-        });
         map.clear();
+
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {

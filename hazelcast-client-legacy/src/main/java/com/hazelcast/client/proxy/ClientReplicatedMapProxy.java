@@ -190,9 +190,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Override
     public void clear() {
-        ClientReplicatedMapClearRequest request = new ClientReplicatedMapClearRequest(getName(),
-                getOrInitTargetPartitionId());
-        invokeOnPartition(request, getOrInitTargetPartitionId());
+        ClientReplicatedMapClearRequest request = new ClientReplicatedMapClearRequest(getName());
+        invoke(request);
     }
 
     @Override

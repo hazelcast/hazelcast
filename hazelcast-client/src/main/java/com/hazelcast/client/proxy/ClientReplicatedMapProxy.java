@@ -55,7 +55,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.record.ResultSet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.IterationType;
-
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -215,7 +214,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public void clear() {
         ClientMessage request = ReplicatedMapClearCodec.encodeRequest(name);
-        invokeOnPartition(request, getOrInitTargetPartitionId());
+        invoke(request);
     }
 
     @Override
