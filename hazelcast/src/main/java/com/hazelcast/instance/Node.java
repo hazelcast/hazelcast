@@ -393,6 +393,18 @@ public class Node {
         } catch (Throwable ignored) {
         }
 
+        try {
+            shutdownServices(terminate);
+            state = NodeState.SHUT_DOWN;
+            logger.info("Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
+        } finally {
+            if (state != NodeState.SHUT_DOWN) {
+                shuttingDown.compareAndSet(true, false);
+            }
+        }
+    }
+
+    private void shutdownServices(boolean terminate) {
         nodeExtension.beforeShutdown();
         phoneHome.shutdown();
         if (managementCenterService != null) {
@@ -418,8 +430,6 @@ public class Node {
 
         hazelcastThreadGroup.destroy();
         nodeExtension.shutdown();
-        logger.info("Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
-        state = NodeState.SHUT_DOWN;
     }
 
     private boolean setShuttingDown() {
