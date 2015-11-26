@@ -4,6 +4,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.executor.ManagedExecutorService;
 import org.junit.Before;
@@ -11,6 +12,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -33,6 +35,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class BasicCompletableFutureTest {
 
@@ -132,7 +135,7 @@ public class BasicCompletableFutureTest {
 
     @Test
     public void completeDelegate_successfully_callbacksNeverRun() throws Exception {
-        ExecutionCallback callback = mock(ExecutionCallback.class);
+        ExecutionCallback<String> callback = getStringExecutionCallback();
 
         delegateFuture.run();
         outerFuture.andThen(callback);
@@ -142,7 +145,7 @@ public class BasicCompletableFutureTest {
 
     @Test
     public void completeDelegate_withException_callbacksNeverRun() throws Exception {
-        ExecutionCallback callback = mock(ExecutionCallback.class);
+        ExecutionCallback<String> callback = getStringExecutionCallback();
         delegateThrowException = true;
 
         delegateFuture.run();
@@ -153,68 +156,73 @@ public class BasicCompletableFutureTest {
 
     @Test
     public void completeDelegate_successfully_callbackAfterGet_invokeIsDoneOnOuter_callbacksRun() throws Exception {
-        ExecutionCallback callback = mock(ExecutionCallback.class);
+        ExecutionCallback<String> callback = getStringExecutionCallback();
 
         delegateFuture.run();
         outerFuture.isDone();
         outerFuture.andThen(callback);
 
-        verify(callback, times(1)).onResponse(any(Throwable.class));
+        verify(callback, times(1)).onResponse(any(String.class));
         verify(callback, times(0)).onFailure(any(Throwable.class));
+        verifyZeroInteractions(callback);
     }
 
     @Test
     public void completeDelegate_successfully_callbackAfterGet_invokeGetOnOuter_callbacksRun() throws Exception {
-        ExecutionCallback callback = mock(ExecutionCallback.class);
+        ExecutionCallback<String> callback = getStringExecutionCallback();
 
         delegateFuture.run();
         outerFuture.get();
         outerFuture.andThen(callback);
 
-        verify(callback, times(1)).onResponse(any(Throwable.class));
+        verify(callback, times(1)).onResponse(any(String.class));
         verify(callback, times(0)).onFailure(any(Throwable.class));
+        verifyZeroInteractions(callback);
     }
 
     @Test
     public void completeDelegate_successfully_callbackBeforeGet_invokeIsDoneOnOuter_callbacksRun() throws Exception {
-        ExecutionCallback callback = mock(ExecutionCallback.class);
+        ExecutionCallback<String> callback = getStringExecutionCallback();
 
         delegateFuture.run();
         outerFuture.andThen(callback);
         outerFuture.isDone();
 
-        verify(callback, times(1)).onResponse(any(Throwable.class));
+        verify(callback, times(1)).onResponse(any(String.class));
         verify(callback, times(0)).onFailure(any(Throwable.class));
+        verifyZeroInteractions(callback);
     }
 
     @Test
     public void completeDelegate_successfully_callbackBeforeGet_invokeGetOnOuter_callbacksRun() throws Exception {
-        ExecutionCallback callback = mock(ExecutionCallback.class);
+        ExecutionCallback<String> callback = getStringExecutionCallback();
 
         delegateFuture.run();
         outerFuture.andThen(callback);
         outerFuture.get();
 
-        verify(callback, times(1)).onResponse(any(Throwable.class));
+        verify(callback, times(1)).onResponse(any(String.class));
         verify(callback, times(0)).onFailure(any(Throwable.class));
+        verifyZeroInteractions(callback);
     }
 
     @Test
     public void completeDelegate_withException_callbackBeforeGet_invokeIsDoneOnOuter_callbacksRun() throws Exception {
-        ExecutionCallback callback = mock(ExecutionCallback.class);
+        ExecutionCallback<String> callback = getStringExecutionCallback();
         delegateThrowException = true;
 
         delegateFuture.run();
         outerFuture.andThen(callback);
         outerFuture.isDone();
 
-        verify(callback, times(0)).onResponse(any(Throwable.class));
+        verify(callback, times(0)).onResponse(any(String.class));
         verify(callback, times(1)).onFailure(any(Throwable.class));
+        verifyZeroInteractions(callback);
     }
 
     @Test
     public void completeDelegate_withException_callbackBeforeGet_invokeGetOnOuter_callbacksNeverReached() throws Exception {
-        ExecutionCallback callback = mock(ExecutionCallback.class);
+        ExecutionCallback<String> callback = getStringExecutionCallback();
         delegateThrowException = true;
 
         delegateFuture.run();
@@ -227,8 +235,9 @@ public class BasicCompletableFutureTest {
             assertEquals("Exception in execution", t.getCause().getMessage());
         }
 
-        verify(callback, times(0)).onResponse(any(Throwable.class));
+        verify(callback, times(0)).onResponse(any(String.class));
         verify(callback, times(1)).onFailure(any(Throwable.class));
+        verifyZeroInteractions(callback);
     }
 
     private <V> FutureTask<V> future(final V result) {
@@ -241,6 +250,11 @@ public class BasicCompletableFutureTest {
                 return result;
             }
         });
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ExecutionCallback<String> getStringExecutionCallback() {
+        return mock(ExecutionCallback.class);
     }
 
     private static <V> BasicCompletableFuture<V> basicCompletableFuture(Future<V> future) {
@@ -269,14 +283,13 @@ public class BasicCompletableFutureTest {
             return Integer.MAX_VALUE;
         }
 
-        public void execute(Runnable r) {
+        public void execute(Runnable runnable) {
             // run in current thread
             try {
-                r.run();
+                runnable.run();
             } catch (Exception ex) {
                 sneakyThrow(new ExecutionException(ex));
             }
         }
     }
-
 }
