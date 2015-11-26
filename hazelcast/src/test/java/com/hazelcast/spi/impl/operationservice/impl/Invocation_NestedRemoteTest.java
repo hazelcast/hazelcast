@@ -12,14 +12,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.ExecutionException;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class Invocation_NestedRemoteTest extends Invocation_NestedTest {
+public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
 
     private static final String RESPONSE = "someresponse";
 

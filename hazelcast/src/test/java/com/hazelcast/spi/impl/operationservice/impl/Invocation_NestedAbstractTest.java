@@ -12,7 +12,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 
 import java.io.IOException;
 
-public abstract class Invocation_NestedTest extends HazelcastTestSupport {
+public abstract class Invocation_NestedAbstractTest extends HazelcastTestSupport {
 
     protected static final int GENERIC_OPERATION = -1;
 
@@ -25,9 +25,11 @@ public abstract class Invocation_NestedTest extends HazelcastTestSupport {
     }
 
     public static class OuterOperation extends AbstractOperation {
+
         public Operation innerOperation;
         public Object result;
 
+        @SuppressWarnings("unused")
         public OuterOperation() {
         }
 
@@ -59,7 +61,6 @@ public abstract class Invocation_NestedTest extends HazelcastTestSupport {
         protected void writeInternal(ObjectDataOutput out) throws IOException {
             super.writeInternal(out);
             out.writeObject(innerOperation);
-
         }
 
         @Override
@@ -72,6 +73,7 @@ public abstract class Invocation_NestedTest extends HazelcastTestSupport {
     public static class InnerOperation extends AbstractOperation {
         public Object value;
 
+        @SuppressWarnings("unused")
         public InnerOperation() {
         }
 
@@ -102,8 +104,8 @@ public abstract class Invocation_NestedTest extends HazelcastTestSupport {
         }
     }
 
-    protected static int randomPartitionIdNotMappedToSameThreadAsGivenPartitionIdOnInstance(
-            HazelcastInstance hz, int givenPartitionId) {
+    protected static int randomPartitionIdNotMappedToSameThreadAsGivenPartitionIdOnInstance(HazelcastInstance hz,
+                                                                                            int givenPartitionId) {
         int resultPartitionId;
         for (resultPartitionId = 0; resultPartitionId < hz.getPartitionService().getPartitions().size(); resultPartitionId++) {
             if (resultPartitionId == givenPartitionId) {
@@ -119,8 +121,9 @@ public abstract class Invocation_NestedTest extends HazelcastTestSupport {
         return resultPartitionId;
     }
 
-    protected static int randomPartitionIdMappedToSameThreadAsGivenPartitionIdOnInstance(
-            int givenPartitionId, HazelcastInstance instance, OperationService operationService) {
+    protected static int randomPartitionIdMappedToSameThreadAsGivenPartitionIdOnInstance(int givenPartitionId,
+                                                                                         HazelcastInstance instance,
+                                                                                         OperationService operationService) {
         int resultPartitionId = 0;
         for (; resultPartitionId < instance.getPartitionService().getPartitions().size(); resultPartitionId++) {
             if (resultPartitionId == givenPartitionId) {
@@ -135,6 +138,4 @@ public abstract class Invocation_NestedTest extends HazelcastTestSupport {
         }
         return resultPartitionId;
     }
-
-
 }
