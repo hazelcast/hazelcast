@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
@@ -45,10 +44,6 @@ abstract class AbstractMultipleEntryBackupOperation extends AbstractMultipleEntr
     protected AbstractMultipleEntryBackupOperation() {
     }
 
-    protected AbstractMultipleEntryBackupOperation(String name, EntryProcessor entryProcessor) {
-        super(name, entryProcessor);
-    }
-
     protected AbstractMultipleEntryBackupOperation(String name, EntryBackupProcessor backupProcessor) {
         super(name, backupProcessor);
     }
@@ -70,14 +65,12 @@ abstract class AbstractMultipleEntryBackupOperation extends AbstractMultipleEntr
             final MapEventPublisher mapEventPublisher = getMapEventPublisher();
             if (EntryEventType.REMOVED.equals(eventType)) {
                 mapEventPublisher.publishWanReplicationRemoveBackup(name, key, getNow());
-                wanEventList.add(new WanEventWrapper(key, null, EntryEventType.REMOVED));
             } else {
                 final Record record = recordStore.getRecord(key);
                 if (record != null) {
                     final Data dataValueAsData = toData(value);
                     final EntryView entryView = createSimpleEntryView(key, dataValueAsData, record);
                     mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
-                    wanEventList.add(new WanEventWrapper(key, value, EntryEventType.UPDATED));
                 }
             }
         }

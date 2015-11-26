@@ -110,7 +110,12 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
     @Override
     public Operation getBackupOperation() {
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        return backupProcessor != null ? new PartitionWideEntryBackupOperation(name, backupProcessor) : null;
+        PartitionWideEntryBackupOperation backupOperation = null;
+        if (backupProcessor != null) {
+            backupOperation = new PartitionWideEntryBackupOperation(name, backupProcessor);
+            backupOperation.setWanEventList(wanEventList);
+        }
+        return backupOperation;
     }
 
     private boolean applyPredicate(Data key, Object value) {

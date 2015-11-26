@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 
 public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntryOperation {
@@ -44,10 +45,12 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
     @Override
     public Operation getBackupOperation() {
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        if (backupProcessor == null) {
-            return null;
+        PartitionWideEntryWithPredicateBackupOperation backupOperation = null;
+        if (backupProcessor != null) {
+            backupOperation = new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, predicate);
+            backupOperation.setWanEventList(wanEventList);
         }
-        return new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, predicate);
+        return backupOperation;
     }
 
     @Override
