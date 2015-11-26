@@ -34,13 +34,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-
-public abstract class SetBasicTest extends HazelcastTestSupport {
+public abstract class SetAbstractTest extends HazelcastTestSupport {
 
     protected HazelcastInstance[] instances;
     protected IAtomicLong atomicLong;
     private ISet<String> set;
-    private SetConfig setConfig;
 
     @Before
     public void setup() {
@@ -52,7 +50,6 @@ public abstract class SetBasicTest extends HazelcastTestSupport {
         HazelcastInstance target = instances[instances.length - 1];
         String methodName = getThreadLocalFrameworkMethod().getMethod().getName();
         String name = randomNameOwnedBy(target, methodName);
-        setConfig = config.getSetConfig(name);
         set = local.getSet(name);
     }
 
@@ -267,6 +264,5 @@ public abstract class SetBasicTest extends HazelcastTestSupport {
             contains.add("item" + i);
         }
         assertFalse(set.containsAll(contains));
-
     }
 }

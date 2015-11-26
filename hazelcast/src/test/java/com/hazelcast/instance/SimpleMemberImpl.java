@@ -25,16 +25,13 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 
-
-/**
- * @author mdogan 25/08/14
- */
 public class SimpleMemberImpl implements Member {
 
     private String uuid;
     private InetSocketAddress address;
     private boolean liteMember;
 
+    @SuppressWarnings("unused")
     public SimpleMemberImpl() {
     }
 
@@ -90,7 +87,6 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void setStringAttribute(String key, String value) {
-
     }
 
     @Override
@@ -100,7 +96,6 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void setBooleanAttribute(String key, boolean value) {
-
     }
 
     @Override
@@ -110,7 +105,6 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void setByteAttribute(String key, byte value) {
-
     }
 
     @Override
@@ -120,7 +114,6 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void setShortAttribute(String key, short value) {
-
     }
 
     @Override
@@ -130,7 +123,6 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void setIntAttribute(String key, int value) {
-
     }
 
     @Override
@@ -140,7 +132,6 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void setLongAttribute(String key, long value) {
-
     }
 
     @Override
@@ -150,7 +141,6 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void setFloatAttribute(String key, float value) {
-
     }
 
     @Override
@@ -160,12 +150,10 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void setDoubleAttribute(String key, double value) {
-
     }
 
     @Override
     public void removeAttribute(String key) {
-
     }
 
     @Override

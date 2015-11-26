@@ -478,10 +478,6 @@ public final class TestNodeRegistry {
             return remoteEndpoint;
         }
 
-        public boolean live() {
-            return live;
-        }
-
         public boolean write(OutboundFrame frame) {
             Packet packet = (Packet) frame;
             if (nodeEngine.getNode().getState() != NodeState.SHUT_DOWN) {
@@ -563,7 +559,7 @@ public final class TestNodeRegistry {
 
         @Override
         public boolean isAlive() {
-            return true;
+            return live;
         }
 
         @Override

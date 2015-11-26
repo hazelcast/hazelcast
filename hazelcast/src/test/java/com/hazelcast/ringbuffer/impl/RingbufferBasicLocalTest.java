@@ -10,7 +10,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class RingbufferBasicLocalTest extends RingbufferBasicTest {
+public class RingbufferBasicLocalTest extends RingbufferAbstractTest {
 
     @Override
     protected HazelcastInstance[] newInstances(Config config) {

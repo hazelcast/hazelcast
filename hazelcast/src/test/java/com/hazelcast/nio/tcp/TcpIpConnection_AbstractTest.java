@@ -1,14 +1,13 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.tcp.nonblocking.Select_NonBlockingIOThreadingModelFactory;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -65,7 +64,7 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
                 .build();
     }
 
-    public void startAllConnectionManagers(){
+    public void startAllConnectionManagers() {
         connManagerA.start();
         connManagerB.start();
         connManagerC.start();
@@ -121,7 +120,6 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
                     return connection;
                 }
             }
-
 
             if (startMs + 20000 < System.currentTimeMillis()) {
                 fail("Timeout: Could not find connection");

@@ -3,13 +3,10 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -30,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public abstract class TcpIpConnectionManager_ConnectOldClientTest extends TcpIpConnection_AbstractTest {
+public abstract class TcpIpConnectionManager_ConnectOldClientBaseTest extends TcpIpConnection_AbstractTest {
 
     private Socket socket;
 
@@ -47,6 +44,7 @@ public abstract class TcpIpConnectionManager_ConnectOldClientTest extends TcpIpC
             try {
                 socket.close();
             } catch (IOException e) {
+                EmptyStatement.ignore(e);
             }
         }
     }

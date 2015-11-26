@@ -11,7 +11,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.test.HazelcastTestSupport;
 
-public abstract class IdGeneratorBasicTest extends HazelcastTestSupport {
+public abstract class IdGeneratorAbstractTest extends HazelcastTestSupport {
 
     protected HazelcastInstance[] instances;
     protected IdGenerator idGenerator;

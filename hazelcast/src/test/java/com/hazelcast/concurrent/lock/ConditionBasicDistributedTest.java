@@ -9,7 +9,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ConditionBasicDistributedTest extends ConditionBasicTest {
+public class ConditionBasicDistributedTest extends ConditionAbstractTest {
     @Override
     protected HazelcastInstance[] newInstances() {
         return createHazelcastInstanceFactory(2).newInstances();

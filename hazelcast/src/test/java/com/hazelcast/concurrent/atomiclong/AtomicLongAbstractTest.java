@@ -21,6 +21,7 @@ import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,7 +30,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public abstract class AtomicLongBasicTest extends HazelcastTestSupport {
+public abstract class AtomicLongAbstractTest extends HazelcastTestSupport {
 
     protected HazelcastInstance[] instances;
     protected IAtomicLong atomicLong;
@@ -115,6 +116,7 @@ public abstract class AtomicLongBasicTest extends HazelcastTestSupport {
             atomicLong.apply(new FailingFunction());
             fail();
         } catch (ExpectedRuntimeException expected) {
+            EmptyStatement.ignore(expected);
         }
 
         assertEquals(1, atomicLong.get());
@@ -133,6 +135,7 @@ public abstract class AtomicLongBasicTest extends HazelcastTestSupport {
             atomicLong.alter(new FailingFunction());
             fail();
         } catch (ExpectedRuntimeException expected) {
+            EmptyStatement.ignore(expected);
         }
 
         assertEquals(10, atomicLong.get());
@@ -143,7 +146,6 @@ public abstract class AtomicLongBasicTest extends HazelcastTestSupport {
         atomicLong.set(10);
         atomicLong.alter(new AddOneFunction());
         assertEquals(11, atomicLong.get());
-
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -159,6 +161,7 @@ public abstract class AtomicLongBasicTest extends HazelcastTestSupport {
             atomicLong.alterAndGet(new FailingFunction());
             fail();
         } catch (ExpectedRuntimeException expected) {
+            EmptyStatement.ignore(expected);
         }
 
         assertEquals(10, atomicLong.get());
@@ -184,6 +187,7 @@ public abstract class AtomicLongBasicTest extends HazelcastTestSupport {
             atomicLong.getAndAlter(new FailingFunction());
             fail();
         } catch (ExpectedRuntimeException expected) {
+            EmptyStatement.ignore(expected);
         }
 
         assertEquals(10, atomicLong.get());
@@ -203,12 +207,10 @@ public abstract class AtomicLongBasicTest extends HazelcastTestSupport {
         }
     }
 
-
     private static class FailingFunction implements IFunction<Long, Long> {
         @Override
         public Long apply(Long input) {
             throw new ExpectedRuntimeException();
         }
     }
-
 }

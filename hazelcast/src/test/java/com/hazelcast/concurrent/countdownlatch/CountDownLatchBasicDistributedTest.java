@@ -9,7 +9,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class CountDownLatchBasicDistributedTest extends CountDownLatchBasicTest {
+public class CountDownLatchBasicDistributedTest extends CountDownLatchAbstractTest {
 
     @Override
     protected HazelcastInstance[] newInstances() {

@@ -24,7 +24,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public abstract class ReliableTopicBasicTest extends HazelcastTestSupport {
+public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
     public static final int CAPACITY = 10;
 

@@ -21,10 +21,10 @@ public class TcpIpConnectionManager_BasicTest extends TcpIpConnection_AbstractTe
 
     @Test
     public void start_whenAlreadyStarted_thenCallIgnored() {
-        //first time
+        // first time
         connManagerA.start();
 
-        //second time
+        // second time
         connManagerA.start();
 
         assertTrue(connManagerA.isLive());

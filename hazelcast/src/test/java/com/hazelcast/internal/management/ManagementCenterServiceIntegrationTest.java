@@ -41,7 +41,7 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
     @Before
     public void setUp() throws Exception {
         setLoggingLog4j();
-        setLogLevel(Level.DEBUG);
+        setLogLevel(Level.TRACE);
 
         URL root = new URL(MancenterServlet.class.getResource("/"), "../test-classes");
         String baseDir = URLDecoder.decode(root.getFile(), "UTF-8");

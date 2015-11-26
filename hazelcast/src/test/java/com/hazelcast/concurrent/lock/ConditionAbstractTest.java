@@ -25,8 +25,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-
-public abstract class ConditionBasicTest extends HazelcastTestSupport {
+public abstract class ConditionAbstractTest extends HazelcastTestSupport {
 
     private static final int THIRTY_SECONDS = 30;
 
@@ -331,7 +330,8 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         signal(lock, condition);
 
         startThreadWaitingOnCondition(lock, condition, new CountDownLatch(0), signalled);
-        assertFalse("The time should elapse but the latch reached zero unexpectedly", signalled.await(3000, TimeUnit.MILLISECONDS));
+        assertFalse("The time should elapse but the latch reached zero unexpectedly",
+                signalled.await(3000, TimeUnit.MILLISECONDS));
     }
 
     @Test(timeout = 60000, expected = IllegalMonitorStateException.class)
@@ -452,7 +452,8 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         assertFalse(condition.await(-1, TimeUnit.MILLISECONDS));
     }
 
-    private TestThread startThreadWaitingOnCondition(final ILock lock, final ICondition condition, final CountDownLatch awaited, final CountDownLatch signalled) {
+    private TestThread startThreadWaitingOnCondition(final ILock lock, final ICondition condition, final CountDownLatch awaited,
+                                                     final CountDownLatch signalled) {
         TestThread t = new TestThread() {
             public void doRun() throws Exception {
                 try {
@@ -485,7 +486,8 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         assertLockStateEventually("Lock should have been unlocked eventually", false, lock, timeoutInSeconds);
     }
 
-    private static void assertLockStateEventually(final String message, final boolean locked, final ILock lock, int timeoutInSeconds) {
+    private static void assertLockStateEventually(final String message, final boolean locked, final ILock lock,
+                                                  int timeoutInSeconds) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -515,5 +517,4 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         condition.signalAll();
         lock.unlock();
     }
-
 }

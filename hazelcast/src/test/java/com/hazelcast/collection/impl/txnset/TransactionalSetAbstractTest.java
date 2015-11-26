@@ -16,15 +16,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-
-public abstract class TransactionalSetBasicTest extends HazelcastTestSupport {
+public abstract class TransactionalSetAbstractTest extends HazelcastTestSupport {
 
     static final String ELEMENT = "item";
 
     protected HazelcastInstance[] instances;
     protected IAtomicLong atomicLong;
     private ISet<String> set;
-    private SetConfig setConfig;
     private String setName;
     private HazelcastInstance local;
 
@@ -38,7 +36,6 @@ public abstract class TransactionalSetBasicTest extends HazelcastTestSupport {
         HazelcastInstance target = instances[instances.length - 1];
         String methodName = getThreadLocalFrameworkMethod().getMethod().getName();
         setName = randomNameOwnedBy(target, methodName);
-        setConfig = config.getSetConfig(setName);
         set = local.getSet(setName);
     }
 
@@ -79,7 +76,6 @@ public abstract class TransactionalSetBasicTest extends HazelcastTestSupport {
 
         context.commitTransaction();
         assertEquals(0, set.size());
-
     }
 
     @Test

@@ -56,8 +56,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testPutAsync() throws Exception {
-        HazelcastInstance h1 = createHazelcastInstance();
-        IMap<Integer, Integer> map = h1.getMap(randomMapName());
+        IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.putAsync(i, i);
         }
@@ -85,11 +84,10 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testGetAsyncAndHitsGenerated() throws Exception {
-        HazelcastInstance h1 = createHazelcastInstance();
-        IMap<Integer, Integer> map = h1.getMap(randomMapName());
+        IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
-            map.getAsync(i);
+            map.getAsync(i).get();
         }
         final LocalMapStats localMapStats = map.getLocalMapStats();
         assertTrueEventually(new AssertTask() {
@@ -104,8 +102,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testRemove() throws Exception {
-        HazelcastInstance h1 = createHazelcastInstance();
-        IMap<Integer, Integer> map = h1.getMap(randomMapName());
+        IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.remove(i);
@@ -116,8 +113,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAsync() throws Exception {
-        HazelcastInstance h1 = createHazelcastInstance();
-        IMap<Integer, Integer> map = h1.getMap(randomMapName());
+        IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.removeAsync(i);
@@ -250,7 +246,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     @Test
     public void testPutStats_afterPutAll() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances();
+        final HazelcastInstance[] instances = factory.newInstances(getConfig());
         Map map = new HashMap();
         for (int i = 1; i <= 5000; i++) map.put(i, i);
 

@@ -35,6 +35,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -60,6 +61,34 @@ public class LazyIteratorTest
             ReplicatedRecord<String, Integer> record = new ReplicatedRecord<String, Integer>(key, value, -1);
             TEST_DATA_TOMBS.put(key, record);
         }
+    }
+
+    @Test
+    public void test_lazy_set_size() throws Exception {
+        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
+        LazySet<String, Integer, String> set = new LazySet<String, Integer, String>(factory, TEST_DATA_SIMPLE);
+        assertEquals(100, set.size());
+    }
+
+    @Test
+    public void test_lazy_set_empty() throws Exception {
+        KeySetIteratorFactory<String, Integer> factory = new KeySetIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
+        LazySet<String, Integer, String> set = new LazySet<String, Integer, String>(factory, TEST_DATA_SIMPLE);
+        assertFalse(set.isEmpty());
+    }
+
+    @Test
+    public void test_lazy_collection_size() throws Exception {
+        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
+        LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_SIMPLE);
+        assertEquals(100, collection.size());
+    }
+
+    @Test
+    public void test_lazy_collection_empty() throws Exception {
+        ValuesIteratorFactory<String, Integer> factory = new ValuesIteratorFactory<String, Integer>(REPLICATED_RECORD_STORE);
+        LazyCollection<String, Integer> collection = new LazyCollection<String, Integer>(factory, TEST_DATA_SIMPLE);
+        assertFalse(collection.isEmpty());
     }
 
     @Test

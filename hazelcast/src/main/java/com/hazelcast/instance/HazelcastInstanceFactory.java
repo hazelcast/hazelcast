@@ -274,7 +274,7 @@ public final class HazelcastInstanceFactory {
     static void remove(HazelcastInstanceImpl instance) {
         OutOfMemoryErrorDispatcher.deregisterServer(instance);
         InstanceFuture future = INSTANCE_MAP.remove(instance.getName());
-        if (future != null) {
+        if (future != null && future.isSet()) {
             future.get().original = null;
         }
         if (INSTANCE_MAP.size() == 0) {
@@ -326,6 +326,10 @@ public final class HazelcastInstanceFactory {
                 this.throwable = throwable;
                 notifyAll();
             }
+        }
+
+        boolean isSet() {
+            return hz != null;
         }
     }
 }

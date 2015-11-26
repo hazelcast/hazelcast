@@ -10,7 +10,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ListBasicLocalTest extends ListBasicTest {
+public class ListBasicLocalTest extends ListAbstractTest {
 
     @Override
     protected HazelcastInstance[] newInstances(Config config) {
