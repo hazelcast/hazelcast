@@ -1242,8 +1242,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     @Override
     public boolean hasOnGoingMigrationLocal() {
         return !activeMigrations.isEmpty() || !migrationQueue.isEmpty()
-                || migrationThread.isMigrating()
-                || shouldWaitMigrationOrBackups(Level.OFF);
+                || migrationThread.isMigrating();
     }
 
     private boolean isReplicaInSyncState() {
