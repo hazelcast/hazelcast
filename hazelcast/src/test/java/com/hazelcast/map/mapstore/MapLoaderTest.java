@@ -333,12 +333,11 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
     static class FailingMapLoader extends MapStoreAdapter {
 
-        boolean first = true;
+        AtomicBoolean first = new AtomicBoolean(true);
 
         @Override
         public Set loadAllKeys() {
-            if (first) {
-                first = false;
+            if (first.compareAndSet(true, false)) {
                 throw new IllegalStateException("Intentional exception");
             }
             return singleton("key");
