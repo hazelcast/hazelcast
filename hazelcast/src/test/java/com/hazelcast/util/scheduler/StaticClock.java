@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.util.scheduler;
 
-// for testing purposes
+import com.hazelcast.util.Clock;
+
 class StaticClock extends Clock.ClockImpl {
 
     private static final long TIME = System.currentTimeMillis();
