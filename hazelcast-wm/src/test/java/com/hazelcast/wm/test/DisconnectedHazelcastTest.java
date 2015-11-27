@@ -23,7 +23,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -101,7 +100,6 @@ public class DisconnectedHazelcastTest extends AbstractWebFilterTest {
     }
 
     @Test(timeout = 60000)
-    @Ignore
     public void test_setAttribute() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
         executeRequest("write", serverPort1, cookieStore);
@@ -110,7 +108,6 @@ public class DisconnectedHazelcastTest extends AbstractWebFilterTest {
     }
 
     @Test(timeout = 60000)
-    @Ignore
     public void test_getAttribute() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
         assertEquals("null", executeRequest("read", serverPort1, cookieStore));
@@ -119,6 +116,7 @@ public class DisconnectedHazelcastTest extends AbstractWebFilterTest {
         assertEquals("value", executeRequest("readIfExist", serverPort1, cookieStore));
         assertEquals("null", executeRequest("read", serverPort2, cookieStore));
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+        assertClusterSizeEventually(1, hz);
         Thread.sleep(9000);
         executeRequest("write", serverPort1, cookieStore);
         assertEquals("value", executeRequest("read", serverPort1, cookieStore));
