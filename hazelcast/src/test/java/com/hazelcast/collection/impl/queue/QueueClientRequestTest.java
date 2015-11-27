@@ -68,7 +68,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class QueueClientRequestTest extends ClientTestSupport {
 
     static final String queueName = "test";
@@ -373,8 +372,10 @@ public class QueueClientRequestTest extends ClientTestSupport {
         });
 
         final SimpleClient client = getClient();
-        client.send(new RemoveListenerRequest(queueName));
-        boolean result = (Boolean) client.receive();
+        RemoveListenerRequest removeListenerRequest = new RemoveListenerRequest(queueName);
+        removeListenerRequest.setRegistrationId(registrationId);
+        client.send(removeListenerRequest);
+        boolean result = (Boolean)client.receive();
 
         assertTrue(result);
         queue.offer("item3");
