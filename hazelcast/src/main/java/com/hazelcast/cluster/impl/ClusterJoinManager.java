@@ -310,7 +310,7 @@ public class ClusterJoinManager {
                 timeToStartJoin = now + waitMillisBeforeJoin;
             }
         }
-        if (now > timeToStartJoin) {
+        if (now >= timeToStartJoin) {
             startJoin();
         }
     }
