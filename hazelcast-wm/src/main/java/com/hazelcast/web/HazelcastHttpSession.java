@@ -33,6 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class HazelcastHttpSession implements HttpSession {
 
+    volatile String invalidatedOriginalSessionId;
+
     private WebFilter webFilter;
     private volatile boolean valid = true;
     private final String id;
@@ -175,6 +177,7 @@ public class HazelcastHttpSession implements HttpSession {
         // invalidation as our SessionListener will be triggered.
         webFilter.destroySession(this, true);
         originalSession.invalidate();
+        invalidatedOriginalSessionId = originalSession.getId();
     }
 
     public boolean isNew() {
