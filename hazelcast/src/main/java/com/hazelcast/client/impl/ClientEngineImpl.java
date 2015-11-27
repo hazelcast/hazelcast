@@ -350,7 +350,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         return node.nodeEngine.getTransactionManagerService();
     }
 
-    private final class ClientPacketProcessor implements PartitionSpecificRunnable {
+    public final class ClientPacketProcessor implements PartitionSpecificRunnable {
         final Packet packet;
 
         private ClientPacketProcessor(Packet packet) {
