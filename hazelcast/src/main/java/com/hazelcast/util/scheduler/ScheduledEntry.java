@@ -36,22 +36,14 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K, V> {
 
     private final int actualDelaySeconds;
 
-    private final long scheduleStartTimeInNanos;
+    private final long scheduleId;
 
-    public ScheduledEntry(K key, V value, long scheduledDelayMillis, int actualDelaySeconds) {
+    public ScheduledEntry(K key, V value, long scheduledDelayMillis, int actualDelaySeconds, long scheduleId) {
         this.key = key;
         this.value = value;
         this.scheduledDelayMillis = scheduledDelayMillis;
         this.actualDelaySeconds = actualDelaySeconds;
-        this.scheduleStartTimeInNanos = System.nanoTime();
-    }
-
-    public ScheduledEntry(K key, V value, long scheduledDelayMillis, int actualDelaySeconds, long scheduleStartTimeInNanos) {
-        this.key = key;
-        this.value = value;
-        this.scheduledDelayMillis = scheduledDelayMillis;
-        this.actualDelaySeconds = actualDelaySeconds;
-        this.scheduleStartTimeInNanos = scheduleStartTimeInNanos;
+        this.scheduleId = scheduleId;
     }
 
     @Override
@@ -77,8 +69,8 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K, V> {
         return actualDelaySeconds;
     }
 
-    public long getScheduleStartTimeInNanos() {
-        return scheduleStartTimeInNanos;
+    public long getScheduleId() {
+        return scheduleId;
     }
 
     public long getActualDelayMillis() {
@@ -124,8 +116,8 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K, V> {
                 + scheduledDelayMillis
                 + ", actualDelaySeconds="
                 + actualDelaySeconds
-                + ", scheduleStartTimeInNanos="
-                + scheduleStartTimeInNanos
+                + ", scheduleId="
+                + scheduleId
                 + '}';
     }
 }
