@@ -22,9 +22,10 @@ import static org.junit.Assert.assertTrue;
 public class AbstractBaseReplicatedRecordStoreTest extends HazelcastTestSupport {
 
     TestReplicatedRecordStore recordStore;
+    TestReplicatedRecordStore recordStoreSameAttributes;
+
+    TestReplicatedRecordStore recordStoreOtherStorage;
     TestReplicatedRecordStore recordStoreOtherName;
-    TestReplicatedRecordStore recordStoreSameName;
-    TestReplicatedRecordStore recordStoreSameStorage;
 
     @Before
     public void setUp() {
@@ -33,10 +34,11 @@ public class AbstractBaseReplicatedRecordStoreTest extends HazelcastTestSupport 
         ReplicatedMapService service = new ReplicatedMapService(nodeEngine);
 
         recordStore = new TestReplicatedRecordStore("recordStore", service, 0);
+        recordStoreSameAttributes = new TestReplicatedRecordStore("recordStore", service, 0);
+        recordStoreSameAttributes.storageRef.set(recordStore.storageRef.get());
+
+        recordStoreOtherStorage = new TestReplicatedRecordStore("recordStore", service, 0);
         recordStoreOtherName = new TestReplicatedRecordStore("otherRecordStore", service, 0);
-        recordStoreSameName = new TestReplicatedRecordStore("recordStore", service, 0);
-        recordStoreSameStorage = new TestReplicatedRecordStore("recordStore", service, 0);
-        recordStoreSameStorage.storageRef.set(recordStore.storageRef.get());
     }
 
     @After
@@ -57,20 +59,22 @@ public class AbstractBaseReplicatedRecordStoreTest extends HazelcastTestSupport 
     @Test
     public void testEquals() {
         assertEquals(recordStore, recordStore);
+        assertEquals(recordStoreSameAttributes, recordStore);
+
         assertNotEquals(recordStore, null);
         assertNotEquals(recordStore, new Object());
 
+        assertNotEquals(recordStoreOtherStorage, recordStore);
         assertNotEquals(recordStoreOtherName, recordStore);
-        assertNotEquals(recordStoreSameName, recordStore);
-        assertEquals(recordStoreSameStorage, recordStore);
     }
 
     @Test
     public void testHashCode() {
         assertEquals(recordStore.hashCode(), recordStore.hashCode());
+        assertEquals(recordStoreSameAttributes.hashCode(), recordStore.hashCode());
+
+        assertNotEquals(recordStoreOtherStorage.hashCode(), recordStore.hashCode());
         assertNotEquals(recordStoreOtherName.hashCode(), recordStore.hashCode());
-        assertNotEquals(recordStoreSameName.hashCode(), recordStore.hashCode());
-        assertEquals(recordStoreSameStorage.hashCode(), recordStore.hashCode());
     }
 
     private class TestReplicatedRecordStore extends AbstractReplicatedRecordStore<String, String> {
