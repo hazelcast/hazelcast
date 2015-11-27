@@ -41,6 +41,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -94,6 +95,8 @@ public class MapLoaderTest extends HazelcastTestSupport {
         }, 10);
     }
 
+    // https://github.com/hazelcast/hazelcast/issues/5035
+    @Ignore
     @Test
     public void testMapLoaderLoadUpdatingIndex() throws Exception {
         final int nodeCount = 3;
