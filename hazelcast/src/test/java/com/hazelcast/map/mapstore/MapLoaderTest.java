@@ -10,6 +10,7 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.MapStoreFactory;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.mapstore.writebehind.TestMapUsingMapStoreBuilder;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.AssertTask;
@@ -157,7 +158,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         MapLoader failingMapLoader = new FailingMapLoader();
         MapStoreConfig mapStoreConfig = new MapStoreConfig().setImplementation(failingMapLoader);
         MapConfig mapConfig = new MapConfig(getClass().getName()).setMapStoreConfig(mapStoreConfig);
-        Config config = new Config().addMapConfig(mapConfig);
+        Config config = new Config().addMapConfig(mapConfig).setProperty(GroupProperty.PARTITION_COUNT, "4");
 
         HazelcastInstance[] hz = createHazelcastInstanceFactory(2).newInstances(config, 2);
         IMap map = hz[0].getMap(mapConfig.getName());
@@ -334,12 +335,11 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
     static class FailingMapLoader extends MapStoreAdapter {
 
-        boolean first = true;
+        AtomicBoolean first = new AtomicBoolean(true);
 
         @Override
         public Set loadAllKeys() {
-            if (first) {
-                first = false;
+            if (first.compareAndSet(true, false)) {
                 throw new IllegalStateException("Intentional exception");
             }
             return singleton("key");
