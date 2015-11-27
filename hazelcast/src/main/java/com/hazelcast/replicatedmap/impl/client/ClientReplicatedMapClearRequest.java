@@ -16,27 +16,54 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
-import com.hazelcast.replicatedmap.impl.operation.ClearLocalAndRemoteOperation;
+import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.replicatedmap.impl.operation.ClearOperationFactory;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
+import java.io.IOException;
 import java.security.Permission;
+import java.util.Map;
 
 /**
  * Client request class for {@link java.util.Map#clear()} implementation
  */
-public class ClientReplicatedMapClearRequest extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapClearRequest extends AllPartitionsClientRequest {
+
+    private String mapName;
 
     ClientReplicatedMapClearRequest() {
     }
 
-    public ClientReplicatedMapClearRequest(String name, int partitionId) {
-        super(name, partitionId);
+    public ClientReplicatedMapClearRequest(String name) {
+        this.mapName = name;
     }
 
     @Override
-    protected Operation prepareOperation() {
-        return new ClearLocalAndRemoteOperation(getMapName());
+    protected OperationFactory createOperationFactory() {
+        return new ClearOperationFactory(mapName);
+    }
+
+    @Override
+    protected Object reduce(Map<Integer, Object> map) {
+        int deletedEntrySize = 0;
+        for (Object deletedEntryPerPartition : map.values()) {
+            deletedEntrySize += (Integer) deletedEntryPerPartition;
+        }
+        ReplicatedMapService service = getService();
+        ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
+        eventPublishingService.fireMapClearedEvent(deletedEntrySize, getDistributedObjectName());
+        return null;
+    }
+
+
+    @Override
+    public int getFactoryId() {
+        return ReplicatedMapPortableHook.F_ID;
     }
 
     @Override
@@ -46,11 +73,31 @@ public class ClientReplicatedMapClearRequest extends AbstractReplicatedMapClient
 
     @Override
     public Permission getRequiredPermission() {
-        return new ReplicatedMapPermission(getMapName(), ActionConstants.ACTION_REMOVE);
+        return new ReplicatedMapPermission(mapName, ActionConstants.ACTION_REMOVE);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return mapName;
+    }
+
+    @Override
+    public String getServiceName() {
+        return ReplicatedMapService.SERVICE_NAME;
     }
 
     @Override
     public String getMethodName() {
         return "clear";
+    }
+
+    @Override
+    public void write(PortableWriter writer) throws IOException {
+        writer.writeUTF("n", mapName);
+    }
+
+    @Override
+    public void read(PortableReader reader) throws IOException {
+        mapName = reader.readUTF("n");
     }
 }

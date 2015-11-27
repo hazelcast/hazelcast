@@ -18,34 +18,34 @@ package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 import java.io.IOException;
 
-public class ClearLocalAndRemoteOperation extends AbstractOperation {
+public class ClearOperationFactory implements OperationFactory {
 
-    private String name;
+    private String mapName;
 
-    public ClearLocalAndRemoteOperation() {
+    public ClearOperationFactory() {
     }
 
-    public ClearLocalAndRemoteOperation(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public void run() throws Exception {
-        ReplicatedMapService service = getService();
-        service.clearLocalAndRemoteRecordStores(name);
+    public ClearOperationFactory(String mapName) {
+        this.mapName = mapName;
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+    public Operation createOperation() {
+        return new ClearOperation(mapName, true);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(mapName);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        mapName = in.readUTF();
     }
 }
+

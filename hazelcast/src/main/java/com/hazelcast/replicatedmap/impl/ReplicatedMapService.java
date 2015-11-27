@@ -35,14 +35,11 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.replicatedmap.impl.operation.CheckReplicaVersion;
-import com.hazelcast.replicatedmap.impl.operation.ClearLocalOperation;
 import com.hazelcast.replicatedmap.impl.operation.ReplicationOperation;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.replicatedmap.merge.MergePolicyProvider;
 import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -57,7 +54,6 @@ import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -82,7 +78,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     public static final int INVOCATION_TRY_COUNT = 3;
 
     private static final int SYNC_INTERVAL_SECONDS = 30;
-    private static final int MAX_CLEAR_EXECUTION_RETRY = 5;
 
     private final Config config;
     private final NodeEngine nodeEngine;
@@ -285,31 +280,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         return stores;
     }
 
-    public int clearLocalRecordStores(String name) {
-        int deletedEntrySize = 0;
-        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            ReplicatedRecordStore recordStore = partitionContainers[i].getRecordStore(name);
-            if (recordStore != null) {
-                deletedEntrySize += recordStore.size();
-                recordStore.clear();
-            }
-        }
-        return deletedEntrySize;
-    }
-
-    public void clearLocalAndRemoteRecordStores(String name) {
-        Operation operation = new ClearLocalOperation(name);
-        InternalCompletableFuture<Object> result = operationService
-                .invokeOnTarget(SERVICE_NAME, operation, nodeEngine.getThisAddress());
-        Integer deletedEntrySize = (Integer) result.getSafely();
-        Collection<Address> memberAddresses = getMemberAddresses(DATA_MEMBER_SELECTOR);
-        Map<Address, InternalCompletableFuture> futures = executeClearOnMembers(memberAddresses, name);
-        for (Map.Entry<Address, InternalCompletableFuture> future : futures.entrySet()) {
-            future.getValue().getSafely();
-        }
-        eventPublishingService.fireMapClearedEvent(deletedEntrySize, name);
-    }
-
     private Collection<Address> getMemberAddresses(MemberSelector memberSelector) {
         Collection<Member> members = clusterService.getMembers(memberSelector);
         Collection<Address> addresses = new ArrayList<Address>(members.size());
@@ -317,20 +287,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
             addresses.add(member.getAddress());
         }
         return addresses;
-    }
-
-    private Map executeClearOnMembers(Collection<Address> members, String name) {
-        Map<Address, InternalCompletableFuture> futures = new HashMap<Address, InternalCompletableFuture>(members.size());
-        for (Address address : members) {
-            if (address.equals(nodeEngine.getThisAddress())) {
-                continue;
-            }
-            Operation operation = new ClearLocalOperation(name);
-            InvocationBuilder ib = operationService.createInvocationBuilder(SERVICE_NAME, operation, address);
-            ib.setTryCount(MAX_CLEAR_EXECUTION_RETRY);
-            futures.put(address, ib.invoke());
-        }
-        return futures;
     }
 
     public void initializeListeners(String name) {

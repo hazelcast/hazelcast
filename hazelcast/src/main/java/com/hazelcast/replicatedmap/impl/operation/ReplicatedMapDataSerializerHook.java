@@ -52,7 +52,7 @@ public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
         constructors[OP_CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClearLocalOperation();
+                return new ClearOperation();
             }
         };
         constructors[ENTRY_VIEW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

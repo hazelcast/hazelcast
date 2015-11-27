@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
+import com.hazelcast.replicatedmap.impl.operation.ClearOperationFactory;
 import com.hazelcast.replicatedmap.impl.operation.PutAllOperation;
 import com.hazelcast.replicatedmap.impl.operation.PutOperation;
 import com.hazelcast.replicatedmap.impl.operation.RemoveOperation;
@@ -303,7 +304,18 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject
 
     @Override
     public void clear() {
-        service.clearLocalAndRemoteRecordStores(name);
+        OperationService operationService = nodeEngine.getOperationService();
+        try {
+            Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, new ClearOperationFactory(name));
+            int deletedEntrySize = 0;
+            for (Object deletedEntryPerPartition : results.values()) {
+                deletedEntrySize += (Integer) deletedEntryPerPartition;
+            }
+            ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
+            eventPublishingService.fireMapClearedEvent(deletedEntrySize, name);
+        } catch (Throwable t) {
+            ExceptionUtil.rethrow(t);
+        }
     }
 
     @Override
