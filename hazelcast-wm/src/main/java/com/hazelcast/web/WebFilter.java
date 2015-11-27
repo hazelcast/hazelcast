@@ -458,10 +458,11 @@ public class WebFilter implements Filter {
         }
 
         private HazelcastHttpSession readSessionFromLocal() {
-
+            String invalidatedOriginalSessionId = null;
             if (hazelcastSession != null && !hazelcastSession.isValid()) {
                 LOGGER.finest("Session is invalid!");
                 destroySession(hazelcastSession, true);
+                invalidatedOriginalSessionId = hazelcastSession.invalidatedOriginalSessionId;
                 hazelcastSession = null;
             } else if (hazelcastSession != null) {
                 return hazelcastSession;
@@ -476,8 +477,16 @@ public class WebFilter implements Filter {
                     }
                     return hazelcastSession;
                 }
-                originalSessions.remove(originalSession.getId());
-                originalSession.invalidate();
+                // Even though session can be taken from request, it might be already invalidated.
+                // For example, in Wildfly (uses Undertow), taken wrapper session might be valid
+                // but its underlying real session might be already invalidated after redirection
+                // due to its request/url based wrapper session (points to same original session) design.
+                // Therefore, we check the taken session id and
+                // ignore its invalidation if it is already invalidated inside Hazelcast's session.
+                // See issue on Wildfly https://github.com/hazelcast/hazelcast/issues/6335
+                if (!originalSession.getId().equals(invalidatedOriginalSessionId)) {
+                    originalSession.invalidate();
+                }
             }
             if (clusteredSessionId != null) {
                 hazelcastSession = sessions.get(clusteredSessionId);
