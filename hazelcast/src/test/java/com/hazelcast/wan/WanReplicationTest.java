@@ -199,30 +199,6 @@ public class WanReplicationTest extends HazelcastTestSupport {
       checkKeysNotIn(clusterB, "map", 0, 20);
     }
 
-    //"Issue #1371 this topology requested hear https://groups.google.com/forum/#!msg/hazelcast/73jJo9W_v4A/5obqKMDQAnoJ")
-    @Test
-    @Ignore //replica of replica is not supported
-    public void VTopo_1activeActiveReplicar_2producers_Test_PassThroughMergePolicy() {
-        setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configB, configC, clusterC.length, "btoc", PassThroughMergePolicy.class.getName());
-
-        setupReplicateFrom(configC, configA, clusterA.length, "ctoa", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configC, configB, clusterB.length, "ctob", PassThroughMergePolicy.class.getName());
-
-        initAllClusters();
-
-        printAllReplicarConfig();
-
-        createDataIn(clusterA, "map", 0, 1000);
-        createDataIn(clusterB, "map", 1000, 2000);
-
-        assertDataInFrom(clusterC, "map", 0, 1000, clusterA);
-        assertDataInFrom(clusterC, "map", 1000, 2000, clusterB);
-
-        assertDataInFrom(clusterA, "map", 1000, 2000, clusterB);
-        assertDataInFrom(clusterB, "map", 0, 1000, clusterA);
-    }
-
     @Test
     public void VTopo_1passiveReplicar_2producers_Test_PutIfAbsentMapMergePolicy() {
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PutIfAbsentMapMergePolicy.class.getName());
@@ -244,30 +220,6 @@ public class WanReplicationTest extends HazelcastTestSupport {
         removeDataIn(clusterB, "map", 1000, 2000);
 
         assertKeysNotIn(clusterC, "map", 0, 2000);
-        assertDataSizeEventually(clusterC, "map", 0);
-    }
-
-    @Test
-    @Ignore
-    public void VTopo_1passiveReplicar_2producers_Test_LatestUpdateMapMergePolicy() {
-        setupReplicateFrom(configA, configC, clusterC.length, "atoc", LatestUpdateMapMergePolicy.class.getName());
-        setupReplicateFrom(configB, configC, clusterC.length, "btoc", LatestUpdateMapMergePolicy.class.getName());
-        initAllClusters();
-
-        createDataIn(clusterA, "map", 0, 1000);
-        assertDataInFrom(clusterC, "map", 0, 1000, clusterA);
-
-        createDataIn(clusterB, "map", 0, 1000);
-        assertDataInFrom(clusterC, "map", 0, 1000, clusterB);
-
-        assertDataSizeEventually(clusterC, "map", 1000);
-
-        removeDataIn(clusterA, "map", 0, 500);
-        assertKeysNotIn(clusterC, "map", 0, 500);
-
-        removeDataIn(clusterB, "map", 500, 1000);
-        assertKeysNotIn(clusterC, "map", 500, 1000);
-
         assertDataSizeEventually(clusterC, "map", 0);
     }
 
@@ -354,23 +306,6 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertDataInFrom(clusterA, "map", 0, 500, clusterB);
     }
 
-    //("Issue #1372  is a chain of replicars a valid topology")//TODO
-    @Test
-    @Ignore // replica of replica is not supported
-    public void chainTopo_2passiveReplicars_1producer() {
-        setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configB, configC, clusterC.length, "btoc", PassThroughMergePolicy.class.getName());
-        initAllClusters();
-
-        createDataIn(clusterA, "map", 0, 1000);
-
-        assertKeysIn(clusterB, "map", 0, 1000);
-        assertDataSizeEventually(clusterB, "map", 1000);
-
-        assertKeysIn(clusterC, "map", 0, 1000);
-        assertDataSizeEventually(clusterC, "map", 1000);
-    }
-
     @Test
     public void wan_events_should_be_processed_in_order() {
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
@@ -425,23 +360,6 @@ public class WanReplicationTest extends HazelcastTestSupport {
         public EntryBackupProcessor getBackupProcessor() {
             return null;
         }
-    }
-
-    @Test
-    @Ignore // currently Ring is not supported!
-    public void replicationRing() {
-        setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configB, configC, clusterC.length, "btoc", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configC, configA, clusterA.length, "ctoa", PassThroughMergePolicy.class.getName());
-        initAllClusters();
-
-        createDataIn(clusterA, "map", 0, 1000);
-
-        assertKeysIn(clusterB, "map", 0, 1000);
-        assertDataSizeEventually(clusterB, "map", 1000);
-
-        assertKeysIn(clusterC, "map", 0, 1000);
-        assertDataSizeEventually(clusterC, "map", 1000);
     }
 
     @Test

@@ -65,7 +65,6 @@ public class ConnectionTest {
     }
 
     @Test
-    @Ignore
     public void testBlockedClientSockets() throws IOException, InterruptedException {
         final ServerSocket serverSocket = new ServerSocket(13131, 1);
         final int count = 100;
@@ -94,7 +93,7 @@ public class ConnectionTest {
             Thread t = new Thread("client-socket-" + i) {
                 public void run() {
                     try {
-                        if (cc.incrementAndGet() > count/5 && Math.random() > .87f && flag.compareAndSet(false, true)) {
+                        if (cc.incrementAndGet() > count / 5 && Math.random() > .87f && flag.compareAndSet(false, true)) {
                             st.interrupt();
                             serverSocket.close();
                             try {
@@ -128,7 +127,6 @@ public class ConnectionTest {
     }
 
     @Test
-    @Ignore
     public void testBlockedClientSockets2() throws IOException, InterruptedException {
         final ServerSocket serverSocket = new ServerSocket(13131);
         final int count = 100;
@@ -143,7 +141,7 @@ public class ConnectionTest {
             Thread t = new Thread("client-socket-" + i) {
                 public void run() {
                     try {
-                        if (cc.incrementAndGet() > count/5 && Math.random() > .87f && flag.compareAndSet(false, true)) {
+                        if (cc.incrementAndGet() > count / 5 && Math.random() > .87f && flag.compareAndSet(false, true)) {
                             serverSocket.close();
                         } else {
                             clientSocket.setSoTimeout(1000 * 5);
@@ -167,13 +165,11 @@ public class ConnectionTest {
 
 
     @Test
-    @Ignore
     public void testDanglingSocketsOnTerminate() throws Exception {
         testDanglingSocketsOnTerminate(false);
     }
 
     @Test
-    @Ignore
     public void testDanglingSocketsOnTerminate2() throws Exception {
         testDanglingSocketsOnTerminate(true);
     }
