@@ -17,6 +17,7 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.util.Clock;
+
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 /**
@@ -27,8 +28,8 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
  */
 public class ReplicatedRecord<K, V> {
 
-    private static final AtomicLongFieldUpdater<ReplicatedRecord> HITS = AtomicLongFieldUpdater
-            .newUpdater(ReplicatedRecord.class, "hits");
+    private static final AtomicLongFieldUpdater<ReplicatedRecord> HITS
+            = AtomicLongFieldUpdater.newUpdater(ReplicatedRecord.class, "hits");
 
     // These fields are only accessed through the updaters
     @SuppressWarnings("unused")
@@ -124,9 +125,8 @@ public class ReplicatedRecord<K, V> {
         lastAccessTime = Clock.currentTimeMillis();
     }
 
-
+    // CheckStyle is deactivated due to complexity of the equals method
     //CHECKSTYLE:OFF
-    // Deactivated due to complexity of the equals method
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -173,5 +173,3 @@ public class ReplicatedRecord<K, V> {
                 + '}';
     }
 }
-
-
