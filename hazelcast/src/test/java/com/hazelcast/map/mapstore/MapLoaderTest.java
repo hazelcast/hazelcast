@@ -158,7 +158,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         MapLoader failingMapLoader = new FailingMapLoader();
         MapStoreConfig mapStoreConfig = new MapStoreConfig().setImplementation(failingMapLoader);
         MapConfig mapConfig = new MapConfig(getClass().getName()).setMapStoreConfig(mapStoreConfig);
-        Config config = new Config().addMapConfig(mapConfig).setProperty(GroupProperty.PARTITION_COUNT, "4");
+        Config config = new Config().addMapConfig(mapConfig);
 
         HazelcastInstance[] hz = createHazelcastInstanceFactory(2).newInstances(config, 2);
         IMap map = hz[0].getMap(mapConfig.getName());
