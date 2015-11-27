@@ -24,6 +24,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,6 +41,14 @@ public class PublicAddressTest {
 
     public static final int DEFAULT_PORT = 5701;
 
+    private Config config;
+
+    @Before
+    public void createConfig() {
+        config = new Config();
+        config.getNetworkConfig().getJoin().getMulticastConfig().setMulticastTimeoutSeconds(1);
+    }
+
     @After
     public void cleanup() {
         Hazelcast.shutdownAll();
@@ -47,7 +56,6 @@ public class PublicAddressTest {
 
     @Test
     public void testUseDefaultPortWhenLoopback() throws UnknownHostException {
-        Config config = new Config();
         config.getNetworkConfig().setPublicAddress("127.0.0.1");
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
 
@@ -56,7 +64,6 @@ public class PublicAddressTest {
 
     @Test
     public void testUseDefaultPortWhenLocalhost() throws UnknownHostException {
-        Config config = new Config();
         config.getNetworkConfig().setPublicAddress("localhost");
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
 
@@ -65,7 +72,6 @@ public class PublicAddressTest {
 
     @Test
     public void testUseSpecifiedHost() throws UnknownHostException {
-        Config config = new Config();
         config.getNetworkConfig().setPublicAddress("www.example.org");
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
 
@@ -74,7 +80,6 @@ public class PublicAddressTest {
 
     @Test
     public void testUseSpecifiedHostAndPort() throws UnknownHostException {
-        Config config = new Config();
         config.getNetworkConfig().setPublicAddress("www.example.org:6789");
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
 
@@ -83,7 +88,6 @@ public class PublicAddressTest {
 
     @Test
     public void testUseSpecifiedHostAndPortViaProperty() throws UnknownHostException {
-        Config config = new Config();
         config.setProperty("hazelcast.local.publicAddress", "192.168.1.1:6789");
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
 
