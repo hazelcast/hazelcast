@@ -19,10 +19,15 @@ package com.hazelcast.client.map;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.spi.EventRegistration;
@@ -38,6 +43,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -220,5 +226,44 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
         final Set<Integer> values = map.keySet(predicate);
         assertEquals(pageSize, values.size());
+    }
+
+    @Test
+    public void testNoOperationTimeoutException_whenUserCodeLongRunning() {
+        Config config = new XmlConfigBuilder().build();
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "100");
+        hazelcastFactory.newHazelcastInstance(config);
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        IMap<Object, Object> map = client.getMap(randomMapName());
+        SleepyProcessor sleepyProcessor = new SleepyProcessor(2000);
+        String key = randomString();
+        String value = randomString();
+        map.put(key, value);
+        assertEquals(value, map.executeOnKey(key, sleepyProcessor));
+    }
+
+    static class SleepyProcessor implements EntryProcessor, Serializable {
+
+        private long millis;
+
+        SleepyProcessor(long millis) {
+            this.millis = millis;
+        }
+
+        public Object process(Map.Entry entry) {
+            try {
+
+                Thread.sleep(millis);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return entry.getValue();
+        }
+
+        public EntryBackupProcessor getBackupProcessor() {
+            return null;
+        }
+
     }
 }
