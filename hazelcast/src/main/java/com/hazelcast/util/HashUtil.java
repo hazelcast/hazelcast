@@ -32,6 +32,12 @@ public final class HashUtil {
 
     private static final boolean LITTLE_ENDIAN = ByteOrder.LITTLE_ENDIAN == ByteOrder.nativeOrder();
     private static final int DEFAULT_MURMUR_SEED = 0x01000193;
+    private static final int[] PERTURBATIONS = new int[Integer.SIZE]; static {
+        final int primeDisplacement = 17;
+        for (int i = 0; i < PERTURBATIONS.length; i++) {
+            PERTURBATIONS[i] = MurmurHash3_fmix(primeDisplacement + i);
+        }
+    }
 
     public static int MurmurHash3_x86_32(byte[] data, int offset, int len) {
         return MurmurHash3_x86_32(data, offset, len, DEFAULT_MURMUR_SEED);
@@ -441,7 +447,6 @@ public final class HashUtil {
      * The reason this function exists is to deal correctly with negative and especially the Integer.MIN_VALUE; since that can't
      * be used safely with a Math.abs function.
      *
-     * @param hash
      * @param length the length of the array/list
      * @return the mod of the hash
      * @throws IllegalArgumentException if mod smaller than 1.
@@ -456,6 +461,23 @@ public final class HashUtil {
         }
 
         return hash % length;
+    }
+
+    /**
+     * <p>Compute the key perturbation value applied before hashing. The returned value
+     * should be non-zero and ideally different for each capacity. This matters because
+     * keys are nearly-ordered by their hashed values so when adding one container's
+     * values to the other, the number of collisions can skyrocket into the worst case
+     * possible.
+     * <p/>
+     * <p>If it is known that hash containers will not be added to each other
+     * (will be used for counting only, for example) then some speed can be gained by
+     * not perturbing keys before hashing and returning a value of zero for all possible
+     * capacities. The speed gain is a result of faster rehash operation (keys are mostly
+     * in order).
+     */
+    public static int computePerturbationValue(int capacity) {
+        return PERTURBATIONS[Integer.numberOfLeadingZeros(capacity)];
     }
 
     private HashUtil() {
