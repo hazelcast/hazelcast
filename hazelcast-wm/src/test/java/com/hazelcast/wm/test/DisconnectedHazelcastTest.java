@@ -116,6 +116,7 @@ public class DisconnectedHazelcastTest extends AbstractWebFilterTest {
         assertEquals("value", executeRequest("readIfExist", serverPort1, cookieStore));
         assertEquals("null", executeRequest("read", serverPort2, cookieStore));
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+        assertClusterSizeEventually(1, hz);
         Thread.sleep(9000);
         executeRequest("write", serverPort1, cookieStore);
         assertEquals("value", executeRequest("read", serverPort1, cookieStore));

@@ -16,20 +16,18 @@
 
 package com.hazelcast.web;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntrySimple;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.web.entryprocessor.DeleteSessionEntryProcessor;
 import com.hazelcast.web.entryprocessor.GetAttributeEntryProcessor;
 import com.hazelcast.web.entryprocessor.GetAttributeNamesEntryProcessor;
@@ -77,7 +75,6 @@ public class ClusteredSessionService {
     private final FilterConfig filterConfig;
     private final Properties properties;
     private final String clusterMapName;
-    private final String sessionTTL;
 
     private final Queue<AbstractMap.SimpleEntry<String, Boolean>> orphanSessions = new
             LinkedBlockingQueue<AbstractMap.SimpleEntry<String, Boolean>>();
@@ -86,71 +83,69 @@ public class ClusteredSessionService {
     private volatile long lastConnectionTry;
     private final ScheduledExecutorService es = Executors.newSingleThreadScheduledExecutor(new EnsureInstanceThreadFactory());
 
-
     /**
      * Instantiates a new Clustered session service.
      *
-     * @param filterConfig the filter config
-     * @param properties the properties
+     * @param filterConfig   the filter config
+     * @param properties     the properties
      * @param clusterMapName the cluster map name
-     * @param sessionTTL the session tTL
      */
-    public ClusteredSessionService(FilterConfig filterConfig, Properties properties, String clusterMapName, String sessionTTL) {
+    public ClusteredSessionService(FilterConfig filterConfig, Properties properties, String clusterMapName) {
         this.filterConfig = filterConfig;
         this.properties = properties;
         this.clusterMapName = clusterMapName;
-        this.sessionTTL = sessionTTL;
-
         try {
-            ensureInstance();
-        } catch (Exception ignored) {
-            EmptyStatement.ignore(ignored);
+            init();
+        } catch (Exception e) {
+            ExceptionUtil.rethrow(e);
         }
+    }
+
+    public void setFailedConnection(boolean failedConnection) {
+        this.failedConnection = failedConnection;
+    }
+
+    public void init() throws Exception {
+        ensureInstance();
         es.scheduleWithFixedDelay(new Runnable() {
             public void run() {
                 try {
                     ensureInstance();
-                } catch (Exception ignored) {
-                    EmptyStatement.ignore(ignored);
+                } catch (Exception e) {
+                    if (LOGGER.isFinestEnabled()) {
+                        LOGGER.finest("Cannot connect hazelcast server", e);
+                    }
                 }
             }
-        }, CLUSTER_CHECK_INTERVAL, CLUSTER_CHECK_INTERVAL, TimeUnit.SECONDS);
-
+        }, 2 * CLUSTER_CHECK_INTERVAL, CLUSTER_CHECK_INTERVAL, TimeUnit.SECONDS);
     }
+
 
     private void ensureInstance() throws Exception {
         if (failedConnection && System.currentTimeMillis() > lastConnectionTry + RETRY_MILLIS) {
             synchronized (this) {
                 try {
                     if (failedConnection && System.currentTimeMillis() > lastConnectionTry + RETRY_MILLIS) {
-                        reconnectHZInstansce();
+                        reconnectHZInstance();
                         clearOrphanSessionQueue();
                     }
                 } catch (Exception e) {
-                    failedConnection = true;
-                    throw e;
+                    setFailedConnection(true);
+                    if (LOGGER.isFinestEnabled()) {
+                        LOGGER.finest("Cannot connect hazelcast server", e);
+                    }
                 }
             }
         }
     }
 
-    private void reconnectHZInstansce() throws ServletException {
+    private void reconnectHZInstance() throws ServletException {
         LOGGER.info("Retrying the connection!!");
         lastConnectionTry = System.currentTimeMillis();
-        hazelcastInstance = HazelcastInstanceLoader.createInstance(filterConfig, properties);
+        hazelcastInstance = HazelcastInstanceLoader.createInstance(this, filterConfig, properties);
         clusterMap = hazelcastInstance.getMap(clusterMapName);
         sss = (SerializationServiceSupport) hazelcastInstance;
-        try {
-            if (sessionTTL != null) {
-                Config hzConfig = hazelcastInstance.getConfig();
-                MapConfig mapConfig = hzConfig.getMapConfig(clusterMapName);
-                mapConfig.setTimeToLiveSeconds(Integer.parseInt(sessionTTL));
-                hzConfig.addMapConfig(mapConfig);
-            }
-        } catch (UnsupportedOperationException ignored) {
-            LOGGER.info("client cannot access Config.");
-        }
-        failedConnection = false;
+        setFailedConnection(false);
         LOGGER.info("Successfully Connected!");
     }
 
@@ -172,17 +167,16 @@ public class ClusteredSessionService {
      * @param sessionId the session id
      * @param processor the processor
      * @return the object
-     * @throws Exception the exception
+     * @throws Exception
      */
     Object executeOnKey(String sessionId, EntryProcessor processor) throws Exception {
         try {
-            ensureInstance();
             if (processor instanceof JvmIdAware) {
                 ((JvmIdAware) processor).setJvmId(jvmId);
             }
             return clusterMap.executeOnKey(sessionId, processor);
         } catch (Exception e) {
-            failedConnection = true;
+            LOGGER.finest("Cannot connect hazelcast server", e);
             throw e;
         }
     }
@@ -214,7 +208,7 @@ public class ClusteredSessionService {
     /**
      * Gets attribute.
      *
-     * @param sessionId the session id
+     * @param sessionId     the session id
      * @param attributeName the attribute name
      * @return the attribute
      * @throws Exception the exception
@@ -228,7 +222,7 @@ public class ClusteredSessionService {
     /**
      * Delete attribute.
      *
-     * @param sessionId the session id
+     * @param sessionId     the session id
      * @param attributeName the attribute name
      * @throws Exception the exception
      */
@@ -239,9 +233,9 @@ public class ClusteredSessionService {
     /**
      * Sets attribute.
      *
-     * @param sessionId the session id
+     * @param sessionId     the session id
      * @param attributeName the attribute name
-     * @param value the value
+     * @param value         the value
      * @throws Exception the exception
      */
     void setAttribute(String sessionId, String attributeName, Object value) throws Exception {
@@ -254,7 +248,7 @@ public class ClusteredSessionService {
     /**
      * Delete session.
      *
-     * @param sessionId sessionId
+     * @param sessionId  sessionId
      * @param invalidate if true remove the distributed session, otherwise just
      *                   remove the jvm reference
      * @return the boolean
@@ -289,7 +283,7 @@ public class ClusteredSessionService {
     /**
      * Update attributes.
      *
-     * @param id the id
+     * @param id      the id
      * @param updates the updates
      * @throws Exception the exception
      */
@@ -349,3 +343,4 @@ public class ClusteredSessionService {
         }
     }
 }
+
