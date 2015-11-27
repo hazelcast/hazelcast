@@ -349,7 +349,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertGivenDataAppliedEventually(clusterB, "map", 0, 1000, "TEST");
     }
 
-    static class MyEntryProcessor implements EntryProcessor {
+    static class MyEntryProcessor implements EntryProcessor, EntryBackupProcessor {
 
         @Override
         public Object process(Entry entry) {
@@ -358,7 +358,12 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
         @Override
         public EntryBackupProcessor getBackupProcessor() {
-            return null;
+            return MyEntryProcessor.this;
+        }
+
+        @Override
+        public void processBackup(Entry entry) {
+            entry.setValue("TEST");
         }
     }
 

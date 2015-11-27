@@ -104,7 +104,12 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
     @Override
     public Operation getBackupOperation() {
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        return backupProcessor != null ? new MultipleEntryBackupOperation(name, keys, backupProcessor) : null;
+        MultipleEntryBackupOperation backupOperation = null;
+        if (backupProcessor != null) {
+            backupOperation = new MultipleEntryBackupOperation(name, keys, backupProcessor);
+            backupOperation.setWanEventList(wanEventList);
+        }
+        return backupOperation;
     }
 
     @Override

@@ -278,6 +278,10 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
         recordStore.evictEntries(now);
     }
 
+    public void setWanEventList(List<WanEventWrapper> wanEventList) {
+        this.wanEventList = wanEventList;
+    }
+
     protected static class WanEventWrapper {
 
         Data key;
@@ -313,5 +317,6 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
         public void setEventType(EntryEventType eventType) {
             this.eventType = eventType;
         }
+
     }
 }
