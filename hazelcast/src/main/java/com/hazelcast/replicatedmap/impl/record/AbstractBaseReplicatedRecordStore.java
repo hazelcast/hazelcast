@@ -28,6 +28,7 @@ import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
 import com.hazelcast.util.scheduler.ScheduledEntry;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -48,11 +49,10 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
     protected final SerializationService serializationService;
     protected final InternalPartitionService partitionService;
     protected final AtomicBoolean isLoaded = new AtomicBoolean(false);
-    protected final EntryTaskScheduler ttlEvictionScheduler;
+    protected final EntryTaskScheduler<Object, Object> ttlEvictionScheduler;
     protected final EventService eventService;
     protected final String name;
     protected int partitionId;
-
 
     protected AbstractBaseReplicatedRecordStore(String name, ReplicatedMapService replicatedMapService, int partitionId) {
         this.name = name;
@@ -92,7 +92,6 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
         storageRef.get().clear();
     }
 
-
     public long getVersion() {
         return storageRef.get().getVersion();
     }
@@ -105,9 +104,8 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
         return new HashSet<ReplicatedRecord>(storageRef.get().values());
     }
 
-
     @Override
-    public ScheduledEntry cancelTtlEntry(Object key) {
+    public ScheduledEntry<Object, Object> cancelTtlEntry(Object key) {
         return ttlEvictionScheduler.cancel(key);
     }
 
@@ -136,7 +134,6 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
         }
 
         AbstractBaseReplicatedRecordStore that = (AbstractBaseReplicatedRecordStore) o;
-
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
