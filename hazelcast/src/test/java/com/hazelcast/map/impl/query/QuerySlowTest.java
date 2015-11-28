@@ -110,7 +110,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
         assertTrue(tookWithIndex < (tookWithout / 2));
     }
 
-    @Test(timeout = 1000 * 60)
+    @Test(timeout = 1000 * 60 * 2)
     public void testRangeIndexSQLPerformance() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
