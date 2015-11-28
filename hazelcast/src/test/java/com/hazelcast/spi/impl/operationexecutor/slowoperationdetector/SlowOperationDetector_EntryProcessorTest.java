@@ -48,8 +48,7 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
         map.executeOnEntries(getSlowEntryProcessor(6));
         awaitSlowEntryProcessors();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, 4);
@@ -78,8 +77,7 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
         awaitSlowEntryProcessors();
         entryProcessorChild.await();
 
-        final Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 2);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 2);
 
         Iterator<SlowOperationLog> iterator = logs.iterator();
         SlowOperationLog firstLog = iterator.next();
@@ -90,8 +88,8 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
         int firstSize = firstInvocations.size();
         int secondSize = secondInvocations.size();
         assertTrue(format(
-                        "Expected to find 1 and 4 invocations in logs, but was %d and %d. First log: %s%nSecond log: %s",
-                        firstSize, secondSize, firstLog.createDTO().toJson(), secondLog.createDTO().toJson()),
+                "Expected to find 1 and 4 invocations in logs, but was %d and %d. First log: %s%nSecond log: %s",
+                firstSize, secondSize, firstLog.createDTO().toJson(), secondLog.createDTO().toJson()),
                 (firstSize == 1 ^ secondSize == 1) && (firstSize == 4 ^ secondSize == 4));
 
         for (SlowOperationLog.Invocation invocation : firstInvocations) {
@@ -111,8 +109,7 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
         map.executeOnEntries(entryProcessor);
         entryProcessor.await();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, 1);

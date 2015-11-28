@@ -59,8 +59,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         getOperationService(instance).execute(runnable);
         runnable.await();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 0);
+        getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 0);
     }
 
     @Test
@@ -71,8 +70,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         getOperationService(instance).execute(runnable);
         runnable.await();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, 1);
@@ -88,8 +86,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         getOperationService(instance).execute(runnable);
         runnable.await();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, 1);
@@ -105,8 +102,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         executeOperation(instance, operation);
         operation.await();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, 1);
@@ -122,8 +118,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         executeOperation(instance, operation);
         operation.await();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, 1);
@@ -141,8 +136,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         executeOperation(instance, operation);
         operation.await();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, 1);
@@ -160,8 +154,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         executeOperation(instance, operation);
         operation.await();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, 1);
@@ -197,8 +190,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
             operation.await();
         }
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, numberOfOperations);

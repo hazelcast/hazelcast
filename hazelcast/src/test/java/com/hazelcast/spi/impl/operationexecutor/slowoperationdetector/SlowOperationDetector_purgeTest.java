@@ -70,8 +70,7 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         // shutdown to stop purging, so the last one or two entry processor invocations will survive
         shutdownOperationService(instance);
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, 4);
@@ -100,7 +99,6 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         sleepSeconds(3);
         shutdownOperationService(instance);
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 0);
+        getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 0);
     }
 }

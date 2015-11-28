@@ -29,6 +29,7 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.EmptyStatement;
 
@@ -108,11 +109,23 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         return timedMemberStateFactory.createTimedMemberState().getMemberState().getOperationStats().toJson();
     }
 
-    static void assertNumberOfSlowOperationLogs(final Collection<SlowOperationLog> logs, final int expected) {
+    static Collection<SlowOperationLog> getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(final HazelcastInstance instance,
+                                                                                               final int expected) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
+                assertNumberOfSlowOperationLogs(logs, expected);
+            }
+        });
+        return getSlowOperationLogs(instance);
+    }
+
+    static void assertNumberOfSlowOperationLogs(Collection<SlowOperationLog> logs, int expected) {
         assertEqualsStringFormat("Expected %d slow operation logs, but was %d.", expected, logs.size());
     }
 
-    static void assertTotalInvocations(final SlowOperationLog log, final int totalInvocations) {
+    static void assertTotalInvocations(SlowOperationLog log, int totalInvocations) {
         assertEqualsStringFormat("Expected %d total invocations, but was %d. Log: " + log.createDTO().toJson(),
                 totalInvocations, log.totalInvocations.get());
     }
