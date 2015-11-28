@@ -229,7 +229,7 @@ public class TransactionQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore // https://github.com/hazelcast/hazelcast/issues/3796
+    // https://github.com/hazelcast/hazelcast/issues/3796
     public void testIssue859And863() throws Exception {
         final int numberOfMessages = 1000;
         final AtomicInteger count = new AtomicInteger();
