@@ -15,6 +15,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -84,16 +85,17 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testGetAsyncAndHitsGenerated() throws Exception {
-        IMap<Integer, Integer> map = getMap();
+        final IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.getAsync(i).get();
         }
-        final LocalMapStats localMapStats = map.getLocalMapStats();
+
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
+                final LocalMapStats localMapStats = map.getLocalMapStats();
                 assertEquals(100, localMapStats.getGetOperationCount());
                 assertEquals(100, localMapStats.getHits());
             }

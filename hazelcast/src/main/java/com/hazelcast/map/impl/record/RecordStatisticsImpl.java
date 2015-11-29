@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -27,8 +28,7 @@ import java.io.IOException;
  */
 public class RecordStatisticsImpl implements RecordStatistics {
 
-    // TODO is volatile needed? if yes then hits should be atomicnumber
-    protected int hits;
+    protected volatile int hits;
     protected long lastStoredTime;
     protected long expirationTime;
 
@@ -56,6 +56,8 @@ public class RecordStatisticsImpl implements RecordStatistics {
         this.expirationTime = expirationTime;
     }
 
+    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "We have the guarantee that only the partition thread will call this method")
     @Override
     public void access() {
         hits++;
