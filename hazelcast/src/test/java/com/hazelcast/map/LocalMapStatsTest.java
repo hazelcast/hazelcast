@@ -86,16 +86,17 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     @Test
     public void testGetAsyncAndHitsGenerated() throws Exception {
         HazelcastInstance h1 = createHazelcastInstance();
-        IMap<Integer, Integer> map = h1.getMap(randomMapName());
+        final IMap<Integer, Integer> map = h1.getMap(randomMapName());
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.getAsync(i);
         }
-        final LocalMapStats localMapStats = map.getLocalMapStats();
+
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
+                final LocalMapStats localMapStats = map.getLocalMapStats();
                 assertEquals(100, localMapStats.getGetOperationCount());
                 assertEquals(100, localMapStats.getHits());
             }

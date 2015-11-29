@@ -28,8 +28,8 @@ abstract class AbstractBaseRecord<V> implements Record<V> {
      */
     protected long evictionCriteriaNumber;
     protected long ttl;
-    protected long lastAccessTime;
-    protected long lastUpdateTime;
+    protected volatile long lastAccessTime;
+    protected volatile long lastUpdateTime;
     protected long creationTime;
 
     public AbstractBaseRecord() {

@@ -28,8 +28,7 @@ import java.io.IOException;
  */
 public class RecordStatistics implements DataSerializable {
 
-    // TODO is volatile needed? if yes then hits should be atomicnumber
-    protected int hits;
+    protected volatile int hits;
     protected long lastStoredTime;
     protected long expirationTime;
 
@@ -53,6 +52,8 @@ public class RecordStatistics implements DataSerializable {
         this.expirationTime = expirationTime;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "We have the guarantee that only the partition thread will call this method")
     public void access() {
         hits++;
     }
