@@ -106,11 +106,21 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     //TX Methods
 
-    public boolean txnEnsureReserve(long itemId) {
+    public boolean txnCheckReserve(long itemId) {
         if (txMap.get(itemId) == null) {
             throw new TransactionException("No reserve for itemId: " + itemId);
         }
         return true;
+    }
+
+    public void txnEnsureBackupReserve(long itemId, String transactionId, boolean pollOperation) {
+        if (txMap.get(itemId) == null) {
+            if (pollOperation) {
+                txnPollBackupReserve(itemId, transactionId);
+            } else {
+                txnOfferBackupReserve(itemId, transactionId);
+            }
+        }
     }
 
     //TX Poll
