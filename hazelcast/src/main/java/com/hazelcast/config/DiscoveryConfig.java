@@ -107,7 +107,7 @@ public class DiscoveryConfig {
      *
      * @param discoveryStrategyConfig
      */
-    public void addDiscoveryProviderConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
+    public void addDiscoveryStrategyConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
         discoveryStrategyConfigs.add(discoveryStrategyConfig);
     }
 

@@ -46,7 +46,7 @@ public class DiscoveryConfigReadOnly
     }
 
     @Override
-    public void addDiscoveryProviderConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
+    public void addDiscoveryStrategyConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
         throw new UnsupportedOperationException("Configuration is readonly");
     }
 

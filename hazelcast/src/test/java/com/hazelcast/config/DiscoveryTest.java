@@ -88,24 +88,24 @@ public class DiscoveryTest {
     }
 
     @Test
-    public void test_DiscoveryConfigReadOnly_addDiscoveryProviderConfig() {
+    public void test_DiscoveryConfigReadOnly_addDiscoveryStrategyConfig() {
         DiscoveryConfig discoveryConfig = new DiscoveryConfig();
 
         DiscoveryStrategyFactory discoveryStrategyFactory = new TestDiscoveryStrategyFactory();
         DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(discoveryStrategyFactory);
-        discoveryConfig.addDiscoveryProviderConfig(discoveryStrategyConfig);
+        discoveryConfig.addDiscoveryStrategyConfig(discoveryStrategyConfig);
 
         assertSame(discoveryStrategyConfig, discoveryConfig.getDiscoveryStrategyConfigs().iterator().next());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void test_DiscoveryConfigReadOnly_addDiscoveryProviderConfig_thenUnsupportedOperationException() {
+    public void test_DiscoveryConfigReadOnly_addDiscoveryStrategyConfig_thenUnsupportedOperationException() {
         DiscoveryConfig discoveryConfig = new DiscoveryConfig();
         DiscoveryConfig readOnly = discoveryConfig.getAsReadOnly();
 
         DiscoveryStrategyFactory discoveryStrategyFactory = new TestDiscoveryStrategyFactory();
         DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(discoveryStrategyFactory);
-        readOnly.addDiscoveryProviderConfig(discoveryStrategyConfig);
+        readOnly.addDiscoveryStrategyConfig(discoveryStrategyConfig);
     }
 
     private static class TestDiscoveryServiceProvider implements DiscoveryServiceProvider {

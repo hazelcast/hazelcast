@@ -141,7 +141,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         discoveryConfig.getDiscoveryStrategyConfigs().clear();
 
         DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.<String, Comparable>emptyMap());
-        discoveryConfig.addDiscoveryProviderConfig(strategyConfig);
+        discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
 
         final HazelcastInstance hazelcastInstance1 = Hazelcast.newHazelcastInstance(config);
         final HazelcastInstance hazelcastInstance2 = Hazelcast.newHazelcastInstance(config);
@@ -153,7 +153,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
             discoveryConfig.getDiscoveryStrategyConfigs().clear();
 
             strategyConfig = new DiscoveryStrategyConfig(factory, Collections.<String, Comparable>emptyMap());
-            discoveryConfig.addDiscoveryProviderConfig(strategyConfig);
+            discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
 
             final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
