@@ -134,10 +134,10 @@ public class LazyMapEntry implements Map.Entry, Serializable {
             return false;
         }
         Map.Entry<?, ?> e = (Map.Entry<?, ?>) o;
-        return equals(getKey(), e.getKey()) && equals(getValue(), e.getValue());
+        return eq(getKey(), e.getKey()) && eq(getValue(), e.getValue());
     }
 
-    private static boolean equals(Object o1, Object o2) {
+    private static boolean eq(Object o1, Object o2) {
         return o1 == null ? o2 == null : o1.equals(o2);
     }
 
