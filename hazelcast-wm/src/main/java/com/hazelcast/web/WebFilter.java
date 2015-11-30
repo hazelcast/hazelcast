@@ -16,7 +16,6 @@
 
 package com.hazelcast.web;
 
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
@@ -67,9 +66,6 @@ import java.util.logging.Level;
  * destroyed (Default: {@code true})</li>
  * <li>{@code map-name}: Names the {@link IMap} the filter should use to persist session details (Default:
  * {@code "_web_" + ServletContext.getServletContextName()}; e.g. "_web_MyApp")</li>
- * <li>{@code session-ttl-seconds}: Sets the {@link MapConfig#setTimeToLiveSeconds(int) time-to-live} for
- * the {@link IMap} used to persist session details (Default: Uses the existing {@link MapConfig} setting
- * for the {@link IMap}, which defaults to infinite)</li>
  * <li>{@code sticky-session}: When enabled, optimizes {@link IMap} interactions by assuming individual sessions
  * are only used from a single node (Default: {@code true})</li>
  * <li>{@code deferred-write}: When enabled, optimizes {@link IMap} interactions by only writing session attributes
@@ -121,6 +117,10 @@ public class WebFilter implements Filter {
         this.properties = properties;
     }
 
+    public Properties getProperties() {
+        return properties;
+    }
+
     void destroyOriginalSession(HttpSession originalSession) {
         String hazelcastSessionId = originalSessions.remove(originalSession.getId());
         if (hazelcastSessionId != null) {
@@ -136,9 +136,9 @@ public class WebFilter implements Filter {
     }
 
     private static String generateSessionId() {
-        final String id = UUID.randomUUID().toString();
-        final StringBuilder sb = new StringBuilder("HZ");
-        final char[] chars = id.toCharArray();
+        String id = UUID.randomUUID().toString();
+        StringBuilder sb = new StringBuilder("HZ");
+        char[] chars = id.toCharArray();
         for (final char c : chars) {
             if (c != '-') {
                 if (Character.isLetter(c)) {
@@ -165,8 +165,7 @@ public class WebFilter implements Filter {
         if (mapName == null) {
             mapName = "_web_" + servletContext.getServletContextName();
         }
-        String sessionTTL = getParam("session-ttl-seconds");
-        clusteredSessionService = new ClusteredSessionService(filterConfig, properties, mapName, sessionTTL);
+        clusteredSessionService = new ClusteredSessionService(filterConfig, properties, mapName);
 
         if (LOGGER.isLoggable(Level.FINEST)) {
             LOGGER.finest("sticky:" + stickySession + ", shutdown-on-destroy: " + shutdownOnDestroy
@@ -216,6 +215,7 @@ public class WebFilter implements Filter {
         setProperty(HazelcastInstanceLoader.INSTANCE_NAME);
         setProperty(HazelcastInstanceLoader.USE_CLIENT);
         setProperty(HazelcastInstanceLoader.CLIENT_CONFIG_LOCATION);
+        setProperty(HazelcastInstanceLoader.STICKY_SESSION_CONFIG);
     }
 
     private void setProperty(String propertyName) {
@@ -472,6 +472,7 @@ public class WebFilter implements Filter {
                 String hazelcastSessionId = originalSessions.get(originalSession.getId());
                 if (hazelcastSessionId != null) {
                     hazelcastSession = sessions.get(hazelcastSessionId);
+
                     if (hazelcastSession != null && !hazelcastSession.isStickySession()) {
                         hazelcastSession.updateReloadFlag();
                     }
