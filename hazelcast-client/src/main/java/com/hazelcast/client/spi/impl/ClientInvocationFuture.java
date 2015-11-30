@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.EventHandler;
@@ -248,6 +249,7 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
             });
         } catch (RejectedExecutionException e) {
             LOGGER.warning("Execution of callback: " + callback + " is rejected!", e);
+            callback.onFailure(new HazelcastClientNotActiveException(e.getMessage()));
         }
     }
 
