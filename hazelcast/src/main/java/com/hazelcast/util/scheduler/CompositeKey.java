@@ -19,16 +19,16 @@ package com.hazelcast.util.scheduler;
 /**
  * This object is first needed for having different key objects that are created for the same key updated in
  * different times so should be persisted consequently.
- * So using ScheduleType.FOR_EACH, all the updates will be scheduled seperately.
+ * So using ScheduleType.FOR_EACH, all the updates will be scheduled separately.
  */
-final class TimeKey {
+final class CompositeKey {
 
-    private Object key;
-    private long time;
+    private final Object key;
+    private final long id;
 
-    public TimeKey(Object key, long time) {
+    public CompositeKey(Object key, long id) {
         this.key = key;
-        this.time = time;
+        this.id = id;
     }
 
     public Object getKey() {
@@ -44,9 +44,9 @@ final class TimeKey {
             return false;
         }
 
-        TimeKey that = (TimeKey) o;
+        CompositeKey that = (CompositeKey) o;
 
-        if (time != that.time) {
+        if (id != that.id) {
             return false;
         }
         if (key != null ? !key.equals(that.key) : that.key != null) {
@@ -59,12 +59,12 @@ final class TimeKey {
     @Override
     public int hashCode() {
         int result = key != null ? key.hashCode() : 0;
-        result = 31 * result + (int) (time ^ (time >>> 32));
+        result = 31 * result + (int) (id ^ (id >>> 32));
         return result;
     }
 
     @Override
     public String toString() {
-        return "TimeKey{" + "key=" + key + ",time=" + time + '}';
+        return "Key{" + "key=" + key + ", id=" + id + '}';
     }
 }
