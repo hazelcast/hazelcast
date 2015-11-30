@@ -139,7 +139,7 @@ public class DiscoverySpiTest
         discoveryConfig.getDiscoveryStrategyConfigs().clear();
 
         DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.<String, Comparable>emptyMap());
-        discoveryConfig.addDiscoveryProviderConfig(strategyConfig);
+        discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
 
         try {
             final HazelcastInstance hazelcastInstance1 = Hazelcast.newHazelcastInstance(config);

@@ -719,7 +719,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
 
-        discoveryConfig.addDiscoveryProviderConfig(new DiscoveryStrategyConfig(clazz, properties));
+        discoveryConfig.addDiscoveryStrategyConfig(new DiscoveryStrategyConfig(clazz, properties));
     }
 
     private void handleAWS(Node node) {
