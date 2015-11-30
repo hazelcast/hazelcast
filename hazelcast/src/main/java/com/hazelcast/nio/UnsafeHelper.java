@@ -72,7 +72,6 @@ public final class UnsafeHelper {
             + "seem to support unaligned access to memory. Unsafe usage has been enforced via System Property "
             + UNSAFE_MODE_PROPERTY_NAME + " This is not a supported configuration and it can crash JVM or corrupt your data!";
 
-
     static {
         Unsafe unsafe;
         try {
@@ -134,7 +133,7 @@ public final class UnsafeHelper {
         return unsafe == null ? -1 : unsafe.arrayIndexScale(type);
     }
 
-    private static Unsafe findUnsafeIfAllowed() {
+    static Unsafe findUnsafeIfAllowed() {
         if (isUnsafeExplicitlyDisabled()) {
             Logger.getLogger(UnsafeHelper.class).warning(UNSAFE_WARNING_WHEN_EXPLICTLY_DISABLED);
             return null;
@@ -165,13 +164,11 @@ public final class UnsafeHelper {
     }
 
     private static boolean isUnalignedAccessAllowed() {
-        //we can't use Unsafe to access memory on platforms where unaligned access is not allowed
-        //see https://github.com/hazelcast/hazelcast/issues/5518 for details.
+        // we can't use Unsafe to access memory on platforms where unaligned access is not allowed
+        // see https://github.com/hazelcast/hazelcast/issues/5518 for details.
         String arch = System.getProperty("os.arch");
-        //list of architectures copied from OpenJDK - java.nio.Bits::unaligned
-        boolean unalignedAllowed = arch.equals("i386") || arch.equals("x86")
-                || arch.equals("amd64") || arch.equals("x86_64");
-        return unalignedAllowed;
+        // list of architectures copied from OpenJDK - java.nio.Bits::unaligned
+        return arch.equals("i386") || arch.equals("x86") || arch.equals("amd64") || arch.equals("x86_64");
     }
 
     private static Unsafe findUnsafe() {
