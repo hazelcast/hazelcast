@@ -2,7 +2,8 @@ package com.hazelcast.util.scheduler;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
+import com.hazelcast.util.Clock;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,21 +37,14 @@ public class SecondsBasedEntryTaskSchedulerTest {
     @Mock
     private ScheduledEntryProcessor<Integer, Integer> entryProcessor = mock(ScheduledEntryProcessor.class);
 
-
-    private void mockScheduleMethod() {
+    @Before
+    public void mockScheduleMethod() {
         when(executorService.schedule(any(Runnable.class), anyLong(), any(TimeUnit.class))).thenReturn(
                 mock(ScheduledFuture.class));
     }
 
-    @After
-    public void after() {
-        System.clearProperty("com.hazelcast.clock.impl");
-    }
-
     @Test
     public void test_scheduleEntry_scheduleIfNew() {
-        mockScheduleMethod();
-
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
                 new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, SCHEDULE_IF_NEW);
 
@@ -61,8 +55,6 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_scheduleEntryOnlyOnce_scheduleIfNew() {
-        mockScheduleMethod();
-
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
                 new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, SCHEDULE_IF_NEW);
 
@@ -74,8 +66,6 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_cancelEntry_scheduleIfNew() {
-        mockScheduleMethod();
-
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
                 new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, SCHEDULE_IF_NEW);
 
@@ -95,8 +85,6 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_scheduleEntry_postpone() {
-        mockScheduleMethod();
-
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
                 new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, POSTPONE);
 
@@ -107,8 +95,6 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_rescheduleEntry_postpone() {
-        mockScheduleMethod();
-
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
                 new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, POSTPONE);
 
@@ -120,22 +106,22 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_dontRescheduleEntryWithinSameSecond_postpone() {
-        System.setProperty("com.hazelcast.clock.impl", "com.hazelcast.util.StaticClock");
-        mockScheduleMethod();
+        System.setProperty(Clock.HAZELCAST_CLOCK_IMPL, StaticClock.class.getName());
+        try {
+            final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
+                    new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, POSTPONE);
 
-        final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
-                new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, POSTPONE);
-
-        assertTrue(scheduler.schedule(0, 1, 1));
-        assertFalse(scheduler.schedule(0, 1, 1));
-        assertNotNull(scheduler.get(1));
-        assertEquals(1, scheduler.size());
+            assertTrue(scheduler.schedule(0, 1, 1));
+            assertFalse(scheduler.schedule(0, 1, 1));
+            assertNotNull(scheduler.get(1));
+            assertEquals(1, scheduler.size());
+        } finally {
+            System.clearProperty(Clock.HAZELCAST_CLOCK_IMPL);
+        }
     }
 
     @Test
     public void test_cancelEntry_postpone() {
-        mockScheduleMethod();
-
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
                 new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, POSTPONE);
 
@@ -147,8 +133,6 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_scheduleEntry_foreach() {
-        mockScheduleMethod();
-
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
                 new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, FOR_EACH);
 
@@ -159,8 +143,6 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_scheduleEntryMultipleTimes_foreach() {
-        mockScheduleMethod();
-
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
                 new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, FOR_EACH);
 
@@ -172,8 +154,6 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_cancelIfExists_scheduleIfNew() {
-        mockScheduleMethod();
-
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
                 new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, SCHEDULE_IF_NEW);
 
@@ -183,8 +163,6 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_cancelIfExists_postpone() {
-        mockScheduleMethod();
-
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
                 new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, POSTPONE);
 
@@ -194,8 +172,6 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_cancelIfExists_foreach() {
-        mockScheduleMethod();
-
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
                 new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, FOR_EACH);
 
@@ -205,8 +181,6 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_cancelIfExistsWithInvalidValue_foreach() {
-        mockScheduleMethod();
-
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
                 new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, FOR_EACH);
 
@@ -216,8 +190,6 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_cancelIfExistsMultiple_foreach() {
-        mockScheduleMethod();
-
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
                 new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, FOR_EACH);
 
@@ -236,8 +208,6 @@ public class SecondsBasedEntryTaskSchedulerTest {
 
     @Test
     public void test_cancelAll() {
-        mockScheduleMethod();
-
         final SecondsBasedEntryTaskScheduler<Integer, Integer> scheduler =
                 new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, FOR_EACH);
 

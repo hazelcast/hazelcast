@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Schedule execution of an entry for seconds later.
@@ -55,13 +56,12 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
 
     private static final long INITIAL_TIME_MILLIS = Clock.currentTimeMillis();
 
-
     private static final Comparator<ScheduledEntry> SCHEDULED_ENTRIES_COMPARATOR = new Comparator<ScheduledEntry>() {
         @Override
         public int compare(ScheduledEntry o1, ScheduledEntry o2) {
-            if (o1.getScheduleStartTimeInNanos() > o2.getScheduleStartTimeInNanos()) {
+            if (o1.getScheduleId() > o2.getScheduleId()) {
                 return 1;
-            } else if (o1.getScheduleStartTimeInNanos() < o2.getScheduleStartTimeInNanos()) {
+            } else if (o1.getScheduleId() < o2.getScheduleId()) {
                 return -1;
             }
             return 0;
@@ -76,6 +76,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     private final ScheduleType scheduleType;
     private final ConcurrentMap<Integer, ScheduledFuture> scheduledTaskMap
             = new ConcurrentHashMap<Integer, ScheduledFuture>(1000);
+    private final AtomicLong uniqueIdGenerator = new AtomicLong();
 
     SecondsBasedEntryTaskScheduler(ScheduledExecutorService scheduledExecutorService,
                                    ScheduledEntryProcessor<K, V> entryProcessor, ScheduleType scheduleType) {
@@ -100,9 +101,9 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     @Override
     public Set<K> flush(Set<K> keys) {
         if (scheduleType.equals(ScheduleType.FOR_EACH)) {
-            return flushByTimeKeys(keys);
+            return flushByCompositeKeys(keys);
         }
-        Set<ScheduledEntry<K, V>> res = new HashSet<ScheduledEntry<K, V>>(keys.size());
+        List<ScheduledEntry<K, V>> res = new ArrayList<ScheduledEntry<K, V>>(keys.size());
         Set<K> processedKeys = new HashSet<K>();
         for (K key : keys) {
             final Integer second = secondsOfKeys.remove(key);
@@ -118,25 +119,25 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         return processedKeys;
     }
 
-    private Set flushByTimeKeys(Set keys) {
-        Set<ScheduledEntry<K, V>> res = new HashSet<ScheduledEntry<K, V>>(keys.size());
-        Set<TimeKey> candidateKeys = new HashSet<TimeKey>();
+    private Set flushByCompositeKeys(Set keys) {
+        List<ScheduledEntry<K, V>> res = new ArrayList<ScheduledEntry<K, V>>(keys.size());
+        Set<CompositeKey> candidateKeys = new HashSet<CompositeKey>();
         Set processedKeys = new HashSet();
         for (Object key : keys) {
             for (Object skey : secondsOfKeys.keySet()) {
-                TimeKey timeKey = (TimeKey) skey;
-                if (key.equals(timeKey.getKey())) {
-                    candidateKeys.add(timeKey);
+                CompositeKey compositeKey = (CompositeKey) skey;
+                if (key.equals(compositeKey.getKey())) {
+                    candidateKeys.add(compositeKey);
                 }
             }
         }
-        for (TimeKey timeKey : candidateKeys) {
-            final Integer second = secondsOfKeys.remove(timeKey);
+        for (CompositeKey compositeKey : candidateKeys) {
+            final Integer second = secondsOfKeys.remove(compositeKey);
             if (second != null) {
                 final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
                 if (entries != null) {
-                    res.add(entries.remove(timeKey));
-                    processedKeys.add(timeKey.getKey());
+                    res.add(entries.remove(compositeKey));
+                    processedKeys.add(compositeKey.getKey());
                 }
             }
 
@@ -148,7 +149,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     @Override
     public ScheduledEntry<K, V> cancel(K key) {
         if (scheduleType.equals(ScheduleType.FOR_EACH)) {
-            return cancelByTimeKey(key);
+            return cancelByCompositeKey(key);
         }
         final Integer second = secondsOfKeys.remove(key);
         if (second == null) {
@@ -163,10 +164,10 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
 
     @Override
     public int cancelIfExists(K key, V value) {
-        final ScheduledEntry<K, V> scheduledEntry = new ScheduledEntry<K, V>(key, value, 0, 0);
+        final ScheduledEntry<K, V> scheduledEntry = new ScheduledEntry<K, V>(key, value, 0, 0, 0);
 
         if (scheduleType.equals(ScheduleType.FOR_EACH)) {
-            return cancelByTimeKey(key, scheduledEntry);
+            return cancelByCompositeKey(key, scheduledEntry);
         }
 
         final Integer second = secondsOfKeys.remove(key);
@@ -184,7 +185,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     @Override
     public ScheduledEntry<K, V> get(K key) {
         if (scheduleType.equals(ScheduleType.FOR_EACH)) {
-            return getByTimeKey(key);
+            return getByCompositeKey(key);
         }
         final Integer second = secondsOfKeys.get(key);
         if (second != null) {
@@ -196,12 +197,12 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         return null;
     }
 
-    private ScheduledEntry<K, V> cancelByTimeKey(K key) {
-        Set<TimeKey> candidateKeys = getTimeKeys(key);
+    private ScheduledEntry<K, V> cancelByCompositeKey(K key) {
+        Set<CompositeKey> candidateKeys = getCompositeKeys(key);
 
         ScheduledEntry<K, V> result = null;
-        for (TimeKey timeKey : candidateKeys) {
-            final Integer second = secondsOfKeys.remove(timeKey);
+        for (CompositeKey compositeKey : candidateKeys) {
+            final Integer second = secondsOfKeys.remove(compositeKey);
             if (second == null) {
                 continue;
             }
@@ -209,15 +210,15 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
             if (entries == null) {
                 continue;
             }
-            result = cancelAndCleanUpIfEmpty(second, entries, timeKey);
+            result = cancelAndCleanUpIfEmpty(second, entries, compositeKey);
         }
         return result;
     }
 
-    private int cancelByTimeKey(K key, final ScheduledEntry<K, V> entryToRemove) {
+    private int cancelByCompositeKey(K key, final ScheduledEntry<K, V> entryToRemove) {
         int cancelled = 0;
-        for (TimeKey timeKey : getTimeKeys(key)) {
-            final Integer second = secondsOfKeys.remove(timeKey);
+        for (CompositeKey compositeKey : getCompositeKeys(key)) {
+            final Integer second = secondsOfKeys.remove(compositeKey);
             if (second == null) {
                 continue;
             }
@@ -226,33 +227,33 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
                 continue;
             }
 
-            if (cancelAndCleanUpIfEmpty(second, entries, timeKey, entryToRemove)) {
+            if (cancelAndCleanUpIfEmpty(second, entries, compositeKey, entryToRemove)) {
                 cancelled++;
             }
         }
         return cancelled;
     }
 
-    private Set<TimeKey> getTimeKeys(K key) {
-        final Set<TimeKey> candidateKeys = new HashSet<TimeKey>();
-        for (Object timeKeyObj : secondsOfKeys.keySet()) {
-            TimeKey timeKey = (TimeKey) timeKeyObj;
-            if (timeKey.getKey().equals(key)) {
-                candidateKeys.add(timeKey);
+    private Set<CompositeKey> getCompositeKeys(K key) {
+        final Set<CompositeKey> candidateKeys = new HashSet<CompositeKey>();
+        for (Object keyObj : secondsOfKeys.keySet()) {
+            CompositeKey compositeKey = (CompositeKey) keyObj;
+            if (compositeKey.getKey().equals(key)) {
+                candidateKeys.add(compositeKey);
             }
         }
         return candidateKeys;
     }
 
-    public ScheduledEntry<K, V> getByTimeKey(K key) {
-        final Set<TimeKey> candidateKeys = getTimeKeys(key);
+    public ScheduledEntry<K, V> getByCompositeKey(K key) {
+        final Set<CompositeKey> candidateKeys = getCompositeKeys(key);
         ScheduledEntry<K, V> result = null;
-        for (TimeKey timeKey : candidateKeys) {
-            final Integer second = secondsOfKeys.get(timeKey);
+        for (CompositeKey compositeKey : candidateKeys) {
+            final Integer second = secondsOfKeys.get(compositeKey);
             if (second != null) {
                 final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
                 if (entries != null) {
-                    result = entries.get(timeKey);
+                    result = entries.get(compositeKey);
                 }
             }
         }
@@ -269,17 +270,18 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
             }
             removeKeyFromSecond(key, existingSecond);
         }
-        doSchedule(key, new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds), newSecond);
+        final long id = uniqueIdGenerator.incrementAndGet();
+        doSchedule(key, new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds, id), newSecond);
         return true;
     }
 
     private boolean scheduleEntry(long delayMillis, K key, V value) {
         final int delaySeconds = ceilToSecond(delayMillis);
         final Integer newSecond = findRelativeSecond(delayMillis);
-        long time = System.nanoTime();
-        TimeKey timeKey = new TimeKey(key, time);
-        secondsOfKeys.put(timeKey, newSecond);
-        doSchedule(timeKey, new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds, time), newSecond);
+        final long id = uniqueIdGenerator.incrementAndGet();
+        Object compositeKey = new CompositeKey(key, id);
+        secondsOfKeys.put(compositeKey, newSecond);
+        doSchedule(compositeKey, new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds, id), newSecond);
         return true;
     }
 
@@ -289,7 +291,8 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         if (secondsOfKeys.putIfAbsent(key, newSecond) != null) {
             return false;
         }
-        doSchedule(key, new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds), newSecond);
+        final long id = uniqueIdGenerator.incrementAndGet();
+        doSchedule(key, new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds, id), newSecond);
         return true;
     }
 
@@ -416,7 +419,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
             if (entries == null || entries.isEmpty()) {
                 return;
             }
-            Set<ScheduledEntry<K, V>> values = new HashSet<ScheduledEntry<K, V>>(entries.size());
+            List<ScheduledEntry<K, V>> values = new ArrayList<ScheduledEntry<K, V>>(entries.size());
             for (Map.Entry<Object, ScheduledEntry<K, V>> entry : entries.entrySet()) {
                 Integer removed = secondsOfKeys.remove(entry.getKey());
                 if (removed != null) {
@@ -428,15 +431,13 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         }
     }
 
-    private List<ScheduledEntry<K, V>> sortForEntryProcessing(Set<ScheduledEntry<K, V>> coll) {
+    private List<ScheduledEntry<K, V>> sortForEntryProcessing(List<ScheduledEntry<K, V>> coll) {
         if (coll == null || coll.isEmpty()) {
             return Collections.emptyList();
         }
 
-        final List<ScheduledEntry<K, V>> sortedEntries = new ArrayList<ScheduledEntry<K, V>>(coll);
-        Collections.sort(sortedEntries, SCHEDULED_ENTRIES_COMPARATOR);
-
-        return sortedEntries;
+        Collections.sort(coll, SCHEDULED_ENTRIES_COMPARATOR);
+        return coll;
     }
 
 
