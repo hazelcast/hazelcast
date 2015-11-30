@@ -17,7 +17,7 @@ public interface RingbufferCodecTemplate {
      * @param name Name of the Ringbuffer
      * @return the size
      */
-    @Request(id = 1, retryable = false, response = ResponseMessageConst.LONG)
+    @Request(id = 1, retryable = false, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object size(String name);
 
     /**
@@ -27,8 +27,9 @@ public interface RingbufferCodecTemplate {
      * @param name Name of the Ringbuffer
      * @return the sequence of the tail
      */
-    @Request(id = 2, retryable = false, response = ResponseMessageConst.LONG)
+    @Request(id = 2, retryable = false, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object tailSequence(String name);
+
     /**
      * Returns the sequence of the head. The head is the side of the ringbuffer where the oldest items in the ringbuffer
      * are found. If the RingBuffer is empty, the head will be one more than the tail.
@@ -37,15 +38,16 @@ public interface RingbufferCodecTemplate {
      * @param name Name of the Ringbuffer
      * @return the sequence of the head
      */
-    @Request(id = 3, retryable = false, response = ResponseMessageConst.LONG)
+    @Request(id = 3, retryable = false, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object headSequence(String name);
+
     /**
      * Returns the capacity of this Ringbuffer.
      *
      * @param name Name of the Ringbuffer
      * @return the capacity
      */
-    @Request(id = 4, retryable = false, response = ResponseMessageConst.LONG)
+    @Request(id = 4, retryable = false, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object capacity(String name);
 
     /**
@@ -55,7 +57,7 @@ public interface RingbufferCodecTemplate {
      * @param name Name of the Ringbuffer
      * @return the remaining capacity
      */
-    @Request(id = 5, retryable = false, response = ResponseMessageConst.LONG)
+    @Request(id = 5, retryable = false, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object remainingCapacity(String name);
 
     /**
@@ -63,7 +65,7 @@ public interface RingbufferCodecTemplate {
      * will return the sequence of the written item. If there is no space, it depends on the overflow policy what happens:
      * OverflowPolicy OVERWRITE we just overwrite the oldest item in the ringbuffer and we violate the ttl
      * OverflowPolicy FAIL we return -1. The reason that FAIL exist is to give the opportunity to obey the ttl.
-     *
+     * <p/>
      * This sequence will always be unique for this Ringbuffer instance so it can be used as a unique id generator if you are
      * publishing items on this Ringbuffer. However you need to take care of correctly determining an initial id when any node
      * uses the ringbuffer for the first time. The most reliable way to do that is to write a dummy item into the ringbuffer and
@@ -71,12 +73,12 @@ public interface RingbufferCodecTemplate {
      * this id is not the sequence of the item you are about to publish but from a previously published item. So it can't be used
      * to find that item.
      *
-     * @param name Name of the Ringbuffer
+     * @param name           Name of the Ringbuffer
      * @param overflowPolicy the OverflowPolicy to use.
-     * @param value to item to add
+     * @param value          to item to add
      * @return the sequence of the added item, or -1 if the add failed.
      */
-    @Request(id = 6, retryable = false, response = ResponseMessageConst.LONG)
+    @Request(id = 6, retryable = false, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object add(String name, int overflowPolicy, Data value);
 
     /**
@@ -85,11 +87,11 @@ public interface RingbufferCodecTemplate {
      * readers or it can be read multiple times by the same reader. Currently it isn't possible to control how long this
      * call is going to block. In the future we could add e.g. tryReadOne(long sequence, long timeout, TimeUnit unit).
      *
-     * @param name Name of the Ringbuffer
+     * @param name     Name of the Ringbuffer
      * @param sequence the sequence of the item to read.
      * @return the read item
      */
-    @Request(id = 8, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 8, retryable = false, response = ResponseMessageConst.DATA, partitionIdentifier = "name")
     Object readOne(String name, long sequence);
 
     /**
@@ -102,12 +104,12 @@ public interface RingbufferCodecTemplate {
      * If an addAll is executed concurrently with an add or addAll, no guarantee is given that items are contiguous.
      * The result of the future contains the sequenceId of the last written item
      *
-     * @param name Name of the Ringbuffer
-     * @param valueList the batch of items to add
+     * @param name           Name of the Ringbuffer
+     * @param valueList      the batch of items to add
      * @param overflowPolicy the overflowPolicy to use
      * @return the ICompletableFuture to synchronize on completion.
      */
-    @Request(id = 9, retryable = false, response = ResponseMessageConst.LONG)
+    @Request(id = 9, retryable = false, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object addAll(String name, List<Data> valueList, int overflowPolicy);
 
     /**
@@ -119,13 +121,13 @@ public interface RingbufferCodecTemplate {
      * true are returned. Using filters is a good way to prevent getting items that are of no value to the receiver.
      * This reduces the amount of IO and the number of operations being executed, and can result in a significant performance improvement.
      *
-     * @param name Name of the Ringbuffer
+     * @param name          Name of the Ringbuffer
      * @param startSequence the startSequence of the first item to read
-     * @param minCount the minimum number of items to read.
-     * @param maxCount the maximum number of items to read.
-     * @param filter Filter is allowed to be null, indicating there is no filter.
-     * @return  a future containing the items read.
+     * @param minCount      the minimum number of items to read.
+     * @param maxCount      the maximum number of items to read.
+     * @param filter        Filter is allowed to be null, indicating there is no filter.
+     * @return a future containing the items read.
      */
-    @Request(id = 10, retryable = false, response = ResponseMessageConst.READ_RESULT_SET)
+    @Request(id = 10, retryable = false, response = ResponseMessageConst.READ_RESULT_SET, partitionIdentifier = "name")
     Object readMany(String name, long startSequence, int minCount, int maxCount, @Nullable Data filter);
 }

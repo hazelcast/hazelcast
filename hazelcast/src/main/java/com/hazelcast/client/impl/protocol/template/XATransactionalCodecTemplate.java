@@ -30,7 +30,7 @@ public interface XATransactionalCodecTemplate {
      *
      * @param xid Java XA transaction id as defined in interface javax.transaction.xa.Xid.
      */
-    @Request(id = 1, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 1, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "xid")
     void clearRemote(Xid xid);
 
     /**
@@ -45,7 +45,7 @@ public interface XATransactionalCodecTemplate {
      * @param xid Java XA transaction id as defined in interface javax.transaction.xa.Xid.
      * @param isCommit If true, the transaction is committed else transaction is rolled back.
      */
-    @Request(id = 3, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 3, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "xid")
     void finalize(Xid xid, boolean isCommit);
 
     /**

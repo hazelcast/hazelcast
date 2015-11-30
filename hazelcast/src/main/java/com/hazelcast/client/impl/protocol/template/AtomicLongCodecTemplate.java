@@ -29,62 +29,62 @@ public interface AtomicLongCodecTemplate {
     /**
      * Applies a function on the value, the actual stored value will not change.
      *
-     * @param name The name of this IAtomicLong instance.
+     * @param name     The name of this IAtomicLong instance.
      * @param function The function applied to the value, the value is not changed.
      * @return The result of the function application.
      */
-    @Request(id = 1, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 1, retryable = false, response = ResponseMessageConst.DATA, partitionIdentifier = "name")
     Object apply(String name, Data function);
 
     /**
      * Alters the currently stored value by applying a function on it.
      *
-     * @param name The name of this IAtomicLong instance.
+     * @param name     The name of this IAtomicLong instance.
      * @param function The function applied to the currently stored value.
      */
-    @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "name")
     void alter(String name, Data function);
 
     /**
      * Alters the currently stored value by applying a function on it and gets the result.
      *
-     * @param name The name of this IAtomicLong instance.
+     * @param name     The name of this IAtomicLong instance.
      * @param function The function applied to the currently stored value.
      * @return The result of the function application.
      */
-    @Request(id = 3, retryable = false, response = ResponseMessageConst.LONG)
+    @Request(id = 3, retryable = false, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object alterAndGet(String name, Data function);
 
     /**
      * Alters the currently stored value by applying a function on it on and gets the old value.
      *
-     * @param name The name of this IAtomicLong instance.
+     * @param name     The name of this IAtomicLong instance.
      * @param function The function applied to the currently stored value.
      * @return The old value before the function application.
      */
-    @Request(id = 4, retryable = false, response = ResponseMessageConst.LONG)
+    @Request(id = 4, retryable = false, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object getAndAlter(String name, Data function);
 
     /**
      * Atomically adds the given value to the current value.
      *
-     * @param name The name of this IAtomicLong instance.
+     * @param name  The name of this IAtomicLong instance.
      * @param delta the value to add to the current value
      * @return the updated value, the given value added to the current value
      */
-    @Request(id = 5, retryable = false, response = ResponseMessageConst.LONG)
+    @Request(id = 5, retryable = false, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object addAndGet(String name, long delta);
 
     /**
      * Atomically sets the value to the given updated value only if the current value the expected value.
      *
-     * @param name The name of this IAtomicLong instance.
+     * @param name     The name of this IAtomicLong instance.
      * @param expected the expected value
-     * @param updated the new value
+     * @param updated  the new value
      * @return true if successful; or false if the actual value
-     *         was not equal to the expected value.
+     * was not equal to the expected value.
      */
-    @Request(id = 6, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 6, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object compareAndSet(String name, long expected, long updated);
 
     /**
@@ -93,7 +93,7 @@ public interface AtomicLongCodecTemplate {
      * @param name The name of this IAtomicLong instance.
      * @return the updated value, the current value decremented by one
      */
-    @Request(id = 7, retryable = false, response = ResponseMessageConst.LONG)
+    @Request(id = 7, retryable = false, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object decrementAndGet(String name);
 
     /**
@@ -102,27 +102,27 @@ public interface AtomicLongCodecTemplate {
      * @param name The name of this IAtomicLong instance.
      * @return the current value
      */
-    @Request(id = 8, retryable = false, response = ResponseMessageConst.LONG)
+    @Request(id = 8, retryable = false, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object get(String name);
 
     /**
      * Atomically adds the given value to the current value.
      *
-     * @param name The name of this IAtomicLong instance.
+     * @param name  The name of this IAtomicLong instance.
      * @param delta the value to add to the current value
      * @return the old value before the add
      */
-    @Request(id = 9, retryable = false, response = ResponseMessageConst.LONG)
+    @Request(id = 9, retryable = false, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object getAndAdd(String name, long delta);
 
     /**
      * Atomically sets the given value and returns the old value.
      *
-     * @param name The name of this IAtomicLong instance.
+     * @param name     The name of this IAtomicLong instance.
      * @param newValue the new value
      * @return the old value
      */
-    @Request(id = 10, retryable = false, response = ResponseMessageConst.LONG)
+    @Request(id = 10, retryable = false, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object getAndSet(String name, long newValue);
 
     /**
@@ -131,7 +131,7 @@ public interface AtomicLongCodecTemplate {
      * @param name The name of this IAtomicLong instance.
      * @return The updated value, the current value incremented by one
      */
-    @Request(id = 11, retryable = false, response = ResponseMessageConst.LONG)
+    @Request(id = 11, retryable = false, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object incrementAndGet(String name);
 
     /**
@@ -140,15 +140,15 @@ public interface AtomicLongCodecTemplate {
      * @param name The name of this IAtomicLong instance.
      * @return the old value
      */
-    @Request(id = 12, retryable = false, response = ResponseMessageConst.LONG)
+    @Request(id = 12, retryable = false, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object getAndIncrement(String name);
 
     /**
      * Atomically sets the given value.
      *
-     * @param name The name of this IAtomicLong instance.
+     * @param name     The name of this IAtomicLong instance.
      * @param newValue The new value
      */
-    @Request(id = 13, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 13, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "name")
     void set(String name, long newValue);
 }

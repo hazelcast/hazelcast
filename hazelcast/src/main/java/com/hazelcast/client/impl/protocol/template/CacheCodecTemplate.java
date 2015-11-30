@@ -26,25 +26,24 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @GenerateCodec(id = TemplateConstants.JCACHE_TEMPLATE_ID, name = "Cache", ns = "Hazelcast.Client.Protocol.Codec")
 public interface CacheCodecTemplate {
 
     /**
-     * @param name Name of the cache.
+     * @param name      Name of the cache.
      * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return Registration id for the registered listener.
      */
-    @Request(id = 1, retryable = true, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_CACHE})
+    @Request(id = 1, retryable = false, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_CACHE})
     Object addEntryListener(String name, boolean localOnly);
 
     /**
-     * @param name Name of the cache.
+     * @param name      Name of the cache.
      * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return Registration id for the registered listener.
      */
-    @Request(id = 2, retryable = true, response = ResponseMessageConst.STRING,
+    @Request(id = 2, retryable = false, response = ResponseMessageConst.STRING,
             event = {EventMessageConst.EVENT_CACHEINVALIDATION, EventMessageConst.EVENT_CACHEBATCHINVALIDATION})
     Object addInvalidationListener(String name, boolean localOnly);
 
@@ -90,7 +89,7 @@ public interface CacheCodecTemplate {
      * @param key  The key whose presence in this cache is to be tested.
      * @return Returns true if cache value for the key exists, false otherwise.
      */
-    @Request(id = 6, retryable = true, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 6, retryable = true, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "key")
     Object containsKey(String name, Data key);
 
     /**
@@ -100,7 +99,7 @@ public interface CacheCodecTemplate {
      * @return The created configuration object. Byte-array which is serialized from an object implementing
      * javax.cache.configuration.Configuration interface.
      */
-    @Request(id = 7, retryable = true, response = ResponseMessageConst.DATA)
+    @Request(id = 7, retryable = true, response = ResponseMessageConst.DATA, partitionIdentifier = "name")
     Object createConfig(Data cacheConfig, boolean createAlsoOnOthers);
 
     /**
@@ -108,7 +107,7 @@ public interface CacheCodecTemplate {
      *
      * @param name Name of the cache.
      */
-    @Request(id = 8, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 8, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "name")
     void destroy(String name);
 
     /**
@@ -121,7 +120,7 @@ public interface CacheCodecTemplate {
      *                       the request in the cluster.
      * @return the result of the processing, if any, defined by the EntryProcessor implementation
      */
-    @Request(id = 9, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 9, retryable = false, response = ResponseMessageConst.DATA, partitionIdentifier = "key")
     Object entryProcessor(String name, Data key, Data entryProcessor, List<Data> arguments, int completionId);
 
     /**
@@ -149,7 +148,7 @@ public interface CacheCodecTemplate {
      *                     the request in the cluster.
      * @return the value if one existed or null if no mapping existed for this key
      */
-    @Request(id = 11, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 11, retryable = false, response = ResponseMessageConst.DATA, partitionIdentifier = "key")
     Object getAndRemove(String name, Data key, int completionId);
 
     /**
@@ -167,7 +166,7 @@ public interface CacheCodecTemplate {
      *                     the request in the cluster.
      * @return The old value previously assigned to the given key.
      */
-    @Request(id = 12, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 12, retryable = false, response = ResponseMessageConst.DATA, partitionIdentifier = "key")
     Object getAndReplace(String name, Data key, Data value, @Nullable Data expiryPolicy, int completionId);
 
     /**
@@ -176,7 +175,7 @@ public interface CacheCodecTemplate {
      * @return The cache configuration. Byte-array which is serialized from an object implementing
      * javax.cache.configuration.Configuration interface.
      */
-    @Request(id = 13, retryable = true, response = ResponseMessageConst.DATA)
+    @Request(id = 13, retryable = true, response = ResponseMessageConst.DATA, partitionIdentifier = "name")
     Object getConfig(String name, String simpleName);
 
     /**
@@ -190,7 +189,7 @@ public interface CacheCodecTemplate {
      *                     javax.cache.expiry.ExpiryPolicy interface.
      * @return The value assigned to the given key, or null if not assigned.
      */
-    @Request(id = 14, retryable = true, response = ResponseMessageConst.DATA)
+    @Request(id = 14, retryable = true, response = ResponseMessageConst.DATA, partitionIdentifier = "key")
     Object get(String name, Data key, @Nullable Data expiryPolicy);
 
     /**
@@ -205,7 +204,7 @@ public interface CacheCodecTemplate {
      * @param batch       The number of items to be batched
      * @return last index processed and list of data
      */
-    @Request(id = 15, retryable = false, response = ResponseMessageConst.CACHE_KEY_ITERATOR_RESULT)
+    @Request(id = 15, retryable = false, response = ResponseMessageConst.CACHE_KEY_ITERATOR_RESULT, partitionIdentifier = "partitionId")
     Object iterate(String name, int partitionId, int tableIndex, int batch);
 
     /**
@@ -250,7 +249,7 @@ public interface CacheCodecTemplate {
      *                     the request in the cluster.
      * @return true if a value was set, false otherwise.
      */
-    @Request(id = 19, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 19, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "key")
     Object putIfAbsent(String name, Data key, Data value, @Nullable Data expiryPolicy, int completionId);
 
     /**
@@ -264,7 +263,7 @@ public interface CacheCodecTemplate {
      *                     the request in the cluster.
      * @return The value previously assigned to the given key, or null if not assigned.
      */
-    @Request(id = 20, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 20, retryable = false, response = ResponseMessageConst.DATA, partitionIdentifier = "key")
     Object put(String name, Data key, Data value, @Nullable Data expiryPolicy, boolean get, int completionId);
 
     /**
@@ -293,7 +292,7 @@ public interface CacheCodecTemplate {
      *                     the request in the cluster.
      * @return returns false if there was no matching key
      */
-    @Request(id = 23, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 23, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "key")
     Object remove(String name, Data key, @Nullable Data currentValue, int completionId);
 
     /**
@@ -312,7 +311,7 @@ public interface CacheCodecTemplate {
      *                     the request in the cluster.
      * @return The replaced value.
      */
-    @Request(id = 24, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 24, retryable = false, response = ResponseMessageConst.DATA, partitionIdentifier = "key")
     Object replace(String name, Data key, @Nullable Data oldValue, Data newValue, @Nullable Data expiryPolicy, int completionId);
 
     /**
@@ -335,7 +334,7 @@ public interface CacheCodecTemplate {
      *                  sends all partition lost events.
      * @return returns the registration id for the CachePartitionLostListener.
      */
-    @Request(id = 26, retryable = true, response = ResponseMessageConst.STRING,
+    @Request(id = 26, retryable = false, response = ResponseMessageConst.STRING,
             event = EventMessageConst.EVENT_CACHEPARTITIONLOST)
     Object addPartitionLostListener(String name, boolean localOnly);
 
@@ -350,13 +349,12 @@ public interface CacheCodecTemplate {
     Object removePartitionLostListener(String name, String registrationId);
 
     /**
-     *
-     * @param name          name of the cache
-     * @param entries       entries to be put as batch
-     * @param expiryPolicy  expiry policy for the entry. Byte-array which is serialized from an object implementing
-     *                      {@link javax.cache.expiry.ExpiryPolicy} interface.
-     * @param completionId  user generated id which shall be received as a field of the cache event upon completion of
-     *                      the request in the cluster.
+     * @param name         name of the cache
+     * @param entries      entries to be put as batch
+     * @param expiryPolicy expiry policy for the entry. Byte-array which is serialized from an object implementing
+     *                     {@link javax.cache.expiry.ExpiryPolicy} interface.
+     * @param completionId user generated id which shall be received as a field of the cache event upon completion of
+     *                     the request in the cluster.
      */
     @Request(id = 28, retryable = false, response = ResponseMessageConst.VOID)
     void putAll(String name, List<Map.Entry<Data, Data>> entries, @Nullable Data expiryPolicy, int completionId);

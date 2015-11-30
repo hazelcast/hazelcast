@@ -33,7 +33,7 @@ public interface ListCodecTemplate {
      * @param name Name of List
      * @return The number of elements in this list
      */
-    @Request(id = 1, retryable = true, response = ResponseMessageConst.INTEGER)
+    @Request(id = 1, retryable = true, response = ResponseMessageConst.INTEGER, partitionIdentifier = "name")
     Object size(String name);
 
     /**
@@ -43,18 +43,18 @@ public interface ListCodecTemplate {
      * @param value Element whose presence in this list is to be tested
      * @return True if this list contains the specified element, false otherwise
      */
-    @Request(id = 2, retryable = true, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 2, retryable = true, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object contains(String name, Data value);
 
     /**
      * Returns true if this list contains all of the elements of the specified collection.
      *
-     * @param name     Name of the List
+     * @param name   Name of the List
      * @param values Collection to be checked for containment in this list
      * @return True if this list contains all of the elements of the
      * specified collection
      */
-    @Request(id = 3, retryable = true, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 3, retryable = true, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object containsAll(String name, List<Data> values);
 
     /**
@@ -67,7 +67,7 @@ public interface ListCodecTemplate {
      * @param value Element to be appended to this list
      * @return true if this list changed as a result of the call, false otherwise
      */
-    @Request(id = 4, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 4, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object add(String name, Data value);
 
     /**
@@ -80,7 +80,7 @@ public interface ListCodecTemplate {
      * @return True if this list contained the specified element, false otherwise
      */
 
-    @Request(id = 5, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 5, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object remove(String name, Data value);
 
     /**
@@ -93,28 +93,28 @@ public interface ListCodecTemplate {
      * @param valueList Collection containing elements to be added to this list
      * @return True if this list changed as a result of the call, false otherwise
      */
-    @Request(id = 6, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 6, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object addAll(String name, List<Data> valueList);
 
     /**
      * Removes from this list all of its elements that are contained in the specified collection (optional operation).
      *
-     * @param name     Name of the List
+     * @param name   Name of the List
      * @param values The list of values to compare for removal.
      * @return True if removed at least one of the items, false otherwise.
      */
-    @Request(id = 7, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 7, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object compareAndRemoveAll(String name, List<Data> values);
 
     /**
      * Retains only the elements in this list that are contained in the specified collection (optional operation).
      * In other words, removes from this list all of its elements that are not contained in the specified collection.
      *
-     * @param name     Name of the List
+     * @param name   Name of the List
      * @param values The list of values to compare for retaining.
      * @return True if this list changed as a result of the call, false otherwise.
      */
-    @Request(id = 8, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 8, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object compareAndRetainAll(String name, List<Data> values);
 
     /**
@@ -122,7 +122,7 @@ public interface ListCodecTemplate {
      *
      * @param name Name of the List
      */
-    @Request(id = 9, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 9, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "name")
     void clear(String name);
 
     /**
@@ -131,7 +131,7 @@ public interface ListCodecTemplate {
      * @param name Name of the List
      * @return An array of all item values in the list.
      */
-    @Request(id = 10, retryable = true, response = ResponseMessageConst.LIST_DATA)
+    @Request(id = 10, retryable = true, response = ResponseMessageConst.LIST_DATA, partitionIdentifier = "name")
     Object getAll(String name);
 
     /**
@@ -142,7 +142,7 @@ public interface ListCodecTemplate {
      * @param localOnly    if true fires events that originated from this node only, otherwise fires all events
      * @return Registration id for the listener.
      */
-    @Request(id = 11, retryable = true, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_ITEM})
+    @Request(id = 11, retryable = false, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_ITEM}, partitionIdentifier = "name")
     Object addListener(String name, boolean includeValue, boolean localOnly);
 
     /**
@@ -152,7 +152,7 @@ public interface ListCodecTemplate {
      * @param registrationId The id of the listener which was provided during registration.
      * @return True if unregistered, false otherwise.
      */
-    @Request(id = 12, retryable = true, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 12, retryable = true, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object removeListener(String name, String registrationId);
 
     /**
@@ -161,7 +161,7 @@ public interface ListCodecTemplate {
      * @param name Name of the List
      * @return True if this list contains no elements
      */
-    @Request(id = 13, retryable = true, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 13, retryable = true, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object isEmpty(String name);
 
     /**
@@ -176,7 +176,7 @@ public interface ListCodecTemplate {
      * @param valueList The list of value to insert into the list.
      * @return True if this list changed as a result of the call, false otherwise.
      */
-    @Request(id = 14, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 14, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object addAllWithIndex(String name, int index, List<Data> valueList);
 
     /**
@@ -186,7 +186,7 @@ public interface ListCodecTemplate {
      * @param index Index of the element to return
      * @return The element at the specified position in this list
      */
-    @Request(id = 15, retryable = true, response = ResponseMessageConst.DATA)
+    @Request(id = 15, retryable = true, response = ResponseMessageConst.DATA, partitionIdentifier = "name")
     Object get(String name, int index);
 
     /**
@@ -197,7 +197,7 @@ public interface ListCodecTemplate {
      * @param value Element to be stored at the specified position
      * @return The element previously at the specified position
      */
-    @Request(id = 16, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 16, retryable = false, response = ResponseMessageConst.DATA, partitionIdentifier = "name")
     Object set(String name, int index, Data value);
 
     /**
@@ -208,7 +208,7 @@ public interface ListCodecTemplate {
      * @param index index at which the specified element is to be inserted
      * @param value Value to be inserted.
      */
-    @Request(id = 17, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 17, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "name")
     void addWithIndex(String name, int index, Data value);
 
     /**
@@ -219,7 +219,7 @@ public interface ListCodecTemplate {
      * @param index The index of the element to be removed
      * @return The element previously at the specified position
      */
-    @Request(id = 18, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 18, retryable = false, response = ResponseMessageConst.DATA, partitionIdentifier = "name")
     Object removeWithIndex(String name, int index);
 
     /**
@@ -231,7 +231,7 @@ public interface ListCodecTemplate {
      * @return the index of the last occurrence of the specified element in
      * this list, or -1 if this list does not contain the element
      */
-    @Request(id = 19, retryable = true, response = ResponseMessageConst.INTEGER)
+    @Request(id = 19, retryable = true, response = ResponseMessageConst.INTEGER, partitionIdentifier = "name")
     Object lastIndexOf(String name, Data value);
 
     /**
@@ -243,7 +243,7 @@ public interface ListCodecTemplate {
      * @return The index of the first occurrence of the specified element in
      * this list, or -1 if this list does not contain the element
      */
-    @Request(id = 20, retryable = true, response = ResponseMessageConst.INTEGER)
+    @Request(id = 20, retryable = true, response = ResponseMessageConst.INTEGER, partitionIdentifier = "name")
     Object indexOf(String name, Data value);
 
     /**
@@ -265,7 +265,7 @@ public interface ListCodecTemplate {
      * @return A view of the specified range within this list
      */
 
-    @Request(id = 21, retryable = true, response = ResponseMessageConst.LIST_DATA)
+    @Request(id = 21, retryable = true, response = ResponseMessageConst.LIST_DATA, partitionIdentifier = "name")
     Object sub(String name, int from, int to);
 
     /**
@@ -274,7 +274,7 @@ public interface ListCodecTemplate {
      * @param name Name of the List
      * @return An iterator over the elements in this list in proper sequence
      */
-    @Request(id = 22, retryable = true, response = ResponseMessageConst.LIST_DATA)
+    @Request(id = 22, retryable = true, response = ResponseMessageConst.LIST_DATA, partitionIdentifier = "name")
     Object iterator(String name);
 
     /**
@@ -288,6 +288,6 @@ public interface ListCodecTemplate {
      * @return a list iterator over the elements in this list (in proper
      * sequence), starting at the specified position in the list
      */
-    @Request(id = 23, retryable = true, response = ResponseMessageConst.LIST_DATA)
+    @Request(id = 23, retryable = true, response = ResponseMessageConst.LIST_DATA, partitionIdentifier = "name")
     Object listIterator(String name, int index);
 }

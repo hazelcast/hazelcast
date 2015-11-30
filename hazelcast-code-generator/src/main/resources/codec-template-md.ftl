@@ -1,4 +1,4 @@
-#Protocol Messages
+# Protocol Messages
 
 ## Compound Data Types Used In The Protocol Specification
 Some common compound data structures used in the protocol message specification are defined in this section.
@@ -123,11 +123,9 @@ The following error codes are defined in the system:
 |AUTHENTICATION|3|The authentication failed.|
 |CACHE|4||
 |CACHE_LOADER|5||
-|CACHE_NOT_EXISTS|6|This exception class is thrown while creating com.hazelcast.cache.impl.CacheRecordStore instances but the cache config does not exist on the node to create the instance on. This can happen in either of two cases:<br>the cache's config is not yet distributed to the node, or <br>the cache has been already destroyed.<br> For the first option, the caller can decide to just retry the operation a couple of times since distribution is executed in a asynchronous way.
-|
+|CACHE_NOT_EXISTS|6|This exception class is thrown while creating com.hazelcast.cache.impl.CacheRecordStore instances but the cache config does not exist on the node to create the instance on. This can happen in either of two cases:<br>the cache's config is not yet distributed to the node, or <br>the cache has been already destroyed.<br> For the first option, the caller can decide to just retry the operation a couple of times since distribution is executed in a asynchronous way.|
 |CACHE_WRITER|7||
-|CALLER_NOT_MEMBER|8|A Retryable Hazelcast Exception that indicates that an operation was sent by a machine which isn't member in the cluster when the operation is executed.
-|
+|CALLER_NOT_MEMBER|8|A Retryable Hazelcast Exception that indicates that an operation was sent by a machine which isn't member in the cluster when the operation is executed.|
 |CANCELLATION|9|Exception indicating that the result of a value-producing task, such as a FutureTask, cannot be retrieved because the task was cancelled.|
 |CLASS_CAST|10|The class conversion (cast) failed.|
 |CLASS_NOT_FOUND|11|The class does not exists in the loaded jars at the server member.|
@@ -159,8 +157,7 @@ The following error codes are defined in the system:
 |NO_SUCH_ELEMENT|37|The requested element does not exist in the distributed object.|
 |NOT_SERIALIZABLE|38|The object could not be serialized|
 |NULL_POINTER|39|The server faced a null pointer exception during the operation.|
-|OPERATION_TIMEOUT|40| An unchecked version of java.util.concurrent.TimeoutException. <p>Some of the Hazelcast operations may throw an <tt>OperationTimeoutException</tt>. Hazelcast uses OperationTimeoutException to pass TimeoutException up through interfaces that don't have TimeoutException in their signatures.</p>
-|
+|OPERATION_TIMEOUT|40| An unchecked version of java.util.concurrent.TimeoutException. <p>Some of the Hazelcast operations may throw an *OperationTimeoutException*. Hazelcast uses OperationTimeoutException to pass TimeoutException up through interfaces that don't have TimeoutException in their signatures.</p>|
 |PARTITION_MIGRATING|41|Thrown when an operation is executed on a partition, but that partition is currently being moved around.|
 |QUERY|42|Error during query.|
 |QUERY_RESULT_SIZE_EXCEEDED|43|Thrown when a query exceeds a configurable result size limit.|
@@ -196,17 +193,23 @@ The following error codes are defined in the system:
 <#assign map=model?values[key_index]?values/>
 <#if map?has_content>
 
+<br><hr><br>
 <#if key == "com.hazelcast.client.impl.protocol.template.ClientMessageTemplate">
-##General Protocol Operations (No Specific Object)
+## General Protocol Operations
 <#else>
-##${util.getDistributedObjectName(key)} Object
+## ${util.getDistributedObjectName(key)}
 </#if>
 
 <#list map as cm>
-###"${cm.name?cap_first}" Operation
+<br>
+### ${util.getDistributedObjectName(key)}.${cm.name?cap_first}
 
-Request Message Type Id:${cm.id}, Retryable:<#if cm.retryable == 1 >Yes<#else>No</#if>
-<p>${util.getOperationDescription(cm.comment)}
+${util.getOperationDescription(cm.comment)}
+<#if cm.retryable == 1 >This message is idempotent.</#if>
+
+#### Request Message
+**Type Id**      : ${cm.id}<br>
+**Partition Id** : ${resolvePartitionIdentifier(cm.partitionIdentifier)}
 
     <#if cm.requestParams?has_content>
 
@@ -219,7 +222,8 @@ Request Message Type Id:${cm.id}, Retryable:<#if cm.retryable == 1 >Yes<#else>No
 Header only request message, no message body exist.
     </#if>
 
-Response Message Type Id:${cm.response}
+#### Response Message
+**Type Id** : ${cm.hexadecimalResponseId}
 
 ${util.getReturnDescription(cm.comment)}
 
@@ -230,18 +234,16 @@ ${util.getReturnDescription(cm.comment)}
         <#list cm.responseParams as param>
 |${param.name}| ${convertTypeToDocumentType(param.type)}| <#if param.nullable >Yes<#else>No</#if>|
         </#list>
-
     <#else>
-
 Header only response message, no message body exist.
     </#if>
 
     <#if cm.events?has_content>
 
 <#list cm.events as event >
-<br>"${event.name}" Event Message
 
-Message Type Id:${event.type}
+#### Event Message
+**Type Id** : ${event.hexadecimalTypeId}
 
     <#if event.eventParams?has_content>
 
@@ -292,19 +294,19 @@ Header only event message, no message body exist.
             <#return "boolean">
         <#case "java.util.List<" + util.DATA_FULL_NAME + ">">
             <#return "array of byte-array">
-        <#case "java.util.Set<" + util.DATA_FULL_NAME + ">">
+        <#case "java.util.List<" + util.DATA_FULL_NAME + ">">
             <#return "array of byte-array">
-        <#case "java.util.Set<com.hazelcast.core.Member>">
+        <#case "java.util.List<com.hazelcast.core.Member>">
             <#return "array of Member">
-        <#case "java.util.Set<com.hazelcast.client.impl.client.DistributedObjectInfo>">
+        <#case "java.util.List<com.hazelcast.client.impl.client.DistributedObjectInfo>">
             <#return "array of Distributed Object Info">
-        <#case "java.util.Map<com.hazelcast.nio.Address,java.util.Set<java.lang.Integer>>">
+        <#case "java.util.Map<com.hazelcast.nio.Address,java.util.List<java.lang.Integer>>">
             <#return "array of Address-Partition Id pair">
         <#case "java.util.Collection<" + util.DATA_FULL_NAME + ">">
             <#return "array of byte-array">
         <#case "java.util.Map<" + util.DATA_FULL_NAME + "," + util.DATA_FULL_NAME + ">">
             <#return "array of key-value byte array pair">
-        <#case "java.util.Set<java.util.Map.Entry<"+ util.DATA_FULL_NAME + "," + util.DATA_FULL_NAME + ">>">
+        <#case "java.util.List<java.util.Map.Entry<"+ util.DATA_FULL_NAME + "," + util.DATA_FULL_NAME + ">>">
             <#return "array of key-value byte array pair">
         <#case "java.util.List<java.util.Map.Entry<"+ util.DATA_FULL_NAME + "," + util.DATA_FULL_NAME + ">>">
             <#return "array of key-value byte array pair">
@@ -322,7 +324,7 @@ Header only event message, no message body exist.
             <#return "Query Cache Event Data">
         <#case "java.util.List<com.hazelcast.mapreduce.JobPartitionState>">
             <#return "array of Job Partition State">
-        <#case "java.util.Set<com.hazelcast.cache.impl.CacheEventData>">
+        <#case "java.util.List<com.hazelcast.cache.impl.CacheEventData>">
             <#return "array of Cache Event Data">
         <#case "java.util.List<com.hazelcast.map.impl.querycache.event.QueryCacheEventData>">
             <#return "array of Query Cache Event Data">
@@ -333,3 +335,16 @@ Header only event message, no message body exist.
     </#switch>
 </#function>
 
+
+<#function resolvePartitionIdentifier partitionIdentifier>
+    <#switch partitionIdentifier?trim>
+        <#case "random">
+            <#return "a random partition id from 0 to PARTITION_COUNT(inclusive)">
+        <#case "-1">
+            <#return "-1">
+        <#case "partitionId">
+            <#return "the value passed in partitionId field">
+        <#default>
+            <#return "Murmur hash of " + partitionIdentifier + " % partition count">
+    </#switch>
+</#function>

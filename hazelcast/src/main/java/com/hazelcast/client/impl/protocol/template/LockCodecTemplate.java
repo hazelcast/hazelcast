@@ -29,7 +29,7 @@ public interface LockCodecTemplate {
      * @param name Name of the Lock
      * @return True if this lock is locked, false otherwise.
      */
-    @Request(id = 1, retryable = true, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 1, retryable = true, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object isLocked(String name);
 
     /**
@@ -39,7 +39,7 @@ public interface LockCodecTemplate {
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @return True if this lock is locked by current thread, false otherwise.
      */
-    @Request(id = 2, retryable = true, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 2, retryable = true, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object isLockedByCurrentThread(String name, long threadId);
 
     /**
@@ -48,7 +48,7 @@ public interface LockCodecTemplate {
      * @param name Name of the Lock
      * @return The lock hold count.
      */
-    @Request(id = 3, retryable = true, response = ResponseMessageConst.INTEGER)
+    @Request(id = 3, retryable = true, response = ResponseMessageConst.INTEGER, partitionIdentifier = "name")
     Object getLockCount(String name);
 
     /**
@@ -57,7 +57,7 @@ public interface LockCodecTemplate {
      * @param name Name of the Lock
      * @return Remaining lease time in milliseconds.
      */
-    @Request(id = 4, retryable = true, response = ResponseMessageConst.LONG)
+    @Request(id = 4, retryable = true, response = ResponseMessageConst.LONG, partitionIdentifier = "name")
     Object getRemainingLeaseTime(String name);
 
     /**
@@ -69,7 +69,7 @@ public interface LockCodecTemplate {
      * @param leaseTime Time to wait before releasing to lock
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      */
-    @Request(id = 5, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 5, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "name")
     void lock(String name, long leaseTime, long threadId);
 
     /**
@@ -78,7 +78,7 @@ public interface LockCodecTemplate {
      * @param name Name of the Lock
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      */
-    @Request(id = 6, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 6, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "name")
     void unlock(String name, long threadId);
 
     /**
@@ -87,7 +87,7 @@ public interface LockCodecTemplate {
      *
      * @param name Name of the Lock
      */
-    @Request(id = 7, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 7, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "name")
     void forceUnlock(String name);
 
     /**
@@ -102,7 +102,7 @@ public interface LockCodecTemplate {
      * @param timeout Maximum time to wait for the lock.
      * @return true if the lock was acquired and false if the waiting time elapsed before the lock was acquired.
      */
-    @Request(id = 8, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 8, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object tryLock(String name, long threadId, long lease, long timeout);
 
 }

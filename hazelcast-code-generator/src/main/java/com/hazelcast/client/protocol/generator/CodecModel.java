@@ -16,23 +16,22 @@
 
 package com.hazelcast.client.protocol.generator;
 
+import com.hazelcast.annotation.EventResponse;
+import com.hazelcast.annotation.GenerateCodec;
+import com.hazelcast.annotation.Nullable;
+import com.hazelcast.annotation.Request;
+
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.util.Elements;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.util.Elements;
-
-import com.hazelcast.annotation.EventResponse;
-import com.hazelcast.annotation.GenerateCodec;
-import com.hazelcast.annotation.Nullable;
-import com.hazelcast.annotation.Request;
-
-public class CodecModel implements Model{
+public class CodecModel implements Model {
 
     static final Map<String, TypeElement> CUSTOM_CODEC_MAP = new HashMap<String, TypeElement>();
 
@@ -43,6 +42,7 @@ public class CodecModel implements Model{
     private String className;
     private String parentName;
     private String packageName;
+    private String partitionIdentifier;
     private String comment = "";
 
     private int retryable;
@@ -156,6 +156,7 @@ public class CodecModel implements Model{
 
         name = methodElement.getSimpleName().toString();
         requestId = methodElement.getAnnotation(Request.class).id();
+        partitionIdentifier = methodElement.getAnnotation(Request.class).partitionIdentifier();
         short masterId = parent.getAnnotation(GenerateCodec.class).id();
         id = CodeGenerationUtils.addHexPrefix(CodeGenerationUtils.mergeIds(masterId, requestId));
         parentName = parent.getAnnotation(GenerateCodec.class).name();
@@ -240,6 +241,10 @@ public class CodecModel implements Model{
         return id;
     }
 
+    public String getPartitionIdentifier() {
+        return partitionIdentifier;
+    }
+
     public String getComment() {
         return comment;
     }
@@ -263,6 +268,10 @@ public class CodecModel implements Model{
 
     public int getResponse() {
         return response;
+    }
+
+    public String getHexadecimalResponseId(){
+        return CodeGenerationUtils.addHexPrefix(Integer.toHexString(response));
     }
 
     public List<ParameterModel> getRequestParams() {
@@ -293,6 +302,10 @@ public class CodecModel implements Model{
 
         public int getType() {
             return type;
+        }
+
+        public String getHexadecimalTypeId(){
+            return CodeGenerationUtils.addHexPrefix(Integer.toHexString(type));
         }
 
         public String getName() {

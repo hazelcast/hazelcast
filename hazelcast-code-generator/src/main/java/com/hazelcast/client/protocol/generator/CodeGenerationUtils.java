@@ -64,7 +64,17 @@ public final class CodeGenerationUtils {
     }
 
     public static String addHexPrefix(String s) {
-        return s.length() == 3 ? "0x0" + s : "0x" + s;
+        switch (s.length()) {
+            case 3:
+                return "0x0" + s;
+            case 2:
+                return "0x00" + s;
+            case 1:
+                return "0x000" + s;
+            default:
+                return "0x" + s;
+        }
+
     }
 
     public static String getArrayType(String type) {
@@ -132,9 +142,9 @@ public final class CodeGenerationUtils {
         }
         return type;
     }
-    
+
     public static String getDescription(String parameterName, String commentString) {
-        String result  = "";
+        String result = "";
         if (null != parameterName && null != commentString) {
             int start = commentString.indexOf("@param");
             if (start >= 0) {
@@ -167,7 +177,7 @@ public final class CodeGenerationUtils {
     }
 
     public static String getReturnDescription(String commentString) {
-        String result  = "";
+        String result = "";
         final String RETURN_TAG = "@return";
         int returnTagStartIndex = commentString.indexOf(RETURN_TAG);
         if (returnTagStartIndex >= 0) {
@@ -186,16 +196,16 @@ public final class CodeGenerationUtils {
         return result;
     }
 
-    public static String getOperationDescription(String commentString){
-        String result="";
+    public static String getOperationDescription(String commentString) {
+        String result = "";
         int nextTagIndex = commentString.indexOf("@");
         if (nextTagIndex >= 0) {
-            result = commentString.substring(0,nextTagIndex);
+            result = commentString.substring(0, nextTagIndex);
 
             result = result.trim();
         }
 
-            result = result.replace("\n", "<br>");
+        result = result.replace("\n", "<br>");
 
         return result;
 
@@ -203,7 +213,9 @@ public final class CodeGenerationUtils {
 
     public static String getDistributedObjectName(String templateClassName) {
         String result = templateClassName;
-
+        if (templateClassName.equals("com.hazelcast.client.impl.protocol.template.ClientMessageTemplate")) {
+            return "Generic";
+        }
         int startIndex = templateClassName.lastIndexOf('.');
         if (startIndex >= 0) {
             int endIndex = templateClassName.indexOf("CodecTemplate", startIndex);
@@ -226,8 +238,7 @@ public final class CodeGenerationUtils {
                 paramList.add(current.toString().trim());
                 current = new StringBuilder();
                 continue;
-            }
-            else if (c == '<') {
+            } else if (c == '<') {
                 balanced++;
             } else if (c == '>') {
                 balanced--;

@@ -134,7 +134,7 @@ public interface ClientMessageTemplate {
      *                  sends all partition lost events.
      * @return The listener registration id.
      */
-    @Request(id = 10, retryable = true, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_PARTITIONLOST})
+    @Request(id = 10, retryable = false, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_PARTITIONLOST})
     Object addPartitionLostListener(boolean localOnly);
 
     /**
@@ -153,7 +153,7 @@ public interface ClientMessageTemplate {
     /**
      * @return The registration id for the distributed object listener.
      */
-    @Request(id = 13, retryable = true, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_DISTRIBUTEDOBJECT})
+    @Request(id = 13, retryable = false, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_DISTRIBUTEDOBJECT})
     Object addDistributedObjectListener(boolean localOnly);
 
     /**

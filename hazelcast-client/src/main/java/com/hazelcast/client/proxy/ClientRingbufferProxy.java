@@ -158,10 +158,9 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
         Data element = toData(item);
         ClientMessage request = RingbufferAddCodec.encodeRequest(name, overflowPolicy.getId(), element);
-        request.setPartitionId(partitionId);
 
         try {
-            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request).invoke();
+            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, partitionId).invoke();
             return new ClientDelegatingFuture<Long>(
                     invocationFuture,
                     getContext().getSerializationService(),
@@ -195,10 +194,9 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         }
 
         ClientMessage request = RingbufferAddAllCodec.encodeRequest(name, valueList, overflowPolicy.getId());
-        request.setPartitionId(partitionId);
 
         try {
-            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request).invoke();
+            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, partitionId).invoke();
             return new ClientDelegatingFuture<Long>(
                     invocationFuture,
                     getContext().getSerializationService(),
@@ -224,10 +222,9 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
                 minCount,
                 maxCount,
                 toData(filter));
-        request.setPartitionId(partitionId);
 
         try {
-            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request).invoke();
+            ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, partitionId).invoke();
             return new ClientDelegatingFuture<ReadResultSet<E>>(
                     invocationFuture,
                     getContext().getSerializationService(),
