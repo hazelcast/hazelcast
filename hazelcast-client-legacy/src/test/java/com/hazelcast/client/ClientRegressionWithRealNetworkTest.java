@@ -8,9 +8,14 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -18,6 +23,12 @@ import static org.junit.Assert.assertNull;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClientRegressionWithRealNetworkTest extends HazelcastTestSupport {
+
+    @After
+    public void cleanUp() {
+        HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
+    }
 
     @Test
     public void testClientPortConnection() {
@@ -39,9 +50,29 @@ public class ClientRegressionWithRealNetworkTest extends HazelcastTestSupport {
         final IMap<Object, Object> map = client.getMap("map");
         assertNull(map.put("key", "value"));
         assertEquals(1, map.size());
+    }
 
-        client.shutdown();
-        instance1.getLifecycleService().terminate();
-        instance2.getLifecycleService().terminate();
+    @Test
+    public void testClientConnectionBeforeServerReady() throws InterruptedException {
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                Hazelcast.newHazelcastInstance();
+            }
+        });
+
+        final CountDownLatch clientLatch = new CountDownLatch(1);
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                ClientConfig config = new ClientConfig();
+                config.getNetworkConfig().setConnectionAttemptLimit(10);
+                HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
+                clientLatch.countDown();
+            }
+        });
+
+        assertOpenEventually(clientLatch);
     }
 }

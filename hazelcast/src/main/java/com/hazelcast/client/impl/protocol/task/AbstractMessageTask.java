@@ -156,7 +156,7 @@ public abstract class AbstractMessageTask<P>
     }
 
     private void handleProcessingFailure(Throwable throwable) {
-        if (parameters != null && endpoint != null) {
+        if (endpoint != null) {
             sendClientMessage(throwable);
         }
     }
