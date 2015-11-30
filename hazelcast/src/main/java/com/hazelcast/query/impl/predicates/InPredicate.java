@@ -106,4 +106,9 @@ public class InPredicate extends AbstractIndexAwarePredicate {
         sb.append(")");
         return sb.toString();
     }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.IN_PREDICATE;
+    }
 }

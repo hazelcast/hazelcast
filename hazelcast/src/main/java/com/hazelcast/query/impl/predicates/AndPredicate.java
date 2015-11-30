@@ -18,7 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.VisitablePredicate;
@@ -33,10 +33,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
+
 /**
  * And Predicate
  */
-public final class AndPredicate implements IndexAwarePredicate, DataSerializable, VisitablePredicate, NegatablePredicate {
+public final class AndPredicate
+        implements IndexAwarePredicate, IdentifiedDataSerializable, VisitablePredicate, NegatablePredicate {
 
     protected Predicate[] predicates;
 
@@ -164,5 +167,15 @@ public final class AndPredicate implements IndexAwarePredicate, DataSerializable
         }
         OrPredicate orPredicate = new OrPredicate(inners);
         return orPredicate;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return PREDICATE_DS_FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.AND_PREDICATE;
     }
 }

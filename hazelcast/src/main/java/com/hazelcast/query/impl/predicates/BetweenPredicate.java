@@ -83,4 +83,9 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
     public String toString() {
         return attributeName + " BETWEEN " + from + " AND " + to;
     }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.BETWEEN_PREDICATE;
+    }
 }

@@ -18,7 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
@@ -31,11 +31,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
+
 /**
  * Provides base features for predicates, such as extraction and convertion of the attribute's value.
  * It also handles apply() on MultiResult.
  */
-public abstract class AbstractPredicate implements Predicate, DataSerializable {
+public abstract class AbstractPredicate
+        implements Predicate, IdentifiedDataSerializable {
 
     String attributeName;
     private transient volatile AttributeType attributeType;
@@ -143,5 +146,10 @@ public abstract class AbstractPredicate implements Predicate, DataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         attributeName = in.readUTF();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return PREDICATE_DS_FACTORY_ID;
     }
 }

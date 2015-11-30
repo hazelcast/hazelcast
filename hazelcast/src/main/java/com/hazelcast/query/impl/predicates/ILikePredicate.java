@@ -39,4 +39,9 @@ public class ILikePredicate extends LikePredicate {
     protected int getFlags() {
         return Pattern.CASE_INSENSITIVE;
     }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.ILIKE_PREDICATE;
+    }
 }

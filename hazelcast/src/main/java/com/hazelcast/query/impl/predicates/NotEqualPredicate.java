@@ -58,4 +58,9 @@ public final class NotEqualPredicate extends EqualPredicate {
     public Predicate negate() {
         return new EqualPredicate(attributeName, value);
     }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.NOTEQUAL_PREDICATE;
+    }
 }

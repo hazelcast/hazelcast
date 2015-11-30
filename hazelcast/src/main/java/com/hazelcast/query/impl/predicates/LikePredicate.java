@@ -91,4 +91,9 @@ public class LikePredicate extends AbstractPredicate {
     public String toString() {
         return attributeName + " LIKE '" + expression + "'";
     }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.LIKE_PREDICATE;
+    }
 }

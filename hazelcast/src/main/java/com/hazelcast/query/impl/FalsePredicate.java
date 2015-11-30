@@ -18,21 +18,24 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
+
 /**
  * reminder:
  * when FalsePredicate is going to implement IdentifiedDataSerializable, make sure no new instance
  * is created, but the INSTANCE is returned. No need to create new objects.
  */
-public class FalsePredicate implements DataSerializable, Predicate, IndexAwarePredicate {
+public class FalsePredicate implements IdentifiedDataSerializable, Predicate, IndexAwarePredicate {
     /**
      * An instance of the FalsePredicate.
      */
@@ -64,5 +67,15 @@ public class FalsePredicate implements DataSerializable, Predicate, IndexAwarePr
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+    }
+
+    @Override
+    public int getFactoryId() {
+        return PREDICATE_DS_FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.FALSE_PREDICATE;
     }
 }

@@ -82,4 +82,9 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
     public Predicate negate() {
         return new NotEqualPredicate(attributeName, value);
     }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.EQUAL_PREDICATE;
+    }
 }

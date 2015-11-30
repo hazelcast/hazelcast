@@ -72,4 +72,9 @@ public class RegexPredicate extends AbstractPredicate {
     public String toString() {
         return attributeName + " REGEX '" + regex + "'";
     }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.REGEX_PREDICATE;
+    }
 }

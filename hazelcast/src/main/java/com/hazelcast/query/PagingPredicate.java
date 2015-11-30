@@ -18,9 +18,10 @@ package com.hazelcast.query;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.SortingUtil;
 
@@ -32,6 +33,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
 
 /**
  * This class is a special Predicate which helps to get a page-by-page result of a query.
@@ -67,7 +70,7 @@ import java.util.Set;
  * System.out.println("values = " + values) // will print 'values = [0, 1]'
  * </pre>
  */
-public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
+public class PagingPredicate implements IndexAwarePredicate, IdentifiedDataSerializable {
 
     private static final Map.Entry<Integer, Map.Entry> NULL_ANCHOR = new SimpleImmutableEntry(-1, null);
 
@@ -359,4 +362,13 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         }
     }
 
+    @Override
+    public int getFactoryId() {
+        return PREDICATE_DS_FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.PAGING_PREDICATE;
+    }
 }
