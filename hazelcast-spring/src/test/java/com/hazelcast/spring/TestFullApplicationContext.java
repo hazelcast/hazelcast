@@ -321,8 +321,6 @@ public class TestFullApplicationContext {
         assertEquals(50, simpleMapConfig.getEvictionPercentage());
         assertEquals(1, simpleMapConfig.getTimeToLiveSeconds());
         assertEquals("LATEST_UPDATE", simpleMapConfig.getMergePolicy());
-        // Test that the simpleMapConfig does NOT have a mapStoreConfig
-        assertNull(simpleMapConfig.getMapStoreConfig());
         // Test that the simpleMapConfig does NOT have a nearCacheConfig
         assertNull(simpleMapConfig.getNearCacheConfig());
 
