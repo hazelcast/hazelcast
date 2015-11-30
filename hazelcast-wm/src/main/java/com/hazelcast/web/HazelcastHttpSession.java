@@ -118,7 +118,9 @@ public class HazelcastHttpSession implements HttpSession {
                 cacheEntry.setReload(false);
                 localCache.put(name, cacheEntry);
             } catch (Exception e) {
-                WebFilter.LOGGER.warning("session could not be load so you might be dealing with stale data", e);
+                if (WebFilter.LOGGER.isFinestEnabled()) {
+                    WebFilter.LOGGER.finest("session could not be load so you might be dealing with stale data", e);
+                }
                 if (cacheEntry == null) {
                     return null;
                 }

@@ -169,8 +169,7 @@ public class WebFilter implements Filter {
         if (mapName == null) {
             mapName = "_web_" + servletContext.getServletContextName();
         }
-        String sessionTTL = getParam("session-ttl-seconds");
-        clusteredSessionService = new ClusteredSessionService(filterConfig, properties, mapName, sessionTTL);
+        clusteredSessionService = new ClusteredSessionService(filterConfig, properties, mapName);
 
         if (LOGGER.isLoggable(Level.FINEST)) {
             LOGGER.finest("sticky:" + stickySession + ", shutdown-on-destroy: " + shutdownOnDestroy
@@ -220,6 +219,7 @@ public class WebFilter implements Filter {
         setProperty(HazelcastInstanceLoader.INSTANCE_NAME);
         setProperty(HazelcastInstanceLoader.USE_CLIENT);
         setProperty(HazelcastInstanceLoader.CLIENT_CONFIG_LOCATION);
+        setProperty(HazelcastInstanceLoader.STICKY_SESSION_CONFIG);
     }
 
     private void setProperty(String propertyName) {

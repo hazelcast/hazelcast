@@ -21,12 +21,15 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigLoader;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.UrlXmlConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.web.listener.ClientLifecycleListener;
+import com.hazelcast.web.listener.ServerLifecycleListener;
 
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
@@ -44,13 +47,15 @@ final class HazelcastInstanceLoader {
     public static final String CONFIG_LOCATION = "config-location";
     public static final String USE_CLIENT = "use-client";
     public static final String CLIENT_CONFIG_LOCATION = "client-config-location";
+    public static final String STICKY_SESSION_CONFIG = "sticky-session";
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastInstanceLoader.class);
 
     private HazelcastInstanceLoader() {
     }
 
-    public static HazelcastInstance createInstance(final FilterConfig filterConfig, final Properties properties)
+    public static HazelcastInstance createInstance(final ClusteredSessionService sessionService,
+                                                   final FilterConfig filterConfig, final Properties properties)
             throws ServletException {
         final String instanceName = properties.getProperty(INSTANCE_NAME);
         final String configLocation = properties.getProperty(CONFIG_LOCATION);
@@ -64,7 +69,8 @@ final class HazelcastInstanceLoader {
             configUrl = getConfigURL(filterConfig, configLocation);
         }
         if (useClient) {
-            return createClientInstance(configUrl);
+            boolean isSticky = Boolean.valueOf(properties.getProperty(STICKY_SESSION_CONFIG));
+            return createClientInstance(sessionService, instanceName, configUrl, isSticky);
         }
         Config config;
         if (configUrl == null) {
@@ -76,10 +82,13 @@ final class HazelcastInstanceLoader {
                 throw new ServletException(e);
             }
         }
-        return createHazelcastInstance(instanceName, config);
+        return createHazelcastInstance(sessionService, instanceName, config);
     }
 
-    private static HazelcastInstance createHazelcastInstance(String instanceName, Config config) {
+    private static HazelcastInstance createHazelcastInstance(ClusteredSessionService sessionService,
+                                                             String instanceName, Config config) {
+        ListenerConfig listenerConfig = new ListenerConfig(new ServerLifecycleListener(sessionService));
+        config.addListenerConfig(listenerConfig);
         if (!isEmpty(instanceName)) {
             if (LOGGER.isLoggable(Level.INFO)) {
                 LOGGER.info(format("getOrCreateHazelcastInstance for session replication, using name '%s'", instanceName));
@@ -92,7 +101,8 @@ final class HazelcastInstanceLoader {
         }
     }
 
-    private static HazelcastInstance createClientInstance(URL configUrl) throws ServletException {
+    private static HazelcastInstance createClientInstance(ClusteredSessionService sessionService, String instanceName,
+                                                          URL configUrl, boolean isSticky) throws ServletException {
         LOGGER.warning("Creating HazelcastClient for session replication...");
         LOGGER.warning("make sure this client has access to an already running cluster...");
         ClientConfig clientConfig;
@@ -105,7 +115,12 @@ final class HazelcastInstanceLoader {
                 throw new ServletException(e);
             }
         }
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
+        clientConfig.setInstanceName(instanceName);
+        if (isSticky) {
+            clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
+        }
+        ListenerConfig listenerConfig = new ListenerConfig(new ClientLifecycleListener(sessionService));
+        clientConfig.addListenerConfig(listenerConfig);
         return HazelcastClient.newHazelcastClient(clientConfig);
     }
 
