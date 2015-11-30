@@ -15,7 +15,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -169,14 +168,15 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
         String key = "key";
         map.put(key, "value");
+        map.get(key);
 
-        long lastUpdateTime = map.getLocalMapStats().getLastUpdateTime();
-        assertTrue(lastUpdateTime >= startTime);
+        long lastAccessTime = map.getLocalMapStats().getLastAccessTime();
+        assertTrue(lastAccessTime >= startTime);
 
         Thread.sleep(5);
         map.put(key, "value2");
-        long lastUpdateTime2 = map.getLocalMapStats().getLastUpdateTime();
-        assertTrue(lastUpdateTime2 > lastUpdateTime);
+        long lastAccessTime2 = map.getLocalMapStats().getLastAccessTime();
+        assertTrue(lastAccessTime2 > lastAccessTime);
     }
 
     @Test
@@ -185,6 +185,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         final IMap<String, String> map = getMap();
 
         final String key = "key";
+        map.put(key, "value");
         map.put(key, "value");
 
         final LocalMapStats localMapStats = map.getLocalMapStats();

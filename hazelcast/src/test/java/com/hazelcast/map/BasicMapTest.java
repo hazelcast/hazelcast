@@ -628,7 +628,12 @@ public class BasicMapTest extends HazelcastTestSupport {
         final IMap<Integer, Integer> map = instance.getMap("testEntryView");
         long time1 = Clock.currentTimeMillis();
         map.put(1, 1);
+        map.put(1, 1);
+        map.get(1);
         map.put(2, 2);
+        map.put(2, 2);
+        map.get(2);
+        map.put(3, 3);
         map.put(3, 3);
         long time2 = Clock.currentTimeMillis();
         map.get(3);
@@ -649,13 +654,13 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals((Integer) 22, entryView2.getValue());
         assertEquals((Integer) 3, entryView3.getValue());
 
-        assertEquals(0, entryView1.getHits());
-        assertEquals(1, entryView2.getHits());
-        assertEquals(2, entryView3.getHits());
+        assertEquals(2, entryView1.getHits());
+        assertEquals(3, entryView2.getHits());
+        assertEquals(3, entryView3.getHits());
 
-        assertEquals(0, entryView1.getVersion());
-        assertEquals(1, entryView2.getVersion());
-        assertEquals(0, entryView3.getVersion());
+        assertEquals(1, entryView1.getVersion());
+        assertEquals(2, entryView2.getVersion());
+        assertEquals(1, entryView3.getVersion());
 
         assertTrue(entryView1.getCreationTime() >= time1 && entryView1.getCreationTime() <= time2);
         assertTrue(entryView2.getCreationTime() >= time1 && entryView2.getCreationTime() <= time2);

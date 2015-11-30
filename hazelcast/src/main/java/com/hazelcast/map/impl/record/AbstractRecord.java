@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.Clock;
 
 import static com.hazelcast.map.impl.record.RecordStatistics.EMPTY_STATS;
 
@@ -40,6 +41,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     AbstractRecord() {
         version = 0L;
+        creationTime = Clock.currentTimeMillis();
     }
 
     @Override

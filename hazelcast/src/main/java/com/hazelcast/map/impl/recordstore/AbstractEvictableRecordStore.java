@@ -39,6 +39,8 @@ import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.core.EntryEventType.EXPIRED;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateExpirationWithDelay;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.getIdlenessStartTime;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.getLifeStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
@@ -285,11 +287,11 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (record == null) {
             return null;
         }
-        // lastAccessTime : updates on every touch (put/get).
-        final long lastAccessTime = record.getLastAccessTime();
-        final long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
-        final long idleMillis = calculateExpirationWithDelay(maxIdleMillis, expiryDelayMillis, backup);
-        final long elapsedMillis = now - lastAccessTime;
+
+        long idlenessStartTime = getIdlenessStartTime(record);
+        long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
+        long idleMillis = calculateExpirationWithDelay(maxIdleMillis, expiryDelayMillis, backup);
+        long elapsedMillis = now - idlenessStartTime;
         return elapsedMillis >= idleMillis ? null : record;
     }
 
@@ -297,14 +299,14 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (record == null) {
             return null;
         }
-        final long ttl = record.getTtl();
+        long ttl = record.getTtl();
         // when ttl is zero or negative, it should remain eternally.
         if (ttl < 1L) {
             return record;
         }
-        final long lastUpdateTime = record.getLastUpdateTime();
-        final long ttlMillis = calculateExpirationWithDelay(ttl, expiryDelayMillis, backup);
-        final long elapsedMillis = now - lastUpdateTime;
+        long ttlStartTime = getLifeStartTime(record);
+        long ttlMillis = calculateExpirationWithDelay(ttl, expiryDelayMillis, backup);
+        long elapsedMillis = now - ttlStartTime;
         return elapsedMillis >= ttlMillis ? null : record;
     }
 
