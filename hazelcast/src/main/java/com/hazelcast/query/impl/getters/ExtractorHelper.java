@@ -16,7 +16,6 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.query.extractor.ValueExtractor;
 
@@ -62,11 +61,11 @@ final class ExtractorHelper {
                 throw new IllegalArgumentException("Extractor does not extend ValueExtractor class " + config);
             }
         } catch (IllegalAccessException ex) {
-            throw new InvalidConfigurationException("Could not initialize extractor " + config, ex);
+            throw new IllegalArgumentException("Could not initialize extractor " + config, ex);
         } catch (InstantiationException ex) {
-            throw new InvalidConfigurationException("Could not initialize extractor " + config, ex);
+            throw new IllegalArgumentException("Could not initialize extractor " + config, ex);
         } catch (ClassNotFoundException ex) {
-            throw new InvalidConfigurationException("Could not initialize extractor " + config, ex);
+            throw new IllegalArgumentException("Could not initialize extractor " + config, ex);
         }
     }
 
