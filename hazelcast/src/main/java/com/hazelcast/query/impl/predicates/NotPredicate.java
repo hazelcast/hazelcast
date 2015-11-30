@@ -18,7 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.Indexes;
@@ -26,10 +26,13 @@ import com.hazelcast.query.impl.Indexes;
 import java.io.IOException;
 import java.util.Map;
 
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
+
 /**
  * Not Predicate
  */
-public final class NotPredicate implements Predicate, DataSerializable, VisitablePredicate, NegatablePredicate {
+public final class NotPredicate
+        implements Predicate, VisitablePredicate, NegatablePredicate, IdentifiedDataSerializable {
     protected Predicate predicate;
 
     public NotPredicate(Predicate predicate) {
@@ -79,5 +82,15 @@ public final class NotPredicate implements Predicate, DataSerializable, Visitabl
     @Override
     public Predicate negate() {
         return predicate;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return PREDICATE_DS_FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.NOT_PREDICATE;
     }
 }

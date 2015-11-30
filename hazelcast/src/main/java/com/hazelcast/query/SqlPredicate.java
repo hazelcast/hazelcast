@@ -18,10 +18,11 @@ package com.hazelcast.query;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import com.hazelcast.query.impl.predicates.Visitor;
 
 import java.io.IOException;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
 import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.between;
 import static com.hazelcast.query.Predicates.equal;
@@ -47,7 +49,8 @@ import static com.hazelcast.query.Predicates.regex;
 /**
  * This class contains methods related to conversion of sql query to predicate.
  */
-public class SqlPredicate implements IndexAwarePredicate, VisitablePredicate, DataSerializable {
+public class SqlPredicate
+        implements IndexAwarePredicate, VisitablePredicate, IdentifiedDataSerializable {
 
     private static final long serialVersionUID = 1;
 
@@ -333,5 +336,15 @@ public class SqlPredicate implements IndexAwarePredicate, VisitablePredicate, Da
 
     public Predicate getPredicate() {
         return predicate;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return PREDICATE_DS_FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.SQL_PREDICATE;
     }
 }

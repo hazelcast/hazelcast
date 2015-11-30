@@ -106,4 +106,9 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
     public Predicate negate() {
         return new GreaterLessPredicate(attributeName, value, !equal, !less);
     }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.GREATERLESS_PREDICATE;
+    }
 }
