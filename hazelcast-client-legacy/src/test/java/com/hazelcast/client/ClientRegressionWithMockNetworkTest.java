@@ -77,7 +77,6 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-@Ignore //https://github.com/hazelcast/hazelcast/issues/6153
 public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
