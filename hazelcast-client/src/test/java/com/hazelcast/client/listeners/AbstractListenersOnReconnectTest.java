@@ -87,7 +87,7 @@ public abstract class AbstractListenersOnReconnectTest extends HazelcastTestSupp
         instances[randNode].getLifecycleService().terminate();
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testListenersNonSmartRouting() {
         factory.newHazelcastInstance();
 
@@ -99,7 +99,7 @@ public abstract class AbstractListenersOnReconnectTest extends HazelcastTestSupp
         testListenersInternal();
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testListenersSmartRouting() {
         factory.newHazelcastInstance();
 
@@ -108,7 +108,7 @@ public abstract class AbstractListenersOnReconnectTest extends HazelcastTestSupp
         testListenersInternal();
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testListenersSmartRoutingMultipleServer() {
         factory.newHazelcastInstance();
         factory.newHazelcastInstance();
@@ -119,7 +119,7 @@ public abstract class AbstractListenersOnReconnectTest extends HazelcastTestSupp
         testListenersInternal();
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testListenersNonSmartRoutingMultipleServer() {
         factory.newHazelcastInstance();
         factory.newHazelcastInstance();
