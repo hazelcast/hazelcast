@@ -54,9 +54,10 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.wan.WanReplicationService;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -83,7 +84,13 @@ public class TimedMemberStateFactory {
         this.instance = instance;
         Node node = instance.node;
         maxVisibleInstanceCount = node.groupProperties.getInteger(GroupProperty.MC_MAX_VISIBLE_INSTANCE_COUNT);
-        cacheServiceEnabled = node.nodeEngine.getService(CacheService.SERVICE_NAME) != null;
+        cacheServiceEnabled = isCacheServiceEnabled();
+    }
+
+    private boolean isCacheServiceEnabled() {
+        NodeEngineImpl nodeEngine = instance.node.nodeEngine;
+        Collection<ServiceInfo> serviceInfos = nodeEngine.getServiceInfos(CacheService.class);
+        return !serviceInfos.isEmpty();
     }
 
     public void init() {

@@ -48,20 +48,7 @@ public final class ProxyRegistry {
     ProxyRegistry(ProxyServiceImpl proxyService, String serviceName) {
         this.proxyService = proxyService;
         this.serviceName = serviceName;
-        this.service = getService(proxyService, serviceName);
-    }
-
-    private RemoteService getService(ProxyServiceImpl proxyService, String serviceName) {
-        RemoteService service = proxyService.nodeEngine.getService(serviceName);
-        if (service != null) {
-            return service;
-        }
-
-        if (proxyService.nodeEngine.isRunning()) {
-            throw new IllegalArgumentException("Unknown service: " + serviceName);
-        } else {
-            throw new HazelcastInstanceNotActiveException();
-        }
+        this.service = proxyService.nodeEngine.getService(serviceName);
     }
 
     /**

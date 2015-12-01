@@ -19,7 +19,6 @@ package com.hazelcast.transaction.impl.xa;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.core.TransactionalMultiMap;
@@ -35,11 +34,10 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionalObjectKey;
-
-import javax.transaction.xa.XAResource;
-import javax.transaction.xa.Xid;
 import java.util.HashMap;
 import java.util.Map;
+import javax.transaction.xa.XAResource;
+import javax.transaction.xa.Xid;
 
 public class XATransactionContextImpl implements TransactionContext {
 
@@ -122,12 +120,6 @@ public class XATransactionContextImpl implements TransactionContext {
             obj = ((TransactionalService) service).createTransactionalObject(name, transaction);
             txnObjectMap.put(key, obj);
         } else {
-            if (service == null) {
-                if (!nodeEngine.isRunning()) {
-                    throw new HazelcastInstanceNotActiveException();
-                }
-                throw new IllegalArgumentException("Unknown Service[" + serviceName + "]!");
-            }
             throw new IllegalArgumentException("Service[" + serviceName + "] is not transactional!");
         }
         return obj;

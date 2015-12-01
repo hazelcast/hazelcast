@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -27,10 +26,8 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.spi.exception.RetryableException;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.io.IOException;
 import java.util.Date;
 import java.util.logging.Level;
@@ -226,14 +223,6 @@ public abstract class Operation implements DataSerializable {
             // one might have overridden getServiceName() method...
             final String name = serviceName != null ? serviceName : getServiceName();
             service = ((NodeEngineImpl) nodeEngine).getService(name);
-            if (service == null) {
-                if (nodeEngine.isRunning()) {
-                    throw new HazelcastException("Service with name '" + name + "' not found!");
-                } else {
-                    throw new RetryableHazelcastException("HazelcastInstance[" + nodeEngine.getThisAddress()
-                            + "] is not active!");
-                }
-            }
         }
         return (T) service;
     }
