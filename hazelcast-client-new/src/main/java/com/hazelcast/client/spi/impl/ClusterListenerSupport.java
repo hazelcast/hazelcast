@@ -56,7 +56,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener,
@@ -108,15 +107,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     public void shutdown() {
         clusterExecutor.shutdown();
-        try {
-            boolean success = clusterExecutor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            if (!success) {
-                LOGGER.warning("ClientClusterService shutdown could not completed in "
-                        + TERMINATE_TIMEOUT_SECONDS + " seconds");
-            }
-        } catch (InterruptedException e) {
-            LOGGER.warning("ClientClusterService shutdown is interrupted", e);
-        }
     }
 
     private class ManagerAuthenticator implements Authenticator {

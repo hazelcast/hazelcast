@@ -104,4 +104,38 @@ public class ClientReconnectTest extends HazelcastTestSupport {
             }
         });
     }
+
+    @Test
+    public void testClientShutdownIfReconnectionNotPossible() {
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        final CountDownLatch shutdownLatch = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleEvent.LifecycleState.SHUTDOWN) {
+                    shutdownLatch.countDown();
+                }
+            }
+        });
+        server.shutdown();
+
+        assertOpenEventually(shutdownLatch, 10);
+    }
+
+    @Test(expected = HazelcastClientNotActiveException.class, timeout = 30000)
+    public void testRequestShouldFailOnShutdown() {
+        final HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        IMap<Object, Object> test = client.getMap("test");
+        test.put("key", "value");
+        server.shutdown();
+        test.get("key");
+    }
 }
