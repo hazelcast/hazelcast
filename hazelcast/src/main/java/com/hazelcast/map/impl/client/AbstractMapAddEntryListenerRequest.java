@@ -27,7 +27,9 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.QueryEventFilter;
+import com.hazelcast.map.listener.EntryMergedListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
@@ -65,43 +67,47 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
     public Object call() {
         final ClientEndpoint endpoint = getEndpoint();
         final MapService mapService = getService();
-
-        EntryAdapter<Object, Object> listener = new EntryAdapter<Object, Object>() {
-            @Override
-            public void onEntryEvent(EntryEvent<Object, Object> event) {
-                if (endpoint.isAlive()) {
-                    if (!(event instanceof DataAwareEntryEvent)) {
-                        throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
-                                + event.getClass().getSimpleName());
-                    }
-                    DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                    Data key = dataAwareEntryEvent.getKeyData();
-                    Data value = dataAwareEntryEvent.getNewValueData();
-                    Data oldValue = dataAwareEntryEvent.getOldValueData();
-                    Data mergingValue = dataAwareEntryEvent.getMergingValueData();
-                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, mergingValue,
-                            event.getEventType(), event.getMember().getUuid());
-                    endpoint.sendEvent(key, portableEntryEvent, getCallId());
-                }
-            }
-            @Override
-            public void onMapEvent(MapEvent event) {
-                if (endpoint.isAlive()) {
-                    final EntryEventType type = event.getEventType();
-                    final String uuid = event.getMember().getUuid();
-                    PortableEntryEvent portableEntryEvent =
-                            new PortableEntryEvent(type, uuid, event.getNumberOfEntriesAffected());
-                    endpoint.sendEvent(null, portableEntryEvent, getCallId());
-                }
-            }
-        };
-
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final EventFilter eventFilter = getEventFilter();
-        final String registrationId = mapService.getMapServiceContext().addEventListener(listener, eventFilter, name);
+        final String registrationId = mapServiceContext.addEventListener(new MapListener(), eventFilter, name);
         endpoint.addListenerDestroyAction(MapService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
 
+    private class MapListener extends EntryAdapter<Object, Object> implements EntryMergedListener<Object, Object> {
+        @Override
+        public void onEntryEvent(EntryEvent<Object, Object> event) {
+            if (endpoint.isAlive()) {
+                if (!(event instanceof DataAwareEntryEvent)) {
+                    throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
+                            + event.getClass().getSimpleName());
+                }
+                DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
+                Data key = dataAwareEntryEvent.getKeyData();
+                Data value = dataAwareEntryEvent.getNewValueData();
+                Data oldValue = dataAwareEntryEvent.getOldValueData();
+                Data mergingValue = dataAwareEntryEvent.getMergingValueData();
+                PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, mergingValue,
+                        event.getEventType(), event.getMember().getUuid());
+                endpoint.sendEvent(key, portableEntryEvent, getCallId());
+            }
+        }
+        @Override
+        public void onMapEvent(MapEvent event) {
+            if (endpoint.isAlive()) {
+                final EntryEventType type = event.getEventType();
+                final String uuid = event.getMember().getUuid();
+                PortableEntryEvent portableEntryEvent =
+                        new PortableEntryEvent(type, uuid, event.getNumberOfEntriesAffected());
+                endpoint.sendEvent(null, portableEntryEvent, getCallId());
+            }
+        }
+
+        @Override
+        public void entryMerged(EntryEvent<Object, Object> event) {
+            onEntryEvent(event);
+        }
+    }
 
     protected EventFilter getEventFilter() {
         if (getPredicate() == null) {
