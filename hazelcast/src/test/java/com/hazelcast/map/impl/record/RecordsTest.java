@@ -29,13 +29,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
+
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertNull;
+import static com.hazelcast.test.TimeConstants.MINUTE;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -52,33 +54,80 @@ public class RecordsTest extends HazelcastTestSupport {
     public void getValueOrCachedValue_whenRecordIsNotCachable_thenDoNotCache() {
         String objectPayload = "foo";
         Data dataPayload = serializationService.toData(objectPayload);
-        Record record = mock(Record.class);
-        when(record.getValue()).thenReturn(dataPayload);
-
-        Records.getValueOrCachedValue(record, serializationService);
-        verify(record, never()).setCachedValue(objectPayload);
+        Record record = new DataRecord(dataPayload);
+        Object value = Records.getValueOrCachedValue(record, null);
+        assertSame(dataPayload, value);
     }
 
     @Test
     public void getValueOrCachedValue_whenRecordIsCachedDataRecordWithStats_thenCache() {
         String objectPayload = "foo";
         Data dataPayload = serializationService.toData(objectPayload);
-        Record record = mock(CachedDataRecordWithStats.class);
-        when(record.getValue()).thenReturn(dataPayload);
+        Record record = new CachedDataRecordWithStats(dataPayload);
+        Object firstDeserilizedValue = Records.getValueOrCachedValue(record, serializationService);
+        assertEquals(objectPayload, firstDeserilizedValue);
 
-        Records.getValueOrCachedValue(record, serializationService);
-        verify(record, times(1)).setCachedValue(objectPayload);
+        //we don't need serialization service for the 2nd call
+        Object secondDeserilizedValue = Records.getValueOrCachedValue(record, null);
+        assertSame(firstDeserilizedValue, secondDeserilizedValue);
     }
 
     @Test
     public void getValueOrCachedValue_whenRecordIsCachedDataRecord_thenCache() {
         String objectPayload = "foo";
         Data dataPayload = serializationService.toData(objectPayload);
-        Record record = mock(CachedDataRecord.class);
-        when(record.getValue()).thenReturn(dataPayload);
+        Record record = new CachedDataRecord(dataPayload);
+        Object firstDeserilizedValue = Records.getValueOrCachedValue(record, serializationService);
+        assertEquals(objectPayload, firstDeserilizedValue);
 
+        //we don't need serialization service for the 2nd call
+        Object secondDeserilizedValue = Records.getValueOrCachedValue(record, null);
+        assertSame(firstDeserilizedValue, secondDeserilizedValue);
+    }
+
+    @Test(timeout = MINUTE)
+    public void givenCachedDataRecord_whenInvalidated_thenGetValueOrCachedValueReturnsNull() {
+        //given
+        String objectPayload = "foo";
+        Data dataPayload = serializationService.toData(objectPayload);
+        CachedDataRecord record = new CachedDataRecord(dataPayload);
+
+        //when
+        record.invalidate();
+
+        //then
+        Object cachedValue = Records.getValueOrCachedValue(record, serializationService);
+        assertNull(cachedValue);
+    }
+
+    @Test
+    public void givenCachedDataRecord_whenThreadIsInside_thenGetValueOrCachedValueReturnsTheThread() {
+        //given
+        CachedDataRecord record = new CachedDataRecord();
+
+        //when
+        SerializableThread objectPayload = new SerializableThread();
+        Data dataPayload = serializationService.toData(objectPayload);
+        record.setValue(dataPayload);
+
+        //then
+        Object cachedValue = Records.getValueOrCachedValue(record, serializationService);
+        assertInstanceOf(SerializableThread.class, cachedValue);
+    }
+
+    @Test
+    public void givenCachedDataRecordValueIsThread_whenCachedValueIsCreated_thenGetCachedValueReturnsTheThread() {
+        //given
+        SerializableThread objectPayload = new SerializableThread();
+        Data dataPayload = serializationService.toData(objectPayload);
+        CachedDataRecord record = new CachedDataRecord(dataPayload);
+
+        //when
         Records.getValueOrCachedValue(record, serializationService);
-        verify(record, times(1)).setCachedValue(objectPayload);
+
+        //then
+        Object cachedValue = Records.getCachedValue(record);
+        assertInstanceOf(SerializableThread.class, cachedValue);
     }
 
 
@@ -152,4 +201,7 @@ public class RecordsTest extends HazelcastTestSupport {
     }
 
 
+    private static class SerializableThread extends Thread implements Serializable {
+
+    }
 }

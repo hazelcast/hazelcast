@@ -118,7 +118,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     @Override
-    public Object getCachedValue() {
+    public Object getCachedValueUnsafe() {
         return Record.NOT_CACHED;
     }
 
@@ -143,8 +143,8 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     @Override
-    public void setCachedValue(Object cachedValue) {
-
+    public boolean casCachedValue(Object expectedValue, Object newValue) {
+        return true;
     }
 
     @Override
