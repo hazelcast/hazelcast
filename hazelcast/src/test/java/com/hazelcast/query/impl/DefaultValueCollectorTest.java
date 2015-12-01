@@ -15,6 +15,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -29,6 +30,11 @@ public class DefaultValueCollectorTest {
     }
 
     @Test
+    public void test_emptyCollector() {
+        assertNull(collector.getResult());
+    }
+
+    @Test
     public void test_singleObject() {
         collector.addObject(1);
 
@@ -36,13 +42,24 @@ public class DefaultValueCollectorTest {
     }
 
     @Test
-    public void test_multipleObjects() {
+    public void test_TwoObjects() {
         collector.addObject(1);
         collector.addObject(2);
 
         List<Integer> results = assertIsMultiResultAndGetResults(collector.getResult());
         assertThat(results, hasSize(2));
         assertThat(results, containsInAnyOrder(1, 2));
+    }
+
+    @Test
+    public void test_multipleObjects() {
+        collector.addObject(1);
+        collector.addObject(2);
+        collector.addObject(3);
+
+        List<Integer> results = assertIsMultiResultAndGetResults(collector.getResult());
+        assertThat(results, hasSize(3));
+        assertThat(results, containsInAnyOrder(1, 2, 3));
     }
 
     @Test

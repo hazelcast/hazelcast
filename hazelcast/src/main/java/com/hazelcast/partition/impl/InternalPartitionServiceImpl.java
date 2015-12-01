@@ -435,12 +435,18 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 throw new IllegalStateException("Partition table is already initialized!");
             }
             logger.info("Setting cluster partition table ...");
+            boolean foundReplica = false;
             for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
                 InternalPartitionImpl partition = partitions[partitionId];
                 Address[] replicas = newState[partitionId];
+                if (!foundReplica && replicas != null) {
+                    for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
+                        foundReplica |= replicas[i] != null;
+                    }
+                }
                 partition.setInitialReplicaAddresses(replicas);
             }
-            initialized = true;
+            initialized = foundReplica;
         } finally {
             lock.unlock();
         }
