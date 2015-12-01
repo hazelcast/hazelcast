@@ -16,11 +16,14 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
@@ -53,7 +56,7 @@ public class ClientInvocationTest extends HazelcastTestSupport {
     /**
      * When a async operation fails because of a node termination,
      * failure stack trace is copied incrementally for each async invocation/future
-     * <p/>
+     * <p>
      * see https://github.com/hazelcast/hazelcast/issues/4192
      */
     @Test
@@ -101,6 +104,50 @@ public class ClientInvocationTest extends HazelcastTestSupport {
             assertTrue("Cause stack trace should not be too long! Current: "
                     + stackTraceLength, stackTraceLength < 50);
         }
+    }
+
+    @Test
+    public void executionCallback_FailOnShutdown() {
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+
+        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
+
+        IMap<Object, Object> map = client.getMap(randomName());
+        final String key = randomString();
+        map.put(key, randomString());
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED) {
+                    disconnectedLatch.countDown();
+                }
+            }
+        });
+        server.shutdown();
+
+        assertOpenEventually(disconnectedLatch);
+        final CountDownLatch shutdownLatch = new CountDownLatch(1);
+        int n = 100;
+        final CountDownLatch errorLatch = new CountDownLatch(n);
+        for (int i = 0; i < n; i++) {
+            map.submitToKey(key, new DummyEntryProcessor(), new ExecutionCallback() {
+                @Override
+                public void onResponse(Object response) {
+
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    if (t instanceof HazelcastClientNotActiveException) {
+                        shutdownLatch.countDown();
+                    }
+                    errorLatch.countDown();
+                }
+            });
+        }
+        assertOpenEventually("No requests failed with reason client shutdown", shutdownLatch);
+        assertOpenEventually("Not all of the requests failed", errorLatch);
     }
 
     private static class DummyEntryProcessor implements EntryProcessor {
