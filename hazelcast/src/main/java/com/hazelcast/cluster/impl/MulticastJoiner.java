@@ -30,7 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class MulticastJoiner extends AbstractJoiner {
 
-    private static final int PUBLISH_INTERVAL = 100;
+    private static final int PUBLISH_INTERVAL_MIN = 50;
+    private static final int PUBLISH_INTERVAL_MAX = 200;
     private static final long JOIN_RETRY_INTERVAL = 1000L;
 
     private final AtomicInteger currentTryCount = new AtomicInteger(0);
@@ -150,7 +151,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 node.multicastService.send(joinRequest);
                 if (node.getMasterAddress() == null) {
                     //noinspection BusyWait
-                    Thread.sleep(PUBLISH_INTERVAL);
+                    Thread.sleep(getPublishInterval());
                 } else {
                     return node.getMasterAddress();
                 }
@@ -168,8 +169,8 @@ public class MulticastJoiner extends AbstractJoiner {
     private int calculateTryCount() {
         final NetworkConfig networkConfig = config.getNetworkConfig();
         int timeoutSeconds = networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds();
-        int tryCountCoefficient = 1000 / PUBLISH_INTERVAL;
-        int tryCount = timeoutSeconds * tryCountCoefficient;
+        int avgPublishInterval = (PUBLISH_INTERVAL_MAX + PUBLISH_INTERVAL_MIN) / 2;
+        int tryCount = timeoutSeconds * 1000 / avgPublishInterval;
         String host = node.getThisAddress().getHost();
         int lastDigits;
         try {
@@ -177,10 +178,13 @@ public class MulticastJoiner extends AbstractJoiner {
         } catch (NumberFormatException e) {
             lastDigits = RandomPicker.getInt(512);
         }
-        lastDigits = lastDigits % 100;
         int portDiff = node.getThisAddress().getPort() - networkConfig.getPort();
-        tryCount += lastDigits + portDiff * timeoutSeconds * 3;
+        tryCount += (lastDigits + portDiff) % 10;
         return tryCount;
+    }
+
+    private int getPublishInterval() {
+        return RandomPicker.getInt(PUBLISH_INTERVAL_MIN, PUBLISH_INTERVAL_MAX);
     }
 
     public void onReceivedJoinRequest(JoinRequest joinRequest) {
