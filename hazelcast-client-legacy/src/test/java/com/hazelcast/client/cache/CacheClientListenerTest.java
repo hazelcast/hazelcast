@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.cache;
 
-import com.hazelcast.cache.JCacheListenerTest;
+import com.hazelcast.cache.CacheListenerTest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
@@ -35,7 +35,7 @@ import javax.cache.spi.CachingProvider;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class JCacheClientListenerTest extends JCacheListenerTest {
+public class CacheClientListenerTest extends CacheListenerTest {
 
     @Before
     @After

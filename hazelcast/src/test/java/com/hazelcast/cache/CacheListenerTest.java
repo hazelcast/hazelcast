@@ -53,7 +53,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class JCacheListenerTest extends HazelcastTestSupport {
+public class CacheListenerTest extends HazelcastTestSupport {
 
     protected HazelcastInstance hazelcastInstance;
 

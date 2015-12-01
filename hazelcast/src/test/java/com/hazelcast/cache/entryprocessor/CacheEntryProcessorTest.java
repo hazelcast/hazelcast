@@ -57,7 +57,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class JCacheEntryProcessorTest extends HazelcastTestSupport {
+public class CacheEntryProcessorTest extends HazelcastTestSupport {
 
     private static final int ASSERTION_TIMEOUT_SECONDS = 300;
 

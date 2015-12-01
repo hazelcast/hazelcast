@@ -489,14 +489,23 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected R createRecordWithExpiry(Data key, Object value, long expiryTime,
                                        long now, boolean disableWriteThrough, int completionId, String origin) {
-        if (!disableWriteThrough) {
-            writeThroughCache(key, value);
-        }
         if (!isExpiredAt(expiryTime, now)) {
             R record = createRecord(key, value, expiryTime, completionId, origin);
             try {
                 doPutRecord(key, record);
             } catch (Throwable error) {
+                onCreateRecordWithExpiryError(key, value, expiryTime, now, disableWriteThrough,
+                                              completionId, origin, record, error);
+                throw ExceptionUtil.rethrow(error);
+            }
+            try {
+                if (!disableWriteThrough) {
+                    writeThroughCache(key, value);
+                }
+            } catch (Throwable error) {
+                // Writing to `CacheWriter` failed, so we should revert entry (remove added record).
+                records.remove(key);
+                // Disposing key/value/record should be handled inside `onCreateRecordWithExpiryError`.
                 onCreateRecordWithExpiryError(key, value, expiryTime, now, disableWriteThrough,
                                               completionId, origin, record, error);
                 throw ExceptionUtil.rethrow(error);
@@ -992,9 +1001,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         try {
             if (record == null || isExpired) {
                 saved = createRecordWithExpiry(key, value, expiryPolicy, now,
-                        disableWriteThrough, completionId) != null;
+                                               disableWriteThrough, completionId) != null;
             } else if (record.isTombstone()) {
-                saved = updateRecordWithExpiry(key, value, record, expiryPolicy, now, disableWriteThrough, completionId);
+                saved = updateRecordWithExpiry(key, value, record, expiryPolicy, now,
+                                               disableWriteThrough, completionId);
             } else {
                 if (isEventsEnabled()) {
                     publishEvent(createCacheCompleteEvent(toEventData(key), completionId));
@@ -1241,7 +1251,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     public Object getAndRemove(Data key, String source, int completionId, String origin) {
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
+
         deleteCacheEntry(key);
+
         R record = records.get(key);
         final Object obj;
         boolean removed = false;
