@@ -21,6 +21,12 @@ import java.util.Map;
 /**
  * An abstract {@link EntryProcessor} that already has implemented the {@link #getBackupProcessor()}. In a most cases you
  * want the same logic to be executed on the primary and on the backup. This implementation has this behavior.
+ * <p/>
+ * Note that there is a possibility which an {@link com.hazelcast.map.AbstractEntryProcessor} can see that a key exists
+ * but its backup processor may not find it due to an unsent backup of a previous operation (e.g. a previous put).
+ * In those situations, Hazelcast internally/eventually will sync those owner and backup partitions so you will not lose any data.
+ * Because AbstractEntryProcessor uses the same processor in both owner and backup,
+ * you should take this case into account when implementing {@link com.hazelcast.map.EntryProcessor#process(java.util.Map.Entry)}.
  *
  * @param <K> Type of key of a {@link java.util.Map.Entry}
  * @param <V> Type of value of a {@link java.util.Map.Entry}
