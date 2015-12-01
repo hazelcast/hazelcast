@@ -51,7 +51,7 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
         ClientMessage response = (ClientMessage) invokerWrapper.invoke(request);
 
         Collection<Map.Entry<Data, Data>> result
-                = EnterpriseMapPublisherCreateWithValueCodec.decodeResponse(response).entries;
+                = EnterpriseMapPublisherCreateWithValueCodec.decodeResponse(response).response;
 
         populateWithValues(queryCache, result);
     }
@@ -67,7 +67,7 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
         InvokerWrapper invokerWrapper = context.getInvokerWrapper();
         ClientMessage response = (ClientMessage) invokerWrapper.invoke(request);
 
-        Collection<Data> result = EnterpriseMapPublisherCreateCodec.decodeResponse(response).list;
+        Collection<Data> result = EnterpriseMapPublisherCreateCodec.decodeResponse(response).response;
 
         populateWithoutValues(queryCache, result);
     }
