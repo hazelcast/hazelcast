@@ -856,7 +856,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
         MapGetEntryViewCodec.ResponseParameters parameters = MapGetEntryViewCodec.decodeResponse(response);
         SimpleEntryView<K, V> entryView = new SimpleEntryView<K, V>();
-        SimpleEntryView<Data, Data> dataEntryView = parameters.dataEntryView;
+        SimpleEntryView<Data, Data> dataEntryView = parameters.response;
 
         if (dataEntryView == null) {
             return null;
@@ -944,8 +944,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage response = invoke(request);
         MapKeySetCodec.ResponseParameters resultParameters = MapKeySetCodec.decodeResponse(response);
 
-        InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(resultParameters.list.size());
-        for (Data data : resultParameters.list) {
+        InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
+        for (Data data : resultParameters.response) {
             K key = toObject(data);
             setBuilder.add(key);
         }
@@ -993,8 +993,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             try {
                 ClientMessage response = future.get();
                 MapGetAllCodec.ResponseParameters resultParameters = MapGetAllCodec.decodeResponse(response);
-
-                for (Entry<Data, Data> entry : resultParameters.entries) {
+        
+                for (Entry<Data, Data> entry : resultParameters.response) {
                     final V value = toObject(entry.getValue());
                     final K key = toObject(entry.getKey());
                     result.put(key, value);
@@ -1013,7 +1013,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request = MapValuesCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         MapValuesCodec.ResponseParameters resultParameters = MapValuesCodec.decodeResponse(response);
-        Collection<Data> collectionData = resultParameters.list;
+        Collection<Data> collectionData = resultParameters.response;
         Collection<V> collection = new ArrayList<V>(collectionData.size());
         for (Data data : collectionData) {
             V value = toObject(data);
@@ -1028,9 +1028,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage response = invoke(request);
         MapEntrySetCodec.ResponseParameters resultParameters = MapEntrySetCodec.decodeResponse(response);
 
-        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.entries.size());
+        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
         SerializationService serializationService = getContext().getSerializationService();
-        for (Entry<Data, Data> row : resultParameters.entries) {
+        for (Entry<Data, Data> row : resultParameters.response) {
             LazyMapEntry entry = new LazyMapEntry(row.getKey(), row.getValue(), serializationService);
             setBuilder.add(entry);
         }
@@ -1048,8 +1048,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage response = invoke(request);
         MapKeySetWithPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPredicateCodec.decodeResponse(response);
 
-        InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(resultParameters.list.size());
-        for (Data data : resultParameters.list) {
+        InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
+        for (Data data : resultParameters.response) {
             K key = toObject(data);
             setBuilder.add(key);
         }
@@ -1064,7 +1064,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         MapKeySetWithPagingPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPagingPredicateCodec.decodeResponse(response);
 
         ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
-        for (Data keyData : resultParameters.list) {
+        for (Data keyData : resultParameters.response) {
             K key = toObject(keyData);
             resultList.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, null));
         }
@@ -1083,9 +1083,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage response = invoke(request);
         MapEntriesWithPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPredicateCodec.decodeResponse(response);
 
-        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.entries.size());
+        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
         SerializationService serializationService = getContext().getSerializationService();
-        for (Entry<Data, Data> row : resultParameters.entries) {
+        for (Entry<Data, Data> row : resultParameters.response) {
             LazyMapEntry entry = new LazyMapEntry(row.getKey(), row.getValue(), serializationService);
             setBuilder.add(entry);
         }
@@ -1102,7 +1102,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         MapEntriesWithPagingPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPagingPredicateCodec.decodeResponse(response);
 
         ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
-        for (Entry<Data, Data> entry : resultParameters.entries) {
+        for (Entry<Data, Data> entry : resultParameters.response) {
             K key = toObject(entry.getKey());
             V value = toObject(entry.getValue());
             resultList.add(new AbstractMap.SimpleEntry<K, V>(key, value));
@@ -1120,7 +1120,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage response = invoke(request);
         MapValuesWithPredicateCodec.ResponseParameters resultParameters = MapValuesWithPredicateCodec.decodeResponse(response);
 
-        Collection<Data> result = resultParameters.list;
+        Collection<Data> result = resultParameters.response;
         List<V> values = new ArrayList<V>(result.size());
         for (Data data : result) {
             V value = toObject(data);
@@ -1136,8 +1136,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage response = invoke(request);
         MapValuesWithPagingPredicateCodec.ResponseParameters resultParameters = MapValuesWithPagingPredicateCodec.decodeResponse(response);
 
-        List<Entry> resultList = new ArrayList<Entry>(resultParameters.entries.size());
-        for (Entry<Data, Data> entry : resultParameters.entries) {
+        List<Entry> resultList = new ArrayList<Entry>(resultParameters.response.size());
+        for (Entry<Data, Data> entry : resultParameters.response) {
             K key = toObject(entry.getKey());
             V value = toObject(entry.getValue());
             resultList.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, value));
@@ -1210,7 +1210,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request = MapExecuteOnAllKeysCodec.encodeRequest(name, toData(entryProcessor));
         ClientMessage response = invoke(request);
         MapExecuteOnAllKeysCodec.ResponseParameters resultParameters = MapExecuteOnAllKeysCodec.decodeResponse(response);
-        return prepareResult(resultParameters.entries);
+        return prepareResult(resultParameters.response);
     }
 
     protected Map<K, Object> prepareResult(Collection<Entry<Data, Data>> entries) {
@@ -1234,7 +1234,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage response = invoke(request);
 
         MapExecuteWithPredicateCodec.ResponseParameters resultParameters = MapExecuteWithPredicateCodec.decodeResponse(response);
-        return prepareResult(resultParameters.entries);
+        return prepareResult(resultParameters.response);
     }
 
     @Override
@@ -1285,7 +1285,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataKeys);
         ClientMessage response = invoke(request);
         MapExecuteOnKeysCodec.ResponseParameters resultParameters = MapExecuteOnKeysCodec.decodeResponse(response);
-        return prepareResult(resultParameters.entries);
+        return prepareResult(resultParameters.response);
 
     }
 

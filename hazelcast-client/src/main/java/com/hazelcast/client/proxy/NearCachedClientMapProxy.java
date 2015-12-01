@@ -262,7 +262,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
         List<MapGetAllCodec.ResponseParameters> responses = super.getAllInternal(pIdToKeyData, result);
         for (MapGetAllCodec.ResponseParameters resultParameters : responses) {
-            for (Entry<Data, Data> entry : resultParameters.entries) {
+            for (Entry<Data, Data> entry : resultParameters.response) {
                 nearCache.put(entry.getKey(), entry.getValue());
             }
         }

@@ -167,7 +167,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     public Set<K> keySet() {
         ClientMessage request = TransactionalMapKeySetCodec.encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId());
         ClientMessage response = invoke(request);
-        Collection<Data> dataKeySet = TransactionalMapKeySetCodec.decodeResponse(response).list;
+        Collection<Data> dataKeySet = TransactionalMapKeySetCodec.decodeResponse(response).response;
 
         HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
         for (Data data : dataKeySet) {
@@ -183,7 +183,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage request = TransactionalMapKeySetWithPredicateCodec.encodeRequest(name, getTransactionId(),
                 ThreadUtil.getThreadId(), toData(predicate));
         ClientMessage response = invoke(request);
-        Collection<Data> dataKeySet = TransactionalMapKeySetWithPredicateCodec.decodeResponse(response).list;
+        Collection<Data> dataKeySet = TransactionalMapKeySetWithPredicateCodec.decodeResponse(response).response;
 
         HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
         for (Data data : dataKeySet) {
@@ -197,7 +197,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     public Collection<V> values() {
         ClientMessage request = TransactionalMapValuesCodec.encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId());
         ClientMessage response = invoke(request);
-        Collection<Data> dataValues = TransactionalMapValuesCodec.decodeResponse(response).list;
+        Collection<Data> dataValues = TransactionalMapValuesCodec.decodeResponse(response).response;
 
         List<V> values = new ArrayList<V>(dataValues.size());
         for (Data value : dataValues) {
@@ -213,7 +213,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         ClientMessage request = TransactionalMapValuesWithPredicateCodec.encodeRequest(name, getTransactionId(),
                 ThreadUtil.getThreadId(), toData(predicate));
         ClientMessage response = invoke(request);
-        Collection<Data> dataValues = TransactionalMapValuesWithPredicateCodec.decodeResponse(response).list;
+        Collection<Data> dataValues = TransactionalMapValuesWithPredicateCodec.decodeResponse(response).response;
 
         List<V> values = new ArrayList<V>(dataValues.size());
         for (Data value : dataValues) {

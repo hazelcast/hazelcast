@@ -45,7 +45,7 @@ public class CacheListenerRegistrationMessageTask
     @Override
     protected Operation prepareOperation() {
         CacheEntryListenerConfiguration conf = (CacheEntryListenerConfiguration) nodeEngine.toObject(parameters.listenerConfig);
-        return new CacheListenerRegistrationOperation(parameters.name, conf, parameters.register);
+        return new CacheListenerRegistrationOperation(parameters.name, conf, parameters.shouldRegister);
     }
 
     @Override

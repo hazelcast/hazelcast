@@ -137,7 +137,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         ClientMessage request = ListIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
         ListIteratorCodec.ResponseParameters resultParameters = ListIteratorCodec.decodeResponse(response);
-        List<Data> resultCollection = (List<Data>) resultParameters.list;
+        List<Data> resultCollection = (List<Data>) resultParameters.response;
         SerializationService serializationService = getContext().getSerializationService();
         return new UnmodifiableLazyList<E>(resultCollection, serializationService).iterator();
     }
@@ -263,7 +263,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         ClientMessage request = ListGetAllCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
         ListGetAllCodec.ResponseParameters resultParameters = ListGetAllCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.list;
+        Collection<Data> resultCollection = resultParameters.response;
         final ArrayList<E> list = new ArrayList<E>(resultCollection.size());
         for (Data value : resultCollection) {
             list.add((E) toObject(value));
@@ -297,7 +297,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         ClientMessage request = ListListIteratorCodec.encodeRequest(name, index);
         ClientMessage response = invokeOnPartition(request);
         ListListIteratorCodec.ResponseParameters resultParameters = ListListIteratorCodec.decodeResponse(response);
-        List<Data> resultCollection = resultParameters.list;
+        List<Data> resultCollection = resultParameters.response;
         SerializationService serializationService = getContext().getSerializationService();
         return new UnmodifiableLazyList<E>(resultCollection, serializationService).listIterator();
     }
@@ -306,7 +306,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         ClientMessage request = ListSubCodec.encodeRequest(name, fromIndex, toIndex);
         ClientMessage response = invokeOnPartition(request);
         ListSubCodec.ResponseParameters resultParameters = ListSubCodec.decodeResponse(response);
-        List<Data> resultCollection = resultParameters.list;
+        List<Data> resultCollection = resultParameters.response;
         SerializationService serializationService = getContext().getSerializationService();
         return new UnmodifiableLazyList<E>(resultCollection, serializationService);
     }

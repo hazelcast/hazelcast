@@ -223,7 +223,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         ClientMessage request = QueueDrainToCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
         QueueDrainToCodec.ResponseParameters resultParameters = QueueDrainToCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.list;
+        Collection<Data> resultCollection = resultParameters.response;
         for (Data data : resultCollection) {
             E e = toObject(data);
             objects.add(e);
@@ -235,7 +235,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         ClientMessage request = QueueDrainToMaxSizeCodec.encodeRequest(name, maxElements);
         ClientMessage response = invokeOnPartition(request);
         QueueDrainToMaxSizeCodec.ResponseParameters resultParameters = QueueDrainToMaxSizeCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.list;
+        Collection<Data> resultCollection = resultParameters.response;
         for (Data data : resultCollection) {
             E e = toObject(data);
             c.add(e);
@@ -292,7 +292,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         ClientMessage request = QueueIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
         QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.list;
+        Collection<Data> resultCollection = resultParameters.response;
         return new QueueIterator<E>(resultCollection.iterator(), getContext().getSerializationService(), false);
     }
 
@@ -300,7 +300,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         ClientMessage request = QueueIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
         QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.list;
+        Collection<Data> resultCollection = resultParameters.response;
         int i = 0;
         Object[] array = new Object[resultCollection.size()];
         for (Data data : resultCollection) {
@@ -313,7 +313,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         ClientMessage request = QueueIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
         QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.list;
+        Collection<Data> resultCollection = resultParameters.response;
         int size = resultCollection.size();
         if (ts.length < size) {
             ts = (T[]) java.lang.reflect.Array.newInstance(ts.getClass().getComponentType(), size);

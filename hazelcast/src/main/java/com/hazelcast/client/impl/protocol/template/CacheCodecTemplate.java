@@ -212,11 +212,11 @@ public interface CacheCodecTemplate {
      * @param name           Name of the cache.
      * @param listenerConfig The listener configuration. Byte-array which is serialized from an object implementing
      *                       javax.cache.configuration.CacheEntryListenerConfiguration
-     * @param register       true if the listener is being registered, false if the listener is being unregistered.
+     * @param shouldRegister true if the listener is being registered, false if the listener is being unregistered.
      * @param address        The address of the member server for which the listener is being registered for.
      */
     @Request(id = 16, retryable = false, response = ResponseMessageConst.VOID)
-    void listenerRegistration(String name, Data listenerConfig, boolean register, Address address);
+    void listenerRegistration(String name, Data listenerConfig, boolean shouldRegister, Address address);
 
     /**
      * @param name                  Name of the cache.
