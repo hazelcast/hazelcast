@@ -55,7 +55,7 @@ public class ClientTxnMultiMapProxy<K, V>
                 .encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId(), toData(key));
 
         ClientMessage response = invoke(request);
-        Collection<Data> collection = TransactionalMultiMapGetCodec.decodeResponse(response).list;
+        Collection<Data> collection = TransactionalMultiMapGetCodec.decodeResponse(response).response;
         Collection<V> coll = new ArrayList<V>(collection.size());
         for (Data data : collection) {
             coll.add((V) toObject(data));
@@ -74,7 +74,7 @@ public class ClientTxnMultiMapProxy<K, V>
         ClientMessage request = TransactionalMultiMapRemoveCodec
                 .encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId(), toData(key));
         ClientMessage response = invoke(request);
-        Collection<Data> collection = TransactionalMultiMapRemoveCodec.decodeResponse(response).list;
+        Collection<Data> collection = TransactionalMultiMapRemoveCodec.decodeResponse(response).response;
         Collection<V> coll = new ArrayList<V>(collection.size());
         for (Data data : collection) {
             coll.add((V) toObject(data));

@@ -355,8 +355,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientMessage request = ReplicatedMapKeySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
         ReplicatedMapKeySetCodec.ResponseParameters result = ReplicatedMapKeySetCodec.decodeResponse(response);
-        List<Entry<K, V>> keys = new ArrayList<Entry<K, V>>(result.list.size());
-        for (Data dataKey : result.list) {
+        List<Entry<K, V>> keys = new ArrayList<Entry<K, V>>(result.response.size());
+        for (Data dataKey : result.response) {
             keys.add(new AbstractMap.SimpleImmutableEntry<K, V>((K) toObject(dataKey), null));
         }
         return new ResultSet(keys, IterationType.KEY);
@@ -372,8 +372,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientMessage request = ReplicatedMapValuesCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
         ReplicatedMapValuesCodec.ResponseParameters result = ReplicatedMapValuesCodec.decodeResponse(response);
-        Collection<V> resultCollection = new ArrayList<V>(result.list.size());
-        for (Data data : result.list) {
+        Collection<V> resultCollection = new ArrayList<V>(result.response.size());
+        for (Data data : result.response) {
             resultCollection.add((V) toObject(data));
         }
         return resultCollection;
@@ -391,8 +391,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientMessage request = ReplicatedMapEntrySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
         ReplicatedMapEntrySetCodec.ResponseParameters result = ReplicatedMapEntrySetCodec.decodeResponse(response);
-        List<Entry<K, V>> entries = new ArrayList<Entry<K, V>>(result.entries.size());
-        for (Entry<Data, Data> dataEntry : result.entries) {
+        List<Entry<K, V>> entries = new ArrayList<Entry<K, V>>(result.response.size());
+        for (Entry<Data, Data> dataEntry : result.response) {
             K key = toObject(dataEntry.getKey());
             V value = toObject(dataEntry.getValue());
             entries.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, value));

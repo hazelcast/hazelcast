@@ -76,6 +76,9 @@ public class CodecCodeGenerator
     private final Map<TypeElement, Map<Integer, ExecutableElement>> requestMap = new HashMap<TypeElement, Map<Integer, ExecutableElement>>();
     private final Map<Integer, ExecutableElement> responseMap = new HashMap<Integer, ExecutableElement>();
     private final Map<Integer, ExecutableElement> eventResponseMap = new HashMap<Integer, ExecutableElement>();
+    private Template cppHeaderTemplate;
+    private Template cppTemplate;
+    private Template cppMessageTypeHeaderTemplate;
 
     private int round = 0;
 
@@ -96,11 +99,37 @@ public class CodecCodeGenerator
         for (Lang lang : Lang.values()) {
             boolean enabled = Boolean.getBoolean("hazelcast.generator." + lang.name().toLowerCase());
             if (enabled || lang == Lang.JAVA) {
-                try {
-                    Template codecTemplate = cfg.getTemplate("codec-template-" + lang.name().toLowerCase() + ".ftl");
-                    codecTemplateMap.put(lang, codecTemplate);
-                } catch (IOException e) {
-                    messager.printMessage(Diagnostic.Kind.ERROR, "Cannot find template for lang:" + lang);
+                if (Lang.CPP == lang) {
+                    try {
+                        cppHeaderTemplate = cfg.getTemplate("codec-template-" + lang.name().toLowerCase() + "header.ftl");
+                    } catch (IOException e) {
+                        messager.printMessage(Diagnostic.Kind.ERROR, "Cannot find cpp header template.");
+                    }
+                    try {
+                        cppTemplate = cfg.getTemplate("codec-template-" + lang.name().toLowerCase() + ".ftl");
+                        codecTemplateMap.put(lang, cppTemplate);
+                    } catch (IOException e) {
+                        messager.printMessage(Diagnostic.Kind.ERROR, "Cannot find cpp template.");
+                    }
+                    try {
+                        cppMessageTypeHeaderTemplate = cfg.getTemplate("messagetype-template-" + lang.name().toLowerCase() + "header.ftl");
+                        messageTypeTemplateMap.put(lang, cppMessageTypeHeaderTemplate);
+                    } catch (IOException e) {
+                        messager.printMessage(Diagnostic.Kind.ERROR, "Cannot find cpp messagetype header template.");
+                    }
+                } else {
+                    try {
+                        Template codecTemplate = cfg.getTemplate("codec-template-" + lang.name().toLowerCase() + ".ftl");
+                        codecTemplateMap.put(lang, codecTemplate);
+                    } catch (IOException e) {
+                        messager.printMessage(Diagnostic.Kind.ERROR, "Cannot find template for lang:" + lang);
+                    }
+                    try {
+                        Template messageTypeTemplate = cfg.getTemplate("messagetype-template-" + lang.name().toLowerCase() + ".ftl");
+                        messageTypeTemplateMap.put(lang, messageTypeTemplate);
+                    } catch (IOException e) {
+                        messager.printMessage(Diagnostic.Kind.WARNING, "Cannot find messagetype template for lang:" + lang);
+                    }
                 }
                 try {
                     Template messageTypeTemplate = cfg.getTemplate("messagetype-template-" + lang.name().toLowerCase() + ".ftl");
@@ -169,6 +198,17 @@ public class CodecCodeGenerator
 
         if (lang == Lang.MD) {
             generateDoc(allCodecModel, codecTemplate);
+        } else if (lang == Lang.CPP) {
+            for (Map<Integer, CodecModel> map : allCodecModel.values()) {
+                for (CodecModel model : map.values()) {
+                    if (CodeGenerationUtils.shouldGenerateForCpp(model.getParentName())) {
+                        String content = generateFromTemplate(cppHeaderTemplate, model);
+                        saveFile(model.getClassName() + ".h", "include." + model.getPackageName().toLowerCase(), content);
+                        content = generateFromTemplate(cppTemplate, model);
+                        saveFile(model.getClassName() + ".cpp", "src." + model.getPackageName().toLowerCase(), content);
+                    }
+                }
+            }
         } else {
             for (Map<Integer, CodecModel> map : allCodecModel.values()) {
                 for (CodecModel model : map.values()) {
@@ -282,8 +322,16 @@ public class CodecCodeGenerator
         if (model.isEmpty()) {
             return;
         }
-        final String content = generateFromTemplate(messageTypeTemplate, model);
-        saveContent(model, content);
+
+        if (Lang.CPP == lang) {
+            if (CodeGenerationUtils.shouldGenerateForCpp(model.getName())) {
+                String content = generateFromTemplate(cppMessageTypeHeaderTemplate, model);
+                saveFile(model.getClassName() + ".h", "include." + model.getPackageName().toLowerCase(), content);
+            }
+        } else {
+            final String content = generateFromTemplate(messageTypeTemplate, model);
+            saveContent(model, content);
+        }
     }
 
     private String generateFromTemplate(Template template, Object model) {

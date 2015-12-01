@@ -75,17 +75,17 @@ public interface ResponseTemplate {
 
     /**
      *
-     * @param list The operation result as an array of serialized byte-array.
+     * @param response The operation result as an array of serialized byte-array.
      */
     @Response(ResponseMessageConst.LIST_DATA)
-    void ListData(List<Data> list);
+    void ListData(List<Data> response);
 
     /**
      *
-     * @param entries The operation result as an array of serialized key-value byte-arrays.
+     * @param response The operation result as an array of serialized key-value byte-arrays.
      */
     @Response(ResponseMessageConst.LIST_ENTRY)
-    void ListEntry(List<Map.Entry<Data, Data>> entries);
+    void ListEntry(List<Map.Entry<Data, Data>> response);
 
     /**
      *
@@ -110,17 +110,17 @@ public interface ResponseTemplate {
     void Partitions(Map<Address, List<Integer>> partitions);
 
     /**
-     * @param infoList An list of DistributedObjectInfo (service name and object name).
+     * @param response An list of DistributedObjectInfo (service name and object name).
      */
     @Response(ResponseMessageConst.LIST_DISTRIBUTED_OBJECT)
-    void ListDistributedObject(List<DistributedObjectInfo> infoList);
+    void ListDistributedObject(List<DistributedObjectInfo> response);
 
     /**
      *
-     * @param dataEntryView Response as an EntryView Data type.
+     * @param response Response as an EntryView Data type.
      */
     @Response(ResponseMessageConst.ENTRY_VIEW)
-    void EntryView(@Nullable SimpleEntryView<Data, Data> dataEntryView);
+    void EntryView(@Nullable SimpleEntryView<Data, Data> response);
 
     /**
      *

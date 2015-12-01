@@ -172,7 +172,7 @@ public class ClientMapReduceProxy
 
     private Map toObjectMap(ClientMessage res) {
         SerializationService serializationService = getContext().getSerializationService();
-        Collection<Map.Entry<Data, Data>> entries = MapReduceForCustomCodec.decodeResponse(res).entries;
+        Collection<Map.Entry<Data, Data>> entries = MapReduceForCustomCodec.decodeResponse(res).response;
         HashMap hashMap = new HashMap();
         for (Map.Entry<Data, Data> entry : entries) {
             Object key = serializationService.toObject(entry.getKey());

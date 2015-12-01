@@ -456,7 +456,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             ClientGetDistributedObjectsCodec.ResponseParameters resultParameters =
                     ClientGetDistributedObjectsCodec.decodeResponse(response);
 
-            Collection<DistributedObjectInfo> infoCollection = resultParameters.infoList;
+            Collection<DistributedObjectInfo> infoCollection = resultParameters.response;
             for (DistributedObjectInfo distributedObjectInfo : infoCollection) {
                 getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
             }
