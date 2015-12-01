@@ -1,6 +1,5 @@
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
@@ -48,7 +47,7 @@ public class ExtractorHelperTest {
         MapAttributeConfig config = new MapAttributeConfig("iq", "not.existing.class");
 
         // EXPECT
-        expected.expect(InvalidConfigurationException.class);
+        expected.expect(IllegalArgumentException.class);
         expected.expectCause(isA(ClassNotFoundException.class));
 
         // WHEN
@@ -76,11 +75,60 @@ public class ExtractorHelperTest {
         MapAttributeConfig nameExtractor = new MapAttributeConfig("name", "not.existing.class");
 
         // EXPECT
-        expected.expect(InvalidConfigurationException.class);
+        expected.expect(IllegalArgumentException.class);
         expected.expectCause(isA(ClassNotFoundException.class));
 
         // WHEN
         ExtractorHelper.instantiateExtractors(asList(iqExtractor, nameExtractor));
+    }
+
+    @Test
+    public void instantiate_extractors_duplicateExtractor() {
+        // GIVEN
+        MapAttributeConfig iqExtractor = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
+        MapAttributeConfig iqExtractorDuplicate = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
+
+        // EXPECT
+        expected.expect(IllegalArgumentException.class);
+
+        // WHEN
+        ExtractorHelper.instantiateExtractors(asList(iqExtractor, iqExtractorDuplicate));
+    }
+
+    @Test
+    public void instantiate_extractors_wrongType() {
+        // GIVEN
+        MapAttributeConfig string = new MapAttributeConfig("iq", "java.lang.String");
+
+        // EXPECT
+        expected.expect(IllegalArgumentException.class);
+
+        // WHEN
+        ExtractorHelper.instantiateExtractors(asList(string));
+    }
+
+    @Test
+    public void instantiate_extractors_initException() {
+        // GIVEN
+        MapAttributeConfig string = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$InitExceptionExtractor");
+
+        // EXPECT
+        expected.expect(IllegalArgumentException.class);
+
+        // WHEN
+        ExtractorHelper.instantiateExtractors(asList(string));
+    }
+
+    @Test
+    public void instantiate_extractors_accessException() {
+        // GIVEN
+        MapAttributeConfig string = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$AccessExceptionExtractor");
+
+        // EXPECT
+        expected.expect(IllegalArgumentException.class);
+
+        // WHEN
+        ExtractorHelper.instantiateExtractors(asList(string));
     }
 
     @Test
@@ -155,6 +203,14 @@ public class ExtractorHelperTest {
         @Override
         public void extract(Object target, Object arguments, ValueCollector collector) {
         }
+    }
+
+    public static class AccessExceptionExtractor extends NameExtractor {
+        private AccessExceptionExtractor() {
+        }
+    }
+
+    public static abstract class InitExceptionExtractor extends NameExtractor {
     }
 
     public static class NameExtractor extends ValueExtractor<Object, Object> {

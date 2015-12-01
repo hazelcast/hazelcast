@@ -24,13 +24,19 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.HashMap;
-
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MapAttributeConfigTest {
+
+    @Test
+    public void empty() {
+        new MapAttributeConfig();
+    }
 
     @Test(expected = IllegalArgumentException.class)
     public void nullName() {
@@ -102,6 +108,27 @@ public class MapAttributeConfigTest {
 
         assertEquals("iq", config.getName());
         assertEquals("com.test.IqExtractor", config.getExtractor());
+    }
+
+    @Test
+    public void validToString() {
+        MapAttributeConfig config = new MapAttributeConfig("iq", "com.test.IqExtractor");
+
+        String toString = config.toString();
+
+        assertThat(toString, containsString("iq"));
+        assertThat(toString, containsString("com.test.IqExtractor"));
+    }
+
+    @Test
+    public void validReadOnly() {
+        MapAttributeConfig config = new MapAttributeConfig("iq", "com.test.IqExtractor");
+
+        MapAttributeConfigReadOnly readOnlyConfig = config.getAsReadOnly();
+
+        assertThat(readOnlyConfig, instanceOf(MapAttributeConfigReadOnly.class));
+        assertEquals("iq", readOnlyConfig.getName());
+        assertEquals("com.test.IqExtractor", readOnlyConfig.getExtractor());
     }
 
 }
