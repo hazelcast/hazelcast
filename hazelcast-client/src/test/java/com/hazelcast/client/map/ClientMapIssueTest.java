@@ -88,7 +88,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
                 assertEquals("there should be only one registration", 1, regs1.size());
                 assertEquals("there should be only one registration", 1, regs2.size());
             }
-        }, 10);
+        });
     }
 
     @Test
