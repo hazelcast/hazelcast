@@ -845,6 +845,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                     = new LinkedHashMap<Address, MemberImpl>(membersRemovedInNotActiveStateRef.get());
 
             for (Address address : addresses) {
+                if (thisAddress.equals(address)) {
+                    continue;
+                }
                 membersRemovedInNotActiveState.put(address, new MemberImpl(address, false));
             }
 
