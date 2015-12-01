@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
@@ -39,24 +40,19 @@ final class NodeShutdownLatch {
 
     NodeShutdownLatch(final Node node) {
         localMember = node.localMember;
-        Collection<MemberImpl> memberList = node.clusterService.getMemberList();
+        Collection<Member> memberList = node.clusterService.getMembers();
         registrations = new HashMap<String, HazelcastInstanceImpl>(3);
-        Set<MemberImpl> members = new HashSet<MemberImpl>(memberList);
+        Set<Member> members = new HashSet<Member>(memberList);
         members.remove(localMember);
 
         if (!members.isEmpty()) {
-            final Map<MemberImpl, HazelcastInstanceImpl> map = HazelcastInstanceFactory.getInstanceImplMap();
-            for (Map.Entry<MemberImpl, HazelcastInstanceImpl> entry : map.entrySet()) {
-                final MemberImpl member = entry.getKey();
-                if (members.contains(member)) {
-                    HazelcastInstanceImpl instance = entry.getValue();
-                    if (instance.node.isActive()) {
-                        try {
-                            ClusterServiceImpl clusterService = instance.node.clusterService;
-                            final String id = clusterService.addMembershipListener(new ShutdownMembershipListener());
-                            registrations.put(id, instance);
-                        } catch (Throwable ignored) {
-                        }
+            for (HazelcastInstanceImpl instance : HazelcastInstanceFactory.getInstanceImpls(members)) {
+                if (instance.node.isActive()) {
+                    try {
+                        ClusterServiceImpl clusterService = instance.node.clusterService;
+                        final String id = clusterService.addMembershipListener(new ShutdownMembershipListener());
+                        registrations.put(id, instance);
+                    } catch (Throwable ignored) {
                     }
                 }
             }
