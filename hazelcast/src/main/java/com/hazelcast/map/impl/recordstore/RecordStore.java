@@ -94,6 +94,8 @@ public interface RecordStore {
      */
     Data readBackupData(Data key);
 
+    Object readBackup(Data key);
+
     MapEntrySet getAll(Set<Data> keySet);
 
     boolean containsKey(Data dataKey);
