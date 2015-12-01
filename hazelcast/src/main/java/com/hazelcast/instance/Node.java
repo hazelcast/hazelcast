@@ -183,7 +183,6 @@ public class Node {
             nodeExtension.printNodeInfo();
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
             discoveryService = createDiscoveryService(config);
-            initializeListeners(config);
             joiner = nodeContext.createJoiner(this);
         } catch (Throwable e) {
             try {
@@ -318,6 +317,7 @@ public class Node {
 
     void start() {
         nodeEngine.start();
+        initializeListeners(config);
         connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(
