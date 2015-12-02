@@ -19,7 +19,6 @@ package com.hazelcast.transaction.impl;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.core.TransactionalMultiMap;
@@ -127,12 +126,6 @@ final class TransactionContextImpl implements TransactionContext {
             obj = ((TransactionalService) service).createTransactionalObject(name, transaction);
             txnObjectMap.put(key, obj);
         } else {
-            if (service == null) {
-                if (!nodeEngine.isActive()) {
-                    throw new HazelcastInstanceNotActiveException();
-                }
-                throw new IllegalArgumentException("Unknown Service[" + serviceName + "]!");
-            }
             throw new IllegalArgumentException("Service[" + serviceName + "] is not transactional!");
         }
         return obj;

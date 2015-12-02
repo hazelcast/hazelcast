@@ -69,17 +69,16 @@ public class ReplicatedMapService
     private final Config config;
     private final NodeEngine nodeEngine;
     private final EventService eventService;
-    private final EventRegistration eventRegistration;
 
     public ReplicatedMapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.config = nodeEngine.getConfig();
         this.eventService = nodeEngine.getEventService();
-        this.eventRegistration = eventService.registerListener(SERVICE_NAME, EVENT_TOPIC_NAME, new ReplicationListener());
     }
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
+        eventService.registerListener(SERVICE_NAME, EVENT_TOPIC_NAME, new ReplicationListener());
     }
 
     @Override

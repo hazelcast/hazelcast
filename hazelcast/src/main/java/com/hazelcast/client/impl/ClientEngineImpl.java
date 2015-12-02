@@ -506,12 +506,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             }
 
             Object service = nodeEngine.getService(serviceName);
-            if (service == null) {
-                if (nodeEngine.isActive()) {
-                    throw new IllegalArgumentException("No service registered with name: " + serviceName);
-                }
-                throw new HazelcastInstanceNotActiveException();
-            }
             request.setService(service);
         }
 
