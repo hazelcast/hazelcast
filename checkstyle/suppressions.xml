@@ -504,6 +504,8 @@
     <suppress checks="JavadocType" files="com/hazelcast/util/executor/"/>
     <suppress checks="JavadocMethod" files="com/hazelcast/util/executor/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/util/executor/"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.util.executor.DelegatingFuture"/>
+    <suppress checks="NPathComplexity|CyclomaticComplexity" files="com.hazelcast.client.util.ClientDelegatingFuture"/>
 
     <!-- Written by Doug Lea  -->
     <suppress checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|NPath|Cyclomatic"
