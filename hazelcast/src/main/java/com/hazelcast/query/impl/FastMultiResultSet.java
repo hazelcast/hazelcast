@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- *  Multiple result set for Predicates.
+ * Multiple result set for Predicates.
  */
 public class FastMultiResultSet extends AbstractSet<QueryableEntry> implements MultiResultSet {
 
@@ -103,7 +103,16 @@ public class FastMultiResultSet extends AbstractSet<QueryableEntry> implements M
             if (resultSets.size() == 0) {
                 return null;
             }
-            return currentIterator.next();
+            if (currentIterator != null && currentIterator.hasNext()) {
+                return currentIterator.next();
+            }
+            while (currentIndex < resultSets.size()) {
+                currentIterator = resultSets.get(currentIndex++).values().iterator();
+                if (currentIterator.hasNext()) {
+                    return currentIterator.next();
+                }
+            }
+            return null;
         }
 
         @Override

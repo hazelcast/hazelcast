@@ -17,13 +17,11 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -37,26 +35,47 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class CachedQueryEntryTest {
+public class CachedQueryEntryTest extends QueryEntryTest {
 
-    private SerializationService serializationService;
+    @Test
+    public void getKey_caching() {
+        QueryableEntry entry = entry("key", "value");
 
-    @Before
-    public void before() {
-        serializationService = new DefaultSerializationServiceBuilder().build();
+        assertSame(entry.getKey(), entry.getKey());
+    }
+
+    @Test
+    public void getValue_caching() {
+        QueryableEntry entry = entry("key", "value");
+
+        assertSame(entry.getValue(), entry.getValue());
+    }
+
+    @Test
+    public void getKeyData_caching() {
+        QueryableEntry entry = entry("key", "value");
+
+        assertSame(entry.getKeyData(), entry.getKeyData());
+    }
+
+    @Test
+    public void getValueData_caching() {
+        QueryableEntry entry = entry("key", "value");
+
+        assertSame(entry.getValueData(), entry.getValueData());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testInit_whenKeyIsNull_thenThrowIllegalArgumentException() {
         Data key = null;
-        new CachedQueryEntry(serializationService, key, new Object(), Extractors.empty());
+        entry(key, new Object(), Extractors.empty());
     }
 
     @Test
     public void testGetKey() {
         String keyObject = "key";
         Data keyData = serializationService.toData(keyObject);
-        CachedQueryEntry entry = new CachedQueryEntry(serializationService, keyData, new Object(), Extractors.empty());
+        QueryableEntry entry = entry(keyData, new Object(), Extractors.empty());
 
         Object key = entry.getKey();
         assertEquals(keyObject, key);
@@ -66,7 +85,7 @@ public class CachedQueryEntryTest {
     public void testGetTargetObject_givenKeyDataIsPortable_whenKeyFlagIsTrue_thenReturnKeyData() {
         //given
         Data keyData = mockPortableData();
-        CachedQueryEntry entry = new CachedQueryEntry(serializationService, keyData, new Object(), Extractors.empty());
+        QueryableEntry entry = entry(keyData, new Object(), Extractors.empty());
 
         //when
         Object targetObject = entry.getTargetObject(true);
@@ -80,7 +99,7 @@ public class CachedQueryEntryTest {
         //given
         Object keyObject = "key";
         Data keyData = serializationService.toData(keyObject);
-        CachedQueryEntry entry = new CachedQueryEntry(serializationService, keyData, new Object(), Extractors.empty());
+        QueryableEntry entry = entry(keyData, new Object(), Extractors.empty());
 
         //when
         Object targetObject = entry.getTargetObject(true);
@@ -91,7 +110,7 @@ public class CachedQueryEntryTest {
 
     @Test
     public void testEquals_givenSameInstance_thenReturnTrue() {
-        CachedQueryEntry entry1 = newEntry("key");
+        CachedQueryEntry entry1 = entry("key");
         CachedQueryEntry entry2 = entry1;
 
         assertTrue(entry1.equals(entry2));
@@ -99,7 +118,7 @@ public class CachedQueryEntryTest {
 
     @Test
     public void testEquals_givenOtherIsNull_thenReturnFalse() {
-        CachedQueryEntry entry1 = newEntry("key");
+        CachedQueryEntry entry1 = entry("key");
         CachedQueryEntry entry2 = null;
 
         assertFalse(entry1.equals(entry2));
@@ -107,7 +126,7 @@ public class CachedQueryEntryTest {
 
     @Test
     public void testEquals_givenOtherIsDifferentClass_thenReturnFalse() {
-        CachedQueryEntry entry1 = newEntry("key");
+        CachedQueryEntry entry1 = entry("key");
         Object entry2 = new Object();
 
         assertFalse(entry1.equals(entry2));
@@ -115,16 +134,16 @@ public class CachedQueryEntryTest {
 
     @Test
     public void testEquals_givenOtherHasDifferentKey_thenReturnFalse() {
-        CachedQueryEntry entry1 = newEntry("key1");
-        CachedQueryEntry entry2 = newEntry("key2");
+        CachedQueryEntry entry1 = entry("key1");
+        CachedQueryEntry entry2 = entry("key2");
 
         assertFalse(entry1.equals(entry2));
     }
 
     @Test
     public void testEquals_givenOtherHasEqualKey_thenReturnTrue() {
-        CachedQueryEntry entry1 = newEntry("key");
-        CachedQueryEntry entry2 = newEntry("key");
+        CachedQueryEntry entry1 = entry("key");
+        CachedQueryEntry entry2 = entry("key");
 
         assertTrue(entry1.equals(entry2));
     }
@@ -132,13 +151,13 @@ public class CachedQueryEntryTest {
     @Test(expected = UnsupportedOperationException.class)
     public void givenNewEntry_whenSetValue_thenThrowUnsupportedOperationException() {
         //given
-        CachedQueryEntry entry = newEntry("key");
+        CachedQueryEntry entry = entry("key");
 
         //when
         entry.setValue(new Object());
     }
 
-    private CachedQueryEntry newEntry(Object key) {
+    private CachedQueryEntry entry(Object key) {
         Data keyData = serializationService.toData(key);
         return new CachedQueryEntry(serializationService, keyData, new Object(), Extractors.empty());
     }
@@ -149,5 +168,16 @@ public class CachedQueryEntryTest {
         return keyData;
     }
 
+    protected QueryableEntry entry(Data key, Object value, Extractors extractors) {
+        return new CachedQueryEntry(serializationService, key, value, extractors);
+    }
+
+    protected QueryableEntry entry() {
+        return new CachedQueryEntry();
+    }
+
+    protected void init(Object entry, SerializationService serializationService, Data key, Object value, Extractors extractors) {
+        ((CachedQueryEntry) entry).init(serializationService, key, value, extractors);
+    }
 
 }
