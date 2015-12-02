@@ -167,7 +167,9 @@ public class TextReadHandler implements ReadHandler {
             if (command instanceof HttpCommand) {
                 boolean isMancenterRequest = ((HttpCommand) command).getURI().
                         startsWith(HttpCommandProcessor.URI_MANCENTER_CHANGE_URL);
-                if (!restEnabled && !isMancenterRequest) {
+                boolean isShutdownClusterRequest = ((HttpCommand) command).getURI().
+                        startsWith(HttpCommandProcessor.URI_SHUTDOWN_CLUSTER_URL);
+                if (!restEnabled && !isMancenterRequest && !isShutdownClusterRequest) {
                     connection.close();
                     return;
                 }

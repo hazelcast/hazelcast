@@ -43,6 +43,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public static final byte[] CONTENT_TYPE = stringToBytes("Content-Type: ");
     public static final byte[] CONTENT_LENGTH = stringToBytes("Content-Length: ");
     public static final byte[] CONTENT_TYPE_PLAIN_TEXT = stringToBytes("text/plain");
+    public static final byte[] CONTENT_TYPE_JSON = stringToBytes("application/javascript");
     public static final byte[] CONTENT_TYPE_BINARY = stringToBytes("application/binary");
 
     protected final String uri;

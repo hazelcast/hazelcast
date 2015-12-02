@@ -17,6 +17,7 @@
 package com.hazelcast.internal.ascii;
 
 import com.hazelcast.core.HazelcastInstance;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -24,6 +25,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 
 public class HTTPCommunicator {
 
@@ -130,6 +132,29 @@ public class HTTPCommunicator {
         urlConnection.setUseCaches(false);
         urlConnection.setAllowUserInteraction(false);
         urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
+
+        return urlConnection.getResponseCode();
+    }
+
+    public int shutdownCluster(String groupName, String groupPassword) throws IOException {
+
+        String url = address + "management/cluster/shutdown";
+        /** set up the http connection parameters */
+        HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
+        urlConnection.setRequestMethod("POST");
+        urlConnection.setDoOutput(true);
+        urlConnection.setDoInput(true);
+        urlConnection.setUseCaches(false);
+        urlConnection.setAllowUserInteraction(false);
+        urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
+
+        /** post the data */
+        OutputStream out = urlConnection.getOutputStream();
+        Writer writer = new OutputStreamWriter(out, "UTF-8");
+        String data = URLEncoder.encode(groupName, "UTF-8") + "&" + URLEncoder.encode(groupPassword, "UTF-8");
+        writer.write(data);
+        writer.close();
+        out.close();
 
         return urlConnection.getResponseCode();
     }
