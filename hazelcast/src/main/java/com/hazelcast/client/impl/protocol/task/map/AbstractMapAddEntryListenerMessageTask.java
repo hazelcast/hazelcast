@@ -27,6 +27,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.listener.EntryMergedListener;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
@@ -72,7 +73,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
     }
 
-    private class MapListener extends EntryAdapter<Object, Object> {
+    private class MapListener extends EntryAdapter<Object, Object> implements EntryMergedListener<Object, Object> {
 
         @Override
         public void onEntryEvent(EntryEvent<Object, Object> event) {
@@ -101,6 +102,11 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
                 sendClientMessage(null, encodeEvent(null,
                         null, null, null, type.getType(), uuid, numberOfEntriesAffected));
             }
+        }
+
+        @Override
+        public void entryMerged(EntryEvent<Object, Object> event) {
+            onEntryEvent(event);
         }
     }
 

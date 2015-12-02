@@ -4,6 +4,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
@@ -14,8 +15,19 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.EntryViews;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.operation.MergeOperation;
+import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.listener.EntryMergedListener;
+import com.hazelcast.map.merge.PassThroughMergePolicy;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -24,6 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -34,6 +47,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     HazelcastInstance client;
+    HazelcastInstance server;
 
     @After
     public void cleanup() {
@@ -53,7 +67,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
             }
         });
 
-        hazelcastFactory.newHazelcastInstance();
+        server = hazelcastFactory.newHazelcastInstance();
         client = hazelcastFactory.newHazelcastClient(config);
     }
 
@@ -70,6 +84,32 @@ public class ClientListenersTest extends HazelcastTestSupport {
         }, true);
 
         map.put(1, new ClientRegressionTest.SamplePortable(1));
+        assertOpenEventually(latch);
+    }
+
+    @Test
+    public void testEntryMergeListener_withPortableNotRegisteredInNode() throws Exception {
+        final IMap<Object, Object> map = client.getMap(randomMapName());
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        map.addEntryListener(new EntryMergedListener<Object, Object>() {
+            @Override
+            public void entryMerged(EntryEvent<Object, Object> event) {
+                latch.countDown();
+            }
+        }, true);
+
+        Node node = getNode(server);
+        NodeEngineImpl nodeEngine = node.nodeEngine;
+        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+        SerializationService serializationService = getSerializationService(server);
+        Data key = serializationService.toData(1);
+        Data value = serializationService.toData(new ClientRegressionTest.SamplePortable(1));
+        EntryView entryView = EntryViews.createSimpleEntryView(key, value, Mockito.mock(Record.class));
+        MergeOperation op = new MergeOperation(map.getName(), key, entryView, new PassThroughMergePolicy());
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        operationService.invokeOnPartition(MapService.SERVICE_NAME, op, partitionId);
+
         assertOpenEventually(latch);
     }
 
