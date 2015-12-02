@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -93,8 +94,8 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         mapServiceContext.interceptAfterRemove(name, dataValue);
         EntryEventType eventType = EntryEventType.EVICTED;
-        mapServiceContext.getMapEventPublisher()
-                .publishEvent(getCallerAddress(), name, eventType, dataKey, dataValue, null);
+        MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, dataValue, null);
         invalidateNearCaches();
     }
 

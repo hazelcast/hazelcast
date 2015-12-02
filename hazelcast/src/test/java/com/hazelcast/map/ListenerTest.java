@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.core.EntryAdapter;
@@ -28,7 +29,11 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.impl.MapPartitionEventData;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -42,6 +47,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -67,6 +73,12 @@ public class ListenerTest extends HazelcastTestSupport {
     private final AtomicInteger globalCount = new AtomicInteger();
     private final AtomicInteger localCount = new AtomicInteger();
     private final AtomicInteger valueCount = new AtomicInteger();
+
+    private static void putDummyData(IMap map, int k) {
+        for (int i = 0; i < k; i++) {
+            map.put("foo" + i, "bar");
+        }
+    }
 
     @Before
     public void before() {
@@ -209,12 +221,6 @@ public class ListenerTest extends HazelcastTestSupport {
         int k = 3;
         putDummyData(map1, k);
         checkCountWithExpected(k * 3, k, k * 2);
-    }
-
-    private static void putDummyData(IMap map, int k) {
-        for (int i = 0; i < k; i++) {
-            map.put("foo" + i, "bar");
-        }
     }
 
     private void checkCountWithExpected(final int expectedGlobal, final int expectedLocal, final int expectedValue) {
@@ -544,6 +550,27 @@ public class ListenerTest extends HazelcastTestSupport {
         });
     }
 
+    @Test
+    public void test_ListenerShouldNotCauseDeserialization_withIncludeValueFalse() throws InterruptedException {
+        String name = randomString();
+        String key = randomString();
+        Config config = new Config();
+        config.getMapConfig(name).setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Object, Object> map = instance.getMap(name);
+        EntryAddedLatch latch = new EntryAddedLatch(1);
+        map.addEntryListener(latch, false);
+        map.executeOnKey(key, new AbstractEntryProcessor() {
+            @Override
+            public Object process(Map.Entry entry) {
+                entry.setValue(new SerializeCheckerObject());
+                return null;
+            }
+        });
+        assertOpenEventually(latch, 10);
+        SerializeCheckerObject.assertNotSerialized();
+    }
+
     private Predicate<String, String> matchingPredicate() {
         return new Predicate<String, String>() {
             @Override
@@ -577,6 +604,44 @@ public class ListenerTest extends HazelcastTestSupport {
                 }
             }
         };
+    }
+
+    @Test
+    public void test_mapPartitionEventData_toString() {
+        assertNotNull(new MapPartitionEventData().toString());
+    }
+
+    private static class EntryAddedLatch extends CountDownLatch implements EntryAddedListener {
+
+        public EntryAddedLatch(int count) {
+            super(count);
+        }
+
+        @Override
+        public void entryAdded(EntryEvent event) {
+            countDown();
+        }
+    }
+
+    private static class SerializeCheckerObject implements DataSerializable {
+
+        static volatile boolean serialized = false;
+        static volatile boolean deserialized = false;
+
+        public static void assertNotSerialized() {
+            assertFalse(serialized);
+            assertFalse(deserialized);
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            serialized = true;
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            deserialized = true;
+        }
     }
 
     public class CounterEntryListener implements EntryListener<Object, Object> {
@@ -626,10 +691,5 @@ public class ListenerTest extends HazelcastTestSupport {
                     ", evictCount=" + evictCount +
                     '}';
         }
-    }
-
-    @Test
-    public void test_mapPartitionEventData_toString() {
-        assertNotNull(new MapPartitionEventData().toString());
     }
 }
