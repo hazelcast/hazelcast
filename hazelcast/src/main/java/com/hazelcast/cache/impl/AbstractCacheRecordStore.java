@@ -20,7 +20,6 @@ import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
 import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheMaxSizeChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.cache.impl.record.CacheRecordMap;
 import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.EvictionConfig;
@@ -34,7 +33,6 @@ import com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider;
 import com.hazelcast.internal.eviction.EvictionStrategy;
 import com.hazelcast.internal.eviction.EvictionStrategyProvider;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.nio.Disposable;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.EventRegistration;
@@ -1469,19 +1467,5 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public boolean isWanReplicationEnabled() {
         return wanReplicationEnabled;
-    }
-
-    @Override
-    public void transferRecordsFrom(ICacheRecordStore src) {
-        if (!(src instanceof AbstractCacheRecordStore)) {
-            throw new IllegalArgumentException("Expecting AbstractCacheRecordStore!");
-        }
-
-        AbstractCacheRecordStore dest = this;
-        CacheRecordMap oldRecords = dest.records;
-        dest.records = ((AbstractCacheRecordStore) src).records;
-        if (oldRecords instanceof Disposable) {
-            ((Disposable) oldRecords).dispose();
-        }
     }
 }

@@ -432,14 +432,4 @@ public interface ICacheRecordStore {
      * @return <tt>true</tt> if wan replication is enabled for this record store, <tt>false</tt> otherwise
      */
     boolean isWanReplicationEnabled();
-
-    /**
-     * Transfers all records from source record store
-     * and drops previous records owned by this record store.
-     * Source record store should not be accessed anymore
-     * after transfer.
-     *
-     * @param src source record store whose records will be transferred
-     */
-    void transferRecordsFrom(ICacheRecordStore src);
 }
