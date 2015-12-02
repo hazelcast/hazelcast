@@ -27,8 +27,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.map.impl.event.MapPartitionEventData;
+import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.event.MapPartitionEventData;
+import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.query.Predicate;
@@ -44,6 +46,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -62,6 +65,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -82,6 +86,52 @@ public class ListenerTest extends HazelcastTestSupport {
         globalCount.set(0);
         localCount.set(0);
         valueCount.set(0);
+    }
+
+    @Test
+    public void testSet_whenValueInserted() {
+        HazelcastInstance hz = createHazelcastInstance();
+        IMap map = hz.getMap(randomName());
+        final EntryAddedListener listener = mock(EntryAddedListener.class);
+        map.addEntryListener(listener, true);
+
+        map.set("somekey", "value");
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                ArgumentCaptor<DataAwareEntryEvent> argument = ArgumentCaptor.forClass(DataAwareEntryEvent.class);
+                verify(listener).entryAdded(argument.capture());
+
+                DataAwareEntryEvent entryEvent = argument.getValue();
+                assertNull(entryEvent.getOldValue());
+                assertEquals("value", entryEvent.getValue());
+            }
+        });
+    }
+
+    @Test
+    public void testSet_whenValueUpdated() {
+        HazelcastInstance hz = createHazelcastInstance();
+        IMap map = hz.getMap(randomName());
+        final EntryUpdatedListener listener = mock(EntryUpdatedListener.class);
+        map.addEntryListener(listener, true);
+
+        map.set("somekey", "oldvalue");
+
+        map.set("somekey", "newvalue");
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                ArgumentCaptor<DataAwareEntryEvent> argument = ArgumentCaptor.forClass(DataAwareEntryEvent.class);
+                verify(listener).entryUpdated(argument.capture());
+
+                DataAwareEntryEvent entryEvent = argument.getValue();
+                assertEquals("oldvalue", entryEvent.getOldValue());
+                assertEquals("newvalue", entryEvent.getValue());
+            }
+        });
     }
 
     @Test

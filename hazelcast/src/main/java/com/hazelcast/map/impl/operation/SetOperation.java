@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.Data;
 
 public class SetOperation extends BasePutOperation {
 
-    private boolean newRecord;
+    private boolean response;
 
     public SetOperation() {
     }
@@ -32,17 +32,19 @@ public class SetOperation extends BasePutOperation {
 
     @Override
     public void afterRun() {
-        eventType = newRecord ? EntryEventType.ADDED : EntryEventType.UPDATED;
+        eventType = response ? EntryEventType.ADDED : EntryEventType.UPDATED;
         super.afterRun();
     }
 
     @Override
     public void run() {
-        newRecord = recordStore.set(dataKey, dataValue, ttl);
+        Object oldValue = recordStore.put(dataKey, dataValue, ttl);
+        dataOldValue = mapService.getMapServiceContext().toData(oldValue);
+        response = oldValue == null;
     }
 
     @Override
     public Object getResponse() {
-        return newRecord;
+        return response;
     }
 }
