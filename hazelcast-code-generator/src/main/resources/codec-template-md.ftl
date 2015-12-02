@@ -339,7 +339,7 @@ Header only event message, no message body exist.
 <#function resolvePartitionIdentifier partitionIdentifier>
     <#switch partitionIdentifier?trim>
         <#case "random">
-            <#return "a random partition id from 0 to PARTITION_COUNT(inclusive)">
+            <#return "a random partition id from 0 to PARTITION_COUNT(PARTITION_COUNT exclusive)">
         <#case "-1">
             <#return "-1">
         <#case "partitionId">
