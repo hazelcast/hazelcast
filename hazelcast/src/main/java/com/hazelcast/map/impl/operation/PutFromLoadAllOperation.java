@@ -64,15 +64,16 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
         final MapService mapService = this.mapService;
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, name);
+        boolean hasInterceptor = mapServiceContext.hasInterceptor(name);
         for (int i = 0; i < keyValueSequence.size(); i += 2) {
-            final Data key = keyValueSequence.get(i);
-            final Data dataValue = keyValueSequence.get(i + 1);
+            Data key = keyValueSequence.get(i);
+            Data dataValue = keyValueSequence.get(i + 1);
             // here object conversion is for interceptors.
-            final Object objectValue = mapServiceContext.toObject(dataValue);
-            final Object previousValue = recordStore.putFromLoad(key, objectValue);
+            Object value = hasInterceptor ? mapServiceContext.toObject(dataValue) : dataValue;
+            Object previousValue = recordStore.putFromLoad(key, value);
 
-            callAfterPutInterceptors(objectValue);
-            publishEntryEvent(key, mapServiceContext.toData(previousValue), dataValue);
+            callAfterPutInterceptors(value);
+            publishEntryEvent(key, previousValue, dataValue);
             publishWanReplicationEvent(key, dataValue, recordStore.getRecord(key));
         }
     }
@@ -81,7 +82,7 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
         mapService.getMapServiceContext().interceptAfterPut(name, value);
     }
 
-    private void publishEntryEvent(Data key, Data previousValue, Data newValue) {
+    private void publishEntryEvent(Data key, Object previousValue, Data newValue) {
         final EntryEventType eventType = previousValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();

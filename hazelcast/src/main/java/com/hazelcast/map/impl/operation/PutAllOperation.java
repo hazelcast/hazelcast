@@ -32,16 +32,20 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.core.EntryEventType.ADDED;
+import static com.hazelcast.core.EntryEventType.UPDATED;
 
 public class PutAllOperation extends AbstractMapOperation implements PartitionAwareOperation,
         BackupAwareOperation, MutatingOperation {
@@ -91,17 +95,17 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
             return;
         }
 
-        Data dataOldValue = null;
+        Object oldValue = null;
         if (initialLoad) {
             recordStore.putFromLoad(dataKey, dataValue, -1);
         } else {
-            dataOldValue = mapServiceContext.toData(recordStore.put(dataKey, dataValue, -1));
+            oldValue = recordStore.put(dataKey, dataValue, -1);
         }
         mapServiceContext.interceptAfterPut(name, dataValue);
-        EntryEventType eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        EntryEventType eventType = oldValue == null ? ADDED : UPDATED;
+        MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         dataValue = getValueOrPostProcessedValue(mapServiceContext, recordStore, dataKey, dataValue);
-        mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
+        mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, dataValue);
         keysToInvalidate.add(dataKey);
 
         // check in case of an expiration.

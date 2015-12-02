@@ -159,9 +159,7 @@ public final class EvictionOperator {
         final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final Address thisAddress = nodeEngine.getThisAddress();
-        final Data dataValue = mapServiceContext.toData(value);
-        mapEventPublisher.publishEvent(thisAddress, mapName, EntryEventType.EVICTED, true,
-                key, dataValue, null);
+        mapEventPublisher.publishEvent(thisAddress, mapName, EntryEventType.EVICTED, true, key, value, null);
     }
 
     private boolean hasListener(String mapName) {

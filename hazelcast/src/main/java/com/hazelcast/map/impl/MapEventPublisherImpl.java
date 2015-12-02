@@ -85,20 +85,20 @@ class MapEventPublisherImpl implements MapEventPublisher {
 
     @Override
     public void publishEvent(Address caller, String mapName, EntryEventType eventType,
-                             Data dataKey, Data dataOldValue, Data dataValue) {
-        publishEvent(caller, mapName, eventType, false, dataKey, dataOldValue, dataValue);
+                             Data dataKey, Object oldValue, Object value) {
+        publishEvent(caller, mapName, eventType, false, dataKey, oldValue, value);
     }
 
     @Override
     public void publishEvent(Address caller, String mapName, EntryEventType eventType, boolean syntheticEvent,
-                             final Data dataKey, Data dataOldValue, Data dataValue) {
-        publishEvent(caller, mapName, eventType, syntheticEvent, dataKey, dataOldValue, dataValue, null);
+                             final Data dataKey, Object oldValue, Object value) {
+        publishEvent(caller, mapName, eventType, syntheticEvent, dataKey, oldValue, value, null);
 
     }
 
     @Override
     public void publishEvent(Address caller, String mapName, EntryEventType eventType, boolean syntheticEvent,
-                             final Data dataKey, Data dataOldValue, Data dataValue, Data dataMergingValue) {
+                             final Data dataKey, Object oldValue, Object value, Object mergingValue) {
         final Collection<EventRegistration> registrations = getRegistrations(mapName);
         if (registrations.isEmpty()) {
             return;
@@ -109,7 +109,7 @@ class MapEventPublisherImpl implements MapEventPublisher {
 
         for (final EventRegistration candidate : registrations) {
             final EventFilter filter = candidate.getFilter();
-            final Result result = applyEventFilter(filter, syntheticEvent, dataKey, dataOldValue, dataValue, eventType);
+            final Result result = applyEventFilter(filter, syntheticEvent, dataKey, oldValue, value, eventType);
 
             registrationsWithValue = initRegistrationsWithValue(registrationsWithValue, result);
             registrationsWithoutValue = initRegistrationsWithoutValue(registrationsWithoutValue, result);
@@ -124,15 +124,20 @@ class MapEventPublisherImpl implements MapEventPublisher {
             return;
         }
 
-        final EntryEventData eventData = createEntryEventData(mapName, caller,
-                dataKey, dataValue, dataOldValue, dataMergingValue, eventType.getType());
         final int orderKey = pickOrderKey(dataKey);
 
         if (withValueRegistrationExists) {
+            Data dataOldValue = mapServiceContext.toData(oldValue);
+            Data dataValue = mapServiceContext.toData(value);
+            Data dataMergingValue = mapServiceContext.toData(mergingValue);
+            EntryEventData eventData = createEntryEventData(mapName, caller,
+                    dataKey, dataValue, dataOldValue, dataMergingValue, eventType.getType());
             publishEventInternal(registrationsWithValue, eventData, orderKey);
         }
         if (withoutValueRegistrationExists) {
-            publishEventInternal(registrationsWithoutValue, eventData.cloneWithoutValues(), orderKey);
+            EntryEventData eventData = createEntryEventData(mapName, caller,
+                    dataKey, null, null, null, eventType.getType());
+            publishEventInternal(registrationsWithoutValue, eventData, orderKey);
         }
     }
 
@@ -190,7 +195,7 @@ class MapEventPublisherImpl implements MapEventPublisher {
     }
 
     protected Result applyEventFilter(EventFilter filter, boolean syntheticEvent, Data dataKey,
-                                      Data dataOldValue, Data dataValue, EntryEventType eventType) {
+                                      Object oldValue, Object value, EntryEventType eventType) {
 
         if (filter instanceof MapPartitionLostEventFilter) {
             return Result.NONE;
@@ -213,7 +218,7 @@ class MapEventPublisherImpl implements MapEventPublisher {
 
 
         if (filter instanceof QueryEventFilter) {
-            return processQueryEventFilter(filter, eventType, dataKey, dataOldValue, dataValue);
+            return processQueryEventFilter(filter, eventType, dataKey, oldValue, value);
         }
 
         if (filter instanceof EntryEventFilter) {
@@ -282,14 +287,14 @@ class MapEventPublisherImpl implements MapEventPublisher {
     }
 
     private Result processQueryEventFilter(EventFilter filter, EntryEventType eventType,
-                                           final Data dataKey, Data dataOldValue, Data dataValue) {
+                                           final Data dataKey, Object oldValue, Object value) {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final SerializationService serializationService = nodeEngine.getSerializationService();
-        Data testValue;
+        Object testValue;
         if (eventType == EntryEventType.REMOVED || eventType == EntryEventType.EVICTED) {
-            testValue = dataOldValue;
+            testValue = oldValue;
         } else {
-            testValue = dataValue;
+            testValue = value;
         }
         final QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
         final QueryEntry entry = new QueryEntry(serializationService, dataKey, dataKey, testValue);

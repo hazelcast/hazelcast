@@ -261,9 +261,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         if (hasRegisteredListenerForThisMap()) {
             nullifyOldValueIfNecessary();
             final MapEventPublisher mapEventPublisher = getMapEventPublisher();
-            dataValue = toData(dataValue);
-            mapEventPublisher.
-                    publishEvent(getCallerAddress(), name, eventType, dataKey, toData(oldValue), (Data) dataValue);
+            mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, dataValue);
         }
     }
 

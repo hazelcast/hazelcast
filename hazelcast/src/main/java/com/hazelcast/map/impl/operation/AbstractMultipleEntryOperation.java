@@ -23,7 +23,6 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapEntrySimple;
 import com.hazelcast.map.impl.MapEventPublisher;
@@ -38,6 +37,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
+
 import java.util.AbstractMap;
 import java.util.Map;
 
@@ -166,9 +166,11 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
 
         Object newValue = entry.getValue();
         invalidateNearCaches(key);
-        // assign it again since we don't want to serialize newValue every time.
-        newValue = publishEntryEvent(key, newValue, oldValue, eventType);
-        publishWanReplicationEvent(key, newValue, eventType);
+        if (isWanReplicationEnabled()) {
+            newValue = toData(newValue);
+            publishWanReplicationEvent(key, (Data) newValue, eventType);
+        }
+        publishEntryEvent(key, newValue, oldValue, eventType);
     }
 
     protected boolean entryRemovedBackup(Map.Entry entry, Data key) {
@@ -221,17 +223,13 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
         if (hasRegisteredListenerForThisMap()) {
             oldValue = nullifyOldValueIfNecessary(oldValue, eventType);
             final MapEventPublisher mapEventPublisher = getMapEventPublisher();
-            value = toData(value);
-            mapEventPublisher.
-                    publishEvent(getCallerAddress(), name, eventType, key, toData(oldValue), (Data) value);
+            mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, key, oldValue, value);
         }
         return value;
     }
 
-    protected void publishWanReplicationEvent(Data key, Object value, EntryEventType eventType) {
-        final MapContainer mapContainer = this.mapContainer;
-        if (mapContainer.getWanReplicationPublisher() == null
-                && mapContainer.getWanMergePolicy() == null) {
+    protected void publishWanReplicationEvent(Data key, Data dataValue, EntryEventType eventType) {
+        if (!isWanReplicationEnabled()) {
             return;
         }
         final MapEventPublisher mapEventPublisher = getMapEventPublisher();
@@ -240,13 +238,15 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
         } else {
             final Record record = recordStore.getRecord(key);
             if (record != null) {
-                final Data dataValueAsData = toData(value);
-                final EntryView entryView = createSimpleEntryView(key, dataValueAsData, record);
+                final EntryView entryView = createSimpleEntryView(key, dataValue, record);
                 mapEventPublisher.publishWanReplicationUpdate(name, entryView);
             }
         }
     }
 
+    private boolean isWanReplicationEnabled() {
+        return mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null;
+    }
 
     protected MapServiceContext getMapServiceContext() {
         final MapService mapService = getService();
