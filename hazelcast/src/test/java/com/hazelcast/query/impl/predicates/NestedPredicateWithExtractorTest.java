@@ -5,12 +5,15 @@ import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -21,6 +24,7 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -124,6 +128,52 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void nestedAttributeQuery_customPredicates_entryProcessor() throws Exception {
+        // GIVEN
+        map.put(1, new Body("body1", new Limb("hand")));
+        map.put(2, new Body("body2", new Limb("leg")));
+
+        // WHEN
+        Map<Integer, Object> result = map.executeOnEntries(new ExtractProcessor(), new CustomPredicate());
+        Body resultBody = (Body) result.values().iterator().next();
+
+        // THEN
+        assertEquals(1, result.size());
+        assertEquals("body1", resultBody.getName());
+    }
+
+    private static final class ExtractProcessor implements EntryProcessor<Integer, Body> {
+        @Override
+        public Body process(Map.Entry<Integer, Body> entry) {
+            return entry.getValue();
+        }
+
+        @Override
+        public EntryBackupProcessor<Integer, Body> getBackupProcessor() {
+            return null;
+        }
+    }
+
+    private static final class CustomPredicate extends AbstractPredicate {
+        public CustomPredicate() {
+            super("limbname");
+        }
+
+        @Override
+        protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
+            QueryableEntry queryableEntry = (QueryableEntry) mapEntry;
+            Object val = queryableEntry.getAttributeValue(attributeName);
+            return val.equals("hand");
+        }
+
+        @Override
+        public int getId() {
+            return 0;
+        }
+    }
+
+
+    @Test
     public void nestedAttributeQuery_distributedSql() throws Exception {
         // GIVEN
         map.put(1, new Body("body1", new Limb("hand")));
@@ -138,7 +188,6 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         assertEquals(0, bodyExtractorExecutions);
         assertEquals(2 + 1, limbExtractorExecutions);
     }
-
 
     private static class Body implements Serializable {
         private final String name;
