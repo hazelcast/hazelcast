@@ -64,9 +64,9 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("IS2_INCONSISTENT_SYNC")
     @Override
     public final V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        if (!done) {
+        if (!done || value == null) {
             synchronized (mutex) {
-                if (!done) {
+                if (!done || value == null) {
                     try {
                         value = getResult(future.get(timeout, unit));
                     } catch (InterruptedException e) {
@@ -79,11 +79,14 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
             }
         }
         if (error != null) {
-            if (error instanceof ExecutionException) {
-                throw (ExecutionException) error;
-            }
             if (error instanceof CancellationException) {
                 throw (CancellationException) error;
+            }
+            if (error.getCause() instanceof CancellationException) {
+                throw (CancellationException) error.getCause();
+            }
+            if (error instanceof ExecutionException) {
+                throw (ExecutionException) error;
             }
             if (error instanceof InterruptedException) {
                 throw (InterruptedException) error;

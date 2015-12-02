@@ -111,9 +111,9 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
     @Override
     public V get(long timeout, TimeUnit unit) throws InterruptedException,
             ExecutionException, TimeoutException {
-        if (!done) {
+        if (!done || response == null) {
             synchronized (mutex) {
-                if (!done) {
+                if (!done || response == null) {
                     try {
                         response = resolveMessageToValue(future.get(timeout, unit));
                         if (deserializedValue == null) {
@@ -129,11 +129,14 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
             }
         }
         if (error != null) {
-            if (error instanceof ExecutionException) {
-                throw (ExecutionException) error;
-            }
             if (error instanceof CancellationException) {
                 throw (CancellationException) error;
+            }
+            if (error.getCause() instanceof CancellationException) {
+                throw (CancellationException) error.getCause();
+            }
+            if (error instanceof ExecutionException) {
+                throw (ExecutionException) error;
             }
             if (error instanceof InterruptedException) {
                 throw (InterruptedException) error;

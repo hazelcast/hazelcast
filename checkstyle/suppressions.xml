@@ -478,6 +478,8 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.util.executor[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.util.scheduler.SecondsBasedEntryTaskScheduler"/>
     <suppress checks="" files="com.hazelcast.util.scheduler.ScheduleType"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.util.executor.DelegatingFuture"/>
+    <suppress checks="NPathComplexity|CyclomaticComplexity" files="com.hazelcast.client.util.ClientDelegatingFuture"/>
 
     <!-- ReplicatedMap -->
     <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.client.proxy.ClientReplicatedMapProxy"/>
