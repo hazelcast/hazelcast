@@ -2380,9 +2380,9 @@
 
     <xs:complexType name="quorum">
         <xs:all>
-            <xs:element name="quorum-size" type="quorum-size" maxOccurs="1"/>
-            <xs:element name="quorum-type" type="quorum-type" maxOccurs="1"/>
-            <xs:element name="quorum-function-class-name" type="xs:string" maxOccurs="1"/>
+            <xs:element name="quorum-size" type="quorum-size" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-type" type="quorum-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-function-class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="quorum-listeners" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
@@ -2409,7 +2409,7 @@
 
     <xs:simpleType name="quorum-size">
         <xs:restriction base="xs:int">
-            <xs:minInclusive value="0"/>
+            <xs:minInclusive value="2"/>
         </xs:restriction>
     </xs:simpleType>
 
