@@ -195,7 +195,7 @@ public final class ProxyManager {
         }
         try {
             initialize(clientProxy);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             proxies.remove(ns);
             proxyFuture.set(e);
             throw ExceptionUtil.rethrow(e);
