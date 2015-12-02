@@ -70,6 +70,9 @@ public class QueryEventFilter extends EntryEventFilter {
             return false;
         }
         QueryEventFilter that = (QueryEventFilter) o;
+        if (!super.equals(o)) {
+            return false;
+        }
         if (!predicate.equals(that.predicate)) {
             return false;
         }
@@ -78,6 +81,8 @@ public class QueryEventFilter extends EntryEventFilter {
 
     @Override
     public int hashCode() {
-        return predicate.hashCode();
+        int result = super.hashCode();
+        result = 31 * result + predicate.hashCode();
+        return result;
     }
 }

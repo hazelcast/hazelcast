@@ -74,9 +74,6 @@ public class CachedQueryEntry extends QueryableEntry {
 
     @Override
     public Data getKeyData() {
-        if (keyData == null) {
-            keyData = serializationService.toData(keyObject);
-        }
         return keyData;
     }
 
@@ -92,18 +89,11 @@ public class CachedQueryEntry extends QueryableEntry {
     protected Object getTargetObject(boolean key) {
         Object targetObject;
         if (key) {
-            if (keyObject == null) {
-                if (keyData.isPortable()) {
-                    targetObject = keyData;
-                } else {
-                    targetObject = getKey();
-                }
+            //keyData is never null
+            if (keyData.isPortable()) {
+                targetObject = keyData;
             } else {
-                if (keyObject instanceof Portable) {
-                    targetObject = getKeyData();
-                } else {
-                    targetObject = getKey();
-                }
+                targetObject = getKey();
             }
         } else {
             if (valueObject == null) {
