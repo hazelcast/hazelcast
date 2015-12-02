@@ -87,17 +87,17 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         }
 
         Data dataValue = entry.getValue();
-        Data dataOldValue = null;
+        Object oldValue = null;
         if (initialLoad) {
             recordStore.putFromLoad(dataKey, dataValue, -1);
         } else {
-            dataOldValue = mapServiceContext.toData(recordStore.put(dataKey, dataValue, DEFAULT_TTL));
+            oldValue = recordStore.put(dataKey, dataValue, DEFAULT_TTL);
         }
         mapServiceContext.interceptAfterPut(name, dataValue);
-        EntryEventType eventType = dataOldValue == null ? ADDED : UPDATED;
+        EntryEventType eventType = oldValue == null ? ADDED : UPDATED;
         MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         dataValue = getValueOrPostProcessedValue(dataKey, dataValue);
-        mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
+        mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, dataValue);
 
         Record record = recordStore.getRecord(dataKey);
 

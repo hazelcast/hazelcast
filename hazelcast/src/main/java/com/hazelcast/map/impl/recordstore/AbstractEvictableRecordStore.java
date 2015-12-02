@@ -326,12 +326,11 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
 
         Address thisAddress = nodeEngine.getThisAddress();
-        Data dataValue = mapServiceContext.toData(value);
 
         // Fire EVICTED event also in case of expiration because historically eviction-listener
         // listens all kind of eviction and expiration events and by firing EVICTED event we are preserving
         // this behavior.
-        mapEventPublisher.publishEvent(thisAddress, name, EVICTED, true, key, dataValue, null);
+        mapEventPublisher.publishEvent(thisAddress, name, EVICTED, true, key, value, null);
 
         if (isExpired) {
             // We will be in this if in two cases:
@@ -339,7 +338,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             // 2. When evicting due to the size-based eviction, we are also firing an EXPIRED event
             //    because there is a possibility that evicted entry may be also an expired one. Trying to catch
             //    as much as possible expired entries.
-            mapEventPublisher.publishEvent(thisAddress, name, EXPIRED, true, key, dataValue, null);
+            mapEventPublisher.publishEvent(thisAddress, name, EXPIRED, true, key, value, null);
         }
     }
 
