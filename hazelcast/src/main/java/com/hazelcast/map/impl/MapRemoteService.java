@@ -22,7 +22,6 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
-
 import java.util.Map;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -55,16 +54,14 @@ class MapRemoteService implements RemoteService {
 
     @Override
     public void destroyDistributedObject(String name) {
-        final Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
-        MapContainer mapContainer = mapContainers.remove(name);
-        if (mapContainer != null) {
-            if (mapContainer.isNearCacheEnabled()) {
-                mapServiceContext.getNearCacheProvider().remove(name);
-            }
-            mapContainer.getMapStoreContext().stop();
-        }
         mapServiceContext.destroyMap(name);
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
+        Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
+        MapContainer mapContainer = mapContainers.remove(name);
+        if (mapContainer != null) {
+            mapServiceContext.getNearCacheProvider().remove(name);
+            mapContainer.getMapStoreContext().stop();
+        }
     }
 
 }
