@@ -435,7 +435,8 @@ public abstract class AbstractCacheService
     @Override
     public CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, InMemoryFormat inMemoryFormat) {
         if (InMemoryFormat.NATIVE.equals(inMemoryFormat)) {
-            throw new IllegalArgumentException("Native memory is available only in Enterprise!");
+            throw new IllegalArgumentException("Native memory is available only in Hazelcast Enterprise."
+                    + "Make sure you have Hazelcast Enterprise JARs on your classpath!");
         }
         CacheOperationProvider cacheOperationProvider = operationProviderCache.get(nameWithPrefix);
         if (cacheOperationProvider != null) {
