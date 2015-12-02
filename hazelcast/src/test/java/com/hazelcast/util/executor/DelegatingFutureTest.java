@@ -24,13 +24,17 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -179,6 +183,113 @@ public class DelegatingFutureTest {
         @Override
         public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             return get();
+        }
+    }
+
+
+    private final ExecutorService futureService = Executors.newFixedThreadPool(1);
+
+    private final ExecutorService testService = Executors.newFixedThreadPool(2);
+
+    @Test
+    public void callFutureGetTwiceTest() {
+        Future<Boolean> future = futureService.submit(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                Thread.sleep(2000);
+                return true;
+            }
+        });
+
+        final DelegatingFuture<Boolean> delegatingFuture = new DelegatingFuture<Boolean>(new DummyCompletableFuture(future), null);
+
+        Future<Boolean> resultFuture1 = testService.submit(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                try {
+                    delegatingFuture.get();
+                    return true;
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    return false;
+                }
+            }
+        });
+
+        Future<Boolean> resultFuture2 = testService.submit(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                long start = 0;
+                try {
+                    Thread.sleep(100);
+                    start = System.nanoTime();
+                    delegatingFuture.get(500, TimeUnit.MILLISECONDS);
+                    System.out.println("DID NOT TIME OUT WAITING FOR RESULT!");
+                    return false;
+                } catch (TimeoutException ex) {
+                    final long delay = TimeUnit.MILLISECONDS.convert(System.nanoTime() - start, TimeUnit.NANOSECONDS);
+                    System.out.println("TIMED OUT WAITING FOR RESULT!");
+                    return (delay < 550 && delay > 480);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    return false;
+                } finally {
+                    final long delay = TimeUnit.MILLISECONDS.convert(System.nanoTime() - start, TimeUnit.NANOSECONDS);
+                    System.out.println("Got a result after: [" + delay + "] ms");
+                }
+            }
+        });
+
+        try {
+            Assert.assertTrue(resultFuture1.get());
+            Assert.assertTrue(resultFuture2.get());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Assert.assertNull(ex);
+        }
+    }
+
+    private class DummyCompletableFuture<V> implements ICompletableFuture<V> {
+
+        Future future;
+
+        public DummyCompletableFuture(final Future future) {
+            this.future = future;
+        }
+
+        @Override
+        public void andThen(ExecutionCallback<V> callback) {
+            //DO NOTHING
+        }
+
+        @Override
+        public void andThen(ExecutionCallback<V> callback, Executor executor) {
+            //DO NOTHING
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return future.cancel(mayInterruptIfRunning);
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return future.isCancelled();
+        }
+
+        @Override
+        public boolean isDone() {
+            return future.isDone();
+        }
+
+        @Override
+        public V get() throws InterruptedException, ExecutionException {
+            return (V) future.get();
+        }
+
+        @Override
+        public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            return (V) future.get(timeout, unit);
         }
     }
 }
