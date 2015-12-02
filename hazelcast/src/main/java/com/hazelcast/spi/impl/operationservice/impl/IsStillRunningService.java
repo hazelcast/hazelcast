@@ -142,10 +142,6 @@ public class IsStillRunningService {
      */
     public boolean isOperationExecuting(Address callerAddress, String callerUuid, String serviceName, Object identifier) {
         Object service = nodeEngine.getService(serviceName);
-        if (service == null) {
-            logger.severe("Not able to find operation execution info. Invalid service: " + serviceName);
-            return false;
-        }
         if (service instanceof ExecutionTracingService) {
             return ((ExecutionTracingService) service).isOperationExecuting(callerAddress, callerUuid, identifier);
         }
