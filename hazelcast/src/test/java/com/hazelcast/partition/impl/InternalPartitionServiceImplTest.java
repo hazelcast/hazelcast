@@ -91,10 +91,11 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
             addresses[i][0] = thisAddress;
         }
 
-        partitionService.setInitialState(addresses);
+        partitionService.setInitialState(addresses, partitionCount);
         for (int i = 0; i < partitionCount; i++) {
             assertTrue(partitionService.isPartitionOwner(i));
         }
+        assertEquals(partitionCount, partitionService.getPartitionStateVersion());
     }
 
     @Test(expected = IllegalStateException.class)
@@ -104,8 +105,8 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
             addresses[i][0] = thisAddress;
         }
 
-        partitionService.setInitialState(addresses);
-        partitionService.setInitialState(addresses);
+        partitionService.setInitialState(addresses, 0);
+        partitionService.setInitialState(addresses, 0);
     }
 
     @Test
@@ -118,7 +119,7 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
         TestPartitionListener listener = new TestPartitionListener();
         partitionService.addPartitionListener(listener);
 
-        partitionService.setInitialState(addresses);
+        partitionService.setInitialState(addresses, 0);
         assertEquals(0, listener.eventCount);
     }
 

@@ -428,7 +428,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return true;
     }
 
-    public void setInitialState(Address[][] newState) {
+    public void setInitialState(Address[][] newState, int partitionStateVersion) {
         lock.lock();
         try {
             if (initialized) {
@@ -446,6 +446,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 }
                 partition.setInitialReplicaAddresses(replicas);
             }
+            stateVersion.set(partitionStateVersion);
             initialized = foundReplica;
         } finally {
             lock.unlock();
@@ -486,7 +487,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         if (!member.localMember()) {
             updateMemberGroupsSize();
         }
-        stateVersion.incrementAndGet();
         if (node.isMaster()) {
             lock.lock();
             try {
@@ -494,6 +494,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 if (initialized) {
                     final ClusterState clusterState = nodeEngine.getClusterService().getClusterState();
                     if (clusterState == ClusterState.ACTIVE) {
+                        stateVersion.incrementAndGet();
                         migrationQueue.add(new RepartitioningTask());
                     }
 
@@ -517,9 +518,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return;
         }
 
-        stateVersion.incrementAndGet();
         lock.lock();
         try {
+            if (initialized && node.getClusterService().getClusterState() == ClusterState.ACTIVE) {
+                stateVersion.incrementAndGet();
+            }
             migrationQueue.clear();
             if (!activeMigrations.isEmpty()) {
                 if (node.isMaster()) {
