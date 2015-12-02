@@ -127,19 +127,19 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
     @Override
     public void publishEvent(Address caller, String mapName, EntryEventType eventType,
-                             Data dataKey, Data dataOldValue, Data dataValue) {
+                             Data dataKey, Object dataOldValue, Object dataValue) {
         publishEvent(caller, mapName, eventType, false, dataKey, dataOldValue, dataValue);
     }
 
     @Override
     public void publishEvent(Address caller, String mapName, EntryEventType eventType, boolean syntheticEvent,
-                             Data dataKey, Data dataOldValue, Data dataValue) {
+                             Data dataKey, Object dataOldValue, Object dataValue) {
         publishEvent(caller, mapName, eventType, syntheticEvent, dataKey, dataOldValue, dataValue, null);
     }
 
     @Override
     public void publishEvent(Address caller, String mapName, EntryEventType eventType, boolean syntheticEvent,
-                             Data dataKey, Data dataOldValue, Data dataValue, Data dataMergingValue) {
+                             Data dataKey, Object oldValue, Object value, Object mergingValue) {
         Collection<EventRegistration> registrations = getRegistrations(mapName);
         if (isEmpty(registrations)) {
             return;
@@ -151,7 +151,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         for (EventRegistration registration : registrations) {
             EventFilter filter = registration.getFilter();
 
-            if (!doFilter(filter, syntheticEvent, dataKey, dataOldValue, dataValue, eventType, mapName)) {
+            if (!doFilter(filter, syntheticEvent, dataKey, oldValue, value, eventType, mapName)) {
                 continue;
             }
 
@@ -165,6 +165,9 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         }
 
         if (!isEmpty(includeValueRegistrations)) {
+            Data dataOldValue = mapServiceContext.toData(oldValue);
+            Data dataValue = mapServiceContext.toData(value);
+            Data dataMergingValue = mapServiceContext.toData(mergingValue);
             EntryEventData eventData = createEntryEventData(mapName, caller, dataKey,
                     dataValue, dataOldValue, dataMergingValue, eventType.getType());
             int orderKey = pickOrderKey(dataKey);
@@ -188,7 +191,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
     //CHECKSTYLE:OFF
     protected boolean doFilter(EventFilter filter, boolean syntheticEvent, Data dataKey,
-                               Data dataOldValue, Data dataValue, EntryEventType eventType, String mapNameOrNull) {
+                               Object dataOldValue, Object dataValue, EntryEventType eventType, String mapNameOrNull) {
 
         if (filter instanceof MapPartitionLostEventFilter) {
             return false;
@@ -303,8 +306,8 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     }
 
     private boolean processQueryEventFilter(EventFilter filter, EntryEventType eventType,
-                                            Data dataKey, Data dataOldValue, Data dataValue, String mapNameOrNull) {
-        Data testValue;
+                                            Data dataKey, Object dataOldValue, Object dataValue, String mapNameOrNull) {
+        Object testValue;
         if (eventType == REMOVED || eventType == EVICTED || eventType == EXPIRED) {
             testValue = dataOldValue;
         } else {

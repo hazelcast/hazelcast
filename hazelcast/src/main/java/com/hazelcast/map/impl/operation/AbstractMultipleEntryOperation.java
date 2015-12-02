@@ -169,9 +169,11 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
 
         Object newValue = entry.getValue();
         invalidateNearCache(key);
-        // assign it again since we don't want to serialize newValue every time.
-        newValue = publishEntryEvent(key, newValue, oldValue, eventType);
-        publishWanReplicationEvent(key, newValue, eventType);
+        if (mapContainer.isWanReplicationEnabled()) {
+            newValue = toData(newValue);
+            publishWanReplicationEvent(key, (Data) newValue, eventType);
+        }
+        publishEntryEvent(key, newValue, oldValue, eventType);
     }
 
     protected boolean entryRemovedBackup(Map.Entry entry, Data key) {
@@ -211,31 +213,26 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
         return Clock.currentTimeMillis();
     }
 
-    protected Object publishEntryEvent(Data key, Object value, Object oldValue, EntryEventType eventType) {
+    protected void publishEntryEvent(Data key, Object value, Object oldValue, EntryEventType eventType) {
         if (hasRegisteredListenerForThisMap()) {
             oldValue = nullifyOldValueIfNecessary(oldValue, eventType);
             final MapEventPublisher mapEventPublisher = getMapEventPublisher();
-            value = toData(value);
-            mapEventPublisher.
-                    publishEvent(getCallerAddress(), name, eventType, key, toData(oldValue), (Data) value);
+            mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, key, oldValue, value);
         }
-        return value;
     }
 
-    protected void publishWanReplicationEvent(Data key, Object value, EntryEventType eventType) {
-        if (mapContainer.isWanReplicationEnabled()) {
-            final MapEventPublisher mapEventPublisher = getMapEventPublisher();
-            if (EntryEventType.REMOVED == eventType) {
-                mapEventPublisher.publishWanReplicationRemove(name, key, getNow());
-                wanEventList.add(new WanEventWrapper(key, null, EntryEventType.REMOVED));
-            } else {
-                final Record record = recordStore.getRecord(key);
-                if (record != null) {
-                    final Data dataValueAsData = toData(value);
-                    final EntryView entryView = createSimpleEntryView(key, dataValueAsData, record);
-                    mapEventPublisher.publishWanReplicationUpdate(name, entryView);
-                    wanEventList.add(new WanEventWrapper(key, value, EntryEventType.UPDATED));
-                }
+    protected void publishWanReplicationEvent(Data key, Data value, EntryEventType eventType) {
+        MapEventPublisher mapEventPublisher = getMapEventPublisher();
+        if (EntryEventType.REMOVED == eventType) {
+            mapEventPublisher.publishWanReplicationRemove(name, key, getNow());
+            wanEventList.add(new WanEventWrapper(key, null, EntryEventType.REMOVED));
+        } else {
+            final Record record = recordStore.getRecord(key);
+            if (record != null) {
+                final Data dataValueAsData = toData(value);
+                final EntryView entryView = createSimpleEntryView(key, dataValueAsData, record);
+                mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+                wanEventList.add(new WanEventWrapper(key, value, EntryEventType.UPDATED));
             }
         }
     }

@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.core.EntryAdapter;
@@ -29,8 +30,12 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.impl.event.MapPartitionEventData;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -45,6 +50,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -560,6 +566,78 @@ public class ListenerTest extends HazelcastTestSupport {
         assertEquals(initialValue, oldValue);
     }
 
+    @Test
+    public void hazelcastAwareEntryListener_whenConfiguredViaClassName_thenInjectHazelcastInstance() throws InterruptedException {
+        EntryListenerConfig listenerConfig = new EntryListenerConfig("com.hazelcast.map.ListenerTest$PingPongListener", false, true);
+        hazelcastAwareEntryListener_injectHazelcastInstance(listenerConfig);
+    }
+
+    @Test
+    public void hazelcastAwareEntryListener_whenConfiguredByProvidingInstance_thenInjectHazelcastInstance() throws InterruptedException {
+        EntryListenerConfig listenerConfig = new EntryListenerConfig(new PingPongListener(), false, true);
+        hazelcastAwareEntryListener_injectHazelcastInstance(listenerConfig);
+    }
+
+    @Test
+    public void test_ListenerShouldNotCauseDeserialization_withIncludeValueFalse() throws InterruptedException {
+        String name = randomString();
+        String key = randomString();
+        Config config = new Config();
+        config.getMapConfig(name).setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Object, Object> map = instance.getMap(name);
+        EntryAddedLatch latch = new EntryAddedLatch(1);
+        map.addEntryListener(latch, false);
+        map.executeOnKey(key, new AbstractEntryProcessor() {
+            @Override
+            public Object process(Map.Entry entry) {
+                entry.setValue(new SerializeCheckerObject());
+                return null;
+            }
+        });
+        assertOpenEventually(latch, 10);
+        SerializeCheckerObject.assertNotSerialized();
+    }
+
+    private static class EntryAddedLatch extends CountDownLatch implements EntryAddedListener {
+
+        public EntryAddedLatch(int count) {
+            super(count);
+        }
+
+        @Override
+        public void entryAdded(EntryEvent event) {
+            countDown();
+        }
+    }
+
+    private static class SerializeCheckerObject implements DataSerializable {
+
+        static volatile boolean serialized = false;
+        static volatile boolean deserialized = false;
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            serialized = true;
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            deserialized = true;
+        }
+
+        public static void assertNotSerialized(){
+            assertFalse(serialized);
+            assertFalse(deserialized);
+        }
+    }
+
+    @Test
+    public void test_mapPartitionEventData_toString() {
+        assertNotNull(new MapPartitionEventData().toString());
+    }
+
+
     private <K, V> Map<K, V> createMapWithEntry(K key, V newValue) {
         Map<K, V> map = new HashMap<K, V>();
         map.put(key, newValue);
@@ -617,18 +695,6 @@ public class ListenerTest extends HazelcastTestSupport {
         };
     }
 
-    @Test
-    public void hazelcastAwareEntryListener_whenConfiguredViaClassName_thenInjectHazelcastInstance() throws InterruptedException {
-        EntryListenerConfig listenerConfig = new EntryListenerConfig("com.hazelcast.map.ListenerTest$PingPongListener", false, true);
-        hazelcastAwareEntryListener_injectHazelcastInstance(listenerConfig);
-    }
-
-    @Test
-    public void hazelcastAwareEntryListener_whenConfiguredByProvidingInstance_thenInjectHazelcastInstance() throws InterruptedException {
-        EntryListenerConfig listenerConfig = new EntryListenerConfig(new PingPongListener(), false, true);
-        hazelcastAwareEntryListener_injectHazelcastInstance(listenerConfig);
-    }
-
     private void hazelcastAwareEntryListener_injectHazelcastInstance(EntryListenerConfig listenerConfig) {
         String pingMapName = randomMapName();
         Config config = new Config();
@@ -642,12 +708,6 @@ public class ListenerTest extends HazelcastTestSupport {
 
         IMap<Integer, String> outputMap = instance.getMap(pongMapName);
         assertSizeEventually(1, outputMap);
-    }
-
-
-    @Test
-    public void test_mapPartitionEventData_toString() {
-        assertNotNull(new MapPartitionEventData().toString());
     }
 
     public static class PingPongListener implements EntryListener<Integer, String>, HazelcastInstanceAware {

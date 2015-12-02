@@ -39,13 +39,13 @@ public interface MapEventPublisher {
     void publishMapEvent(Address caller, String mapName, EntryEventType eventType, int numberOfEntriesAffected);
 
     void publishEvent(Address caller, String mapName, EntryEventType eventType,
-                      Data dataKey, Data dataOldValue, Data dataValue);
+                      Data dataKey, Object dataOldValue, Object dataValue);
 
     void publishEvent(Address caller, String mapName, EntryEventType eventType, boolean synthetic,
-                      Data dataKey, Data dataOldValue, Data dataValue);
+                      Data dataKey, Object dataOldValue, Object dataValue);
 
     void publishEvent(Address caller, String mapName, EntryEventType eventType, boolean synthetic,
-                      Data dataKey, Data dataOldValue, Data dataValue, Data dataMergingValue);
+                      Data dataKey, Object dataOldValue, Object dataValue, Object dataMergingValue);
 
     void publishMapPartitionLostEvent(Address caller, String mapName, int partitionId);
 
