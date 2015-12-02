@@ -39,6 +39,7 @@ import javax.cache.integration.CacheLoaderException;
 import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CacheWriterException;
 import javax.cache.integration.CompletionListener;
+import javax.cache.spi.CachingProvider;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,30 +58,45 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class, ParallelTest.class})
 public class CacheReadWriteThroughTest extends HazelcastTestSupport {
 
-    private TestHazelcastInstanceFactory factory;
-    private HazelcastInstance hz1;
-    private HazelcastInstance hz2;
-
-    private HazelcastServerCachingProvider cachingProvider1;
-    private HazelcastServerCachingProvider cachingProvider2;
+    protected TestHazelcastInstanceFactory factory;
+    protected HazelcastInstance hz;
+    protected CachingProvider cachingProvider;
 
     protected Config createConfig() {
         return new Config();
     }
 
+    protected CachingProvider createCachingProvider(HazelcastInstance instance) {
+        return HazelcastServerCachingProvider.createCachingProvider(instance);
+    }
+
+    protected TestHazelcastInstanceFactory createInstanceFactory(int instanceCount) {
+        return createHazelcastInstanceFactory(instanceCount);
+    }
+
+    protected HazelcastInstance getInstance() {
+        // Create master instance
+        HazelcastInstance instance = factory.newHazelcastInstance(createConfig());
+        // Create second instance
+        factory.newHazelcastInstance(createConfig());
+        return instance;
+    }
+
     @Before
     public void setup() {
-        factory = new TestHazelcastInstanceFactory(2);
-        hz1 = factory.newHazelcastInstance(createConfig());
-        hz2 = factory.newHazelcastInstance(createConfig());
-        cachingProvider1 = HazelcastServerCachingProvider.createCachingProvider(hz1);
-        cachingProvider2 = HazelcastServerCachingProvider.createCachingProvider(hz2);
+        factory = createInstanceFactory(2);
+        hz = getInstance();
+        cachingProvider = createCachingProvider(hz);
+    }
+
+    protected void onTearDown() {
+
     }
 
     @After
     public void tearDown() {
-        cachingProvider1.close();
-        cachingProvider2.close();
+        onTearDown();
+        cachingProvider.close();
         factory.shutdownAll();
     }
 
@@ -94,14 +110,14 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
     public void test_getAll_readThrough() throws Exception {
         final String cacheName = randomName();
 
-        CacheManager cacheManager = cachingProvider1.getCacheManager();
+        CacheManager cacheManager = cachingProvider.getCacheManager();
         assertNotNull(cacheManager);
 
         assertNull(cacheManager.getCache(cacheName));
 
         CacheConfig<Integer, Integer> config = createCacheConfig();
         config.setReadThrough(true);
-        config.setCacheLoaderFactory(FactoryBuilder.factoryOf(new GetAllAsyncCacheLoader()));
+        config.setCacheLoaderFactory(FactoryBuilder.factoryOf(new GetAllAsyncCacheLoader(false)));
 
         Cache<Integer, Integer> cache = cacheManager.createCache(cacheName, config);
         assertNotNull(cache);
@@ -115,18 +131,17 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
         assertEquals(100, loaded.size());
     }
 
-    @Test
-    public void test_loadAll_readThrough() throws Exception {
+    private void loadAll_readThrough(boolean throwError) throws Exception {
         final String cacheName = randomName();
 
-        CacheManager cacheManager = cachingProvider1.getCacheManager();
+        CacheManager cacheManager = cachingProvider.getCacheManager();
         assertNotNull(cacheManager);
 
         assertNull(cacheManager.getCache(cacheName));
 
         CacheConfig<Integer, Integer> config = createCacheConfig();
         config.setReadThrough(true);
-        config.setCacheLoaderFactory(FactoryBuilder.factoryOf(new GetAllAsyncCacheLoader()));
+        config.setCacheLoaderFactory(FactoryBuilder.factoryOf(new GetAllAsyncCacheLoader(throwError)));
 
         Cache<Integer, Integer> cache = cacheManager.createCache(cacheName, config);
         assertNotNull(cache);
@@ -150,11 +165,30 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
             }
         });
 
-        latch.await();
-        assertEquals(100, cache.unwrap(ICache.class).size());
+        assertOpenEventually(latch);
+
+        if (!throwError) {
+            assertEquals(100, cache.unwrap(ICache.class).size());
+        }
+    }
+
+    @Test
+    public void test_loadAll_readThrough() throws Exception {
+        loadAll_readThrough(false);
+    }
+
+    @Test
+    public void test_loadAll_readThrough_whenThereIsAnThrowableButNotAnException() throws Exception {
+        loadAll_readThrough(true);
     }
 
     public static class GetAllAsyncCacheLoader implements CacheLoader<Integer, Integer>, Serializable {
+
+        private final boolean throwError;
+
+        private GetAllAsyncCacheLoader(boolean throwError) {
+            this.throwError = throwError;
+        }
 
         @Override
         public Integer load(Integer key) {
@@ -163,8 +197,16 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
 
         @Override
         public Map<Integer, Integer> loadAll(Iterable<? extends Integer> keys) throws CacheLoaderException {
+            if (throwError) {
+                return new HashMap<Integer, Integer>() {
+                    @Override
+                    public Integer get(Object key) {
+                        throw new IllegalAccessError("Bazinga !!!");
+                    }
+                };
+            }
             Map<Integer, Integer> result = new HashMap<Integer, Integer>();
-            for (Integer key : keys ) {
+            for (Integer key : keys) {
                 Integer value = load(key);
                 if (value != null) {
                     result.put(key, value);
@@ -178,7 +220,7 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
         final int ENTRY_COUNT = 100;
         final String cacheName = randomName();
 
-        CacheManager cacheManager = cachingProvider1.getCacheManager();
+        CacheManager cacheManager = cachingProvider.getCacheManager();
         assertNotNull(cacheManager);
 
         assertNull(cacheManager.getCache(cacheName));

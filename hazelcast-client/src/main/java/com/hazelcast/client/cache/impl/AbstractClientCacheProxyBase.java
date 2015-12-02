@@ -218,6 +218,14 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
                 if (completionListener != null) {
                     completionListener.onException(e);
                 }
+            } catch (Throwable t) {
+                if (t instanceof OutOfMemoryError) {
+                    ExceptionUtil.rethrow(t);
+                } else {
+                    if (completionListener != null) {
+                        completionListener.onException(new CacheException(t));
+                    }
+                }
             }
         }
     }
