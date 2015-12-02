@@ -23,7 +23,7 @@ package com.hazelcast.client.impl.protocol;
  * <p/>
  * Event response classes are defined    {@link com.hazelcast.client.impl.protocol.template.EventResponseTemplate}
  * <p/>
- * see {@link   com.hazelcast.client.impl.protocol.template.ClientMessageTemplate#membershipListener()}
+ * see {@link   com.hazelcast.client.impl.protocol.template.ClientMessageTemplate#addMembershipListener(boolean)} ()}
  * for  a sample usage of events in a request.
  */
 public final class EventMessageConst {

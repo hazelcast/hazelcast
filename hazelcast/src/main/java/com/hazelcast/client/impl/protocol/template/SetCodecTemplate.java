@@ -33,7 +33,7 @@ public interface SetCodecTemplate {
      * @param name Name of the Set
      * @return The number of elements in this set (its cardinality)
      */
-    @Request(id = 1, retryable = false, response = ResponseMessageConst.INTEGER)
+    @Request(id = 1, retryable = false, response = ResponseMessageConst.INTEGER, partitionIdentifier = "name")
     Object size(String name);
 
     /**
@@ -43,19 +43,19 @@ public interface SetCodecTemplate {
      * @param value Element whose presence in this set is to be tested
      * @return True if this set contains the specified element, false otherwise
      */
-    @Request(id = 2, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 2, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object contains(String name, Data value);
 
     /**
      * Returns true if this set contains all of the elements of the specified collection. If the specified collection is
      * also a set, this method returns true if it is a subset of this set.
      *
-     * @param name     Name of the Set
+     * @param name  Name of the Set
      * @param items Collection to be checked for containment in this list
      * @return true if this set contains all of the elements of the
      * specified collection
      */
-    @Request(id = 3, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 3, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object containsAll(String name, List<Data> items);
 
     /**
@@ -71,7 +71,7 @@ public interface SetCodecTemplate {
      * @return True if this set did not already contain the specified
      * element and the element is added, returns false otherwise.
      */
-    @Request(id = 4, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 4, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object add(String name, Data value);
 
     /**
@@ -83,7 +83,7 @@ public interface SetCodecTemplate {
      * @param value Object to be removed from this set, if present
      * @return True if this set contained the specified element and it is removed successfully
      */
-    @Request(id = 5, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 5, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object remove(String name, Data value);
 
     /**
@@ -96,7 +96,7 @@ public interface SetCodecTemplate {
      * @param valueList Collection containing elements to be added to this set
      * @return True if this set changed as a result of the call
      */
-    @Request(id = 6, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 6, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object addAll(String name, List<Data> valueList);
 
     /**
@@ -104,11 +104,11 @@ public interface SetCodecTemplate {
      * If the specified collection is also a set, this operation effectively modifies this set so that its value is the
      * asymmetric set difference of the two sets.
      *
-     * @param name     Name of the Set
+     * @param name   Name of the Set
      * @param values The list of values to test for matching the item to remove.
      * @return true if at least one item in values existed and removed, false otherwise.
      */
-    @Request(id = 7, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 7, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object compareAndRemoveAll(String name, List<Data> values);
 
     /**
@@ -122,7 +122,7 @@ public interface SetCodecTemplate {
      * @return true if at least one item in values existed and it is retained, false otherwise. All items not in valueSet but
      * in the Set are removed.
      */
-    @Request(id = 8, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 8, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object compareAndRetainAll(String name, List<Data> values);
 
     /**
@@ -130,7 +130,7 @@ public interface SetCodecTemplate {
      *
      * @param name Name of the Set
      */
-    @Request(id = 9, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 9, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "name")
     Object clear(String name);
 
     /**
@@ -139,7 +139,7 @@ public interface SetCodecTemplate {
      * @param name Name of the Set
      * @return Array of all values in the Set
      */
-    @Request(id = 10, retryable = false, response = ResponseMessageConst.LIST_DATA)
+    @Request(id = 10, retryable = false, response = ResponseMessageConst.LIST_DATA, partitionIdentifier = "name")
     Object getAll(String name);
 
     /**
@@ -150,7 +150,7 @@ public interface SetCodecTemplate {
      * @param localOnly    if true fires events that originated from this node only, otherwise fires all events
      * @return The registration id.
      */
-    @Request(id = 11, retryable = true, response = ResponseMessageConst.STRING,
+    @Request(id = 11, retryable = false, response = ResponseMessageConst.STRING,
             event = {EventMessageConst.EVENT_ITEM})
     Object addListener(String name, boolean includeValue, boolean localOnly);
 
@@ -170,7 +170,7 @@ public interface SetCodecTemplate {
      * @param name Name of the Set
      * @return True if this set contains no elements
      */
-    @Request(id = 13, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 13, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object isEmpty(String name);
 
 }

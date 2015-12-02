@@ -31,7 +31,7 @@ public interface TopicCodecTemplate {
      * @param message The message to publish to all subscribers of this topic
      *
      */
-    @Request(id = 1, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 1, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "name")
     void publish(String name, Data message);
 
     /**
@@ -42,7 +42,7 @@ public interface TopicCodecTemplate {
      * @param localOnly if true listens only local events on registered member
      * @return returns the registration id
      */
-    @Request(id = 2, retryable = true, response = ResponseMessageConst.STRING
+    @Request(id = 2, retryable = false, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_TOPIC})
     Object addMessageListener(String name, boolean localOnly);
     /**

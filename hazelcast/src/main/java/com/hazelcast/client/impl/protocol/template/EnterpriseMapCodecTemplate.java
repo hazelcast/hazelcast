@@ -26,42 +26,39 @@ import com.hazelcast.nio.serialization.Data;
 public interface EnterpriseMapCodecTemplate {
 
     /**
-     *
-     * @param mapName Name of the map.
-     * @param cacheName Name of the cache for query cache.
-     * @param predicate The predicate to filter events which will be applied to the QueryCache.
-     * @param batchSize The size of batch. After reaching this minimum size, node immediately sends buffered events to QueryCache.
-     * @param bufferSize Maximum number of events which can be stored in a buffer of partition.
+     * @param mapName      Name of the map.
+     * @param cacheName    Name of the cache for query cache.
+     * @param predicate    The predicate to filter events which will be applied to the QueryCache.
+     * @param batchSize    The size of batch. After reaching this minimum size, node immediately sends buffered events to QueryCache.
+     * @param bufferSize   Maximum number of events which can be stored in a buffer of partition.
      * @param delaySeconds The minimum number of delay seconds which an event waits in the buffer of node.
-     * @param populate Flag to enable/disable initial population of the QueryCache.
-     * @param coalesce Flag to enable/disable coalescing. If true, then only the last updated value for a key is placed in the
-     *                 batch, otherwise all changed values are included in the update.
+     * @param populate     Flag to enable/disable initial population of the QueryCache.
+     * @param coalesce     Flag to enable/disable coalescing. If true, then only the last updated value for a key is placed in the
+     *                     batch, otherwise all changed values are included in the update.
      * @return Array of key-value pairs.
      */
     @Request(id = 1, retryable = true, response = ResponseMessageConst.LIST_ENTRY)
     Object publisherCreateWithValue(String mapName, String cacheName, Data predicate, int batchSize, int bufferSize,
-                                  long delaySeconds, boolean populate, boolean coalesce);
+                                    long delaySeconds, boolean populate, boolean coalesce);
 
     /**
-     *
-     * @param mapName Name of the map.
-     * @param cacheName Name of query cache.
-     * @param predicate The predicate to filter events which will be applied to the QueryCache.
-     * @param batchSize The size of batch. After reaching this minimum size, node immediately sends buffered events to QueryCache.
-     * @param bufferSize Maximum number of events which can be stored in a buffer of partition.
+     * @param mapName      Name of the map.
+     * @param cacheName    Name of query cache.
+     * @param predicate    The predicate to filter events which will be applied to the QueryCache.
+     * @param batchSize    The size of batch. After reaching this minimum size, node immediately sends buffered events to QueryCache.
+     * @param bufferSize   Maximum number of events which can be stored in a buffer of partition.
      * @param delaySeconds The minimum number of delay seconds which an event waits in the buffer of node.
-     * @param populate Flag to enable/disable initial population of the QueryCache.
-     * @param coalesce Flag to enable/disable coalescing. If true, then only the last updated value for a key is placed in the
-     *                 batch, otherwise all changed values are included in the update.
+     * @param populate     Flag to enable/disable initial population of the QueryCache.
+     * @param coalesce     Flag to enable/disable coalescing. If true, then only the last updated value for a key is placed in the
+     *                     batch, otherwise all changed values are included in the update.
      * @return Array of keys.
      */
     @Request(id = 2, retryable = true, response = ResponseMessageConst.LIST_DATA)
     Object publisherCreate(String mapName, String cacheName, Data predicate, int batchSize, int bufferSize, long delaySeconds,
-                         boolean populate, boolean coalesce);
+                           boolean populate, boolean coalesce);
 
     /**
-     *
-     * @param mapName Name of the map.
+     * @param mapName   Name of the map.
      * @param cacheName Name of query cache.
      * @return True if successfully set as publishable, false otherwise.
      */
@@ -69,28 +66,32 @@ public interface EnterpriseMapCodecTemplate {
     Object madePublishable(String mapName, String cacheName);
 
     /**
-     *
      * @param listenerName Name of the MapListener which will be used to listen this QueryCache
-     * @param localOnly if true fires events that originated from this node only, otherwise fires all events
+     * @param localOnly    if true fires events that originated from this node only, otherwise fires all events
      * @return Registration id for the listener.
      */
-    @Request(id = 4, retryable = true, response = ResponseMessageConst.STRING,
-             event = {EventMessageConst.EVENT_QUERYCACHESINGLE, EventMessageConst.EVENT_QUERYCACHEBATCH})
+    @Request(id = 4, retryable = false, response = ResponseMessageConst.STRING,
+            event = {EventMessageConst.EVENT_QUERYCACHESINGLE, EventMessageConst.EVENT_QUERYCACHEBATCH})
     Object addListener(String listenerName, boolean localOnly);
 
     /**
+     * This method can be used to recover from a possible event loss situation.
+     * This method tries to make consistent the data in this `QueryCache` with the data in the underlying `IMap`
+     * by replaying the events after last consistently received ones. As a result of this replaying logic, same event may
+     * appear more than once to the `QueryCache` listeners.
+     * This method returns `false` if the event is not in the buffer of event publisher side. That means recovery is not
+     * possible.
      *
-     * @param mapName Name of the map.
+     * @param mapName   Name of the map.
      * @param cacheName Name of query cache.
-     * @param sequence The cursor position of the accumulator to be set.
+     * @param sequence  The cursor position of the accumulator to be set.
      * @return True if the cursor position could be set, false otherwise.
      */
-    @Request(id = 5, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 5, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "associated key")
     Object setReadCursor(String mapName, String cacheName, long sequence);
 
     /**
-     *
-     * @param mapName Name of the map.
+     * @param mapName   Name of the map.
      * @param cacheName Name of query cache.
      * @return True if all cache is destroyed, false otherwise.
      */

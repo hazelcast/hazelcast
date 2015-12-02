@@ -39,7 +39,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param ttl ttl in milliseconds to be associated with the specified key-value pair
      * @return The old value if existed for the key.
      */
-    @Request(id = 1, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 1, retryable = false, response = ResponseMessageConst.DATA, partitionIdentifier = "key")
     Object put(String name, Data key, Data value, long ttl);
 
     /**
@@ -49,7 +49,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param name Name of the ReplicatedMap
      * @return the number of key-value mappings in this map.
      */
-    @Request(id = 2, retryable = true, response = ResponseMessageConst.INTEGER)
+    @Request(id = 2, retryable = true, response = ResponseMessageConst.INTEGER, partitionIdentifier = "random")
     Object size(String name);
 
     /**
@@ -58,7 +58,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param name Name of the ReplicatedMap
      * @return <tt>True</tt> if this map contains no key-value mappings
      */
-    @Request(id = 3, retryable = true, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 3, retryable = true, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "random")
     Object isEmpty(String name);
 
     /**
@@ -69,7 +69,7 @@ public interface ReplicatedMapCodecTemplate {
      * @return <tt>True</tt> if this map contains a mapping for the specified key
      *
      */
-    @Request(id = 4, retryable = true, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 4, retryable = true, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "key")
     Object containsKey(String name, Data key);
 
     /**
@@ -80,7 +80,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param value value whose presence in this map is to be tested
      * @return <tt>true</tt> if this map maps one or more keys to the specified value
      */
-    @Request(id = 5, retryable = true, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 5, retryable = true, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "random")
     Object containsValue(String name, Data value);
 
     /**
@@ -93,7 +93,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param key The key whose associated value is to be returned
      * @return The value to which the specified key is mapped, or null if this map contains no mapping for the key
      */
-    @Request(id = 6, retryable = true, response = ResponseMessageConst.DATA)
+    @Request(id = 6, retryable = true, response = ResponseMessageConst.DATA, partitionIdentifier = "key")
     Object get(String name, Data key);
 
     /**
@@ -106,7 +106,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param key Key with which the specified value is to be associated.
      * @return the previous value associated with <tt>key</tt>, or <tt>null</tt> if there was no mapping for <tt>key</tt>.
      */
-    @Request(id = 7, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 7, retryable = false, response = ResponseMessageConst.DATA, partitionIdentifier = "key")
     Object remove(String name, Data key);
 
     /**
@@ -142,7 +142,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string  which is used as a key to remove the listener.
      */
-    @Request(id = 10, retryable = true, response = ResponseMessageConst.STRING
+    @Request(id = 10, retryable = false, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
     Object addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate, boolean localOnly);
 
@@ -155,7 +155,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string  which is used as a key to remove the listener.
      */
-    @Request(id = 11, retryable = true, response = ResponseMessageConst.STRING
+    @Request(id = 11, retryable = false, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
     Object addEntryListenerWithPredicate(String name, Data predicate, boolean localOnly);
 
@@ -168,7 +168,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string  which is used as a key to remove the listener.
      */
-    @Request(id = 12, retryable = true, response = ResponseMessageConst.STRING
+    @Request(id = 12, retryable = false, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
     Object addEntryListenerToKey(String name, Data key, boolean localOnly);
 
@@ -179,7 +179,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string  which is used as a key to remove the listener.
      */
-    @Request(id = 13, retryable = true, response = ResponseMessageConst.STRING
+    @Request(id = 13, retryable = false, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
     Object addEntryListener(String name, boolean localOnly);
 
@@ -204,7 +204,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param name Name of the ReplicatedMap
      * @return A lazy set view of the keys contained in this map.
      */
-    @Request(id = 15, retryable = true, response = ResponseMessageConst.LIST_DATA)
+    @Request(id = 15, retryable = true, response = ResponseMessageConst.LIST_DATA, partitionIdentifier = "random")
     Object keySet(String name);
 
     /**
@@ -212,7 +212,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param name Name of the ReplicatedMap
      * @return A collection view of the values contained in this map.
      */
-    @Request(id = 16, retryable = true, response = ResponseMessageConst.LIST_DATA)
+    @Request(id = 16, retryable = true, response = ResponseMessageConst.LIST_DATA, partitionIdentifier = "random")
     Object values(String name);
 
     /**
@@ -220,7 +220,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param name Name of the ReplicatedMap
      * @return A lazy set view of the mappings contained in this map.
      */
-    @Request(id = 17, retryable = true, response = ResponseMessageConst.LIST_ENTRY)
+    @Request(id = 17, retryable = true, response = ResponseMessageConst.LIST_ENTRY, partitionIdentifier = "random")
     Object entrySet(String name);
 
     /**
@@ -230,7 +230,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param localOnly if true fires events that originated from this node only, otherwise fires all events
      * @return A unique string  which is used as a key to remove the listener.
      */
-    @Request(id = 18, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
+    @Request(id = 18, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     Object addNearCacheEntryListener(String name, boolean includeValue, boolean localOnly);
 
 }

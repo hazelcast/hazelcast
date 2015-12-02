@@ -86,7 +86,17 @@ public final class CodeGenerationUtils {
     }
 
     public static String addHexPrefix(String s) {
-        return s.length() == 3 ? "0x0" + s : "0x" + s;
+        switch (s.length()) {
+            case 3:
+                return "0x0" + s;
+            case 2:
+                return "0x00" + s;
+            case 1:
+                return "0x000" + s;
+            default:
+                return "0x" + s;
+        }
+
     }
 
     public static String getArrayType(String type) {
@@ -225,7 +235,9 @@ public final class CodeGenerationUtils {
 
     public static String getDistributedObjectName(String templateClassName) {
         String result = templateClassName;
-
+        if (templateClassName.equals("com.hazelcast.client.impl.protocol.template.ClientMessageTemplate")) {
+            return "Generic";
+        }
         int startIndex = templateClassName.lastIndexOf('.');
         if (startIndex >= 0) {
             int endIndex = templateClassName.indexOf("CodecTemplate", startIndex);

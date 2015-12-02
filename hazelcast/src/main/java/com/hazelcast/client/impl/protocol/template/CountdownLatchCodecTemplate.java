@@ -35,11 +35,11 @@ public interface CountdownLatchCodecTemplate {
      * and the current thread's interrupted status is cleared. If the specified waiting time elapses then the value false
      * is returned.  If the time is less than or equal to zero, the method will not wait at all.
      *
-     * @param name Name of the CountDownLatch
+     * @param name    Name of the CountDownLatch
      * @param timeout The maximum time in milliseconds to wait
      * @return True if the count reached zero, false if the waiting time elapsed before the count reached zero
      */
-    @Request(id = 1, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 1, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object await(String name, long timeout);
 
     /**
@@ -49,7 +49,7 @@ public interface CountdownLatchCodecTemplate {
      *
      * @param name Name of the CountDownLatch
      */
-    @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "name")
     void countDown(String name);
 
     /**
@@ -58,18 +58,18 @@ public interface CountdownLatchCodecTemplate {
      * @param name Name of the CountDownLatch
      * @return The current count for the latch.
      */
-    @Request(id = 3, retryable = true, response = ResponseMessageConst.INTEGER)
+    @Request(id = 3, retryable = true, response = ResponseMessageConst.INTEGER, partitionIdentifier = "name")
     Object getCount(String name);
 
     /**
      * Sets the count to the given value if the current count is zero. If the count is not zero, then this method does
      * nothing and returns false
      *
-     * @param name Name of the CountDownLatch
+     * @param name  Name of the CountDownLatch
      * @param count The number of times countDown must be invoked before threads can pass through await
      * @return True if the new count was set, false if the current count is not zero.
      */
-    @Request(id = 4, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 4, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "name")
     Object trySetCount(String name, int count);
 
 }

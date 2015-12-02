@@ -26,13 +26,13 @@ public interface ConditionCodecTemplate {
     /**
      * Causes the current thread to wait until it is signalled or interrupted, or the specified waiting time elapses.
      *
-     * @param name Name of the Condition
+     * @param name     Name of the Condition
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
-     * @param timeout The maximum time to wait
+     * @param timeout  The maximum time to wait
      * @param lockName Name of the lock to wait on.
      * @return False if the waiting time detectably elapsed before return from the method, else true
      */
-    @Request(id = 1, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 1, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "lockName")
     Object await(String name, long threadId, long timeout, String lockName);
 
     /**
@@ -53,11 +53,11 @@ public interface ConditionCodecTemplate {
      * An implementation can favor responding to an interrupt over normal method return in response to a signal. In that
      * case the implementation must ensure that the signal is redirected to another waiting thread, if there is one.
      *
-     * @param name Name of the Condition
+     * @param name     Name of the Condition
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param lockName Name of the lock to wait on.
      */
-    @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "lockName")
     void beforeAwait(String name, long threadId, String lockName);
 
     /**
@@ -67,23 +67,23 @@ public interface ConditionCodecTemplate {
      * document this precondition and any actions taken if the lock is not held. Typically, an exception such as
      * ILLEGAL_MONITOR_STATE will be thrown.
      *
-     * @param name Name of the Condition
+     * @param name     Name of the Condition
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param lockName Name of the lock to wait on.
      */
 
-    @Request(id = 3, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 3, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "lockName")
     void signal(String name, long threadId, String lockName);
 
     /**
      * If any threads are waiting on this condition then they are all woken up. Each thread must re-acquire the lock
      * before it can return from
      *
-     * @param name Name of the Condition
+     * @param name     Name of the Condition
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param lockName Name of the lock to wait on.
      */
-    @Request(id = 4, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 4, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "lockName")
     void signalAll(String name, long threadId, String lockName);
 
 }

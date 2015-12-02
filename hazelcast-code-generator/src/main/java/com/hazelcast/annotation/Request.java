@@ -30,6 +30,7 @@ public @interface Request {
     short id();
     boolean retryable();
     int response();
+    String partitionIdentifier() default "-1";
     int[] event() default -1;
 }
 
