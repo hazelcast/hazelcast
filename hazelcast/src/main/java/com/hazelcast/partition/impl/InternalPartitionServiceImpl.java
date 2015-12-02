@@ -524,17 +524,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 stateVersion.incrementAndGet();
             }
             migrationQueue.clear();
-            if (!activeMigrations.isEmpty()) {
-                if (node.isMaster()) {
-                    rollbackActiveMigrationsFromPreviousMaster(node.getLocalMember().getUuid());
-                }
-                for (MigrationInfo migrationInfo : activeMigrations.values()) {
-                    if (deadAddress.equals(migrationInfo.getSource())
-                            || deadAddress.equals(migrationInfo.getDestination())) {
-                        migrationInfo.invalidate();
-                    }
-                }
+            if (node.isMaster()) {
+                rollbackActiveMigrationsFromPreviousMaster(node.getLocalMember().getUuid());
             }
+            invalidateActiveMigrationsBelongingTo(deadAddress);
             // Pause migration and let all other members notice the dead member
             // and fix their own partitions.
             // Otherwise new master may take action fast and send new partition state
@@ -550,6 +543,17 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             resumeMigrationEventually();
         } finally {
             lock.unlock();
+        }
+    }
+
+    private void invalidateActiveMigrationsBelongingTo(Address deadAddress) {
+        if (!activeMigrations.isEmpty()) {
+            for (MigrationInfo migrationInfo : activeMigrations.values()) {
+                if (deadAddress.equals(migrationInfo.getSource())
+                        || deadAddress.equals(migrationInfo.getDestination())) {
+                    migrationInfo.invalidate();
+                }
+            }
         }
     }
 
