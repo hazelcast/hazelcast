@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.SerializationService;
@@ -23,6 +39,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -97,6 +114,61 @@ public class QueryEntryTest extends HazelcastTestSupport {
         assertEquals(0, value.serializationCount);
     }
 
+    @Test(expected = UnsupportedOperationException.class)
+    public void givenNewQueryEntry_whenSetValue_thenThrowUnsupportedOperationException() {
+        //given
+        QueryEntry entry = newEntry();
+
+        //when
+        entry.setValue(new Object());
+    }
+
+    @Test
+    public void testEquals_givenSameInstance_thenReturnTrue() {
+        QueryEntry entry1 = newEntry();
+        QueryEntry entry2 = entry1;
+
+        assertTrue(entry1.equals(entry2));
+    }
+
+    @Test
+    public void testEquals_givenOtherIsNull_thenReturnFalse() {
+        QueryEntry entry = newEntry();
+
+        assertFalse(entry.equals(null));
+    }
+
+    @Test
+    public void testEquals_givenOtherIsDifferentClass_thenReturnFalse() {
+        QueryEntry entry = newEntry();
+
+        assertFalse(entry.equals(new Object()));
+    }
+
+    @Test
+    public void testEquals_givenOtherHasDifferentKey_thenReturnFalse() {
+        SerializableObject value = new SerializableObject();
+        QueryEntry entry1 = newEntry("key1", value);
+        QueryEntry entry2 = newEntry("key2", value);
+
+        assertFalse(entry1.equals(entry2));
+    }
+
+    @Test
+    public void testEquals_givenOtherHasEqualsKey_thenReturnTrue() {
+        SerializableObject value = new SerializableObject();
+        QueryEntry entry1 = newEntry("key", value);
+        QueryEntry entry2 = newEntry("key", value);
+
+        assertTrue(entry1.equals(entry2));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInit_whenKeyIsNull_thenThrowIllegalArgumentException() {
+        Data key = null;
+        new QueryEntry(serializationService, key, new SerializableObject(), Extractors.empty());
+    }
+
     @Test
     public void test_init() throws Exception {
         Data dataKey = serializationService.toData("dataKey");
@@ -111,6 +183,17 @@ public class QueryEntryTest extends HazelcastTestSupport {
         // compare references of objects since they should be cloned after QueryEntry#init call.
         assertTrue("Old dataKey should not be here", dataKey != queryEntry.getKeyData());
         assertTrue("Old dataValue should not be here", dataValue != queryEntry.getValueData());
+    }
+
+    private QueryEntry newEntry() {
+        Data key = serializationService.toData(new SerializableObject());
+        SerializableObject value = new SerializableObject();
+        return new QueryEntry(serializationService, key, value, Extractors.empty());
+    }
+
+    private QueryEntry newEntry(Object key, Object value) {
+        key = serializationService.toData(key);
+        return new QueryEntry(serializationService, (Data)key, value, Extractors.empty());
     }
 
     @SuppressWarnings("unused")
