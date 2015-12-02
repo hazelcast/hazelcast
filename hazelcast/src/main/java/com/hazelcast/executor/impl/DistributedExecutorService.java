@@ -111,9 +111,10 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     public boolean cancel(String uuid, boolean interrupt) {
         CallableProcessor processor = submittedTasks.remove(uuid);
         if (processor != null && processor.cancel(interrupt)) {
-            processor.sendResponse(new CancellationException());
-            getLocalExecutorStats(processor.name).cancelExecution();
-            return true;
+            if (processor.sendResponse(new CancellationException())) {
+                getLocalExecutorStats(processor.name).cancelExecution();
+                return true;
+            }
         }
         return false;
     }
@@ -223,10 +224,13 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             }
         }
 
-        private void sendResponse(Object result) {
+        private boolean sendResponse(Object result) {
             if (RESPONSE_FLAG.compareAndSet(this, Boolean.FALSE, Boolean.TRUE)) {
                 op.sendResponse(result);
+                return true;
             }
+
+            return false;
         }
     }
 }
