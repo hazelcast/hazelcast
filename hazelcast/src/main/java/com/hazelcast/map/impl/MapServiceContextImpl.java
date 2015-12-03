@@ -179,6 +179,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void destroyMap(String mapName) {
+        localMapStatsProvider.destroyLocalMapStatsImpl(mapName);
         final PartitionContainer[] containers = partitionContainers;
         final List<Future> futures = new ArrayList<Future>(containers.length);
         Address thisAddress = getNodeEngine().getThisAddress();
