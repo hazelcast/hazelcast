@@ -229,8 +229,9 @@ public class MapConfig {
         return defensiveCopyObjectMemoryFormat;
     }
 
-    public void setDefensiveCopyObjectMemoryFormat(boolean defensiveCopyObjectMemoryFormat) {
+    public MapConfig setDefensiveCopyObjectMemoryFormat(boolean defensiveCopyObjectMemoryFormat) {
         this.defensiveCopyObjectMemoryFormat = defensiveCopyObjectMemoryFormat;
+        return this;
     }
 
     /**

@@ -164,6 +164,16 @@ public class MapConfigTest {
     }
 
     @Test
+    public void testisDefensiveCopyObjectMemoryFormat() {
+        assertEquals(true, new MapConfig().isDefensiveCopyObjectMemoryFormat());
+    }
+
+    @Test
+    public void testsetDefensiveCopyObjectMemoryFormat() {
+        assertEquals(false, new MapConfig().setDefensiveCopyObjectMemoryFormat(false).isDefensiveCopyObjectMemoryFormat());
+    }
+
+    @Test
     public void testSetMaxSizeMustBePositive() {
         assertTrue(new MapConfig().getMaxSizeConfig().setSize(-1).getSize() > 0);
     }
