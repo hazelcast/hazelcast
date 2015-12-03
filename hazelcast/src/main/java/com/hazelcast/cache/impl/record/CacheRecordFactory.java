@@ -52,6 +52,9 @@ public class CacheRecordFactory<R extends CacheRecord> {
                 Object objectValue = serializationService.toObject(value);
                 record = (R) createCacheObjectRecord(objectValue, creationTime, expiryTime);
                 break;
+            case NATIVE:
+                throw new IllegalArgumentException("Native storage format is supported in Hazelcast Enterprise only. "
+                        + "Make sure you have Hazelcast Enterprise JARs on your classpath!");
             default:
                 throw new IllegalArgumentException("Invalid storage format: " + inMemoryFormat);
         }
