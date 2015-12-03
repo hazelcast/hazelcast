@@ -211,8 +211,8 @@ public class DistributedExecutorService implements ManagedService, RemoteService
                 if (uuid != null) {
                     submittedTasks.remove(uuid);
                 }
-                sendResponse(result);
                 if (!isCancelled()) {
+                    sendResponse(result);
                     finishExecution(name, Clock.currentTimeMillis() - start);
                 }
             }
