@@ -946,7 +946,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         // wait for remove to finish
         store.awaitRemoves();
 
-        assertEquals(0, store.getStore().keySet().size());
+        assertEquals(0, store.getStore().size());
     }
 
     private Config newConfig(Object storeImpl) {
