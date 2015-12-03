@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
@@ -25,7 +26,6 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.map.impl.EventListenerFilter;
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.InvalidateNearCacheOperation;
 import com.hazelcast.map.impl.operation.NearCacheKeySetInvalidationOperation;
@@ -37,7 +37,6 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.ConstructorFunction;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -215,7 +214,6 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
     public void remove(String mapName) {
         InvalidationQueue invalidationQueue = invalidationQueues.remove(mapName);
         if (invalidationQueue != null) {
-            invalidationQueue.clear();
             sendRemoteCleaningInvalidation(mapName, null);
         }
 
@@ -223,8 +221,8 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
     }
 
     private boolean isNearCacheAndInvalidationEnabled(String mapName) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        return mapContainer.isNearCacheEnabled() && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange();
+        MapConfig mapConfig = nodeEngine.getConfig().findMapConfig(mapName);
+        return mapConfig.isNearCacheEnabled() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
     }
 
     public void accumulateOrSendBatchInvalidation(String mapName, Data key) {
@@ -261,7 +259,6 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
 
             sendInvalidationToServerNearCache(mapName, batchNearCacheInvalidation.getDataList());
             sendInvalidationToClientNearCache(mapName, batchNearCacheInvalidation);
-
         } finally {
             invalidationQueue.release();
         }

@@ -76,6 +76,10 @@ public class LocalMapStatsProvider {
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, constructorFunction);
     }
 
+    public void destroyLocalMapStatsImpl(String name) {
+        statsMap.remove(name);
+    }
+
     public LocalMapStatsImpl createLocalMapStats(String mapName) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         LocalMapStatsImpl stats = getLocalMapStatsImpl(mapName);

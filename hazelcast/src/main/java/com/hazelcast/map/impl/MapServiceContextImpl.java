@@ -30,7 +30,7 @@ import com.hazelcast.map.impl.operation.BaseRemoveOperation;
 import com.hazelcast.map.impl.operation.DefaultMapOperationProvider;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.operation.MapPartitionDestroyOperation;
+import com.hazelcast.map.impl.operation.MapPartitionDestroyTask;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.MapQueryEngineImpl;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
@@ -39,7 +39,6 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.EventFilter;
@@ -47,13 +46,11 @@ import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
-
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -61,7 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -223,28 +220,18 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public void destroyMap(String mapName) {
+    public void destroyMap(final String mapName) {
+        localMapStatsProvider.destroyLocalMapStatsImpl(mapName);
         final PartitionContainer[] containers = partitionContainers;
-        final List<Future> futures = new ArrayList<Future>(containers.length);
-        for (PartitionContainer container : containers) {
-            if (container != null) {
-                int partitionId = container.getPartitionId();
-                InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
-
-                if (partition.isLocal()) {
-                    OperationService operationService = nodeEngine.getOperationService();
-                    Operation operation = new MapPartitionDestroyOperation(container, mapName);
-
-                    Future f = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
-                    futures.add(f);
-                }
-            }
+        final Semaphore semaphore = new Semaphore(0);
+        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        for (final PartitionContainer container : containers) {
+            MapPartitionDestroyTask partitionDestroyTask = new MapPartitionDestroyTask(container, mapName, semaphore);
+            operationService.execute(partitionDestroyTask);
         }
 
         try {
-            for (Future f : futures) {
-                f.get(DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            }
+            semaphore.tryAcquire(containers.length, DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
