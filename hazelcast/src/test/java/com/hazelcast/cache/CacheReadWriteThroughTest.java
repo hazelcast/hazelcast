@@ -216,7 +216,7 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
         }
     }
 
-    private void do_put_writeThrough(boolean acceptAll) {
+    private void do_putAsAdd_writeThrough(boolean acceptAll) {
         final int ENTRY_COUNT = 100;
         final String cacheName = randomName();
 
@@ -225,7 +225,12 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
 
         assertNull(cacheManager.getCache(cacheName));
 
-        PutCacheWriter putCacheWriter = new PutCacheWriter(acceptAll);
+        PutCacheWriter putCacheWriter;
+        if (acceptAll) {
+            putCacheWriter = new PutCacheWriter();
+        } else {
+            putCacheWriter = new PutCacheWriter(new ModValueChecker(ENTRY_COUNT / 10));
+        }
         CacheConfig<Integer, Integer> config = createCacheConfig();
         config.setWriteThrough(true);
         config.setCacheWriterFactory(FactoryBuilder.factoryOf(putCacheWriter));
@@ -249,36 +254,100 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_put_writeThrough_allKeysAccepted() {
-        do_put_writeThrough(true);
+    public void test_putAsAdd_writeThrough_allKeysAccepted() {
+        do_putAsAdd_writeThrough(true);
     }
 
     @Test
-    public void test_put_writeThrough_someKeysBanned() {
-        do_put_writeThrough(false);
+    public void test_putAsAdd_writeThrough_someKeysBanned() {
+        do_putAsAdd_writeThrough(false);
+    }
+
+    private void do_putAsUpdate_writeThrough(boolean acceptAll) {
+        final int ENTRY_COUNT = 100;
+        final String cacheName = randomName();
+
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+        assertNotNull(cacheManager);
+
+        assertNull(cacheManager.getCache(cacheName));
+
+        PutCacheWriter putCacheWriter;
+        if (acceptAll) {
+            putCacheWriter = new PutCacheWriter();
+        } else {
+            putCacheWriter = new PutCacheWriter(new MaxValueChecker(ENTRY_COUNT));
+        }
+        CacheConfig<Integer, Integer> config = createCacheConfig();
+        config.setWriteThrough(true);
+        config.setCacheWriterFactory(FactoryBuilder.factoryOf(putCacheWriter));
+
+        ICache<Integer, Integer> cache = cacheManager.createCache(cacheName, config).unwrap(ICache.class);
+        assertNotNull(cache);
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.put(i, i);
+        }
+        assertEquals(ENTRY_COUNT, cache.size());
+
+        Map<Integer, Integer> keysAndValues = new HashMap<Integer, Integer>();
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            int oldValue = cache.get(i);
+            int newValue = ENTRY_COUNT + i;
+            try {
+                cache.put(i, newValue);
+                keysAndValues.put(i, newValue);
+            } catch (CacheWriterException e) {
+                keysAndValues.put(i, oldValue);
+            }
+        }
+        assertEquals(ENTRY_COUNT, cache.size());
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            Integer expectedValue = keysAndValues.get(i);
+            assertNotNull(expectedValue);
+
+            Integer actualValue = cache.get(i);
+            assertNotNull(actualValue);
+
+            assertEquals(expectedValue, actualValue);
+        }
+    }
+
+    @Test
+    public void test_putAsUpdate_writeThrough_allKeysAccepted() {
+        do_putAsUpdate_writeThrough(true);
+    }
+
+    @Test
+    public void test_putAsUpdate_writeThrough_someKeysBanned() {
+        do_putAsUpdate_writeThrough(false);
     }
 
     public static class PutCacheWriter implements CacheWriter<Integer, Integer>, Serializable {
 
-        private final boolean acceptAll;
+        private final ValueChecker valueChecker;
 
-        private PutCacheWriter(boolean acceptAll) {
-            this.acceptAll = acceptAll;
+        private PutCacheWriter() {
+            this.valueChecker = null;
         }
 
-        private boolean isAcceptableKey(int key) {
-            if (acceptAll) {
+        private PutCacheWriter(ValueChecker valueChecker) {
+            this.valueChecker = valueChecker;
+        }
+
+        private boolean isAcceptableValue(int value) {
+            if (valueChecker == null) {
                 return true;
             }
-            return key % 10 != 0;
+            return valueChecker.isAcceptableValue(value);
         }
 
         @Override
         public void write(Cache.Entry<? extends Integer, ? extends Integer> entry)
                 throws CacheWriterException {
-            Integer keyValue = entry.getKey().intValue();
-            if (!isAcceptableKey(keyValue)) {
-                throw new CacheWriterException("Key value is invalid: " + keyValue);
+            Integer value = entry.getValue().intValue();
+            if (!isAcceptableValue(value)) {
+                throw new CacheWriterException("Value is invalid: " + value);
             }
         }
 
@@ -296,6 +365,44 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
         public void deleteAll(Collection<?> keys)
                 throws CacheWriterException {
         }
+
+    }
+
+
+    public interface ValueChecker extends Serializable {
+
+        boolean isAcceptableValue(int value);
+
+    }
+
+    public static class ModValueChecker implements ValueChecker {
+
+        private final int mod;
+
+        private ModValueChecker(int mod) {
+            this.mod = mod;
+        }
+
+        @Override
+        public boolean isAcceptableValue(int value) {
+            return value % mod != 0;
+        }
+
+    }
+
+    public static class MaxValueChecker implements ValueChecker  {
+
+        private final int maxValue;
+
+        private MaxValueChecker(int maxValue) {
+            this.maxValue = maxValue;
+        }
+
+        @Override
+        public boolean isAcceptableValue(int value) {
+            return value < maxValue;
+        }
+
     }
 
 }
