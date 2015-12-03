@@ -45,7 +45,6 @@ import com.hazelcast.util.FutureUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -56,7 +55,6 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.ExpirationTimeSetter.updateExpiryTime;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
-import static java.util.Collections.EMPTY_MAP;
 import static java.util.Collections.EMPTY_SET;
 import static java.util.Collections.emptyList;
 
@@ -337,28 +335,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public String getLockOwnerInfo(Data key) {
         return lockStore != null ? lockStore.getOwnerInfo(key) : null;
-    }
-
-    @Override
-    public Set<Map.Entry<Data, Data>> entrySetData() {
-        checkIfLoaded();
-        long now = getNow();
-
-        Collection<Record> records = storage.values();
-        Map<Data, Data> tempMap = EMPTY_MAP;
-        for (Record record : records) {
-            Data key = record.getKey();
-            record = getOrNullIfExpired(record, now, false);
-            if (record == null) {
-                continue;
-            }
-            if (tempMap == EMPTY_MAP) {
-                tempMap = new HashMap<Data, Data>();
-            }
-            Data value = toData(record.getValue());
-            tempMap.put(key, value);
-        }
-        return tempMap.entrySet();
     }
 
     @Override
