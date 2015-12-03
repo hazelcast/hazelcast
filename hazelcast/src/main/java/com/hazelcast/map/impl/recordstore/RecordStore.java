@@ -27,9 +27,9 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -217,8 +217,6 @@ public interface RecordStore<R extends Record> {
     int evictAll(boolean backup);
 
     MapContainer getMapContainer();
-
-    Set<Map.Entry<Data, Data>> entrySetData();
 
     void flush();
 
