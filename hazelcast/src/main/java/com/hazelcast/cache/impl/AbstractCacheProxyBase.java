@@ -31,6 +31,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletableFutureTask;
 
 import javax.cache.CacheException;
@@ -236,6 +237,14 @@ abstract class AbstractCacheProxyBase<K, V> {
             } catch (Exception e) {
                 if (completionListener != null) {
                     completionListener.onException(e);
+                }
+            } catch (Throwable t) {
+                if (t instanceof OutOfMemoryError) {
+                    ExceptionUtil.rethrow(t);
+                } else {
+                    if (completionListener != null) {
+                        completionListener.onException(new CacheException(t));
+                    }
                 }
             }
         }
