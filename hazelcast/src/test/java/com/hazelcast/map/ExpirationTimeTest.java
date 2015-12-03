@@ -165,15 +165,6 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         assertEquals(0L, entryView.getLastAccessTime());
     }
 
-    @Test
-    public void testLastUpdateTime_isZero_afterFirstPut() throws Exception {
-        IMap<Integer, Integer> map = createMap();
-        map.put(1, 1);
-        EntryView<Integer, Integer> entryView = map.getEntryView(1);
-
-        assertEquals(0L, entryView.getLastUpdateTime());
-    }
-
     private IMap<Integer, Integer> createMap() {
         String mapName = randomMapName();
         HazelcastInstance node = createHazelcastInstance(getConfig());
