@@ -13,7 +13,6 @@ import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.listener.EntryMergedListener;
 import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
-import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.monitor.LocalMapStats;
@@ -24,7 +23,6 @@ import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.wan.impl.WanNoDelayReplication;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -612,24 +610,5 @@ public class WanReplicationTest extends HazelcastTestSupport {
                 assertTrue(checkGivenDataApplied(cluster, mapName, start, end, value));
             }
         }, ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE);
-    }
-
-    private void printReplicaConfig(Config c) {
-        Map m = c.getWanReplicationConfigs();
-        Set<Entry> s = m.entrySet();
-        for (Entry e : s) {
-            System.out.println(e.getKey() + " ==> " + e.getValue());
-        }
-    }
-
-    private void printAllReplicarConfig() {
-        System.out.println();
-        System.out.println("==configA==");
-        printReplicaConfig(configA);
-        System.out.println("==configB==");
-        printReplicaConfig(configB);
-        System.out.println("==configC==");
-        printReplicaConfig(configC);
-        System.out.println();
     }
 }

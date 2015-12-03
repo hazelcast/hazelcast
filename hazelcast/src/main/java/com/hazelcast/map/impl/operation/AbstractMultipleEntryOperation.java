@@ -282,10 +282,10 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
     protected static class WanEventWrapper {
 
         Data key;
-        Object value;
+        Data value;
         EntryEventType eventType;
 
-        public WanEventWrapper(Data key, Object value, EntryEventType eventType) {
+        public WanEventWrapper(Data key, Data value, EntryEventType eventType) {
             this.key = key;
             this.value = value;
             this.eventType = eventType;
@@ -299,11 +299,11 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
             this.key = key;
         }
 
-        public Object getValue() {
+        public Data getValue() {
             return value;
         }
 
-        public void setValue(Object value) {
+        public void setValue(Data value) {
             this.value = value;
         }
 

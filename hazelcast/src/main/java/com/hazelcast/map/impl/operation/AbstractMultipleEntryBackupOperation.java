@@ -81,7 +81,7 @@ abstract class AbstractMultipleEntryBackupOperation extends AbstractMultipleEntr
         out.writeInt(wanEventList.size());
         for (WanEventWrapper wanEventWrapper : wanEventList) {
             out.writeData(wanEventWrapper.getKey());
-            out.writeObject(wanEventWrapper.getValue());
+            out.writeData(wanEventWrapper.getValue());
             out.writeInt(wanEventWrapper.getEventType().getType());
         }
     }
@@ -92,7 +92,7 @@ abstract class AbstractMultipleEntryBackupOperation extends AbstractMultipleEntr
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             Data key = in.readData();
-            Object value = in.readObject();
+            Data value = in.readData();
             EntryEventType entryEventType = EntryEventType.getByType(in.readInt());
             wanEventList.add(new WanEventWrapper(key, value, entryEventType));
         }
