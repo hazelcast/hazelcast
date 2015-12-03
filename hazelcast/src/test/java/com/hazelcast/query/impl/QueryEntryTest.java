@@ -38,15 +38,19 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class QueryEntryTest extends HazelcastTestSupport {
 
-    private SerializationService serializationService;
+    protected SerializationService serializationService;
 
     @Before
     public void before() {
@@ -63,9 +67,8 @@ public class QueryEntryTest extends HazelcastTestSupport {
     @Test
     public void getAttribute_whenValueIsPortableObject_thenConvertedToData() {
         Data key = serializationService.toData("indexedKey");
-
         Portable value = new SampleObjects.PortableEmployee(30, "peter");
-        QueryEntry queryEntry = new QueryEntry(serializationService, key, value, Extractors.empty());
+        QueryableEntry queryEntry = entry(key, value, Extractors.empty());
 
         // in the portable-data, the attribute 'name' is called 'n'. So if we can retrieve on n
         // correctly it shows that we have used the Portable data, not the actual Portable object
@@ -77,9 +80,8 @@ public class QueryEntryTest extends HazelcastTestSupport {
     @Test
     public void getAttribute_whenKeyIsPortableObject_thenConvertedToData() {
         Data key = serializationService.toData(new SampleObjects.PortableEmployee(30, "peter"));
-
         SerializableObject value = new SerializableObject();
-        QueryEntry queryEntry = new QueryEntry(serializationService, key, value, Extractors.empty());
+        QueryableEntry queryEntry = entry(key, value, Extractors.empty());
 
         // in the portable-data, the attribute 'name' is called 'n'. So if we can retrieve on n
         // correctly it shows that we have used the Portable data, not the actual Portable object
@@ -91,9 +93,8 @@ public class QueryEntryTest extends HazelcastTestSupport {
     @Test
     public void getAttribute_whenKeyPortableObjectThenConvertedToData() {
         Data key = serializationService.toData(new SampleObjects.PortableEmployee(30, "peter"));
-
         SerializableObject value = new SerializableObject();
-        QueryEntry queryEntry = new QueryEntry(serializationService, key, value, Extractors.empty());
+        QueryableEntry queryEntry = entry(key, value, Extractors.empty());
 
         Object result = queryEntry.getAttributeValue(QueryConstants.KEY_ATTRIBUTE_NAME.value() + ".n");
 
@@ -105,7 +106,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
         Data key = serializationService.toData(new SerializableObject());
         SerializableObject value = new SerializableObject();
         value.name = "somename";
-        QueryEntry queryEntry = new QueryEntry(serializationService, key, value, Extractors.empty());
+        QueryableEntry queryEntry = entry(key, value, Extractors.empty());
 
         Object result = queryEntry.getAttributeValue("name");
 
@@ -114,86 +115,109 @@ public class QueryEntryTest extends HazelcastTestSupport {
         assertEquals(0, value.serializationCount);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void givenNewQueryEntry_whenSetValue_thenThrowUnsupportedOperationException() {
-        //given
-        QueryEntry entry = newEntry();
-
-        //when
-        entry.setValue(new Object());
-    }
-
-    @Test
-    public void testEquals_givenSameInstance_thenReturnTrue() {
-        QueryEntry entry1 = newEntry();
-        QueryEntry entry2 = entry1;
-
-        assertTrue(entry1.equals(entry2));
-    }
-
-    @Test
-    public void testEquals_givenOtherIsNull_thenReturnFalse() {
-        QueryEntry entry = newEntry();
-
-        assertFalse(entry.equals(null));
-    }
-
-    @Test
-    public void testEquals_givenOtherIsDifferentClass_thenReturnFalse() {
-        QueryEntry entry = newEntry();
-
-        assertFalse(entry.equals(new Object()));
-    }
-
-    @Test
-    public void testEquals_givenOtherHasDifferentKey_thenReturnFalse() {
-        SerializableObject value = new SerializableObject();
-        QueryEntry entry1 = newEntry("key1", value);
-        QueryEntry entry2 = newEntry("key2", value);
-
-        assertFalse(entry1.equals(entry2));
-    }
-
-    @Test
-    public void testEquals_givenOtherHasEqualsKey_thenReturnTrue() {
-        SerializableObject value = new SerializableObject();
-        QueryEntry entry1 = newEntry("key", value);
-        QueryEntry entry2 = newEntry("key", value);
-
-        assertTrue(entry1.equals(entry2));
-    }
-
     @Test(expected = IllegalArgumentException.class)
     public void testInit_whenKeyIsNull_thenThrowIllegalArgumentException() {
         Data key = null;
-        new QueryEntry(serializationService, key, new SerializableObject(), Extractors.empty());
+        entry(key, new SerializableObject(), Extractors.empty());
     }
 
     @Test
     public void test_init() throws Exception {
         Data dataKey = serializationService.toData("dataKey");
         Data dataValue = serializationService.toData("dataValue");
-        QueryEntry queryEntry = new QueryEntry(serializationService, dataKey, dataValue, Extractors.empty());
-
+        QueryableEntry queryEntry = entry(dataKey, dataValue, Extractors.empty());
         Object objectValue = queryEntry.getValue();
         Object objectKey = queryEntry.getKey();
 
-        queryEntry.init(serializationService, serializationService.toData(objectKey), objectValue, Extractors.empty());
+        init(queryEntry, serializationService, serializationService.toData(objectKey), objectValue, Extractors.empty());
 
         // compare references of objects since they should be cloned after QueryEntry#init call.
         assertTrue("Old dataKey should not be here", dataKey != queryEntry.getKeyData());
         assertTrue("Old dataValue should not be here", dataValue != queryEntry.getValueData());
     }
 
-    private QueryEntry newEntry() {
-        Data key = serializationService.toData(new SerializableObject());
-        SerializableObject value = new SerializableObject();
-        return new QueryEntry(serializationService, key, value, Extractors.empty());
+    @Test(expected = IllegalArgumentException.class)
+    public void test_init_nullKey() throws Exception {
+        entry(null, "value", Extractors.empty());
     }
 
-    private QueryEntry newEntry(Object key, Object value) {
-        key = serializationService.toData(key);
-        return new QueryEntry(serializationService, (Data)key, value, Extractors.empty());
+    @Test(expected = UnsupportedOperationException.class)
+    public void test_setValue() throws Exception {
+        QueryableEntry queryEntry = entry(mock(Data.class), "value", Extractors.empty());
+        queryEntry.setValue("anyValue");
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void test_equality_empty() throws Exception {
+        QueryableEntry entryKeyLeft = entry();
+        QueryableEntry entryKeyRight = entry();
+
+        entryKeyLeft.equals(entryKeyRight);
+    }
+
+    @Test
+    public void test_equality_same() throws Exception {
+        QueryableEntry entry = entry();
+
+        assertTrue(entry.equals(entry));
+    }
+
+    @Test
+    public void test_equality_differentType() throws Exception {
+        QueryableEntry entry = entry();
+
+        assertFalse(entry.equals("string"));
+    }
+
+    @Test
+    public void test_equality_null() throws Exception {
+        QueryableEntry entry = entry();
+
+        assertFalse(entry.equals(null));
+    }
+
+    @Test
+    public void test_equality_differentKey() throws Exception {
+        QueryableEntry queryEntry = entry("dataKey", "dataValue");
+        QueryableEntry queryEntryOther = entry("dataKeyOther", "dataValue");
+
+        assertFalse(queryEntry.equals(queryEntryOther));
+    }
+
+    @Test
+    public void test_equality_sameKey() throws Exception {
+        QueryableEntry queryEntry = entry("dataKey", "dataValue");
+        QueryableEntry queryEntryOther = entry("dataKey", "dataValueOther");
+
+        assertTrue(queryEntry.equals(queryEntryOther));
+    }
+
+    @Test
+    public void getKey_caching() {
+        QueryableEntry entry = entry("key", "value");
+
+        assertThat(entry.getKey(), not(sameInstance(entry.getKey())));
+    }
+
+    @Test
+    public void getValue_caching() {
+        QueryableEntry entry = entry("key", "value");
+
+        assertThat(entry.getValue(), not(sameInstance(entry.getValue())));
+    }
+
+    @Test
+    public void getKeyData_caching() {
+        QueryableEntry entry = entry("key", "value");
+
+        assertThat(entry.getKeyData(), sameInstance(entry.getKeyData()));
+    }
+
+    @Test
+    public void getValueData_caching() {
+        QueryableEntry entry = entry("key", "value");
+
+        assertThat(entry.getValueData(), sameInstance(entry.getValueData()));
     }
 
     @SuppressWarnings("unused")
@@ -213,4 +237,23 @@ public class QueryEntryTest extends HazelcastTestSupport {
             deserializationCount++;
         }
     }
+
+    protected QueryableEntry entry(String key, String value) {
+        return entry(serializationService.toData(key),
+                serializationService.toData(value),
+                Extractors.empty());
+    }
+
+    protected QueryableEntry entry(Data key, Object value, Extractors extractors) {
+        return new QueryEntry(serializationService, key, value, extractors);
+    }
+
+    protected QueryableEntry entry() {
+        return new QueryEntry();
+    }
+
+    protected void init(Object entry, SerializationService serializationService, Data key, Object value, Extractors extractors) {
+        ((QueryEntry) entry).init(serializationService, key, value, extractors);
+    }
+
 }

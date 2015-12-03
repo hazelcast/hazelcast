@@ -27,7 +27,6 @@ import static com.hazelcast.query.impl.getters.AbstractMultiValueGetter.validate
 public final class GetterFactory {
 
     private GetterFactory() {
-
     }
 
     public static Getter newFieldGetter(Object object, Getter parentGetter, Field field, String modifierSuffix)
