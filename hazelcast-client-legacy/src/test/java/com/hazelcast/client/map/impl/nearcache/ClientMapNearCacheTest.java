@@ -44,6 +44,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.instance.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
@@ -85,6 +86,8 @@ public class ClientMapNearCacheTest {
     public static void setup() throws Exception {
         Config config = new Config();
         config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED, "false");
+        config.setProperty(PARTITION_OPERATION_THREAD_COUNT, "4");
+
         server = hazelcastFactory.newHazelcastInstance(config);
         hazelcastFactory.newHazelcastInstance(config);
 
