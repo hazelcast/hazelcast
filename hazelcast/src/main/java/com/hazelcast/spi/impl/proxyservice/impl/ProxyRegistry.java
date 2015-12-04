@@ -27,6 +27,7 @@ import com.hazelcast.spi.impl.DistributedObjectEventPacket;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,20 +50,7 @@ public final class ProxyRegistry {
     ProxyRegistry(ProxyServiceImpl proxyService, String serviceName) {
         this.proxyService = proxyService;
         this.serviceName = serviceName;
-        this.service = getService(proxyService, serviceName);
-    }
-
-    private RemoteService getService(ProxyServiceImpl proxyService, String serviceName) {
-        RemoteService service = proxyService.nodeEngine.getService(serviceName);
-        if (service != null) {
-            return service;
-        }
-
-        if (proxyService.nodeEngine.isActive()) {
-            throw new IllegalArgumentException("Unknown service: " + serviceName);
-        } else {
-            throw new HazelcastInstanceNotActiveException();
-        }
+        this.service = proxyService.nodeEngine.getService(serviceName);
     }
 
     /**
