@@ -289,15 +289,15 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return value;
     }
 
-	private Object readBackup(Data key) {
-		final Object toReturn;
-		if (defensiveCopyObjectMemoryFormat) {
-			toReturn = readBackupDataOrNull(key);
-		} else {
-			toReturn = readBackupOrNull(key);
-		}
-		return toReturn;
-	}
+    private Object readBackup(Data key) {
+        final Object toReturn;
+        if (defensiveCopyObjectMemoryFormat) {
+            toReturn = readBackupDataOrNull(key);
+        } else {
+            toReturn = readBackupOrNull(key);
+        }
+        return toReturn;
+    }
 
     private boolean notOwnerPartitionForKey(Data key) {
         final MapService mapService = getService();
