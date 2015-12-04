@@ -6,6 +6,10 @@ import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.LocalMapStatsProvider;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionService;
@@ -15,11 +19,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
+import java.lang.reflect.Field;
+import java.util.Collection;
+import java.util.concurrent.ConcurrentMap;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -27,6 +32,25 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class LocalMapStatsTest extends HazelcastTestSupport {
+
+    @Test
+    public void testMapStatsAreNotLeaking() throws Exception {
+        HazelcastInstance instance = createHazelcastInstance();
+        for (int i = 0; i < 1000; i++) {
+            IMap<Object, Object> map = instance.getMap(randomName());
+            map.destroy();
+        }
+
+        Node node = getNode(instance);
+        MapService service = node.getNodeEngine().getService(MapService.SERVICE_NAME);
+        MapServiceContext mapServiceContext = service.getMapServiceContext();
+        LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+        Field field = localMapStatsProvider.getClass().getDeclaredField("statsMap");
+        field.setAccessible(true);
+        ConcurrentMap statsMap = (ConcurrentMap) field.get(localMapStatsProvider);
+
+        assertEquals(0, statsMap.size());
+    }
 
     @Test
     public void testHitsGenerated() throws Exception {
