@@ -159,6 +159,37 @@ public class HTTPCommunicator {
         return urlConnection.getResponseCode();
     }
 
+    public String getClusterState(String groupName, String groupPassword) throws IOException {
+
+        String url = address + "management/cluster/state";
+        return doPost(url, groupName, groupPassword);
+
+    }
+
+    public int changeClusterState(String groupName, String groupPassword, String newState) throws IOException {
+
+        String url = address + "management/cluster/changeState";
+        /** set up the http connection parameters */
+        HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
+        urlConnection.setRequestMethod("POST");
+        urlConnection.setDoOutput(true);
+        urlConnection.setDoInput(true);
+        urlConnection.setUseCaches(false);
+        urlConnection.setAllowUserInteraction(false);
+        urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
+
+        /** post the data */
+        OutputStream out = urlConnection.getOutputStream();
+        Writer writer = new OutputStreamWriter(out, "UTF-8");
+        String data = URLEncoder.encode(groupName, "UTF-8") + "&" + URLEncoder.encode(groupPassword, "UTF-8")+
+                "&" + URLEncoder.encode(newState, "UTF-8");
+        writer.write(data);
+        writer.close();
+        out.close();
+
+        return urlConnection.getResponseCode();
+    }
+
     private String doGet(final String url) throws IOException {
         HttpURLConnection httpUrlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         try {
@@ -168,6 +199,35 @@ public class HTTPCommunicator {
             return readBytes == -1 ? "" : new String(buffer, 0, readBytes);
         } finally {
             httpUrlConnection.disconnect();
+        }
+    }
+
+    private String doPost(final String url, String ... params) throws IOException {
+        /** set up the http connection parameters */
+        HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
+        urlConnection.setRequestMethod("POST");
+        urlConnection.setDoOutput(true);
+        urlConnection.setDoInput(true);
+        urlConnection.setUseCaches(false);
+        urlConnection.setAllowUserInteraction(false);
+        urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
+        /** post the data */
+        OutputStream out = urlConnection.getOutputStream();
+        Writer writer = new OutputStreamWriter(out, "UTF-8");
+        String data = "";
+        for ( String param : params){
+            data +=  URLEncoder.encode(param, "UTF-8") + "&";
+        }
+        writer.write(data);
+        writer.close();
+        out.close();
+        try {
+            InputStream inputStream = urlConnection.getInputStream();
+            byte[] buffer = new byte[4096];
+            int readBytes = inputStream.read(buffer);
+            return readBytes == -1 ? "" : new String(buffer, 0, readBytes);
+        } finally {
+            urlConnection.disconnect();
         }
     }
 }
