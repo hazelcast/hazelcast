@@ -173,11 +173,10 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public final long getSequence() {
-        throw new UnsupportedOperationException();
+        return -1L;
     }
 
     @Override
     public final void setSequence(long sequence) {
-        throw new UnsupportedOperationException();
     }
 }
