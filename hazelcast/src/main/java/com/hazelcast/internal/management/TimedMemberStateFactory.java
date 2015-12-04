@@ -31,7 +31,6 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
@@ -50,7 +49,9 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.topic.impl.TopicService;
 
 import java.util.ArrayList;
@@ -72,7 +73,6 @@ public class TimedMemberStateFactory {
     private final HazelcastInstanceImpl instance;
     private final int maxVisibleInstanceCount;
     private final boolean cacheServiceEnabled;
-    private final ILogger logger;
 
     private volatile boolean memberStateSafe = true;
 
@@ -80,8 +80,7 @@ public class TimedMemberStateFactory {
         this.instance = instance;
         Node node = instance.node;
         maxVisibleInstanceCount = node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
-        cacheServiceEnabled = node.nodeEngine.getService(CacheService.SERVICE_NAME) != null;
-        logger = node.getLogger(TimedMemberStateFactory.class);
+        cacheServiceEnabled = isCacheServiceEnabled();
     }
 
     public void init() {
@@ -283,5 +282,11 @@ public class TimedMemberStateFactory {
     private ICacheService getCacheService() {
         CacheDistributedObject setupRef = instance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         return setupRef.getService();
+    }
+
+    private boolean isCacheServiceEnabled() {
+        NodeEngineImpl nodeEngine = instance.node.nodeEngine;
+        Collection<ServiceInfo> serviceInfos = nodeEngine.getServiceInfos(CacheService.class);
+        return !serviceInfos.isEmpty();
     }
 }
