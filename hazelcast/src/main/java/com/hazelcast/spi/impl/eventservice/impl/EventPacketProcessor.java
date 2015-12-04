@@ -41,24 +41,13 @@ public class EventPacketProcessor implements StripedRunnable {
         Object eventObject = getEventObject(eventPacket);
         String serviceName = eventPacket.getServiceName();
 
-        EventPublishingService<Object, Object> service = getPublishingService(serviceName);
+        EventPublishingService<Object, Object> service = eventService.nodeEngine.getService(serviceName);
 
         Registration registration = getRegistration(eventPacket, serviceName);
         if (registration == null) {
             return;
         }
         service.dispatchEvent(eventObject, registration.getListener());
-    }
-
-    private EventPublishingService<Object, Object> getPublishingService(String serviceName) {
-        EventPublishingService<Object, Object> service = eventService.nodeEngine.getService(serviceName);
-        if (service == null) {
-            if (eventService.nodeEngine.isActive()) {
-                eventService.logger.warning("There is no service named: " + serviceName);
-            }
-            return null;
-        }
-        return service;
     }
 
     private Registration getRegistration(EventPacket eventPacket, String serviceName) {
