@@ -20,7 +20,7 @@ This plugin supports two different options of resolving against the discovery re
 
 Hazelcast, since 3.6, offers a, so called, Discovery SPI to integrate external discovery mechanisms into the system. For more
 information please rely on the official documentation, available
-link:http://docs.hazelcast.org/docs/3.6-EA/manual/html-single/index.html#discovery-spi[here].
+link:http://docs.hazelcast.org/docs/3.6-EA2/manual/html-single/index.html#discovery-spi[here].
 
 == Configuration Property Documentation
 
