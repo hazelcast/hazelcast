@@ -149,9 +149,7 @@ public class ProxyServiceImpl
             registry.destroyProxy(name, fireEvent);
         }
         final RemoteService service = nodeEngine.getService(serviceName);
-        if (service != null) {
-            service.destroyDistributedObject(name);
-        }
+        service.destroyDistributedObject(name);
         String message = "DistributedObject[" + service + " -> " + name + "] has been destroyed!";
         Throwable cause = new DistributedObjectDestroyedException(message);
         nodeEngine.getWaitNotifyService().cancelWaitingOps(serviceName, name, cause);

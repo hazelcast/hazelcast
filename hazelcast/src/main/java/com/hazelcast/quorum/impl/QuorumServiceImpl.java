@@ -64,8 +64,11 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
         this.nodeEngine = nodeEngine;
         this.eventService = nodeEngine.getEventService();
         initializeQuorums();
-        initializeListeners();
         this.inactive = quorums.isEmpty();
+    }
+
+    public void start() {
+        initializeListeners();
     }
 
     private void initializeQuorums() {

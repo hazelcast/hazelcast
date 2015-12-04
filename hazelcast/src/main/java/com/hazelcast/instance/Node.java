@@ -167,7 +167,6 @@ public class Node {
             textCommandService = new TextCommandServiceImpl(this);
             nodeExtension.printNodeInfo(this);
             this.multicastService = createMulticastService(addressPicker);
-            initializeListeners(config);
             joiner = nodeContext.createJoiner(this);
         } catch (Throwable e) {
             try {
@@ -328,6 +327,7 @@ public class Node {
         }
         if (completelyShutdown) return;
         nodeEngine.start();
+        initializeListeners(config);
         connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(

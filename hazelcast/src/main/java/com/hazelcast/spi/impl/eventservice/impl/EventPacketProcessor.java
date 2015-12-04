@@ -42,9 +42,6 @@ public class EventPacketProcessor implements StripedRunnable {
         String serviceName = eventPacket.getServiceName();
 
         EventPublishingService<Object, Object> service = getPublishingService(serviceName);
-        if (service == null) {
-            return;
-        }
 
         Registration registration = getRegistration(eventPacket, serviceName);
         if (registration == null) {
