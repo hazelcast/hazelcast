@@ -38,7 +38,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-final class ServiceEndpointResolver
+class ServiceEndpointResolver
         extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
 
     private final String serviceName;
@@ -53,6 +53,7 @@ final class ServiceEndpointResolver
         this.namespace = namespace;
 
         String accountToken = getAccountToken();
+        logger.info("Kubernetes Discovery: Bearer Token { " + accountToken + " }");
         Config config = new ConfigBuilder().withOauthToken(accountToken).build();
         this.client = new DefaultKubernetesClient(config);
     }

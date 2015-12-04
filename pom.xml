@@ -28,7 +28,7 @@
     <timestamp>${maven.build.timestamp}</timestamp>
     <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
 
-    <hazelcast.version>3.6-EA</hazelcast.version>
+    <hazelcast.version>3.6-EA2</hazelcast.version>
     <kubernetes.version>2.2.54</kubernetes.version>
     <dnsjava.version>2.1.7</dnsjava.version>
   </properties>
@@ -113,9 +113,9 @@
             <Import-Package>
               com.hazelcast.config,com.hazelcast.config.properties,
               com.hazelcast.spi.discovery,com.hazelcast.core,
-              com.hazelcast.logging,com.hazelcast.nio,
+              com.hazelcast.logging,com.hazelcast.nio, com.hazelcast.util,
               io.fabric8.kubernetes.api.model,io.fabric8.kubernetes.client.*,
-              org.xbill.DNS
+              org.xbill.DNS,io.fabric8.openshift.client
             </Import-Package>
           </instructions>
         </configuration>

@@ -21,6 +21,7 @@ import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
+import com.hazelcast.util.StringUtil;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -28,6 +29,11 @@ import java.util.List;
 import java.util.Map;
 
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.IpType;
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_SYSTEM_PREFIX;
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.NAMESPACE;
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS;
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS_IP_TYPE;
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
 
 final class HazelcastKubernetesDiscoveryStrategy
         implements DiscoveryStrategy {
@@ -37,15 +43,22 @@ final class HazelcastKubernetesDiscoveryStrategy
     private final EndpointResolver endpointResolver;
 
     HazelcastKubernetesDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
-        String serviceDns = getOrNull(properties, KubernetesProperties.SERVICE_DNS);
-        IpType serviceDnsIpType = getOrDefault(properties, KubernetesProperties.SERVICE_DNS_IP_TYPE, IpType.IPV4);
-        String serviceName = getOrNull(properties, KubernetesProperties.SERVICE_NAME);
-        String namespace = getOrNull(properties, KubernetesProperties.NAMESPACE);
+        String serviceDns = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_DNS);
+        IpType serviceDnsIpType = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_DNS_IP_TYPE, IpType.IPV4);
+        String serviceName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_NAME);
+        String namespace = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE);
 
         if (serviceDns != null && (serviceName == null || namespace == null)) {
             throw new RuntimeException(
                     "For kubernetes discovery either 'service-dns' or " + "'service-name' and 'namespace' must be set");
         }
+
+        logger.info("Kubernetes Discovery properties: { "
+                + "service-dns: " + serviceDns + ", "
+                + "service-dns-ip-type: " + serviceDnsIpType.name() + ", "
+                + "service-name: " + serviceName + ", "
+                + "namespace: " + namespace
+                + "}");
 
         EndpointResolver endpointResolver;
         if (serviceDns != null) {
@@ -53,6 +66,7 @@ final class HazelcastKubernetesDiscoveryStrategy
         } else {
             endpointResolver = new ServiceEndpointResolver(logger, serviceName, namespace);
         }
+        logger.info("Kubernetes Discovery activated resolver: " + endpointResolver.getClass().getSimpleName());
         this.endpointResolver = endpointResolver;
     }
 
@@ -68,23 +82,58 @@ final class HazelcastKubernetesDiscoveryStrategy
         endpointResolver.destroy();
     }
 
-    private <T extends Comparable> T getOrNull(Map<String, Comparable> properties, PropertyDefinition property) {
-        return getOrDefault(properties, property, null);
+    protected <T extends Comparable> T getOrNull(Map<String, Comparable> properties, String prefix, PropertyDefinition property) {
+        return getOrDefault(properties, prefix, property, null);
     }
 
-    private <T extends Comparable> T getOrDefault(Map<String, Comparable> properties, PropertyDefinition property,
-                                                  T defaultValue) {
-
-        if (properties == null || property == null) {
+    protected  <T extends Comparable> T getOrDefault(Map<String, Comparable> properties, String prefix,
+                                                     PropertyDefinition property, T defaultValue) {
+        if (property == null) {
             return defaultValue;
         }
 
-        Comparable value = properties.get(property.key());
+        Comparable value = readProperty(prefix, property);
+        if (value == null) {
+            value = properties.get(property.key());
+        }
+
         if (value == null) {
             return defaultValue;
         }
 
         return (T) value;
+    }
+
+    private Comparable readProperty(String prefix, PropertyDefinition property) {
+        if (prefix != null) {
+            String p = getProperty(prefix, property);
+            String v = System.getProperty(p);
+            if (StringUtil.isNullOrEmpty(v)) {
+                v = System.getenv(p);
+                if (StringUtil.isNullOrEmpty(v)) {
+                    v = System.getenv(cIdentifierLike(p));
+                }
+            }
+
+            if (!StringUtil.isNullOrEmpty(v)) {
+                return property.typeConverter().convert(v);
+            }
+        }
+        return null;
+    }
+
+    private String cIdentifierLike(String property) {
+        property = property.toUpperCase();
+        property = property.replace(".", "_");
+        return property.replace("-", "_");
+    }
+
+    private String getProperty(String prefix, PropertyDefinition property) {
+        StringBuilder sb = new StringBuilder(prefix);
+        if (prefix.charAt(prefix.length() - 1) != '.') {
+            sb.append('.');
+        }
+        return sb.append(property.key()).toString();
     }
 
     static abstract class EndpointResolver {

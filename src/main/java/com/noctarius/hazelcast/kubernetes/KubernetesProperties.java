@@ -29,8 +29,27 @@ import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 public final class KubernetesProperties {
 
     /**
+     * <p>Configuration System Environment Prefix: <tt>hazelcast.kubernetes.</tt></p>
+     * Defines the prefix for system environment variables and JVM command line parameters.<br/>
+     * Defining or overriding properties as JVM parameters or using the system environment, those
+     * properties need to be prefixed to prevent collision on property names.<br/>
+     * Example: {@link #SERVICE_DNS} will be:
+     * <pre>
+     *     -Dhazelcast.kubernetes.service-dns=value
+     * </pre>
+     * For kubernetes and openshift there is a special rule where the environment variables are
+     * provided in C-identifier style, therefore the prefix is converted to uppercase and dots
+     * and dashed will be replaced with underscores:
+     * <pre>
+     *     HAZELCAST_KUBERNETES_SERVICE_DNS=value
+     * </pre>
+     */
+    public static final String KUBERNETES_SYSTEM_PREFIX = "hazelcast.kubernetes.";
+
+    /**
      * <p>Configuration key: <tt>service-dns</tt></p>
-     * Defines the DNS service lookup. This is defined as something similar to <tt>my-svc.my-namespace.svc.cluster.local</tt>.
+     * Defines the DNS service lookup domain. This is defined as something similar
+     * to <tt>my-svc.my-namespace.svc.cluster.local</tt>.<br/>
      * For more information please refer to the official documentation of the Kubernetes DNS addon,
      * <a href="https://github.com/kubernetes/kubernetes/tree/v1.0.6/cluster/addons/dns">here</a>.
      */
