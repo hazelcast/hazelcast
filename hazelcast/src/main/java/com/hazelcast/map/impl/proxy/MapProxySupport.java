@@ -164,9 +164,11 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         localMapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         this.partitionService = getNodeEngine().getPartitionService();
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
-        defensiveCopyObjectMemoryFormat = 
-			getMapConfig().isDefensiveCopyObjectMemoryFormat() || 
-			!InMemoryFormat.OBJECT.equals(getMapConfig().getInMemoryFormat());
+        boolean defensiveCopy = getMapConfig().isDefensiveCopyObjectMemoryFormat();
+        if (!InMemoryFormat.OBJECT.equals(getMapConfig().getInMemoryFormat())) {
+            defensiveCopy = true;
+        }
+        defensiveCopyObjectMemoryFormat = defensiveCopy;
     }
 
     @Override
@@ -286,7 +288,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
         return value;
     }
-	
+
 	private Object readBackup(Data key) {
 		final Object toReturn;
 		if (defensiveCopyObjectMemoryFormat) {
