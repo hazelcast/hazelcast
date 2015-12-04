@@ -227,7 +227,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         final List listeners = parseListeners(node, ListenerConfig.class);
                         configBuilder.addPropertyValue("listenerConfigs", listeners);
                     } else if ("lite-member".equals(nodeName)) {
-                        configBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(node));
+                        handleLiteMember(node);
                     } else if ("license-key".equals(nodeName)) {
                         configBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(node));
                     } else if ("management-center".equals(nodeName)) {
@@ -282,6 +282,11 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             quorumManagedMap.put(name, beanDefinition);
+        }
+
+        private void handleLiteMember(Node node) {
+            Node attrEnabled = node.getAttributes().getNamedItem("enabled");
+            configBuilder.addPropertyValue(xmlToJavaName(cleanNodeName(node)), getTextContent(attrEnabled));
         }
 
         public void handleServices(Node node) {

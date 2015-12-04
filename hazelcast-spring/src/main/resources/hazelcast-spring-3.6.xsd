@@ -982,7 +982,7 @@
                         <xs:element name="quorum" type="quorum" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="lite-member" minOccurs="0" maxOccurs="1">
                             <xs:complexType>
-                                <xs:attribute name="enabled" type="xs:string">
+                                <xs:attribute name="enabled" type="parameterized-boolean">
                                     <xs:annotation>
                                         <xs:documentation>
                                             True to set the node as a lite member, false otherwise.
