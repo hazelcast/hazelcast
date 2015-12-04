@@ -90,6 +90,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         MapConfig mapConfig = mapContainer.getMapConfig();
         Record record = recordFactory.newRecord(value);
         record.setCreationTime(now);
+        record.setLastUpdateTime(now);
         final long ttlMillisFromConfig = calculateTTLMillis(mapConfig);
         final long ttl = pickTTL(ttlMillis, ttlMillisFromConfig);
         record.setTtl(ttl);

@@ -63,11 +63,11 @@ public class MergePolicyTest extends HazelcastTestSupport {
         IMap<Object, Object> map2 = h2.getMap(mapName);
         map1.put("key1", "value");
         //prevent updating at the same time
-        sleepMillis(1);
+        sleepAtLeastMillis(1);
         map2.put("key1", "LatestUpdatedValue");
         map2.put("key2", "value2");
         //prevent updating at the same time
-        sleepMillis(1);
+        sleepAtLeastMillis(1);
         map1.put("key2", "LatestUpdatedValue2");
 
         assertOpenEventually(lifeCycleListener.latch);
