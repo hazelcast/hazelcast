@@ -158,7 +158,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         localMapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         this.partitionService = getNodeEngine().getPartitionService();
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
-        defensiveCopyObjectMemoryFormat = getMapConfig().isDefensiveCopyObjectMemoryFormat() || !InMemoryFormat.OBJECT.equals(getMapConfig().getInMemoryFormat());
+        defensiveCopyObjectMemoryFormat = 
+			getMapConfig().isDefensiveCopyObjectMemoryFormat() || 
+			!InMemoryFormat.OBJECT.equals(getMapConfig().getInMemoryFormat());
     }
 
     @Override
@@ -246,12 +248,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
         // todo action for read-backup true is not well tested.
         if (mapConfig.isReadBackupData()) {
-            final Object fromBackup;
-            if (defensiveCopyObjectMemoryFormat) {
-                fromBackup = readBackupDataOrNull(key);
-            } else {
-                fromBackup = readBackupOrNull(key);
-            }
+            final Object fromBackup = readBackup(key);
             if (fromBackup != null) {
                 return fromBackup;
             }
@@ -267,6 +264,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
         return value;
     }
+	
+	private Object readBackup(Data key) {
+		final Object toReturn;
+		if (defensiveCopyObjectMemoryFormat) {
+			toReturn = readBackupDataOrNull(key);
+		} else {
+			toReturn = readBackupOrNull(key);
+		}
+		return toReturn;
+	}
 
     private boolean notOwnerPartitionForKey(Data key) {
         final MapService mapService = getService();
@@ -331,7 +338,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return NearCache.NULL_OBJECT.equals(cached);
     }
 
-    private RecordStore getRecordStore(Data key){
+    private RecordStore getRecordStore(Data key) {
         final MapService mapService = getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
