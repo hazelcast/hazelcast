@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.ascii;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
@@ -200,6 +201,41 @@ public class RestTest extends HazelcastTestSupport{
                 assertFalse(instance1.getLifecycleService().isRunning());
                 assertFalse(instance2.getLifecycleService().isRunning());
                 assertFalse(instance3.getLifecycleService().isRunning());
+            }
+        });
+    }
+
+    @Test
+    public void testGetClusterState() throws IOException {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+
+        HTTPCommunicator communicator1 = new HTTPCommunicator(instance1);
+        HTTPCommunicator communicator2 = new HTTPCommunicator(instance2);
+
+        instance1.getCluster().changeClusterState(ClusterState.FROZEN);
+        assertEquals("{\"status\":\"success\",\"state\":\"frozen\"}",
+                communicator1.getClusterState("dev", "dev-pass"));
+
+        instance1.getCluster().changeClusterState(ClusterState.PASSIVE);
+        assertEquals("{\"status\":\"success\",\"state\":\"passive\"}",
+                communicator2.getClusterState("dev", "dev-pass"));
+
+    }
+
+    @Test
+    public void testChangeClusterState() throws IOException {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance1);
+
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.changeClusterState("dev", "dev-pass", "frozen"));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+            assertEquals(ClusterState.FROZEN, instance1.getCluster().getClusterState());
+            assertEquals(ClusterState.FROZEN, instance2.getCluster().getClusterState());
             }
         });
     }
