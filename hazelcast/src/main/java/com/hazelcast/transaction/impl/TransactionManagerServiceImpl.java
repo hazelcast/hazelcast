@@ -188,6 +188,9 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     private void finalizeTransactionsOf(String uuid) {
+        MemberImpl member = nodeEngine.getClusterService().getMember(uuid);
+        logger.info("Committing/rolling-back alive transactions of "
+                + (member != null ? member : "client") + ", UUID: " + uuid);
         for (Map.Entry<String, TxBackupLog> entry : txBackupLogs.entrySet()) {
             finalize(uuid, entry.getKey(), entry.getValue());
         }
@@ -201,6 +204,9 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
         //TODO shouldn't we remove TxBackupLog from map ?
         if (log.state == ACTIVE) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Rolling-back transaction[id:" + txnId + ", state:ACTIVE] of endpoint " + uuid);
+            }
             Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
             Collection<Future> futures = new ArrayList<Future>(memberList.size());
             for (Member member : memberList) {
@@ -222,12 +228,19 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             }
 
             if (log.state == COMMITTING) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Committing transaction[id:" + txnId + ", state:COMMITTING] of endpoint " + uuid);
+                }
                 try {
                     tx.commit();
                 } catch (Throwable e) {
                     logger.warning("Error during committing from tx backup!", e);
                 }
             } else {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Rolling-back transaction[id:" + txnId + ", state:" + log.state
+                            + "] of endpoint " + uuid);
+                }
                 try {
                     tx.rollback();
                 } catch (Throwable e) {
