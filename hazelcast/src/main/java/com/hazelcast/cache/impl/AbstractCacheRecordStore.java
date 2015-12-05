@@ -468,53 +468,63 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected R createRecord(Data keyData, Object value, long expirationTime, int completionId) {
-        return createRecord(keyData, value, expirationTime, completionId, null);
-    }
-
-    protected R createRecord(Data keyData, Object value, long expirationTime, int completionId, String origin) {
         final R record = createRecord(value, expirationTime);
         if (isEventsEnabled()) {
             publishEvent(createCacheCreatedEvent(toEventData(keyData), toEventData(value),
-                                                 expirationTime, origin, completionId));
+                                                 expirationTime, null, completionId));
+        }
+        return record;
+    }
+
+    protected void onCreateRecordError(Data key, Object value, long expiryTime, long now,
+                                       boolean disableWriteThrough, int completionId, String origin,
+                                       R record, Throwable error) {
+    }
+
+    protected R createRecord(Data key, Object value, long expiryTime,
+                             long now, boolean disableWriteThrough, int completionId, String origin) {
+        R record = createRecord(value, expiryTime);
+        try {
+            doPutRecord(key, record);
+        } catch (Throwable error) {
+            onCreateRecordError(key, value, expiryTime, now, disableWriteThrough,
+                                completionId, origin, record, error);
+            throw ExceptionUtil.rethrow(error);
+        }
+        try {
+            if (!disableWriteThrough) {
+                writeThroughCache(key, value);
+            }
+        } catch (Throwable error) {
+            // Writing to `CacheWriter` failed, so we should revert entry (remove added record).
+            records.remove(key);
+            // Disposing key/value/record should be handled inside `onCreateRecordWithExpiryError`.
+            onCreateRecordError(key, value, expiryTime, now, disableWriteThrough,
+                                completionId, origin, record, error);
+            throw ExceptionUtil.rethrow(error);
+        }
+        if (isEventsEnabled()) {
+            publishEvent(createCacheCreatedEvent(toEventData(key), toEventData(value),
+                                                 expiryTime, origin, completionId));
         }
         return record;
     }
 
     protected R createRecordWithExpiry(Data key, Object value, long expiryTime,
-                                       long now, boolean disableWriteThrough, int completionId) {
-        return createRecordWithExpiry(key, value, expiryTime, now, disableWriteThrough, completionId, null);
-    }
-
-    protected R createRecordWithExpiry(Data key, Object value, long expiryTime,
                                        long now, boolean disableWriteThrough, int completionId, String origin) {
         if (!isExpiredAt(expiryTime, now)) {
-            R record = createRecord(key, value, expiryTime, completionId, origin);
-            try {
-                doPutRecord(key, record);
-            } catch (Throwable error) {
-                onCreateRecordWithExpiryError(key, value, expiryTime, now, disableWriteThrough,
-                                              completionId, origin, record, error);
-                throw ExceptionUtil.rethrow(error);
-            }
-            try {
-                if (!disableWriteThrough) {
-                    writeThroughCache(key, value);
-                }
-            } catch (Throwable error) {
-                // Writing to `CacheWriter` failed, so we should revert entry (remove added record).
-                records.remove(key);
-                // Disposing key/value/record should be handled inside `onCreateRecordWithExpiryError`.
-                onCreateRecordWithExpiryError(key, value, expiryTime, now, disableWriteThrough,
-                                              completionId, origin, record, error);
-                throw ExceptionUtil.rethrow(error);
-            }
-            return record;
+            return createRecord(key, value, expiryTime, now, disableWriteThrough, completionId, origin);
         }
         if (isEventsEnabled()) {
             publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
                                                   origin, completionId));
         }
         return null;
+    }
+
+    protected R createRecordWithExpiry(Data key, Object value, long expiryTime,
+                                       long now, boolean disableWriteThrough, int completionId) {
+        return createRecordWithExpiry(key, value, expiryTime, now, disableWriteThrough, completionId, null);
     }
 
     protected R createRecordWithExpiry(Data key, Object value, ExpiryPolicy expiryPolicy,
@@ -535,11 +545,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return createRecordWithExpiry(key, value, expiryTime, now, disableWriteThrough, completionId, origin);
     }
 
-    protected void onCreateRecordWithExpiryError(Data key, Object value, long expiryTime, long now,
-                                                 boolean disableWriteThrough, int completionId, String origin,
-                                                 R record, Throwable error) {
-    }
-
     protected void onUpdateRecord(Data key, R record, Object value, Data oldDataValue) {
     }
 
@@ -547,51 +552,66 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                                        Data oldDataValue, Throwable error) {
     }
 
-    protected R updateRecord(Data key, R record, Object value, int completionId, String source, String origin) {
+    protected void updateRecord(Data key, R record, Object value, long expiryTime, long now,
+                                boolean disableWriteThrough, int completionId, String source, String origin) {
         Data dataOldValue = null;
         Data dataValue = null;
         Object recordValue = value;
         try {
-            switch (cacheConfig.getInMemoryFormat()) {
-                case BINARY:
-                    recordValue = toData(value);
-                    dataValue = (Data) recordValue;
-                    dataOldValue = toData(record);
-                    break;
-                case OBJECT:
-                    if (value instanceof Data) {
-                        recordValue = dataToValue((Data) value);
-                        dataValue = (Data) value;
-                    } else {
-                        dataValue = valueToData(value);
-                    }
-                    dataOldValue = toData(record);
-                    break;
-                case NATIVE:
-                    recordValue = toData(value);
-                    dataValue = (Data) recordValue;
-                    dataOldValue = toData(record);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid storage format: " + cacheConfig.getInMemoryFormat());
+            record.setExpirationTime(expiryTime);
+
+            if (isExpiredAt(expiryTime, now)) {
+                // No need to update record value if it is expired
+
+                if (!disableWriteThrough) {
+                    writeThroughCache(key, value);
+                }
+            } else {
+                switch (cacheConfig.getInMemoryFormat()) {
+                    case BINARY:
+                        recordValue = toData(value);
+                        dataValue = (Data) recordValue;
+                        dataOldValue = toData(record);
+                        break;
+                    case OBJECT:
+                        if (value instanceof Data) {
+                            recordValue = dataToValue((Data) value);
+                            dataValue = (Data) value;
+                        } else {
+                            dataValue = valueToData(value);
+                        }
+                        dataOldValue = toData(record);
+                        break;
+                    case NATIVE:
+                        recordValue = toData(value);
+                        dataValue = (Data) recordValue;
+                        dataOldValue = toData(record);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Invalid storage format: " + cacheConfig.getInMemoryFormat());
+                }
+
+                if (!disableWriteThrough) {
+                    writeThroughCache(key, value);
+                    // If writing to `CacheWriter` fails no need to revert.
+                    // Because we have not update record value yet with its new value
+                    // but just converted new value to required storage type.
+                }
+
+                Data eventDataKey = toEventData(key);
+                Data eventDataValue = toEventData(dataValue);
+                Data eventDataOldValue = toEventData(dataOldValue);
+
+                updateRecordValue(record, recordValue);
+                onUpdateRecord(key, record, value, dataOldValue);
+                invalidateEntry(key, source);
+
+                if (isEventsEnabled()) {
+                    publishEvent(createCacheUpdatedEvent(eventDataKey, eventDataValue, eventDataOldValue,
+                                                         record.getExpirationTime(), record.getAccessTime(),
+                                                         record.getAccessHit(), origin, completionId));
+                }
             }
-
-            Data eventDataKey = toEventData(key);
-            Data eventDataValue = toEventData(dataValue);
-            Data eventDataOldValue = toEventData(dataOldValue);
-
-            updateRecordValue(record, recordValue);
-            onUpdateRecord(key, record, value, dataOldValue);
-            invalidateEntry(key, source);
-
-            if (isEventsEnabled()) {
-                publishEvent(createCacheUpdatedEvent(eventDataKey, eventDataValue, eventDataOldValue,
-                                                     record.getExpirationTime(),
-                                                     record.getAccessTime(),
-                                                     record.getAccessHit(),
-                                                     origin, completionId));
-            }
-            return record;
         } catch (Throwable error) {
             onUpdateRecordError(key, record, value, dataValue, dataOldValue, error);
             throw ExceptionUtil.rethrow(error);
@@ -600,6 +620,14 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected void updateRecordValue(R record, Object recordValue) {
         record.setValue(recordValue);
+    }
+
+    protected boolean updateRecordWithExpiry(Data key, Object value, R record, long expiryTime, long now,
+                                             boolean disableWriteThrough, int completionId,
+                                             String source, String origin) {
+        updateRecord(key, record, value, expiryTime, now, disableWriteThrough, completionId, source, origin);
+
+        return processExpiredEntry(key, record, expiryTime, now, source) != null;
     }
 
     protected boolean updateRecordWithExpiry(Data key, Object value, R record, long expiryTime,
@@ -612,19 +640,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                                              long now, boolean disableWriteThrough, int completionId, String source) {
         return updateRecordWithExpiry(key, value, record, expiryTime, now,
                                       disableWriteThrough, completionId, source, null);
-    }
-
-    protected boolean updateRecordWithExpiry(Data key, Object value, R record, long expiryTime, long now,
-                                             boolean disableWriteThrough, int completionId, String source, String origin) {
-        record.setExpirationTime(expiryTime);
-        if (!disableWriteThrough) {
-            writeThroughCache(key, value);
-        }
-        if (!isExpiredAt(expiryTime, now)) {
-            // No need to update record value if it is expired
-            updateRecord(key, record, value, completionId, source, origin);
-        }
-        return processExpiredEntry(key, record, expiryTime, now, source) != null;
     }
 
     protected boolean updateRecordWithExpiry(Data key, Object value, R record, ExpiryPolicy expiryPolicy,

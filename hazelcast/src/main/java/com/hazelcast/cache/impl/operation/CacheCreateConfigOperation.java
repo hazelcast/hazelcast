@@ -114,6 +114,13 @@ public class CacheCreateConfigOperation
         returnsResponse = false;
     }
 
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        // Execution failed so we should enable `returnsResponse` flag to prevent waiting anymore
+        returnsResponse = true;
+        super.onExecutionFailure(e);
+    }
+
     private static class CacheConfigCreateCallback extends SimpleExecutionCallback<Object> {
 
         final AtomicInteger counter;
@@ -141,6 +148,7 @@ public class CacheCreateConfigOperation
     public boolean returnsResponse() {
         return returnsResponse;
     }
+
 
     @Override
     protected void writeInternal(ObjectDataOutput out)
