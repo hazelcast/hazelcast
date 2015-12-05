@@ -45,7 +45,7 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
     private final Object mutex = new Object();
     private Throwable error;
     private V deserializedValue;
-    private Object response;
+    private volatile Object response;
     private volatile boolean done;
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
@@ -194,9 +194,9 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
 
         @Override
         public void onResponse(ClientMessage message) {
-            if (!done) {
+            if (!done || response == null) {
                 synchronized (mutex) {
-                    if (!done) {
+                    if (!done || response == null) {
                         response = resolveMessageToValue(message);
                         if (shouldDeserializeData && deserializedValue == null) {
                             deserializedValue = serializationService.toObject(response);

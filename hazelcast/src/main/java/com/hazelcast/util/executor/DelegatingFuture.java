@@ -36,8 +36,8 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
     private final V defaultValue;
     private final boolean hasDefaultValue;
     private final Object mutex = new Object();
-    private V value;
     private Throwable error;
+    private volatile V value;
     private volatile boolean done;
 
     public DelegatingFuture(ICompletableFuture future, SerializationService serializationService) {
@@ -159,9 +159,9 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
 
         @Override
         public void onResponse(Object response) {
-            if (!done) {
+            if (!done || value == null) {
                 synchronized (mutex) {
-                    if (!done) {
+                    if (!done || value == null) {
                         value = getResult(response);
                         done = true;
                     }
