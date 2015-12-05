@@ -115,6 +115,13 @@ public class CacheCreateConfigOperation
         returnsResponse = false;
     }
 
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        // Execution failed so we should enable `returnsResponse` flag to prevent waiting anymore
+        returnsResponse = true;
+        super.onExecutionFailure(e);
+    }
+
     private static class CacheConfigCreateCallback implements Callback<Object> {
 
         final ResponseHandler responseHandler;
