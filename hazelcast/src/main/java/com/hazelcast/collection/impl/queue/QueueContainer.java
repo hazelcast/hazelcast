@@ -149,7 +149,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     public void txnPollBackupReserve(long itemId, String transactionId) {
         QueueItem item = getBackupMap().remove(itemId);
         if (item == null) {
-            logger.warning("Backup reserve failed, itemId: " + itemId);
+            logger.warning("Backup reserve failed, itemId: " + itemId + " is not found");
             return;
         }
         txMap.put(itemId, new TxQueueItem(item).setPollOperation(true).setTransactionId(transactionId));
@@ -182,7 +182,10 @@ public class QueueContainer implements IdentifiedDataSerializable {
         if (item == null) {
             return false;
         }
-        if (!backup) {
+
+        if (backup) {
+            getBackupMap().put(itemId, item);
+        } else {
             addTxItemOrdered(item);
         }
         cancelEvictionIfExists();
