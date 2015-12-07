@@ -30,6 +30,8 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -309,6 +311,44 @@ public class TransactionQueueTest extends HazelcastTestSupport {
             moveMessage1.interrupt();
             moveMessage2.interrupt();
         }
+    }
+
+    // https://github.com/hazelcast/hazelcast/issues/6259
+    @Test
+    public void issue_6259_backupNotRollingBackCorrectly() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance();
+        HazelcastInstance remote = factory.newHazelcastInstance();
+        final String queueName = generateKeyOwnedBy(remote);
+
+        // first we add an item
+        local.executeTransaction(new TransactionalTask<Object>() {
+            @Override
+            public Object execute(TransactionalTaskContext context) throws TransactionException {
+                TransactionalQueue<String> queue = context.getQueue(queueName);
+                queue.offer("item");
+                return null;
+            }
+        });
+
+        // we remove the item and then do a rollback. This causes the local (backup) to become out
+        // of sync with the remote (primary)
+        TransactionContext firstCtxt = local.newTransactionContext();
+        firstCtxt.beginTransaction();
+        TransactionalQueue<String> queue = firstCtxt.getQueue(queueName);
+        queue.poll();
+        firstCtxt.rollbackTransaction();
+
+        // we kill the remote. Now the local (which was the backup) is going to become primary
+        remote.shutdown();
+
+        // if we take the item, we should get an error
+        TransactionContext secondCtxt = local.newTransactionContext();
+        secondCtxt.beginTransaction();
+        queue = secondCtxt.getQueue(queueName);
+
+        String found = queue.poll();
+        assertEquals("item", found);
     }
 
     @Test
