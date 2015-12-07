@@ -59,10 +59,10 @@ public interface NearCacheInvalidator {
      * Local near-caches are node local, remote near-caches can be exist on remote nodes or clients.
      *
      * @param mapName    name of the map.
-     * @param owner      <code>true</code> if this method is called from owner, otherwise <code>false</code>.
+     * @param owner      <code>true</code> if this method is called from partition owner, otherwise <code>false</code>.
      * @param sourceUuid caller uuid
      */
-    void clearNearCache(String mapName, boolean owner, String sourceUuid);
+    void clearNearCaches(String mapName, boolean owner, String sourceUuid);
 
     /**
      * Invalidates local and remote near-caches.
@@ -72,7 +72,7 @@ public interface NearCacheInvalidator {
      * @param key        key of the entry to be removed.
      * @param sourceUuid caller uuid
      */
-    void invalidateNearCache(String mapName, Data key, String sourceUuid);
+    void invalidateNearCaches(String mapName, Data key, String sourceUuid);
 
     /**
      * Invalidates local and remote near-caches.
@@ -82,7 +82,7 @@ public interface NearCacheInvalidator {
      * @param keys       keys of the entries to be removed.
      * @param sourceUuid caller uuid
      */
-    void invalidateNearCache(String mapName, List<Data> keys, String sourceUuid);
+    void invalidateNearCaches(String mapName, List<Data> keys, String sourceUuid);
 
     /**
      * Removes supplied maps invalidation queue and flushes its content.
@@ -90,5 +90,6 @@ public interface NearCacheInvalidator {
      *
      * @param mapName name of the map.
      */
-    void remove(String mapName);
+    void flushAndRemoveInvalidationQueue(String mapName);
+
 }

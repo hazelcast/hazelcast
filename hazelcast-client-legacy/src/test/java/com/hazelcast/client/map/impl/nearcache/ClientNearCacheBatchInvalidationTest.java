@@ -57,7 +57,7 @@ public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testBatchInvalidationWorks() throws Exception {
+    public void testBatchInvalidationRemovesEntries() throws Exception {
         Config config = getConfig();
         configureBatching(config, true, 10, 1);
         HazelcastInstance server = factory.newHazelcastInstance(config);

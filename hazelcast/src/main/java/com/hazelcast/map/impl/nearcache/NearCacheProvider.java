@@ -78,7 +78,7 @@ public class NearCacheProvider {
         if (nearCache != null) {
             nearCache.clear();
         }
-        nearCacheInvalidator.remove(mapName);
+        nearCacheInvalidator.flushAndRemoveInvalidationQueue(mapName);
     }
 
     public Object getFromNearCache(String mapName, Data key) {

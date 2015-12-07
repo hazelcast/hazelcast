@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
@@ -26,6 +25,7 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.map.impl.EventListenerFilter;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.InvalidateNearCacheOperation;
 import com.hazelcast.map.impl.operation.NearCacheKeySetInvalidationOperation;
@@ -37,6 +37,8 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.ConstructorFunction;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -80,11 +82,6 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
     private final ConcurrentMap<String, InvalidationQueue> invalidationQueues
             = new ConcurrentHashMap<String, InvalidationQueue>();
 
-    /**
-     * map-name to client-invalidation-listener-id-set mappings.
-     */
-    private final ConcurrentMap<String, Set<String>> clientInvalidationListenerIds
-            = new ConcurrentHashMap<String, Set<String>>();
     private final EventService eventService;
     private final NodeEngine nodeEngine;
     private final MapServiceContext mapServiceContext;
@@ -146,7 +143,7 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
 
     @Override
     public void invalidateLocalNearCache(String mapName, Data key) {
-        if (!isNearCacheAndInvalidationEnabled(mapName)) {
+        if (!isServerNearCacheInvalidationEnabled(mapName)) {
             return;
         }
 
@@ -158,7 +155,7 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
 
     @Override
     public void invalidateLocalNearCache(String mapName, Collection<Data> keys) {
-        if (!isNearCacheAndInvalidationEnabled(mapName)) {
+        if (!isServerNearCacheInvalidationEnabled(mapName)) {
             return;
         }
         NearCache nearCache = nearCacheProvider.getOrNullNearCache(mapName);
@@ -171,7 +168,7 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
 
     @Override
     public void clearLocalNearCache(String mapName, String sourceUuid) {
-        if (!isNearCacheAndInvalidationEnabled(mapName)) {
+        if (!isServerNearCacheInvalidationEnabled(mapName)) {
             return;
         }
 
@@ -182,7 +179,7 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
     }
 
     @Override
-    public void clearNearCache(String mapName, boolean owner, String sourceUuid) {
+    public void clearNearCaches(String mapName, boolean owner, String sourceUuid) {
         if (owner) {
             sendRemoteCleaningInvalidation(mapName, sourceUuid);
         }
@@ -192,7 +189,7 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
     }
 
     @Override
-    public void invalidateNearCache(String mapName, Data key, String sourceUuid) {
+    public void invalidateNearCaches(String mapName, Data key, String sourceUuid) {
         // remote near-cache invalidation
         sendRemoteInvalidation(mapName, key, sourceUuid);
         // local near-cache invalidation: this invalidation is for the case the data is cached before partition is owned/migrated
@@ -200,7 +197,7 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
     }
 
     @Override
-    public void invalidateNearCache(String mapName, List<Data> keys, String sourceUuid) {
+    public void invalidateNearCaches(String mapName, List<Data> keys, String sourceUuid) {
         if (isEmpty(keys)) {
             return;
         }
@@ -211,26 +208,41 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
     }
 
     @Override
-    public void remove(String mapName) {
+    public void flushAndRemoveInvalidationQueue(String mapName) {
         InvalidationQueue invalidationQueue = invalidationQueues.remove(mapName);
         if (invalidationQueue != null) {
             sendRemoteCleaningInvalidation(mapName, null);
         }
-
-        clientInvalidationListenerIds.remove(mapName);
-    }
-
-    private boolean isNearCacheAndInvalidationEnabled(String mapName) {
-        MapConfig mapConfig = nodeEngine.getConfig().findMapConfig(mapName);
-        return mapConfig.isNearCacheEnabled() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
     }
 
     public void accumulateOrSendBatchInvalidation(String mapName, Data key) {
+        if (!isServerNearCacheInvalidationEnabled(mapName)
+                && !hasInvalidationListener(mapName)) {
+            return;
+        }
+
         InvalidationQueue invalidationQueue = getOrPutIfAbsent(invalidationQueues, mapName, invalidationQueueConstructor);
         invalidationQueue.offer(mapServiceContext.toData(key));
         if (invalidationQueue.size() >= batchSize) {
             sendBatchInvalidation(mapName, invalidationQueue);
         }
+    }
+
+    private boolean isServerNearCacheInvalidationEnabled(String mapName) {
+        MapContainer mapContainer = mapServiceContext.getOrNullMapContainer(mapName);
+        if (mapContainer == null) {
+            return false;
+        }
+        return mapContainer.isServerNearCacheInvalidationEnabled();
+    }
+
+    protected boolean hasInvalidationListener(String mapName) {
+        MapContainer mapContainer = mapServiceContext.getOrNullMapContainer(mapName);
+        if (mapContainer == null) {
+            return false;
+        }
+
+        return mapContainer.hasInvalidationListener();
     }
 
     private void sendBatchInvalidation(String mapName, InvalidationQueue invalidationQueue) {
@@ -242,63 +254,84 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
             return;
         }
 
-        try {
-            int size = invalidationQueue.size();
-            BatchNearCacheInvalidation batchNearCacheInvalidation
-                    = new BatchNearCacheInvalidation(mapName, size);
-            // At most, poll from the invalidation queue as the current size of the queue before start to polling.
-            // So skip new invalidation queue items offered while the polling in progress in this round.
-            Data key;
-            for (int i = 0; i < size; i++) {
-                key = invalidationQueue.poll();
-                if (key == null) {
-                    break;
-                }
-                batchNearCacheInvalidation.add(key);
+        int size = invalidationQueue.size();
+        List<Data> keysToBeInvalidated = new ArrayList<Data>(size);
+        for (int i = 0; i < size; i++) {
+            Data key = invalidationQueue.poll();
+            if (key == null) {
+                break;
             }
+            keysToBeInvalidated.add(key);
+        }
 
-            sendInvalidationToServerNearCache(mapName, batchNearCacheInvalidation.getDataList());
-            sendInvalidationToClientNearCache(mapName, batchNearCacheInvalidation);
+        try {
+            sendInvalidationToServerNearCaches(mapName, keysToBeInvalidated);
+            sendInvalidationToClientNearCaches(mapName, keysToBeInvalidated, null);
         } finally {
             invalidationQueue.release();
         }
     }
 
-    private void sendRemoteInvalidation(String mapName, Data key, String callerUuid) {
+    private void sendRemoteInvalidation(String mapName, Data key, String sourceUuid) {
         if (batchingEnabled) {
             accumulateOrSendBatchInvalidation(mapName, key);
         } else {
-            sendInvalidationToServerNearCache(mapName, key);
-            sendInvalidationToClientNearCache(mapName, new SingleNearCacheInvalidation(mapName, key, callerUuid));
+            sendInvalidationToServerNearCaches(mapName, key);
+            sendInvalidationToClientNearCaches(mapName, key, sourceUuid);
         }
     }
 
-    private void sendRemoteInvalidation(String mapName, List<Data> keys, String callerUuid) {
+    private void sendRemoteInvalidation(String mapName, List<Data> keys, String sourceUuid) {
         if (batchingEnabled) {
             for (Data key : keys) {
                 accumulateOrSendBatchInvalidation(mapName, key);
             }
         } else {
-            sendInvalidationToServerNearCache(mapName, keys);
-            sendInvalidationToClientNearCache(mapName,
-                    new BatchNearCacheInvalidation(mapName, keys, callerUuid));
+            sendInvalidationToServerNearCaches(mapName, keys);
+            sendInvalidationToClientNearCaches(mapName, keys, sourceUuid);
         }
     }
 
-    private void sendRemoteCleaningInvalidation(String mapName, String callerUuid) {
+    private void sendRemoteCleaningInvalidation(String mapName, String sourceUuid) {
         // only send invalidation event to clients, server near-caches are cleared by ClearOperation.
-        sendInvalidationToClientNearCache(mapName, new CleaningNearCacheInvalidation(mapName, callerUuid));
+        sendInvalidationToClientNearCaches(mapName, null, sourceUuid);
     }
 
-    private void sendInvalidationToClientNearCache(String mapName, Invalidation invalidation) {
+    private void sendInvalidationToClientNearCaches(String mapName, Object invalidationData, String sourceUuid) {
+        if (!hasInvalidationListener(mapName)) {
+            return;
+        }
+
+        Invalidation invalidation = null;
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, mapName);
         for (EventRegistration registration : registrations) {
             EventFilter filter = registration.getFilter();
             if (filter instanceof EventListenerFilter && filter.eval(INVALIDATION.getType())) {
+                if (invalidation == null) {
+                    invalidation = newInvalidation(mapName, invalidationData, sourceUuid);
+                }
+
                 Object orderKey = getOrderKey(mapName, invalidation);
                 eventService.publishEvent(SERVICE_NAME, registration, invalidation, orderKey.hashCode());
             }
         }
+    }
+
+    private Invalidation newInvalidation(String mapName, Object invalidationData, String sourceUuid) {
+        if (invalidationData instanceof Data) {
+            return new SingleNearCacheInvalidation(mapName, ((Data) invalidationData), sourceUuid);
+        }
+
+        if (invalidationData instanceof List) {
+            return new BatchNearCacheInvalidation(mapName, ((List<Data>) invalidationData), sourceUuid);
+        }
+
+        if (invalidationData == null) {
+            return new CleaningNearCacheInvalidation(mapName, sourceUuid);
+        }
+
+        throw new IllegalArgumentException("Unexpected near cache invalidation data type found = ["
+                + invalidationData + ']');
     }
 
     public static Object getOrderKey(String mapName, Invalidation invalidation) {
@@ -309,8 +342,8 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
         }
     }
 
-    private void sendInvalidationToServerNearCache(String mapName, Data key) {
-        if (!isNearCacheAndInvalidationEnabled(mapName)) {
+    private void sendInvalidationToServerNearCaches(String mapName, Data key) {
+        if (!isServerNearCacheInvalidationEnabled(mapName)) {
             return;
         }
         Collection<Member> members = nodeEngine.getClusterService().getMembers();
@@ -327,17 +360,18 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
         }
     }
 
-    private void sendInvalidationToServerNearCache(String mapName, List<Data> keys) {
-        if (!isNearCacheAndInvalidationEnabled(mapName)) {
+    private void sendInvalidationToServerNearCaches(String mapName, List<Data> keys) {
+        if (!isServerNearCacheInvalidationEnabled(mapName)) {
             return;
         }
-        Operation operation = new NearCacheKeySetInvalidationOperation(mapName, keys).setServiceName(SERVICE_NAME);
+
         Collection<Member> members = nodeEngine.getClusterService().getMembers();
         for (Member member : members) {
             try {
                 if (member.localMember()) {
                     continue;
                 }
+                Operation operation = new NearCacheKeySetInvalidationOperation(mapName, keys).setServiceName(SERVICE_NAME);
                 nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
                 nodeEngine.getLogger(getClass()).warning(throwable);

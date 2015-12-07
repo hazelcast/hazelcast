@@ -52,7 +52,7 @@ import static org.junit.Assert.assertEquals;
 public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
 
     @Test
-    public void testBatchInvalidationWorks() throws Exception {
+    public void testBatchInvalidationRemovesEntries() throws Exception {
         String mapName = randomMapName();
         Config config = newConfig(mapName);
         config.setProperty(GroupProperty.PARTITION_COUNT, "1");
