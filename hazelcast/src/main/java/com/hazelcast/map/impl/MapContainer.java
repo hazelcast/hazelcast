@@ -35,9 +35,9 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
@@ -76,8 +77,14 @@ public class MapContainer {
             return ss.toData(input, partitioningStrategy);
         }
     };
+    protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
+    protected final boolean serverNearCacheInvalidationEnabled;
+    /**
+     * Holds number of registered {@link com.hazelcast.map.impl.nearcache.InvalidationListener} from clients.
+     */
+    protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
+
     protected WanReplicationPublisher wanReplicationPublisher;
-    protected ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
     protected MapMergePolicy wanMergePolicy;
     protected Evictor evictor;
 
@@ -108,6 +115,7 @@ public class MapContainer {
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs());
         this.indexes = new Indexes(serializationService, extractors);
         this.evictor = createEvictor(mapServiceContext);
+        this.serverNearCacheInvalidationEnabled = isNearCacheEnabled() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
     }
 
     // this method is overridden.
@@ -281,6 +289,22 @@ public class MapContainer {
 
     Extractors getExtractors() {
         return extractors;
+    }
+
+    public boolean isServerNearCacheInvalidationEnabled() {
+        return serverNearCacheInvalidationEnabled;
+    }
+
+    public boolean hasInvalidationListener() {
+        return invalidationListenerCount.get() > 0;
+    }
+
+    public void increaseInvalidationListenerCount() {
+        invalidationListenerCount.incrementAndGet();
+    }
+
+    public void decreaseInvalidationListenerCount() {
+        invalidationListenerCount.decrementAndGet();
     }
 }
 

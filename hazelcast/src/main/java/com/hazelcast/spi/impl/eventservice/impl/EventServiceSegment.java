@@ -50,7 +50,7 @@ public class EventServiceSegment<S> {
         this.service = service;
     }
 
-    private void pingNotifiableEventListenerIfAvailable(String topic, Registration registration, boolean register) {
+    private void pingNotifiableEventListener(String topic, Registration registration, boolean register) {
         Object listener = registration.getListener();
         if (!(listener instanceof NotifiableEventListener)) {
             EventFilter filter = registration.getFilter();
@@ -58,13 +58,21 @@ public class EventServiceSegment<S> {
                 listener = ((ListenerWrapperEventFilter) filter).getListener();
             }
         }
-        if (listener instanceof NotifiableEventListener) {
-            NotifiableEventListener notifiableEventListener = (NotifiableEventListener) listener;
-            if (register) {
-                notifiableEventListener.onRegister(service, serviceName, topic, registration);
-            } else {
-                notifiableEventListener.onDeregister(service, serviceName, topic, registration);
-            }
+        pingNotifiableEventListenerInternal(listener, topic, registration, register);
+        pingNotifiableEventListenerInternal(service, topic, registration, register);
+
+    }
+
+    private void pingNotifiableEventListenerInternal(Object object, String topic, Registration registration, boolean register) {
+        if (!(object instanceof NotifiableEventListener)) {
+            return;
+        }
+
+        NotifiableEventListener notifiableEventListener = ((NotifiableEventListener) object);
+        if (register) {
+            notifiableEventListener.onRegister(service, serviceName, topic, registration);
+        } else {
+            notifiableEventListener.onDeregister(service, serviceName, topic, registration);
         }
     }
 
@@ -90,7 +98,7 @@ public class EventServiceSegment<S> {
         final Collection<Registration> registrations = getRegistrations(topic, true);
         if (registrations.add(registration)) {
             registrationIdMap.put(registration.getId(), registration);
-            pingNotifiableEventListenerIfAvailable(topic, registration, true);
+            pingNotifiableEventListener(topic, registration, true);
             return true;
         }
         return false;
@@ -103,7 +111,7 @@ public class EventServiceSegment<S> {
             if (all != null) {
                 all.remove(registration);
             }
-            pingNotifiableEventListenerIfAvailable(topic, registration, false);
+            pingNotifiableEventListener(topic, registration, false);
         }
         return registration;
     }
@@ -113,7 +121,7 @@ public class EventServiceSegment<S> {
         if (all != null) {
             for (Registration reg : all) {
                 registrationIdMap.remove(reg.getId());
-                pingNotifiableEventListenerIfAvailable(topic, reg, false);
+                pingNotifiableEventListener(topic, reg, false);
             }
         }
     }
@@ -125,7 +133,7 @@ public class EventServiceSegment<S> {
                 Registration reg = iter.next();
                 iter.remove();
                 registrationIdMap.remove(reg.getId());
-                pingNotifiableEventListenerIfAvailable(reg.getTopic(), reg, false);
+                pingNotifiableEventListener(reg.getTopic(), reg, false);
             }
         }
     }
@@ -138,7 +146,7 @@ public class EventServiceSegment<S> {
                 if (address.equals(reg.getSubscriber())) {
                     iter.remove();
                     registrationIdMap.remove(reg.getId());
-                    pingNotifiableEventListenerIfAvailable(reg.getTopic(), reg, false);
+                    pingNotifiableEventListener(reg.getTopic(), reg, false);
                 }
             }
         }

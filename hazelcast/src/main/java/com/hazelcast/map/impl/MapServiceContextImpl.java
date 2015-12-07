@@ -51,6 +51,7 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -146,6 +147,11 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public MapContainer getMapContainer(String mapName) {
         return ConcurrencyUtil.getOrPutSynchronized(mapContainers, mapName, mapContainers, mapConstructor);
+    }
+
+    @Override
+    public MapContainer getOrNullMapContainer(String mapName) {
+        return mapContainers.get(mapName);
     }
 
     @Override
@@ -482,11 +488,9 @@ class MapServiceContextImpl implements MapServiceContext {
         }
     }
 
-
     @Override
     public boolean removeEventListener(String mapName, String registrationId) {
         return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
-
     }
 
     @Override
