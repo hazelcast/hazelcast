@@ -21,13 +21,14 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.TestNodeRegistry;
+import com.hazelcast.test.mocknetwork.MockConnectionManager;
+
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class FirewallingMockConnectionManager extends TestNodeRegistry.MockConnectionManager {
+public class FirewallingMockConnectionManager extends MockConnectionManager {
 
     final Set<Address> blockedAddresses = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
