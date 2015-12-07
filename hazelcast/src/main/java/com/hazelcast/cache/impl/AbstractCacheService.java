@@ -121,6 +121,7 @@ public abstract class AbstractCacheService
         for (CachePartitionSegment partitionSegment : partitionSegments) {
             if (partitionSegment != null) {
                 partitionSegment.clear();
+                partitionSegment.init();
             }
         }
     }
@@ -151,6 +152,7 @@ public abstract class AbstractCacheService
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             clearPartitionReplica(event.getPartitionId());
         }
+        initPartitionReplica(event.getPartitionId());
     }
 
     @Override
@@ -158,6 +160,11 @@ public abstract class AbstractCacheService
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             clearPartitionReplica(event.getPartitionId());
         }
+        initPartitionReplica(event.getPartitionId());
+    }
+
+    private void initPartitionReplica(int partitionId) {
+        segments[partitionId].init();
     }
 
     @Override

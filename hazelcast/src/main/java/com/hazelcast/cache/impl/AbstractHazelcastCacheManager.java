@@ -380,6 +380,7 @@ public abstract class AbstractHazelcastCacheManager
         return sb.toString();
     }
 
+    @Override
     public String getCacheNameWithPrefix(String name) {
         return cacheNamePrefix + name;
     }
