@@ -174,7 +174,9 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
-        final String uuid = event.getMember().getUuid();
+        MemberImpl member = event.getMember();
+        final String uuid = member.getUuid();
+        logger.info("Committing/rolling-back alive transactions of " + member + ", UUID: " + uuid);
         nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
             @Override
             public void run() {
@@ -188,9 +190,6 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     private void finalizeTransactionsOf(String uuid) {
-        MemberImpl member = nodeEngine.getClusterService().getMember(uuid);
-        logger.info("Committing/rolling-back alive transactions of "
-                + (member != null ? member : "client") + ", UUID: " + uuid);
         for (Map.Entry<String, TxBackupLog> entry : txBackupLogs.entrySet()) {
             finalize(uuid, entry.getKey(), entry.getValue());
         }
@@ -252,6 +251,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
     @Override
     public void clientDisconnected(String clientUuid) {
+        logger.info("Committing/rolling-back alive transactions of client, UUID: " + clientUuid);
         finalizeTransactionsOf(clientUuid);
     }
 
