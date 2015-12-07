@@ -19,6 +19,7 @@ package com.hazelcast.client.multimap;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -310,8 +311,12 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
         final Object key = "Key";
 
         mm.lock(key, 1, TimeUnit.SECONDS);
-        sleepSeconds(2);
-        assertFalse(mm.isLocked(key));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse(mm.isLocked(key));
+            }
+        });
     }
 
     @Test
@@ -321,8 +326,12 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
 
         mm.lock(key);
         mm.lock(key, 1, TimeUnit.SECONDS);
-        sleepSeconds(2);
-        assertFalse(mm.isLocked(key));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse(mm.isLocked(key));
+            }
+        });
     }
 
     @Test
