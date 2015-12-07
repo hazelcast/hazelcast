@@ -21,4 +21,3 @@ com.hazelcast.cache.impl.CacheDataSerializerHook
 com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook
 com.hazelcast.wan.impl.WanDataSerializerHook
 com.hazelcast.query.impl.predicates.PredicateDataSerializerHook
-

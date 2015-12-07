@@ -45,10 +45,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -58,6 +61,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -143,6 +147,22 @@ public class ClientServiceTest extends HazelcastTestSupport {
         assertEquals(0, instance2.getClientService().getConnectedClients().size());
     }
 
+    @Test
+    public void loadServiceHooksClassNames() throws IOException {
+        File serviceDirectory = new File("src/main/resources/META-INF/services/");
+        for (File serviceFile : serviceDirectory.listFiles()) {
+            Scanner scan = new Scanner(serviceFile);
+            while (scan.hasNextLine()) {
+                String className = scan.nextLine();
+                try {
+                    this.getClass().getClassLoader()
+                            .loadClass(className);
+                } catch (ClassNotFoundException e) {
+                    fail("Couldn't load " + className);
+                }
+            }
+        }
+    }
 
     @Test(timeout = 120000)
     @Category(NightlyTest.class)

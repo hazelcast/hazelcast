@@ -29,8 +29,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Scanner;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests to basic session methods. getAttribute,setAttribute,isNew,getAttributeNames etc.
@@ -187,6 +192,23 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
         executeRequest("write", serverPort1, cookieStore);
         executeRequest("timeout", serverPort1, cookieStore);
         assertSizeEventually(0, map);
+    }
+
+    @Test
+    public void loadServiceHooksClassNames() throws IOException {
+        File serviceDirectory = new File("src/main/resources/META-INF/services/");
+        for (File serviceFile : serviceDirectory.listFiles()) {
+            Scanner scan = new Scanner(serviceFile);
+            while (scan.hasNextLine()) {
+                String className = scan.nextLine();
+                try {
+                    this.getClass().getClassLoader()
+                            .loadClass(className);
+                } catch (ClassNotFoundException e) {
+                    fail("Couldn't load " + className);
+                }
+            }
+        }
     }
 
     @Override
