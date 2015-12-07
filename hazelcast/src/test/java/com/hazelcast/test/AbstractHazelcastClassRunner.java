@@ -19,6 +19,7 @@ package com.hazelcast.test;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
+import org.apache.log4j.MDC;
 import org.junit.After;
 import org.junit.internal.runners.statements.RunAfters;
 import org.junit.runners.model.FrameworkMethod;
@@ -67,14 +68,20 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
     }
 
-    protected static final ThreadLocal<FrameworkMethod> FRAMEWORK_METHOD_THREAD_LOCAL = new ThreadLocal<FrameworkMethod>();
+    private static final ThreadLocal<String> TEST_NAME_THREAD_LOCAL = new InheritableThreadLocal<String>();
 
-    public static FrameworkMethod getThreadLocalFrameworkMethod() {
-        return FRAMEWORK_METHOD_THREAD_LOCAL.get();
+    protected static void setThreadLocalTestMethodName(String name) {
+        MDC.put("test-name", name);
+        TEST_NAME_THREAD_LOCAL.set(name);
+    }
+
+    protected static void removeThreadLocalTestMethodName() {
+        TEST_NAME_THREAD_LOCAL.remove();
+        MDC.remove("test-name");
     }
 
     public static String getTestMethodName() {
-        return FRAMEWORK_METHOD_THREAD_LOCAL.get().getName();
+        return TEST_NAME_THREAD_LOCAL.get();
     }
 
     /**

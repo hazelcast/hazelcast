@@ -29,7 +29,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import static com.hazelcast.test.AbstractHazelcastClassRunner.getThreadLocalFrameworkMethod;
+import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -48,7 +48,7 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
         instances = newInstances(config);
         HazelcastInstance local = instances[0];
         HazelcastInstance target = instances[instances.length - 1];
-        String methodName = getThreadLocalFrameworkMethod().getMethod().getName();
+        String methodName = getTestMethodName();
         String name = randomNameOwnedBy(target, methodName);
         set = local.getSet(name);
     }

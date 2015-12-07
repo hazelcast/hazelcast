@@ -30,7 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.test.AbstractHazelcastClassRunner.getThreadLocalFrameworkMethod;
+import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -53,7 +53,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         instances = newInstances(config);
         HazelcastInstance local = instances[0];
         HazelcastInstance target = instances[instances.length - 1];
-        String methodName = getThreadLocalFrameworkMethod().getMethod().getName();
+        String methodName = getTestMethodName();
         String name = randomNameOwnedBy(target, methodName);
         queueConfig = config.getQueueConfig(name);
         queue = local.getQueue(name);

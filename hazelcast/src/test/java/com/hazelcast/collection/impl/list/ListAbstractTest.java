@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
-import static com.hazelcast.test.AbstractHazelcastClassRunner.getThreadLocalFrameworkMethod;
+import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -50,7 +50,7 @@ public abstract class ListAbstractTest extends HazelcastTestSupport {
         instances = newInstances(config);
         HazelcastInstance local = instances[0];
         HazelcastInstance target = instances[instances.length - 1];
-        String methodName = getThreadLocalFrameworkMethod().getMethod().getName();
+        String methodName = getTestMethodName();
         String name = randomNameOwnedBy(target, methodName);
         list = local.getList(name);
     }

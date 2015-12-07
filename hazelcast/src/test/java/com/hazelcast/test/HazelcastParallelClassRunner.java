@@ -93,7 +93,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
             }
         }
         numThreads.incrementAndGet();
-        new Thread(new TestRunner(method, notifier), method.getName()).start();
+        new Thread(new TestRunner(method, notifier)).start();
     }
 
     @Override
@@ -131,17 +131,17 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
         @Override
         public void run() {
-            FRAMEWORK_METHOD_THREAD_LOCAL.set(method);
+            String testName = testName(method);
+            setThreadLocalTestMethodName(testName);
             try {
                 long start = System.currentTimeMillis();
-                String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
                 System.out.println("Started Running Test: " + testName);
                 HazelcastParallelClassRunner.super.runChild(method, notifier);
                 numThreads.decrementAndGet();
                 float took = (float) (System.currentTimeMillis() - start) / 1000;
                 System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
             } finally {
-                FRAMEWORK_METHOD_THREAD_LOCAL.remove();
+                removeThreadLocalTestMethodName();
             }
         }
     }
