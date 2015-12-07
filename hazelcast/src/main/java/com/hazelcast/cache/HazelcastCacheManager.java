@@ -29,6 +29,14 @@ public interface HazelcastCacheManager
         extends CacheManager {
 
     /**
+     * Gets cache name by adding manager prefix.
+     *
+     * @param name pure cache name with prefix
+     * @return the cache name with manager prefix
+     */
+    String getCacheNameWithPrefix(String name);
+
+    /**
      * Gets the underlying {@link HazelcastInstance} implementation.
      *
      * @return the underlying {@link HazelcastInstance} implementation

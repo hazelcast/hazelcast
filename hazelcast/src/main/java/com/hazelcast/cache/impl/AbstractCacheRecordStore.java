@@ -33,7 +33,9 @@ import com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider;
 import com.hazelcast.internal.eviction.EvictionStrategy;
 import com.hazelcast.internal.eviction.EvictionStrategyProvider;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
@@ -80,7 +82,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final int partitionId;
     protected final int partitionCount;
     protected final NodeEngine nodeEngine;
-    protected final InternalPartitionService partitionService;
     protected final AbstractCacheService cacheService;
     protected final CacheConfig cacheConfig;
     protected CRM records;
@@ -98,17 +99,15 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final EvictionChecker evictionChecker;
     protected final EvictionStrategy<Data, R, CRM> evictionStrategy;
     protected final boolean wanReplicationEnabled;
-    protected final boolean isOwner;
+    protected boolean primary;
 
     //CHECKSTYLE:OFF
     public AbstractCacheRecordStore(final String name, final int partitionId, final NodeEngine nodeEngine,
                                     final AbstractCacheService cacheService) {
         this.name = name;
         this.partitionId = partitionId;
-        this.isOwner = nodeEngine.getPartitionService().isPartitionOwner(partitionId);
         this.nodeEngine = nodeEngine;
-        this.partitionService = nodeEngine.getPartitionService();
-        this.partitionCount = partitionService.getPartitionCount();
+        this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.cacheService = cacheService;
         this.cacheConfig = cacheService.getCacheConfig(name);
         this.cacheContext = cacheService.getOrCreateCacheContext(name);
@@ -159,8 +158,23 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (defaultExpiryPolicy instanceof Closeable) {
             cacheService.addCacheResource(name, (Closeable) defaultExpiryPolicy);
         }
+
+        init();
     }
     //CHECKSTYLE:ON
+
+    private boolean isPrimary() {
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        InternalPartition partition = partitionService.getPartition(partitionId, false);
+        Address owner = partition.getOwnerOrNull();
+        Address thisAddress = nodeEngine.getThisAddress();
+        return owner != null && owner.equals(thisAddress);
+    }
+
+    @Override
+    public void init() {
+        primary = isPrimary();
+    }
 
     protected boolean isReadThrough() {
         return cacheConfig.isReadThrough();
@@ -219,7 +233,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected boolean isInvalidationEnabled() {
-        return isOwner && cacheContext.getInvalidationListenerCount() > 0;
+        return primary && cacheContext.getInvalidationListenerCount() > 0;
     }
 
     @Override

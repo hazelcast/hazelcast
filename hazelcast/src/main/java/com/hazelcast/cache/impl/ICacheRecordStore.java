@@ -307,6 +307,11 @@ public interface ICacheRecordStore {
     void removeAll(Set<Data> keys, int completionId);
 
     /**
+     * Initializes record store.
+     */
+    void init();
+
+    /**
      * Close is equivalent to below operations in the given order:
      * <ul>
      *     <li>close resources.</li>

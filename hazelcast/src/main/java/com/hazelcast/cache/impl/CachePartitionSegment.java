@@ -92,6 +92,14 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
         return recordStores.containsKey(name);
     }
 
+    public void init() {
+        synchronized (mutex) {
+            for (ICacheRecordStore store : recordStores.values()) {
+                store.init();
+            }
+        }
+    }
+
     public void clear() {
         synchronized (mutex) {
             for (ICacheRecordStore store : recordStores.values()) {
