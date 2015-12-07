@@ -31,7 +31,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -58,7 +57,7 @@ public class IssuesTest extends HazelcastTestSupport {
         int n = 1;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
 
-        final IMap<Integer, Integer> imap = factory.newHazelcastInstance().getMap("testIssue321_1");
+        final IMap<Integer, Integer> imap = factory.newHazelcastInstance(getConfig()).getMap("testIssue321_1");
         final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
@@ -87,7 +86,7 @@ public class IssuesTest extends HazelcastTestSupport {
         int n = 1;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
 
-        final IMap<Integer, Integer> imap = factory.newHazelcastInstance().getMap("testIssue321_2");
+        final IMap<Integer, Integer> imap = factory.newHazelcastInstance(getConfig()).getMap("testIssue321_2");
         final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
@@ -117,7 +116,7 @@ public class IssuesTest extends HazelcastTestSupport {
         int n = 1;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
 
-        final IMap<Integer, Integer> imap = factory.newHazelcastInstance().getMap("testIssue321_3");
+        final IMap<Integer, Integer> imap = factory.newHazelcastInstance(getConfig()).getMap("testIssue321_3");
         final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         final EntryAdapter<Integer, Integer> listener = new EntryAdapter<Integer, Integer>() {
             @Override
@@ -141,7 +140,7 @@ public class IssuesTest extends HazelcastTestSupport {
     public void testIssue304() {
         int n = 1;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
-        IMap<String, String> map = factory.newHazelcastInstance().getMap("testIssue304");
+        IMap<String, String> map = factory.newHazelcastInstance(getConfig()).getMap("testIssue304");
         map.lock("1");
         assertEquals(0, map.size());
         assertEquals(0, map.entrySet().size());
@@ -163,7 +162,7 @@ public class IssuesTest extends HazelcastTestSupport {
     public void testIssue174NearCacheContainsKeySingleNode() {
         int n = 1;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
-        Config config = new Config();
+        Config config = getConfig();
         config.getGroupConfig().setName("testIssue174NearCacheContainsKeySingleNode");
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         config.getMapConfig("default").setNearCacheConfig(nearCacheConfig);
@@ -178,7 +177,7 @@ public class IssuesTest extends HazelcastTestSupport {
     public void testIssue1067GlobalSerializer() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
-        final Config config = new Config();
+        final Config config = getConfig();
         GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
         globalSerializerConfig.setOverrideJavaSerialization(false);
         config.getSerializationConfig().setGlobalSerializerConfig(globalSerializerConfig
@@ -222,9 +221,10 @@ public class IssuesTest extends HazelcastTestSupport {
 
     @Test
     public void testMapInterceptorInstanceAware() {
+        Config config = getConfig();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz1 = factory.newHazelcastInstance();
-        HazelcastInstance hz2 = factory.newHazelcastInstance();
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
         IMap<Object, Object> map = hz1.getMap("test");
 
         InstanceAwareMapInterceptorImpl interceptor = new InstanceAwareMapInterceptorImpl();
@@ -288,7 +288,7 @@ public class IssuesTest extends HazelcastTestSupport {
     public void testMapClearDoesNotTriggerEqualsOrHashCodeOnKeyObject() {
         int n = 1;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
-        final HazelcastInstance instance = factory.newHazelcastInstance();
+        final HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
         final IMap map = instance.getMap(randomString());
         final CompositeKey key = new CompositeKey();
         map.put(key, "value");
