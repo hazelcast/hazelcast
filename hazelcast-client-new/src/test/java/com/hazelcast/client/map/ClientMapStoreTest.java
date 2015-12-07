@@ -57,7 +57,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         nodeConfig.addMapConfig(mapConfig);
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testOneClient_KickOffMapStoreLoad() throws InterruptedException {
         hazelcastFactory.newHazelcastInstance(nodeConfig);
 
@@ -68,7 +68,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         assertSizeEventually(SimpleMapStore.MAX_KEYS, client1.map);
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testTwoClient_KickOffMapStoreLoad() throws InterruptedException {
         hazelcastFactory.newHazelcastInstance(nodeConfig);
         ClientThread[] clientThreads = new ClientThread[2];
@@ -85,7 +85,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testOneClientKickOffMapStoreLoad_ThenNodeJoins() {
         hazelcastFactory.newHazelcastInstance(nodeConfig);
 
@@ -99,7 +99,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         assertSizeEventually(SimpleMapStore.MAX_KEYS, client1.map);
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void testForIssue2112() {
         hazelcastFactory.newHazelcastInstance(nodeConfig);
         IMap<String, String> map = hazelcastFactory.newHazelcastClient().getMap(ClientMapStoreTest.MAP_NAME);
@@ -109,7 +109,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         assertSizeEventually(SimpleMapStore.MAX_KEYS, map);
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void mapSize_After_MapStore_OperationQueue_OverFlow_Test() throws Exception {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
@@ -141,7 +141,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         assertEquals(max - 1, map.size());
     }
 
-    @Test(expected = ReachedMaxSizeException.class)
+    @Test(expected = ReachedMaxSizeException.class, timeout = 120000)
     public void mapStore_OperationQueue_AtMaxCapacity_Test() throws Exception {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
@@ -171,7 +171,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
     }
 
 
-    @Test
+    @Test(timeout = 120000)
     public void destroyMap_configedWith_MapStore() throws Exception {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
@@ -324,7 +324,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
     }
 
 
-    @Test
+    @Test(timeout = 120000)
     public void testIssue3023_testWithSubStringMapNames() throws Exception {
         String mapNameWithStore = "MapStore*";
         String mapNameWithStoreAndSize = "MapStoreMaxSize*";
