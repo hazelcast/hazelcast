@@ -41,7 +41,8 @@ import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.TestNodeRegistry;
+import com.hazelcast.test.mocknetwork.MockConnection;
+import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -170,9 +171,13 @@ public class TestClientRegistry {
 
         @Override
         public boolean write(OutboundFrame frame) {
+            final Node node = serverNodeEngine.getNode();
+            if (!node.isRunning()) {
+                return false;
+            }
             Packet newPacket = readFromPacket((Packet) frame);
             lastWriteTime = System.currentTimeMillis();
-            serverNodeEngine.getNode().clientEngine.handlePacket(newPacket);
+            node.clientEngine.handlePacket(newPacket);
             return true;
         }
 
@@ -256,7 +261,7 @@ public class TestClientRegistry {
         }
     }
 
-    private class MockedNodeConnection extends TestNodeRegistry.MockConnection {
+    private class MockedNodeConnection extends MockConnection {
 
         private final MockedClientConnection responseConnection;
         private final int connectionId;

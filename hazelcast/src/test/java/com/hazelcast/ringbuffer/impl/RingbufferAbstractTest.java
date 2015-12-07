@@ -30,6 +30,7 @@ import java.util.concurrent.Future;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
 import static com.hazelcast.ringbuffer.OverflowPolicy.OVERWRITE;
+import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static java.lang.Math.max;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -91,8 +92,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         local = instances[0];
         HazelcastInstance target = instances[instances.length - 1];
 
-        FrameworkMethod method = AbstractHazelcastClassRunner.getThreadLocalFrameworkMethod();
-        name = HazelcastTestSupport.randomNameOwnedBy(target, method.getName());
+        name = HazelcastTestSupport.randomNameOwnedBy(target, getTestMethodName());
         ringbuffer = local.getRingbuffer(name);
     }
 

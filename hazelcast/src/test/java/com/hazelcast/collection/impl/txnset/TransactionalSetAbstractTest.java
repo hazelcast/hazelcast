@@ -11,7 +11,7 @@ import com.hazelcast.transaction.TransactionContext;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.hazelcast.test.AbstractHazelcastClassRunner.getThreadLocalFrameworkMethod;
+import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -34,7 +34,7 @@ public abstract class TransactionalSetAbstractTest extends HazelcastTestSupport 
         instances = newInstances(config);
         local = instances[0];
         HazelcastInstance target = instances[instances.length - 1];
-        String methodName = getThreadLocalFrameworkMethod().getMethod().getName();
+        String methodName = getTestMethodName();
         setName = randomNameOwnedBy(target, methodName);
         set = local.getSet(setName);
     }

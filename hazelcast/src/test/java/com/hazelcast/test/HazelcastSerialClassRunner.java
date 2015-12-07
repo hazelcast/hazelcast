@@ -40,18 +40,18 @@ public class HazelcastSerialClassRunner extends AbstractHazelcastClassRunner {
     protected void runChild(FrameworkMethod method, RunNotifier notifier) {
         // save the current system properties
         Properties currentSystemProperties = System.getProperties();
-        FRAMEWORK_METHOD_THREAD_LOCAL.set(method);
+        String testName = testName(method);
+        setThreadLocalTestMethodName(testName);
         try {
             // use local system properties so se tests don't effect each other
             System.setProperties(new LocalProperties(currentSystemProperties));
             long start = System.currentTimeMillis();
-            String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
             System.out.println("Started Running Test: " + testName);
             super.runChild(method, notifier);
             float took = (float) (System.currentTimeMillis() - start) / 1000;
             System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
         } finally {
-            FRAMEWORK_METHOD_THREAD_LOCAL.remove();
+            removeThreadLocalTestMethodName();
             // restore the system properties
             System.setProperties(currentSystemProperties);
         }

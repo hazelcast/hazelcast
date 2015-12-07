@@ -24,6 +24,7 @@ import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.nio.Address;
+import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
