@@ -352,7 +352,7 @@
             </hz:quorum>
 
             <hz:hot-restart enabled="true" validation-timeout-seconds="1111" data-load-timeout-seconds="2222">
-                <hz:home-dir>/mnt/hot-restart/</hz:home-dir>
+                <hz:base-dir>/mnt/hot-restart/</hz:base-dir>
             </hz:hot-restart>
         </hz:config>
     </hz:hazelcast>

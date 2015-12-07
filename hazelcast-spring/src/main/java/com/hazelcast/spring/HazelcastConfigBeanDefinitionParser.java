@@ -251,9 +251,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
-                if ("home-dir".equals(name)) {
+                if ("base-dir".equals(name)) {
                     String value = getTextContent(child);
-                    hotRestartConfigBuilder.addPropertyValue("homeDir", value);
+                    hotRestartConfigBuilder.addPropertyValue("baseDir", value);
                 }
             }
             configBuilder.addPropertyValue("hotRestartConfig", hotRestartConfigBuilder.getBeanDefinition());
