@@ -358,8 +358,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
 
         for (Node n : childElements(hrRoot)) {
             final String name = cleanNodeName(n);
-            if ("home-dir".equals(name)) {
-                hrConfig.setHomeDir(new File(getTextContent(n)).getAbsoluteFile());
+            if ("base-dir".equals(name)) {
+                hrConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
             } else if (validationTimeoutName.equals(name)) {
                 hrConfig.setValidationTimeoutSeconds(getIntegerValue(validationTimeoutName, getTextContent(n)));
             } else if (dataLoadTimeoutName.equals(name)) {

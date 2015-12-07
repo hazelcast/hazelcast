@@ -34,7 +34,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  */
 public class HotRestartConfig {
     /** Default directory name for the Hot Restart store's home */
-    public static final String HOT_RESTART_HOME_DEFAULT = "hot-restart";
+    public static final String HOT_RESTART_BASE_DIR_DEFAULT = "hot-restart";
 
     /**
      * Default validation timeout
@@ -47,7 +47,7 @@ public class HotRestartConfig {
     public static final int DEFAULT_DATA_LOAD_TIMEOUT = 15 * 60;
 
     private boolean enabled;
-    private File homeDir = new File(HOT_RESTART_HOME_DEFAULT);
+    private File baseDir = new File(HOT_RESTART_BASE_DIR_DEFAULT);
     private int validationTimeoutSeconds = DEFAULT_VALIDATION_TIMEOUT;
     private int dataLoadTimeoutSeconds = DEFAULT_DATA_LOAD_TIMEOUT;
 
@@ -71,21 +71,21 @@ public class HotRestartConfig {
     }
 
     /**
-     * Home directory for all Hot Restart stores.
+     * Base directory for all Hot Restart stores.
      */
-    public File getHomeDir() {
-        return homeDir;
+    public File getBaseDir() {
+        return baseDir;
     }
 
     /**
-     * Sets home directory for all Hot Restart stores.
+     * Sets base directory for all Hot Restart stores.
      *
-     * @param homeDir home directory
+     * @param baseDir home directory
      * @return HotRestartConfig
      */
-    public HotRestartConfig setHomeDir(File homeDir) {
-        checkNotNull(homeDir, "Home directory cannot be null!");
-        this.homeDir = homeDir;
+    public HotRestartConfig setBaseDir(File baseDir) {
+        checkNotNull(baseDir, "Base directory cannot be null!");
+        this.baseDir = baseDir;
         return this;
     }
 
