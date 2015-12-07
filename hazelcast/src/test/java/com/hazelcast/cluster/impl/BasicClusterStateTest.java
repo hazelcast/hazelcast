@@ -247,7 +247,8 @@ public class BasicClusterStateTest
         assertClusterSizeEventually(2, hz2);
         assertClusterSizeEventually(2, hz3);
 
-        hz3.getCluster().changeClusterState(ClusterState.ACTIVE);
+        // try until member is removed and partition-service takes care of removal
+        changeClusterStateEventually(hz3, ClusterState.ACTIVE);
 
         assertClusterState(ClusterState.ACTIVE, hz2, hz3);
     }
@@ -270,7 +271,8 @@ public class BasicClusterStateTest
         assertClusterSizeEventually(2, hz2);
         assertClusterSizeEventually(2, hz3);
 
-        hz3.getCluster().changeClusterState(ClusterState.PASSIVE);
+        // try until member is removed and partition-service takes care of removal
+        changeClusterStateEventually(hz3, ClusterState.PASSIVE);
 
         assertClusterState(ClusterState.PASSIVE, hz2, hz3);
     }
