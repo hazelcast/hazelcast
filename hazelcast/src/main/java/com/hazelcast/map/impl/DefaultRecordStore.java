@@ -963,11 +963,20 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public Object putFromLoad(Data key, Object value) {
-        return putFromLoad(key, value, DEFAULT_TTL);
+        return putFromLoadInternal(key, value, DEFAULT_TTL, false);
+    }
+
+    @Override
+    public Object putFromLoadBackup(Data key, Object value) {
+        return putFromLoadInternal(key, value, DEFAULT_TTL, true);
     }
 
     @Override
     public Object putFromLoad(Data key, Object value, long ttl) {
+        return putFromLoadInternal(key, value, ttl, false);
+    }
+
+    private Object putFromLoadInternal(Data key, Object value, long ttl, boolean backup) {
         if (key == null || value == null) {
             return null;
         }
@@ -994,8 +1003,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateSizeEstimator(calculateRecordHeapCost(record));
             updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
-        saveIndex(record);
-
+        if (!backup) {
+            saveIndex(record);
+        }
         return oldValue;
     }
 

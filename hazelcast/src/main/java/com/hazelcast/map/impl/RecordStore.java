@@ -127,6 +127,17 @@ public interface RecordStore {
     Object putFromLoad(Data key, Object value);
 
     /**
+     * Puts key-value pair to map which is the result of a load from map store operation on backup.
+     *
+     * @param key   key to put.
+     * @param value to put.
+     * @return the previous value associated with <tt>key</tt>, or
+     * <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @see com.hazelcast.map.impl.operation.PutFromLoadAllBackupOperation
+     */
+    Object putFromLoadBackup(Data key, Object value);
+
+    /**
      * Puts key-value pair to map which is the result of a load from map store operation.
      *
      * @param key   key to put.
