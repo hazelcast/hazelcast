@@ -412,7 +412,8 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         } else {
             // if cluster state change failed then partition state version should be some positive number
             assertEquals(ClusterState.ACTIVE, currentState);
-            assertTrue(partitionService.getPartitionStateVersion() > 0);
+            final int partitionStateVersion = partitionService.getPartitionStateVersion();
+            assertTrue("Version should be positive: " + partitionService, partitionStateVersion > 0);
         }
     }
 
