@@ -313,8 +313,12 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
         final Object key = "Key";
 
         mm.lock(key, 1, TimeUnit.SECONDS);
-        sleepSeconds(2);
-        assertFalse(mm.isLocked(key));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse(mm.isLocked(key));
+            }
+        });
     }
 
     @Test
@@ -324,8 +328,13 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
 
         mm.lock(key);
         mm.lock(key, 1, TimeUnit.SECONDS);
-        sleepSeconds(2);
-        assertFalse(mm.isLocked(key));
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse(mm.isLocked(key));
+            }
+        });
     }
 
     @Test
