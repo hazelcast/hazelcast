@@ -16,6 +16,9 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.internal.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.operation.PutOperation;
@@ -24,12 +27,8 @@ import com.hazelcast.map.impl.operation.RemoveOperation;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.map.impl.query.QueryResultSet;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY_ID;
@@ -43,16 +42,16 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int REMOVE = 2;
     public static final int PUT_BACKUP = 3;
     public static final int REMOVE_BACKUP = 4;
-    //    public static final int DATA_RECORD = 5;
-//    public static final int OBJECT_RECORD = 6;
-//    public static final int CACHED_RECORD = 7;
+    //public static final int DATA_RECORD = 5;
+    //public static final int OBJECT_RECORD = 6;
+    //public static final int CACHED_RECORD = 7;
     public static final int KEY_SET = 8;
     public static final int VALUES = 9;
     public static final int MAP_ENTRIES = 10;
     public static final int ENTRY_VIEW = 11;
-    //    public static final int MAP_STATS = 12;
+    //public static final int MAP_STATS = 12;
     public static final int QUERY_RESULT_ROW = 13;
-    public static final int QUERY_RESULT_SET = 14;
+    //public static final int QUERY_RESULT_SET = 14;
     public static final int QUERY_RESULT = 15;
 
     private static final int LEN = QUERY_RESULT + 1;
@@ -120,11 +119,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[QUERY_RESULT_ROW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new QueryResultRow();
-            }
-        };
-        constructors[QUERY_RESULT_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueryResultSet();
             }
         };
         constructors[QUERY_RESULT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
