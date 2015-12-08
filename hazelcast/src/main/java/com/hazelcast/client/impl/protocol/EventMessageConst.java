@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol;
 
-
 /**
  * Message type ids of event responses in client protocol. They also used to bind a request to event inside Request
  * annotation.
@@ -47,4 +46,7 @@ public final class EventMessageConst {
     public static final int EVENT_CACHEPARTITIONLOST = 214;
     public static final int EVENT_IMAPINVALIDATION = 215;
     public static final int EVENT_IMAPBATCHINVALIDATION = 216;
+
+    private EventMessageConst() {
+    }
 }
