@@ -26,11 +26,11 @@
 </#if>
 <#assign isAddRemoveListener=(isAddListener || isRemoveListener)>
 
-<#if isAddRemoveListener>#include <stdio.h>
+<#if isAddRemoveListener>#include "hazelcast/util/Util.h"
 #include "hazelcast/util/ILogger.h"</#if>
 
 #include "hazelcast/client/protocol/codec/${model.className}.h"
-#include "hazelcast/client/protocol/exception/UnexpectedMessageTypeException.h"
+#include "hazelcast/client/exception/UnexpectedMessageTypeException.h"
 <#if shouldIncludeHeader("Data", isAddRemoveListener)>
 #include "hazelcast/client/serialization/pimpl/Data.h"
 </#if>
@@ -47,7 +47,7 @@
 #include "hazelcast/client/map/DataEntryView.h"
 </#if>
 <#if shouldIncludeHeader("DistributedObjectInfo", isAddRemoveListener)>
-#include "hazelcast/client/DistributedObjectInfo.h"
+#include "hazelcast/client/impl/DistributedObjectInfo.h"
 </#if>
 <#if model.events?has_content>
 #include "hazelcast/client/protocol/EventMessageConst.h"
@@ -60,7 +60,12 @@ namespace hazelcast {
                 const ${model.parentName}MessageType ${model.className}::RequestParameters::TYPE = HZ_${model.parentName?upper_case}_${model.name?upper_case};
                 const bool ${model.className}::RequestParameters::RETRYABLE = <#if model.retryable == 1>true<#else>false</#if>;
                 const int32_t ${model.className}::ResponseParameters::TYPE = ${model.response};
+                <#if isAddListener || isRemoveListener>
 
+                ${model.className}::~${model.className}() {
+                }
+
+                </#if>
                 std::auto_ptr<ClientMessage> ${model.className}::RequestParameters::encode(<#list model.requestParams as param>
                         <#if util.isPrimitive(param.type)>${util.getCppType(param.type)} ${param.name}<#else>const ${util.getCppType(param.type)} <#if param.nullable >*<#else>&</#if>${param.name}</#if><#if param_has_next>, </#if></#list>) {
                     int32_t requiredDataSize = calculateDataSize(<#list model.requestParams as param>${param.name}<#if param_has_next>, </#if></#list>);
@@ -106,6 +111,9 @@ namespace hazelcast {
                 <#if model.events?has_content>
 
                 //************************ EVENTS START*************************************************************************//
+                ${model.className}::AbstractEventHandler::~AbstractEventHandler() {
+                }
+
                 void ${model.className}::AbstractEventHandler::handle(std::auto_ptr<protocol::ClientMessage> clientMessage) {
                     int messageType = clientMessage->getMessageType();
                     switch (messageType) {
@@ -121,7 +129,7 @@ namespace hazelcast {
                         </#list>
                         default:
                             char buf[300];
-                            sprintf(buf, "[${model.className}::AbstractEventHandler::handle] Unknown message type (%d) received on event handler.", clientMessage->getMessageType());
+                            util::snprintf(buf, 300, "[${model.className}::AbstractEventHandler::handle] Unknown message type (%d) received on event handler.", clientMessage->getMessageType());
                             util::ILogger::getLogger().warning(buf);
                     }
                 }

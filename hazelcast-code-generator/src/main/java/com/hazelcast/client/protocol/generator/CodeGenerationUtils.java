@@ -64,7 +64,7 @@ public final class CodeGenerationUtils {
         put("java.util.Map", "std::vector<std::pair");
         put("java.util.Map.Entry", "std::pair");
         put("com.hazelcast.nio.Address", "Address");
-        put("com.hazelcast.client.impl.client.DistributedObjectInfo", "DistributedObjectInfo");
+        put("com.hazelcast.client.impl.client.DistributedObjectInfo", "impl::DistributedObjectInfo");
         put("com.hazelcast.core.Member", "Member");
         put("com.hazelcast.cluster.client.MemberAttributeChange", "MemberAttributeChange");
         put("com.hazelcast.map.impl.SimpleEntryView", "EntryView");
