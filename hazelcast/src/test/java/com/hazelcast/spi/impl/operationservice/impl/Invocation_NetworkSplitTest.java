@@ -39,15 +39,14 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.EmptyStatement;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -185,6 +184,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getGroupConfig().setName(generateRandomString(10));
         config.setProperty(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS, "1");
+        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "10");
         return config;
     }
 
