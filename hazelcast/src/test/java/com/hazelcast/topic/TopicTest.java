@@ -36,10 +36,6 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.util.UuidUtil;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -51,6 +47,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -590,11 +589,11 @@ public class TopicTest extends HazelcastTestSupport {
         });
 
         topic1.publish(message);
-        assertTrue(latch1.await(5, TimeUnit.SECONDS));
+        assertOpenEventually(latch1);
 
         instance1.shutdown();
         topic2.publish(message);
-        assertTrue(latch2.await(5, TimeUnit.SECONDS));
+        assertOpenEventually(latch2);
     }
 
     @Test
