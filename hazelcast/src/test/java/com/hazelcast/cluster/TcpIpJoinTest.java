@@ -19,19 +19,15 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.JoinConfig;
-import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,10 +35,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -52,6 +44,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     @After
     public void killAllHazelcastInstances() throws IOException {
         HazelcastInstanceFactory.terminateAll();
+        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
     }
 
     @Test
@@ -98,6 +91,23 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         InterfacesConfig interfaces = networkConfig.getInterfaces();
         interfaces.setEnabled(true);
         interfaces.addInterface("127.0.0.1");
+
+        testJoin(config);
+    }
+
+    @Test
+    public void test_whenHostAndInterfacesConfigured() throws Exception {
+        System.clearProperty("hazelcast.local.localAddress");
+
+        final Config config = new Config();
+        config.setProperty("hazelcast.socket.bind.any", "false");
+        final NetworkConfig networkConfig = config.getNetworkConfig();
+        networkConfig.setPort(5701).setPortAutoIncrement(true)
+              .getInterfaces().addInterface("127.0.0.1").setEnabled(true);
+        final JoinConfig joinConfig = networkConfig.getJoin();
+        joinConfig.getMulticastConfig().setEnabled(false);
+        joinConfig.getAwsConfig().setEnabled(false);
+        joinConfig.getTcpIpConfig().addMember("localhost:5701").addMember("localhost:5702").setEnabled(true);
 
         testJoin(config);
     }
