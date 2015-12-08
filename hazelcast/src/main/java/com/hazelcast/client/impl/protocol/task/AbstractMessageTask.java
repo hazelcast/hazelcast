@@ -33,6 +33,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.security.Permission;
 import java.util.logging.Level;
@@ -234,7 +235,7 @@ public abstract class AbstractMessageTask<P>
     }
 
     protected void sendClientMessage(Throwable throwable) {
-        ClientMessage exception = createExceptionMessage(throwable);
+        ClientMessage exception = createExceptionMessage(ExceptionUtil.peel(throwable));
         sendClientMessage(exception);
     }
 
