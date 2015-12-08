@@ -95,6 +95,23 @@ public class TcpIpJoinTest extends AbstractJoinTest {
     }
 
     @Test
+    public void test_whenHostAndInterfacesConfigured() throws Exception {
+        System.clearProperty("hazelcast.local.localAddress");
+
+        final Config config = new Config();
+        config.setProperty("hazelcast.socket.bind.any", "false");
+        final NetworkConfig networkConfig = config.getNetworkConfig();
+        networkConfig.setPort(5701).setPortAutoIncrement(true)
+                     .getInterfaces().addInterface("127.0.0.1").setEnabled(true);
+        final JoinConfig joinConfig = networkConfig.getJoin();
+        joinConfig.getMulticastConfig().setEnabled(false);
+        joinConfig.getAwsConfig().setEnabled(false);
+        joinConfig.getTcpIpConfig().addMember("localhost:5701").addMember("localhost:5702").setEnabled(true);
+
+        testJoin(config);
+    }
+
+    @Test
     public void test_whenDifferentBuildNumber() {
         Config config = new Config();
         NetworkConfig networkConfig = config.getNetworkConfig();
