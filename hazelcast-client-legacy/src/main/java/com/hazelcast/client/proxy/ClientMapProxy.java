@@ -138,6 +138,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
+    protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
+    protected static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Predicate should not be null!";
 
     protected final String name;
 
@@ -566,11 +568,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public String addEntryListener(MapListener listener, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return addEntryListenerInternal(listener, null, includeValue, null);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return addEntryListenerInternal(listener, null, includeValue, null);
     }
 
@@ -594,31 +598,43 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public String addEntryListener(MapListener listener, K key, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         return addEntryListenerInternal(listener, null, includeValue, key);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, K key, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         return addEntryListenerInternal(listener, null, includeValue, key);
     }
 
     @Override
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         return addEntryListenerInternal(listener, predicate, includeValue, key);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         return addEntryListenerInternal(listener, predicate, includeValue, key);
     }
 
     @Override
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         return addEntryListenerInternal(listener, predicate, includeValue, null);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         return addEntryListenerInternal(listener, predicate, includeValue, null);
     }
 

@@ -902,6 +902,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the specified listener is null.
      * @see MapListener
      */
     String addEntryListener(MapListener listener, boolean includeValue);
@@ -914,6 +915,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the specified listener is null.
      * @deprecated use {@link #addEntryListener(MapListener, boolean)} instead.
      */
     String addEntryListener(EntryListener listener, boolean includeValue);
@@ -969,6 +971,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the specified listener is null.
      * @throws NullPointerException if the specified key is null.
      * @see MapListener
      */
@@ -989,6 +992,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the specified listener is null.
      * @throws NullPointerException if the specified key is null.
      * @deprecated use {@link #addEntryListener(MapListener, Predicate, Object, boolean)} instead.
      */
@@ -1003,6 +1007,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the specified listener is null.
+     * @throws NullPointerException if the specified predicate is null.
      * @see MapListener
      */
     String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue);
@@ -1016,6 +1022,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the specified listener is null.
+     * @throws NullPointerException if the specified predicate is null.
      * @deprecated use {@link #addEntryListener(MapListener, Predicate, boolean)} instead.
      */
     String addEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue);
@@ -1030,6 +1038,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the specified listener is null.
+     * @throws NullPointerException if the specified predicate is null.
      * @see MapListener
      */
     String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
@@ -1044,6 +1054,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the specified listener is null.
+     * @throws NullPointerException if the specified predicate is null.
      * @deprecated use {@link #addEntryListener(MapListener, Object, boolean)}
      */
     String addEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue);

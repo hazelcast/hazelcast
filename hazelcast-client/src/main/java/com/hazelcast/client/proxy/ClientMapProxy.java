@@ -150,6 +150,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
+    protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
+    protected static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Predicate should not be null!";
+
 
     private static final ClientMessageDecoder getAsyncResponseDecoder = new ClientMessageDecoder() {
         @Override
@@ -625,12 +628,14 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public String addEntryListener(MapListener listener, final boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, includeValue);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, final boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, includeValue);
     }
@@ -707,12 +712,16 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public String addEntryListener(MapListener listener, K key, final boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, key, includeValue);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, K key, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, key, includeValue);
     }
@@ -751,12 +760,16 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, predicate, key, includeValue);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, predicate, key, includeValue);
     }
@@ -802,12 +815,16 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, predicate, includeValue);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, predicate, includeValue);
     }
