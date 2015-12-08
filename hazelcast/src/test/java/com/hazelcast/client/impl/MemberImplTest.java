@@ -1,0 +1,182 @@
+package com.hazelcast.client.impl;
+
+import com.hazelcast.nio.Address;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class MemberImplTest extends HazelcastTestSupport {
+
+    private static Address address;
+
+    @BeforeClass
+    public static void setUp() throws Exception {
+        address = new Address("127.0.0.1", 5701);
+    }
+
+    @Test
+    public void testConstructor() {
+        MemberImpl member = new MemberImpl();
+
+        assertNull(member.getAddress());
+        assertFalse(member.localMember());
+        assertFalse(member.isLiteMember());
+    }
+
+    @Test
+    public void testConstructor_withAddress() {
+        MemberImpl member = new MemberImpl(address);
+
+        assertBasicMemberImplFields(member);
+        assertFalse(member.isLiteMember());
+    }
+
+    @Test
+    public void testConstructor_withAddressAndUUid() {
+        MemberImpl member = new MemberImpl(address, "uuid2342");
+
+        assertBasicMemberImplFields(member);
+        assertEquals("uuid2342", member.getUuid());
+        assertFalse(member.isLiteMember());
+    }
+
+    @Test
+    public void testConstructor_withAttributes() throws Exception {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put("stringKey", "value");
+        attributes.put("booleanKeyTrue", true);
+        attributes.put("booleanKeyFalse", false);
+        attributes.put("byteKey", Byte.MAX_VALUE);
+        attributes.put("shortKey", Short.MAX_VALUE);
+        attributes.put("intKey", Integer.MAX_VALUE);
+        attributes.put("longKey", Long.MAX_VALUE);
+        attributes.put("floatKey", Float.MAX_VALUE);
+        attributes.put("doubleKey", Double.MAX_VALUE);
+
+        MemberImpl member = new MemberImpl(address, "uuid2342", attributes, true);
+
+        assertBasicMemberImplFields(member);
+        assertEquals("uuid2342", member.getUuid());
+        assertTrue(member.isLiteMember());
+
+        assertEquals("value", member.getStringAttribute("stringKey"));
+        assertNull(member.getBooleanAttribute("booleanKey"));
+
+        Boolean booleanValueTrue = member.getBooleanAttribute("booleanKeyTrue");
+        assertNotNull(booleanValueTrue);
+        assertTrue(booleanValueTrue);
+
+        Boolean booleanValueFalse = member.getBooleanAttribute("booleanKeyFalse");
+        assertNotNull(booleanValueFalse);
+        assertFalse(booleanValueFalse);
+
+        Byte byteValue = member.getByteAttribute("byteKey");
+        assertNotNull(byteValue);
+        assertEquals(Byte.MAX_VALUE, byteValue.byteValue());
+
+        Short shortValue = member.getShortAttribute("shortKey");
+        assertNotNull(shortValue);
+        assertEquals(Short.MAX_VALUE, shortValue.shortValue());
+
+        Integer intValue = member.getIntAttribute("intKey");
+        assertNotNull(intValue);
+        assertEquals(Integer.MAX_VALUE, intValue.intValue());
+
+        Long longValue = member.getLongAttribute("longKey");
+        assertNotNull(longValue);
+        assertEquals(Long.MAX_VALUE, longValue.longValue());
+
+        Float floatValue = member.getFloatAttribute("floatKey");
+        assertNotNull(floatValue);
+        assertEquals(Float.MAX_VALUE, floatValue, 0.000001);
+
+        Double doubleValue = member.getDoubleAttribute("doubleKey");
+        assertNotNull(doubleValue);
+        assertEquals(Double.MAX_VALUE, doubleValue, 0.000001);
+    }
+
+    @Test
+    public void testConstructor_withMemberImpl() {
+        MemberImpl member = new MemberImpl(new MemberImpl(address));
+
+        assertBasicMemberImplFields(member);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetStringAttribute() {
+        MemberImpl member = new MemberImpl(address);
+        member.setStringAttribute("stringKey", "stringValue");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetBooleanAttribute() {
+        MemberImpl member = new MemberImpl(address);
+        member.setBooleanAttribute("booleanKeyTrue", true);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetByteAttribute() {
+        MemberImpl member = new MemberImpl(address);
+        member.setByteAttribute("byteKey", Byte.MAX_VALUE);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetShortAttribute() {
+        MemberImpl member = new MemberImpl(address);
+        member.setShortAttribute("shortKey", Short.MAX_VALUE);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetIntAttribute() {
+        MemberImpl member = new MemberImpl(address);
+        member.setIntAttribute("intKey", Integer.MAX_VALUE);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetLongAttribute() {
+        MemberImpl member = new MemberImpl(address);
+        member.setLongAttribute("longKey", Long.MAX_VALUE);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFloatAttribute() {
+        MemberImpl member = new MemberImpl(address);
+        member.setFloatAttribute("floatKey", Float.MAX_VALUE);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetDoubleAttribute() {
+        MemberImpl member = new MemberImpl(address);
+        member.setDoubleAttribute("doubleKey", Double.MAX_VALUE);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testRemoveAttribute() {
+        MemberImpl member = new MemberImpl(address);
+        member.removeAttribute("removeKey");
+    }
+
+    private static void assertBasicMemberImplFields(MemberImpl member) {
+        assertEquals(address, member.getAddress());
+        assertEquals(5701, member.getPort());
+        assertEquals("127.0.0.1", member.getInetAddress().getHostAddress());
+        assertNull(member.getLogger());
+        assertFalse(member.localMember());
+    }
+}
