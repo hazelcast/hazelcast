@@ -69,10 +69,10 @@ public class MapIndexBackupTest extends HazelcastTestSupport {
         Set<Object> foundByPredicate = new TreeSet<Object>(
                 bookMap.localKeySet(
                         Predicates.and(
-                            Predicates.in("author", "0", "1", "2", "3", "4", "5", "6"),
-                            Predicates.between("year", 1990, 2000))));
+                                Predicates.in("author", "0", "1", "2", "3", "4", "5", "6"),
+                                Predicates.between("year", 1990, 2000))));
 
-        Map<Member,Set<Object>> foundByPredicateByMember = new HashMap<Member, Set<Object>>();
+        Map<Member, Set<Object>> foundByPredicateByMember = new HashMap<Member, Set<Object>>();
         for (Object key : foundByPredicate) {
             Member owner = instance1.getPartitionService().getPartition(key).getOwner();
             Set<Object> keys = foundByPredicateByMember.get(owner);
@@ -88,7 +88,7 @@ public class MapIndexBackupTest extends HazelcastTestSupport {
     }
 
     private HazelcastInstance createNode(TestHazelcastInstanceFactory instanceFactory) {
-        Config config = new Config();
+        Config config = getConfig();
         MapConfig mapConfig = config.getMapConfig("book");
         mapConfig.addMapIndexConfig(new MapIndexConfig("author", false));
         mapConfig.addMapIndexConfig(new MapIndexConfig("year", true));
