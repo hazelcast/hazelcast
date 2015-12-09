@@ -72,7 +72,7 @@
 #include "hazelcast/client/map/DataEntryView.h"
 </#if>
 <#if shouldIncludeHeader("DistributedObjectInfo", isAddRemoveListener)>
-#include "hazelcast/client/DistributedObjectInfo.h"
+#include "hazelcast/client/impl/DistributedObjectInfo.h"
 </#if>
 
 namespace hazelcast {
@@ -101,13 +101,16 @@ namespace hazelcast {
         }
 </#if>
 <#if shouldForwardDeclare("DistributedObjectInfo", isAddRemoveListener)>
-        class DistributedObjectInfo;
+        namespace impl {
+                class DistributedObjectInfo;
+        }
 </#if>
 
         namespace protocol {
             namespace codec {
                 class HAZELCAST_API ${model.className} <#if isAddListener || isRemoveListener>: public ${listenerInterface}</#if>{
                 public:
+<#if isAddListener || isRemoveListener>                    virtual ~${model.className}();</#if>
                     //************************ REQUEST STARTS ******************************************************************//
                     class HAZELCAST_API RequestParameters {
                         public:
@@ -150,12 +153,14 @@ namespace hazelcast {
                     //************************ EVENTS START*********************************************************************//
                     class HAZELCAST_API AbstractEventHandler : public impl::BaseEventHandler {
                         public:
-                        void handle(std::auto_ptr<protocol::ClientMessage> message);
+                            virtual ~AbstractEventHandler();
 
-                        <#list model.events as event>
-                        virtual void handle${event.name?cap_first}(<#list event.eventParams as param><#if !param.nullable>const ${util.getCppType(param.type)} &<#else>std::auto_ptr<${util.getCppType(param.type)} > </#if>${param.name}<#if param_has_next>, </#if></#list>) = 0;
+                            void handle(std::auto_ptr<protocol::ClientMessage> message);
 
-                        </#list>
+                            <#list model.events as event>
+                            virtual void handle${event.name?cap_first}(<#list event.eventParams as param><#if !param.nullable>const ${util.getCppType(param.type)} &<#else>std::auto_ptr<${util.getCppType(param.type)} > </#if>${param.name}<#if param_has_next>, </#if></#list>) = 0;
+
+                            </#list>
                     };
 
                     //************************ EVENTS END **********************************************************************//
