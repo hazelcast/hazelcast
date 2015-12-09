@@ -152,10 +152,10 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (indexes.hasIndex()) {
             Object value = Records.getValueOrCachedValue(record, serializationService);
             // When using format InMemoryFormat.NATIVE, just copy key & value to heap.
-            if (NATIVE.equals(inMemoryFormat)) {
-                dataKey = toData(dataKey);
-                value = toData(record.getValue());
-                oldValue = toData(oldValue);
+            if (NATIVE == inMemoryFormat) {
+                dataKey = (Data) copyToHeap(dataKey);
+                value = copyToHeap(value);
+                oldValue = copyToHeap(oldValue);
             }
             QueryableEntry queryableEntry = mapContainer.newQueryEntry(dataKey, value);
             indexes.saveEntryIndex(queryableEntry, oldValue);
@@ -168,12 +168,16 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         if (indexes.hasIndex()) {
             Data key = record.getKey();
             Object value = Records.getValueOrCachedValue(record, serializationService);
-            if (NATIVE.equals(inMemoryFormat)) {
-                key = toData(key);
-                value = toData(value);
+            if (NATIVE == inMemoryFormat) {
+                key = (Data) copyToHeap(key);
+                value = copyToHeap(value);
             }
             indexes.removeEntryIndex(key, value);
         }
+    }
+
+    protected Object copyToHeap(Object value) {
+        return value instanceof Data ? toData(value) : value;
     }
 
     protected void removeIndex(Collection<Record> records) {
