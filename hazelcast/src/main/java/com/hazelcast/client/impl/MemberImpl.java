@@ -27,12 +27,10 @@ import java.util.Map;
 /**
  * Client side specific Member implementation.
  *
- * <p>Caution: This class is required by protocol encoder/decoder which are on hazelcast module
- * so this impl also stays in the same module, although it is totally client side specific</p>
+ * <p>Caution: This class is required by protocol encoder/decoder which are on the Hazelcast module.
+ * So this implementation also stays in the same module, although it is totally client side specific.</p>
  */
-public final class MemberImpl
-        extends AbstractMember
-        implements Member {
+public final class MemberImpl extends AbstractMember implements Member {
 
     public MemberImpl() {
     }
@@ -70,94 +68,93 @@ public final class MemberImpl
 
     @Override
     public void setStringAttribute(String key, String value) {
-        notSupportedOnClient();
+        throw notSupportedOnClient();
     }
 
     @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "null means 'missing'")
     @Override
     public Boolean getBooleanAttribute(String key) {
-        final Object attribute = getAttribute(key);
+        Object attribute = getAttribute(key);
         return attribute != null ? Boolean.valueOf(attribute.toString()) : null;
     }
 
     @Override
     public void setBooleanAttribute(String key, boolean value) {
-        notSupportedOnClient();
+        throw notSupportedOnClient();
     }
 
     @Override
     public Byte getByteAttribute(String key) {
-        final Object attribute = getAttribute(key);
+        Object attribute = getAttribute(key);
         return attribute != null ? Byte.valueOf(attribute.toString()) : null;
     }
 
     @Override
     public void setByteAttribute(String key, byte value) {
-        notSupportedOnClient();
+        throw notSupportedOnClient();
     }
 
     @Override
     public Short getShortAttribute(String key) {
-        final Object attribute = getAttribute(key);
+        Object attribute = getAttribute(key);
         return attribute != null ? Short.valueOf(attribute.toString()) : null;
     }
 
     @Override
     public void setShortAttribute(String key, short value) {
-        notSupportedOnClient();
+        throw notSupportedOnClient();
     }
 
     @Override
     public Integer getIntAttribute(String key) {
-        final Object attribute = getAttribute(key);
+        Object attribute = getAttribute(key);
         return attribute != null ? Integer.valueOf(attribute.toString()) : null;
     }
 
     @Override
     public void setIntAttribute(String key, int value) {
-        notSupportedOnClient();
+        throw notSupportedOnClient();
     }
 
     @Override
     public Long getLongAttribute(String key) {
-        final Object attribute = getAttribute(key);
-        return attribute != null ? Long.getLong(attribute.toString()) : null;
+        Object attribute = getAttribute(key);
+        return attribute != null ? Long.valueOf(attribute.toString()) : null;
     }
 
     @Override
     public void setLongAttribute(String key, long value) {
-        notSupportedOnClient();
+        throw notSupportedOnClient();
     }
 
     @Override
     public Float getFloatAttribute(String key) {
-        final Object attribute = getAttribute(key);
+        Object attribute = getAttribute(key);
         return attribute != null ? Float.valueOf(attribute.toString()) : null;
     }
 
     @Override
     public void setFloatAttribute(String key, float value) {
-        notSupportedOnClient();
+        throw notSupportedOnClient();
     }
 
     @Override
     public Double getDoubleAttribute(String key) {
-        final Object attribute = getAttribute(key);
+        Object attribute = getAttribute(key);
         return attribute != null ? Double.valueOf(attribute.toString()) : null;
     }
 
     @Override
     public void setDoubleAttribute(String key, double value) {
-        notSupportedOnClient();
+        throw notSupportedOnClient();
     }
 
     @Override
     public void removeAttribute(String key) {
-        notSupportedOnClient();
+        throw notSupportedOnClient();
     }
 
-    private void notSupportedOnClient() {
-        throw new UnsupportedOperationException("Attributes on remote members must not be changed");
+    private UnsupportedOperationException notSupportedOnClient() {
+        return new UnsupportedOperationException("Attributes on remote members must not be changed");
     }
-
 }
