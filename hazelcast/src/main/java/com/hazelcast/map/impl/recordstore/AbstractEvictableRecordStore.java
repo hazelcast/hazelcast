@@ -288,8 +288,11 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             return null;
         }
 
-        long idlenessStartTime = getIdlenessStartTime(record);
         long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
+        if (maxIdleMillis == Long.MAX_VALUE) {
+            return record;
+        }
+        long idlenessStartTime = getIdlenessStartTime(record);
         long idleMillis = calculateExpirationWithDelay(maxIdleMillis, expiryDelayMillis, backup);
         long elapsedMillis = now - idlenessStartTime;
         return elapsedMillis >= idleMillis ? null : record;
@@ -300,8 +303,8 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             return null;
         }
         long ttl = record.getTtl();
-        // when ttl is zero or negative, it should remain eternally.
-        if (ttl < 1L) {
+        // when ttl is zero or negative or Long.MAX_VALUE, it should remain eternally.
+        if (ttl < 1L || ttl == Long.MAX_VALUE) {
             return record;
         }
         long ttlStartTime = getLifeStartTime(record);
