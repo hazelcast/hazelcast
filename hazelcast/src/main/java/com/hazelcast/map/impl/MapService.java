@@ -200,10 +200,8 @@ public class MapService implements ManagedService, MigrationAwareService,
             return;
         }
 
-        MapContainer mapContainer = mapServiceContext.getOrNullMapContainer(topic);
-        if (mapContainer != null) {
-            mapContainer.increaseInvalidationListenerCount();
-        }
+        MapContainer mapContainer = mapServiceContext.getMapContainer(topic);
+        mapContainer.increaseInvalidationListenerCount();
     }
 
     @Override
@@ -213,9 +211,7 @@ public class MapService implements ManagedService, MigrationAwareService,
             return;
         }
 
-        MapContainer mapContainer = mapServiceContext.getOrNullMapContainer(topic);
-        if (mapContainer != null) {
-            mapContainer.decreaseInvalidationListenerCount();
-        }
+        MapContainer mapContainer = mapServiceContext.getMapContainer(topic);
+        mapContainer.decreaseInvalidationListenerCount();
     }
 }
