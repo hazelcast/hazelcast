@@ -17,14 +17,12 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,7 +50,7 @@ public final class IOUtil {
 
     /**
      * This method has a direct dependency on how objects are serialized in
-     * {@link com.hazelcast.nio.serialization.DataSerializer}! If the stream
+     * {@link com.hazelcast.internal.serialization.impl.DataSerializer}! If the stream
      * format is ever changed this extraction method needs to be changed too!
      */
     public static long extractOperationCallId(Data data, SerializationService serializationService) throws IOException {
@@ -101,6 +99,7 @@ public final class IOUtil {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T readObject(ObjectDataInput in) throws IOException {
         boolean isBinary = in.readBoolean();
         if (isBinary) {
@@ -109,9 +108,9 @@ public final class IOUtil {
         return in.readObject();
     }
 
-    public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, final InputStream in) throws IOException {
+    public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, InputStream in) throws IOException {
         return new ObjectInputStream(in) {
-            protected Class<?> resolveClass(final ObjectStreamClass desc) throws ClassNotFoundException {
+            protected Class<?> resolveClass(ObjectStreamClass desc) throws ClassNotFoundException {
                 return ClassLoaderUtil.loadClass(classLoader, desc.getName());
             }
         };
@@ -170,38 +169,10 @@ public final class IOUtil {
         return n;
     }
 
-    public static int copyToDirectBuffer(ByteBuffer src, ByteBuffer dst) {
-        int n = Math.min(src.remaining(), dst.remaining());
-        if (n > 0) {
-            dst.put(src.array(), src.position(), n);
-            src.position(src.position() + n);
-        }
-        return n;
-    }
-
-    public static void writeLongString(DataOutput dos, String str) throws IOException {
-        int chunk = 1000;
-        int count = str.length() / chunk;
-        int remaining = str.length() - (count * chunk);
-        dos.writeInt(count + ((remaining > 0) ? 1 : 0));
-        for (int i = 0; i < count; i++) {
-            dos.writeUTF(str.substring(i * chunk, (i + 1) * chunk));
-        }
-        if (remaining > 0) {
-            dos.writeUTF(str.substring(count * chunk));
-        }
-    }
-
-    public static String readLongString(DataInput in) throws IOException {
-        int count = in.readInt();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            sb.append(in.readUTF());
-        }
-        return sb.toString();
-    }
-
     public static byte[] compress(byte[] input) throws IOException {
+        if (input.length == 0) {
+            return new byte[0];
+        }
         Deflater compressor = new Deflater();
         compressor.setLevel(Deflater.BEST_SPEED);
         compressor.setInput(input);
@@ -237,7 +208,6 @@ public final class IOUtil {
         inflater.end();
         return bos.toByteArray();
     }
-
 
     public static void writeAttributeValue(Object value, ObjectDataOutput out) throws IOException {
         Class<?> type = value.getClass();
@@ -292,7 +262,6 @@ public final class IOUtil {
             default:
                 throw new IllegalStateException("Illegal attribute type id found");
         }
-
     }
 
     /**
@@ -300,7 +269,7 @@ public final class IOUtil {
      *
      * @param closeable the Closeable to close.
      */
-    public static void closeResource(final Closeable closeable) {
+    public static void closeResource(Closeable closeable) {
         if (closeable != null) {
             try {
                 closeable.close();
@@ -320,7 +289,7 @@ public final class IOUtil {
         if (!f.exists()) {
             return;
         }
-        final File[] subFiles = f.listFiles();
+        File[] subFiles = f.listFiles();
         if (subFiles != null) {
             for (File sf : subFiles) {
                 delete(sf);
