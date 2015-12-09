@@ -129,7 +129,7 @@ public class CacheReplicationOperation extends AbstractOperation {
                 final Data key = e.getKey();
                 final CacheRecord record = e.getValue();
 
-                if (record.isExpiredAt(now) || record.isTombstone()) {
+                if (record.isExpiredAt(now)) {
                     continue;
                 }
                 out.writeData(key);

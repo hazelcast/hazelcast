@@ -902,7 +902,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         final boolean isExpired = processExpiredEntry(key, record, now);
 
         try {
-            if (recordNotExistOrExpiredOrTombstone(record, isExpired)) {
+            if (recordNotExistOrExpired(record, isExpired)) {
                 if (isStatisticsEnabled()) {
                     statistics.increaseCacheMisses(1);
                 }
@@ -937,7 +937,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         long now = Clock.currentTimeMillis();
         R record = records.get(key);
         boolean isExpired = processExpiredEntry(key, record, now);
-        return record != null && !record.isTombstone() && !isExpired;
+        return record != null && !isExpired;
     }
 
     protected void onPut(Data key, Object value, ExpiryPolicy expiryPolicy, String source,
@@ -1029,9 +1029,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             if (record == null || isExpired) {
                 saved = createRecordWithExpiry(key, value, expiryPolicy, now,
                                                disableWriteThrough, completionId) != null;
-            } else if (record.isTombstone()) {
-                saved = updateRecordWithExpiry(key, value, record, expiryPolicy, now,
-                                               disableWriteThrough, completionId);
             } else {
                 if (isEventsEnabled()) {
                     publishEvent(createCacheCompleteEvent(toEventData(key), completionId));
@@ -1074,7 +1071,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         final boolean isExpired = record != null && record.isExpiredAt(now);
 
         try {
-            if (recordNotExistOrExpiredOrTombstone(record, isExpired)) {
+            if (recordNotExistOrExpired(record, isExpired)) {
                 if (isEventsEnabled()) {
                     publishEvent(createCacheCompleteEvent(toEventData(key), completionId));
                 }
@@ -1147,7 +1144,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
         try {
             Object obj = toValue(record);
-            if (recordNotExistOrExpiredOrTombstone(record, isExpired)) {
+            if (recordNotExistOrExpired(record, isExpired)) {
                 obj = null;
                 if (isEventsEnabled()) {
                     publishEvent(createCacheCompleteEvent(toEventData(key), completionId));
@@ -1196,7 +1193,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         boolean removed = false;
 
         try {
-            if (recordNotExistOrExpiredOrTombstone(record, now)) {
+            if (recordNotExistOrExpired(record, now)) {
                 if (isEventsEnabled()) {
                     publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
                                                           origin, completionId));
@@ -1229,7 +1226,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         boolean removed = false;
 
         try {
-            if (recordNotExistOrExpiredOrTombstone(record, now)) {
+            if (recordNotExistOrExpired(record, now)) {
                 if (isStatisticsEnabled()) {
                     statistics.increaseCacheMisses(1);
                 }
@@ -1286,7 +1283,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         boolean removed = false;
 
         try {
-            if (recordNotExistOrExpiredOrTombstone(record, now)) {
+            if (recordNotExistOrExpired(record, now)) {
                 obj = null;
                 if (isEventsEnabled()) {
                     publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
@@ -1406,7 +1403,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             record = null;
         }
         if (isStatisticsEnabled()) {
-            if (recordNotExistOrExpiredOrTombstone(record, isExpired)) {
+            if (recordNotExistOrExpired(record, isExpired)) {
                 statistics.increaseCacheMisses(1);
             } else {
                 statistics.increaseCacheHits(1);
@@ -1419,12 +1416,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return result;
     }
 
-    private boolean recordNotExistOrExpiredOrTombstone(R record, boolean isExpired) {
-        return record == null || isExpired || record.isTombstone();
+    private boolean recordNotExistOrExpired(R record, boolean isExpired) {
+        return record == null || isExpired;
     }
 
-    private boolean recordNotExistOrExpiredOrTombstone(R record, long now) {
-        return record == null || record.isExpiredAt(now) || record.isTombstone();
+    private boolean recordNotExistOrExpired(R record, long now) {
+        return record == null || record.isExpiredAt(now);
     }
 
     @Override
