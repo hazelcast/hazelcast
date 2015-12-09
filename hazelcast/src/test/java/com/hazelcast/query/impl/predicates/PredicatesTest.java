@@ -30,12 +30,12 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.query.SampleObjects.Value;
 import com.hazelcast.query.impl.AttributeType;
-import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.getters.ReflectionHelper;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -66,7 +66,10 @@ import static com.hazelcast.query.Predicates.or;
 import static com.hazelcast.query.Predicates.regex;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -249,6 +252,13 @@ public class PredicatesTest extends HazelcastTestSupport {
         assertPredicateTrue(ilike(ATTRIBUTE, "java%ld"), "Java World");
         assertPredicateTrue(ilike(ATTRIBUTE, "%world"), "Java World");
         assertPredicateFalse(ilike(ATTRIBUTE, "Java_World"), "gava World");
+    }
+
+    @Test
+    public void testILike_Id() {
+        ILikePredicate predicate = (ILikePredicate) ilike(ATTRIBUTE, "Java_World");
+
+        assertThat(predicate.getId(), allOf(equalTo(6), equalTo(PredicateDataSerializerHook.ILIKE_PREDICATE)));
     }
 
     @Test

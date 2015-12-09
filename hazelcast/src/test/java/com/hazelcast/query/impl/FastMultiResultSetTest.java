@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -75,6 +76,21 @@ public class FastMultiResultSetTest {
         Iterator<QueryableEntry> it = result.iterator();
         assertThat(it.hasNext(), is(true));
         assertThat(it.next(), is(entry));
+    }
+
+    @Test
+    public void testIterator_empty_next() throws Exception {
+        assertNull(result.iterator().next());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testIterator_empty_remove() throws Exception {
+        result.iterator().remove();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testIterator_addUnsopperted() throws Exception {
+        result.add(mock(QueryableEntry.class));
     }
 
     @Test
