@@ -93,8 +93,6 @@ public interface Record<V> {
 
     void setCreationTime(long creationTime);
 
-    boolean isTombstone();
-
     /**
      * Only used for Hot Restart, HDRecord
      * @return
@@ -106,8 +104,4 @@ public interface Record<V> {
      * @return
      */
     void setSequence(long sequence);
-
-    long getTombstoneSequence();
-
-    void setTombstoneSequence(long tombstoneSequence);
 }
