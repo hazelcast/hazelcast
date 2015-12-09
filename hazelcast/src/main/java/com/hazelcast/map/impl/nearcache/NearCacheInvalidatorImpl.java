@@ -109,10 +109,9 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
             @Override
             public void stateChanged(LifecycleEvent event) {
                 if (event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
-                    Set<String> mapNames = NearCacheInvalidatorImpl.this.nearCacheProvider.nearCacheMap.keySet();
-                    for (String mapName : mapNames) {
-                        InvalidationQueue invalidationQueue = invalidationQueues.get(mapName);
-                        sendBatchInvalidation(mapName, invalidationQueue);
+                    Set<Map.Entry<String, InvalidationQueue>> entries = invalidationQueues.entrySet();
+                    for (Map.Entry<String, InvalidationQueue> entry : entries) {
+                        sendBatchInvalidation(entry.getKey(), entry.getValue());
                     }
                 }
             }
