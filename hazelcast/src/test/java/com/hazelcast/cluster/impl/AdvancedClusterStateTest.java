@@ -377,7 +377,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
     @Test
     public void test_eitherClusterStateChange_orPartitionInitialization_shouldBeSuccessful()
-            throws InterruptedException {
+            throws Exception {
 
         Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
@@ -391,29 +391,37 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
         final ClusterServiceImpl cluster = getNode(hz2).getClusterService();
         final ClusterState newState = ClusterState.PASSIVE;
-        Thread thread = new Thread() {
+
+        final Future future = spawn(new Runnable() {
             public void run() {
                 try {
                     cluster.changeClusterState(newState, initialPartitionStateVersion);
                 } catch (Exception ignored) {
                 }
             }
-        };
-        thread.start();
+        });
 
         partitionService.firstArrangement();
 
-        thread.join(TimeUnit.MINUTES.toMillis(1));
+        future.get(2, TimeUnit.MINUTES);
 
         final ClusterState currentState = cluster.getClusterState();
         if (currentState == newState) {
             // if cluster state changed then partition state version should be equal to initial version
             assertEquals(initialPartitionStateVersion, partitionService.getPartitionStateVersion());
         } else {
-            // if cluster state change failed then partition state version should be some positive number
             assertEquals(ClusterState.ACTIVE, currentState);
-            final int partitionStateVersion = partitionService.getPartitionStateVersion();
-            assertTrue("Version should be positive: " + partitionService, partitionStateVersion > 0);
+
+            final InternalPartition partition = partitionService.getPartition(0, false);
+            if (partition.getOwnerOrNull() == null) {
+                // if partition assignment failed then partition state version should be equal to initial version
+                assertEquals(initialPartitionStateVersion, partitionService.getPartitionStateVersion());
+            } else {
+                // if cluster state change failed and partition assignment is done
+                // then partition state version should be some positive number
+                final int partitionStateVersion = partitionService.getPartitionStateVersion();
+                assertTrue("Version should be positive: " + partitionService, partitionStateVersion > 0);
+            }
         }
     }
 
