@@ -165,13 +165,13 @@ public abstract class HazelcastTestSupport {
         return node.clusterService.getThisAddress();
     }
 
-    public static Packet toPacket(HazelcastInstance hz, Operation operation) {
-        SerializationService serializationService = getSerializationService(hz);
-        ConnectionManager connectionManager = getConnectionManager(hz);
+    public static Packet toPacket(HazelcastInstance local, HazelcastInstance remote, Operation operation) {
+        SerializationService serializationService = getSerializationService(local);
+        ConnectionManager connectionManager = getConnectionManager(local);
 
         Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
         packet.setHeader(Packet.HEADER_OP);
-        packet.setConn(connectionManager.getConnection(getAddress(hz)));
+        packet.setConn(connectionManager.getConnection(getAddress(remote)));
         return packet;
     }
 

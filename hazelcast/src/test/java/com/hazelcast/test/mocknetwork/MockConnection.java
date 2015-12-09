@@ -138,7 +138,7 @@ public class MockConnection implements Connection {
 
     @Override
     public boolean isAlive() {
-        return live;
+        return live && nodeEngine.isRunning();
     }
 
     @Override
