@@ -63,10 +63,7 @@ public class CachePutAllBackupOperation
     public void run() throws Exception {
         if (cacheRecords != null) {
             for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
-                final CacheRecord record = entry.getValue();
-                if (record.isTombstone()) {
-                    continue;
-                }
+                CacheRecord record = entry.getValue();
                 cache.putRecord(entry.getKey(), record);
             }
         }
