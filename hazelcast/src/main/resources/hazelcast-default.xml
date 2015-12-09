@@ -195,6 +195,15 @@
         -->
         <merge-policy>com.hazelcast.map.merge.PutIfAbsentMapMergePolicy</merge-policy>
 
+        <!--
+           Control caching of de-serialized values. Caching makes query evaluation faster, but it cost memory.
+           Possible Values:
+                        NEVER: Never cache deserialized object
+                        INDEX-ONLY: Caches values only when they are inserted into an index.
+                        ALWAYS: Always cache deserialized values.
+        -->
+        <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
+
     </map>
 
     <multimap name="default">

@@ -75,6 +75,7 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
@@ -596,6 +597,13 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         .addPropertyValue(xmlToJavaName(cleanNodeName(maxSizePolicyNode))
                                 , MaxSizeConfig.MaxSizePolicy.valueOf(getTextContent(maxSizePolicyNode)));
             }
+            final Node cacheDeserializedValueNode = node.getAttributes().getNamedItem("cache-deserialized-values");
+            if (cacheDeserializedValueNode != null) {
+                String cacheDeserializedValueContent = getTextContent(cacheDeserializedValueNode);
+                CacheDeserializedValues value = CacheDeserializedValues.parseString(cacheDeserializedValueContent);
+                mapConfigBuilder.addPropertyValue("cacheDeserializedValues", value);
+            }
+
             for (Node childNode : childElements(node)) {
                 final String nodeName = cleanNodeName(childNode);
                 if ("map-store".equals(nodeName)) {

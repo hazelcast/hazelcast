@@ -442,7 +442,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                         "</hazelcast>";
         final Config config1 = buildConfig(xml1);
         final MapConfig mapConfig1 = config1.getMapConfig("mymap1");
-        assertTrue(mapConfig1.isOptimizeQueries());
+        assertEquals(CacheDeserializedValues.ALWAYS, mapConfig1.getCacheDeserializedValues());
 
         String xml2 =
                 HAZELCAST_START_TAG +
@@ -452,11 +452,11 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                         "</hazelcast>";
         final Config config2 = buildConfig(xml2);
         final MapConfig mapConfig2 = config2.getMapConfig("mymap2");
-        assertFalse(mapConfig2.isOptimizeQueries());
+        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapConfig2.getCacheDeserializedValues());
     }
 
     @Test
-    public void testMapConfig_optimizeQueries_defaultValue() {
+    public void testMapConfig_cacheValueConfig_defaultValue() {
         String xml =
                 "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">" +
                         "<map name=\"mymap\">" +
@@ -464,7 +464,46 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                         "</hazelcast>";
         final Config config = buildConfig(xml);
         final MapConfig mapConfig = config.getMapConfig("mymap");
-        assertFalse(mapConfig.isOptimizeQueries());
+        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapConfig.getCacheDeserializedValues());
+    }
+
+    @Test
+    public void testMapConfig_cacheValueConfig_never() {
+        String xml =
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">" +
+                        "<map name=\"mymap\">" +
+                        "<cache-deserialized-values>NEVER</cache-deserialized-values>" +
+                        "</map>" +
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        final MapConfig mapConfig = config.getMapConfig("mymap");
+        assertEquals(CacheDeserializedValues.NEVER, mapConfig.getCacheDeserializedValues());
+    }
+
+    @Test
+    public void testMapConfig_cacheValueConfig_always() {
+        String xml =
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">" +
+                        "<map name=\"mymap\">" +
+                        "<cache-deserialized-values>ALWAYS</cache-deserialized-values>" +
+                        "</map>" +
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        final MapConfig mapConfig = config.getMapConfig("mymap");
+        assertEquals(CacheDeserializedValues.ALWAYS, mapConfig.getCacheDeserializedValues());
+    }
+
+    @Test
+    public void testMapConfig_cacheValueConfig_indexOnly() {
+        String xml =
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">" +
+                        "<map name=\"mymap\">" +
+                        "<cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>" +
+                        "</map>" +
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        final MapConfig mapConfig = config.getMapConfig("mymap");
+        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapConfig.getCacheDeserializedValues());
     }
 
     @Test

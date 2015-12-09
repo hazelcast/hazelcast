@@ -98,8 +98,26 @@
             <xs:element name="optimize-queries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
                 <xs:annotation>
                     <xs:documentation>
+                        This parameter is deprecated as of Hazelcast 3.6
+                        Use cache-deserialized-values attribute instead.
+
+                        When both optimize-query and cache-deserialized-values are used at the same time
+                        Hazelcast will do its best to detect possible conflicts. Conflict detection
+                        is done on best-effort basis and you should not rely on it.
+
                         If true, increases the speed of query processes in the map. It only works when in-memory-format
                         is set as BINARY and performs a pre-caching on the entries queried. Default value is false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="cache-deserialized-values" type="cache-deserialized-values" minOccurs="0" maxOccurs="1" default="INDEX-ONLY">
+                <xs:annotation>
+                    <xs:documentation>
+                        Control caching of de-serialized values. Caching makes query evaluation faster, but it cost memory.
+                        Possible Values:
+                        NEVER: Never cache de-serialized object
+                        INDEX-ONLY: Cache values only when they are inserted into an index.
+                        ALWAYS: Always cache de-serialized values.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2276,6 +2294,14 @@
             <xs:enumeration value="BINARY"/>
             <xs:enumeration value="OBJECT"/>
             <xs:enumeration value="NATIVE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="cache-deserialized-values">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="NEVER"/>
+            <xs:enumeration value="ALWAYS"/>
+            <xs:enumeration value="INDEX-ONLY"/>
         </xs:restriction>
     </xs:simpleType>
 

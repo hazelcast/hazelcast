@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
@@ -34,7 +35,9 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -267,20 +270,36 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         Iterator<Record> iterator = partitionContainer.getRecordStore(mapName).loadAwareIterator(getNow(), false);
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(pagingPredicate);
+        boolean useCachedVersion = shouldUseCachedValue(mapContainer);
+        Extractors extractors = mapServiceContext.getExtractors(mapName);
         while (iterator.hasNext()) {
             Record record = iterator.next();
-            Data key = record.getKey();
-            Object value = Records.getValueOrCachedValue(record, serializationService);
+            Object value = useCachedVersion ? Records.getValueOrCachedValue(record, serializationService) : record.getValue();
             if (value == null) {
                 continue;
             }
-            QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
+            Data key = record.getKey();
+            //we want to always use CachedQueryEntry as these are short-living objects anyway
+            QueryableEntry queryEntry = new CachedQueryEntry(serializationService, key, value, extractors);
 
             if (predicate.apply(queryEntry) && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
                 resultList.add(queryEntry);
             }
         }
         return getSortedSubList(resultList, pagingPredicate, nearestAnchorEntry);
+    }
+
+    private boolean shouldUseCachedValue(MapContainer mapContainer) {
+        CacheDeserializedValues cacheDeserializedValues = mapContainer.getMapConfig().getCacheDeserializedValues();
+        switch (cacheDeserializedValues) {
+            case NEVER:
+                return false;
+            case ALWAYS:
+                return true;
+            default:
+                //if index exists then cached value is already set -> let's use it
+                return mapContainer.getIndexes().hasIndex();
+        }
     }
 
     @Override

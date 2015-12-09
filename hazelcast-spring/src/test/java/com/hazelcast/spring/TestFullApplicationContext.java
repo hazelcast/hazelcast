@@ -54,6 +54,7 @@ import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -228,7 +229,7 @@ public class TestFullApplicationContext {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(12, config.getMapConfigs().size());
+        assertEquals(14, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -333,13 +334,19 @@ public class TestFullApplicationContext {
         assertEquals(dummyMapStoreFactory, testMapConfig4.getMapStoreConfig().getFactoryImplementation());
 
         MapConfig mapWithOptimizedQueriesConfig = config.getMapConfig("mapWithOptimizedQueries");
-        assertTrue(mapWithOptimizedQueriesConfig.isOptimizeQueries());
+        assertEquals(CacheDeserializedValues.ALWAYS, mapWithOptimizedQueriesConfig.getCacheDeserializedValues());
+
+        MapConfig mapWithValueCachingSetToNever = config.getMapConfig("mapWithValueCachingSetToNever");
+        assertEquals(CacheDeserializedValues.NEVER, mapWithValueCachingSetToNever.getCacheDeserializedValues());
+
+        MapConfig mapWithValueCachingSetToAlways = config.getMapConfig("mapWithValueCachingSetToAlways");
+        assertEquals(CacheDeserializedValues.ALWAYS, mapWithValueCachingSetToAlways.getCacheDeserializedValues());
 
         MapConfig mapWithNotOptimizedQueriesConfig = config.getMapConfig("mapWithNotOptimizedQueries");
-        assertFalse(mapWithNotOptimizedQueriesConfig.isOptimizeQueries());
+        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapWithNotOptimizedQueriesConfig.getCacheDeserializedValues());
 
         MapConfig mapWithDefaultOptimizedQueriesConfig = config.getMapConfig("mapWithDefaultOptimizedQueries");
-        assertFalse(mapWithDefaultOptimizedQueriesConfig.isOptimizeQueries());
+        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapWithDefaultOptimizedQueriesConfig.getCacheDeserializedValues());
 
         MapConfig testMapWithPartitionLostListenerConfig = config.getMapConfig("mapWithPartitionLostListener");
         List<MapPartitionLostListenerConfig> partitionLostListenerConfigs = testMapWithPartitionLostListenerConfig.getPartitionLostListenerConfigs();

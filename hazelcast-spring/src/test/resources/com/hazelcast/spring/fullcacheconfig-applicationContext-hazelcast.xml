@@ -232,6 +232,8 @@
 
             <hz:map name="mapWithOptimizedQueries" optimize-queries="true"/>
             <hz:map name="mapWithNotOptimizedQueries" optimize-queries="false"/>
+            <hz:map name="mapWithValueCachingSetToNever" cache-deserialized-values="NEVER"/>
+            <hz:map name="mapWithValueCachingSetToAlways" cache-deserialized-values="ALWAYS"/>
             <hz:map name="mapWithDefaultOptimizedQueries"/>
             <hz:map name="map-with-native-max-size-policy" max-size-policy="USED_NATIVE_MEMORY_PERCENTAGE" in-memory-format="NATIVE"/>
 

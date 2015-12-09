@@ -105,7 +105,7 @@ public class MapContainer {
         this.quorumName = mapConfig.getQuorumName();
         this.serializationService = nodeEngine.getSerializationService();
         this.recordFactoryConstructor = createRecordFactoryConstructor(serializationService);
-        this.queryEntryFactory = new QueryEntryFactory(mapConfig.isOptimizeQueries());
+        this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues());
         initWanReplication(nodeEngine);
         this.interceptors = new CopyOnWriteArrayList<MapInterceptor>();
         this.interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();

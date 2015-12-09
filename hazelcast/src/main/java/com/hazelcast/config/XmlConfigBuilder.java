@@ -1084,6 +1084,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 mapConfig.setStatisticsEnabled(getBooleanValue(value));
             } else if ("optimize-queries".equals(nodeName)) {
                 mapConfig.setOptimizeQueries(getBooleanValue(value));
+            } else if ("cache-deserialized-values".equals(nodeName)) {
+                CacheDeserializedValues cacheDeserializedValues = CacheDeserializedValues.parseString(value);
+                mapConfig.setCacheDeserializedValues(cacheDeserializedValues);
             } else if ("wan-replication-ref".equals(nodeName)) {
                 mapWanReplicationRefHandle(node, mapConfig);
             } else if ("indexes".equals(nodeName)) {

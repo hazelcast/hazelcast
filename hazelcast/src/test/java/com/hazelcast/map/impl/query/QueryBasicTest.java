@@ -3,6 +3,7 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
@@ -767,10 +768,10 @@ public class QueryBasicTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQueryPortableObjectAndOptimizeQueries() {
+    public void testQueryPortableObjectAndAlwaysCacheValues() {
         String name = randomMapName();
         Config config = getConfig();
-        config.addMapConfig(new MapConfig(name).setOptimizeQueries(true));
+        config.addMapConfig(new MapConfig(name).setCacheDeserializedValues(CacheDeserializedValues.ALWAYS));
 
         testQueryUsingPortableObject(config, name);
     }
@@ -851,11 +852,11 @@ public class QueryBasicTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQueryPortableObjectWithIndexAndOptimizeQueries() {
+    public void testQueryPortableObjectWithIndexAndAlwaysCacheValues() {
         String name = randomMapName();
         Config config = getConfig();
         config.addMapConfig(new MapConfig(name)
-                .setOptimizeQueries(true)
+                .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
                 .addMapIndexConfig(new MapIndexConfig("timestamp", true)));
 
         testQueryUsingPortableObject(config, name);

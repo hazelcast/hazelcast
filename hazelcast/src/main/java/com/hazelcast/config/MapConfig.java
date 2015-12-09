@@ -87,6 +87,11 @@ public class MapConfig {
      */
     public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
 
+    /**
+     * We want to cache values only when an index is defined.
+     */
+    public static final CacheDeserializedValues DEFAULT_CACHED_DESERIALIZED_VALUES = CacheDeserializedValues.INDEX_ONLY;
+
     private String name;
 
     private int backupCount = DEFAULT_BACKUP_COUNT;
@@ -111,7 +116,7 @@ public class MapConfig {
 
     private boolean readBackupData;
 
-    private boolean optimizeQueries;
+    private CacheDeserializedValues cacheDeserializedValues = DEFAULT_CACHED_DESERIALIZED_VALUES;
 
     private String mergePolicy = DEFAULT_MAP_MERGE_POLICY;
 
@@ -139,6 +144,11 @@ public class MapConfig {
 
     private MapConfigReadOnly readOnly;
 
+    // we use these 2 flags to detect a conflict between (deprecated) #setOptimizeQueries()
+    // and #setCacheDeserializedValues()
+    private boolean optimizeQueryExplicitlyInvoked;
+    private boolean setCacheDeserializedValuesExplicitlyInvoked;
+
     public MapConfig(String name) {
         this.name = name;
     }
@@ -161,7 +171,7 @@ public class MapConfig {
         this.mapStoreConfig = config.mapStoreConfig != null ? new MapStoreConfig(config.mapStoreConfig) : null;
         this.nearCacheConfig = config.nearCacheConfig != null ? new NearCacheConfig(config.nearCacheConfig) : null;
         this.readBackupData = config.readBackupData;
-        this.optimizeQueries = config.optimizeQueries;
+        this.cacheDeserializedValues = config.cacheDeserializedValues;
         this.statisticsEnabled = config.statisticsEnabled;
         this.mergePolicy = config.mergePolicy;
         this.wanReplicationRef = config.wanReplicationRef != null ? new WanReplicationRef(config.wanReplicationRef) : null;
@@ -674,13 +684,94 @@ public class MapConfig {
         return nearCacheConfig != null;
     }
 
+    /**
+     *
+     * @return
+     * @deprecated user {@link #getQueryCacheConfigs()} instead.
+     */
     public boolean isOptimizeQueries() {
-        return optimizeQueries;
+        return cacheDeserializedValues == CacheDeserializedValues.ALWAYS;
     }
 
+    /**
+     *
+     * Enable de-serialized value caching when evaluating predicates. It has no effect when {@link InMemoryFormat}
+     * is {@link InMemoryFormat#OBJECT} or when {@link com.hazelcast.nio.serialization.Portable} serialization is used.
+     *
+     * @param optimizeQueries
+     * @return this {@code MapConfig} instance.
+     * @deprecated use {@link #setCacheDeserializedValues(CacheDeserializedValues)} instead
+     * @see {@link CacheDeserializedValues}
+     */
     public MapConfig setOptimizeQueries(boolean optimizeQueries) {
-        this.optimizeQueries = optimizeQueries;
+        validateSetOptimizeQueriesOption(optimizeQueries);
+        if (optimizeQueries) {
+            this.cacheDeserializedValues = CacheDeserializedValues.ALWAYS;
+        }
+        //this is used to remember the method has been called explicitly
+        this.optimizeQueryExplicitlyInvoked = true;
         return this;
+    }
+
+    private void validateSetOptimizeQueriesOption(boolean optimizeQueries) {
+        if (setCacheDeserializedValuesExplicitlyInvoked) {
+            if (optimizeQueries && cacheDeserializedValues == CacheDeserializedValues.NEVER) {
+                throw new ConfigurationException("Deprecated option 'optimize-queries' is set to true, "
+                        + "but 'cacheDeserializedValues' is set to NEVER. "
+                        + "These are conflicting options. Please remove the `optimize-queries'");
+            } else if (!optimizeQueries && cacheDeserializedValues == CacheDeserializedValues.ALWAYS) {
+                throw new ConfigurationException("Deprecated option 'optimize-queries' is set to false, "
+                        + "but 'cacheDeserializedValues' is set to ALWAYS. "
+                        + "These are conflicting options. Please remove the `optimize-queries'");
+            }
+        }
+    }
+
+    /**
+     * Configure de-serialized value caching.
+     * Default: {@link CacheDeserializedValues#INDEX_ONLY}
+     *
+     * @param cacheDeserializedValues
+     * @return this {@code MapConfig} instance.
+     * @since 3.6
+     * @see {@link CacheDeserializedValues}
+     */
+    public MapConfig setCacheDeserializedValues(CacheDeserializedValues cacheDeserializedValues) {
+        validateCacheDeserializedValuesOption(cacheDeserializedValues);
+        this.cacheDeserializedValues = cacheDeserializedValues;
+        this.setCacheDeserializedValuesExplicitlyInvoked = true;
+        return this;
+    }
+
+    private void validateCacheDeserializedValuesOption(CacheDeserializedValues validatedCacheDeserializedValues) {
+        if (optimizeQueryExplicitlyInvoked) {
+            // deprecated {@link #setOptimizeQueries(boolean)} was explicitly invoked
+            // we need to be strict with validation to detect conflicts
+            boolean optimizeQuerySet = (cacheDeserializedValues == CacheDeserializedValues.ALWAYS);
+            if (optimizeQuerySet && validatedCacheDeserializedValues == CacheDeserializedValues.NEVER) {
+                throw new ConfigurationException("Deprecated option 'optimize-queries' is set to `true`, "
+                        + "but 'cacheDeserializedValues' is set to NEVER. These are conflicting options. "
+                        + "Please remove the `optimize-queries'");
+            }
+
+            if (cacheDeserializedValues != validatedCacheDeserializedValues) {
+                boolean optimizeQueriesFlagState = cacheDeserializedValues == CacheDeserializedValues.ALWAYS;
+                throw new ConfigurationException("Deprecated option 'optimize-queries' is set to "
+                        + optimizeQueriesFlagState + " but 'cacheDeserializedValues' is set to "
+                        + validatedCacheDeserializedValues + ". These are conflicting options. "
+                        + "Please remove the `optimize-queries'");
+            }
+        }
+    }
+
+    /**
+     * Get current value cache settings
+     *
+     * @return current value cache settings
+     * @since 3.6
+     */
+    public CacheDeserializedValues getCacheDeserializedValues() {
+        return cacheDeserializedValues;
     }
 
     public boolean isCompatible(MapConfig other) {
@@ -738,6 +829,7 @@ public class MapConfig {
                 + ((this.nearCacheConfig == null) ? 0 : this.nearCacheConfig
                 .hashCode());
         result = prime * result + this.timeToLiveSeconds;
+        result = prime * result + cacheDeserializedValues.hashCode();
         result = prime * result + (this.readBackupData ? 1231 : 1237);
         return result;
     }
@@ -761,6 +853,7 @@ public class MapConfig {
                         && this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize()
                         && this.timeToLiveSeconds == other.timeToLiveSeconds
                         && this.readBackupData == other.readBackupData
+                        && (this.cacheDeserializedValues == other.cacheDeserializedValues)
                         && (this.mergePolicy != null ? this.mergePolicy.equals(other.mergePolicy) : other.mergePolicy == null)
                         && (this.inMemoryFormat != null ? this.inMemoryFormat.equals(other.inMemoryFormat)
                         : other.inMemoryFormat == null)
@@ -796,6 +889,7 @@ public class MapConfig {
                 + ", mapAttributeConfigs=" + mapAttributeConfigs
                 + ", quorumName=" + quorumName
                 + ", queryCacheConfigs=" + queryCacheConfigs
+                + ", cacheDeserializedValues=" + cacheDeserializedValues
                 + '}';
     }
 }

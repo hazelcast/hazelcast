@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
@@ -25,7 +26,7 @@ public class DataRecordFactory implements RecordFactory<Data> {
 
     private final SerializationService serializationService;
     private final PartitioningStrategy partitionStrategy;
-    private final boolean optimizeQuery;
+    private final CacheDeserializedValues cacheDeserializedValues;
     private final boolean statisticsEnabled;
 
     public DataRecordFactory(MapConfig config, SerializationService serializationService,
@@ -33,17 +34,18 @@ public class DataRecordFactory implements RecordFactory<Data> {
         this.serializationService = serializationService;
         this.partitionStrategy = partitionStrategy;
         this.statisticsEnabled = config.isStatisticsEnabled();
-        this.optimizeQuery = config.isOptimizeQueries();
+        this.cacheDeserializedValues = config.getCacheDeserializedValues();
     }
 
     @Override
     public Record<Data> newRecord(Object value) {
         final Data data = serializationService.toData(value, partitionStrategy);
-        if (optimizeQuery) {
-            return statisticsEnabled ? new CachedDataRecordWithStats(data)
-                    : new CachedDataRecord(data);
+        switch (cacheDeserializedValues) {
+            case NEVER:
+                return statisticsEnabled ? new DataRecordWithStats(data) : new DataRecord(data);
+            default:
+                return statisticsEnabled ? new CachedDataRecordWithStats(data) : new CachedDataRecord(data);
         }
-        return statisticsEnabled ? new DataRecordWithStats(data) : new DataRecord(data);
     }
 
     @Override
