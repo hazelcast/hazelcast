@@ -306,6 +306,10 @@ public class MapContainer {
     public void decreaseInvalidationListenerCount() {
         invalidationListenerCount.decrementAndGet();
     }
+
+    public boolean isInvalidationEnabled() {
+        return isServerNearCacheInvalidationEnabled() || hasInvalidationListener();
+    }
 }
 
 

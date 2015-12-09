@@ -79,16 +79,25 @@ public abstract class MapOperation extends AbstractNamedOperation {
     }
 
     protected final void invalidateNearCache(List<Data> keys) {
+        if (!mapContainer.isInvalidationEnabled()) {
+            return;
+        }
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
         nearCacheProvider.getNearCacheInvalidator().invalidateNearCaches(name, keys, getCallerUuid());
     }
 
     protected final void invalidateNearCache(Data key) {
+        if (!mapContainer.isInvalidationEnabled()) {
+            return;
+        }
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
         nearCacheProvider.getNearCacheInvalidator().invalidateNearCaches(name, key, getCallerUuid());
     }
 
     protected final void clearNearCache(boolean owner) {
+        if (!mapContainer.isInvalidationEnabled()) {
+            return;
+        }
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
         nearCacheProvider.getNearCacheInvalidator().clearNearCaches(name, owner, getCallerUuid());
     }
