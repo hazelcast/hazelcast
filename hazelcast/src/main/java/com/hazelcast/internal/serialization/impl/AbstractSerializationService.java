@@ -66,6 +66,7 @@ public abstract class AbstractSerializationService implements SerializationServi
     protected SerializerAdapter portableSerializerAdapter;
     protected final SerializerAdapter nullSerializerAdapter;
     protected SerializerAdapter javaSerializerAdapter;
+    protected SerializerAdapter javaExternalizableAdapter;
 
     private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap = new IdentityHashMap<Class, SerializerAdapter>(
             CONSTANT_SERIALIZERS_LENGTH);
@@ -386,10 +387,9 @@ public abstract class AbstractSerializationService implements SerializationServi
             return nullSerializerAdapter;
         }
         Class type = object.getClass();
-        SerializerAdapter serializer;
 
         //2-Default serializers, Dataserializable, Portable, primitives, arrays, String and some helper Java types(BigInteger etc)
-        serializer = lookupDefaultSerializer(type);
+        SerializerAdapter  serializer = lookupDefaultSerializer(type);
 
         //3-Custom registered types by user
         if (serializer == null) {
@@ -467,10 +467,18 @@ public abstract class AbstractSerializationService implements SerializationServi
     }
 
     private SerializerAdapter lookupJavaSerializer(Class type) {
+        if (Externalizable.class.isAssignableFrom(type)) {
+            if (safeRegister(type, javaExternalizableAdapter) && !Throwable.class.isAssignableFrom(type)) {
+                logger.info("Performance Hint: Serialization service will use java.io.Externalizable for : " + type.getName()
+                        + " . Please consider using a faster serialization option such as DataSerializable. ");
+            }
+            return javaExternalizableAdapter;
+        }
+
         if (Serializable.class.isAssignableFrom(type)) {
             if (safeRegister(type, javaSerializerAdapter) && !Throwable.class.isAssignableFrom(type)) {
-                logger.info("Performance Hint: Serialization service will use Java Serialization for : " + type.getName()
-                    + " . Please consider using a faster serialization option such as DataSerializable. ");
+                logger.info("Performance Hint: Serialization service will use java.io.Serializable for : " + type.getName()
+                        + " . Please consider using a faster serialization option such as DataSerializable. ");
             }
             return javaSerializerAdapter;
         }
