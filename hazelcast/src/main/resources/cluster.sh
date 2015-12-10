@@ -1,8 +1,8 @@
 #!/bin/sh
 if [[ ( $1 == "--help") ||  ($1 == "-h") ]]; then 
    	echo "parameters : "
-   	echo "	-o, --operation 	: Defines state operation of the script. Operation can be 'get' or 'change'."
-    echo "	-s, --state 	    : Defines new state of the cluster. State can be 'active', 'frozen', 'passive'"
+   	echo "	-o, --operation	    : Defines state operation of the script. Operation can be 'get' or 'change'."
+        echo "	-s, --state 	    : Defines new state of the cluster. State can be 'active', 'frozen', 'passive'"
    	echo "	-p, --port  	    : Defines which port hazelcast is running. Default value is '5701'."
    	echo "	-g, --groupname     : Defines groupname of the cluster. Default value is 'dev'."
    	echo "	-P, --password      : Defines password of the cluster. Default value is 'dev-pass'."
