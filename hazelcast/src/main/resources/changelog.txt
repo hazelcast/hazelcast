@@ -46,18 +46,21 @@ Chapter 17 - Management
 Chapter 21 - WAN
 - WAN Replication Event Filtering API section and WAN Replication Acknowledge Types section added as new sections to explain the improvements performed for Hazelcast WAN replication feature.
 
-Chapter 22 - Hazelcast Configuration
+Chapter 22 - OSGI
+- Added as a new chapter.
+
+Chapter 23 - Hazelcast Configuration
 - Improved by adding missing configuration elements and attributes. Added Quorum Configuration section.
 - Network Configuration: Join section updated by adding the explanation for `discovery-strategies` element.
 - System Properties: Added the new system properties `hazelcast.unsafe.mode`,  `hazelcast.io.input.thread.count`, `hazelcast.io.output.thread.count` and `hazelcast.query.optimizer.type`. Updated the definition of `hazelcast.io.thread.count`.
 
-Chapter 23 - Extending Hazelcast
+Chapter 24 - Extending Hazelcast
 - This title added as a chapter to include the section previously present as "User Defined Services".
 - Discovery SPI: Added as a new section.
 - Config Properties SPI: Added as a new section.
 
-Chapter 27 - FAQ
+Chapter 28 - FAQ
 - Added new questions/answers.
 
-Chapter 28 - Glossary
+Chapter 29 - Glossary
 - Added new glossary items.
