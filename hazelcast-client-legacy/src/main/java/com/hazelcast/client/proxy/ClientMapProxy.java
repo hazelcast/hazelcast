@@ -210,7 +210,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         // I do not why but findbugs does not like this null check:
         // value must be nonnull but is marked as nullable ["com.hazelcast.client.proxy.ClientMapProxy"]
         // At ClientMapProxy.java:[lines 131-1253]
-        // checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
         Data valueData = toData(value);
@@ -585,6 +585,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public String addPartitionLostListener(MapPartitionLostListener listener) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         MapAddPartitionLostListenerRequest addRequest = new MapAddPartitionLostListenerRequest(name);
         MapRemovePartitionLostListenerRequest removeRequest = new MapRemovePartitionLostListenerRequest(name);
         EventHandler<PortableMapPartitionLostEvent> handler = new ClientMapPartitionLostEventHandler(listener);
@@ -782,11 +783,16 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public Collection<V> values() {
         // we pass null instead of TruePredicate.INSTANCE due to security. But null will be interpreted as TruePredicate.
-        return values(null);
+        return valuesInternal(null);
     }
 
     @Override
     public Collection<V> values(Predicate predicate) {
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        return valuesInternal(predicate);
+    }
+
+    private Collection<V> valuesInternal(Predicate predicate) {
         if (predicate instanceof PagingPredicate) {
             return valuesForPagingPredicate((PagingPredicate) predicate);
         }
@@ -804,12 +810,17 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public Set<Entry<K, V>> entrySet() {
         // we pass null instead of TruePredicate.INSTANCE due to security. But null will be interpreted as TruePredicate.
-        return entrySet(null);
+        return entrySetInternal(null);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Set<Entry<K, V>> entrySet(Predicate predicate) {
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        return entrySetInternal(predicate);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<Entry<K, V>> entrySetInternal(Predicate predicate) {
         PagingPredicate pagingPredicate = null;
         if (predicate instanceof PagingPredicate) {
             pagingPredicate = (PagingPredicate) predicate;
@@ -839,12 +850,17 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public Set<K> keySet() {
         // we pass null instead of TruePredicate.INSTANCE due to security. But null will be interpreted as TruePredicate.
-        return keySet(null);
+        return keySetInternal(null);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Set<K> keySet(Predicate predicate) {
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        return keySetInternal(predicate);
+    }
+
+    private Set<K> keySetInternal(Predicate predicate) {
         PagingPredicate pagingPredicate = null;
         if (predicate instanceof PagingPredicate) {
             pagingPredicate = (PagingPredicate) predicate;
@@ -1005,6 +1021,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
+        if (keys == null || keys.size() == 0 || keys.contains(null)) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
         Set<Data> dataKeys = new HashSet<Data>(keys.size());
         for (K key : keys) {
             dataKeys.add(toData(key));

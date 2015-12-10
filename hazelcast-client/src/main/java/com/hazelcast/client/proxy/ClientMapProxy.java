@@ -677,6 +677,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public String addPartitionLostListener(MapPartitionLostListener listener) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         final EventHandler<ClientMessage> handler = new ClientMapPartitionLostEventHandler(listener);
         return registerListener(createMapPartitionListenerCodec(), handler);
     }
@@ -1057,6 +1058,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     @SuppressWarnings("unchecked")
     public Set<K> keySet(Predicate predicate) {
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         if (predicate instanceof PagingPredicate) {
             return keySetWithPagingPredicate((PagingPredicate) predicate);
         }
@@ -1129,6 +1131,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public Collection<V> values(Predicate predicate) {
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         if (predicate instanceof PagingPredicate) {
             return valuesForPagingPredicate((PagingPredicate) predicate);
         }
@@ -1294,6 +1297,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
+        if (keys == null || keys.size() == 0 || keys.contains(null)) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
         Set<Data> dataKeys = new HashSet<Data>(keys.size());
         for (K key : keys) {
             dataKeys.add(toData(key));

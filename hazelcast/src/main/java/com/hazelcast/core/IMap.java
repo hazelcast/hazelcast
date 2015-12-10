@@ -791,6 +791,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param listener {@link MapListener} for this map.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws UnsupportedOperationException if this operation isn't supported. For example
+     *                                       on the client side it isn't possible to add a LocalEntryListener.
+     * @throws NullPointerException if the listener is null.
      * @see #localKeySet()
      * @see MapListener
      */
@@ -812,6 +815,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param listener entry listener.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws UnsupportedOperationException if this operation isn't supported. For example
+     *                                       on the client side it isn't possible to add a LocalEntryListener.
+     * @throws NullPointerException if the listener is null.
      * @see #localKeySet()
      * @deprecated use {@link #addLocalEntryListener(MapListener)} instead.
      */
@@ -827,6 +833,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws UnsupportedOperationException if this operation isn't supported. For example
+     *                                       on the client side it isn't possible to add a LocalEntryListener.
+     * @throws NullPointerException if the listener is null.
+     * @throws NullPointerException if the predicate is null.
      * @see MapListener
      */
     String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue);
@@ -841,6 +851,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the listener is null.
+     * @throws NullPointerException if the predicate is null.
      * @deprecated use {@link #addLocalEntryListener(MapListener, com.hazelcast.query.Predicate, boolean)}
      */
     String addLocalEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue);
@@ -856,6 +868,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the listener is null.
+     * @throws NullPointerException if the predicate is null.
      * @see MapListener
      */
     String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
@@ -872,7 +886,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
-     * @deprecated use {@link #addLocalEntryListener(MapListener, com.hazelcast.query.Predicate, boolean)} instead
+     * @throws NullPointerException if the listener is null.
+     * @throws NullPointerException if the predicate is null.
+     * @deprecated use {@link #addLocalEntryListener(MapListener, com.hazelcast.query.Predicate, Object, boolean)} instead
      */
     String addLocalEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
@@ -994,7 +1010,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      * @throws NullPointerException if the specified listener is null.
      * @throws NullPointerException if the specified key is null.
-     * @deprecated use {@link #addEntryListener(MapListener, Predicate, Object, boolean)} instead.
+     * @deprecated use {@link #addEntryListener(MapListener, Object, boolean)} instead.
      */
     String addEntryListener(EntryListener listener, K key, boolean includeValue);
 
@@ -1024,7 +1040,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      * @throws NullPointerException if the specified listener is null.
      * @throws NullPointerException if the specified predicate is null.
-     * @deprecated use {@link #addEntryListener(MapListener, Predicate, boolean)} instead.
+     * @deprecated use {@link #addEntryListener(MapListener, com.hazelcast.query.Predicate, boolean)} instead.
      */
     String addEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue);
 
@@ -1056,7 +1072,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      * @throws NullPointerException if the specified listener is null.
      * @throws NullPointerException if the specified predicate is null.
-     * @deprecated use {@link #addEntryListener(MapListener, Object, boolean)}
+     * @deprecated use {@link #addEntryListener(MapListener, com.hazelcast.query.Predicate, Object, boolean)}
      */
     String addEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
@@ -1180,6 +1196,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param predicate specified query criteria.
      * @return result key set of the query.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
+     * @throws NullPointerException if the predicate is null
      * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> keySet(Predicate predicate);
@@ -1201,6 +1218,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param predicate specified query criteria.
      * @return result entry set of the query.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
+     * @throws NullPointerException if the predicate is null
      * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<Map.Entry<K, V>> entrySet(Predicate predicate);
@@ -1222,6 +1240,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param predicate specified query criteria.
      * @return result value collection of the query.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
+     * @throws NullPointerException if the predicate is null
      * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Collection<V> values(Predicate predicate);
