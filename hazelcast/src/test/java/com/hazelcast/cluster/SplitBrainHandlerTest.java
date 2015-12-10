@@ -61,6 +61,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.cluster.ClusterState.ACTIVE;
 import static com.hazelcast.cluster.ClusterState.FROZEN;
 import static com.hazelcast.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstance;
@@ -129,6 +130,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         assertEquals(1, l.getCount(LifecycleState.MERGED));
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
+
+        assertEquals(ACTIVE, h1.getCluster().getClusterState());
+        assertEquals(ACTIVE, h2.getCluster().getClusterState());
     }
 
     @Test
@@ -267,6 +271,10 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         assertEquals(3, h1.getCluster().getMembers().size());
         assertEquals(3, h2.getCluster().getMembers().size());
         assertEquals(3, h3.getCluster().getMembers().size());
+
+        assertEquals(ACTIVE, h1.getCluster().getClusterState());
+        assertEquals(ACTIVE, h2.getCluster().getClusterState());
+        assertEquals(ACTIVE, h3.getCluster().getClusterState());
     }
 
     @Test
