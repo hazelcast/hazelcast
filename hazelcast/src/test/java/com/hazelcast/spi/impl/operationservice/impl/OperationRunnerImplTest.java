@@ -191,7 +191,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         Operation op = new DummyOperation();
         setCallId(op, 1000 * 1000);
 
-        Packet packet = toPacket(remote, op);
+        Packet packet = toPacket(local, remote, op);
         operationRunner.run(packet);
     }
 
@@ -200,7 +200,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         Operation op = new DummyOperation();
         setCallId(op, 1000 * 1000);
 
-        Packet packet = toPacket(remote, op);
+        Packet packet = toPacket(local, remote, op);
         byte[] bytes = packet.toByteArray();
         for (int k = 0; k < bytes.length; k++) {
             bytes[k]++;

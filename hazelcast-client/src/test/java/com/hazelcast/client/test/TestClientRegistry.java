@@ -250,6 +250,12 @@ public class TestClientRegistry {
             super(localEndpoint, remoteEndpoint, nodeEngine);
             this.responseConnection = responseConnection;
             this.connectionId = connectionId;
+            register();
+        }
+
+        private void register() {
+            Node node = nodeEngine.getNode();
+            node.getConnectionManager().registerConnection(getEndPoint(), this);
         }
 
         @Override

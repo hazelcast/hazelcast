@@ -19,7 +19,6 @@ package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -32,7 +31,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.executor.StripedRunnable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -46,7 +44,7 @@ public class MockConnectionManager implements ConnectionManager {
     private static final int RETRY_NUMBER = 5;
     private static final int DELAY_FACTOR = 100;
 
-    final Map<Address, MockConnection> mapConnections = new ConcurrentHashMap<Address, MockConnection>(10);
+    final ConcurrentMap<Address, MockConnection> mapConnections = new ConcurrentHashMap<Address, MockConnection>(10);
     final ConcurrentMap<Address, NodeEngineImpl> nodes;
     final Node node;
     final Object joinerLock;
@@ -69,28 +67,29 @@ public class MockConnectionManager implements ConnectionManager {
 
     @Override
     public Connection getConnection(Address address) {
+        return mapConnections.get(address);
+    }
+
+    @Override
+    public Connection getOrConnect(Address address) {
         MockConnection conn = mapConnections.get(address);
         if (conn == null || !conn.isAlive()) {
             NodeEngineImpl nodeEngine = nodes.get(address);
-            if (nodeEngine != null && nodeEngine.getNode().getState() != NodeState.SHUT_DOWN) {
+            if (nodeEngine != null && nodeEngine.isRunning()) {
                 MockConnection thisConnection = new MockConnection(address, node.getThisAddress(), node.nodeEngine);
                 conn = new MockConnection(node.getThisAddress(), address, nodeEngine);
                 conn.localConnection = thisConnection;
                 thisConnection.localConnection = conn;
                 mapConnections.put(address, conn);
+                logger.info("Created connection to endpoint: " + address + ", connection: " + conn);
             }
         }
         return conn;
     }
 
     @Override
-    public Connection getOrConnect(Address address) {
-        return getConnection(address);
-    }
-
-    @Override
     public Connection getOrConnect(Address address, boolean silent) {
-        return getConnection(address);
+        return getOrConnect(address);
     }
 
     @Override
@@ -109,6 +108,9 @@ public class MockConnectionManager implements ConnectionManager {
                     }
                 });
             }
+        }
+        for (MockConnection connection : mapConnections.values()) {
+            connection.close();
         }
     }
 
@@ -142,7 +144,12 @@ public class MockConnectionManager implements ConnectionManager {
 
     public void destroyConnection(final Connection connection) {
         final Address endPoint = connection.getEndPoint();
-        mapConnections.remove(endPoint);
+        final boolean removed = mapConnections.remove(endPoint, connection);
+        if (!removed) {
+            return;
+        }
+
+        logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);
         ioService.getEventService().executeEventCallback(new StripedRunnable() {
             @Override
             public void run() {
