@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.EventListenerFilter;
-import com.hazelcast.map.impl.SyntheticEventFilter;
 import com.hazelcast.map.impl.nearcache.BatchNearCacheInvalidation;
 import com.hazelcast.map.impl.nearcache.CleaningNearCacheInvalidation;
 import com.hazelcast.map.impl.nearcache.Invalidation;
@@ -81,8 +80,7 @@ public class MapAddNearCacheEntryListenerMessageTask
 
     @Override
     protected EventFilter getEventFilter() {
-        SyntheticEventFilter syntheticEventFilter = new SyntheticEventFilter(TrueEventFilter.INSTANCE);
-        return new EventListenerFilter(parameters.listenerFlags, syntheticEventFilter);
+        return new EventListenerFilter(parameters.listenerFlags, TrueEventFilter.INSTANCE);
     }
 
     private final class ClientNearCacheInvalidationListenerImpl implements InvalidationListener {
