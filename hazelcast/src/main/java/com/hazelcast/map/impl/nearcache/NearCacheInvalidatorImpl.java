@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
@@ -347,15 +346,11 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
         }
         Collection<Member> members = nodeEngine.getClusterService().getMembers();
         for (Member member : members) {
-            try {
-                if (member.localMember()) {
-                    continue;
-                }
-                Operation operation = new InvalidateNearCacheOperation(mapName, key).setServiceName(SERVICE_NAME);
-                nodeEngine.getOperationService().send(operation, member.getAddress());
-            } catch (Throwable throwable) {
-                throw new HazelcastException(throwable);
+            if (member.localMember()) {
+                continue;
             }
+            Operation operation = new InvalidateNearCacheOperation(mapName, key).setServiceName(SERVICE_NAME);
+            nodeEngine.getOperationService().send(operation, member.getAddress());
         }
     }
 
@@ -366,15 +361,11 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
 
         Collection<Member> members = nodeEngine.getClusterService().getMembers();
         for (Member member : members) {
-            try {
-                if (member.localMember()) {
-                    continue;
-                }
-                Operation operation = new NearCacheKeySetInvalidationOperation(mapName, keys).setServiceName(SERVICE_NAME);
-                nodeEngine.getOperationService().send(operation, member.getAddress());
-            } catch (Throwable throwable) {
-                nodeEngine.getLogger(getClass()).warning(throwable);
+            if (member.localMember()) {
+                continue;
             }
+            Operation operation = new NearCacheKeySetInvalidationOperation(mapName, keys).setServiceName(SERVICE_NAME);
+            nodeEngine.getOperationService().send(operation, member.getAddress());
         }
     }
 
