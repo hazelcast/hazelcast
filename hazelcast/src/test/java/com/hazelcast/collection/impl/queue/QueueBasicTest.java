@@ -73,6 +73,16 @@ public abstract class QueueBasicTest extends HazelcastTestSupport {
         assertEquals(100, queue.size());
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testOffer_whenNullItem() {
+        queue.offer(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testOfferWithTimeout_whenNullItem() throws InterruptedException {
+        queue.offer(null, 1, TimeUnit.SECONDS);
+    }
+
     @Test
     public void testOffer_whenFull() {
         for (int i = 0; i < queueConfig.getMaxSize(); i++) {
@@ -107,6 +117,16 @@ public abstract class QueueBasicTest extends HazelcastTestSupport {
         queue.poll();
         assertSizeEventually(queueConfig.getMaxSize(), queue);
         assertTrue(queue.contains("waiting"));
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testAdd_whenNullItem() {
+        queue.add(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testPut_whenNullItem() throws InterruptedException {
+        queue.put(null);
     }
 
     // ================ poll ==============================

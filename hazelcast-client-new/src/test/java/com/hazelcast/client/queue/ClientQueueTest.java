@@ -82,6 +82,31 @@ public class ClientQueueTest {
         assertEquals(1, q.size());
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testOffer_whenNullItem() {
+        IQueue q = client.getQueue(randomString());
+        q.offer(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testOfferWithTimeout_whenNullItem() throws InterruptedException {
+        IQueue q = client.getQueue(randomString());
+        q.offer(null, 1, TimeUnit.SECONDS);
+    }
+
+
+    @Test(expected = NullPointerException.class)
+    public void testAdd_whenNullItem() {
+        final IQueue q = client.getQueue(randomString());
+        q.add(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testPut_whenNullItem() throws InterruptedException {
+        final IQueue q = client.getQueue(randomString());
+        q.put(null);
+    }
+
     @Test
     public void testadd() {
         final IQueue q = client.getQueue(randomString());
