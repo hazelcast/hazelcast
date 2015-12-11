@@ -72,7 +72,7 @@ public class MapKeyLoader {
     private InternalPartitionService partitionService;
     private IFunction<Object, Data> toData;
     private ExecutionService execService;
-    private CoalescingDelayedTrigger deleayedTrigger;
+    private CoalescingDelayedTrigger delayedTrigger;
 
     private int maxSizePerNode;
     private int maxBatch;
@@ -220,7 +220,7 @@ public class MapKeyLoader {
      * Triggers key loading on SENDER if it hadn't started. Delays triggering if invoked multiple times.
      **/
     public void triggerLoadingWithDelay() {
-        if (deleayedTrigger == null) {
+        if (delayedTrigger == null) {
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
@@ -228,10 +228,10 @@ public class MapKeyLoader {
                     opService.invokeOnPartition(SERVICE_NAME, op, mapNamePartition);
                 }
             };
-            deleayedTrigger = new CoalescingDelayedTrigger(execService, LOADING_TRIGGER_DELAY, LOADING_TRIGGER_DELAY, runnable);
+            delayedTrigger = new CoalescingDelayedTrigger(execService, LOADING_TRIGGER_DELAY, LOADING_TRIGGER_DELAY, runnable);
         }
 
-        deleayedTrigger.executeWithDelay();
+        delayedTrigger.executeWithDelay();
     }
 
     public boolean shouldDoInitialLoad() {
@@ -285,7 +285,7 @@ public class MapKeyLoader {
         } catch (Exception caught) {
             loadError = caught;
         } finally {
-            sendLoadCompleted(clusterSize, partitionService.getPartitionCount(), replaceExistingValues, loadError);
+            sendLoadCompleted(clusterSize, loadError);
 
             if (keys instanceof Closeable) {
                 closeResource((Closeable) keys);
@@ -308,8 +308,7 @@ public class MapKeyLoader {
         return futures;
     }
 
-    private void sendLoadCompleted(int clusterSize, int partitions,
-                                   boolean replaceExistingValues, Throwable exception) throws Exception {
+    private void sendLoadCompleted(int clusterSize, Throwable exception) throws Exception {
 
         // notify all partitions about loading status: finished or exception encountered
         opService.invokeOnAllPartitions(SERVICE_NAME, new LoadStatusOperationFactory(mapName, exception));
