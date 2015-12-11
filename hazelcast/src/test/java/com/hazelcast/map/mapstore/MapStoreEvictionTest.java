@@ -9,6 +9,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -58,7 +59,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
 
         assertSizeEventually(MAP_STORE_ENTRY_COUNT, map);
         assertEquals(MAP_STORE_ENTRY_COUNT, loader.getLoadedValueCount());
-        assertTrue(loader.isLoadAllKeysClosed());
+        assertLoaderIsClosedEventually();
     }
 
     private IMap<Object, Object> getMap(final String mapName, Config cfg) {
@@ -123,7 +124,16 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
         assertFalse("Map is not empty", map.isEmpty());
         assertTrue(MAX_SIZE_PER_CLUSTER >= map.size());
         assertTrue(MAX_SIZE_PER_CLUSTER >= loader.getLoadedValueCount());
-        assertTrue(loader.isLoadAllKeysClosed());
+        assertLoaderIsClosedEventually();
+    }
+
+    private void assertLoaderIsClosedEventually() {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(loader.isLoadAllKeysClosed());
+            }
+        });
     }
 
     private Config newConfig(String mapName, boolean sizeLimited, MapStoreConfig.InitialLoadMode loadMode) {
