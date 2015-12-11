@@ -52,6 +52,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.Preconditions;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -61,6 +62,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy implements IQueue<E> {
 
@@ -175,6 +178,8 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
+        checkNotNull(e, "item can't be null");
+
         Data data = toData(e);
         ClientMessage request = QueueOfferCodec.encodeRequest(name, data, unit.toMillis(timeout));
         ClientMessage response = invokeOnPartitionInterruptibly(request);

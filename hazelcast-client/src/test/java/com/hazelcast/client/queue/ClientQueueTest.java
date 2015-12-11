@@ -31,6 +31,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.internal.matchers.Null;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -83,8 +84,20 @@ public class ClientQueueTest {
         assertEquals(1, q.size());
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testOffer_whenNullItem() {
+        IQueue q = client.getQueue(randomString());
+        q.offer(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testOfferWithTimeout_whenNullItem() throws InterruptedException {
+        IQueue q = client.getQueue(randomString());
+        q.offer(null, 1, TimeUnit.SECONDS);
+    }
+
     @Test
-    public void testadd() {
+    public void testAdd() {
         final IQueue q = client.getQueue(randomString());
         assertTrue(q.add(1));
         assertEquals(1, q.size());
@@ -108,11 +121,23 @@ public class ClientQueueTest {
         q.add(1);
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testAdd_whenNullItem() {
+        IQueue q = client.getQueue(randomString());
+        q.add(null);
+    }
+
     @Test
     public void testPut() throws InterruptedException {
         final IQueue q = client.getQueue(randomString());
         q.put(1);
         assertEquals(1, q.size());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testPut_whenNullItem() throws InterruptedException {
+        IQueue q = client.getQueue(randomString());
+        q.put(null);
     }
 
     @Test
