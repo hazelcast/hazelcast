@@ -18,6 +18,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 
+import com.hazelcast.util.ExceptionUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +29,7 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -50,14 +52,18 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 
+        warmUpPartitions(h1, h2);
+
         TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
         h2.getCluster().addMembershipListener(memberShipListener);
-        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1);
+
+        CountDownLatch mergeBlockingLatch = new CountDownLatch(1);
+        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1, mergeBlockingLatch);
         h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
 
         closeConnectionBetween(h1, h2);
 
-        assertOpenEventually(memberShipListener.latch);
+        assertOpenEventually(memberShipListener.memberRemovedLatch);
         assertClusterSizeEventually(1, h1);
         assertClusterSizeEventually(1, h2);
 
@@ -71,9 +77,6 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
 
         Cache cache1 = cacheManager1.createCache(cacheName, cacheConfig);
         Cache cache2 = cacheManager2.createCache(cacheName, cacheConfig);
-
-        // TODO We assume that until here and also while doing get/put, cluster is still splitted.
-        // This assumptions seems fragile due to time sensitivity.
 
         cache1.put("key1", "value");
         assertEquals("value", cache1.get("key1")); // Access to record
@@ -93,7 +96,10 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
         cache1.put("key2", "LatestUpdatedValue2");
         assertEquals("LatestUpdatedValue2", cache1.get("key2")); // Access to record
 
-        assertOpenEventually(lifeCycleListener.latch);
+        // Allow merge process to continue
+        mergeBlockingLatch.countDown();
+
+        assertOpenEventually(lifeCycleListener.mergeFinishedLatch);
         assertClusterSizeEventually(2, h1);
         assertClusterSizeEventually(2, h2);
 
@@ -109,14 +115,18 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 
+        warmUpPartitions(h1, h2);
+
         TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
         h2.getCluster().addMembershipListener(memberShipListener);
-        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1);
+
+        CountDownLatch mergeBlockingLatch = new CountDownLatch(1);
+        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1, mergeBlockingLatch);
         h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
 
         closeConnectionBetween(h1, h2);
 
-        assertOpenEventually(memberShipListener.latch);
+        assertOpenEventually(memberShipListener.memberRemovedLatch);
         assertClusterSizeEventually(1, h1);
         assertClusterSizeEventually(1, h2);
 
@@ -130,9 +140,6 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
 
         Cache cache1 = cacheManager1.createCache(cacheName, cacheConfig);
         Cache cache2 = cacheManager2.createCache(cacheName, cacheConfig);
-
-        // TODO We assume that until here and also while doing get/put, cluster is still splitted.
-        // This assumptions seems fragile due to time sensitivity.
 
         cache1.put("key1", "higherHitsValue");
         cache1.put("key2", "value2");
@@ -148,7 +155,10 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
         assertEquals("higherHitsValue2", cache2.get("key2"));
         assertEquals("higherHitsValue2", cache2.get("key2"));
 
-        assertOpenEventually(lifeCycleListener.latch);
+        // Allow merge process to continue
+        mergeBlockingLatch.countDown();
+
+        assertOpenEventually(lifeCycleListener.mergeFinishedLatch);
         assertClusterSizeEventually(2, h1);
         assertClusterSizeEventually(2, h2);
 
@@ -164,14 +174,18 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 
+        warmUpPartitions(h1, h2);
+
         TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
         h2.getCluster().addMembershipListener(memberShipListener);
-        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1);
+
+        CountDownLatch mergeBlockingLatch = new CountDownLatch(1);
+        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1, mergeBlockingLatch);
         h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
 
         closeConnectionBetween(h1, h2);
 
-        assertOpenEventually(memberShipListener.latch);
+        assertOpenEventually(memberShipListener.memberRemovedLatch);
         assertClusterSizeEventually(1, h1);
         assertClusterSizeEventually(1, h2);
 
@@ -186,15 +200,15 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
         Cache cache1 = cacheManager1.createCache(cacheName, cacheConfig);
         Cache cache2 = cacheManager2.createCache(cacheName, cacheConfig);
 
-        // TODO We assume that until here and also while doing get/put, cluster is still splitted.
-        // This assumptions seems fragile due to time sensitivity.
-
         cache1.put("key1", "PutIfAbsentValue1");
 
         cache2.put("key1", "value");
         cache2.put("key2", "PutIfAbsentValue2");
 
-        assertOpenEventually(lifeCycleListener.latch);
+        // Allow merge process to continue
+        mergeBlockingLatch.countDown();
+
+        assertOpenEventually(lifeCycleListener.mergeFinishedLatch);
         assertClusterSizeEventually(2, h1);
         assertClusterSizeEventually(2, h2);
 
@@ -210,14 +224,18 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 
+        warmUpPartitions(h1, h2);
+
         TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
         h2.getCluster().addMembershipListener(memberShipListener);
-        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1);
+
+        CountDownLatch mergeBlockingLatch = new CountDownLatch(1);
+        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1, mergeBlockingLatch);
         h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
 
         closeConnectionBetween(h1, h2);
 
-        assertOpenEventually(memberShipListener.latch);
+        assertOpenEventually(memberShipListener.memberRemovedLatch);
         assertClusterSizeEventually(1, h1);
         assertClusterSizeEventually(1, h2);
 
@@ -237,7 +255,10 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
 
         cache2.put(key, "passThroughValue");
 
-        assertOpenEventually(lifeCycleListener.latch);
+        // Allow merge process to continue
+        mergeBlockingLatch.countDown();
+
+        assertOpenEventually(lifeCycleListener.mergeFinishedLatch);
         assertClusterSizeEventually(2, h1);
         assertClusterSizeEventually(2, h2);
 
@@ -252,14 +273,18 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 
+        warmUpPartitions(h1, h2);
+
         TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
         h2.getCluster().addMembershipListener(memberShipListener);
-        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1);
+
+        CountDownLatch mergeBlockingLatch = new CountDownLatch(1);
+        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1, mergeBlockingLatch);
         h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
 
         closeConnectionBetween(h1, h2);
 
-        assertOpenEventually(memberShipListener.latch);
+        assertOpenEventually(memberShipListener.memberRemovedLatch);
         assertClusterSizeEventually(1, h1);
         assertClusterSizeEventually(1, h2);
 
@@ -274,15 +299,15 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
         Cache cache1 = cacheManager1.createCache(cacheName, cacheConfig);
         Cache cache2 = cacheManager2.createCache(cacheName, cacheConfig);
 
-        // TODO We assume that until here and also while doing get/put, cluster is still splitted.
-        // This assumptions seems fragile due to time sensitivity.
-
         String key = generateKeyOwnedBy(h1);
         cache1.put(key, "value");
 
         cache2.put(key,Integer.valueOf(1));
 
-        assertOpenEventually(lifeCycleListener.latch);
+        // Allow merge process to continue
+        mergeBlockingLatch.countDown();
+
+        assertOpenEventually(lifeCycleListener.mergeFinishedLatch);
         assertClusterSizeEventually(2, h1);
         assertClusterSizeEventually(2, h2);
 
@@ -308,16 +333,24 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
 
     private static class TestLifeCycleListener implements LifecycleListener {
 
-        CountDownLatch latch;
+        final CountDownLatch mergeFinishedLatch;
+        final CountDownLatch mergeBlockingLatch;
 
-        TestLifeCycleListener(int countdown) {
-            latch = new CountDownLatch(countdown);
+        TestLifeCycleListener(int countdown, CountDownLatch mergeBlockingLatch) {
+            this.mergeFinishedLatch = new CountDownLatch(countdown);
+            this.mergeBlockingLatch = mergeBlockingLatch;
         }
 
         @Override
         public void stateChanged(LifecycleEvent event) {
-            if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
-                latch.countDown();
+            if (event.getState() == LifecycleEvent.LifecycleState.MERGING) {
+                try {
+                    mergeBlockingLatch.await(30, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    ExceptionUtil.rethrow(e);
+                }
+            } else if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
+                mergeFinishedLatch.countDown();
             }
         }
 
@@ -325,10 +358,10 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
 
     private static class TestMemberShipListener implements MembershipListener {
 
-        final CountDownLatch latch;
+        final CountDownLatch memberRemovedLatch;
 
         TestMemberShipListener(int countdown) {
-            latch = new CountDownLatch(countdown);
+            memberRemovedLatch = new CountDownLatch(countdown);
         }
 
         @Override
@@ -338,7 +371,7 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
 
         @Override
         public void memberRemoved(MembershipEvent membershipEvent) {
-            latch.countDown();
+            memberRemovedLatch.countDown();
         }
 
         @Override
