@@ -54,6 +54,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * @author ali 5/19/13
  */
@@ -133,6 +135,8 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     }
 
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
+        checkNotNull(e, "item can't be null");
+
         Data data = getContext().getSerializationService().toData(e);
         OfferRequest request = new OfferRequest(name, unit.toMillis(timeout), data);
         final Boolean result = invokeInterruptibly(request);
