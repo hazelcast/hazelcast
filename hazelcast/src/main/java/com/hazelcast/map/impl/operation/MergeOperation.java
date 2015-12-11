@@ -88,7 +88,7 @@ public class MergeOperation extends BasePutOperation {
             final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
             final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
             mapServiceContext.interceptAfterPut(name, dataValue);
-            mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.MERGED, false, dataKey, dataOldValue,
+            mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.MERGED, dataKey, dataOldValue,
                     dataValue, mergingValue);
             invalidateNearCache(dataKey);
             evict();

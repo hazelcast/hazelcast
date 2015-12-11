@@ -24,15 +24,14 @@ import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.SyntheticEventFilter;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.wan.MapReplicationRemove;
 import com.hazelcast.map.impl.wan.MapReplicationUpdate;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.CachedQueryEntry;
-import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -128,17 +127,12 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     @Override
     public void publishEvent(Address caller, String mapName, EntryEventType eventType,
                              Data dataKey, Object dataOldValue, Object dataValue) {
-        publishEvent(caller, mapName, eventType, false, dataKey, dataOldValue, dataValue);
+        publishEvent(caller, mapName, eventType, dataKey, dataOldValue, dataValue, null);
     }
 
-    @Override
-    public void publishEvent(Address caller, String mapName, EntryEventType eventType, boolean syntheticEvent,
-                             Data dataKey, Object dataOldValue, Object dataValue) {
-        publishEvent(caller, mapName, eventType, syntheticEvent, dataKey, dataOldValue, dataValue, null);
-    }
 
     @Override
-    public void publishEvent(Address caller, String mapName, EntryEventType eventType, boolean syntheticEvent,
+    public void publishEvent(Address caller, String mapName, EntryEventType eventType,
                              Data dataKey, Object oldValue, Object value, Object mergingValue) {
         Collection<EventRegistration> registrations = getRegistrations(mapName);
         if (isEmpty(registrations)) {
@@ -151,7 +145,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         for (EventRegistration registration : registrations) {
             EventFilter filter = registration.getFilter();
 
-            if (!doFilter(filter, syntheticEvent, dataKey, oldValue, value, eventType, mapName)) {
+            if (!doFilter(filter, dataKey, oldValue, value, eventType, mapName)) {
                 continue;
             }
 
@@ -190,7 +184,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     }
 
     //CHECKSTYLE:OFF
-    protected boolean doFilter(EventFilter filter, boolean syntheticEvent, Data dataKey,
+    protected boolean doFilter(EventFilter filter, Data dataKey,
                                Object dataOldValue, Object dataValue, EntryEventType eventType, String mapNameOrNull) {
 
         if (filter instanceof MapPartitionLostEventFilter) {
@@ -205,14 +199,6 @@ public class MapEventPublisherImpl implements MapEventPublisher {
                 return false;
             } else {
                 filter = ((EventListenerFilter) filter).getEventFilter();
-            }
-        }
-
-        if (filter instanceof SyntheticEventFilter) {
-            if (syntheticEvent) {
-                return false;
-            } else {
-                filter = ((SyntheticEventFilter) filter).getFilter();
             }
         }
 
@@ -238,10 +224,6 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         // SyntheticEventFilter wraps an event filter.
         if (filter instanceof EventListenerFilter) {
             filter = ((EventListenerFilter) filter).getEventFilter();
-        }
-
-        if (filter instanceof SyntheticEventFilter) {
-            filter = ((SyntheticEventFilter) filter).getFilter();
         }
 
         if (filter instanceof TrueEventFilter) {

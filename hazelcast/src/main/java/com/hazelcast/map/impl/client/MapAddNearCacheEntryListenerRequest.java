@@ -18,10 +18,8 @@ package com.hazelcast.map.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.map.impl.MapPortableHook;
-import com.hazelcast.map.impl.SyntheticEventFilter;
 import com.hazelcast.map.impl.nearcache.Invalidation;
 import com.hazelcast.map.impl.nearcache.InvalidationListener;
-import com.hazelcast.spi.EventFilter;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.map.impl.nearcache.NearCacheInvalidatorImpl.getOrderKey;
@@ -37,12 +35,6 @@ public class MapAddNearCacheEntryListenerRequest extends MapAddEntryListenerRequ
 
     public MapAddNearCacheEntryListenerRequest(String name, boolean includeValue) {
         super(name, includeValue, INVALIDATION.getType());
-    }
-
-    @Override
-    protected EventFilter getEventFilter() {
-        final EventFilter eventFilter = super.getEventFilter();
-        return new SyntheticEventFilter(eventFilter);
     }
 
     @Override
