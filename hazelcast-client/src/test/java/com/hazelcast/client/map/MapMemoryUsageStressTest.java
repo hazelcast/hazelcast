@@ -3,11 +3,14 @@ package com.hazelcast.client.map;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 public class MapMemoryUsageStressTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private final ILogger logger = Logger.getLogger(MapMemoryUsageStressTest.class);
     private HazelcastInstance client;
 
     @Before
@@ -75,7 +79,7 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
                     map.destroy();
 
                     if (index % 1000 == 0) {
-                        System.out.println("At: " + index);
+                        logger.log(Level.INFO, "At: " + index);
                     }
                 }
             } catch (Throwable t) {
