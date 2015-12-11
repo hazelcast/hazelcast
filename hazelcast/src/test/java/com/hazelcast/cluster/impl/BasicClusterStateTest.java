@@ -24,6 +24,12 @@ import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.PartitionLostListener;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -35,12 +41,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.Map;
 
 import static com.hazelcast.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.instance.TestUtil.terminateInstance;
+import static com.hazelcast.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -373,6 +382,54 @@ public class BasicClusterStateTest
         other.shutdown();
     }
 
+    @Test
+    public void test_listener_registration_whenClusterState_PASSIVE() {
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance master = factory.newHazelcastInstance();
+        final HazelcastInstance other = factory.newHazelcastInstance();
+
+        changeClusterStateEventually(master, ClusterState.PASSIVE);
+        master.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
+        assertRegistrationsSizeEventually(master, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 1);
+        assertRegistrationsSizeEventually(other, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 1);
+    }
+
+    @Test
+    public void test_listener_deregistration_whenClusterState_PASSIVE() {
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance master = factory.newHazelcastInstance();
+        final HazelcastInstance other = factory.newHazelcastInstance();
+
+        final String registrationId = master.getPartitionService().addPartitionLostListener(mock(PartitionLostListener.class));
+        assertRegistrationsSizeEventually(master, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 1);
+        assertRegistrationsSizeEventually(other, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 1);
+
+        changeClusterStateEventually(master, ClusterState.PASSIVE);
+        master.getPartitionService().removePartitionLostListener(registrationId);
+
+        assertRegistrationsSizeEventually(other, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 0);
+        assertRegistrationsSizeEventually(master, InternalPartitionService.SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, 0);
+    }
+
+    @Test
+    public void test_eventsDispatched_whenClusterState_PASSIVE() {
+        System.setProperty(EventServiceImpl.EVENT_SYNC_FREQUENCY_PROP, "1");
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance master = factory.newHazelcastInstance();
+        final HazelcastInstance other = factory.newHazelcastInstance();
+
+        changeClusterStateEventually(master, ClusterState.PASSIVE);
+        master.getMap(randomMapName());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(1, getNodeEngineImpl(other).getProxyService().getProxyCount());
+            }
+        });
+    }
+
     private static void assertClusterState(ClusterState expectedState, HazelcastInstance... instances) {
         for (HazelcastInstance instance : instances) {
             assertEquals(expectedState, instance.getCluster().getClusterState());
@@ -385,4 +442,19 @@ public class BasicClusterStateTest
             assertEquals(expectedState, node.getState());
         }
     }
+
+    private void assertRegistrationsSizeEventually(final HazelcastInstance instance, final String serviceName, final String topic, final int size) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+
+                final InternalEventService eventService = getNode(instance).getNodeEngine().getEventService();
+                final Collection<EventRegistration> registrations =
+                        eventService.getRegistrations(serviceName, topic);
+                assertEquals(size, registrations.size());
+            }
+        });
+    }
+
 }
