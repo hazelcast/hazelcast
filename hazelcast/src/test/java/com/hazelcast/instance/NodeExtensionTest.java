@@ -16,33 +16,21 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.cluster.Joiner;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.wan.WanReplicationService;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 
-import java.net.UnknownHostException;
-import java.nio.channels.ServerSocketChannel;
-
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -59,7 +47,7 @@ public class NodeExtensionTest extends HazelcastTestSupport {
 
     @Test
     public void verifyMethods() throws Exception {
-        DummyNodeContext nodeContext = new DummyNodeContext(new Address("127.0.0.1", 5000));
+        TestNodeContext nodeContext = new TestNodeContext();
         NodeExtension nodeExtension = nodeContext.getNodeExtension();
 
         hazelcastInstance = new HazelcastInstanceImpl(randomName(), getConfig(), nodeContext);
@@ -84,74 +72,5 @@ public class NodeExtensionTest extends HazelcastTestSupport {
         JoinConfig join = networkConfig.getJoin();
         join.getMulticastConfig().setEnabled(false);
         return config;
-    }
-
-    public static class DummyAddressPicker implements AddressPicker {
-        final Address address;
-
-        private DummyAddressPicker(Address address) {
-            this.address = address;
-        }
-
-        @Override
-        public void pickAddress() throws Exception {
-        }
-
-        @Override
-        public Address getBindAddress() {
-            return address;
-        }
-
-        @Override
-        public Address getPublicAddress() {
-            return address;
-        }
-
-        @Override
-        public ServerSocketChannel getServerSocketChannel() {
-            return null;
-        }
-    }
-
-    public static class DummyNodeContext implements NodeContext {
-
-        private final Address address;
-        private final NodeExtension nodeExtension = mock(NodeExtension.class);
-
-        public DummyNodeContext() throws UnknownHostException {
-            this(new Address("127.0.0.1", 5000));
-        }
-
-        public DummyNodeContext(Address address) {
-            this.address = address;
-        }
-
-        public NodeExtension getNodeExtension() {
-            return nodeExtension;
-        }
-
-        @Override
-        public NodeExtension createNodeExtension(Node node) {
-            when(nodeExtension.createService(MapService.class)).thenReturn(mock(MapService.class));
-            when(nodeExtension.createService(ICacheService.class)).thenReturn(mock(ICacheService.class));
-            when(nodeExtension.createService(WanReplicationService.class)).thenReturn(mock(WanReplicationService.class));
-            when(nodeExtension.createSerializationService()).thenReturn(new DefaultSerializationServiceBuilder().build());
-            return nodeExtension;
-        }
-
-        @Override
-        public AddressPicker createAddressPicker(Node node) {
-            return new DummyAddressPicker(address);
-        }
-
-        @Override
-        public Joiner createJoiner(Node node) {
-            return null;
-        }
-
-        @Override
-        public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
-            return mock(ConnectionManager.class);
-        }
     }
 }
