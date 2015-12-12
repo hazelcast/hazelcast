@@ -1,35 +1,24 @@
 package com.hazelcast.instance;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.instance.OutOfMemoryHandlerHelper.tryCloseConnections;
 import static com.hazelcast.instance.OutOfMemoryHandlerHelper.tryShutdown;
 import static com.hazelcast.instance.OutOfMemoryHandlerHelper.tryStopThreads;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 
-public class OutOfMemoryHandlerHelperTest extends HazelcastTestSupport {
-
-    private HazelcastInstanceImpl hazelcastInstance;
-    private HazelcastInstanceImpl hazelcastInstanceThrowsException;
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class OutOfMemoryHandlerHelperTest extends AbstractOutOfMemoryHandlerTest {
 
     @Before
     public void setUp() throws Exception {
-        Config config = new Config();
-
-        ConnectionManager connectionManager = mock(ConnectionManager.class);
-        doThrow(new OutOfMemoryError()).when(connectionManager).shutdown();
-
-        NodeContext nodeContext = new TestNodeContext();
-        NodeContext nodeContextWithThrowable = new TestNodeContext(connectionManager);
-
-        hazelcastInstance = new HazelcastInstanceImpl("OutOfMemoryHandlerHelper", config, nodeContext);
-        hazelcastInstanceThrowsException = new HazelcastInstanceImpl("OutOfMemoryHandlerHelperThrowsException", config,
-                nodeContextWithThrowable);
+        initHazelcastInstances();
     }
 
     @Test
