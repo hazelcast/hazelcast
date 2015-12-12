@@ -66,7 +66,7 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
     }
 
     public <R> void andThenInternal(final ExecutionCallback<R> callback) {
-        future.andThenInternal(new DelegatingExecutionCallback<R>(callback, false));
+        future.andThen(new DelegatingExecutionCallback<R>(callback, false));
     }
 
     @Override

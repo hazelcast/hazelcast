@@ -17,6 +17,7 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -39,6 +40,18 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     private static final ILogger LOGGER = Logger.getLogger(ClientExecutionService.class);
     private static final long TERMINATE_TIMEOUT_SECONDS = 30;
+    private static final ExecutionCallback FAILURE_LOGGING_EXECUTION_CALLBACK = new ExecutionCallback() {
+        @Override
+        public void onResponse(Object response) {
+
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            LOGGER.warning("Rejected internal execution on scheduledExecutor", t);
+        }
+    };
+
     private final ExecutorService userExecutor;
     private final ExecutorService internalExecutor;
     private final ScheduledExecutorService scheduledExecutor;
@@ -75,14 +88,14 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     }
 
+    public void executeInternal(Runnable runnable) {
+        internalExecutor.execute(runnable);
+    }
+
     public <T> ICompletableFuture<T> submitInternal(Runnable runnable) {
         CompletableFutureTask futureTask = new CompletableFutureTask(runnable, null, internalExecutor);
         internalExecutor.submit(futureTask);
         return futureTask;
-    }
-
-    public void executeInternal(Runnable runnable) {
-        internalExecutor.execute(runnable);
     }
 
     @Override
@@ -104,11 +117,30 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
         return futureTask;
     }
 
+    /**
+     * Utilized when given command needs to make a remote call. Response of remote call is not handled in runnable itself
+     * but rather in  execution callback so that executor is not blocked because of a remote operation
+     *
+     * @param command
+     * @param delay
+     * @param unit
+     * @param executionCallback
+     * @return scheduledFuture
+     */
+    public ScheduledFuture<?> schedule(final Runnable command, long delay, TimeUnit unit,
+                                       final ExecutionCallback executionCallback) {
+        return scheduledExecutor.schedule(new Runnable() {
+            public void run() {
+                executeInternalSafely(command, executionCallback);
+            }
+        }, delay, unit);
+    }
+
     @Override
     public ScheduledFuture<?> schedule(final Runnable command, long delay, TimeUnit unit) {
         return scheduledExecutor.schedule(new Runnable() {
             public void run() {
-                executeInternalSafely(command);
+                executeInternalSafely(command, FAILURE_LOGGING_EXECUTION_CALLBACK);
             }
         }, delay, unit);
     }
@@ -117,7 +149,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
         return scheduledExecutor.scheduleAtFixedRate(new Runnable() {
             public void run() {
-                executeInternalSafely(command);
+                executeInternalSafely(command, FAILURE_LOGGING_EXECUTION_CALLBACK);
             }
         }, initialDelay, period, unit);
     }
@@ -126,7 +158,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
         return scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
             public void run() {
-                executeInternalSafely(command);
+                executeInternalSafely(command, FAILURE_LOGGING_EXECUTION_CALLBACK);
             }
         }, initialDelay, period, unit);
     }
@@ -142,11 +174,11 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
         shutdownExecutor("internal", internalExecutor);
     }
 
-    private void executeInternalSafely(Runnable command) {
+    private void executeInternalSafely(Runnable command, ExecutionCallback executionCallback) {
         try {
-            executeInternal(command);
+            submitInternal(command).andThen(executionCallback);
         } catch (RejectedExecutionException e) {
-            LOGGER.warning("Rejected internal execution on scheduledExecutor", e);
+            executionCallback.onFailure(e);
         }
     }
 

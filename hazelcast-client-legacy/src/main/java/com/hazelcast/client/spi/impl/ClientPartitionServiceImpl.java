@@ -20,7 +20,8 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientPartitionService;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.logging.ILogger;
@@ -34,7 +35,6 @@ import com.hazelcast.partition.client.PartitionsResponse;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,6 +51,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private static final long PERIOD = 10;
     private static final long INITIAL_DELAY = 10;
     private static final int PARTITION_WAIT_TIME = 1000;
+    private final ExecutionCallback<PartitionsResponse> refreshTaskCallback = new RefreshTaskCallback();
 
     private final HazelcastClientInstanceImpl client;
 
@@ -70,10 +71,15 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     public void refreshPartitions() {
-        ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
+        if (!updating.compareAndSet(false, true)) {
+            return;
+        }
+        ClientExecutionService executionService = client.getClientExecutionService();
         try {
-            executionService.executeInternal(new RefreshTask());
+            ICompletableFuture future = executionService.submit(new RefreshTask());
+            future.andThen(refreshTaskCallback);
         } catch (RejectedExecutionException ignored) {
+            updating.set(false);
             EmptyStatement.ignore(ignored);
         }
     }
@@ -98,38 +104,45 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         return clusterService.getMembers(DATA_MEMBER_SELECTOR).isEmpty();
     }
 
-    private boolean getPartitions() {
+    private Connection getOwnerConnection() {
         ClientClusterService clusterService = client.getClientClusterService();
         Address ownerAddress = clusterService.getOwnerConnectionAddress();
         if (ownerAddress == null) {
-            return false;
+            return null;
         }
         Connection connection = client.getConnectionManager().getConnection(ownerAddress);
-        PartitionsResponse response = getPartitionsFrom(connection);
-        if (response != null) {
-            processPartitionResponse(response);
-            return true;
-        }
-        return false;
-    }
-
-    private PartitionsResponse getPartitionsFrom(Connection connection) {
         if (connection == null) {
             return null;
         }
+        return connection;
+    }
+
+    private boolean getPartitions() {
+        Connection connection = getOwnerConnection();
+        if (connection == null) {
+            return false;
+        }
         try {
-            final GetPartitionsRequest request = new GetPartitionsRequest();
-            Future<PartitionsResponse> future = new ClientInvocation(client, request, connection).invokeUrgent();
-            return client.getSerializationService().toObject(future.get());
+            ClientInvocationFuture future = getPartitionsFrom(connection);
+            PartitionsResponse response = client.getSerializationService().toObject(future.get());
+            if (response == null) {
+                return false;
+            }
+            return processPartitionResponse(response);
         } catch (Exception e) {
             if (client.getLifecycleService().isRunning()) {
                 LOGGER.warning("Error while fetching cluster partition table!", e);
             }
         }
-        return null;
+        return false;
     }
 
-    private void processPartitionResponse(PartitionsResponse response) {
+    private ClientInvocationFuture getPartitionsFrom(Connection connection) {
+        final GetPartitionsRequest request = new GetPartitionsRequest();
+        return new ClientInvocation(client, request, connection).invokeUrgent();
+    }
+
+    private boolean processPartitionResponse(PartitionsResponse response) {
         Address[] members = response.getMembers();
         int[] ownerIndexes = response.getOwnerIndexes();
         if (partitionCount == 0) {
@@ -141,6 +154,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
                 partitions.put(partitionId, members[ownerIndex]);
             }
         }
+        return response.getMembers().length > 0;
     }
 
     public void stop() {
@@ -219,13 +233,34 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
                 return;
             }
 
+            Connection connection = getOwnerConnection();
+            if (connection == null) {
+                return;
+            }
+            ClientInvocationFuture clientInvocationFuture = getPartitionsFrom(connection);
+            clientInvocationFuture.andThen(refreshTaskCallback);
+
+        }
+    }
+
+    private class RefreshTaskCallback
+            implements ExecutionCallback<PartitionsResponse> {
+
+        @Override
+        public void onResponse(PartitionsResponse response) {
             try {
-                getPartitions();
-            } catch (HazelcastInstanceNotActiveException ignored) {
-                EmptyStatement.ignore(ignored);
+                processPartitionResponse(response);
             } finally {
                 updating.set(false);
             }
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            if (client.getLifecycleService().isRunning()) {
+                LOGGER.warning("Error while fetching cluster partition table!", t);
+            }
+            updating.set(false);
         }
     }
 }
