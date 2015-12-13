@@ -299,11 +299,8 @@ class CacheEventHandler {
 
         @Override
         public boolean remove(Object o) {
-            boolean removed = super.remove(o);
-            if (removed) {
-                elementCount.decrementAndGet();
-            }
-            return removed;
+            // We don't support this at the moment, because it is not used at the moment
+            throw new UnsupportedOperationException();
         }
 
         @Override
