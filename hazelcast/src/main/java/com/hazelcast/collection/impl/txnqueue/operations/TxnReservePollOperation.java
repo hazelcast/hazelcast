@@ -16,12 +16,12 @@
 
 package com.hazelcast.collection.impl.txnqueue.operations;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.QueueItem;
+import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
@@ -60,7 +60,7 @@ public class TxnReservePollOperation extends QueueBackupAwareOperation implement
     @Override
     public boolean shouldWait() {
         final QueueContainer queueContainer = getOrCreateContainer();
-        return getWaitTimeout() != 0 && (queueContainer.size() + queueContainer.txMapSize()) == 0;
+        return getWaitTimeout() != 0 && reservedOfferId == -1 && queueContainer.size() == 0;
     }
 
     @Override

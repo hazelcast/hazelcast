@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -380,11 +381,11 @@ public class TransactionQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionalOfferAndPollWithTimeout() throws InterruptedException {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance();
-        final String item = "offered";
-        final String queueName = "testTransactionalOfferAndPollWithTimeout";
+        HazelcastInstance instance = createHazelcastInstance();
+        String item = "offered";
+        String queueName = "testTransactionalOfferAndPollWithTimeout";
 
-        final TransactionContext context = instance.newTransactionContext();
+        TransactionContext context = instance.newTransactionContext();
         context.beginTransaction();
         TransactionalQueue<String> txnQueue = context.getQueue(queueName);
         assertTrue(txnQueue.offer(item));
@@ -393,6 +394,29 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         context.commitTransaction();
     }
 
+    @Test
+    public void testPollWithTimeout_WithAnotherThreadOffering() throws InterruptedException {
+        final HazelcastInstance instance = createHazelcastInstance();
+        final String name = randomString();
+        final CountDownLatch offerReserveLatch = new CountDownLatch(1);
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                TransactionContext context = instance.newTransactionContext();
+                context.beginTransaction();
+                context.getQueue(name).offer(randomString());
+                offerReserveLatch.countDown();
+                sleepAtLeastSeconds(2);
+                context.commitTransaction();
+            }
+        });
+        assertOpenEventually(offerReserveLatch, 10);
+        TransactionContext context = instance.newTransactionContext();
+        context.beginTransaction();
+        TransactionalQueue<Object> queue = context.getQueue(name);
+        Object item = queue.poll(30, TimeUnit.SECONDS);
+        assertNotNull(item);
+    }
 
     private <E> IQueue<E> getQueue(HazelcastInstance[] instances, String name) {
         final Random rnd = new Random();
