@@ -82,8 +82,9 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
         if (delayedEntry == null) {
             return false;
         }
+
         Object existingValue = delayedEntry.getValue();
-        if (existingValue == value) {
+        if (existingValue.equals(value)) {
             map.remove(key);
             return true;
         }

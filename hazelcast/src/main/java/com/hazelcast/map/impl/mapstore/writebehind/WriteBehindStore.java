@@ -33,6 +33,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.config.InMemoryFormat.OBJECT;
+
 /**
  * Write behind map data store implementation.
  * Created per every record-store. Only called from one thread.
@@ -58,6 +61,11 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     private final AtomicInteger flushCounter;
 
     private final InMemoryFormat inMemoryFormat;
+
+    /**
+     * @see {@link com.hazelcast.config.MapStoreConfig#setWriteCoalescing(boolean)}
+     */
+    private final boolean coalesce;
 
     private WriteBehindQueue<DelayedEntry> writeBehindQueue;
 
@@ -85,13 +93,14 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     private final ConcurrentMap<Data, DelayedEntry> stagingArea;
 
     public WriteBehindStore(MapStoreWrapper store, SerializationService serializationService,
-                            long writeDelayTime, int partitionId, InMemoryFormat inMemoryFormat) {
+                            long writeDelayTime, int partitionId, InMemoryFormat inMemoryFormat, boolean coalesce) {
         super(store, serializationService);
         this.writeDelayTime = writeDelayTime;
         this.partitionId = partitionId;
         this.stagingArea = new ConcurrentHashMap<Data, DelayedEntry>();
         this.flushCounter = new AtomicInteger(0);
         this.inMemoryFormat = inMemoryFormat;
+        this.coalesce = coalesce;
     }
 
 
@@ -99,19 +108,24 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     public Object add(Data key, Object value, long now) {
 
         // When using format InMemoryFormat.NATIVE, just copy key & value to heap.
-        if (InMemoryFormat.NATIVE.equals(inMemoryFormat)) {
+        if (NATIVE == inMemoryFormat) {
             value = toData(value);
             key = toData(key);
         }
 
-        // we will be in this `if` only in case of an entry modification via entry-processor.
-        // otherwise this extra serialization of value should not be happen.
-        if (InMemoryFormat.OBJECT.equals(inMemoryFormat)) {
+        // This note describes the problem when we want to persist all states of an entry (means write-coalescing is off)
+        // by using both EntryProcessor + OBJECT in-memory-format:
+        //
+        // If in-memory-format is OBJECT, there is a possibility that a previous state of an entry can be overwritten
+        // by a subsequent write operation while both are waiting in the write-behind-queue, this is because they are referencing
+        // to the same entry-value. To prevent such a problem, we are taking snapshot of the value by serializing it,
+        // this means an extra serialization and additional latency for operations like map#put but it is needed,
+        // otherwise we can lost a state.
+        if (!coalesce && OBJECT == inMemoryFormat) {
             value = toData(value);
         }
 
-        long writeDelay = this.writeDelayTime;
-        long storeTime = now + writeDelay;
+        long storeTime = now + writeDelayTime;
         DelayedEntry<Data, Object> delayedEntry
                 = DelayedEntries.createDefault(key, value, storeTime, partitionId);
 
@@ -127,7 +141,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     @Override
     public void addTransient(Data key, long now) {
-        if (InMemoryFormat.NATIVE.equals(inMemoryFormat)) {
+        if (NATIVE == inMemoryFormat) {
             key = toData(key);
         }
 
@@ -141,13 +155,11 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     @Override
     public void remove(Data key, long now) {
-
-        if (InMemoryFormat.NATIVE.equals(inMemoryFormat)) {
+        if (NATIVE == inMemoryFormat) {
             key = toData(key);
         }
 
-        long writeDelay = this.writeDelayTime;
-        long storeTime = now + writeDelay;
+        long storeTime = now + writeDelayTime;
         DelayedEntry<Data, Object> delayedEntry
                 = DelayedEntries.createWithoutValue(key, storeTime, partitionId);
 
@@ -214,7 +226,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      */
     @Override
     public boolean loadable(Data key) {
-        if (InMemoryFormat.NATIVE.equals(inMemoryFormat)) {
+        if (NATIVE == inMemoryFormat) {
             key = toData(key);
         }
 
@@ -228,7 +240,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     @Override
     public Object flush(Data key, Object value, boolean backup) {
-        if (InMemoryFormat.NATIVE.equals(inMemoryFormat)) {
+        if (NATIVE == inMemoryFormat) {
             key = toData(key);
             value = toData(value);
         }

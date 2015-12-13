@@ -5,6 +5,12 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.mapstore.MapStoreTest;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -15,6 +21,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -139,6 +146,58 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
         assertStoreOperationCount(mapStore, 1 + numberOfSubscriptions + numberOfSubscriptions / 2);
         assertFinalSubscriptionCountInStore(mapStore, numberOfSubscriptions / 2);
     }
+
+
+    @Test
+    public void testCoalescingMode_doesNotCauseSerialization_whenInMemoryFormatIsObject() throws Exception {
+        MapStore mapStore = new MapStoreTest.SimpleMapStore<Integer, TestObject>();
+        IMap map = TestMapUsingMapStoreBuilder.create()
+                .withMapStore(mapStore)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
+                .withWriteDelaySeconds(1)
+                .withWriteCoalescing(true)
+                .withInMemoryFormat(InMemoryFormat.OBJECT)
+                .build();
+
+        final TestObject testObject = new TestObject();
+        map.executeOnKey(1, new EntryProcessor() {
+            @Override
+            public Object process(Map.Entry entry) {
+                entry.setValue(testObject);
+                return null;
+            }
+
+            @Override
+            public EntryBackupProcessor getBackupProcessor() {
+                return null;
+            }
+        });
+
+        assertEquals(0, testObject.serializedCount);
+        assertEquals(0, testObject.deserializedCount);
+    }
+
+    private static class TestObject implements DataSerializable {
+
+        int serializedCount = 0;
+        int deserializedCount = 0;
+
+        public TestObject() {
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(++serializedCount);
+            out.writeInt(deserializedCount);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            serializedCount = in.readInt();
+            deserializedCount = in.readInt() + 1;
+        }
+    }
+
 
     private IMap<Long, Customer> createMap(MapStore mapStore) {
         final TestMapUsingMapStoreBuilder builder = TestMapUsingMapStoreBuilder.create()
