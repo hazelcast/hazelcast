@@ -28,11 +28,11 @@ public class ClientEventRegistration {
 
     private Address subscriber;
     private final String serverRegistrationId;
-    private final int callId;
+    private final long callId;
     private final ListenerMessageCodec codec;
 
     public ClientEventRegistration(String serverRegistrationId,
-                                   int callId, Address subscriber, ListenerMessageCodec codec) {
+                                   long callId, Address subscriber, ListenerMessageCodec codec) {
         isNotNull(serverRegistrationId, "serverRegistrationId");
         this.serverRegistrationId = serverRegistrationId;
         this.callId = callId;
@@ -68,7 +68,7 @@ public class ClientEventRegistration {
      *
      * @return call id
      */
-    public int getCallId() {
+    public long getCallId() {
         return callId;
     }
 

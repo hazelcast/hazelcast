@@ -51,7 +51,8 @@ public class ClientMessageTest {
 
         ClientMessage cmEncode = TestClientMessage.createForEncode(safeBuffer, 0);
 
-        cmEncode.setMessageType(0x1122).setVersion((short) 0xEF).addFlag(ClientMessage.BEGIN_AND_END_FLAGS).setCorrelationId(0x12345678)
+        cmEncode.setMessageType(0x1122).setVersion((short) 0xEF).addFlag(ClientMessage.BEGIN_AND_END_FLAGS)
+                .setCorrelationId(0x1234567812345678l)
                 .setPartitionId(0x11223344);
 
         // little endian
@@ -76,16 +77,20 @@ public class ClientMessageTest {
         assertThat(byteBuffer.get(9), is((byte) 0x56));
         assertThat(byteBuffer.get(10), is((byte) 0x34));
         assertThat(byteBuffer.get(11), is((byte) 0x12));
+        assertThat(byteBuffer.get(12), is((byte) 0x78));
+        assertThat(byteBuffer.get(13), is((byte) 0x56));
+        assertThat(byteBuffer.get(14), is((byte) 0x34));
+        assertThat(byteBuffer.get(15), is((byte) 0x12));
 
         //setPartitionId
-        assertThat(byteBuffer.get(12), is((byte) 0x44));
-        assertThat(byteBuffer.get(13), is((byte) 0x33));
-        assertThat(byteBuffer.get(14), is((byte) 0x22));
-        assertThat(byteBuffer.get(15), is((byte) 0x11));
+        assertThat(byteBuffer.get(16), is((byte) 0x44));
+        assertThat(byteBuffer.get(17), is((byte) 0x33));
+        assertThat(byteBuffer.get(18), is((byte) 0x22));
+        assertThat(byteBuffer.get(19), is((byte) 0x11));
 
         //data offset
-        assertThat(byteBuffer.get(16), is((byte) ClientMessage.HEADER_SIZE));
-        assertThat(byteBuffer.get(17), is((byte) 0x00));
+        assertThat(byteBuffer.get(20), is((byte) ClientMessage.HEADER_SIZE));
+        assertThat(byteBuffer.get(21), is((byte) 0x00));
 
     }
 
@@ -371,14 +376,14 @@ public class ClientMessageTest {
 
     @Test
     public void testUnsignedFields() throws IOException {
-        ClientProtocolBuffer buffer = new SafeBuffer(new byte[18]);
+        ClientProtocolBuffer buffer = new SafeBuffer(new byte[22]);
 
         ClientMessage cmEncode = ClientMessage.createForEncode(buffer, 0);
 
         cmEncode.setVersion((short) (Byte.MAX_VALUE + 10));
         cmEncode.setMessageType(Short.MAX_VALUE + 10);
         cmEncode.setDataOffset((int) Short.MAX_VALUE + 10);
-        cmEncode.setCorrelationId(Short.MAX_VALUE + 10);
+        cmEncode.setCorrelationId(Integer.MAX_VALUE + 10);
 
         ClientMessage cmDecode = ClientMessage.createForDecode(buffer, 0);
 

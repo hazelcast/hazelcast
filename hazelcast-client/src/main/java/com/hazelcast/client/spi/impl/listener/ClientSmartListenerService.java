@@ -82,7 +82,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
         String serverRegistrationId = codec.decodeAddResponse(invocation.invoke().get());
 
         handler.onListenerRegister();
-        int correlationId = request.getCorrelationId();
+        long correlationId = request.getCorrelationId();
         ClientEventRegistration registration
                 = new ClientEventRegistration(serverRegistrationId, correlationId, address, codec);
 

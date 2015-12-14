@@ -210,8 +210,16 @@ public class MessageFlyweight {
         return buffer.getInt(index + offset);
     }
 
-    protected void int32Set(int index, int length) {
-        buffer.putInt(index + offset, length);
+    protected void int32Set(int index, int value) {
+        buffer.putInt(index + offset, value);
+    }
+
+    protected long int64Get(int index) {
+        return buffer.getLong(index + offset);
+    }
+
+    protected void int64Set(int index, long value) {
+        buffer.putLong(index + offset, value);
     }
 
     protected short uint8Get(int index) {

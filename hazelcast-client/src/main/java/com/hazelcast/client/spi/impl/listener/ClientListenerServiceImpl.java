@@ -43,8 +43,8 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
     protected final SerializationService serializationService;
     protected final ClientInvocationService invocationService;
     protected final ILogger logger = Logger.getLogger(ClientListenerService.class);
-    private final ConcurrentMap<Integer, EventHandler> eventHandlerMap
-            = new ConcurrentHashMap<Integer, EventHandler>();
+    private final ConcurrentMap<Long, EventHandler> eventHandlerMap
+            = new ConcurrentHashMap<Long, EventHandler>();
 
     private final StripedExecutor eventExecutor;
 
@@ -57,15 +57,15 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
                 client.getThreadGroup(), eventThreadCount, eventQueueCapacity);
     }
 
-    public void addEventHandler(int callId, EventHandler handler) {
+    public void addEventHandler(long callId, EventHandler handler) {
         eventHandlerMap.put(callId, handler);
     }
 
-    protected void removeEventHandler(int callId) {
+    protected void removeEventHandler(long callId) {
         eventHandlerMap.remove(callId);
     }
 
-    protected EventHandler getEventHandler(int callId) {
+    protected EventHandler getEventHandler(long callId) {
         return eventHandlerMap.get(callId);
     }
 
@@ -101,7 +101,7 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
         @Override
         public void run() {
             try {
-                int correlationId = clientMessage.getCorrelationId();
+                long correlationId = clientMessage.getCorrelationId();
                 final EventHandler eventHandler = eventHandlerMap.get(correlationId);
                 if (eventHandler == null) {
                     logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage
