@@ -246,7 +246,7 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public void reset() {
         clearPartitions();
-        getNearCacheProvider().clear();
+        getNearCacheProvider().reset();
     }
 
     @Override

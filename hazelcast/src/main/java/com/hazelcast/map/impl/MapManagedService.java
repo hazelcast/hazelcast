@@ -30,7 +30,7 @@ import java.util.Properties;
  *
  * @see MapService
  */
-class MapManagedService implements ManagedService {
+public class MapManagedService implements ManagedService {
 
     private final MapServiceContext mapServiceContext;
 
@@ -57,12 +57,16 @@ class MapManagedService implements ManagedService {
     @Override
     public void shutdown(boolean terminate) {
         if (!terminate) {
+            // in case of a graceful shutdown flush map-stores to prevent data-loss.
             mapServiceContext.flushMaps();
             mapServiceContext.destroyMapStores();
-            mapServiceContext.clearPartitions();
-            mapServiceContext.getNearCacheProvider().clear();
-            mapServiceContext.getMapContainers().clear();
         }
+
+        // clear internal resources, these are the resources wholly managed by hazelcast,
+        // means they have no external interaction like map-stores.
+        mapServiceContext.clearPartitions();
+        mapServiceContext.getNearCacheProvider().shutdown();
+        mapServiceContext.getMapContainers().clear();
     }
 
     private class ObjectNamespaceLockStoreInfoConstructorFunction implements ConstructorFunction<ObjectNamespace, LockStoreInfo> {
