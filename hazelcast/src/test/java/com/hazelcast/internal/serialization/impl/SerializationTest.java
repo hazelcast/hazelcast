@@ -14,7 +14,6 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class SerializationTest extends HazelcastTestSupport{
 
-
     @Test
     public void testPrivateConstructors() throws Exception {
         assertUtilityConstructor(FactoryIdHelper.class);
@@ -23,8 +22,4 @@ public class SerializationTest extends HazelcastTestSupport{
         assertUtilityConstructor(ConstantSerializers.class);
         assertUtilityConstructor(SerializationConstants.class);
     }
-
-
-
-
 }

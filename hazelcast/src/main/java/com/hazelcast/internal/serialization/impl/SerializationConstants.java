@@ -83,10 +83,13 @@ public final class SerializationConstants {
     // NUMBER OF CONSTANT SERIALIZERS...
     public static final int CONSTANT_SERIALIZERS_LENGTH = 28;
 
+
+
     // ------------------------------------------------------------
     // JAVA SERIALIZATION
 
     public static final int JAVA_DEFAULT_TYPE_SERIALIZABLE = -100;
+    public static final int JAVA_DEFAULT_TYPE_EXTERNALIZABLE = -101;
 
     // ------------------------------------------------------------
     // HIBERNATE SERIALIZERS

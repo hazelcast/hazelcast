@@ -36,6 +36,7 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 
+import java.io.Externalizable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -95,6 +96,8 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         portableSerializerAdapter = createSerializerAdapter(portableSerializer, this);
 
         javaSerializerAdapter = createSerializerAdapter(new JavaSerializer(enableSharedObject, enableCompression), this);
+        javaExternalizableAdapter = createSerializerAdapter(
+                new JavaDefaultSerializers.ExternalizableSerializer(enableCompression), this);
         registerConstantSerializers();
         registerJavaTypeSerializers();
     }
@@ -148,6 +151,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(LinkedList.class, new LinkedListStreamSerializer());
 
         safeRegister(Serializable.class, javaSerializerAdapter);
+        safeRegister(Externalizable.class, javaExternalizableAdapter);
     }
 
     public void registerClassDefinitions(Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors) {

@@ -22,7 +22,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.io.Externalizable;
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.io.Serializable;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -38,6 +45,57 @@ public class AbstractSerializationServiceTest {
         DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
         abstractSerializationService = (AbstractSerializationService) defaultSerializationServiceBuilder
                 .setVersion(SerializationService.VERSION_1).build();
+    }
+
+    @Test
+    public void testExternalizable() {
+        ExternalizableValue original = new ExternalizableValue(100);
+
+        Data data = abstractSerializationService.toData(original);
+        ExternalizableValue found = abstractSerializationService.toObject(data);
+
+        assertNotNull(found);
+        assertEquals(original.value, found.value);
+    }
+
+    static class ExternalizableValue implements Externalizable {
+        int value;
+
+        ExternalizableValue() {
+        }
+
+        ExternalizableValue(int value) {
+            this.value = value;
+        }
+
+        @Override
+        public void writeExternal(ObjectOutput out) throws IOException {
+            out.writeInt(value);
+        }
+
+        @Override
+        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+            value = in.readInt();
+        }
+    }
+
+    @Test
+    public void testSerializable() {
+        SerializableleValue original = new SerializableleValue(100);
+
+        Data data = abstractSerializationService.toData(original);
+        SerializableleValue found = abstractSerializationService.toObject(data);
+
+        assertNotNull(found);
+        assertEquals(original.value, found.value);
+    }
+
+    static class SerializableleValue implements Serializable {
+        int value;
+
+        SerializableleValue(int value) {
+            this.value = value;
+        }
     }
 
     @Test(expected = HazelcastSerializationException.class)
