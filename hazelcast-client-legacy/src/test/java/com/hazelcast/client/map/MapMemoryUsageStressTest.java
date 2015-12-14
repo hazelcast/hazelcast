@@ -51,7 +51,7 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
             stressThread.start();
         }
 
-        assertJoinable(TimeUnit.MINUTES.toSeconds(10), threads);
+        assertJoinable(TimeUnit.MINUTES.toSeconds(30), threads);
         assertEquals(0, errors.get());
         assertTrue(counter.get() <= 0);
     }
