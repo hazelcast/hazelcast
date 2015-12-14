@@ -575,22 +575,22 @@ public class ClientMapNearCacheTest {
 
         // put entry with TTL into server map
         serverMap.put(1, 23, 6, TimeUnit.SECONDS);
-        assertNotNull(serverMap.get(1));
+        assertNotNull("The TTL value should still be available in the server map right after it was put there", serverMap.get(1));
 
         // wait until near cache invalidation is done after ADDED event
         assertOpenEventually(eventAddedLatch);
         assertThatOwnedEntryCountEquals(clientMap, 0);
 
         // get() operation puts entry into client near cache
-        assertNotNull(clientMap.get(1));
+        assertNotNull("The TTL value should still be available after the invalidation event arrived", clientMap.get(1));
         assertThatOwnedEntryCountEquals(clientMap, 1);
 
         // assert that the entry is not available on the server after expiration
         assertOpenEventually(expiredEventLatch);
-        assertNull(serverMap.get(1));
+        assertNull("The TTL value should be gone in the server map after its expiration", serverMap.get(1));
 
         // assert that the entry is still available on the client and in the client near cache
-        assertNotNull(clientMap.get(1));
+        assertNotNull("The TTL value should still be available in the near cache after server side expiration", clientMap.get(1));
         assertThatOwnedEntryCountEquals(clientMap, 1);
     }
 
