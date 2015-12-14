@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.instance.TestUtil.getNode;
+import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class TestHazelcastInstanceFactory {
@@ -112,6 +114,7 @@ public class TestHazelcastInstanceFactory {
 
     /**
      * Creates a new test Hazelcast instance.
+     *
      * @param address the address to use as Member's address instead of picking the next address
      */
     public HazelcastInstance newHazelcastInstance(Address address) {
@@ -120,11 +123,12 @@ public class TestHazelcastInstanceFactory {
 
     /**
      * Creates a new test Hazelcast instance.
+     *
      * @param address the address to use as Member's address instead of picking the next address
-     * @param config the config to use; use <code>null</code> to get the default config.
+     * @param config  the config to use; use <code>null</code> to get the default config.
      */
     public HazelcastInstance newHazelcastInstance(Address address, Config config) {
-        final String instanceName = config != null? config.getInstanceName() : null;
+        final String instanceName = config != null ? config.getInstanceName() : null;
         if (mockNetwork) {
             init(config);
             NodeContext nodeContext = registry.createNodeContext(address);
@@ -164,6 +168,17 @@ public class TestHazelcastInstanceFactory {
             return registry.getAllHazelcastInstances();
         }
         return Hazelcast.getAllHazelcastInstances();
+    }
+
+    /**
+     * Terminates supplied instance by releasing internal resources.
+     *
+     * @param instance the instance.
+     */
+    public void terminate(HazelcastInstance instance) {
+        Address address = getNode(instance).address;
+        terminateInstance(instance);
+        registry.removeInstance(address);
     }
 
     public void shutdownAll() {
@@ -236,5 +251,9 @@ public class TestHazelcastInstanceFactory {
     @Override
     public String toString() {
         return "TestHazelcastInstanceFactory{addresses=" + addresses + '}';
+    }
+
+    public TestNodeRegistry getRegistry() {
+        return registry;
     }
 }
