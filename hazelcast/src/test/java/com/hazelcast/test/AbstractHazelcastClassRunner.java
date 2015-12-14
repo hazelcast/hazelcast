@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
 import org.apache.log4j.MDC;
 import org.junit.After;
+import org.junit.internal.runners.statements.FailOnTimeout;
 import org.junit.internal.runners.statements.RunAfters;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -36,8 +37,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.Boolean.getBoolean;
+import static java.lang.Integer.getInteger;
 
 /**
  * Base test runner which has base system properties and test repetition logic. The tests are run in random order.
@@ -45,6 +48,9 @@ import static java.lang.Boolean.getBoolean;
 public abstract class AbstractHazelcastClassRunner extends AbstractParameterizedHazelcastClassRunner {
 
     protected static final boolean DISABLE_THREAD_DUMP_ON_FAILURE = getBoolean("hazelcast.test.disableThreadDumpOnFailure");
+    protected static final int DEFAULT_TEST_TIMEOUT_IN_SECONDS = getInteger("hazelcast.test.defaultTestTimeoutInSeconds", 300);
+
+    private static final ThreadLocal<String> TEST_NAME_THREAD_LOCAL = new InheritableThreadLocal<String>();
 
     static {
         String logging = "hazelcast.logging.type";
@@ -68,7 +74,18 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
     }
 
-    private static final ThreadLocal<String> TEST_NAME_THREAD_LOCAL = new InheritableThreadLocal<String>();
+    /**
+     * Creates a BlockJUnit4ClassRunner to run {@code clazz}
+     *
+     * @throws org.junit.runners.model.InitializationError if the test class is malformed.
+     */
+    public AbstractHazelcastClassRunner(Class<?> clazz) throws InitializationError {
+        super(clazz);
+    }
+
+    public AbstractHazelcastClassRunner(Class<?> clazz, Object[] parameters, String name) throws InitializationError {
+        super(clazz, parameters, name);
+    }
 
     protected static void setThreadLocalTestMethodName(String name) {
         MDC.put("test-name", name);
@@ -84,19 +101,6 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         return TEST_NAME_THREAD_LOCAL.get();
     }
 
-    /**
-     * Creates a BlockJUnit4ClassRunner to run {@code clazz}
-     *
-     * @throws org.junit.runners.model.InitializationError if the test class is malformed.
-     */
-    public AbstractHazelcastClassRunner(Class<?> clazz) throws InitializationError {
-        super(clazz);
-    }
-
-    public AbstractHazelcastClassRunner(Class<?> clazz, Object[] parameters, String name) throws InitializationError {
-        super(clazz, parameters, name);
-    }
-
     @Override
     protected List<FrameworkMethod> getChildren() {
         List<FrameworkMethod> children = super.getChildren();
@@ -104,6 +108,16 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         Collections.shuffle(modifiableList);
         return modifiableList;
     }
+
+    @Override
+    protected Statement withPotentialTimeout(FrameworkMethod method, Object test, Statement next) {
+        Statement statement = super.withPotentialTimeout(method, test, next);
+        if (statement instanceof FailOnTimeout) {
+            return statement;
+        }
+        return new FailOnTimeout(statement, TimeUnit.SECONDS.toMillis(DEFAULT_TEST_TIMEOUT_IN_SECONDS));
+    }
+
 
     @Override
     protected Statement withAfters(FrameworkMethod method, Object target, Statement statement) {
@@ -115,47 +129,6 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             return statement;
         } else {
             return new RunAfters(statement, afters, target);
-        }
-    }
-
-    protected class ThreadDumpAwareRunAfters extends Statement {
-
-        private final FrameworkMethod method;
-        private final Statement next;
-        private final Object target;
-        private final List<FrameworkMethod> afters;
-
-        protected ThreadDumpAwareRunAfters(FrameworkMethod method, Statement next, List<FrameworkMethod> afters, Object target) {
-            this.method = method;
-            this.next = next;
-            this.afters = afters;
-            this.target = target;
-        }
-
-        @Override
-        public void evaluate() throws Throwable {
-            List<Throwable> errors = new ArrayList<Throwable>();
-            try {
-                next.evaluate();
-            } catch (Throwable e) {
-                System.err.println("THREAD DUMP FOR TEST FAILURE: \"" + e.getMessage() + "\" at \"" + method.getName() + "\"\n");
-                try {
-                    System.err.println(generateThreadDump());
-                } catch (Throwable t) {
-                    System.err.println("Unable to get thread dump!");
-                    e.printStackTrace();
-                }
-                errors.add(e);
-            } finally {
-                for (FrameworkMethod each : afters) {
-                    try {
-                        each.invokeExplosively(target);
-                    } catch (Throwable e) {
-                        errors.add(e);
-                    }
-                }
-            }
-            MultipleFailureException.assertEmpty(errors);
         }
     }
 
@@ -232,6 +205,47 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             dump.append("\n\n");
         }
         return dump.toString();
+    }
+
+    protected class ThreadDumpAwareRunAfters extends Statement {
+
+        private final FrameworkMethod method;
+        private final Statement next;
+        private final Object target;
+        private final List<FrameworkMethod> afters;
+
+        protected ThreadDumpAwareRunAfters(FrameworkMethod method, Statement next, List<FrameworkMethod> afters, Object target) {
+            this.method = method;
+            this.next = next;
+            this.afters = afters;
+            this.target = target;
+        }
+
+        @Override
+        public void evaluate() throws Throwable {
+            List<Throwable> errors = new ArrayList<Throwable>();
+            try {
+                next.evaluate();
+            } catch (Throwable e) {
+                System.err.println("THREAD DUMP FOR TEST FAILURE: \"" + e.getMessage() + "\" at \"" + method.getName() + "\"\n");
+                try {
+                    System.err.println(generateThreadDump());
+                } catch (Throwable t) {
+                    System.err.println("Unable to get thread dump!");
+                    e.printStackTrace();
+                }
+                errors.add(e);
+            } finally {
+                for (FrameworkMethod each : afters) {
+                    try {
+                        each.invokeExplosively(target);
+                    } catch (Throwable e) {
+                        errors.add(e);
+                    }
+                }
+            }
+            MultipleFailureException.assertEmpty(errors);
+        }
     }
 
     private class TestRepeater extends Statement {

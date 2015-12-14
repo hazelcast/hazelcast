@@ -57,7 +57,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class XATestWithJCA extends HazelcastTestSupport {
 
-    private HazelcastConnection connection;
+    private ConnectionFactoryImpl factory;
     private HazelcastInstance instance;
 
     @Before
@@ -70,12 +70,12 @@ public class XATestWithJCA extends HazelcastTestSupport {
         managedConnectionFactory.setConnectionTracingDetail(true);
         managedConnectionFactory.setConnectionTracingEvents("FACTORY_INIT, CREATE, TX_START, TX_COMPLETE, CLEANUP, DESTROY");
         TestConnectionManager connectionManager = new TestConnectionManager();
-        ConnectionFactoryImpl factory = new ConnectionFactoryImpl(managedConnectionFactory, connectionManager);
-        connection = factory.getConnection();
+        factory = new ConnectionFactoryImpl(managedConnectionFactory, connectionManager);
     }
 
     @Test
     public void testPut() throws ResourceException {
+        HazelcastConnection connection = factory.getConnection();
         String name = randomString();
         String key = randomString();
         String val = randomString();
@@ -90,6 +90,7 @@ public class XATestWithJCA extends HazelcastTestSupport {
 
     @Test
     public void testTransactionalQueueShouldPollWhatWasOffered() throws ResourceException {
+        HazelcastConnection connection = factory.getConnection();
         String name = randomString();
         String item = randomString();
 
@@ -99,19 +100,20 @@ public class XATestWithJCA extends HazelcastTestSupport {
         connection.close();
 
         IQueue<String> q = instance.getQueue(name);
-        assertEquals(item,q.poll());
+        assertEquals(item, q.poll());
     }
 
     @Test
     public void testTransactionalMultiMapShouldHaveWhatIsInserted() throws ResourceException {
+        HazelcastConnection connection = factory.getConnection();
         String name = randomString();
         String key = randomString();
         String val1 = randomString();
         String val2 = randomString();
 
         TransactionalMultiMap<String, String> multiMap = connection.getTransactionalMultiMap(name);
-        multiMap.put(key,val1);
-        multiMap.put(key,val2);
+        multiMap.put(key, val1);
+        multiMap.put(key, val2);
 
         connection.close();
 
@@ -124,6 +126,7 @@ public class XATestWithJCA extends HazelcastTestSupport {
 
     @Test
     public void testTransactionalListShouldHaveWhatIsInserted() throws ResourceException {
+        HazelcastConnection connection = factory.getConnection();
         String name = randomString();
         String item = randomString();
 
@@ -133,12 +136,13 @@ public class XATestWithJCA extends HazelcastTestSupport {
         connection.close();
 
         List<String> l = instance.getList(name);
-        assertEquals(item,l.get(0));
+        assertEquals(item, l.get(0));
     }
 
 
     @Test
     public void testTransactionalSetShouldHaveWhatIsInserted() throws ResourceException {
+        HazelcastConnection connection = factory.getConnection();
         String name = randomString();
         String item = randomString();
 
@@ -195,7 +199,6 @@ public class XATestWithJCA extends HazelcastTestSupport {
 
         @Override
         public void localTransactionStarted(ConnectionEvent event) {
-
         }
 
         @Override
