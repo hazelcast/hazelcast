@@ -45,7 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 
@@ -61,10 +61,10 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     protected  ClientListenerServiceImpl clientListenerService;
     private  ILogger logger = Logger.getLogger(ClientInvocationService.class);
     private  ResponseThread responseThread;
-    private  ConcurrentMap<Integer, ClientInvocation> callIdMap
-            = new ConcurrentHashMap<Integer, ClientInvocation>();
+    private  ConcurrentMap<Long, ClientInvocation> callIdMap
+            = new ConcurrentHashMap<Long, ClientInvocation>();
 
-    private final AtomicInteger callIdIncrementer = new AtomicInteger();
+    private final AtomicLong callIdIncrementer = new AtomicLong();
     private ClientExceptionFactory clientExceptionFactory;
     private volatile boolean isShutdown;
 
@@ -107,7 +107,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
         ClientMessage clientMessage = invocation.getClientMessage();
         if (!isAllowedToSendRequest(connection, invocation) || !writeToConnection(connection, clientMessage)) {
-            final int callId = clientMessage.getCorrelationId();
+            final long callId = clientMessage.getCorrelationId();
             ClientInvocation clientInvocation = deRegisterCallId(callId);
             if (clientInvocation != null) {
                 throw new IOException("Packet not send to " + connection.getRemoteEndpoint());
@@ -144,7 +144,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
     private void registerInvocation(ClientInvocation clientInvocation) {
         short protocolVersion = client.getProtocolVersion();
-        final int correlationId = newCorrelationId();
+        final long correlationId = newCorrelationId();
         clientInvocation.getClientMessage().setCorrelationId(correlationId).setVersion(protocolVersion);
         callIdMap.put(correlationId, clientInvocation);
         EventHandler handler = clientInvocation.getEventHandler();
@@ -153,14 +153,14 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         }
     }
 
-    private ClientInvocation deRegisterCallId(int callId) {
+    private ClientInvocation deRegisterCallId(long callId) {
         return callIdMap.remove(callId);
     }
 
     public void cleanResources(ConstructorFunction<Object, Throwable> responseCtor, ClientConnection connection) {
-        final Iterator<Map.Entry<Integer, ClientInvocation>> iter = callIdMap.entrySet().iterator();
+        final Iterator<Map.Entry<Long, ClientInvocation>> iter = callIdMap.entrySet().iterator();
         while (iter.hasNext()) {
-            final Map.Entry<Integer, ClientInvocation> entry = iter.next();
+            final Map.Entry<Long, ClientInvocation> entry = iter.next();
             final ClientInvocation invocation = entry.getValue();
             if (connection.equals(invocation.getSendConnection())) {
                 iter.remove();
@@ -320,7 +320,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
         private void handleClientMessage(ClientMessage clientMessage) throws ClassNotFoundException,
                 NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-            int correlationId = clientMessage.getCorrelationId();
+            long correlationId = clientMessage.getCorrelationId();
 
             final ClientInvocation future = deRegisterCallId(correlationId);
             if (future == null) {
@@ -342,7 +342,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
     }
 
-    private int newCorrelationId() {
+    private long newCorrelationId() {
         return callIdIncrementer.incrementAndGet();
     }
 

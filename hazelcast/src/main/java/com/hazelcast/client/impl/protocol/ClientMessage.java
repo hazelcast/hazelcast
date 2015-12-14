@@ -44,7 +44,9 @@ import java.util.Arrays;
  * +-------------+---------------+---------------------------------+
  * |  Version    |B|E|  Flags    |               Type              |
  * +-------------+---------------+---------------------------------+
- * |                       CorrelationId                           |
+ * |                                                               |
+ * +                       CorrelationId                           +
+ * |                                                               |
  * +---------------------------------------------------------------+
  * |                        PartitionId                            |
  * +-----------------------------+---------------------------------+
@@ -100,7 +102,7 @@ public class ClientMessage
     private static final int FLAGS_FIELD_OFFSET = VERSION_FIELD_OFFSET + Bits.BYTE_SIZE_IN_BYTES;
     private static final int TYPE_FIELD_OFFSET = FLAGS_FIELD_OFFSET + Bits.BYTE_SIZE_IN_BYTES;
     private static final int CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + Bits.SHORT_SIZE_IN_BYTES;
-    private static final int PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
+    private static final int PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
     private static final int DATA_OFFSET_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
 
 
@@ -265,8 +267,8 @@ public class ClientMessage
      *
      * @return The correlation id field.
      */
-    public int getCorrelationId() {
-        return int32Get(CORRELATION_ID_FIELD_OFFSET);
+    public long getCorrelationId() {
+        return int64Get(CORRELATION_ID_FIELD_OFFSET);
     }
 
     /**
@@ -275,8 +277,8 @@ public class ClientMessage
      * @param correlationId The value to set in the correlation id field.
      * @return The ClientMessage with the new correlation id field value.
      */
-    public ClientMessage setCorrelationId(final int correlationId) {
-        int32Set(CORRELATION_ID_FIELD_OFFSET, correlationId);
+    public ClientMessage setCorrelationId(final long correlationId) {
+        int64Set(CORRELATION_ID_FIELD_OFFSET, correlationId);
         return this;
     }
 
