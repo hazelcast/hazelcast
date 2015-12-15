@@ -30,10 +30,10 @@ public final class CacheInvalidationListener
         implements CacheEventListener, NotifiableEventListener<ICacheService> {
 
     private final ClientEndpoint endpoint;
-    private final int callId;
+    private final long callId;
     private final CacheContext cacheContext;
 
-    public CacheInvalidationListener(ClientEndpoint endpoint, int callId, CacheContext cacheContext) {
+    public CacheInvalidationListener(ClientEndpoint endpoint, long callId, CacheContext cacheContext) {
         this.endpoint = endpoint;
         this.callId = callId;
         this.cacheContext = cacheContext;

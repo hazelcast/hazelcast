@@ -214,7 +214,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         return nodeEngine.getProxyService();
     }
 
-    public void sendResponse(ClientEndpoint endpoint, Object key, Object response, int callId, boolean isError, boolean isEvent) {
+    public void sendResponse(ClientEndpoint endpoint, Object key, Object response, long callId,
+                             boolean isError, boolean isEvent) {
         Data data = serializationService.toData(response);
         ClientResponse clientResponse = new ClientResponse(data, callId, isError);
         int partitionId = key == null ? -1 : getPartitionService().getPartitionId(key);
@@ -445,7 +446,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             if (request != null && endpoint != null) {
                 endpoint.sendResponse(e, request.getCallId());
             } else if (data != null && endpoint != null) {
-                int callId = extractCallId(data);
+                long callId = extractCallId(data);
                 if (callId != -1) {
                     endpoint.sendResponse(e, callId);
                 }
@@ -453,10 +454,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             }
         }
 
-        private int extractCallId(Data data) {
+        private long extractCallId(Data data) {
             try {
                 PortableReader portableReader = serializationService.createPortableReader(data);
-                return portableReader.readInt("cId");
+                return portableReader.readLong("cId");
 
             } catch (Throwable e) {
                 Level level = nodeEngine.isRunning() ? Level.SEVERE : Level.FINEST;

@@ -99,7 +99,7 @@ class ClientMembershipListener implements EventHandler<ClientInitialMembershipEv
                         + "Address " + ownerConnectionAddress);
             }
             ClientInvocation invocation = new ClientInvocation(client, this, request, connection);
-            invocation.invoke().get();
+            invocation.invokeUrgent().get();
             waitInitialMemberListFetched();
 
         } catch (Exception e) {

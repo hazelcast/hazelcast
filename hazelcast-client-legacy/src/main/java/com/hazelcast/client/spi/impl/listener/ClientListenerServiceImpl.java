@@ -44,8 +44,8 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
     protected final SerializationService serializationService;
     protected final ClientInvocationService invocationService;
     protected final ILogger logger = Logger.getLogger(ClientListenerService.class);
-    private final ConcurrentMap<Integer, EventHandler> eventHandlerMap
-            = new ConcurrentHashMap<Integer, EventHandler>();
+    private final ConcurrentMap<Long, EventHandler> eventHandlerMap
+            = new ConcurrentHashMap<Long, EventHandler>();
 
     private final StripedExecutor eventExecutor;
 
@@ -59,15 +59,15 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
     }
 
 
-    public void addEventHandler(int callId, EventHandler handler) {
+    public void addEventHandler(long callId, EventHandler handler) {
         eventHandlerMap.put(callId, handler);
     }
 
-    protected void removeEventHandler(int callId) {
+    protected void removeEventHandler(long callId) {
         eventHandlerMap.remove(callId);
     }
 
-    protected EventHandler getEventHandler(int callId) {
+    protected EventHandler getEventHandler(long callId) {
         return eventHandlerMap.get(callId);
     }
 
@@ -102,7 +102,7 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
             ClientConnection conn = (ClientConnection) packet.getConn();
             try {
                 ClientResponse clientResponse = serializationService.toObject(packet);
-                int callId = clientResponse.getCallId();
+                long callId = clientResponse.getCallId();
                 Data response = clientResponse.getResponse();
                 handleEvent(response, callId, conn);
             } finally {
@@ -110,7 +110,7 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
             }
         }
 
-        private void handleEvent(Data event, int callId, ClientConnection conn) {
+        private void handleEvent(Data event, long callId, ClientConnection conn) {
             Object eventObject = serializationService.toObject(event);
             EventHandler eventHandler = eventHandlerMap.get(callId);
             if (eventHandler == null) {

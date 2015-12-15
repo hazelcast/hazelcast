@@ -119,11 +119,11 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
         try {
             final GetPartitionsRequest request = new GetPartitionsRequest();
-            Future<PartitionsResponse> future = new ClientInvocation(client, request, connection).invoke();
+            Future<PartitionsResponse> future = new ClientInvocation(client, request, connection).invokeUrgent();
             return client.getSerializationService().toObject(future.get());
         } catch (Exception e) {
             if (client.getLifecycleService().isRunning()) {
-                LOGGER.severe("Error while fetching cluster partition table!", e);
+                LOGGER.warning("Error while fetching cluster partition table!", e);
             }
         }
         return null;

@@ -45,8 +45,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.client.config.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 
 
@@ -55,23 +55,24 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED = 10;
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD = 5000;
     protected final HazelcastClientInstanceImpl client;
-    protected  ClientConnectionManager connectionManager;
-    protected  ClientPartitionService partitionService;
-    protected  ClientExecutionService executionService;
-    protected  ClientListenerServiceImpl clientListenerService;
-    private  ILogger logger = Logger.getLogger(ClientInvocationService.class);
-    private  ResponseThread responseThread;
-    private  ConcurrentMap<Long, ClientInvocation> callIdMap
+    protected ClientConnectionManager connectionManager;
+    protected ClientPartitionService partitionService;
+    protected ClientExecutionService executionService;
+    protected ClientListenerServiceImpl clientListenerService;
+    private ILogger logger = Logger.getLogger(ClientInvocationService.class);
+    private ResponseThread responseThread;
+    private ConcurrentMap<Long, ClientInvocation> callIdMap
             = new ConcurrentHashMap<Long, ClientInvocation>();
 
-    private final AtomicLong callIdIncrementer = new AtomicLong();
+    private final CallIdSequence callIdSequence;
     private ClientExceptionFactory clientExceptionFactory;
     private volatile boolean isShutdown;
 
 
     public ClientInvocationServiceSupport(HazelcastClientInstanceImpl client) {
         this.client = client;
-
+        int maxAllowedConcurrentInvocations = client.getClientProperties().getInteger(MAX_CONCURRENT_INVOCATIONS);
+        callIdSequence = new CallIdSequence.CallIdSequenceWithBackpressureViaException(maxAllowedConcurrentInvocations);
     }
 
     @Override
@@ -110,6 +111,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             final long callId = clientMessage.getCorrelationId();
             ClientInvocation clientInvocation = deRegisterCallId(callId);
             if (clientInvocation != null) {
+                callIdSequence.complete();
                 throw new IOException("Packet not send to " + connection.getRemoteEndpoint());
             } else {
                 if (logger.isFinestEnabled()) {
@@ -144,7 +146,12 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
     private void registerInvocation(ClientInvocation clientInvocation) {
         short protocolVersion = client.getProtocolVersion();
-        final long correlationId = newCorrelationId();
+        long correlationId;
+        if (clientInvocation.isUrgent()) {
+            correlationId = callIdSequence.renew();
+        } else {
+            correlationId = callIdSequence.next();
+        }
         clientInvocation.getClientMessage().setCorrelationId(correlationId).setVersion(protocolVersion);
         callIdMap.put(correlationId, clientInvocation);
         EventHandler handler = clientInvocation.getEventHandler();
@@ -327,7 +334,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 logger.warning("No call for callId: " + correlationId + ", response: " + clientMessage);
                 return;
             }
-
+            callIdSequence.complete();
             if (ErrorCodec.TYPE == clientMessage.getMessageType()) {
                 ErrorCodec exParameters = ErrorCodec.decode(clientMessage);
                 Throwable exception =
@@ -342,8 +349,5 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
     }
 
-    private long newCorrelationId() {
-        return callIdIncrementer.incrementAndGet();
-    }
 
 }

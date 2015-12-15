@@ -38,10 +38,10 @@ public interface ClientEndpoint {
     boolean isAlive();
 
     //TODO remove after requests removed
-    void sendResponse(Object response, int callId);
+    void sendResponse(Object response, long callId);
 
     //TODO remove after requests removed
-    void sendEvent(Object key, Object event, int callId);
+    void sendEvent(Object key, Object event, long callId);
 
 
     /**

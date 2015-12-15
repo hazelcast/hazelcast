@@ -88,7 +88,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
         String serverRegistrationId = serializationService.toObject(future.get());
 
         handler.onListenerRegister();
-        int callId = invocation.getRequest().getCallId();
+        long callId = invocation.getRequest().getCallId();
         ClientEventRegistration registration
                 = new ClientEventRegistration(serverRegistrationId, callId, address, removeRequest);
 

@@ -50,8 +50,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.client.config.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 
 
@@ -66,16 +66,17 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     protected ClientListenerServiceImpl clientListenerService;
     private ILogger logger = Logger.getLogger(ClientInvocationService.class);
     private ResponseThread responseThread;
-    private final ConcurrentMap<Integer, ClientInvocation> callIdMap
-            = new ConcurrentHashMap<Integer, ClientInvocation>();
+    private final ConcurrentMap<Long, ClientInvocation> callIdMap
+            = new ConcurrentHashMap<Long, ClientInvocation>();
 
-    private final AtomicInteger callIdIncrementer = new AtomicInteger();
-
+    private final CallIdSequence callIdSequence;
     private volatile boolean isShutdown;
 
 
     public ClientInvocationServiceSupport(HazelcastClientInstanceImpl client) {
         this.client = client;
+        int maxAllowedConcurrentInvocations = client.getClientProperties().getInteger(MAX_CONCURRENT_INVOCATIONS);
+        callIdSequence = new CallIdSequence.CallIdSequenceWithBackpressureViaException(maxAllowedConcurrentInvocations);
     }
 
     @Override
@@ -109,9 +110,10 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         final byte[] bytes = ss.toBytes(invocation.getRequest());
         Packet packet = new Packet(bytes, invocation.getPartitionId());
         if (!isAllowedToSendRequest(connection, invocation.getRequest()) || !connection.write(packet)) {
-            int callId = invocation.getRequest().getCallId();
+            long callId = invocation.getRequest().getCallId();
             ClientInvocation clientInvocation = deRegisterCallId(callId);
             if (clientInvocation != null) {
+                callIdSequence.complete();
                 throw new IOException("Packet not send to " + connection.getRemoteEndpoint());
             } else {
                 if (logger.isFinestEnabled()) {
@@ -139,7 +141,12 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     }
 
     private void registerInvocation(ClientInvocation clientInvocation) {
-        final int callId = newCallId();
+        long callId;
+        if (clientInvocation.isUrgent()) {
+            callId = callIdSequence.renew();
+        } else {
+            callId = callIdSequence.next();
+        }
         clientInvocation.getRequest().setCallId(callId);
         callIdMap.put(callId, clientInvocation);
         EventHandler handler = clientInvocation.getEventHandler();
@@ -148,14 +155,14 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         }
     }
 
-    private ClientInvocation deRegisterCallId(int callId) {
+    private ClientInvocation deRegisterCallId(long callId) {
         return callIdMap.remove(callId);
     }
 
     public void cleanResources(ConstructorFunction<Object, Throwable> responseCtor, ClientConnection connection) {
-        final Iterator<Map.Entry<Integer, ClientInvocation>> iter = callIdMap.entrySet().iterator();
+        final Iterator<Map.Entry<Long, ClientInvocation>> iter = callIdMap.entrySet().iterator();
         while (iter.hasNext()) {
-            final Map.Entry<Integer, ClientInvocation> entry = iter.next();
+            final Map.Entry<Long, ClientInvocation> entry = iter.next();
             final ClientInvocation invocation = entry.getValue();
             if (connection.equals(invocation.getSendConnection())) {
                 iter.remove();
@@ -285,10 +292,10 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         }
 
         private void process(Packet packet) {
-            final ClientConnection conn = (ClientConnection) packet.getConn();
+            ClientConnection conn = (ClientConnection) packet.getConn();
             try {
-                final ClientResponse clientResponse = client.getSerializationService().toObject(packet);
-                final int callId = clientResponse.getCallId();
+                ClientResponse clientResponse = client.getSerializationService().toObject(packet);
+                long callId = clientResponse.getCallId();
                 Data response = clientResponse.getResponse();
                 //TODO can response be made to be NULL ?
                 if (response == null) {
@@ -302,22 +309,19 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             }
         }
 
-        private void handlePacket(Object response, boolean isError, int callId) {
-            final ClientInvocation future = deRegisterCallId(callId);
+        private void handlePacket(Object response, boolean isError, long callId) {
+            ClientInvocation future = deRegisterCallId(callId);
             if (future == null) {
                 logger.warning("No call for callId: " + callId + ", response: " + response);
                 return;
             }
+            callIdSequence.complete();
             if (isError) {
                 response = client.getSerializationService().toObject(response);
             }
             future.notify(response);
         }
 
-    }
-
-    private int newCallId() {
-        return callIdIncrementer.incrementAndGet();
     }
 
 }

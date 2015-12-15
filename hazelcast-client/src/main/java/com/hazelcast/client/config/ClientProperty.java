@@ -65,7 +65,18 @@ public enum ClientProperty implements HazelcastProperty {
     /**
      * Time to give up on invocation when a member in the member list is not reachable.
      */
-    INVOCATION_TIMEOUT_SECONDS("hazelcast.client.invocation.timeout.seconds", 120, SECONDS);
+    INVOCATION_TIMEOUT_SECONDS("hazelcast.client.invocation.timeout.seconds", 120, SECONDS),
+
+    /**
+     * The maximum number of concurrent invocations allowed.
+     * <p/>
+     * To prevent the system from overloading, user can apply a constraint on the number of concurrent invocations.
+     * If the maximum number of concurrent invocations has been exceeded and a new invocation comes in,
+     * then hazelcast will throw HazelcastOverloadException
+     * <p/>
+     * By default it is configured as Integer.MaxValue.
+     */
+    MAX_CONCURRENT_INVOCATIONS("hazelcast.client.max.concurrent.invocations", Integer.MAX_VALUE);
 
     private final String name;
     private final String defaultValue;

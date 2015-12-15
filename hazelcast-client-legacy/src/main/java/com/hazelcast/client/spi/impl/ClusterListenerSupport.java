@@ -117,7 +117,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             //contains remoteAddress and principal
             SerializableList collectionWrapper;
             final ClientInvocation clientInvocation = new ClientInvocation(client, auth, connection);
-            final Future<SerializableList> future = clientInvocation.invoke();
+            final Future<SerializableList> future = clientInvocation.invokeUrgent();
             try {
                 collectionWrapper = ss.toObject(future.get());
             } catch (Exception e) {

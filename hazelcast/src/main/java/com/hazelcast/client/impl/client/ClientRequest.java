@@ -29,7 +29,7 @@ import java.io.IOException;
 
 public abstract class ClientRequest implements SecureRequest, VersionedPortable {
 
-    protected volatile int callId = -1;
+    protected volatile long callId = -1;
     protected transient ClientEngineImpl clientEngine;
     protected transient OperationService operationService;
     protected transient SerializationService serializationService;
@@ -72,17 +72,17 @@ public abstract class ClientRequest implements SecureRequest, VersionedPortable 
 
     public abstract String getServiceName();
 
-    public int getCallId() {
+    public long getCallId() {
         return callId;
     }
 
-    public void setCallId(int callId) {
+    public void setCallId(long callId) {
         this.callId = callId;
     }
 
     @Override
     public final void writePortable(PortableWriter writer) throws IOException {
-        writer.writeInt("cId", callId);
+        writer.writeLong("cId", callId);
         write(writer);
     }
 
@@ -91,7 +91,7 @@ public abstract class ClientRequest implements SecureRequest, VersionedPortable 
 
     @Override
     public final void readPortable(PortableReader reader) throws IOException {
-        callId = reader.readInt("cId");
+        callId = reader.readLong("cId");
         read(reader);
     }
 
