@@ -300,7 +300,7 @@
                                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                                     <!-- 1C means 1 process per cpu core -->
                                     <forkCount>1C</forkCount>
-                                    <reuseForks>false</reuseForks>
+                                    <reuseForks>true</reuseForks>
                                     <!-- the argLine variable is needed for JaCoco -->
                                     <argLine>
                                         -Xms128m -Xmx1G -XX:MaxPermSize=128M
