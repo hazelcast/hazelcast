@@ -71,8 +71,12 @@ public abstract class AbstractListenersOnReconnectTest extends HazelcastTestSupp
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
-                assertEquals(EVENT_COUNT, eventCount.get());
+            public void run()
+                    throws Exception {
+                int current = eventCount.get();
+                String msg = "[testListenersInternal] Current event count is " + current + " and expected event count is "
+                        + EVENT_COUNT;
+                assertEquals(msg, EVENT_COUNT, current);
             }
         });
 
@@ -99,7 +103,7 @@ public abstract class AbstractListenersOnReconnectTest extends HazelcastTestSupp
         testListenersInternal();
     }
 
-    @Test(timeout = 120000)
+    @Test(timeout = 150000)
     public void testListenersSmartRouting() {
         factory.newHazelcastInstance();
 
