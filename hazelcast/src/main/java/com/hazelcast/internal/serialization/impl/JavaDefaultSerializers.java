@@ -32,8 +32,6 @@ import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -51,7 +49,6 @@ public final class JavaDefaultSerializers {
 
     public static final class ExternalizableSerializer extends SingletonSerializer<Externalizable> {
 
-        private ConcurrentMap<String, Class> clazzCache = new ConcurrentHashMap<String, Class>();
         private final boolean gzipEnabled;
 
         public ExternalizableSerializer(boolean gzipEnabled) {
