@@ -60,7 +60,7 @@
                 <xs:element ref="member-attributes" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="quorum" type="quorum" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="lite-member" type="lite-member" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0" maxOccurs="1"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -267,14 +267,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="hot-restart-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
-                <xs:annotation>
-                    <xs:documentation>
-                        True if hot-restart is enabled, false otherwise
-                        Only available on Hazelcast Enterprise.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
+            <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1" />
             <xs:element name="map-store" type="map-store" minOccurs="0" maxOccurs="1"/>
             <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1"/>
             <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0" maxOccurs="1"/>
@@ -533,14 +526,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="hot-restart-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
-                <xs:annotation>
-                    <xs:documentation>
-                        True if hot-restart is enabled, false otherwise
-                        Only available on Hazelcast Enterprise.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
+            <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1" />
         </xs:all>
 
         <xs:attribute name="name" use="required">
@@ -2748,7 +2734,7 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="hot-restart">
+    <xs:complexType name="hot-restart-persistence">
         <xs:all>
             <xs:element name="base-dir" type="xs:string" minOccurs="0" maxOccurs="1" default="hot-restart">
                 <xs:annotation>
@@ -2779,6 +2765,28 @@
             <xs:annotation>
                 <xs:documentation>
                     True to enable hot-restart, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="hot-restart">
+        <xs:all>
+            <xs:element name="fsync" type="xs:boolean" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        True if disk write should be followed by an fsync() system call,
+                        false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+
+        <xs:attribute name="enabled" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    True if hot-restart is enabled, false otherwise
+                    Only available on Hazelcast Enterprise.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

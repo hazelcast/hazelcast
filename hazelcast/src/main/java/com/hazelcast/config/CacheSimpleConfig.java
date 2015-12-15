@@ -99,7 +99,7 @@ public class CacheSimpleConfig {
 
     private String mergePolicy = BuiltInCacheMergePolicies.getDefault().getImplementationClassName();
 
-    private boolean hotRestartEnabled;
+    private HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public CacheSimpleConfig(CacheSimpleConfig cacheSimpleConfig) {
@@ -126,7 +126,7 @@ public class CacheSimpleConfig {
                 new ArrayList<CachePartitionLostListenerConfig>(cacheSimpleConfig.getPartitionLostListenerConfigs());
         this.quorumName = cacheSimpleConfig.quorumName;
         this.mergePolicy = cacheSimpleConfig.mergePolicy;
-        this.hotRestartEnabled = cacheSimpleConfig.hotRestartEnabled;
+        this.hotRestartConfig = new HotRestartConfig(cacheSimpleConfig.hotRestartConfig);
     }
 
     public CacheSimpleConfig() {
@@ -555,24 +555,6 @@ public class CacheSimpleConfig {
     }
 
     /**
-     * Sets whether hot restart is enabled on this cache.
-     * @return this
-     */
-    public CacheSimpleConfig setHotRestartEnabled(boolean hotRestart) {
-        this.hotRestartEnabled = hotRestart;
-        return this;
-    }
-
-    /**
-     * Returns whether hot restart enabled on this cache.
-     *
-     * @return true if hot restart enabled, false otherwise
-     */
-    public boolean isHotRestartEnabled() {
-        return hotRestartEnabled;
-    }
-
-    /**
      * Gets the class name of {@link com.hazelcast.cache.CacheMergePolicy}
      * implementation of this cache config.
      *
@@ -592,6 +574,24 @@ public class CacheSimpleConfig {
      */
     public void setMergePolicy(String mergePolicy) {
         this.mergePolicy = mergePolicy;
+    }
+
+    /**
+     * Gets the {@code HotRestartConfig} for this {@code CacheSimpleConfig}
+     * @return hot restart config
+     */
+    public HotRestartConfig getHotRestartConfig() {
+        return hotRestartConfig;
+    }
+
+    /**
+     * Sets the {@code HotRestartConfig} for this {@code CacheSimpleConfig}
+     * @param hotRestartConfig hot restart config
+     * @return this {@code CacheSimpleConfig} instance
+     */
+    public CacheSimpleConfig setHotRestartConfig(HotRestartConfig hotRestartConfig) {
+        this.hotRestartConfig = hotRestartConfig;
+        return this;
     }
 
     /**

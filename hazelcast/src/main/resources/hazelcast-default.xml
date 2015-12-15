@@ -257,6 +257,4 @@
 
     <lite-member enabled="false"/>
 
-    <hot-restart enabled="false" />
-
 </hazelcast>

@@ -16,43 +16,24 @@
 
 package com.hazelcast.config;
 
-import java.io.File;
-
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
-
 /**
- * Configures the Hot Restart stores.
- * <p/>
- * Hot restart stores are used to hold copy of in-memory data in
- * disk to be able to restart very fast without needing to load
- * data from a central storage.
- * <p/>
- * HotRestartConfig configures whether hot restart is enabled,
- * where disk data will be stored, should data be persisted
- * sync or async etc.
+ * Configures the Hot Restart Persistence per Hazelcast data structure.
  */
 public class HotRestartConfig {
-    /** Default directory name for the Hot Restart store's home */
-    public static final String HOT_RESTART_BASE_DIR_DEFAULT = "hot-restart";
-
-    /**
-     * Default validation timeout
-     */
-    public static final int DEFAULT_VALIDATION_TIMEOUT = 2 * 60;
-
-    /**
-     * Default load timeout
-     */
-    public static final int DEFAULT_DATA_LOAD_TIMEOUT = 15 * 60;
 
     private boolean enabled;
-    private File baseDir = new File(HOT_RESTART_BASE_DIR_DEFAULT);
-    private int validationTimeoutSeconds = DEFAULT_VALIDATION_TIMEOUT;
-    private int dataLoadTimeoutSeconds = DEFAULT_DATA_LOAD_TIMEOUT;
+    private boolean fsync;
+
+    public HotRestartConfig() {
+    }
+
+    public HotRestartConfig(HotRestartConfig hotRestartConfig) {
+        enabled = hotRestartConfig.enabled;
+        fsync = hotRestartConfig.fsync;
+    }
 
     /**
-     * Returns whether hot restart enabled on this member.
+     * Returns whether hot restart enabled on related data structure.
      *
      * @return true if hot restart enabled, false otherwise
      */
@@ -61,7 +42,7 @@ public class HotRestartConfig {
     }
 
     /**
-     * Sets whether hot restart is enabled on this member.
+     * Sets whether hot restart is enabled on related data structure.
      *
      * @return HotRestartConfig
      */
@@ -71,66 +52,31 @@ public class HotRestartConfig {
     }
 
     /**
-     * Base directory for all Hot Restart stores.
+     * Returns whether disk write should be followed by an {@code fsync()} system call.
+     *
+     * @return true if fsync is be called after disk write, false otherwise
      */
-    public File getBaseDir() {
-        return baseDir;
+    public boolean isFsync() {
+        return fsync;
     }
 
     /**
-     * Sets base directory for all Hot Restart stores.
+     * Sets whether disk write should be followed by an {@code fsync()} system call.
      *
-     * @param baseDir home directory
-     * @return HotRestartConfig
+     * @param fsync fsync
+     * @return this HotRestartConfig
      */
-    public HotRestartConfig setBaseDir(File baseDir) {
-        checkNotNull(baseDir, "Base directory cannot be null!");
-        this.baseDir = baseDir;
+    public HotRestartConfig setFsync(boolean fsync) {
+        this.fsync = fsync;
         return this;
     }
 
-    /**
-     * Returns configured validation timeout for hot-restart process.
-     *
-     * @return validation timeout in seconds
-     */
-    public int getValidationTimeoutSeconds() {
-        return validationTimeoutSeconds;
-    }
-
-    /**
-     * Sets validation timeout for hot-restart process, includes validating
-     * cluster members expected to join and partition table on all cluster.
-     *
-     * @param validationTimeoutSeconds validation timeout in seconds
-     * @return HotRestartConfig
-     */
-    public HotRestartConfig setValidationTimeoutSeconds(int validationTimeoutSeconds) {
-        checkPositive(validationTimeoutSeconds, "Validation timeout should be positive!");
-        this.validationTimeoutSeconds = validationTimeoutSeconds;
-        return this;
-    }
-
-    /**
-     * Returns configured data load timeout for hot-restart process.
-     *
-     * @return data load timeout in seconds
-     */
-    public int getDataLoadTimeoutSeconds() {
-        return dataLoadTimeoutSeconds;
-    }
-
-    /**
-     * Sets data load timeout for hot-restart process,
-     * all members in the cluster should complete restoring their local data
-     * before this timeout.
-     *
-     * @param dataLoadTimeoutSeconds data load timeout in seconds
-     * @return HotRestartConfig
-     */
-    public HotRestartConfig setDataLoadTimeoutSeconds(int dataLoadTimeoutSeconds) {
-        checkPositive(dataLoadTimeoutSeconds, "Load timeout should be positive!");
-        this.dataLoadTimeoutSeconds = dataLoadTimeoutSeconds;
-        return this;
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("HotRestartConfig{");
+        sb.append("enabled=").append(enabled);
+        sb.append(", fsync=").append(fsync);
+        sb.append('}');
+        return sb.toString();
     }
 }

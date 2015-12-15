@@ -423,7 +423,7 @@ class OperationRunnerImpl extends OperationRunner {
             return true;
         }
 
-        Exception error = new CallerNotMemberException(
+        Exception error = new CallerNotMemberException(node.getThisAddress(),
                 op.getCallerAddress(), op.getPartitionId(),
                 op.getClass().getName(), op.getServiceName());
         handleOperationError(op, error);

@@ -94,10 +94,7 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
      */
     protected boolean isManagementEnabled;
 
-    /**
-     * Whether Hot Restart is enabled
-     */
-    protected boolean hotRestartEnabled;
+    protected HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
     public AbstractCacheConfig() {
         this.keyType = (Class<K>) Object.class;
@@ -232,21 +229,21 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
     }
 
     /**
-     * Sets whether hot restart is enabled on this cache.
-     * @return this
+     * Gets the {@code HotRestartConfig} for this {@code CacheConfiguration}
+     * @return hot restart config
      */
-    public CacheConfiguration<K, V> setHotRestartEnabled(boolean hotRestart) {
-        this.hotRestartEnabled = hotRestart;
-        return this;
+    public HotRestartConfig getHotRestartConfig() {
+        return hotRestartConfig;
     }
 
     /**
-     * Returns whether hot restart enabled on this cache.
-     *
-     * @return true if hot restart enabled, false otherwise
+     * Sets the {@code HotRestartConfig} for this {@code CacheConfiguration}
+     * @param hotRestartConfig hot restart config
+     * @return this {@code CacheConfiguration} instance
      */
-    public boolean isHotRestartEnabled() {
-        return hotRestartEnabled;
+    public CacheConfiguration<K, V> setHotRestartConfig(HotRestartConfig hotRestartConfig) {
+        this.hotRestartConfig = hotRestartConfig;
+        return this;
     }
 
     @Override

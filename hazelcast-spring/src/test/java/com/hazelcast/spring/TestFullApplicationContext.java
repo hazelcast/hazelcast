@@ -25,7 +25,7 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.HotRestartConfig;
+import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -216,7 +216,8 @@ public class TestFullApplicationContext {
         assertEquals(1, config.getCacheConfigs().size());
         CacheSimpleConfig cacheConfig = config.getCacheConfig("testCache");
         assertEquals("testCache", cacheConfig.getName());
-        assertTrue(cacheConfig.isHotRestartEnabled());
+        assertTrue(cacheConfig.getHotRestartConfig().isEnabled());
+        assertTrue(cacheConfig.getHotRestartConfig().isFsync());
 
         WanReplicationRef wanRef = cacheConfig.getWanReplicationRef();
         assertEquals("testWan", wanRef.getName());
@@ -239,7 +240,8 @@ public class TestFullApplicationContext {
         assertEquals(Integer.MAX_VALUE, testMapConfig.getMaxSizeConfig().getSize());
         assertEquals(30, testMapConfig.getEvictionPercentage());
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
-        assertTrue(testMapConfig.isHotRestartEnabled());
+        assertTrue(testMapConfig.getHotRestartConfig().isEnabled());
+        assertTrue(testMapConfig.getHotRestartConfig().isFsync());
         assertEquals(1000, testMapConfig.getMinEvictionCheckMillis());
         assertEquals("PUT_IF_ABSENT", testMapConfig.getMergePolicy());
         assertTrue(testMapConfig.isReadBackupData());
@@ -766,11 +768,11 @@ public class TestFullApplicationContext {
     @Test
     public void testHotRestart() {
         File dir = new File("/mnt/hot-restart/");
-        HotRestartConfig hotRestartConfig = config.getHotRestartConfig();
-        assertTrue(hotRestartConfig.isEnabled());
-        assertEquals(dir.getAbsolutePath(), hotRestartConfig.getBaseDir().getAbsolutePath());
-        assertEquals(1111, hotRestartConfig.getValidationTimeoutSeconds());
-        assertEquals(2222, hotRestartConfig.getDataLoadTimeoutSeconds());
+        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
+        assertTrue(hotRestartPersistenceConfig.isEnabled());
+        assertEquals(dir.getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
+        assertEquals(1111, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
+        assertEquals(2222, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
     }
 
 }
