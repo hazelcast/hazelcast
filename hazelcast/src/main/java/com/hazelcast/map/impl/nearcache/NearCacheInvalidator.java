@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ManagedService;
 
 import java.util.Collection;
 import java.util.List;
@@ -86,10 +87,27 @@ public interface NearCacheInvalidator {
 
     /**
      * Removes supplied maps invalidation queue and flushes its content.
-     * This method is called when removing a near-cache.
+     * This method is called when removing a near-cache with
+     * {@link com.hazelcast.map.impl.MapRemoteService#destroyDistributedObject(String)}
      *
      * @param mapName name of the map.
+     * @see com.hazelcast.map.impl.MapRemoteService#destroyDistributedObject(String)
      */
     void flushAndRemoveInvalidationQueue(String mapName);
 
+    /**
+     * Resets this invalidator back to its initial state.
+     * Aimed to call with {@link ManagedService#reset()}
+     *
+     * @see {@link ManagedService#reset()}
+     */
+    void reset();
+
+    /**
+     * Shuts down this invalidator and releases used resources.
+     * Aimed to call with {@link com.hazelcast.spi.ManagedService#shutdown(boolean)}
+     *
+     * @see {@link com.hazelcast.spi.ManagedService#shutdown(boolean)}
+     */
+    void shutdown();
 }

@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapManagedService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.SizeEstimator;
 import com.hazelcast.nio.serialization.Data;
@@ -65,19 +66,40 @@ public class NearCacheProvider {
         return nearCacheMap.get(mapName);
     }
 
-    public void clear() {
+
+    /**
+     * @see MapManagedService#reset()
+     */
+    public void reset() {
         Collection<NearCache> nearCaches = nearCacheMap.values();
         for (NearCache nearCache : nearCaches) {
             nearCache.clear();
         }
         nearCacheMap.clear();
+        nearCacheInvalidator.reset();
     }
 
-    public void remove(String mapName) {
+    /**
+     * @see MapManagedService#shutdown(boolean)
+     */
+    public void shutdown() {
+        Collection<NearCache> nearCaches = nearCacheMap.values();
+        for (NearCache nearCache : nearCaches) {
+            nearCache.destroy();
+        }
+        nearCacheMap.clear();
+        nearCacheInvalidator.shutdown();
+    }
+
+    /**
+     * @see com.hazelcast.map.impl.MapRemoteService#destroyDistributedObject(String)
+     */
+    public void destroyNearCache(String mapName) {
         NearCache nearCache = nearCacheMap.remove(mapName);
         if (nearCache != null) {
-            nearCache.clear();
+            nearCache.destroy();
         }
+
         nearCacheInvalidator.flushAndRemoveInvalidationQueue(mapName);
     }
 

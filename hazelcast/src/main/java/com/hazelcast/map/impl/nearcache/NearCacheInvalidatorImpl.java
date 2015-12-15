@@ -64,6 +64,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
  */
 public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
 
+    private static final String INVALIDATION_EXECUTOR_NAME = NearCacheInvalidator.class.getName();
     /**
      * Creates an invalidation-queue for a map.
      */
@@ -87,6 +88,7 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
     private final NearCacheProvider nearCacheProvider;
     private final boolean batchingEnabled;
     private final int batchSize;
+    private String listenerRegistrationId;
 
     NearCacheInvalidatorImpl(MapServiceContext mapServiceContext, NearCacheProvider nearCacheProvider) {
         this.mapServiceContext = mapServiceContext;
@@ -104,7 +106,7 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
     private void handleBatchesOnNodeShutdown() {
         HazelcastInstance node = nodeEngine.getHazelcastInstance();
         LifecycleService lifecycleService = node.getLifecycleService();
-        lifecycleService.addLifecycleListener(new LifecycleListener() {
+        listenerRegistrationId = lifecycleService.addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
                 if (event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
@@ -120,8 +122,9 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
     private void startBackgroundBatchProcessor() {
         int periodSeconds = getBackgroundProcessorRunPeriodSeconds();
         ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.scheduleAtFixedRate(SERVICE_NAME + ":batchBackgroundProcessor",
+        executionService.scheduleAtFixedRate(INVALIDATION_EXECUTOR_NAME,
                 new MapBatchInvalidationEventSender(), periodSeconds, periodSeconds, TimeUnit.SECONDS);
+
     }
 
     private int getBatchSize() {
@@ -210,6 +213,29 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
         InvalidationQueue invalidationQueue = invalidationQueues.remove(mapName);
         if (invalidationQueue != null) {
             sendRemoteCleaningInvalidation(mapName, null);
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        if (batchingEnabled) {
+            assert listenerRegistrationId != null;
+
+            ExecutionService executionService = nodeEngine.getExecutionService();
+            executionService.shutdownExecutor(INVALIDATION_EXECUTOR_NAME);
+
+            HazelcastInstance node = nodeEngine.getHazelcastInstance();
+            LifecycleService lifecycleService = node.getLifecycleService();
+            lifecycleService.removeLifecycleListener(listenerRegistrationId);
+
+            invalidationQueues.clear();
+        }
+    }
+
+    @Override
+    public void reset() {
+        if (batchingEnabled) {
+            invalidationQueues.clear();
         }
     }
 
