@@ -55,13 +55,13 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED = 10;
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD = 5000;
     protected final HazelcastClientInstanceImpl client;
-    protected ClientConnectionManager connectionManager;
-    protected ClientPartitionService partitionService;
-    protected ClientExecutionService executionService;
-    protected ClientListenerServiceImpl clientListenerService;
-    private ILogger logger = Logger.getLogger(ClientInvocationService.class);
-    private ResponseThread responseThread;
-    private ConcurrentMap<Long, ClientInvocation> callIdMap
+    protected  ClientConnectionManager connectionManager;
+    protected  ClientPartitionService partitionService;
+    protected  ClientExecutionService executionService;
+    protected  ClientListenerServiceImpl clientListenerService;
+    private  ILogger logger = Logger.getLogger(ClientInvocationService.class);
+    private  ResponseThread responseThread;
+    private  ConcurrentMap<Long, ClientInvocation> callIdMap
             = new ConcurrentHashMap<Long, ClientInvocation>();
 
     private final CallIdSequence callIdIncrementer;
