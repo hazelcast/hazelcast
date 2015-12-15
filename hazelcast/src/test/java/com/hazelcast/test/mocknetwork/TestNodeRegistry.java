@@ -55,6 +55,10 @@ public final class TestNodeRegistry {
         return nodeEngine != null && nodeEngine.isRunning() ? nodeEngine.getHazelcastInstance() : null;
     }
 
+    public boolean removeInstance(Address address) {
+        return nodes.remove(address) != null;
+    }
+
     public Collection<HazelcastInstance> getAllHazelcastInstances() {
         Collection<HazelcastInstance> all = new LinkedList<HazelcastInstance>();
         for (NodeEngineImpl nodeEngine : nodes.values()) {
@@ -80,6 +84,10 @@ public final class TestNodeRegistry {
             HazelcastInstance hz = value.getHazelcastInstance();
             hz.getLifecycleService().terminate();
         }
+    }
+
+    ConcurrentMap<Address, NodeEngineImpl> getNodes() {
+        return nodes;
     }
 
 }
