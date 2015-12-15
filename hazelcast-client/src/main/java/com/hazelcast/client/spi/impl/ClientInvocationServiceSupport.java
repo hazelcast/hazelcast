@@ -45,9 +45,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 
 abstract class ClientInvocationServiceSupport implements ClientInvocationService, ConnectionListener {
@@ -55,16 +55,17 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED = 10;
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD = 5000;
     protected final HazelcastClientInstanceImpl client;
-    protected  ClientConnectionManager connectionManager;
-    protected  ClientPartitionService partitionService;
-    protected  ClientExecutionService executionService;
-    protected  ClientListenerServiceImpl clientListenerService;
-    private  ILogger logger = Logger.getLogger(ClientInvocationService.class);
-    private  ResponseThread responseThread;
-    private  ConcurrentMap<Long, ClientInvocation> callIdMap
+    protected ClientConnectionManager connectionManager;
+    protected ClientPartitionService partitionService;
+    protected ClientExecutionService executionService;
+    protected ClientListenerServiceImpl clientListenerService;
+    private ILogger logger = Logger.getLogger(ClientInvocationService.class);
+    private ResponseThread responseThread;
+    private ConcurrentMap<Long, ClientInvocation> callIdMap
             = new ConcurrentHashMap<Long, ClientInvocation>();
 
-    private final AtomicLong callIdIncrementer = new AtomicLong();
+    private final CallIdSequence callIdIncrementer;
+
     private ClientExceptionFactory clientExceptionFactory;
     private volatile boolean isShutdown;
 
@@ -72,6 +73,15 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     public ClientInvocationServiceSupport(HazelcastClientInstanceImpl client) {
         this.client = client;
 
+        boolean backPressureEnabled = true;
+        int maxConcurrentCalls = 1000;
+        long maxWaitingForCallIdMs = SECONDS.toMillis(60);
+
+        if (backPressureEnabled) {
+            callIdIncrementer = new CallIdSequence.CallIdSequenceWithBackpressure(maxConcurrentCalls, maxWaitingForCallIdMs);
+        } else {
+            callIdIncrementer = new CallIdSequence.CallIdSequenceWithoutBackpressure();
+        }
     }
 
     @Override
@@ -328,6 +338,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 return;
             }
 
+            callIdIncrementer.complete();
+
             if (ErrorCodec.TYPE == clientMessage.getMessageType()) {
                 ErrorCodec exParameters = ErrorCodec.decode(clientMessage);
                 Throwable exception =
@@ -343,7 +355,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     }
 
     private long newCorrelationId() {
-        return callIdIncrementer.incrementAndGet();
+        return callIdIncrementer.next();
     }
 
 }
