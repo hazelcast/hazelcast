@@ -376,6 +376,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         final long ttlMillis = mergingEntry.getTtl();
         record.setTtl(ttlMillis);
 
+        final long creationTime = mergingEntry.getCreationTime();
+        record.setCreationTime(creationTime);
+
         final long lastAccessTime = mergingEntry.getLastAccessTime();
         record.setLastAccessTime(lastAccessTime);
 
