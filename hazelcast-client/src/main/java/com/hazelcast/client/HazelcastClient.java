@@ -16,23 +16,15 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
+import java.util.Collection;
+
 import com.hazelcast.client.impl.ClientConnectionManagerFactory;
-import com.hazelcast.client.impl.DefaultClientConnectionManagerFactory;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
-import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.client.config.ClientConfig;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * The HazelcastClient is comparable to the {@link com.hazelcast.core.Hazelcast} class and provides the ability
@@ -56,45 +48,28 @@ import java.util.concurrent.ConcurrentMap;
  * When the connected cluster member dies, client will automatically switch to another live member.
  */
 public final class HazelcastClient {
+    private static final HazelcastClientFactory HAZELCAST_CLIENT_FACTORY = new HazelcastClientFactory() {
+        @Override
+        public HazelcastClientInstanceImpl createHazelcastInstanceClient(ClientConfig config,
+                                                                         ClientConnectionManagerFactory factory) {
+            return new HazelcastClientInstanceImpl(config, factory, null);
+        }
 
-    static {
-        OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
-    }
-
-    private static final ConcurrentMap<String, HazelcastClientProxy> CLIENTS
-            = new ConcurrentHashMap<String, HazelcastClientProxy>(5);
+        @Override
+        public HazelcastClientProxy createProxy(HazelcastClientInstanceImpl client) {
+            return new HazelcastClientProxy(client);
+        }
+    };
 
     private HazelcastClient() {
     }
 
     public static HazelcastInstance newHazelcastClient() {
-        return newHazelcastClient(new XmlClientConfigBuilder().build());
+        return HazelcastClientManager.newHazelcastClient(HAZELCAST_CLIENT_FACTORY);
     }
 
     public static HazelcastInstance newHazelcastClient(ClientConfig config) {
-        if (config == null) {
-            config = new XmlClientConfigBuilder().build();
-        }
-
-        final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-        HazelcastClientProxy proxy;
-        try {
-            Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
-            ClientConnectionManagerFactory clientConnectionManagerFactory = new DefaultClientConnectionManagerFactory();
-            final HazelcastClientInstanceImpl client =
-                    new HazelcastClientInstanceImpl(config, clientConnectionManagerFactory, null);
-            client.start();
-            OutOfMemoryErrorDispatcher.registerClient(client);
-            proxy = new HazelcastClientProxy(client);
-            if (CLIENTS.containsKey(client.getName())) {
-                throw new DuplicateInstanceNameException("HazelcastClientInstance with name '" + client.getName()
-                        + "' already exists!");
-            }
-            CLIENTS.put(client.getName(), proxy);
-        } finally {
-            Thread.currentThread().setContextClassLoader(tccl);
-        }
-        return proxy;
+        return HazelcastClientManager.newHazelcastClient(config, HAZELCAST_CLIENT_FACTORY);
     }
 
     /**
@@ -104,7 +79,7 @@ public final class HazelcastClient {
      * @return HazelcastInstance
      */
     public static HazelcastInstance getHazelcastClientByName(String instanceName) {
-        return CLIENTS.get(instanceName);
+        return HazelcastClientManager.getHazelcastClientByName(instanceName);
     }
 
     /**
@@ -120,8 +95,7 @@ public final class HazelcastClient {
      * @return the collection of client HazelcastInstances
      */
     public static Collection<HazelcastInstance> getAllHazelcastClients() {
-        Collection<HazelcastClientProxy> values = CLIENTS.values();
-        return Collections.unmodifiableCollection(new HashSet<HazelcastInstance>(values));
+        return HazelcastClientManager.getAllHazelcastClients();
     }
 
     /**
@@ -135,20 +109,7 @@ public final class HazelcastClient {
      * @see #getAllHazelcastClients()
      */
     public static void shutdownAll() {
-        for (HazelcastClientProxy proxy : CLIENTS.values()) {
-            HazelcastClientInstanceImpl client = proxy.client;
-            if (client == null) {
-                continue;
-            }
-            proxy.client = null;
-            try {
-                client.shutdown();
-            } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
-            }
-        }
-        OutOfMemoryErrorDispatcher.clearClients();
-        CLIENTS.clear();
+        HazelcastClientManager.shutdownAll();
     }
 
     /**
@@ -157,23 +118,7 @@ public final class HazelcastClient {
      * @param instance the hazelcast client instance
      */
     public static void shutdown(HazelcastInstance instance) {
-        if (instance instanceof HazelcastClientProxy) {
-            final HazelcastClientProxy proxy = (HazelcastClientProxy) instance;
-            HazelcastClientInstanceImpl client = proxy.client;
-            if (client == null) {
-                return;
-            }
-            proxy.client = null;
-            CLIENTS.remove(client.getName());
-
-            try {
-                client.shutdown();
-            } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
-            } finally {
-                OutOfMemoryErrorDispatcher.deregisterClient(client);
-            }
-        }
+        HazelcastClientManager.shutdown(instance);
     }
 
     /**
@@ -182,22 +127,7 @@ public final class HazelcastClient {
      * @param instanceName the hazelcast client instance name
      */
     public static void shutdown(String instanceName) {
-        HazelcastClientProxy proxy = CLIENTS.remove(instanceName);
-        if (proxy == null) {
-            return;
-        }
-        HazelcastClientInstanceImpl client = proxy.client;
-        if (client == null) {
-            return;
-        }
-        proxy.client = null;
-        try {
-            client.shutdown();
-        } catch (Throwable ignored) {
-            EmptyStatement.ignore(ignored);
-        } finally {
-            OutOfMemoryErrorDispatcher.deregisterClient(client);
-        }
+        HazelcastClientManager.shutdown(instanceName);
     }
 
     /**
@@ -216,6 +146,6 @@ public final class HazelcastClient {
      * @see OutOfMemoryHandler
      */
     public static void setOutOfMemoryHandler(OutOfMemoryHandler outOfMemoryHandler) {
-        OutOfMemoryErrorDispatcher.setClientHandler(outOfMemoryHandler);
+        HazelcastClientManager.setOutOfMemoryHandler(outOfMemoryHandler);
     }
 }

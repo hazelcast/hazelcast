@@ -16,13 +16,15 @@
 
 package com.hazelcast.core;
 
+import java.io.Serializable;
+
 /**
  * PartitioningStrategy allows keys to be located on the same member.
  * This causes related data to be stored in the same location. (See data-affinity.)
  *
  * @param <K> key type
  */
-public interface PartitioningStrategy<K> {
+public interface PartitioningStrategy<K> extends Serializable {
 
     /**
      * Returns the key object that will be used by Hazelcast to specify the partition.

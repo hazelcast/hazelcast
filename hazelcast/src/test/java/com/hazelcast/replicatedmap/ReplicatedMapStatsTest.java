@@ -246,6 +246,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
 
     private <K, V> ReplicatedMap<K, V> getReplicatedMap() {
         HazelcastInstance instance = createHazelcastInstance();
+        warmUpPartitions(instance);
         return instance.getReplicatedMap(randomMapName());
     }
 }

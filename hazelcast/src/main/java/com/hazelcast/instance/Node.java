@@ -140,7 +140,12 @@ public class Node {
 
     private final HazelcastThreadGroup hazelcastThreadGroup;
 
+
     private final boolean liteMember;
+
+    protected NodeExtension createNodeExtension(NodeContext nodeContext) {
+        return nodeContext.createNodeExtension(this);
+    }
 
     public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
         this.hazelcastInstance = hazelcastInstance;
@@ -167,7 +172,8 @@ public class Node {
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
-            this.nodeExtension = nodeContext.createNodeExtension(this);
+
+            this.nodeExtension = createNodeExtension(nodeContext);
             nodeExtension.beforeStart();
 
             serializationService = nodeExtension.createSerializationService();

@@ -109,12 +109,11 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
     final HealthMonitor healthMonitor;
 
-    HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext)
+    protected HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext)
             throws Exception {
         this.name = name;
+        this.lifecycleService = new LifecycleServiceImpl(this);
 
-
-        lifecycleService = new LifecycleServiceImpl(this);
         ManagedContext configuredManagedContext = config.getManagedContext();
         managedContext = new HazelcastManagedContext(this, configuredManagedContext);
 
@@ -122,7 +121,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
         //user-context map instance instead of having a shared map instance. So changes made to the user-context map
         //in one HazelcastInstance will not reflect on other the user-context of other HazelcastInstances.
         userContext.putAll(config.getUserContext());
-        node = new Node(this, config, nodeContext);
+        node = createNode(config, nodeContext);
 
         try {
             logger = node.getLogger(getClass().getName());
@@ -148,6 +147,10 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
             }
             throw ExceptionUtil.rethrow(e);
         }
+    }
+
+    protected Node createNode(Config config, NodeContext nodeContext) {
+        return new Node(this, config, nodeContext);
     }
 
     private void initManagedContext(ManagedContext configuredManagedContext) {
