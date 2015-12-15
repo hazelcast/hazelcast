@@ -64,7 +64,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     private  ConcurrentMap<Long, ClientInvocation> callIdMap
             = new ConcurrentHashMap<Long, ClientInvocation>();
 
-    private final CallIdSequence callIdIncrementer;
+    private final CallIdSequence callIdSequence;
 
     private ClientExceptionFactory clientExceptionFactory;
     private volatile boolean isShutdown;
@@ -78,9 +78,9 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         long maxWaitingForCallIdMs = SECONDS.toMillis(60);
 
         if (backPressureEnabled) {
-            callIdIncrementer = new CallIdSequence.CallIdSequenceWithBackpressure(maxConcurrentCalls, maxWaitingForCallIdMs);
+            callIdSequence = new CallIdSequence.CallIdSequenceWithBackpressure(maxConcurrentCalls, maxWaitingForCallIdMs);
         } else {
-            callIdIncrementer = new CallIdSequence.CallIdSequenceWithoutBackpressure();
+            callIdSequence = new CallIdSequence.CallIdSequenceWithoutBackpressure();
         }
     }
 
@@ -338,7 +338,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 return;
             }
 
-            callIdIncrementer.complete();
+            callIdSequence.complete();
 
             if (ErrorCodec.TYPE == clientMessage.getMessageType()) {
                 ErrorCodec exParameters = ErrorCodec.decode(clientMessage);
@@ -355,7 +355,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     }
 
     private long newCorrelationId() {
-        return callIdIncrementer.next();
+        return callIdSequence.next();
     }
 
 }
