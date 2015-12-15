@@ -389,8 +389,7 @@ public class ConfigXmlGenerator {
                     .append("</merge-policy>");
             xml.append("<read-backup-data>").append(m.isReadBackupData())
                     .append("</read-backup-data>");
-            xml.append("<hot-restart-enabled>").append(m.isHotRestartEnabled())
-                    .append("</hot-restart-enabled>");
+            appendHotRestartConfig(xml, m.getHotRestartConfig());
             xml.append("<statistics-enabled>").append(m.isStatisticsEnabled())
                     .append("</statistics-enabled>");
 
@@ -410,6 +409,13 @@ public class ConfigXmlGenerator {
         }
     }
 
+    private void appendHotRestartConfig(StringBuilder xml, HotRestartConfig m) {
+        xml.append("<hot-restart enabled=\"")
+                .append(m != null && m.isEnabled()).append("\">")
+                .append("<fsync>").append(m != null && m.isFsync()).append("</fsync>")
+                .append("</hot-restart>");
+    }
+
     private void cacheConfigXmlGenerator(StringBuilder xml, Config config) {
         for (CacheSimpleConfig c : config.getCacheConfigs().values()) {
             xml.append("<cache name=\"").append(c.getName()).append("\">");
@@ -420,7 +426,7 @@ public class ConfigXmlGenerator {
             xml.append("<management-enabled>").append(c.isManagementEnabled()).append("</management-enabled>");
             xml.append("<backup-count>").append(c.getBackupCount()).append("</backup-count>");
             xml.append("<async-backup-count>").append(c.getAsyncBackupCount()).append("</async-backup-count>");
-            xml.append("<hot-restart-enabled>").append(c.isHotRestartEnabled()) .append("</hot-restart-enabled>");
+            appendHotRestartConfig(xml, c.getHotRestartConfig());
             xml.append("<read-through>").append(c.isReadThrough()).append("</read-through>");
             xml.append("<write-through>").append(c.isWriteThrough()).append("</write-through>");
             xml.append("<cache-loader-factory class-name=\"").append(c.getCacheLoaderFactory()).append("\"/>");
@@ -709,20 +715,20 @@ public class ConfigXmlGenerator {
     }
 
     private void hotRestartXmlGenerator(StringBuilder xml, Config config) {
-        HotRestartConfig hotRestartConfig = config.getHotRestartConfig();
-        if (hotRestartConfig == null) {
-            xml.append("<hot-restart enabled=\"false\" />");
+        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
+        if (hotRestartPersistenceConfig == null) {
+            xml.append("<hot-restart-persistence enabled=\"false\" />");
             return;
         }
-        xml.append("<hot-restart enabled=\"").append(hotRestartConfig.isEnabled()).append("\">");
-        xml.append("<base-dir>").append(hotRestartConfig.getBaseDir().getAbsolutePath()).append("</base-dir>");
+        xml.append("<hot-restart-persistence enabled=\"").append(hotRestartPersistenceConfig.isEnabled()).append("\">");
+        xml.append("<base-dir>").append(hotRestartPersistenceConfig.getBaseDir().getAbsolutePath()).append("</base-dir>");
         xml.append("<validation-timeout-seconds>")
-                .append(hotRestartConfig.getValidationTimeoutSeconds())
+                .append(hotRestartPersistenceConfig.getValidationTimeoutSeconds())
                 .append("</validation-timeout-seconds>");
         xml.append("<data-load-timeout-seconds>")
-                .append(hotRestartConfig.getDataLoadTimeoutSeconds())
+                .append(hotRestartPersistenceConfig.getDataLoadTimeoutSeconds())
                 .append("</data-load-timeout-seconds>");
-        xml.append("</hot-restart>");
+        xml.append("</hot-restart-persistence>");
     }
 
     private void liteMemberXmlGenerator(StringBuilder xml, Config config) {

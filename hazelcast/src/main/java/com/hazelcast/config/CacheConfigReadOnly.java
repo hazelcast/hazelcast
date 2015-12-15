@@ -146,7 +146,7 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public CacheConfiguration<K, V> setHotRestartEnabled(boolean hotRestart) {
+    public CacheConfiguration<K, V> setHotRestartConfig(HotRestartConfig hotRestartConfig) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 

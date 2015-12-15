@@ -32,6 +32,7 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartConfig;
+import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -239,15 +240,15 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleSpringAware();
                     } else if ("quorum".equals(nodeName)) {
                         handleQuorum(node);
-                    } else if ("hot-restart".equals(nodeName)) {
-                        handleHotRestart(node);
+                    } else if ("hot-restart-persistence".equals(nodeName)) {
+                        handleHotRestartPersistence(node);
                     }
                 }
             }
         }
 
-        private void handleHotRestart(Node node) {
-            BeanDefinitionBuilder hotRestartConfigBuilder = createBeanBuilder(HotRestartConfig.class);
+        private void handleHotRestartPersistence(Node node) {
+            BeanDefinitionBuilder hotRestartConfigBuilder = createBeanBuilder(HotRestartPersistenceConfig.class);
             fillAttributeValues(node, hotRestartConfigBuilder);
 
             for (Node child : childElements(node)) {
@@ -257,7 +258,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     hotRestartConfigBuilder.addPropertyValue("baseDir", value);
                 }
             }
-            configBuilder.addPropertyValue("hotRestartConfig", hotRestartConfigBuilder.getBeanDefinition());
+            configBuilder.addPropertyValue("hotRestartPersistenceConfig", hotRestartConfigBuilder.getBeanDefinition());
         }
 
         private void handleQuorum(final org.w3c.dom.Node node) {
@@ -639,9 +640,17 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("partition-lost-listeners".endsWith(nodeName)) {
                     ManagedList listeners = parseListeners(childNode, MapPartitionLostListenerConfig.class);
                     mapConfigBuilder.addPropertyValue("partitionLostListenerConfigs", listeners);
+                } else if ("hot-restart".equals(nodeName)) {
+                    handleHotRestartConfig(mapConfigBuilder, childNode);
                 }
             }
             mapConfigManagedMap.put(name, beanDefinition);
+        }
+
+        private void handleHotRestartConfig(BeanDefinitionBuilder configBuilder, Node node) {
+            BeanDefinitionBuilder hotRestartConfigBuilder = createBeanBuilder(HotRestartConfig.class);
+            fillAttributeValues(node, hotRestartConfigBuilder);
+            configBuilder.addPropertyValue("hotRestartConfig", hotRestartConfigBuilder.getBeanDefinition());
         }
 
         private ManagedList getQueryCaches(Node childNode) {
@@ -759,6 +768,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     cacheConfigBuilder.addPropertyValue("partitionLostListenerConfigs", listeners);
                 } else if ("merge-policy".equals(cleanNodeName(childNode))) {
                     cacheConfigBuilder.addPropertyValue("mergePolicy", getTextContent(childNode));
+                } else if ("hot-restart".equals(cleanNodeName(childNode))) {
+                    handleHotRestartConfig(cacheConfigBuilder, childNode);
                 }
             }
             cacheConfigManagedMap.put(name, cacheConfigBuilder.getBeanDefinition());

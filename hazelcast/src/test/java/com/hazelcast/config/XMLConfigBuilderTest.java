@@ -1156,19 +1156,19 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         int validationTimeout = 13131;
         int dataLoadTimeout = 45454;
         String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
-                "<hot-restart enabled=\"true\">"
+                "<hot-restart-persistence enabled=\"true\">"
                 + "<base-dir>" + dir + "</base-dir>"
                 + "<validation-timeout-seconds>" + validationTimeout + "</validation-timeout-seconds>"
                 + "<data-load-timeout-seconds>" + dataLoadTimeout + "</data-load-timeout-seconds>"
-                + "</hot-restart>\n" +
+                + "</hot-restart-persistence>\n" +
                 "</hazelcast>";
 
         Config config = new InMemoryXmlConfig(xml);
-        HotRestartConfig hotRestartConfig = config.getHotRestartConfig();
-        assertTrue(hotRestartConfig.isEnabled());
-        assertEquals(new File(dir).getAbsolutePath(), hotRestartConfig.getBaseDir().getAbsolutePath());
-        assertEquals(validationTimeout, hotRestartConfig.getValidationTimeoutSeconds());
-        assertEquals(dataLoadTimeout, hotRestartConfig.getDataLoadTimeoutSeconds());
+        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
+        assertTrue(hotRestartPersistenceConfig.isEnabled());
+        assertEquals(new File(dir).getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
+        assertEquals(validationTimeout, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
+        assertEquals(dataLoadTimeout, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
     }
 
     @Test(expected = InvalidConfigurationException.class)

@@ -48,7 +48,7 @@ enum XmlElements {
     NATIVE_MEMORY("native-memory", false),
     QUORUM("quorum", true),
     LITE_MEMBER("lite-member", false),
-    HOT_RESTART("hot-restart", false),
+    HOT_RESTART_PERSISTENCE("hot-restart-persistence", false),
     ;
 
     final String name;

@@ -60,7 +60,7 @@ import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.GROUP;
-import static com.hazelcast.config.XmlElements.HOT_RESTART;
+import static com.hazelcast.config.XmlElements.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.config.XmlElements.IMPORT;
 import static com.hazelcast.config.XmlElements.INSTANCE_NAME;
 import static com.hazelcast.config.XmlElements.JOB_TRACKER;
@@ -331,8 +331,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleQuorum(node);
         } else if (LITE_MEMBER.isEqual(nodeName)) {
             handleLiteMember(node);
-        } else if (HOT_RESTART.isEqual(nodeName)) {
-            handleHotRestart(node);
+        } else if (HOT_RESTART_PERSISTENCE.isEqual(nodeName)) {
+            handleHotRestartPersistence(node);
         } else {
             return true;
         }
@@ -347,8 +347,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         config.setInstanceName(instanceName);
     }
 
-    private void handleHotRestart(Node hrRoot) {
-        final HotRestartConfig hrConfig = new HotRestartConfig();
+    private void handleHotRestartPersistence(Node hrRoot) {
+        final HotRestartPersistenceConfig hrConfig = new HotRestartPersistenceConfig();
         Node attrEnabled = hrRoot.getAttributes().getNamedItem("enabled");
         final boolean enabled = getBooleanValue(getTextContent(attrEnabled));
         hrConfig.setEnabled(enabled);
@@ -366,7 +366,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 hrConfig.setDataLoadTimeoutSeconds(getIntegerValue(dataLoadTimeoutName, getTextContent(n)));
             }
         }
-        config.setHotRestartConfig(hrConfig);
+        config.setHotRestartPersistenceConfig(hrConfig);
     }
 
     private void handleLiteMember(Node node) {
@@ -1076,8 +1076,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 handleViaReflection(node, mapConfig, new NearCacheConfig());
             } else if ("merge-policy".equals(nodeName)) {
                 mapConfig.setMergePolicy(value);
-            } else if ("hot-restart-enabled".equals(nodeName)) {
-                mapConfig.setHotRestartEnabled(getBooleanValue(value));
+            } else if ("hot-restart".equals(nodeName)) {
+                mapConfig.setHotRestartConfig(createHotRestartConfig(node));
             } else if ("read-backup-data".equals(nodeName)) {
                 mapConfig.setReadBackupData(getBooleanValue(value));
             } else if ("statistics-enabled".equals(nodeName)) {
@@ -1108,6 +1108,23 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         this.config.addMapConfig(mapConfig);
     }
     //CHECKSTYLE:ON
+
+    private HotRestartConfig createHotRestartConfig(Node node) {
+        HotRestartConfig hotRestartConfig = new HotRestartConfig();
+
+        Node attrEnabled = node.getAttributes().getNamedItem("enabled");
+        final boolean enabled = getBooleanValue(getTextContent(attrEnabled));
+        hotRestartConfig.setEnabled(enabled);
+
+        for (Node n : childElements(node)) {
+            final String name = cleanNodeName(n);
+            if ("fsync".equals(name)) {
+                hotRestartConfig.setFsync(getBooleanValue(getTextContent(n)));
+            }
+        }
+
+        return hotRestartConfig;
+    }
 
     private void handleCache(final Node node)
             throws Exception {
@@ -1158,8 +1175,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 cachePartitionLostListenerHandle(n, cacheConfig);
             } else if ("merge-policy".equals(nodeName)) {
                 cacheConfig.setMergePolicy(value);
-            } else if ("hot-restart-enabled".equals(nodeName)) {
-                cacheConfig.setHotRestartEnabled(getBooleanValue(value));
+            } else if ("hot-restart".equals(nodeName)) {
+                cacheConfig.setHotRestartConfig(createHotRestartConfig(n));
             }
         }
         this.config.addCacheConfig(cacheConfig);

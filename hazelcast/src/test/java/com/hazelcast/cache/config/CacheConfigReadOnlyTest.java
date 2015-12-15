@@ -20,6 +20,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheConfigReadOnly;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleConfigReadOnly;
+import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -47,7 +48,7 @@ public class CacheConfigReadOnlyTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void settingHotRestartEnabledOfReadOnlyCacheConfigShouldFail() {
-        getCacheConfigReadOnly().setHotRestartEnabled(false);
+        getCacheConfigReadOnly().setHotRestartConfig(new HotRestartConfig());
     }
 
     @Test(expected = UnsupportedOperationException.class)

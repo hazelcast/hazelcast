@@ -140,7 +140,7 @@ public class MapConfig {
 
     private String quorumName;
 
-    private boolean hotRestartEnabled;
+    private HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
     private MapConfigReadOnly readOnly;
 
@@ -184,7 +184,7 @@ public class MapConfig {
         this.partitioningStrategyConfig = config.partitioningStrategyConfig != null
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
         this.quorumName = config.quorumName;
-        this.hotRestartEnabled = config.hotRestartEnabled;
+        this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
     }
     //CHECKSTYLE:ON
 
@@ -193,15 +193,6 @@ public class MapConfig {
             readOnly = new MapConfigReadOnly(this);
         }
         return readOnly;
-    }
-
-    public boolean isHotRestartEnabled() {
-        return hotRestartEnabled;
-    }
-
-    public MapConfig setHotRestartEnabled(boolean hotRestartEnabled) {
-        this.hotRestartEnabled = hotRestartEnabled;
-        return this;
     }
 
     /**
@@ -765,6 +756,24 @@ public class MapConfig {
     }
 
     /**
+     * Gets the {@code HotRestartConfig} for this {@code MapConfig}
+     * @return hot restart config
+     */
+    public HotRestartConfig getHotRestartConfig() {
+        return hotRestartConfig;
+    }
+
+    /**
+     * Sets the {@code HotRestartConfig} for this {@code MapConfig}
+     * @param hotRestartConfig hot restart config
+     * @return this {@code MapConfig} instance
+     */
+    public MapConfig setHotRestartConfig(HotRestartConfig hotRestartConfig) {
+        this.hotRestartConfig = hotRestartConfig;
+        return this;
+    }
+
+    /**
      * Get current value cache settings
      *
      * @return current value cache settings
@@ -789,7 +798,7 @@ public class MapConfig {
                 || (Math.min(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == 0
                 && Math.max(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == Integer.MAX_VALUE))
                 && this.timeToLiveSeconds == other.timeToLiveSeconds
-                && this.hotRestartEnabled == other.hotRestartEnabled
+                && this.hotRestartConfig.isEnabled() == other.hotRestartConfig.isEnabled()
                 && this.readBackupData == other.readBackupData;
     }
 
@@ -879,7 +888,7 @@ public class MapConfig {
                 + ", minEvictionCheckMillis=" + minEvictionCheckMillis
                 + ", maxSizeConfig=" + maxSizeConfig
                 + ", readBackupData=" + readBackupData
-                + ", hotRestartEnabled=" + hotRestartEnabled
+                + ", hotRestart=" + hotRestartConfig
                 + ", nearCacheConfig=" + nearCacheConfig
                 + ", mapStoreConfig=" + mapStoreConfig
                 + ", mergePolicyConfig='" + mergePolicy + '\''

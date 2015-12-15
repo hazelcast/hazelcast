@@ -118,7 +118,7 @@ public class Config {
 
     private NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig();
 
-    private HotRestartConfig hotRestartConfig = new HotRestartConfig();
+    private HotRestartPersistenceConfig hotRestartPersistenceConfig = new HotRestartPersistenceConfig();
 
     private String licenseKey;
 
@@ -1002,8 +1002,8 @@ public class Config {
      *
      * @return hot restart configuration
      */
-    public HotRestartConfig getHotRestartConfig() {
-        return hotRestartConfig;
+    public HotRestartPersistenceConfig getHotRestartPersistenceConfig() {
+        return hotRestartPersistenceConfig;
     }
 
     /**
@@ -1012,9 +1012,9 @@ public class Config {
      * @param hrConfig hot restart configuration
      * @return Config
      */
-    public Config setHotRestartConfig(HotRestartConfig hrConfig) {
+    public Config setHotRestartPersistenceConfig(HotRestartPersistenceConfig hrConfig) {
         checkNotNull(hrConfig, "Hot restart config cannot be null!");
-        this.hotRestartConfig = hrConfig;
+        this.hotRestartPersistenceConfig = hrConfig;
         return this;
     }
 
