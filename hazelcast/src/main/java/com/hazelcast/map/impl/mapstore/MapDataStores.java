@@ -67,7 +67,8 @@ public final class MapDataStores {
         final boolean writeCoalescing = mapStoreConfig.isWriteCoalescing();
         final InMemoryFormat inMemoryFormat = getInMemoryFormat(mapStoreContext);
         final WriteBehindStore mapDataStore
-                = new WriteBehindStore(store, serializationService, writeDelayMillis, partitionId, inMemoryFormat);
+                = new WriteBehindStore(store, serializationService,
+                        writeDelayMillis, partitionId, inMemoryFormat, writeCoalescing);
         final WriteBehindQueue writeBehindQueue = newWriteBehindQueue(mapServiceContext, writeCoalescing);
         mapDataStore.setWriteBehindQueue(writeBehindQueue);
         mapDataStore.setWriteBehindProcessor(writeBehindProcessor);
