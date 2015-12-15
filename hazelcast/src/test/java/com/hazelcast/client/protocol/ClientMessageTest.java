@@ -1,6 +1,7 @@
 package com.hazelcast.client.protocol;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
@@ -393,4 +394,21 @@ public class ClientMessageTest {
 
     }
 
+    @Test(expected = MaxMessageSizeExceeded.class)
+    public void testMessageSizeOverflow()
+            throws Exception {
+        ClientMessage.findSuitableMessageSize(Integer.MAX_VALUE << 1);
+    }
+
+    @Test
+    public void testMaxMessageSize()
+            throws Exception {
+        assertEquals(Integer.MAX_VALUE, ClientMessage.findSuitableMessageSize(Integer.MAX_VALUE));
+    }
+
+    @Test
+    public void testLargeMessageSize()
+            throws Exception {
+        assertEquals(Integer.MAX_VALUE, ClientMessage.findSuitableMessageSize(Integer.MAX_VALUE / 2 + 1000));
+    }
 }
