@@ -607,7 +607,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String xml =
                 HAZELCAST_START_TAG +
                         "  <map name=\"" + mapName + "\">\n" +
-                        "    <near-cache>\n" +
+                        "    <near-cache name=\"test\">\n" +
                         "      <in-memory-format>OBJECT</in-memory-format>\n" +
                         "      <max-size>1234</max-size>\n" +
                         "      <time-to-live-seconds>77</time-to-live-seconds>\n" +
@@ -633,6 +633,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(LRU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
         assertEquals(ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaximumSizePolicy());
         assertEquals(3333, nearCacheConfig.getEvictionConfig().getSize());
+        assertEquals("test", nearCacheConfig.getName());
 
     }
 

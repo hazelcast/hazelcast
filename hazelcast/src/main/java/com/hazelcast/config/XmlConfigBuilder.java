@@ -1113,7 +1113,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
 
     private NearCacheConfig handleNearCacheConfig(Node node) {
         String name = getAttribute(node, "name");
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        NearCacheConfig nearCacheConfig = new NearCacheConfig(name);
         for (Node child : childElements(node)) {
             final String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();
