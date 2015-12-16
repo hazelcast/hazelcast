@@ -31,6 +31,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
+import static com.hazelcast.test.HazelcastTestSupport.warmUpPartitions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -81,6 +82,7 @@ public class ClientMapPartitionLostListenerTest {
 
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(config);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        warmUpPartitions(instance, client);
 
         final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
         client.getMap(mapName).addPartitionLostListener(listener);
@@ -118,6 +120,7 @@ public class ClientMapPartitionLostListenerTest {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(false);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        warmUpPartitions(instance1, instance2, client);
 
         final HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         final Address clientOwnerAddress = clientInstanceImpl.getClientClusterService().getOwnerConnectionAddress();
