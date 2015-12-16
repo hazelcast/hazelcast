@@ -22,7 +22,7 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.instance.NodeExtensionTest;
+import com.hazelcast.instance.TestNodeContext;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -103,7 +103,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
 
     @Test(expected = ExpectedRuntimeException.class)
     public void test_NewInstance_failed_beforeNodeStart() throws Exception {
-        NodeContext context = new NodeExtensionTest.DummyNodeContext() {
+        NodeContext context = new TestNodeContext() {
             @Override
             public NodeExtension createNodeExtension(Node node) {
                 NodeExtension nodeExtension = super.createNodeExtension(node);
@@ -120,7 +120,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
 
     @Test(expected = ExpectedRuntimeException.class)
     public void test_NewInstance_failed_beforeJoin() throws Exception {
-        NodeContext context = new NodeExtensionTest.DummyNodeContext() {
+        NodeContext context = new TestNodeContext() {
             @Override
             public NodeExtension createNodeExtension(Node node) {
                 NodeExtension nodeExtension = super.createNodeExtension(node);
@@ -137,7 +137,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
 
     @Test(expected = ExpectedRuntimeException.class)
     public void test_NewInstance_failed_afterNodeStart() throws Exception {
-        NodeContext context = new NodeExtensionTest.DummyNodeContext() {
+        NodeContext context = new TestNodeContext() {
             @Override
             public NodeExtension createNodeExtension(Node node) {
                 NodeExtension nodeExtension = super.createNodeExtension(node);
@@ -154,7 +154,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
 
     @Test(expected = ExpectedRuntimeException.class)
     public void test_NewInstance_failed_beforeNodeShutdown() throws Exception {
-        NodeContext context = new NodeExtensionTest.DummyNodeContext() {
+        NodeContext context = new TestNodeContext() {
             @Override
             public NodeExtension createNodeExtension(Node node) {
                 NodeExtension nodeExtension = super.createNodeExtension(node);
@@ -186,7 +186,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
 
     @Test(expected = ExpectedRuntimeException.class)
     public void test_NewInstance_failedAfterStartAndBeforeShutdown() throws Exception {
-        NodeContext context = new NodeExtensionTest.DummyNodeContext() {
+        NodeContext context = new TestNodeContext() {
             @Override
             public NodeExtension createNodeExtension(Node node) {
                 NodeExtension nodeExtension = super.createNodeExtension(node);
@@ -204,7 +204,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalStateException.class)
     public void test_NewInstance_terminateInstance_afterNodeStart() throws Exception {
-        NodeContext context = new NodeExtensionTest.DummyNodeContext() {
+        NodeContext context = new TestNodeContext() {
             @Override
             public NodeExtension createNodeExtension(final Node node) {
                 NodeExtension nodeExtension = super.createNodeExtension(node);
