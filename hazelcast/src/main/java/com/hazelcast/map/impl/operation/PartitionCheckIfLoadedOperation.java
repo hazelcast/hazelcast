@@ -72,7 +72,8 @@ public class PartitionCheckIfLoadedOperation extends MapOperation implements Par
 
     @Override
     public boolean returnsResponse() {
-        return !waitForKeyLoad;
+        // has to return true in all cases in order to enable the default retry invocation mechanism
+        return true;
     }
 
     @Override
