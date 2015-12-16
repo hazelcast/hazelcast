@@ -420,67 +420,18 @@ public class ClientMapNearCacheTest {
     }
 
     @Test
-    public void testNearCacheInvalidationWithLFU() throws Exception {
-        final IMap<Integer, Integer> map = getNearCachedMapFromClient(newLFUMaxSizeNearCacheConfig());
-
-        int mapSize = MAX_CACHE_SIZE * 2;
-        populateNearCache(map, mapSize);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                triggerEviction(map);
-                assertThatOwnedEntryCountIsSmallerThan(map, MAX_CACHE_SIZE);
-            }
-        });
-    }
-
-    @Test
     public void testNearCacheInvalidation_WithLFU_whenMaxSizeExceeded() throws Exception {
-        final IMap<Integer, Integer> map = getNearCachedMapFromClient(newLFUMaxSizeNearCacheConfig());
-
-        int mapSize = MAX_CACHE_SIZE * 2;
-        populateNearCache(map, mapSize);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                triggerEviction(map);
-                assertThatOwnedEntryCountIsSmallerThan(map, MAX_CACHE_SIZE);
-            }
-        });
+        assertNearCacheInvalidation_whenMaxSizeExceeded(newLFUMaxSizeNearCacheConfig());
     }
 
     @Test
     public void testNearCacheInvalidation_WithLRU_whenMaxSizeExceeded() throws Exception {
-        final IMap<Integer, Integer> map = getNearCachedMapFromClient(newLRUMaxSizeConfig());
-
-        int mapSize = MAX_CACHE_SIZE * 2;
-        populateNearCache(map, mapSize);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                triggerEviction(map);
-                assertThatOwnedEntryCountIsSmallerThan(map, MAX_CACHE_SIZE);
-            }
-        });
+        assertNearCacheInvalidation_whenMaxSizeExceeded(newLRUMaxSizeConfig());
     }
 
     @Test
     public void testNearCacheInvalidation_WithRandom_whenMaxSizeExceeded() throws Exception {
-        final IMap<Integer, Integer> map = getNearCachedMapFromClient(newRandomNearCacheConfig());
-
-        int mapSize = MAX_CACHE_SIZE * 2;
-        populateNearCache(map, mapSize);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                triggerEviction(map);
-                assertThatOwnedEntryCountIsSmallerThan(map, MAX_CACHE_SIZE);
-            }
-        });
+        assertNearCacheInvalidation_whenMaxSizeExceeded(newRandomNearCacheConfig());
     }
 
     @Test
@@ -513,7 +464,7 @@ public class ClientMapNearCacheTest {
             public void run() throws Exception {
                 // map.put() triggers near cache eviction/expiration process, but we need to call this on every assert,
                 // since the near cache has a cooldown for TTL cleanups, which may not be over after populateNearCache()
-                map.put(0, 0);
+                triggerEviction(map);
 
                 assertThatOwnedEntryCountIsSmallerThan(map, size);
             }
@@ -617,7 +568,7 @@ public class ClientMapNearCacheTest {
     }
 
     protected void triggerEviction(IMap<Integer, Integer> map) {
-        populateNearCache(map, 1);
+        map.put(0, 0);
     }
 
     protected void addNearCacheInvalidateListener(IMap clientMap, CountDownLatch eventAddedLatch) {
@@ -753,5 +704,19 @@ public class ClientMapNearCacheTest {
 
     protected ClientConfig newClientConfig() {
         return new ClientConfig();
+    }
+
+    protected void assertNearCacheInvalidation_whenMaxSizeExceeded(NearCacheConfig config) {
+        final IMap<Integer, Integer> map = getNearCachedMapFromClient(config);
+        populateNearCache(map, MAX_CACHE_SIZE);
+        assertThatOwnedEntryCountEquals(map, MAX_CACHE_SIZE);
+
+        triggerEviction(map);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertThatOwnedEntryCountIsSmallerThan(map, MAX_CACHE_SIZE);
+            }
+        });
     }
 }
