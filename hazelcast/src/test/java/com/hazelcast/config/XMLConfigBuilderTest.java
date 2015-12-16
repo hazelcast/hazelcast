@@ -45,6 +45,8 @@ import java.text.MessageFormat;
 import java.util.Iterator;
 import java.util.List;
 
+import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.EvictionPolicy.LRU;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -71,11 +73,11 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         file.deleteOnExit();
         String xml =
                 HAZELCAST_START_TAG +
-                "    <group>\n" +
-                "        <name>foobar</name>\n" +
-                "        <password>dev-pass</password>\n" +
-                "    </group>\n" +
-                "</hazelcast>\n";
+                        "    <group>\n" +
+                        "        <name>foobar</name>\n" +
+                        "        <password>dev-pass</password>\n" +
+                        "    </group>\n" +
+                        "</hazelcast>\n";
         final Writer writer = new PrintWriter(file, "UTF-8");
         writer.write(xml);
         writer.close();
@@ -93,7 +95,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 "            <tcp-ip enabled=\"true\"/>\n" +
                 "        </join>\n" +
                 "    </network>\n" +
-                        "</hazelcast>";
+                "</hazelcast>";
         buildConfig(xml);
     }
 
@@ -101,13 +103,13 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     public void testSecurityInterceptorConfig() {
         String xml =
                 HAZELCAST_START_TAG +
-                    "<security enabled=\"true\">" +
+                        "<security enabled=\"true\">" +
                         "<security-interceptors>" +
-                            "<interceptor class-name=\"foo\"/>" +
-                            "<interceptor class-name=\"bar\"/>" +
+                        "<interceptor class-name=\"foo\"/>" +
+                        "<interceptor class-name=\"bar\"/>" +
                         "</security-interceptors>" +
-                    "</security>" +
-                "</hazelcast>";
+                        "</security>" +
+                        "</hazelcast>";
 
         final Config config = buildConfig(xml);
         final SecurityConfig securityConfig = config.getSecurityConfig();
@@ -121,30 +123,30 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     public void readAwsConfig() {
         String xml =
                 HAZELCAST_START_TAG +
-                "   <group>\n" +
-                "        <name>dev</name>\n" +
-                "        <password>dev-pass</password>\n" +
-                "    </group>\n" +
-                "    <network>\n" +
-                "        <port auto-increment=\"true\">5701</port>\n" +
-                "        <join>\n" +
-                "            <multicast enabled=\"false\">\n" +
-                "                <multicast-group>224.2.2.3</multicast-group>\n" +
-                "                <multicast-port>54327</multicast-port>\n" +
-                "            </multicast>\n" +
-                "            <tcp-ip enabled=\"false\">\n" +
-                "                <interface>127.0.0.1</interface>\n" +
-                "            </tcp-ip>\n" +
-                "            <aws enabled=\"true\" connection-timeout-seconds=\"10\" >\n" +
-                "                <access-key>access</access-key>\n" +
-                "                <secret-key>secret</secret-key>\n" +
-                "            </aws>\n" +
-                "        </join>\n" +
-                "        <interfaces enabled=\"false\">\n" +
-                "            <interface>10.10.1.*</interface>\n" +
-                "        </interfaces>\n" +
-                "    </network>\n" +
-                "</hazelcast>";
+                        "   <group>\n" +
+                        "        <name>dev</name>\n" +
+                        "        <password>dev-pass</password>\n" +
+                        "    </group>\n" +
+                        "    <network>\n" +
+                        "        <port auto-increment=\"true\">5701</port>\n" +
+                        "        <join>\n" +
+                        "            <multicast enabled=\"false\">\n" +
+                        "                <multicast-group>224.2.2.3</multicast-group>\n" +
+                        "                <multicast-port>54327</multicast-port>\n" +
+                        "            </multicast>\n" +
+                        "            <tcp-ip enabled=\"false\">\n" +
+                        "                <interface>127.0.0.1</interface>\n" +
+                        "            </tcp-ip>\n" +
+                        "            <aws enabled=\"true\" connection-timeout-seconds=\"10\" >\n" +
+                        "                <access-key>access</access-key>\n" +
+                        "                <secret-key>secret</secret-key>\n" +
+                        "            </aws>\n" +
+                        "        </join>\n" +
+                        "        <interfaces enabled=\"false\">\n" +
+                        "            <interface>10.10.1.*</interface>\n" +
+                        "        </interfaces>\n" +
+                        "    </network>\n" +
+                        "</hazelcast>";
         Config config = buildConfig(xml);
         AwsConfig awsConfig = config.getNetworkConfig().getJoin().getAwsConfig();
         assertTrue(awsConfig.isEnabled());
@@ -598,6 +600,42 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(InMemoryFormat.OBJECT, ncConfig.getInMemoryFormat());
     }
 
+
+    @Test
+    public void testNearCacheFullConfig() {
+        String mapName = "testNearCacheFullConfig";
+        String xml =
+                HAZELCAST_START_TAG +
+                        "  <map name=\"" + mapName + "\">\n" +
+                        "    <near-cache>\n" +
+                        "      <in-memory-format>OBJECT</in-memory-format>\n" +
+                        "      <max-size>1234</max-size>\n" +
+                        "      <time-to-live-seconds>77</time-to-live-seconds>\n" +
+                        "      <max-idle-seconds>92</max-idle-seconds>\n" +
+                        "      <eviction-policy>LFU</eviction-policy>\n" +
+                        "      <invalidate-on-change>false</invalidate-on-change>\n" +
+                        "      <cache-local-entries>false</cache-local-entries>\n" +
+                        "      <eviction eviction-policy=\"LRU\" max-size-policy=\"ENTRY_COUNT\" size=\"3333\"/>\n" +
+                        "    </near-cache>\n" +
+                        "  </map>\n" +
+                        "</hazelcast>";
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
+
+        assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
+        assertEquals(1234, nearCacheConfig.getMaxSize());
+        assertEquals(77, nearCacheConfig.getTimeToLiveSeconds());
+        assertEquals(92, nearCacheConfig.getMaxIdleSeconds());
+        assertEquals("LFU", nearCacheConfig.getEvictionPolicy());
+        assertFalse(nearCacheConfig.isInvalidateOnChange());
+        assertFalse(nearCacheConfig.isCacheLocalEntries());
+        assertEquals(LRU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(3333, nearCacheConfig.getEvictionConfig().getSize());
+
+    }
+
     @Test
     public void testMapWanReplicationRef() {
         String mapName = "testMapWanReplicationRef";
@@ -1028,8 +1066,8 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertTrue(queryCacheConfig.isPopulate());
         assertIndexesEqual(queryCacheConfig);
         assertEquals("com.hazelcast.examples.SimplePredicate", queryCacheConfig.getPredicateConfig().getClassName());
-        assertEquals(EvictionPolicy.LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
         assertEquals(133, queryCacheConfig.getEvictionConfig().getSize());
     }
 
@@ -1129,7 +1167,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String name = randomName();
         String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
                 "<instance-name>" + name + "</instance-name>\n" +
-            "</hazelcast>";
+                "</hazelcast>";
 
         Config config = new InMemoryXmlConfig(xml);
         assertEquals(name, config.getInstanceName());
