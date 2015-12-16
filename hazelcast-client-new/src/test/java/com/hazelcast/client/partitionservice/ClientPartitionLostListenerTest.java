@@ -35,6 +35,7 @@ import static com.hazelcast.partition.InternalPartitionService.SERVICE_NAME;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
+import static com.hazelcast.test.HazelcastTestSupport.warmUpPartitions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
@@ -77,8 +78,9 @@ public class ClientPartitionLostListenerTest {
     @Test
     public void test_partitionLostListener_invoked() {
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
-
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        warmUpPartitions(instance, client);
+
         final EventCollectingPartitionLostListener listener = new EventCollectingPartitionLostListener();
 
         client.getPartitionService().addPartitionLostListener(listener);
@@ -99,6 +101,7 @@ public class ClientPartitionLostListenerTest {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(false);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        warmUpPartitions(instance1, instance2, client);
 
         final HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         final Address clientOwnerAddress = clientInstanceImpl.getClientClusterService().getOwnerConnectionAddress();
