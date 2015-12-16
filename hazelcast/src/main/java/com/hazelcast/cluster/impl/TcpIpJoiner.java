@@ -423,18 +423,10 @@ public class TcpIpJoiner extends AbstractJoiner {
                     final InterfacesConfig interfaces = networkConfig.getInterfaces();
                     if (interfaces.isEnabled()) {
                         final InetAddress[] inetAddresses = InetAddress.getAllByName(host);
-                        if (inetAddresses.length > 1) {
-                            for (InetAddress inetAddress : inetAddresses) {
-                                if (AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
-                                        interfaces.getInterfaces())) {
-                                    addPossibleAddresses(possibleAddresses, null, inetAddress, port, count);
-                                }
-                            }
-                        } else {
-                            final InetAddress inetAddress = inetAddresses[0];
+                        for (InetAddress inetAddress : inetAddresses) {
                             if (AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
                                     interfaces.getInterfaces())) {
-                                addPossibleAddresses(possibleAddresses, host, null, port, count);
+                                addPossibleAddresses(possibleAddresses, host, inetAddress, port, count);
                             }
                         }
                     } else {
@@ -459,7 +451,15 @@ public class TcpIpJoiner extends AbstractJoiner {
                                       final int port, final int count) throws UnknownHostException {
         for (int i = 0; i < count; i++) {
             int currentPort = port + i;
-            Address address = host != null ? new Address(host, currentPort) : new Address(inetAddress, currentPort);
+
+            Address address;
+            if (host != null && inetAddress != null) {
+                address = new Address(host, inetAddress, currentPort);
+            } else if (host != null) {
+                address = new Address(host, currentPort);
+            } else {
+                address = new Address(inetAddress, currentPort);
+            }
             if (!isLocalAddress(address)) {
                 possibleAddresses.add(address);
             }
