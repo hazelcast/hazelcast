@@ -40,7 +40,7 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-    @Test
+    @Test(timeout = 30 * 60 * 1000)
     public void voidCacher() throws Exception {
         final AtomicInteger counter = new AtomicInteger(200000);
         final AtomicInteger errors = new AtomicInteger();
