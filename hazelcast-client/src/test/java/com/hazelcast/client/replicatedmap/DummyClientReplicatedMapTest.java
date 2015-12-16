@@ -17,15 +17,19 @@
 package com.hazelcast.client.replicatedmap;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import org.junit.After;
@@ -43,13 +47,6 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
 
     TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    static ClientConfig dummyClientConfig;
-
-    static {
-        dummyClientConfig = new ClientConfig();
-        dummyClientConfig.getNetworkConfig().setSmartRouting(false);
-    }
-
     @After
     public void cleanup() {
         hazelcastFactory.terminateAll();
@@ -59,10 +56,11 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
     public void testGet() throws Exception {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(dummyClientConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig(instance1));
         ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
-
         String key = generateKeyOwnedBy(instance2);
+        int partitionId = instance2.getPartitionService().getPartition(key).getPartitionId();
+        setPartitionId(map, partitionId);
         String value = randomString();
         map.put(key, value);
 
@@ -73,10 +71,12 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
     public void testIsEmpty() throws Exception {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(dummyClientConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig(instance1));
         final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
 
         String key = generateKeyOwnedBy(instance2);
+        int partitionId = instance1.getPartitionService().getPartition(key).getPartitionId();
+        setPartitionId(map, partitionId);
         String value = randomString();
         map.put(key, value);
 
@@ -92,10 +92,12 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
     public void testKeySet() throws Exception {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(dummyClientConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig(instance1));
         final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
 
         final String key = generateKeyOwnedBy(instance2);
+        int partitionId = instance1.getPartitionService().getPartition(key).getPartitionId();
+        setPartitionId(map, partitionId);
         String value = randomString();
         map.put(key, value);
 
@@ -114,9 +116,11 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
     public void testEntrySet() throws Exception {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(dummyClientConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig(instance1));
         final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
         final String key = generateKeyOwnedBy(instance2);
+        int partitionId = instance1.getPartitionService().getPartition(key).getPartitionId();
+        setPartitionId(map, partitionId);
         final String value = randomString();
         map.put(key, value);
 
@@ -135,9 +139,12 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
     public void testValues() throws Exception {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(dummyClientConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig(instance1));
         final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
         final String key = generateKeyOwnedBy(instance2);
+        int partitionId = instance1.getPartitionService().getPartition(key).getPartitionId();
+        setPartitionId(map, partitionId);
+
         final String value = randomString();
         map.put(key, value);
 
@@ -151,15 +158,16 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
         });
     }
 
-
     @Test
     public void testContainsKey() throws Exception {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(dummyClientConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig(instance1));
         ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
 
-        String key = generateKeyOwnedBy(instance2);
+        final String key = generateKeyOwnedBy(instance2);
+        int partitionId = instance1.getPartitionService().getPartition(key).getPartitionId();
+        setPartitionId(map, partitionId);
         String value = randomString();
         map.put(key, value);
 
@@ -170,10 +178,12 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
     public void testContainsValue() throws Exception {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(dummyClientConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig(instance1));
         final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
 
-        String key = generateKeyOwnedBy(instance2);
+        final String key = generateKeyOwnedBy(instance2);
+        int partitionId = instance1.getPartitionService().getPartition(key).getPartitionId();
+        setPartitionId(map, partitionId);
         final String value = randomString();
         map.put(key, value);
 
@@ -189,10 +199,12 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
     public void testSize() throws Exception {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(dummyClientConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig(instance1));
         final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
 
         String key = generateKeyOwnedBy(instance2);
+        int partitionId = instance1.getPartitionService().getPartition(key).getPartitionId();
+        setPartitionId(map, partitionId);
         String value = randomString();
         map.put(key, value);
 
@@ -208,10 +220,12 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
     public void testClear() throws Exception {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(dummyClientConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig(instance1));
         final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
 
         String key = generateKeyOwnedBy(instance2);
+        int partitionId = instance1.getPartitionService().getPartition(key).getPartitionId();
+        setPartitionId(map, partitionId);
         String value = randomString();
         map.put(key, value);
         map.clear();
@@ -222,6 +236,64 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
                 assertEquals(0, map.size());
             }
         });
+    }
+
+    @Test
+    public void testRemove() throws Exception {
+        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig(instance1));
+        final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
+
+        String key = generateKeyOwnedBy(instance2);
+        int partitionId = instance1.getPartitionService().getPartition(key).getPartitionId();
+        setPartitionId(map, partitionId);
+        String value = randomString();
+        map.put(key, value);
+        map.remove(key);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, map.size());
+            }
+        });
+    }
+
+    @Test
+    public void testPutAll() throws Exception {
+        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig(instance1));
+        final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
+
+        String key = generateKeyOwnedBy(instance2);
+        int partitionId = instance1.getPartitionService().getPartition(key).getPartitionId();
+        setPartitionId(map, partitionId);
+        String value = randomString();
+        HashMap m = new HashMap();
+        m.put(key, value);
+        map.putAll(m);
+
+        assertEquals(value, map.get(key));
+    }
+
+    private ClientConfig getClientConfig(HazelcastInstance instance) {
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        String addressString = address.getHost() + ":" + address.getPort();
+        ClientConfig dummyClientConfig = new ClientConfig();
+        ClientNetworkConfig networkConfig = new ClientNetworkConfig();
+        networkConfig.setSmartRouting(false);
+        networkConfig.addAddress(addressString);
+        dummyClientConfig.setNetworkConfig(networkConfig);
+        return dummyClientConfig;
+    }
+
+    private void setPartitionId(ReplicatedMap<String, String> map, int partitionId) throws NoSuchFieldException, IllegalAccessException {
+        Class<?> clazz = map.getClass();
+        Field targetPartitionId = clazz.getDeclaredField("targetPartitionId");
+        targetPartitionId.setAccessible(true);
+        targetPartitionId.setInt(map, partitionId);
     }
 
 

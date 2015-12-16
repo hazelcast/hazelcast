@@ -69,12 +69,6 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
 
     @Override
     public void dispatchEvent(Object event, Object listener) {
-        if (nodeEngine.getConfig().isLiteMember()) {
-            final Class<?> eventClazz = event.getClass();
-            nodeEngine.getLogger(ReplicatedMapService.class).warning("Replicated map event ignored by lite member " + eventClazz);
-            return;
-        }
-
         if ((event instanceof EntryEventData)) {
             EntryEventData entryEventData = (EntryEventData) event;
             Member member = getMember(entryEventData);

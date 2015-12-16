@@ -27,10 +27,6 @@ public class ResultSet<K, V> extends AbstractSet<Map.Entry<K, V>> {
     private final List<Map.Entry<K, V>> entries;
     private final IterationType iterationType;
 
-    public ResultSet() {
-        this(null, null);
-    }
-
     public ResultSet(List<Map.Entry<K, V>> entries, IterationType iterationType) {
         this.entries = entries;
         this.iterationType = iterationType;

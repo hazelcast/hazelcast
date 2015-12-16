@@ -16,9 +16,9 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
@@ -47,24 +47,13 @@ public class VersionResponsePair implements DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        final boolean isData = response instanceof Data;
-        out.writeBoolean(isData);
-        if (isData) {
-            out.writeData((Data) response);
-        } else {
-            out.writeObject(response);
-        }
+        IOUtil.writeObject(out, response);
         out.writeLong(version);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        final boolean isData = in.readBoolean();
-        if (isData) {
-            response = in.readData();
-        } else {
-            response = in.readObject();
-        }
+        response = IOUtil.readObject(in);
         version = in.readLong();
     }
 }
