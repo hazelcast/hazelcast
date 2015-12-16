@@ -39,6 +39,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
@@ -585,11 +586,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         }
         final Class<?> arg = method.getParameterTypes()[0];
         final Object coercedArg =
-                arg == String.class  ? argument
-              : arg == int.class     ? Integer.valueOf(argument)
-              : arg == long.class    ? Long.valueOf(argument)
-              : arg == boolean.class ? getBooleanValue(argument)
-              : null;
+                arg == String.class ? argument
+                        : arg == int.class ? Integer.valueOf(argument)
+                        : arg == long.class ? Long.valueOf(argument)
+                        : arg == boolean.class ? getBooleanValue(argument)
+                        : null;
         if (coercedArg == null) {
             throw new HazelcastException(String.format(
                     "Method %s has unsupported argument type %s", method.getName(), arg.getSimpleName()));
@@ -1073,7 +1074,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 MapStoreConfig mapStoreConfig = createMapStoreConfig(node);
                 mapConfig.setMapStoreConfig(mapStoreConfig);
             } else if ("near-cache".equals(nodeName)) {
-                handleViaReflection(node, mapConfig, new NearCacheConfig());
+                mapConfig.setNearCacheConfig(handleNearCacheConfig(node));
             } else if ("merge-policy".equals(nodeName)) {
                 mapConfig.setMergePolicy(value);
             } else if ("hot-restart".equals(nodeName)) {
@@ -1108,6 +1109,37 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         this.config.addMapConfig(mapConfig);
     }
     //CHECKSTYLE:ON
+
+
+    private NearCacheConfig handleNearCacheConfig(Node node) {
+        String name = getAttribute(node, "name");
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        for (Node child : childElements(node)) {
+            final String nodeName = cleanNodeName(child);
+            String value = getTextContent(child).trim();
+            if ("max-size".equals(nodeName)) {
+                nearCacheConfig.setMaxSize(Integer.parseInt(value));
+            } else if ("time-to-live-seconds".equals(nodeName)) {
+                nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(value));
+            } else if ("max-idle-seconds".equals(nodeName)) {
+                nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(value));
+            } else if ("eviction-policy".equals(nodeName)) {
+                nearCacheConfig.setEvictionPolicy(value);
+            } else if ("in-memory-format".equals(nodeName)) {
+                nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
+            } else if ("invalidate-on-change".equals(nodeName)) {
+                nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(value));
+            } else if ("cache-local-entries".equals(nodeName)) {
+                nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(value));
+            } else if ("local-update-policy".equals(nodeName)) {
+                NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.valueOf(value);
+                nearCacheConfig.setLocalUpdatePolicy(policy);
+            } else if ("eviction".equals(nodeName)) {
+                nearCacheConfig.setEvictionConfig(getEvictionConfig(child));
+            }
+        }
+        return nearCacheConfig;
+    }
 
     private HotRestartConfig createHotRestartConfig(Node node) {
         HotRestartConfig hotRestartConfig = new HotRestartConfig();
