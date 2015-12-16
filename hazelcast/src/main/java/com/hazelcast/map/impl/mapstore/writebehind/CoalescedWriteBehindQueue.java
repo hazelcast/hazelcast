@@ -37,7 +37,7 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
 
     protected Map<Data, DelayedEntry> map;
 
-    public CoalescedWriteBehindQueue() {
+    CoalescedWriteBehindQueue() {
         map = new LinkedHashMap<Data, DelayedEntry>();
     }
 
@@ -71,21 +71,23 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
      * Removes the first occurrence of the specified element in this queue
      * when searching it by starting from the head of this queue.
      *
-     * @param entry element to be removed.
+     * @param incoming element to be removed.
      * @return <code>true</code> if removed successfully, <code>false</code> otherwise
      */
     @Override
-    public boolean removeFirstOccurrence(DelayedEntry entry) {
-        Data key = (Data) entry.getKey();
-        Object value = entry.getValue();
-        DelayedEntry delayedEntry = map.get(key);
-        if (delayedEntry == null) {
+    public boolean removeFirstOccurrence(DelayedEntry incoming) {
+        Data incomingKey = (Data) incoming.getKey();
+        Object incomingValue = incoming.getValue();
+
+        DelayedEntry current = map.get(incomingKey);
+        if (current == null) {
             return false;
         }
 
-        Object existingValue = delayedEntry.getValue();
-        if (existingValue.equals(value)) {
-            map.remove(key);
+        Object currentValue = current.getValue();
+        if (incomingValue == null && currentValue == null
+                || incomingValue != null && currentValue != null && incomingValue.equals(currentValue)) {
+            map.remove(incomingKey);
             return true;
         }
 
