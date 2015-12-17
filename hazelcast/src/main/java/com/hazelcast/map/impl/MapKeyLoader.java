@@ -35,6 +35,7 @@ import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.StateMachine;
 import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
+
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -49,6 +50,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.logging.Logger.getLogger;
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.assignRole;
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.toBatches;
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.toPartition;
@@ -366,7 +368,7 @@ public class MapKeyLoader {
         }
 
         private LoadFinishedFuture() {
-            super((Executor) null, null);
+            super((Executor) null, getLogger(LoadFinishedFuture.class));
         }
 
         @Override
