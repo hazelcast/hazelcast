@@ -1,7 +1,5 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
-import com.hazelcast.internal.properties.GroupProperty;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -10,25 +8,29 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.internal.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.internal.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClassicOperationExecutorTest extends AbstractClassicOperationExecutorTest {
+public class ClassicOperationExecutor_BasicTest extends ClassicOperationExecutor_AbstractTest {
 
     @Test
     public void testConstruction() {
         initExecutor();
 
-        assertEquals(groupProperties.getInteger(GroupProperty.PARTITION_COUNT), executor.getPartitionOperationRunners().length);
+        assertEquals(groupProperties.getInteger(PARTITION_COUNT), executor.getPartitionOperationRunners().length);
         assertEquals(executor.getGenericOperationThreadCount(), executor.getGenericOperationRunners().length);
 
-        assertEquals(groupProperties.getInteger(GroupProperty.PARTITION_OPERATION_THREAD_COUNT),
+        assertEquals(groupProperties.getInteger(PARTITION_OPERATION_THREAD_COUNT),
                 executor.getPartitionOperationThreadCount());
 
-        assertEquals(groupProperties.getInteger(GroupProperty.GENERIC_OPERATION_THREAD_COUNT),
+        assertEquals(groupProperties.getInteger(GENERIC_OPERATION_THREAD_COUNT),
                 executor.getGenericOperationThreadCount());
     }
 
@@ -36,8 +38,8 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
     public void test_getRunningOperationCount() {
         initExecutor();
 
-        executor.execute(new DummyOperation(Operation.GENERIC_PARTITION_ID).durationMs(2000));
-        executor.execute(new DummyOperation(Operation.GENERIC_PARTITION_ID).durationMs(2000));
+        executor.execute(new DummyOperation(GENERIC_PARTITION_ID).durationMs(2000));
+        executor.execute(new DummyOperation(GENERIC_PARTITION_ID).durationMs(2000));
 
         executor.execute(new DummyOperation(0).durationMs(2000));
 
@@ -45,7 +47,6 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
             @Override
             public void run() throws Exception {
                 int runningOperationCount = executor.getRunningOperationCount();
-                System.out.println("runningOperationCount:" + runningOperationCount);
                 assertEquals(3, runningOperationCount);
             }
         });
@@ -57,7 +58,7 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
 
         // first we need to set the threads to work so the queues are going to be left alone.
         for (int k = 0; k < executor.getGenericOperationThreadCount(); k++) {
-            executor.execute(new DummyOperation(Operation.GENERIC_PARTITION_ID).durationMs(2000));
+            executor.execute(new DummyOperation(GENERIC_PARTITION_ID).durationMs(2000));
         }
         for (int k = 0; k < executor.getPartitionOperationThreadCount(); k++) {
             executor.execute(new DummyOperation(k).durationMs(2000));
@@ -67,7 +68,7 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
         int count = 0;
         for (int l = 0; l < 3; l++) {
             for (int k = 0; k < executor.getGenericOperationThreadCount(); k++) {
-                executor.execute(new DummyOperation(Operation.GENERIC_PARTITION_ID).durationMs(2000));
+                executor.execute(new DummyOperation(GENERIC_PARTITION_ID).durationMs(2000));
                 count++;
             }
         }
@@ -148,6 +149,6 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
     }
 
     private static void awaitBarrier(CyclicBarrier barrier) throws Exception {
-        barrier.await(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
+        barrier.await(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
     }
 }

@@ -89,4 +89,20 @@ public final class DefaultScheduleQueue implements ScheduleQueue {
             return normalItem;
         }
     }
+
+    @Override
+    public Object poll() {
+        for (; ; ) {
+            Object item = priorityQueue.poll();
+            if (item != null) {
+                return item;
+            }
+
+            item = normalQueue.poll();
+            if (item == TRIGGER_TASK) {
+                continue;
+            }
+            return item;
+        }
+    }
 }
