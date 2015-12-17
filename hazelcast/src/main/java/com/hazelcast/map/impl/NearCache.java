@@ -109,12 +109,19 @@ public class NearCache {
             value = inMemoryFormat.equals(InMemoryFormat.OBJECT) ? serializationService.toObject(data) : data;
         }
         final NearCacheRecord record = new NearCacheRecord(key, value);
-        cache.put(key, record);
-        updateSizeEstimator(calculateCost(record));
+        NearCacheRecord previous = cache.put(key, record);
+        updateSizeEstimatorWithRecords(previous, record);
         if (NULL_OBJECT.equals(value)) {
             return null;
         } else {
             return value;
+        }
+    }
+
+    private void updateSizeEstimatorWithRecords(NearCacheRecord previous, NearCacheRecord record) {
+        updateSizeEstimator(calculateCost(record));
+        if (previous != null) {
+            updateSizeEstimator(-calculateCost(record));
         }
     }
 
