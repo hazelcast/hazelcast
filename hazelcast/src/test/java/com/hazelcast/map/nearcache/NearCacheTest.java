@@ -529,8 +529,8 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         map.loadAll(keys, true);
 
-//        NearCacheStats nearCacheStats = map.getLocalMapStats().getNearCacheStats();
-//        assertEquals(0, nearCacheStats.getOwnedEntryCount());
+        NearCacheStats nearCacheStats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(0, nearCacheStats.getOwnedEntryCount());
     }
 
     @Test
