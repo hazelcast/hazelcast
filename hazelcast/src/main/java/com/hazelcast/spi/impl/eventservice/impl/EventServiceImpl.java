@@ -63,6 +63,8 @@ import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 
 public class EventServiceImpl implements InternalEventService {
 
+    public static final String EVENT_SYNC_FREQUENCY_PROP = "hazelcast.event.sync.frequency";
+
     private static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
 
     private static final int EVENT_SYNC_FREQUENCY = 100000;
@@ -90,6 +92,7 @@ public class EventServiceImpl implements InternalEventService {
     @Probe(name = "rejectedCount")
     private final MwCounter rejectedCount = newMwCounter();
     private final SerializationService serializationService;
+    private final int eventSyncFrequency;
 
     public EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -100,6 +103,15 @@ public class EventServiceImpl implements InternalEventService {
         this.eventThreadCount = groupProperties.getInteger(GroupProperty.EVENT_THREAD_COUNT);
         this.eventQueueCapacity = groupProperties.getInteger(GroupProperty.EVENT_QUEUE_CAPACITY);
         this.eventQueueTimeoutMs = groupProperties.getMillis(GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS);
+        final String eventSyncFrequencyProp = System.getProperty(EVENT_SYNC_FREQUENCY_PROP);
+        int eventSyncFrequency;
+        try {
+            eventSyncFrequency = Integer.valueOf(eventSyncFrequencyProp);
+        } catch (Exception e) {
+            eventSyncFrequency = EVENT_SYNC_FREQUENCY;
+        }
+        this.eventSyncFrequency = eventSyncFrequency;
+
         HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
         this.eventExecutor = new StripedExecutor(
                 node.getLogger(EventServiceImpl.class),
@@ -367,7 +379,7 @@ public class EventServiceImpl implements InternalEventService {
     private void sendEvent(Address subscriber, EventEnvelope eventEnvelope, int orderKey) {
         final String serviceName = eventEnvelope.getServiceName();
         final EventServiceSegment segment = getSegment(serviceName, true);
-        boolean sync = segment.incrementPublish() % EVENT_SYNC_FREQUENCY == 0;
+        boolean sync = segment.incrementPublish() % eventSyncFrequency == 0;
 
         if (sync) {
             SendEventOperation op = new SendEventOperation(eventEnvelope, orderKey);

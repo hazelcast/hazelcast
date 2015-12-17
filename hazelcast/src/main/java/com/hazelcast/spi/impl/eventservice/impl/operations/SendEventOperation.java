@@ -19,13 +19,14 @@ package com.hazelcast.spi.impl.eventservice.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.eventservice.impl.EventEnvelope;
 import com.hazelcast.spi.impl.eventservice.impl.EventProcessor;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 
 import java.io.IOException;
 
-public class SendEventOperation extends AbstractOperation {
+public class SendEventOperation extends AbstractOperation implements AllowedDuringPassiveState {
     private EventEnvelope eventEnvelope;
     private int orderKey;
 
