@@ -78,7 +78,7 @@ public class TopicStressTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
+    @Test(timeout=RUNNING_TIME_SECONDS*2*1000)
     public void test() throws Exception {
         startLatch.countDown();
         System.out.printf("Test is going to run for %s seconds\n", RUNNING_TIME_SECONDS);
