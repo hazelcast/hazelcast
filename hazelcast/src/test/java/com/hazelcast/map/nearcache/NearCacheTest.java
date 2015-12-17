@@ -46,6 +46,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -193,6 +195,49 @@ public class NearCacheTest extends HazelcastTestSupport {
                 mapSize * 2,
                 hitsAndMisses
         );
+    }
+
+    @Test
+    public void testHeapCostCalculationWhenConcurrentCacheMisses() {
+        String mapName = randomName();
+        Config config = getConfig();
+        NearCacheConfig nearCacheConfig = newNearCacheConfig().setCacheLocalEntries(true);
+        config.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig.setInvalidateOnChange(false));
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(config);
+
+        final IMap<Integer, Integer> map = hazelcastInstance.getMap(mapName);
+
+        int threadCount = 10;
+        final int itemCount = 100;
+
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        for (int i = 0; i < itemCount; i++) {
+            map.put(i, i);
+        }
+
+        final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
+        Runnable task = new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < itemCount; i++) {
+                    map.get(i);
+                }
+                countDownLatch.countDown();
+            }
+        };
+
+        for (int i = 0; i < threadCount; i++) {
+            executorService.execute(task);
+        }
+        assertOpenEventually(countDownLatch);
+
+        for (int i = 0; i < itemCount; i++) {
+            map.remove(i);
+        }
+
+        assertEquals(0, map.getLocalMapStats().getHeapCost());
     }
 
     @Test
