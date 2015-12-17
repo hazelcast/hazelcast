@@ -415,11 +415,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     /**
      * Maps keys to corresponding partitions and sends operations to them.
      *
-     * @param keys
+     * @param dataKeys
      * @param replaceExistingValues
      */
-    protected void loadInternal(Iterable keys, boolean replaceExistingValues) {
-        Iterable<Data> dataKeys = convertToData(keys);
+    protected void loadInternal(Iterable<Data> dataKeys, boolean replaceExistingValues) {
         Map<Integer, List<Data>> partitionIdToKeys = getPartitionIdToKeysMap(dataKeys);
         Iterable<Entry<Integer, List<Data>>> entries = partitionIdToKeys.entrySet();
 
@@ -433,7 +432,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         waitUntilLoaded();
     }
 
-    private <K> Iterable<Data> convertToData(Iterable<K> keys) {
+    protected <K> Iterable<Data> convertToData(Iterable<K> keys) {
         return IterableUtil.map(nullToEmpty(keys), new IFunction<K, Data>() {
             public Data apply(K key) {
                 return toData(key);

@@ -19,16 +19,15 @@ package com.hazelcast.map.nearcache;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.mapstore.MapStoreTest;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
@@ -45,14 +44,13 @@ import org.junit.runner.RunWith;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -504,6 +502,39 @@ public class NearCacheTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testAfterLoadInvalidateNearCache() {
+        int mapSize = 100;
+        String mapName = "testLoad";
+
+        Config config = createNearCachedMapConfig(mapName);
+        MapStoreTest.SimpleMapStore store = new MapStoreTest.SimpleMapStore();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(store);
+        config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        //Populate map
+        IMap<Integer, Integer> map = instance.getMap(mapName);
+        HashSet<Integer> keys = new HashSet<Integer>();
+        for (int i = 0; i < mapSize; i++) {
+            map.put(i, i);
+            keys.add(i);
+        }
+
+        //Populate Near Cache
+        for (int i = 0; i < mapSize; i++) {
+            map.get(i);
+        }
+
+        map.loadAll(keys, true);
+
+        NearCacheStats nearCacheStats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(0, nearCacheStats.getOwnedEntryCount());
+    }
+
+    @Test
     public void testNearCacheInvalidation_WithLFU_whenMaxSizeExceeded() throws Exception {
         int mapSize = 2000;
         final int maxSize = 1000;
@@ -697,5 +728,49 @@ public class NearCacheTest extends HazelcastTestSupport {
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
 
         return service.getMapServiceContext().getNearCacheProvider().getOrCreateNearCache(mapName);
+    }
+
+    public static class SimpleMapStore<K, V> extends MapStoreAdapter<K, V> {
+        public final Map<K, V> store;
+        private boolean loadAllKeys = true;
+
+        public SimpleMapStore() {
+            store = new ConcurrentHashMap<K, V>();
+        }
+
+        public SimpleMapStore(final Map<K, V> store) {
+            this.store = store;
+        }
+
+        @Override
+        public void delete(final K key) {
+            store.remove(key);
+        }
+
+        @Override
+        public V load(final K key) {
+            return store.get(key);
+        }
+
+        @Override
+        public void store(final K key, final V value) {
+            store.put(key, value);
+        }
+
+        public Set<K> loadAllKeys() {
+            if (loadAllKeys) {
+                return store.keySet();
+            }
+            return null;
+        }
+
+        public void setLoadAllKeys(boolean loadAllKeys) {
+            this.loadAllKeys = loadAllKeys;
+        }
+
+        @Override
+        public void storeAll(final Map<K, V> kvMap) {
+            store.putAll(kvMap);
+        }
     }
 }

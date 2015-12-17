@@ -544,7 +544,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(getMapStore(), "First you should configure a map store");
         checkNotNull(keys, "Parameter keys should not be null.");
 
-        loadInternal(keys, replaceExistingValues);
+        Iterable<Data> dataKeys = convertToData(keys);
+        loadInternal(dataKeys, replaceExistingValues);
     }
 
     /**
