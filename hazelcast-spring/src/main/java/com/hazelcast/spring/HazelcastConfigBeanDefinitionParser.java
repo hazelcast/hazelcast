@@ -17,6 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
@@ -76,7 +77,6 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
-import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
@@ -811,6 +811,21 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                             }
                             targetClusterConfigBuilder.addPropertyValue("endpoints", addresses);
                         } else if ("acknowledge-type".equals(childNodeName)) {
+                            targetClusterConfigBuilder
+                                    .addPropertyValue(xmlToJavaName(childNodeName), getTextContent(childNode));
+                        } else if ("queue-full-behavior".equals(childNodeName)) {
+                            targetClusterConfigBuilder
+                                    .addPropertyValue(xmlToJavaName(childNodeName), getTextContent(childNode));
+                        } else if ("batch-size".equals(childNodeName)) {
+                            targetClusterConfigBuilder
+                                    .addPropertyValue(xmlToJavaName(childNodeName), getTextContent(childNode));
+                        } else if ("batch-max-delay-millis".equals(childNodeName)) {
+                            targetClusterConfigBuilder
+                                    .addPropertyValue(xmlToJavaName(childNodeName), getTextContent(childNode));
+                        } else if ("queue-capacity".equals(childNodeName)) {
+                            targetClusterConfigBuilder
+                                    .addPropertyValue(xmlToJavaName(childNodeName), getTextContent(childNode));
+                        } else if ("response-timeout-millis".equals(childNodeName)) {
                             targetClusterConfigBuilder
                                     .addPropertyValue(xmlToJavaName(childNodeName), getTextContent(childNode));
                         }

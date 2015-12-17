@@ -218,6 +218,12 @@ public class MapContainer {
         return true;
     }
 
+    public void checkWanReplicationQueues() {
+        if (isWanReplicationEnabled()) {
+            wanReplicationPublisher.checkWanReplicationQueues();
+        }
+    }
+
     public boolean isNearCacheEnabled() {
         return mapConfig.isNearCacheEnabled();
     }

@@ -449,10 +449,12 @@ public abstract class AbstractCacheService
         if (cacheOperationProvider != null) {
             return cacheOperationProvider;
         }
-        cacheOperationProvider = new DefaultOperationProvider(nameWithPrefix);
+        cacheOperationProvider = createOperationProvider(nameWithPrefix, inMemoryFormat);
         CacheOperationProvider current = operationProviderCache.putIfAbsent(nameWithPrefix, cacheOperationProvider);
         return current == null ? cacheOperationProvider : current;
     }
+
+    protected abstract CacheOperationProvider createOperationProvider(String nameWithPrefix, InMemoryFormat inMemoryFormat);
 
     @SuppressFBWarnings(value = "JLM_JSR166_UTILCONCURRENT_MONITORENTER", justification =
             "several ops performed on concurrent map, need synchronization for atomicity")

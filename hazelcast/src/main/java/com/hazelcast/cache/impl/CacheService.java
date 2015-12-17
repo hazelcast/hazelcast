@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionReplicationEvent;
 
@@ -55,6 +56,11 @@ public class CacheService extends AbstractCacheService {
     @Override
     protected ICacheRecordStore createNewRecordStore(String name, int partitionId) {
         return new CacheRecordStore(name, partitionId, nodeEngine, this);
+    }
+
+    @Override
+    protected CacheOperationProvider createOperationProvider(String nameWithPrefix, InMemoryFormat inMemoryFormat) {
+        return new DefaultOperationProvider(nameWithPrefix);
     }
 
     @Override

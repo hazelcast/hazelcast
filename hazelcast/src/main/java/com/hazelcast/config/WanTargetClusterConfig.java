@@ -24,6 +24,16 @@ import java.util.List;
 public class WanTargetClusterConfig {
 
     private static final WanAcknowledgeType DEFAULT_ACK_TYPE = WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE;
+    private static final WANQueueFullBehavior QUEUE_FULL_BEHAVIOR = WANQueueFullBehavior.DISCARD_AFTER_MUTATION;
+    private static final int DEFAULT_BATCH_SIZE = 500;
+    private static final long DEFAULT_BATCH_MAX_DELAY_MILLIS = 1000;
+    private static final int DEFAULT_QUEUE_CAPACITY = 10000;
+    private static final long DEFAULT_RESPONSE_TIMEOUT_MILLIS = 60000;
+
+    int batchSize = DEFAULT_BATCH_SIZE;
+    long batchMaxDelayMillis = DEFAULT_BATCH_MAX_DELAY_MILLIS;
+    int queueCapacity = DEFAULT_QUEUE_CAPACITY;
+    long responseTimeoutMillis = DEFAULT_RESPONSE_TIMEOUT_MILLIS;
 
     String groupName = "dev";
     String groupPassword = "dev-pass";
@@ -32,6 +42,7 @@ public class WanTargetClusterConfig {
     // ip:port
     List<String> endpoints;
     WanAcknowledgeType acknowledgeType = DEFAULT_ACK_TYPE;
+    WANQueueFullBehavior queueFullBehavior = QUEUE_FULL_BEHAVIOR;
 
     public String getGroupName() {
         return groupName;
@@ -94,6 +105,46 @@ public class WanTargetClusterConfig {
         this.acknowledgeType = acknowledgeType;
     }
 
+    public WANQueueFullBehavior getQueueFullBehavior() {
+        return queueFullBehavior;
+    }
+
+    public void setQueueFullBehavior(WANQueueFullBehavior queueFullBehavior) {
+        this.queueFullBehavior = queueFullBehavior;
+    }
+
+    public int getBatchSize() {
+        return batchSize;
+    }
+
+    public void setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
+    }
+
+    public long getBatchMaxDelayMillis() {
+        return batchMaxDelayMillis;
+    }
+
+    public void setBatchMaxDelayMillis(long batchMaxDelayMillis) {
+        this.batchMaxDelayMillis = batchMaxDelayMillis;
+    }
+
+    public int getQueueCapacity() {
+        return queueCapacity;
+    }
+
+    public void setQueueCapacity(int queueCapacity) {
+        this.queueCapacity = queueCapacity;
+    }
+
+    public long getResponseTimeoutMillis() {
+        return responseTimeoutMillis;
+    }
+
+    public void setResponseTimeoutMillis(long responseTimeoutMillis) {
+        this.responseTimeoutMillis = responseTimeoutMillis;
+    }
+
     @Override
     public String toString() {
         return "WanTargetClusterConfig{"
@@ -102,6 +153,11 @@ public class WanTargetClusterConfig {
                 + ", replicationImplObject=" + replicationImplObject
                 + ", endpoints=" + endpoints
                 + ", acknowledgeType=" + acknowledgeType
+                + ", queueFullBehavior=" + queueFullBehavior
+                + ", batchSize=" + batchSize
+                + ", batchMaxDelayMillis=" + batchMaxDelayMillis
+                + ", queueCapacity=" + queueCapacity
+                + ", responseTimeoutMillis" + responseTimeoutMillis
                 + '}';
     }
 }

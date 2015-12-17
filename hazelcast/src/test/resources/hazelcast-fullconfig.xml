@@ -57,6 +57,11 @@
                 <address>10.3.5.2:5701</address>
             </end-points>
             <acknowledge-type>ACK_ON_TRANSMIT</acknowledge-type>
+            <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
+            <batch-size>7</batch-size>
+            <batch-max-delay-millis>14</batch-max-delay-millis>
+            <queue-capacity>21</queue-capacity>
+            <response-timeout-millis>28</response-timeout-millis>
         </target-cluster>
     </wan-replication>
     <network>
