@@ -108,8 +108,11 @@ public class NearCacheImpl implements NearCache<Data, Object> {
                     ? serializationService.toObject(value) : serializationService.toData(value);
         }
         final NearCacheRecord record = new NearCacheRecord(key, value);
-        cache.put(key, record);
+        NearCacheRecord previous = cache.put(key, record);
         updateSizeEstimator(calculateCost(record));
+        if (previous != null) {
+            updateSizeEstimator(-calculateCost(previous));
+        }
     }
 
     @Override
