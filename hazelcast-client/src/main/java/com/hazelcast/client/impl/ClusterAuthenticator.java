@@ -73,7 +73,7 @@ public class ClusterAuthenticator implements Authenticator {
 
         ClientMessage response;
         final ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
-        final Future<ClientMessage> future = clientInvocation.invoke();
+        final Future<ClientMessage> future = clientInvocation.invokeUrgent();
         try {
             response = future.get();
         } catch (Exception e) {

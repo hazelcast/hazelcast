@@ -88,10 +88,10 @@ public class AddMessageListenerRequest extends BaseClientAddListenerRequest {
 
     private static class MessageListenerImpl implements MessageListener {
         private final ClientEndpoint endpoint;
-        private final int callId;
+        private final long callId;
         private final Data partitionKey;
 
-        public MessageListenerImpl(ClientEndpoint endpoint, Data partitionKey, int callId) {
+        public MessageListenerImpl(ClientEndpoint endpoint, Data partitionKey, long callId) {
             this.endpoint = endpoint;
             this.partitionKey = partitionKey;
             this.callId = callId;

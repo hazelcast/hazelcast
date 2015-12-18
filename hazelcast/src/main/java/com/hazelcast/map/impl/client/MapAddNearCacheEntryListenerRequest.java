@@ -49,11 +49,11 @@ public class MapAddNearCacheEntryListenerRequest extends MapAddEntryListenerRequ
 
     private static class ClientNearCacheInvalidationListenerImpl implements InvalidationListener {
 
-        private final int callId;
+        private final long callId;
         private final String mapName;
         private final ClientEndpoint endpoint;
 
-        ClientNearCacheInvalidationListenerImpl(String mapName, ClientEndpoint endpoint, int callId) {
+        ClientNearCacheInvalidationListenerImpl(String mapName, ClientEndpoint endpoint, long callId) {
             this.mapName = mapName;
             this.endpoint = endpoint;
             this.callId = callId;

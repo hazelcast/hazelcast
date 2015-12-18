@@ -28,11 +28,11 @@ public class ClientEventRegistration {
 
     private Address subscriber;
     private final String serverRegistrationId;
-    private final int callId;
+    private final long callId;
     private BaseClientRemoveListenerRequest removeRequest;
 
     public ClientEventRegistration(String serverRegistrationId,
-                                   int callId, Address subscriber, BaseClientRemoveListenerRequest removeRequest) {
+                                   long callId, Address subscriber, BaseClientRemoveListenerRequest removeRequest) {
         this.removeRequest = removeRequest;
         isNotNull(serverRegistrationId, "serverRegistrationId");
         this.serverRegistrationId = serverRegistrationId;
@@ -77,7 +77,7 @@ public class ClientEventRegistration {
      *
      * @return call id
      */
-    public int getCallId() {
+    public long getCallId() {
         return callId;
     }
 

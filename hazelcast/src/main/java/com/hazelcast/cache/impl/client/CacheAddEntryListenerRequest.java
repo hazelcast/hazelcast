@@ -83,10 +83,10 @@ public class CacheAddEntryListenerRequest extends BaseClientAddListenerRequest {
             ListenerWrapperEventFilter,
             Serializable {
 
-        private final int callId;
+        private final long callId;
         private final transient ClientEndpoint endpoint;
 
-        private CacheEntryListener(int callId, ClientEndpoint endpoint) {
+        private CacheEntryListener(long callId, ClientEndpoint endpoint) {
             this.callId = callId;
             this.endpoint = endpoint;
         }

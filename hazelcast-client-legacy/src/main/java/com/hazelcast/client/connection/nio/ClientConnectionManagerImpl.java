@@ -360,7 +360,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 }
                 if (now - connection.lastReadTimeMillis() > heartBeatInterval) {
                     final ClientPingRequest request = new ClientPingRequest();
-                    new ClientInvocation(client, request, connection).invoke();
+                    new ClientInvocation(client, request, connection).invokeUrgent();
                 } else {
                     if (!connection.isHeartBeating()) {
                         connection.heartBeatingSucceed();

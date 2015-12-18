@@ -27,13 +27,13 @@ import java.io.IOException;
 public class ClientResponse implements IdentifiedDataSerializable {
 
     private Data response;
-    private int callId;
+    private long callId;
     private boolean isError;
 
     public ClientResponse() {
     }
 
-    public ClientResponse(Data response, int callId, boolean isError) {
+    public ClientResponse(Data response, long callId, boolean isError) {
         this.response = response;
         this.callId = callId;
         this.isError = isError;
@@ -43,7 +43,7 @@ public class ClientResponse implements IdentifiedDataSerializable {
         return response;
     }
 
-    public int getCallId() {
+    public long getCallId() {
         return callId;
     }
 
@@ -63,14 +63,14 @@ public class ClientResponse implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(callId);
+        out.writeLong(callId);
         out.writeBoolean(isError);
         out.writeData(response);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        callId = in.readInt();
+        callId = in.readLong();
         isError = in.readBoolean();
         response = in.readData();
     }

@@ -241,7 +241,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
     }
 
     @Override
-    public void sendResponse(Object response, int callId) {
+    public void sendResponse(Object response, long callId) {
         boolean isError = false;
         Object clientResponseObject;
         if (response instanceof Throwable) {
@@ -261,7 +261,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
     }
 
     @Override
-    public void sendEvent(Object key, Object event, int callId) {
+    public void sendEvent(Object key, Object event, long callId) {
         clientEngine.sendResponse(this, key, event, callId, false, true);
     }
 

@@ -138,7 +138,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
             }
             ClientInvocation invocation = new ClientInvocation(client, clientMessage, connection);
             invocation.setEventHandler(this);
-            invocation.invoke().get();
+            invocation.invokeUrgent().get();
             waitInitialMemberListFetched();
 
         } catch (Exception e) {

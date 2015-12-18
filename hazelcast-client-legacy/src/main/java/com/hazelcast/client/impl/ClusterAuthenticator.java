@@ -60,7 +60,7 @@ public class ClusterAuthenticator implements Authenticator {
         //contains remoteAddress and principal
         SerializableList collectionWrapper;
         final ClientInvocation clientInvocation = new ClientInvocation(client, auth, connection);
-        final Future<SerializableList> future = clientInvocation.invoke();
+        final Future<SerializableList> future = clientInvocation.invokeUrgent();
         try {
             collectionWrapper = ss.toObject(future.get());
         } catch (Exception e) {

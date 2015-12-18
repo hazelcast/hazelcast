@@ -120,12 +120,12 @@ public final class ClientPartitionServiceImpl
         }
         try {
             ClientMessage requestMessage = ClientGetPartitionsCodec.encodeRequest();
-            Future<ClientMessage> future = new ClientInvocation(client, requestMessage, connection).invoke();
+            Future<ClientMessage> future = new ClientInvocation(client, requestMessage, connection).invokeUrgent();
             ClientMessage responseMessage = future.get();
             return ClientGetPartitionsCodec.decodeResponse(responseMessage);
         } catch (Exception e) {
             if (client.getLifecycleService().isRunning()) {
-                LOGGER.severe("Error while fetching cluster partition table!", e);
+                LOGGER.warning("Error while fetching cluster partition table!", e);
             }
         }
         return null;

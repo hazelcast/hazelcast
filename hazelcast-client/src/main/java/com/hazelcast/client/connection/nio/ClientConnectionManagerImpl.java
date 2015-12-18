@@ -365,7 +365,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     ClientMessage request = ClientPingCodec.encodeRequest();
                     ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
                     clientInvocation.setBypassHeartbeatCheck(true);
-                    clientInvocation.invoke();
+                    clientInvocation.invokeUrgent();
                 } else {
                     if (!connection.isHeartBeating()) {
                         LOGGER.warning("Heartbeat is back to healthy for connection : " + connection);

@@ -27,6 +27,7 @@ import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
@@ -67,6 +68,7 @@ public class ClientInvocation implements Runnable {
     private final Connection connection;
     private volatile ClientConnection sendConnection;
     private boolean bypassHeartbeatCheck;
+    private boolean urgent;
     private long retryTimeoutPointInMillis;
     private EventHandler handler;
 
@@ -130,10 +132,18 @@ public class ClientInvocation implements Runnable {
         try {
             invokeOnSelection();
         } catch (Exception e) {
+            if (e instanceof HazelcastOverloadException) {
+                throw (HazelcastOverloadException) e;
+            }
             notifyException(e);
         }
         return clientInvocationFuture;
 
+    }
+
+    public ClientInvocationFuture invokeUrgent() {
+        urgent = true;
+        return invoke();
     }
 
     private void invokeOnSelection() throws IOException {
@@ -270,6 +280,10 @@ public class ClientInvocation implements Runnable {
 
     public boolean shouldBypassHeartbeatCheck() {
         return bypassHeartbeatCheck;
+    }
+
+    public boolean isUrgent() {
+        return urgent;
     }
 
     public void setBypassHeartbeatCheck(boolean bypassHeartbeatCheck) {

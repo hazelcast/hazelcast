@@ -27,10 +27,10 @@ import com.hazelcast.spi.impl.PortableEntryEvent;
 
 public class ClientMapListener extends MapListenerAdapter<Object, Object> {
 
-    private final int callId;
+    private final long callId;
     private final ClientEndpoint endpoint;
 
-    public ClientMapListener(ClientEndpoint endpoint, int callId) {
+    public ClientMapListener(ClientEndpoint endpoint, long callId) {
         this.endpoint = endpoint;
         this.callId = callId;
     }
