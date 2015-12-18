@@ -23,11 +23,16 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.SampleObjects;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -40,10 +45,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -501,20 +503,13 @@ public class NearCacheTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAfterLoadInvalidateNearCache() {
-        int mapSize = 100;
-        String mapName = "testLoad";
+    public void testAfterLoadAllWithDefinedKeysNearCacheIsInvalidated() {
+        int mapSize = 1000;
+        String mapName = randomMapName();
 
-        Config config = createNearCachedMapConfig(mapName);
-        SimpleMapStore store = new SimpleMapStore();
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(store);
-        config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
-
+        Config config = createNearCachedMapConfigWithMapStoreConfig(mapName);
         HazelcastInstance instance = createHazelcastInstance(config);
 
-        //Populate map
         IMap<Integer, Integer> map = instance.getMap(mapName);
         HashSet<Integer> keys = new HashSet<Integer>();
         for (int i = 0; i < mapSize; i++) {
@@ -522,12 +517,139 @@ public class NearCacheTest extends HazelcastTestSupport {
             keys.add(i);
         }
 
-        //Populate Near Cache
         for (int i = 0; i < mapSize; i++) {
             map.get(i);
         }
 
         map.loadAll(keys, true);
+
+        NearCacheStats nearCacheStats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(0, nearCacheStats.getOwnedEntryCount());
+    }
+
+    @Test
+    public void testAfterLoadAllNearCacheIsInvalidated() {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+
+        Config config = createNearCachedMapConfigWithMapStoreConfig(mapName);
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = instance.getMap(mapName);
+        for (int i = 0; i < mapSize; i++) {
+            map.put(i, i);
+        }
+
+        for (int i = 0; i < mapSize; i++) {
+            map.get(i);
+        }
+
+        map.loadAll(true);
+
+        NearCacheStats nearCacheStats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(0, nearCacheStats.getOwnedEntryCount());
+    }
+
+    @Test
+    public void testAfterReplaceNearCacheIsInvalidated() {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+
+        Config config = createNearCachedMapConfig(mapName);
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = instance.getMap(mapName);
+        for (int i = 0; i < mapSize; i++) {
+            map.put(i, i);
+        }
+
+        for (int i = 0; i < mapSize; i++) {
+            map.get(i);
+        }
+
+        for (int i = 0; i < mapSize; i++) {
+            map.replace(i, i, mapSize - 1 - i);
+        }
+
+        NearCacheStats nearCacheStats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(0, nearCacheStats.getOwnedEntryCount());
+    }
+
+    @Test
+    public void testAfterSubmitToKeyWithCallbackNearCacheIsInvalidated() throws InterruptedException {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+        Random random = new Random();
+
+        Config config = createNearCachedMapConfig(mapName);
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = instance.getMap(mapName);
+        for (int i = 0; i < mapSize; i++) {
+            map.put(i, i);
+        }
+
+        for (int i = 0; i < mapSize; i++) {
+            map.get(i);
+        }
+
+        final CountDownLatch latch = new CountDownLatch(10);
+        ExecutionCallback<Integer> callback = new ExecutionCallback<Integer>() {
+            @Override
+            public void onResponse(Integer response) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+            }
+        };
+
+        int randomKey = random.nextInt(mapSize);
+        map.submitToKey(randomKey, new AbstractEntryProcessor() {
+            @Override
+            public Object process(Map.Entry entry) {
+                int currentValue = (Integer) entry.getValue();
+                int newValue = currentValue + 1;
+                entry.setValue(newValue);
+                return newValue;
+            }
+        }, callback);
+
+        latch.await(3,TimeUnit.SECONDS);
+        NearCacheStats nearCacheStats = map.getLocalMapStats().getNearCacheStats();
+        assertEquals(mapSize - 1, nearCacheStats.getOwnedEntryCount());
+    }
+
+    @Test
+    public void testAfterExecuteOnEntriesNearCacheIsInvalidated() {
+        int mapSize = 10;
+        String mapName = randomMapName();
+
+        Config config = createNearCachedMapConfig(mapName);
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        IMap<Integer, SampleObjects.Employee> map = instance.getMap(mapName);
+        for (int i = 0; i < mapSize; i++) {
+            map.put(i, new SampleObjects.Employee(i, "", 0, true, 0D));
+        }
+
+        for (int i = 0; i < mapSize; i++) {
+            map.get(i);
+        }
+
+        EntryObject e = new PredicateBuilder().getEntryObject();
+        Predicate predicate = e.get("salary").equal(0);
+        map.executeOnEntries(new AbstractEntryProcessor() {
+            @Override
+            public Object process(Map.Entry entry) {
+                SampleObjects.Employee employee = (SampleObjects.Employee) entry.getValue();
+                double currentSalary = employee.getSalary();
+                double newSalary = currentSalary + 10;
+                employee.setSalary(newSalary);
+                return newSalary;
+            }
+        }, predicate);
 
         NearCacheStats nearCacheStats = map.getLocalMapStats().getNearCacheStats();
         assertEquals(0, nearCacheStats.getOwnedEntryCount());
@@ -718,6 +840,17 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         final MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.setNearCacheConfig(nearCacheConfig);
+
+        return config;
+    }
+
+    protected Config createNearCachedMapConfigWithMapStoreConfig(String mapName) {
+        Config config = createNearCachedMapConfig(mapName);
+        SimpleMapStore store = new SimpleMapStore();
+        final MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(store);
+        config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
 
         return config;
     }
