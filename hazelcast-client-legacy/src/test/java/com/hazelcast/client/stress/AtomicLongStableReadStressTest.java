@@ -61,7 +61,7 @@ public class AtomicLongStableReadStressTest extends StressTestSupport {
         test(true);
     }
 
-    @Test
+    @Test(timeout=600000)
     public void testFixedCluster() {
         test(false);
     }
