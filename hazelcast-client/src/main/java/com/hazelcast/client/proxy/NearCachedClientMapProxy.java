@@ -39,7 +39,6 @@ import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -239,7 +238,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected List<MapGetAllCodec.ResponseParameters> getAllInternal(Map<Integer, List<Data>> pIdToKeyData, Map<K, V> result) {
-        List<Integer> partitionsWithCachedEntries = new ArrayList<Integer>(pIdToKeyData.size());
         for (Entry<Integer, List<Data>> partitionKeyEntry : pIdToKeyData.entrySet()) {
             List<Data> keyList = partitionKeyEntry.getValue();
             Iterator<Data> iterator = keyList.iterator();
@@ -251,13 +249,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
                     iterator.remove();
                 }
             }
-            if (keyList.isEmpty()) {
-                partitionsWithCachedEntries.add(partitionKeyEntry.getKey());
-            }
-        }
-
-        for (Integer partitionId : partitionsWithCachedEntries) {
-            pIdToKeyData.remove(partitionId);
         }
 
         List<MapGetAllCodec.ResponseParameters> responses = super.getAllInternal(pIdToKeyData, result);
