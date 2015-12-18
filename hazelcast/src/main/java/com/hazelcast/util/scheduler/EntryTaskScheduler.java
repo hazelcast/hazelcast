@@ -16,8 +16,6 @@
 
 package com.hazelcast.util.scheduler;
 
-import java.util.Set;
-
 /**
  * Schedules (or reschedules) the execution of given entry.
  *
@@ -43,9 +41,5 @@ public interface EntryTaskScheduler<K, V> {
 
     ScheduledEntry<K, V> get(K key);
 
-    Set<K> flush(Set<K> keys);
-
     void cancelAll();
-
-    int size();
 }
