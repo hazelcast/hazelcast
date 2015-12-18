@@ -138,6 +138,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
+    protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
+    protected static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Predicate should not be null!";
 
     protected final String name;
 
@@ -208,7 +210,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         // I do not why but findbugs does not like this null check:
         // value must be nonnull but is marked as nullable ["com.hazelcast.client.proxy.ClientMapProxy"]
         // At ClientMapProxy.java:[lines 131-1253]
-        // checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
         Data valueData = toData(value);
@@ -566,11 +568,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public String addEntryListener(MapListener listener, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return addEntryListenerInternal(listener, null, includeValue, null);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return addEntryListenerInternal(listener, null, includeValue, null);
     }
 
@@ -581,6 +585,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public String addPartitionLostListener(MapPartitionLostListener listener) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         MapAddPartitionLostListenerRequest addRequest = new MapAddPartitionLostListenerRequest(name);
         MapRemovePartitionLostListenerRequest removeRequest = new MapRemovePartitionLostListenerRequest(name);
         EventHandler<PortableMapPartitionLostEvent> handler = new ClientMapPartitionLostEventHandler(listener);
@@ -594,31 +599,43 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public String addEntryListener(MapListener listener, K key, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         return addEntryListenerInternal(listener, null, includeValue, key);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, K key, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         return addEntryListenerInternal(listener, null, includeValue, key);
     }
 
     @Override
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         return addEntryListenerInternal(listener, predicate, includeValue, key);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         return addEntryListenerInternal(listener, predicate, includeValue, key);
     }
 
     @Override
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         return addEntryListenerInternal(listener, predicate, includeValue, null);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         return addEntryListenerInternal(listener, predicate, includeValue, null);
     }
 
@@ -768,11 +785,16 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public Collection<V> values() {
         // we pass null instead of TruePredicate.INSTANCE due to security. But null will be interpreted as TruePredicate.
-        return values(null);
+        return valuesInternal(null);
     }
 
     @Override
     public Collection<V> values(Predicate predicate) {
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        return valuesInternal(predicate);
+    }
+
+    private Collection<V> valuesInternal(Predicate predicate) {
         if (predicate instanceof PagingPredicate) {
             return valuesForPagingPredicate((PagingPredicate) predicate);
         }
@@ -790,12 +812,17 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public Set<Entry<K, V>> entrySet() {
         // we pass null instead of TruePredicate.INSTANCE due to security. But null will be interpreted as TruePredicate.
-        return entrySet(null);
+        return entrySetInternal(null);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Set<Entry<K, V>> entrySet(Predicate predicate) {
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        return entrySetInternal(predicate);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<Entry<K, V>> entrySetInternal(Predicate predicate) {
         PagingPredicate pagingPredicate = null;
         if (predicate instanceof PagingPredicate) {
             pagingPredicate = (PagingPredicate) predicate;
@@ -825,12 +852,17 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public Set<K> keySet() {
         // we pass null instead of TruePredicate.INSTANCE due to security. But null will be interpreted as TruePredicate.
-        return keySet(null);
+        return keySetInternal(null);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Set<K> keySet(Predicate predicate) {
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        return keySetInternal(predicate);
+    }
+
+    private Set<K> keySetInternal(Predicate predicate) {
         PagingPredicate pagingPredicate = null;
         if (predicate instanceof PagingPredicate) {
             pagingPredicate = (PagingPredicate) predicate;
@@ -991,6 +1023,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
+        if (keys == null || keys.size() == 0 || keys.contains(null)) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
         Set<Data> dataKeys = new HashSet<Data>(keys.size());
         for (K key : keys) {
             dataKeys.add(toData(key));

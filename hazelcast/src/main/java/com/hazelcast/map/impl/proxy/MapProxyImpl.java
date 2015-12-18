@@ -381,11 +381,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public String addLocalEntryListener(MapListener listener) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return addLocalEntryListenerInternal(listener);
     }
 
     @Override
     public String addLocalEntryListener(EntryListener listener) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         return addLocalEntryListenerInternal(listener);
     }
 
@@ -442,6 +444,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     @Override
     public String addEntryListener(MapListener listener, K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         return addEntryListenerInternal(listener, toData(key, partitionStrategy), includeValue);
     }
@@ -449,6 +452,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     @Override
     public String addEntryListener(EntryListener listener, K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         return addEntryListenerInternal(listener, toData(key, partitionStrategy), includeValue);
     }
@@ -664,7 +668,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
-        if (keys == null || keys.size() == 0) {
+        if (keys == null || keys.size() == 0 || keys.contains(null)) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         Set<Data> dataKeys = new HashSet<Data>(keys.size());
