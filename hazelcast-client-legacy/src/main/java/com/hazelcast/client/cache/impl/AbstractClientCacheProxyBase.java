@@ -21,25 +21,21 @@ import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CompletionListener;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 
 /**
  * Abstract class providing cache open/close operations and {@link ClientContext} accessor which will be used
@@ -101,7 +97,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
             CacheDestroyRequest request = new CacheDestroyRequest(nameWithPrefix, partitionId);
             final ClientInvocation clientInvocation =
                     new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
-                                         request, partitionId);
+                            request, partitionId);
             final Future<SerializableList> future = clientInvocation.invoke();
             future.get();
         } catch (Exception e) {
@@ -153,64 +149,44 @@ abstract class AbstractClientCacheProxyBase<K, V> {
     }
 
     protected void submitLoadAllTask(final CacheLoadAllRequest request, final CompletionListener completionListener) {
-        final long start = System.nanoTime();
-        LoadAllTask loadAllTask = new LoadAllTask(request, completionListener);
-        ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) clientContext.getExecutionService();
-
-        final ICompletableFuture<?> future = executionService.submitInternal(loadAllTask);
-        loadAllTasks.add(future);
-        future.andThen(new ExecutionCallback() {
-            @Override
-            public void onResponse(Object response) {
-                loadAllTasks.remove(future);
-                onLoadAll(request.getKeys(), response, start, System.nanoTime());
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                loadAllTasks.remove(future);
-            }
-        });
-    }
-
-    protected void onLoadAll(Set<Data> keys, Object response, long start, long end) {
-
-    }
-
-    private final class LoadAllTask
-            implements Runnable {
-
-        private final CacheLoadAllRequest request;
-        private final CompletionListener completionListener;
-
-        private LoadAllTask(CacheLoadAllRequest request, CompletionListener completionListener) {
-            this.request = request;
-            this.completionListener = completionListener;
-        }
-
-        @Override
-        public void run() {
-            try {
-                final Map<Integer, Object> results = invoke(request);
-                validateResults(results);
-                if (completionListener != null) {
-                    completionListener.onCompletion();
+        try {
+            final long start = System.nanoTime();
+            ClientInvocationFuture future = new ClientInvocation(
+                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request).invoke();
+            future.andThen(new ExecutionCallback<V>() {
+                @Override
+                public void onResponse(V response) {
+                    if (completionListener != null) {
+                        completionListener.onCompletion();
+                        onLoadAll(request.getKeys(), response, start, System.nanoTime());
+                    }
                 }
 
-            } catch (Exception e) {
-                if (completionListener != null) {
-                    completionListener.onException(e);
-                }
-            } catch (Throwable t) {
-                if (t instanceof OutOfMemoryError) {
-                    ExceptionUtil.rethrow(t);
-                } else {
+                @Override
+                public void onFailure(Throwable t) {
                     if (completionListener != null) {
                         completionListener.onException(new CacheException(t));
                     }
                 }
+            });
+
+        } catch (Exception e) {
+            if (completionListener != null) {
+                completionListener.onException(e);
+            }
+        } catch (Throwable t) {
+            if (t instanceof OutOfMemoryError) {
+                ExceptionUtil.rethrow(t);
+            } else {
+                if (completionListener != null) {
+                    completionListener.onException(new CacheException(t));
+                }
             }
         }
+    }
+
+    protected void onLoadAll(Set<Data> keys, Object response, long start, long end) {
+
     }
 
 }

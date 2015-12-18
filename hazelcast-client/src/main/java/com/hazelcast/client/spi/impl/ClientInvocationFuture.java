@@ -31,7 +31,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -159,17 +158,6 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
 
     @Override
     public void andThen(ExecutionCallback<ClientMessage> callback, Executor executor) {
-        synchronized (this) {
-            if (response != null) {
-                runAsynchronous(callback, executor);
-                return;
-            }
-            callbackNodeList.add(new ExecutionCallbackNode(callback, executor));
-        }
-    }
-
-    public void andThenInternal(ExecutionCallback<ClientMessage> callback) {
-        ExecutorService executor = executionService.getAsyncExecutor();
         synchronized (this) {
             if (response != null) {
                 runAsynchronous(callback, executor);
