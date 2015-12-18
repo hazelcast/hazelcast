@@ -28,7 +28,6 @@ import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -43,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_INTERVAL;
 import static com.hazelcast.client.config.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 
-public class ClientInvocation implements Runnable {
+public class ClientInvocation implements Runnable, ExecutionCallback {
 
     public static final long RETRY_WAIT_TIME_IN_SECONDS = 1;
     private static final int UNASSIGNED_PARTITION = -1;
@@ -224,33 +223,8 @@ public class ClientInvocation implements Runnable {
     }
 
     private void rescheduleInvocation() {
-        executionService.schedule(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    ICompletableFuture<?> future = ((ClientExecutionServiceImpl) executionService)
-                            .submitInternal(ClientInvocation.this);
-                    future.andThen(new ExecutionCallback() {
-                        @Override
-                        public void onResponse(Object response) {
-                        }
-
-                        @Override
-                        public void onFailure(Throwable t) {
-                            if (LOGGER.isFinestEnabled()) {
-                                LOGGER.finest("Failure during retry ", t);
-                            }
-                            clientInvocationFuture.setResponse(t);
-                        }
-                    });
-                } catch (RejectedExecutionException e) {
-                    if (LOGGER.isFinestEnabled()) {
-                        LOGGER.finest("Could not reschedule invocation.", e);
-                    }
-                    notifyException(e);
-                }
-            }
-        }, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
+        ClientExecutionServiceImpl executionServiceImpl = (ClientExecutionServiceImpl) this.executionService;
+        executionServiceImpl.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS, this);
     }
 
     private boolean isBindToSingleConnection() {
@@ -291,5 +265,17 @@ public class ClientInvocation implements Runnable {
         return t instanceof IOException
                 || t instanceof HazelcastInstanceNotActiveException
                 || t instanceof AuthenticationException;
+    }
+
+    @Override
+    public void onResponse(Object response) {
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        if (LOGGER.isFinestEnabled()) {
+            LOGGER.finest("Failure during retry ", t);
+        }
+        clientInvocationFuture.setResponse(t);
     }
 }
