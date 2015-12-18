@@ -270,6 +270,9 @@ public class NearCacheConfig
     /**
      * True to evict the cached entries if the entries are changed (updated or removed).
      *
+     * When true, the member listens for cluster-wide changes on the entries and invalidates
+     * them on change. Changes done on the local member always invalidate the cache.
+     *
      * @return This near cache config instance.
      */
     public boolean isInvalidateOnChange() {
@@ -278,6 +281,9 @@ public class NearCacheConfig
 
     /**
      * True to evict the cached entries if the entries are changed (updated or removed).
+     *
+     * If set to true, the member will listen for cluster-wide changes on the entries and invalidate
+     * them on change. Changes done on the local member always invalidate the cache.
      *
      * @param invalidateOnChange True to evict the cached entries if the entries are
      *                           changed (updated or removed), false otherwise.
