@@ -19,35 +19,33 @@ package com.hazelcast.client.map.impl.nearcache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
-import com.hazelcast.client.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.RunParallel;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
-import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
@@ -58,9 +56,18 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunParallel
+@RunWith(HazelcastTestRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientMapNearCacheTest {
+
+    @Parameterized.Parameter
+    public boolean batchInvalidationEnabled;
+
+    @Parameterized.Parameters(name = "batchInvalidationEnabled:{0}")
+    public static Iterable<Object[]> parameters() {
+        return Arrays.asList(new Object[]{Boolean.TRUE}, new Object[]{Boolean.FALSE});
+    }
 
     protected static final int MAX_TTL_SECONDS = 3;
     protected static final int MAX_IDLE_SECONDS = 1;
@@ -496,54 +503,6 @@ public class ClientMapNearCacheTest {
         });
     }
 
-    @Test
-    public void testServerMapExpiration_doesNotInvalidateClientNearCache() {
-        String mapName = randomMapName();
-        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
-        NearCacheConfig nearCacheConfig = newLongMaxIdleNearCacheConfig();
-        ClientConfig clientConfig = newClientConfig();
-        clientConfig.addNearCacheConfig(nearCacheConfig);
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-
-        IMap<Integer, Integer> serverMap = server.getMap(mapName);
-        IMap<Integer, Integer> clientMap = client.getMap(mapName);
-
-        // add EntryExpiredListener to catch expiration events
-        final CountDownLatch expiredEventLatch = new CountDownLatch(2);
-        EntryExpiredListener listener = new EntryExpiredListener() {
-            @Override
-            public void entryExpired(EntryEvent event) {
-                expiredEventLatch.countDown();
-            }
-        };
-        serverMap.addEntryListener(listener, false);
-        clientMap.addEntryListener(listener, false);
-
-        // add NearCacheEventListener to catch near cache invalidation event on client side
-        final CountDownLatch eventAddedLatch = new CountDownLatch(1);
-        addNearCacheInvalidateListener(clientMap, eventAddedLatch);
-
-        // put entry with TTL into server map
-        serverMap.put(1, 23, 6, TimeUnit.SECONDS);
-        assertNotNull("The TTL value should still be available in the server map right after it was put there", serverMap.get(1));
-
-        // wait until near cache invalidation is done after ADDED event
-        assertOpenEventually(eventAddedLatch);
-        assertThatOwnedEntryCountEquals(clientMap, 0);
-
-        // get() operation puts entry into client near cache
-        assertNotNull("The TTL value should still be available after the invalidation event arrived", clientMap.get(1));
-        assertThatOwnedEntryCountEquals(clientMap, 1);
-
-        // assert that the entry is not available on the server after expiration
-        assertOpenEventually(expiredEventLatch);
-        assertNull("The TTL value should be gone in the server map after its expiration", serverMap.get(1));
-
-        // assert that the entry is still available on the client and in the client near cache
-        assertNotNull("The TTL value should still be available in the near cache after server side expiration", clientMap.get(1));
-        assertThatOwnedEntryCountEquals(clientMap, 1);
-    }
-
     protected void populateNearCache(IMap<Integer, Integer> map, int size) {
         for (int i = 0; i < size; i++) {
             map.put(i, i);
@@ -572,13 +531,6 @@ public class ClientMapNearCacheTest {
 
     protected void triggerEviction(IMap<Integer, Integer> map) {
         map.put(0, 0);
-    }
-
-    protected void addNearCacheInvalidateListener(IMap clientMap, CountDownLatch eventAddedLatch) {
-        NearCacheEventListener listener = new NearCacheEventListener(eventAddedLatch);
-
-        NearCachedClientMapProxy mapProxy = (NearCachedClientMapProxy) clientMap;
-        mapProxy.addNearCacheInvalidateListener(listener);
     }
 
     protected static class NearCacheEventListener extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler
@@ -651,14 +603,6 @@ public class ClientMapNearCacheTest {
         return nearCacheConfig;
     }
 
-    protected NearCacheConfig newLongMaxIdleNearCacheConfig() {
-        NearCacheConfig nearCacheConfig = newNearCacheConfig();
-        nearCacheConfig.setInvalidateOnChange(true);
-        nearCacheConfig.setMaxIdleSeconds(LONG_MAX_IDLE_SECONDS);
-
-        return nearCacheConfig;
-    }
-
     protected NearCacheConfig newMaxIdleSecondsNearCacheConfig() {
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(false);
@@ -690,7 +634,7 @@ public class ClientMapNearCacheTest {
 
     protected Config newConfig() {
         Config config = new Config();
-        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED, "false");
+        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED, String.valueOf(batchInvalidationEnabled));
         return config;
     }
 
@@ -721,7 +665,6 @@ public class ClientMapNearCacheTest {
     protected void assertNearCacheInvalidation_whenMaxSizeExceeded(NearCacheConfig config) {
         final IMap<Integer, Integer> map = getNearCachedMapFromClient(config);
         populateNearCache(map, MAX_CACHE_SIZE);
-        assertThatOwnedEntryCountEquals(map, MAX_CACHE_SIZE);
 
         triggerEviction(map);
         assertTrueEventually(new AssertTask() {
