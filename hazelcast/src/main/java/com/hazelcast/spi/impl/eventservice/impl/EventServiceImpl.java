@@ -106,7 +106,10 @@ public class EventServiceImpl implements InternalEventService {
         final String eventSyncFrequencyProp = System.getProperty(EVENT_SYNC_FREQUENCY_PROP);
         int eventSyncFrequency;
         try {
-            eventSyncFrequency = Integer.valueOf(eventSyncFrequencyProp);
+            eventSyncFrequency = Integer.parseInt(eventSyncFrequencyProp);
+            if (eventSyncFrequency <= 0) {
+                eventSyncFrequency = EVENT_SYNC_FREQUENCY;
+            }
         } catch (Exception e) {
             eventSyncFrequency = EVENT_SYNC_FREQUENCY;
         }
