@@ -21,7 +21,6 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
@@ -43,6 +42,7 @@ import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedExecutor;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -98,15 +98,13 @@ public class EventServiceImpl implements InternalEventService {
         this.nodeEngine = nodeEngine;
         this.serializationService = nodeEngine.getSerializationService();
         this.logger = nodeEngine.getLogger(EventService.class.getName());
-        final Node node = nodeEngine.getNode();
-        GroupProperties groupProperties = node.getGroupProperties();
+        GroupProperties groupProperties = nodeEngine.getNode().getGroupProperties();
         this.eventThreadCount = groupProperties.getInteger(GroupProperty.EVENT_THREAD_COUNT);
         this.eventQueueCapacity = groupProperties.getInteger(GroupProperty.EVENT_QUEUE_CAPACITY);
         this.eventQueueTimeoutMs = groupProperties.getMillis(GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS);
-        final String eventSyncFrequencyProp = System.getProperty(EVENT_SYNC_FREQUENCY_PROP);
         int eventSyncFrequency;
         try {
-            eventSyncFrequency = Integer.parseInt(eventSyncFrequencyProp);
+            eventSyncFrequency = Integer.parseInt(System.getProperty(EVENT_SYNC_FREQUENCY_PROP));
             if (eventSyncFrequency <= 0) {
                 eventSyncFrequency = EVENT_SYNC_FREQUENCY;
             }
@@ -115,9 +113,9 @@ public class EventServiceImpl implements InternalEventService {
         }
         this.eventSyncFrequency = eventSyncFrequency;
 
-        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
+        HazelcastThreadGroup threadGroup = nodeEngine.getNode().getHazelcastThreadGroup();
         this.eventExecutor = new StripedExecutor(
-                node.getLogger(EventServiceImpl.class),
+                nodeEngine.getNode().getLogger(EventServiceImpl.class),
                 threadGroup.getThreadNamePrefix("event"),
                 threadGroup.getInternalThreadGroup(),
                 eventThreadCount,
