@@ -72,7 +72,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     public ClientInvocationServiceSupport(HazelcastClientInstanceImpl client) {
         this.client = client;
         int maxAllowedConcurrentInvocations = client.getClientProperties().getInteger(MAX_CONCURRENT_INVOCATIONS);
-        callIdSequence = new CallIdSequence.CallIdSequenceWithBackpressureViaException(maxAllowedConcurrentInvocations);
+        callIdSequence = new CallIdSequence.CallIdSequenceFailFast(maxAllowedConcurrentInvocations);
     }
 
     @Override
