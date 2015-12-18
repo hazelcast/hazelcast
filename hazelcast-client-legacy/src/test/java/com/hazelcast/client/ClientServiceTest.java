@@ -214,11 +214,14 @@ public class ClientServiceTest extends HazelcastTestSupport {
         final HazelcastInstance client1 = hazelcastFactory.newHazelcastClient();
         final HazelcastInstance client2 = hazelcastFactory.newHazelcastClient();
 
+        assertTrue("[testClientListener] ClientListener did not get two events for new clients",
+                latchAdd.await(6, TimeUnit.SECONDS));
+
         client1.getLifecycleService().shutdown();
         client2.getLifecycleService().shutdown();
 
-        assertTrue(latchAdd.await(6, TimeUnit.SECONDS));
-        assertTrue(latchRemove.await(6, TimeUnit.SECONDS));
+        assertTrue("[testClientListener] ClientListener did not get two events for client shutdowns",
+                latchRemove.await(6, TimeUnit.SECONDS));
 
         assertTrue(clientService.removeClientListener(id));
 
