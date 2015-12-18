@@ -68,7 +68,8 @@ public abstract class CallIdSequence {
         @Override
         public long next() {
             if (!hasSpace()) {
-                throw new HazelcastOverloadException("Failed to get a callId for invocation: ");
+                throw new HazelcastOverloadException("maxConcurrentInvocations : "
+                        + maxConcurrentInvocations + " is reached");
             }
 
             return longs.incrementAndGet(INDEX_HEAD);
