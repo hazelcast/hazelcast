@@ -53,7 +53,7 @@ public abstract class CallIdSequence {
      * - due to racy nature of checking if space is available and getting the next sequence.
      * <p/>
      */
-    public static final class CallIdSequenceWithBackpressureViaException extends CallIdSequence {
+    public static final class CallIdSequenceFailFast extends CallIdSequence {
         private static final int INDEX_HEAD = 7;
         private static final int INDEX_TAIL = INDEX_HEAD + CACHE_LINE_LENGTH / LONG_SIZE_IN_BYTES;
 
@@ -62,7 +62,7 @@ public abstract class CallIdSequence {
 
         private final int maxConcurrentInvocations;
 
-        public CallIdSequenceWithBackpressureViaException(int maxConcurrentInvocations) {
+        public CallIdSequenceFailFast(int maxConcurrentInvocations) {
             this.maxConcurrentInvocations = maxConcurrentInvocations;
         }
 
