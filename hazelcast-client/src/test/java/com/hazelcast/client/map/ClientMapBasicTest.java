@@ -314,6 +314,72 @@ public class ClientMapBasicTest {
     }
 
     @Test
+    public void testSetAsync() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "Key";
+        String value = "Val";
+
+        Future<Void> result = map.setAsync(key, value);
+
+        result.get();
+        assertEquals(value, map.get(key));
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testSetAsync_withKeyNull() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String val = "Val";
+
+        map.setAsync(null, val);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testSetAsync_withValueNull() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "key";
+
+        map.setAsync(key, null);
+    }
+
+    @Test
+    public void testSetAsyncTTL() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "Key";
+        String value = "Val";
+
+        Future<Void> result = map.setAsync(key, value, 5, TimeUnit.MINUTES);
+
+        result.get();
+        assertEquals(value, map.get(key));
+    }
+
+    @Test
+    public void testSetAsyncTTL_afterExpire() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "Key";
+        String value = "Val";
+
+        Future<Void> result = map.setAsync(key, value, 1, TimeUnit.SECONDS);
+        sleepSeconds(2);
+        result.get();
+        assertEquals(null, map.get(key));
+    }
+
+    @Test
+    public void testSetAsyncTTL_afterExpireWhenKeyExists() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "Key";
+        String oldValue = "oldValue";
+        String newValue = "Val";
+
+        map.set(key, oldValue);
+        Future<Void> result = map.setAsync(key, newValue, 1, TimeUnit.SECONDS);
+        sleepSeconds(2);
+        result.get();
+        assertEquals(null, map.get(key));
+    }
+
+    @Test
     public void testTryPut_whenNotLocked() throws Exception {
         IMap<String, String> map = client.getMap(randomString());
         String key = "Key";

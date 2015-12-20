@@ -16,10 +16,10 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -78,7 +78,7 @@ public class AsyncTest extends HazelcastTestSupport {
         IMap<String, String> map = instance.getMap(randomString());
 
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryAdapter<String, String>() {
+        map.addEntryListener(new EntryEvictedListener<String, String>() {
             public void entryEvicted(EntryEvent<String, String> event) {
                 latch.countDown();
             }
@@ -87,6 +87,36 @@ public class AsyncTest extends HazelcastTestSupport {
         Future<String> f1 = map.putAsync(key, value1, 3, TimeUnit.SECONDS);
         String f1Val = f1.get();
         assertNull(f1Val);
+        assertEquals(value1, map.get(key));
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertNull(map.get(key));
+    }
+
+    @Test
+    public void testSetAsync() throws Exception {
+        IMap<String, String> map = instance.getMap(randomString());
+        Future<Void> f1 = map.setAsync(key, value1);
+        f1.get();
+        assertEquals(value1, map.get(key));
+        Future<Void> f2 = map.setAsync(key, value2);
+        f2.get();
+        assertEquals(value2, map.get(key));
+    }
+
+    @Test
+    public void testSetAsyncWithTtl() throws Exception {
+        IMap<String, String> map = instance.getMap(randomString());
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryEvictedListener<String, String>() {
+            public void entryEvicted(EntryEvent<String, String> event) {
+                latch.countDown();
+            }
+        }, true);
+
+        Future<Void> f1 = map.setAsync(key, value1, 3, TimeUnit.SECONDS);
+        f1.get();
         assertEquals(value1, map.get(key));
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
