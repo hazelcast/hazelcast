@@ -32,6 +32,7 @@ import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -259,6 +260,33 @@ public class ClientMapTest extends HazelcastTestSupport {
         IMap<String, String> map = createMap();
         final CountDownLatch latch = new CountDownLatch(1);
         map.addEntryListener(new EntryAdapter<String, String>() {
+            public void entryEvicted(EntryEvent<String, String> event) {
+                latch.countDown();
+            }
+        }, true);
+
+        Future<String> future = map.putAsync("key", "value1", 3, TimeUnit.SECONDS);
+        assertNull(future.get());
+        assertEquals("value1", map.get("key"));
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertNull(map.get("key"));
+    }
+
+    @Test
+    public void testAsyncSet() throws Exception {
+        IMap<String, String> map = createMap();
+        fillMap(map);
+        Future<Void> future = map.setAsync("key3", "value");
+        future.get();
+        assertEquals("value", map.get("key3"));
+    }
+
+    @Test
+    public void testAsyncSetWithTtl() throws Exception {
+        IMap<String, String> map = createMap();
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryEvictedListener<String, String>() {
             public void entryEvicted(EntryEvent<String, String> event) {
                 latch.countDown();
             }

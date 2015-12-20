@@ -32,6 +32,8 @@ import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -254,11 +256,10 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testAsyncPutWithTtl() throws Exception {
         IMap<String, String> map = createMap();
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryAdapter<String, String>() {
+        map.addEntryListener(new EntryEvictedListener<String, String>() {
             public void entryEvicted(EntryEvent<String, String> event) {
                 latch.countDown();
             }
@@ -266,6 +267,33 @@ public class ClientMapTest extends HazelcastTestSupport {
 
         Future<String> future = map.putAsync("key", "value1", 3, TimeUnit.SECONDS);
         assertNull(future.get());
+        assertEquals("value1", map.get("key"));
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertNull(map.get("key"));
+    }
+
+    @Test
+    public void testAsyncSet() throws Exception {
+        IMap<String, String> map = createMap();
+        fillMap(map);
+        Future<Void> future = map.setAsync("key3", "value");
+        future.get();
+        assertEquals("value", map.get("key3"));
+    }
+
+    @Test
+    public void testAsyncSetWithTtl() throws Exception {
+        IMap<String, String> map = createMap();
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryEvictedListener<String, String>() {
+            public void entryEvicted(EntryEvent<String, String> event) {
+                latch.countDown();
+            }
+        }, true);
+
+        Future<Void> future = map.setAsync("key", "value1", 3, TimeUnit.SECONDS);
+        future.get();
         assertEquals("value1", map.get("key"));
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
@@ -816,13 +844,12 @@ public class ClientMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testEntryListenerWithPredicateOnDeleteOperation() throws Exception {
         IMap<String, String> serverMap = server.getMap("A");
         IMap<String, String> clientMap = client.getMap("A");
 
         final CountDownLatch latch = new CountDownLatch(1);
-        clientMap.addEntryListener(new EntryAdapter<String, String>() {
+        clientMap.addEntryListener(new EntryRemovedListener<String, String>() {
             @Override
             public void entryRemoved(EntryEvent<String, String> event) {
                 latch.countDown();
