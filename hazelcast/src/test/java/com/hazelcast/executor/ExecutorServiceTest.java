@@ -830,7 +830,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         for (int i = 0; i < TASK_COUNT; i++) {
             tasks.add(new BasicTestCallable());
         }
-        futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+        futures = executor.invokeAll(tasks, 15, TimeUnit.SECONDS);
         assertEquals(futures.size(), TASK_COUNT);
         for (int i = 0; i < TASK_COUNT; i++) {
             assertEquals(futures.get(i).get(), BasicTestCallable.RESULT);
