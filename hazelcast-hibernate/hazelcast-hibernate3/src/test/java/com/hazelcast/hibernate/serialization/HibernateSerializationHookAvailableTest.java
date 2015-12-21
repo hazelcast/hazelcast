@@ -32,10 +32,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Scanner;
 import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -82,5 +86,22 @@ public class HibernateSerializationHookAvailableTest {
 
         assertTrue("CacheKey serializer not found", cacheKeySerializerFound);
         assertTrue("CacheEntry serializer not found", cacheEntrySerializerFound);
+    }
+    
+    @Test
+    public void loadServiceHooksClassNames() throws IOException {
+        File serviceDirectory = new File("src/main/resources/META-INF/services/");
+        for (File serviceFile : serviceDirectory.listFiles()) {
+            Scanner scan = new Scanner(serviceFile);
+            while (scan.hasNextLine()) {
+                String className = scan.nextLine();
+                try {
+                    this.getClass().getClassLoader()
+                            .loadClass(className);
+                } catch (ClassNotFoundException e) {
+                    fail("Couldn't load " + className);
+                }
+            }
+        }
     }
 }
