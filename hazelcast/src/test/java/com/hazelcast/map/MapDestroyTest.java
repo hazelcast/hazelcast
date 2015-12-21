@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperty;
@@ -50,8 +51,9 @@ public class MapDestroyTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        instance1 = factory.newHazelcastInstance();
-        instance2 = factory.newHazelcastInstance();
+        Config config = getConfig();
+        instance1 = factory.newHazelcastInstance(config);
+        instance2 = factory.newHazelcastInstance(config);
     }
 
     @Test
