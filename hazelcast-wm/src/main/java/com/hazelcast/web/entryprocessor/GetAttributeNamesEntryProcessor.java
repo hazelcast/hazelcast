@@ -21,7 +21,6 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.web.JvmIdAware;
 import com.hazelcast.web.SessionState;
 import com.hazelcast.web.WebDataSerializerHook;
 
@@ -35,15 +34,9 @@ import java.util.Map;
  */
 
 public final class GetAttributeNamesEntryProcessor implements EntryProcessor<String, SessionState>,
-        IdentifiedDataSerializable, JvmIdAware {
-
-    private String jvmId;
+        IdentifiedDataSerializable {
 
     public GetAttributeNamesEntryProcessor() {
-    }
-
-    public void setJvmId(String jvmId) {
-        this.jvmId = jvmId;
     }
 
     @Override
@@ -62,7 +55,6 @@ public final class GetAttributeNamesEntryProcessor implements EntryProcessor<Str
         if (sessionState == null) {
             return null;
         }
-        sessionState.addJvmId(jvmId);
         entry.setValue(sessionState);
         return new HashSet<String>(sessionState.getAttributes().keySet());
     }
@@ -74,11 +66,9 @@ public final class GetAttributeNamesEntryProcessor implements EntryProcessor<Str
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(jvmId);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        jvmId = in.readUTF();
     }
 }

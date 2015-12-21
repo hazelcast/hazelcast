@@ -67,7 +67,7 @@ import java.util.logging.Level;
  * destroyed (Default: {@code true})</li>
  * <li>{@code map-name}: Names the {@link IMap} the filter should use to persist session details (Default:
  * {@code "_web_" + ServletContext.getServletContextName()}; e.g. "_web_MyApp")</li>
- * <li>{@code session-ttl-seconds}: Sets the {@link MapConfig#setTimeToLiveSeconds(int) time-to-live} for
+ *  * <li>{@code session-ttl-seconds}: Sets the {@link MapConfig#setMaxIdleSeconds(int)} (int) time-to-live} for
  * the {@link IMap} used to persist session details (Default: Uses the existing {@link MapConfig} setting
  * for the {@link IMap}, which defaults to infinite)</li>
  * <li>{@code sticky-session}: When enabled, optimizes {@link IMap} interactions by assuming individual sessions
@@ -78,10 +78,8 @@ import java.util.logging.Level;
  * <li>{@code cookie-name}: Sets the name for the Hazelcast session cookie (Default:
  * {@link #HAZELCAST_SESSION_COOKIE_NAME "hazelcast.sessionId"}</li>
  * <li>{@code cookie-domain}: Sets the domain for the Hazelcast session cookie (Default: {@code null})</li>
- * <li>{@code cookie-secure}: When set to {@code true}, indicates the Hazelcast session cookie should always be marked
- * "Secure", even if the request that initiated the corresponding session is using plain HTTP instead of HTTPS. If
- * {@code false}, it will be marked as secure only if the request that initiated the corresponding session was also
- * secure. (Default: {@code false})</li>
+ * <li>{@code cookie-secure}: When enabled, indicates the Hazelcast session cookie should only be sent over
+ * secure protocols (Default: {@code false})</li>
  * <li>{@code cookie-http-only}: When enabled, marks the Hazelcast session cookie as "HttpOnly", indicating
  * it should not be available to scripts (Default: {@code false})
  * <ul>
@@ -157,6 +155,7 @@ public class WebFilter implements Filter {
         return sb.toString();
     }
 
+    @Override
     public final void init(final FilterConfig config)
             throws ServletException {
         filterConfig = config;
@@ -222,6 +221,7 @@ public class WebFilter implements Filter {
         setProperty(HazelcastInstanceLoader.USE_CLIENT);
         setProperty(HazelcastInstanceLoader.CLIENT_CONFIG_LOCATION);
         setProperty(HazelcastInstanceLoader.STICKY_SESSION_CONFIG);
+        setProperty(HazelcastInstanceLoader.SESSION_TTL_CONFIG);
     }
 
     private void setProperty(String propertyName) {
@@ -321,7 +321,7 @@ public class WebFilter implements Filter {
                         + "</init-param>");
             }
         }
-        sessionCookie.setSecure(sessionCookieSecure || req.isSecure());
+        sessionCookie.setSecure(sessionCookieSecure);
         req.res.addCookie(sessionCookie);
     }
 
@@ -339,6 +339,7 @@ public class WebFilter implements Filter {
         return null;
     }
 
+    @Override
     public final void doFilter(ServletRequest req, ServletResponse res, final FilterChain chain)
             throws IOException, ServletException {
         if (!(req instanceof HttpServletRequest)) {
@@ -372,6 +373,7 @@ public class WebFilter implements Filter {
         }
     }
 
+    @Override
     public final void destroy() {
         sessions.clear();
         originalSessions.clear();
@@ -478,6 +480,7 @@ public class WebFilter implements Filter {
                 String hazelcastSessionId = originalSessions.get(originalSession.getId());
                 if (hazelcastSessionId != null) {
                     hazelcastSession = sessions.get(hazelcastSessionId);
+
                     if (hazelcastSession != null && !hazelcastSession.isStickySession()) {
                         hazelcastSession.updateReloadFlag();
                     }
