@@ -54,11 +54,6 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
     }
 
     @Test
-    public void test_ifNew() {
-        test_forScheduleType(ScheduleType.SCHEDULE_IF_NEW);
-    }
-
-    @Test
     public void test_forEach() {
         test_forScheduleType(ScheduleType.FOR_EACH);
     }
@@ -72,6 +67,7 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
         for (int i = 0; i < NUMBER_OF_THREADS; i++) {
             final Thread thread = new Thread() {
                 final Random random = new Random();
+
                 @Override
                 public void run() {
                     for (int j = 0; j < NUMBER_OF_EVENTS_PER_THREAD; j++) {
@@ -86,8 +82,7 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
             thread.start();
         }
 
-        final long numberOfExpectedEvents = getExpectedEventCount(scheduleType, NUMBER_OF_THREADS,
-                NUMBER_OF_EVENTS_PER_THREAD);
+        final long numberOfExpectedEvents = NUMBER_OF_THREADS * NUMBER_OF_EVENTS_PER_THREAD;
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -111,6 +106,7 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
         for (int i = 0; i < NUMBER_OF_THREADS; i++) {
             final Thread thread = new Thread() {
                 final Random random = new Random();
+
                 @Override
                 public void run() {
                     for (int j = 0; j < NUMBER_OF_EVENTS_PER_THREAD; j++) {
@@ -150,15 +146,6 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
         });
     }
 
-    private long getExpectedEventCount(ScheduleType scheduleType, int numberOfThreads, long numberOfPerThreadExpectedEvents) {
-        if (scheduleType == ScheduleType.FOR_EACH) {
-            return numberOfThreads * numberOfPerThreadExpectedEvents;
-        } else if (scheduleType == ScheduleType.SCHEDULE_IF_NEW) {
-            return numberOfPerThreadExpectedEvents;
-        }
-        throw new IllegalArgumentException();
-    }
-
     private static class EventCountingEntryProcessor implements ScheduledEntryProcessor {
         final AtomicInteger numberOfEvents = new AtomicInteger();
 
@@ -177,7 +164,7 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
 
         @Override
         public void process(EntryTaskScheduler<Integer, Integer> scheduler,
-                Collection<ScheduledEntry<Integer, Integer>> entries) {
+                            Collection<ScheduledEntry<Integer, Integer>> entries) {
 
             // scheduler is single threaded
             for (ScheduledEntry<Integer, Integer> entry : entries) {
