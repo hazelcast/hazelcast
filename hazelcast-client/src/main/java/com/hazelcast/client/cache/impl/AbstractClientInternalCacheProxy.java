@@ -54,8 +54,6 @@ import com.hazelcast.core.Client;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -136,8 +134,6 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             return (T) Boolean.valueOf(CachePutIfAbsentCodec.decodeResponse(clientMessage).response);
         }
     };
-
-    protected final ILogger logger = Logger.getLogger(getClass());
 
     protected final HazelcastClientCacheManager cacheManager;
     protected final NearCacheManager nearCacheManager;

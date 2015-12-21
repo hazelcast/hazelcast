@@ -25,14 +25,20 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CompletionListener;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -48,12 +54,25 @@ abstract class AbstractClientCacheProxyBase<K, V> {
 
     static final int TIMEOUT = 10;
 
+    private static final CompletionListener NULL_COMPLETION_LISTENER = new CompletionListener() {
+        @Override
+        public void onCompletion() {
+        }
+
+        @Override
+        public void onException(Exception e) {
+        }
+    };
+
+    protected final ILogger logger = Logger.getLogger(getClass());
+
     protected final ClientContext clientContext;
     protected final CacheConfig<K, V> cacheConfig;
     protected final String name;
     protected final String nameWithPrefix;
 
-    private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
+    private final ConcurrentMap<Future, CompletionListener> loadAllCalls
+            = new ConcurrentHashMap<Future, CompletionListener>();
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
@@ -75,15 +94,24 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         if (!isClosed.compareAndSet(false, true)) {
             return;
         }
-        for (Future f : loadAllTasks) {
+        waitOnGoingLoadAllCallsToFinish();
+        closeListeners();
+    }
+
+    private void waitOnGoingLoadAllCallsToFinish() {
+        Iterator<Map.Entry<Future, CompletionListener>> iterator = loadAllCalls.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Future, CompletionListener> entry = iterator.next();
+            Future f = entry.getKey();
+            CompletionListener completionListener = entry.getValue();
             try {
                 f.get(TIMEOUT, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                throw new CacheException(e);
+            } catch (Throwable t) {
+                logger.finest("Error occurred at loadAll operation execution while waiting it to finish on cache close!", t);
+                handleFailureOnCompletionListener(completionListener, t);
             }
+            iterator.remove();
         }
-        loadAllTasks.clear();
-        closeListeners();
     }
 
     public void destroy() {
@@ -149,38 +177,51 @@ abstract class AbstractClientCacheProxyBase<K, V> {
     }
 
     protected void submitLoadAllTask(final CacheLoadAllRequest request, final CompletionListener completionListener) {
+        final CompletionListener compListener = completionListener != null ? completionListener : NULL_COMPLETION_LISTENER;
+        ClientInvocationFuture invocationFuture = null;
         try {
             final long start = System.nanoTime();
-            ClientInvocationFuture future = new ClientInvocation(
+            invocationFuture = new ClientInvocation(
                     (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request).invoke();
-            future.andThen(new ExecutionCallback<V>() {
+            final Future invFuture = invocationFuture;
+            loadAllCalls.put(invFuture, compListener);
+            invocationFuture.andThen(new ExecutionCallback<V>() {
                 @Override
                 public void onResponse(V response) {
-                    if (completionListener != null) {
-                        completionListener.onCompletion();
-                        onLoadAll(request.getKeys(), response, start, System.nanoTime());
-                    }
+                    loadAllCalls.remove(invFuture);
+                    onLoadAll(request.getKeys(), response, start, System.nanoTime());
+                    compListener.onCompletion();
                 }
 
                 @Override
                 public void onFailure(Throwable t) {
-                    if (completionListener != null) {
-                        completionListener.onException(new CacheException(t));
-                    }
+                    loadAllCalls.remove(invFuture);
+                    handleFailureOnCompletionListener(compListener, t);
                 }
             });
 
-        } catch (Exception e) {
-            if (completionListener != null) {
-                completionListener.onException(e);
-            }
         } catch (Throwable t) {
+            if (invocationFuture != null) {
+                loadAllCalls.remove(invocationFuture);
+            }
+            handleFailureOnCompletionListener(compListener, t);
+        }
+    }
+
+    private void handleFailureOnCompletionListener(CompletionListener completionListener,
+                                                   Throwable t) {
+        if (t instanceof Exception) {
+            Throwable cause = t.getCause();
+            if (t instanceof ExecutionException && cause instanceof CacheException) {
+                completionListener.onException((CacheException) cause);
+            } else {
+                completionListener.onException((Exception) t);
+            }
+        } else {
             if (t instanceof OutOfMemoryError) {
                 ExceptionUtil.rethrow(t);
             } else {
-                if (completionListener != null) {
-                    completionListener.onException(new CacheException(t));
-                }
+                completionListener.onException(new CacheException(t));
             }
         }
     }
