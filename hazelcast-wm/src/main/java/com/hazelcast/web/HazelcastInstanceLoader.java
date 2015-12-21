@@ -21,13 +21,16 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigLoader;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.UrlXmlConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.web.listener.ClientLifecycleListener;
 import com.hazelcast.web.listener.ServerLifecycleListener;
 
@@ -48,6 +51,9 @@ final class HazelcastInstanceLoader {
     public static final String USE_CLIENT = "use-client";
     public static final String CLIENT_CONFIG_LOCATION = "client-config-location";
     public static final String STICKY_SESSION_CONFIG = "sticky-session";
+    public static final String SESSION_TTL_CONFIG = "session-ttl-seconds";
+
+    private static final String SESSION_TTL_DEFAULT_SECONDS = "1800";
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastInstanceLoader.class);
 
@@ -55,8 +61,8 @@ final class HazelcastInstanceLoader {
     }
 
     public static HazelcastInstance createInstance(final ClusteredSessionService sessionService,
-                                                   final FilterConfig filterConfig, final Properties properties)
-            throws ServletException {
+                                                   final FilterConfig filterConfig, final Properties properties,
+                                                   final String mapName) throws ServletException {
         final String instanceName = properties.getProperty(INSTANCE_NAME);
         final String configLocation = properties.getProperty(CONFIG_LOCATION);
         final String useClientProp = properties.getProperty(USE_CLIENT);
@@ -68,10 +74,19 @@ final class HazelcastInstanceLoader {
         } else if (!isEmpty(configLocation)) {
             configUrl = getConfigURL(filterConfig, configLocation);
         }
+        String sessionTTLConfig = properties.getProperty(SESSION_TTL_CONFIG);
         if (useClient) {
+            if (sessionTTLConfig != null) {
+                throw new InvalidConfigurationException("session-ttl-seconds cannot be used with client/server mode.");
+            }
             boolean isSticky = Boolean.valueOf(properties.getProperty(STICKY_SESSION_CONFIG));
             return createClientInstance(sessionService, configUrl, isSticky);
         }
+        Config config = getServerConfig(mapName, configUrl, sessionTTLConfig);
+        return createHazelcastInstance(sessionService, instanceName, config);
+    }
+
+    private static Config getServerConfig(String mapName, URL configUrl, String sessionTTLConfig) throws ServletException {
         Config config;
         if (configUrl == null) {
             config = new XmlConfigBuilder().build();
@@ -82,7 +97,16 @@ final class HazelcastInstanceLoader {
                 throw new ServletException(e);
             }
         }
-        return createHazelcastInstance(sessionService, instanceName, config);
+        if (sessionTTLConfig == null) {
+            sessionTTLConfig = SESSION_TTL_DEFAULT_SECONDS;
+        }
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        try {
+            mapConfig.setMaxIdleSeconds(Integer.parseInt(sessionTTLConfig));
+        } catch (NumberFormatException e) {
+            ExceptionUtil.rethrow(new InvalidConfigurationException("session-ttl-seconds must be a numeric value"));
+        }
+        return config;
     }
 
     private static HazelcastInstance createHazelcastInstance(ClusteredSessionService sessionService,

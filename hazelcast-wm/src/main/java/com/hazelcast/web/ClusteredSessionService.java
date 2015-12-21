@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -67,7 +66,6 @@ public class ClusteredSessionService {
     private static final long CLUSTER_CHECK_INTERVAL = 5L;
     private static final long RETRY_MILLIS = 7000;
 
-    private final String jvmId = UUID.randomUUID().toString();
     private volatile IMap clusterMap;
     private volatile SerializationServiceSupport sss;
     private volatile HazelcastInstance hazelcastInstance;
@@ -75,7 +73,6 @@ public class ClusteredSessionService {
     private final FilterConfig filterConfig;
     private final Properties properties;
     private final String clusterMapName;
-
     private final Queue<AbstractMap.SimpleEntry<String, Boolean>> orphanSessions = new
             LinkedBlockingQueue<AbstractMap.SimpleEntry<String, Boolean>>();
 
@@ -142,7 +139,7 @@ public class ClusteredSessionService {
     private void reconnectHZInstance() throws ServletException {
         LOGGER.info("Retrying the connection!!");
         lastConnectionTry = System.currentTimeMillis();
-        hazelcastInstance = HazelcastInstanceLoader.createInstance(this, filterConfig, properties);
+        hazelcastInstance = HazelcastInstanceLoader.createInstance(this, filterConfig, properties, clusterMapName);
         clusterMap = hazelcastInstance.getMap(clusterMapName);
         sss = (SerializationServiceSupport) hazelcastInstance;
         setFailedConnection(false);
@@ -171,9 +168,6 @@ public class ClusteredSessionService {
      */
     Object executeOnKey(String sessionId, EntryProcessor processor) throws Exception {
         try {
-            if (processor instanceof JvmIdAware) {
-                ((JvmIdAware) processor).setJvmId(jvmId);
-            }
             return clusterMap.executeOnKey(sessionId, processor);
         } catch (Exception e) {
             LOGGER.finest("Cannot connect hazelcast server", e);
@@ -190,7 +184,6 @@ public class ClusteredSessionService {
      */
     Set<Map.Entry<String, Object>> getAttributes(String sessionId) throws Exception {
         GetSessionStateEntryProcessor entryProcessor = new GetSessionStateEntryProcessor();
-        entryProcessor.setJvmId(jvmId);
         SessionState sessionState = (SessionState) executeOnKey(sessionId, entryProcessor);
         if (sessionState == null) {
             return null;
@@ -215,7 +208,6 @@ public class ClusteredSessionService {
      */
     Object getAttribute(String sessionId, String attributeName) throws Exception {
         GetAttributeEntryProcessor entryProcessor = new GetAttributeEntryProcessor(attributeName);
-        entryProcessor.setJvmId(jvmId);
         return executeOnKey(sessionId, entryProcessor);
     }
 
@@ -241,7 +233,6 @@ public class ClusteredSessionService {
     void setAttribute(String sessionId, String attributeName, Object value) throws Exception {
         Data dataValue = (value == null) ? null : sss.getSerializationService().toData(value);
         SessionUpdateEntryProcessor sessionUpdateProcessor = new SessionUpdateEntryProcessor(attributeName, dataValue);
-        sessionUpdateProcessor.setJvmId(jvmId);
         executeOnKey(sessionId, sessionUpdateProcessor);
     }
 
@@ -264,8 +255,7 @@ public class ClusteredSessionService {
     }
 
     private void doDeleteSession(String sessionId, boolean invalidate) throws Exception {
-        DeleteSessionEntryProcessor entryProcessor = new DeleteSessionEntryProcessor(sessionId, invalidate);
-        entryProcessor.setJvmId(jvmId);
+        DeleteSessionEntryProcessor entryProcessor = new DeleteSessionEntryProcessor(invalidate);
         executeOnKey(sessionId, entryProcessor);
     }
 
@@ -290,7 +280,6 @@ public class ClusteredSessionService {
     public void updateAttributes(String id, Map<String, Object> updates) throws Exception {
         SerializationService ss = sss.getSerializationService();
         SessionUpdateEntryProcessor sessionUpdate = new SessionUpdateEntryProcessor(updates.size());
-        sessionUpdate.setJvmId(jvmId);
         for (Map.Entry<String, Object> entry : updates.entrySet()) {
             String name = entry.getKey();
             Object value = entry.getValue();

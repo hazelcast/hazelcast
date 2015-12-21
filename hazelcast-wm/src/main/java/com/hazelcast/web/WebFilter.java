@@ -16,6 +16,7 @@
 
 package com.hazelcast.web;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
@@ -66,6 +67,9 @@ import java.util.logging.Level;
  * destroyed (Default: {@code true})</li>
  * <li>{@code map-name}: Names the {@link IMap} the filter should use to persist session details (Default:
  * {@code "_web_" + ServletContext.getServletContextName()}; e.g. "_web_MyApp")</li>
+ *  * <li>{@code session-ttl-seconds}: Sets the {@link MapConfig#setMaxIdleSeconds(int)} (int) time-to-live} for
+ * the {@link IMap} used to persist session details (Default: Uses the existing {@link MapConfig} setting
+ * for the {@link IMap}, which defaults to infinite)</li>
  * <li>{@code sticky-session}: When enabled, optimizes {@link IMap} interactions by assuming individual sessions
  * are only used from a single node (Default: {@code true})</li>
  * <li>{@code deferred-write}: When enabled, optimizes {@link IMap} interactions by only writing session attributes
@@ -151,6 +155,7 @@ public class WebFilter implements Filter {
         return sb.toString();
     }
 
+    @Override
     public final void init(final FilterConfig config)
             throws ServletException {
         filterConfig = config;
@@ -216,6 +221,7 @@ public class WebFilter implements Filter {
         setProperty(HazelcastInstanceLoader.USE_CLIENT);
         setProperty(HazelcastInstanceLoader.CLIENT_CONFIG_LOCATION);
         setProperty(HazelcastInstanceLoader.STICKY_SESSION_CONFIG);
+        setProperty(HazelcastInstanceLoader.SESSION_TTL_CONFIG);
     }
 
     private void setProperty(String propertyName) {
@@ -333,6 +339,7 @@ public class WebFilter implements Filter {
         return null;
     }
 
+    @Override
     public final void doFilter(ServletRequest req, ServletResponse res, final FilterChain chain)
             throws IOException, ServletException {
         if (!(req instanceof HttpServletRequest)) {
@@ -366,6 +373,7 @@ public class WebFilter implements Filter {
         }
     }
 
+    @Override
     public final void destroy() {
         sessions.clear();
         originalSessions.clear();

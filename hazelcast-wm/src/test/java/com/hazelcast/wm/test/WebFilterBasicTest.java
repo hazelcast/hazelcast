@@ -138,13 +138,21 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
         assertEquals("false", executeRequest("isNew", serverPort1, cookieStore));
     }
 
-    @Test(timeout = 20000)
+    @Test(timeout = 40000)
     public void test_sessionTimeout() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
         IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
         executeRequest("write", serverPort1, cookieStore);
         executeRequest("timeout", serverPort1, cookieStore);
         assertSizeEventually(0, map);
+    }
+
+    @Test(timeout = 20000)
+    public void testServerRestart() throws Exception {
+        CookieStore cookieStore = new BasicCookieStore();
+        executeRequest("write", serverPort1, cookieStore);
+        server1.restart();
+        assertEquals("value",executeRequest("read", serverPort2, cookieStore));
     }
 
     @Override
