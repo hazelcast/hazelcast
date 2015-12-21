@@ -238,6 +238,7 @@ public final class ClientPartitionServiceImpl
 
             Connection connection = getOwnerConnection();
             if (connection == null) {
+                updating.set(false);
                 return;
             }
             ClientInvocationFuture clientInvocationFuture = getPartitionsFrom(connection);
