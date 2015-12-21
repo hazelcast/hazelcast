@@ -188,4 +188,13 @@ public interface NodeExtension {
      * @return true if listener is registered, false otherwise
      */
     boolean registerListener(Object listener);
+
+    /**
+     * Forces node to start by skipping hot-restart completely and removing all hot-restart data
+     * even if node is still on validation phase or loading hot-restart data.
+     *
+     * @return true if hot restart is enabled and this node knows the master
+     *
+     */
+    boolean triggerForceStart();
 }

@@ -357,6 +357,13 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     }
 
     @Override
+    public void interruptAllPartitionThreads() {
+        for (PartitionOperationThread thread : partitionOperationThreads) {
+            thread.interrupt();
+        }
+    }
+
+    @Override
     public void execute(Packet packet) {
         checkNotNull(packet, "packet can't be null");
         checkOpPacket(packet);
