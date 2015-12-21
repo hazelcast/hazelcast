@@ -77,6 +77,16 @@ public class PartitionCheckIfLoadedOperation extends AbstractMapOperation implem
     }
 
     @Override
+    public void onExecutionFailure(Throwable e) {
+        if (!returnsResponse()) {
+            // In case of execution failure the CallbackResponseSender will be never invoked
+            // and the operation will be never retried. That is the reason why we need to propagate the
+            // exception to the caller manually.
+            getResponseHandler().sendResponse(e);
+        }
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(doLoad);
@@ -91,7 +101,6 @@ public class PartitionCheckIfLoadedOperation extends AbstractMapOperation implem
     }
 
     private class CallbackResponseSender implements ExecutionCallback<Boolean> {
-
         @Override
         public void onResponse(Boolean response) {
             getResponseHandler().sendResponse(response);

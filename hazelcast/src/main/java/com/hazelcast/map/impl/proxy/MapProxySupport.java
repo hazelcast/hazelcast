@@ -143,9 +143,12 @@ import static java.util.logging.Level.WARNING;
 abstract class MapProxySupport extends AbstractDistributedObject<MapService> implements InitializingObject {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
+
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
     protected static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Predicate should not be null!";
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
+
+    private static final int CHECK_IF_LOADED_TIMEOUT_SECONDS = 60;
 
     protected final String name;
     protected final LocalMapStatsImpl localMapStats;
@@ -670,14 +673,17 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         try {
             OperationService operationService = nodeEngine.getOperationService();
             int mapNamePartition = partitionService.getPartitionId(name);
-
             Operation op = new PartitionCheckIfLoadedOperation(name, false, true);
             Future loadingFuture = operationService.invokeOnPartition(SERVICE_NAME, op, mapNamePartition);
-            // wait for keys to be loaded
-            FutureUtil.waitWithDeadline(singleton(loadingFuture), 1, SECONDS, logAllExceptions(WARNING));
+            // wait for keys to be loaded - it's insignificant since it doesn't trigger the keys loading
+            // it's just waiting for them to be loaded. Timeout failure doesn't mean anything negative here.
+            // This call just introduces some ordering of requests.
+            FutureUtil.waitWithDeadline(singleton(loadingFuture), CHECK_IF_LOADED_TIMEOUT_SECONDS, SECONDS,
+                    logAllExceptions(WARNING));
 
             OperationFactory opFactory = new PartitionCheckIfLoadedOperationFactory(name);
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, opFactory);
+            // wait for all the data to be loaded on all partitions - wait forever
             waitAllTrue(results);
 
         } catch (Throwable t) {
