@@ -149,10 +149,6 @@ class MapServiceContextImpl implements MapServiceContext {
         return ConcurrencyUtil.getOrPutSynchronized(mapContainers, mapName, mapContainers, mapConstructor);
     }
 
-    @Override
-    public MapContainer getOrNullMapContainer(String mapName) {
-        return mapContainers.get(mapName);
-    }
 
     @Override
     public Map<String, MapContainer> getMapContainers() {

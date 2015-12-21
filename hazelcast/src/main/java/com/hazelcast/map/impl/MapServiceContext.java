@@ -59,8 +59,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     MapContainer getMapContainer(String mapName);
 
-    MapContainer getOrNullMapContainer(String mapName);
-
     Map<String, MapContainer> getMapContainers();
 
     PartitionContainer getPartitionContainer(int partitionId);
