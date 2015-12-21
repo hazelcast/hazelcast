@@ -192,6 +192,16 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
+    public MapOperation createMapFlushOperation(String name) {
+        return new MapFlushOperation(name);
+    }
+
+    @Override
+    public MapOperation createLoadMapOperation(String name, boolean replaceExistingValues) {
+        return new LoadMapOperation(name, replaceExistingValues);
+    }
+
+    @Override
     public OperationFactory createPartitionWideEntryWithPredicateOperationFactory(String name,
                                                                                   EntryProcessor entryProcessor,
                                                                                   Predicate predicate) {

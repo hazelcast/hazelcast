@@ -1,6 +1,7 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
@@ -8,14 +9,15 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -31,7 +33,8 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
 
     @Before
     public void launchHazelcastServer() {
-        hazelcastFactory.newHazelcastInstance();
+        Config config = getConfig();
+        hazelcastFactory.newHazelcastInstance(config);
         client = hazelcastFactory.newHazelcastClient();
     }
 

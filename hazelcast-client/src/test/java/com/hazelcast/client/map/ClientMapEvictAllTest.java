@@ -1,6 +1,7 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -34,8 +35,9 @@ public class ClientMapEvictAllTest extends HazelcastTestSupport {
     @Test
     public void evictAll_firesEvent() throws Exception {
         final String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
+        Config config = getConfig();
+        hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         final IMap<Object, Object> map = client.getMap(mapName);
         final CountDownLatch evictedEntryCount = new CountDownLatch(3);
@@ -62,7 +64,8 @@ public class ClientMapEvictAllTest extends HazelcastTestSupport {
     @Test
     public void evictAll_firesOnlyOneEvent() throws Exception {
         final String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance();
+        Config config = getConfig();
+        hazelcastFactory.newHazelcastInstance(config);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         final IMap<Object, Object> map = client.getMap(mapName);
         final CountDownLatch eventCount = new CountDownLatch(2);

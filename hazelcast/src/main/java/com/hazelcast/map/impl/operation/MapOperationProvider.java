@@ -87,6 +87,10 @@ public interface MapOperationProvider {
     MapOperation createMergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
                                       MapMergePolicy policy, boolean disableWanReplicationEvent);
 
+    MapOperation createMapFlushOperation(String name);
+
+    MapOperation createLoadMapOperation(String name, boolean replaceExistingValues);
+
 
     OperationFactory createPartitionWideEntryOperationFactory(String name, EntryProcessor entryProcessor);
 

@@ -52,8 +52,6 @@ import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.map.impl.operation.ClearOperation;
 import com.hazelcast.map.impl.operation.EvictAllOperation;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
-import com.hazelcast.map.impl.operation.LoadMapOperation;
-import com.hazelcast.map.impl.operation.MapFlushOperation;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
@@ -400,7 +398,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected void loadAllInternal(boolean replaceExistingValues) {
         int mapNamePartition = partitionService.getPartitionId(name);
 
-        Operation operation = new LoadMapOperation(name, replaceExistingValues);
+        Operation operation = operationProvider.createLoadMapOperation(name, replaceExistingValues);
         Future loadMapFuture = operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, mapNamePartition);
 
         try {
@@ -739,8 +737,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     public void flush() {
         try {
             // todo add a feature to mancenter to sync cache to db completely
+            MapOperation operation = operationProvider.createMapFlushOperation(name);
             operationService.invokeOnAllPartitions(SERVICE_NAME,
-                    new BinaryOperationFactory(new MapFlushOperation(name), getNodeEngine()));
+                    new BinaryOperationFactory(operation, getNodeEngine()));
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

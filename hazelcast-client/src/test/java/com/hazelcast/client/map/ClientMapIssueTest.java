@@ -20,7 +20,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -64,17 +63,18 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
     @Test
     public void testListenerRegistrations() throws Exception {
-        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
+        Config config = getConfig();
+        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         final String mapName = randomMapName();
         IMap<Object, Object> map = client.getMap(mapName);
         map.addEntryListener(new EntryAdapter<Object, Object>(), true);
 
-        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance(config);
 
         instance1.getLifecycleService().terminate();
-        instance1 = hazelcastFactory.newHazelcastInstance();
+        instance1 = hazelcastFactory.newHazelcastInstance(config);
 
         final EventService eventService1 = TestUtil.getNode(instance1).nodeEngine.getEventService();
         final EventService eventService2 = TestUtil.getNode(instance2).nodeEngine.getEventService();
@@ -94,8 +94,9 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
     @Test
     @Category(NightlyTest.class)
     public void testOperationNotBlockingAfterClusterShutdown() throws InterruptedException {
-        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+        Config config = getConfig();
+        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setExecutorPoolSize(1);
@@ -128,8 +129,9 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
     @Test
     @Category(NightlyTest.class)
     public void testOperationNotBlockingAfterClusterShutdown_withOneExecutorPoolSize() throws InterruptedException {
-        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+        Config config = getConfig();
+        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setExecutorPoolSize(1);
@@ -161,8 +163,9 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
     @Test
     public void testMapPagingEntries() {
-        hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
+        Config config = getConfig();
+        hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
 
         final ClientConfig clientConfig = new ClientConfig();
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
@@ -184,8 +187,9 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
     @Test
     public void testMapPagingValues() {
-        hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
+        Config config = getConfig();
+        hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
 
         final ClientConfig clientConfig = new ClientConfig();
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
@@ -207,8 +211,9 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
     @Test
     public void testMapPagingKeySet() {
-        hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
+        Config config = getConfig();
+        hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
 
         final ClientConfig clientConfig = new ClientConfig();
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
@@ -231,7 +236,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
     @Test
     public void testNoOperationTimeoutException_whenUserCodeLongRunning() {
-        Config config = new XmlConfigBuilder().build();
+        Config config = getConfig();
         config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "100");
         hazelcastFactory.newHazelcastInstance(config);
 
