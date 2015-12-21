@@ -228,4 +228,10 @@ public class DefaultNodeExtension implements NodeExtension {
     public boolean registerListener(Object listener) {
         return false;
     }
+
+    @Override
+    public boolean triggerForceStart() {
+        logger.warning("Force start is available when hot restart is active!");
+        return false;
+    }
 }
