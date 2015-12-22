@@ -21,7 +21,6 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.web.JvmIdAware;
 import com.hazelcast.web.SessionState;
 import com.hazelcast.web.WebDataSerializerHook;
 
@@ -35,22 +34,16 @@ import java.util.Map;
 
 public final class DeleteSessionEntryProcessor
         implements EntryProcessor<String, SessionState>,
-        EntryBackupProcessor<String, SessionState>, IdentifiedDataSerializable, JvmIdAware {
+        EntryBackupProcessor<String, SessionState>, IdentifiedDataSerializable {
 
-    private String jvmId;
     private boolean invalidate;
     private boolean removed;
 
-    public DeleteSessionEntryProcessor(String jvmId, boolean invalidate) {
-        this.jvmId = jvmId;
+    public DeleteSessionEntryProcessor(boolean invalidate) {
         this.invalidate = invalidate;
     }
 
     public DeleteSessionEntryProcessor() {
-    }
-
-    public void setJvmId(String jvmId) {
-        this.jvmId = jvmId;
     }
 
     @Override
@@ -69,8 +62,8 @@ public final class DeleteSessionEntryProcessor
         if (sessionState == null) {
             return Boolean.FALSE;
         }
-        sessionState.removeJvmId(jvmId);
-        if (invalidate || sessionState.getJvmIds().isEmpty()) {
+
+        if (invalidate) {
             entry.setValue(null);
             removed = true;
         } else {
@@ -86,13 +79,11 @@ public final class DeleteSessionEntryProcessor
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(jvmId);
         out.writeBoolean(invalidate);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        jvmId = in.readUTF();
         invalidate = in.readBoolean();
     }
 
