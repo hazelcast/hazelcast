@@ -1191,16 +1191,25 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        final Data keyData = toData(key);
+        Data keyData = toData(key);
+        return executeOnKeyInternal(keyData, entryProcessor);
+    }
+
+    public Object executeOnKeyInternal(Data keyData, EntryProcessor entryProcessor) {
         ClientMessage request = MapExecuteOnKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, ThreadUtil.getThreadId());
         ClientMessage response = invoke(request, keyData);
         MapExecuteOnKeyCodec.ResponseParameters resultParameters = MapExecuteOnKeyCodec.decodeResponse(response);
         return toObject(resultParameters.response);
     }
 
+    @Override
     public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        final Data keyData = toData(key);
+        Data keyData = toData(key);
+        submitToKeyInternal(keyData, entryProcessor, callback);
+    }
+
+    public void submitToKeyInternal(Data keyData, EntryProcessor entryProcessor, final ExecutionCallback callback) {
         ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, ThreadUtil.getThreadId());
         try {
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
@@ -1213,9 +1222,14 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         }
     }
 
+    @Override
     public Future submitToKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        final Data keyData = toData(key);
+        Data keyData = toData(key);
+        return submitToKeyInternal(keyData, entryProcessor);
+    }
+
+    public Future submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
         ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, ThreadUtil.getThreadId());
 
         try {
