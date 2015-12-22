@@ -91,6 +91,7 @@
     <suppress checks="JavadocVariable" files="com/hazelcast/core/"/>
     <suppress checks="MethodCount" files="com/hazelcast/core/HazelcastInstance"/>
     <suppress checks="MethodCount" files="com/hazelcast/core/IMap"/>
+    <suppress checks="FileLengthCheck" files="com/hazelcast/core/IMap"/>
 
     <!-- Config -->
     <suppress checks="MethodCount" files="com/hazelcast/config/Config"/>
