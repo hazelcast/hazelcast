@@ -22,8 +22,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
+import com.hazelcast.query.impl.Extractable;
 import com.hazelcast.query.impl.IndexImpl;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.MultiResult;
 
 import java.io.IOException;
@@ -100,7 +100,7 @@ public abstract class AbstractPredicate
                 // Returning unconverted value is an optimization since the given value will be compared with null.
                 return givenAttributeValue;
             }
-            type = ((QueryableEntry) entry).getAttributeType(attributeName);
+            type = ((Extractable) entry).getAttributeType(attributeName);
             attributeType = type;
         }
 
@@ -126,8 +126,8 @@ public abstract class AbstractPredicate
     }
 
     protected Object readAttributeValue(Map.Entry entry) {
-        QueryableEntry queryableEntry = (QueryableEntry) entry;
-        Object attributeValue = queryableEntry.getAttributeValue(attributeName);
+        Extractable extractable = (Extractable) entry;
+        Object attributeValue = extractable.getAttributeValue(attributeName);
         return convertEnumValue(attributeValue);
     }
 

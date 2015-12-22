@@ -34,23 +34,28 @@ import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
 
 /**
  * This abstract class contains methods related to Queryable Entry, which means searched an indexed by SQL query or predicate.
+ * <p/>
+ * If the object, which is used as the extraction target, is not of Data or Portable type the serializationService
+ * will not be touched at all.
  */
-public abstract class QueryableEntry implements Map.Entry {
+public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, V> {
 
     protected SerializationService serializationService;
     protected Extractors extractors;
 
+    @Override
     public Object getAttributeValue(String attributeName) throws QueryException {
         return extractAttributeValue(attributeName);
     }
 
+    @Override
     public AttributeType getAttributeType(String attributeName) throws QueryException {
         return extractAttributeType(attributeName);
     }
 
-    public abstract Object getValue();
+    public abstract V getValue();
 
-    public abstract Object getKey();
+    public abstract K getKey();
 
     public abstract Data getKeyData();
 
@@ -116,7 +121,7 @@ public abstract class QueryableEntry implements Map.Entry {
         if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return serializationService.toObject(key);
         } else if (THIS_ATTRIBUTE_NAME.value().equals(attributeName)) {
-            return serializationService.toObject(value);
+            return value instanceof Data ? serializationService.toObject(value) : value;
         }
         return null;
     }
@@ -143,7 +148,11 @@ public abstract class QueryableEntry implements Map.Entry {
             }
         }
 
-        Object targetObject = serializationService.toObject(target);
+        Object targetObject = target;
+        if (target instanceof Data) {
+            targetObject = serializationService.toObject(target);
+        }
+
         return extractors.extract(targetObject, attributeName);
     }
 
