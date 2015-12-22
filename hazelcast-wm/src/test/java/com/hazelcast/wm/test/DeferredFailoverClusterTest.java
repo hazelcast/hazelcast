@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 import java.io.File;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 /**
@@ -129,9 +130,9 @@ public class DeferredFailoverClusterTest extends AbstractWebFilterTest {
         assertEquals(2, sessionState.getAttributes().size());
         assertEquals("value", executeRequest("read", serverPort2, cookieStore));
         server2.stop();
-        assertEquals(0, map.size());
+        assertEquals(1, map.size());
         sessionState = (SessionState) map.get(hazelcastSessionId);
-        assertNull(sessionState);
+        assertNotNull(sessionState);
         server1.start();
         assertEquals("true", executeRequest("write", serverPort1, cookieStore));
         server2.start();
