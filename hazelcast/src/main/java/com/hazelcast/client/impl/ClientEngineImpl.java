@@ -20,6 +20,8 @@ import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
 import com.hazelcast.client.ClientEngine;
+import com.hazelcast.client.ClientEvent;
+import com.hazelcast.client.ClientEventType;
 import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.ClientResponse;
@@ -95,7 +97,7 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmpty
  * Class that requests, listeners from client handled in node side.
  */
 public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwareService,
-        ManagedService, MembershipAwareService, EventPublishingService<ClientEndpointImpl, ClientListener> {
+        ManagedService, MembershipAwareService, EventPublishingService<ClientEvent, ClientListener> {
 
     /**
      * Service name to be used in requests.
@@ -271,19 +273,23 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             Address address = new Address(conn.getRemoteSocketAddress());
             ((TcpIpConnection) conn).setEndPoint(address);
         }
-        sendClientEvent(endpoint);
+        ClientEvent event = new ClientEvent(endpoint.getUuid(),
+                ClientEventType.CONNECTED,
+                endpoint.getSocketAddress(),
+                endpoint.getClientType());
+        sendClientEvent(event);
     }
 
-    void sendClientEvent(ClientEndpoint endpoint) {
+    void sendClientEvent(ClientEvent event) {
         final EventService eventService = nodeEngine.getEventService();
         final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
-        String uuid = endpoint.getUuid();
-        eventService.publishEvent(SERVICE_NAME, regs, endpoint, uuid.hashCode());
+        String uuid = event.getUuid();
+        eventService.publishEvent(SERVICE_NAME, regs, event, uuid.hashCode());
     }
 
     @Override
-    public void dispatchEvent(ClientEndpointImpl event, ClientListener listener) {
-        if (event.isAuthenticated()) {
+    public void dispatchEvent(ClientEvent event, ClientListener listener) {
+        if (event.getEventType() == ClientEventType.CONNECTED) {
             listener.clientConnected(event);
         } else {
             listener.clientDisconnected(event);
