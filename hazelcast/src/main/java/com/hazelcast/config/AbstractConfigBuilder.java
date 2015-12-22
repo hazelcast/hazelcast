@@ -27,7 +27,6 @@ import org.w3c.dom.NodeList;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.InputStream;
 import java.net.URL;
@@ -131,13 +130,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
      */
     protected abstract ConfigType getXmlType();
 
-    private void traverseChildsAndReplaceVariables(Node root) throws XPathExpressionException {
-        NodeList misplacedHazelcastTag = (NodeList) xpath.evaluate(
-                "//" + this.getXmlType().name, root.getOwnerDocument(), XPathConstants.NODESET);
-        if (misplacedHazelcastTag.getLength() > 1) {
-            throw new InvalidConfigurationException(
-                    '<' + this.getXmlType().name + "> element can appear only once in the XML");
-        }
+    private void traverseChildsAndReplaceVariables(Node root) {
         NamedNodeMap attributes = root.getAttributes();
         if (attributes != null) {
             for (int k = 0; k < attributes.getLength(); k++) {

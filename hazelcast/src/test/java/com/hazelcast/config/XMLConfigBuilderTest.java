@@ -1227,4 +1227,10 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String xml = HAZELCAST_START_TAG + "</hazelcast>";
         buildConfig(xml);
     }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testHazelcastTagAppearsTwice() {
+        String xml = HAZELCAST_START_TAG + "<hazelcast/></hazelcast>";
+        buildConfig(xml);
+    }
 }
