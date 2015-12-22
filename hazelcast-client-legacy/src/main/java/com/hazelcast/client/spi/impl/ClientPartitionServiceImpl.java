@@ -250,6 +250,9 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         @Override
         public void onResponse(PartitionsResponse response) {
             try {
+                if (response == null) {
+                    return;
+                }
                 processPartitionResponse(response);
             } finally {
                 updating.set(false);
