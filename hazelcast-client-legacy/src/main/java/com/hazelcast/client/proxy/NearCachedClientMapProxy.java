@@ -25,6 +25,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.client.MapAddNearCacheEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapRemoveEntryListenerRequest;
@@ -270,6 +271,24 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
+    public Object executeOnKeyInternal(Data keyData, EntryProcessor entryProcessor) {
+        invalidateNearCache(keyData);
+        return super.executeOnKeyInternal(keyData, entryProcessor);
+    }
+
+    @Override
+    public Future submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
+        invalidateNearCache(keyData);
+        return super.submitToKeyInternal(keyData, entryProcessor);
+    }
+
+    @Override
+    public void submitToKeyInternal(Data keyData, EntryProcessor entryProcessor, ExecutionCallback callback) {
+        invalidateNearCache(keyData);
+        super.submitToKeyInternal(keyData, entryProcessor, callback);
+    }
+
+    @Override
     protected Map<K, Object> prepareResult(MapEntries mapEntries) {
         if (mapEntries.isEmpty()) {
             return emptyMap();
@@ -290,10 +309,12 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     protected void putAllInternal(List<Future<?>> futures, MapEntries[] entriesPerPartition) {
         for (int i = 0; i < entriesPerPartition.length; i++) {
             MapEntries mapEntries = entriesPerPartition[i];
-            Collection<Entry<Data, Data>> entries = mapEntries.entries();
-            for (Entry<Data, Data> entry : entries) {
-                Data keyData = entry.getKey();
-                invalidateNearCache(keyData);
+            if (mapEntries != null) {
+                Collection<Entry<Data, Data>> entries = mapEntries.entries();
+                for (Entry<Data, Data> entry : entries) {
+                    Data keyData = entry.getKey();
+                    invalidateNearCache(keyData);
+                }
             }
         }
         super.putAllInternal(futures, entriesPerPartition);

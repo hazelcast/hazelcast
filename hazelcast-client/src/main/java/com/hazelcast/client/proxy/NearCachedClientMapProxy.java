@@ -30,6 +30,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
@@ -266,6 +267,24 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
         ((LocalMapStatsImpl) localMapStats).setNearCacheStats(((NearCacheStatsImpl) nearCacheStats));
         return localMapStats;
+    }
+
+    @Override
+    public Object executeOnKeyInternal(Data keyData, EntryProcessor entryProcessor) {
+        invalidateNearCache(keyData);
+        return super.executeOnKeyInternal(keyData, entryProcessor);
+    }
+
+    @Override
+    public Future submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
+        invalidateNearCache(keyData);
+        return super.submitToKeyInternal(keyData, entryProcessor);
+    }
+
+    @Override
+    public void submitToKeyInternal(Data keyData, EntryProcessor entryProcessor, ExecutionCallback callback) {
+        invalidateNearCache(keyData);
+        super.submitToKeyInternal(keyData, entryProcessor, callback);
     }
 
     @Override
