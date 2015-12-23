@@ -222,13 +222,6 @@ public class GroupProperties extends HazelcastProperties {
     @Deprecated
     public static final String PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY = GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.getName();
     @Deprecated
-    public static final String PROP_ENTERPRISE_WAN_REP_QUEUE_CAPACITY = GroupProperty.ENTERPRISE_WAN_REP_QUEUE_CAPACITY.getName();
-    @Deprecated
-    public static final String PROP_ENTERPRISE_WAN_REP_BATCH_SIZE = GroupProperty.ENTERPRISE_WAN_REP_BATCH_SIZE.getName();
-    @Deprecated
-    public static final String PROP_ENTERPRISE_WAN_REP_BATCH_FREQUENCY_SECONDS
-            = GroupProperty.ENTERPRISE_WAN_REP_BATCH_FREQUENCY_SECONDS.getName();
-    @Deprecated
     public static final String PROP_CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED
             = GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED.getName();
     @Deprecated
@@ -237,9 +230,6 @@ public class GroupProperties extends HazelcastProperties {
     @Deprecated
     public static final String PROP_CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS
             = GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName();
-    @Deprecated
-    public static final String PROP_ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS
-            = GroupProperty.ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS.getName();
     @Deprecated
     public static final String PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS = GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName();
     @Deprecated

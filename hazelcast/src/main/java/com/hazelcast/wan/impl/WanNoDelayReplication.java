@@ -108,6 +108,11 @@ public class WanNoDelayReplication
     }
 
     @Override
+    public void checkWanReplicationQueues() {
+        //NOP
+    }
+
+    @Override
     public void shutdown() {
         running = false;
     }

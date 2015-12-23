@@ -27,9 +27,9 @@ import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.BasePutOperation;
 import com.hazelcast.map.impl.operation.BaseRemoveOperation;
-import com.hazelcast.map.impl.operation.DefaultMapOperationProvider;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
+import com.hazelcast.map.impl.operation.MapOperationProviders;
 import com.hazelcast.map.impl.operation.MapPartitionDestroyTask;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.MapQueryEngineImpl;
@@ -102,7 +102,7 @@ class MapServiceContextImpl implements MapServiceContext {
     protected MapEventPublisher mapEventPublisher;
     protected MapService mapService;
     protected EventService eventService;
-    protected MapOperationProvider operationProvider;
+    protected MapOperationProviders operationProviders;
 
     MapServiceContextImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -116,7 +116,11 @@ class MapServiceContextImpl implements MapServiceContext {
         this.mapEventPublisher = createMapEventPublisherSupport();
         this.mapQueryEngine = createMapQueryEngine();
         this.eventService = nodeEngine.getEventService();
-        this.operationProvider = new DefaultMapOperationProvider();
+        this.operationProviders = createOperationProviders();
+    }
+
+    MapOperationProviders createOperationProviders() {
+        return new MapOperationProviders(this);
     }
 
     // this method is overridden in another context.
@@ -496,7 +500,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public MapOperationProvider getMapOperationProvider(String name) {
-        return operationProvider;
+        return operationProviders.getOperationProvider(name);
     }
 
     @Override

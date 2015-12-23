@@ -171,6 +171,11 @@ public class WanReplicationServiceImpl implements WanReplicationService {
         throw new UnsupportedOperationException("Resuming wan replication is not supported");
     }
 
+    @Override
+    public void checkWanReplicationQueues(String name) {
+        //NOP
+    }
+
     private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWanReplicationPublisherMapping() {
         return new ConcurrentHashMap<String, WanReplicationPublisherDelegate>(2);
     }

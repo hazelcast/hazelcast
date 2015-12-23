@@ -839,6 +839,11 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                         "          <address>20.30.40.50:5702</address>\n" +
                         "       </end-points>\n" +
                         "       <acknowledge-type>ACK_ON_TRANSMIT</acknowledge-type>\n" +
+                        "       <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>\n" +
+                        "       <batch-size>7</batch-size>" +
+                        "       <batch-max-delay-millis>14</batch-max-delay-millis>\n" +
+                        "       <queue-capacity>21</queue-capacity>\n" +
+                        "       <response-timeout-millis>28</response-timeout-millis>\n" +
                         "    </target-cluster>\n" +
                         "</wan-replication>\n" +
                         "</hazelcast>";
@@ -856,6 +861,11 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertTrue(targetEndpoints.contains("20.30.40.50:5701"));
         assertTrue(targetEndpoints.contains("20.30.40.50:5702"));
         assertEquals(WanAcknowledgeType.ACK_ON_TRANSMIT, targetClusterConfig.getAcknowledgeType());
+        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, targetClusterConfig.getQueueFullBehavior());
+        assertEquals(7, targetClusterConfig.getBatchSize());
+        assertEquals(14, targetClusterConfig.getBatchMaxDelayMillis());
+        assertEquals(21, targetClusterConfig.getQueueCapacity());
+        assertEquals(28, targetClusterConfig.getResponseTimeoutMillis());
     }
 
     @Test
