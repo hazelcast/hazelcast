@@ -14,24 +14,22 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
-public class ClientQueueDisruptionTest extends HazelcastTestSupport {
+public class ClientDisruptionTest extends HazelcastTestSupport {
 
     private static final int CLUSTER_SIZE = 3;
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    private Random random = new Random();
     private List<HazelcastInstance> cluster;
 
     private HazelcastInstance client1;
     private HazelcastInstance client2;
-
 
     @Before
     public void setup() {
@@ -39,7 +37,6 @@ public class ClientQueueDisruptionTest extends HazelcastTestSupport {
         for (int i = 0; i < CLUSTER_SIZE; i++) {
             cluster.add(hazelcastFactory.newHazelcastInstance());
         }
-
         client1 = hazelcastFactory.newHazelcastClient();
         client2 = hazelcastFactory.newHazelcastClient();
     }
@@ -50,34 +47,34 @@ public class ClientQueueDisruptionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void clientsConsume_withNodeShutdown() throws InterruptedException {
+    public void queueServerOfferClientsPoll_withNodeShutdown() throws InterruptedException {
 
         final int initial = 2000, max = 8000;
 
         for (int i = 0; i < initial; i++) {
-            getRandomNode().getQueue("Q1").offer(i);
-            getRandomNode().getQueue("Q2").offer(i);
+            getNode(1).getQueue("Q1").offer(i);
+            getNode(2).getQueue("Q2").offer(i);
         }
 
         int expectCount = 0;
         for (int i = initial; i < max; i++) {
 
             if (i == max / 2) {
-                shutdownRandomNode();
+                shutdownNode(2);
             }
             final int index = i;
 
             assertExactlyOneSuccessfulRun(new AssertTask() {
                 @Override
                 public void run() throws Exception {
-                    assertTrue(getRandomNode().getQueue("Q1").offer(index));
+                    assertTrue(getNode(1).getQueue("Q1").offer(index));
                 }
             });
 
             assertExactlyOneSuccessfulRun(new AssertTask() {
                 @Override
                 public void run() throws Exception {
-                    assertTrue(getRandomNode().getQueue("Q2").offer(index));
+                    assertTrue(getNode(3).getQueue("Q2").offer(index));
                 }
             });
 
@@ -97,7 +94,6 @@ public class ClientQueueDisruptionTest extends HazelcastTestSupport {
                 }
             });
 
-
             expectCount++;
         }
 
@@ -107,14 +103,60 @@ public class ClientQueueDisruptionTest extends HazelcastTestSupport {
         }
     }
 
-    private HazelcastInstance getRandomNode() {
-        int index = random.nextInt(cluster.size());
-        return cluster.get(index);
+    @Test
+    public void mapServerPutClientsGet_withNodeShutdown() throws InterruptedException {
+        final int initial = 200, max = 800;
+
+        for (int i = 0; i < initial; i++) {
+            getNode(2).getMap("m").put(i, i);
+        }
+
+        int expectCount = 0;
+        for (int i = initial; i < max; i++) {
+
+            if (i == max / 2) {
+                shutdownNode(1);
+            }
+            final int index = i;
+
+            assertExactlyOneSuccessfulRun(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertNull(getNode(2).getMap("m").put(index, index));
+                }
+            });
+
+            final int expected = expectCount;
+
+            assertExactlyOneSuccessfulRun(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(expected, client1.getMap("m").get(expected));
+                }
+            });
+
+            assertExactlyOneSuccessfulRun(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(expected, client2.getMap("m").get(expected));
+                }
+            });
+
+            expectCount++;
+        }
+
+        for (int i = expectCount; i < max; i++) {
+            assertEquals(i, client1.getMap("m").get(i));
+        }
     }
 
-    private void shutdownRandomNode() {
-        HazelcastInstance node = getRandomNode();
-        node.getLifecycleService().shutdown();
-        cluster.remove(node);
+    private HazelcastInstance getNode(int index) {
+        return cluster.get(index - 1);
     }
+
+    private void shutdownNode(int index) {
+        HazelcastInstance node = getNode(index);
+        node.getLifecycleService().shutdown();
+    }
+
 }

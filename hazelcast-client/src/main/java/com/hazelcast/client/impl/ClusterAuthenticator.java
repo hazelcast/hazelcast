@@ -69,7 +69,6 @@ public class ClusterAuthenticator implements Authenticator {
                     client.getSerializationService().getVersion());
 
         }
-        connection.init();
 
         ClientMessage response;
         final ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
