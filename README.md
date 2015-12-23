@@ -25,7 +25,7 @@ enterprise-ready and developer-friendly in-memory data grid solution.
 
 ### Getting Started
 
-See [Getting Started Guide](http://hazelcast.org/docs/latest/manual/html/gettingstarted.html)
+See [Getting Started Guide](http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#getting-started)
 
 ### Documentation
 
