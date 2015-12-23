@@ -23,6 +23,7 @@ import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
 import static com.hazelcast.transaction.impl.Transaction.State.PREPARING;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -293,4 +294,31 @@ public class TransactionImpl_TwoPhaseIntegrationTest extends HazelcastTestSuppor
         record1.assertPrepareCalled().assertCommitNotCalled().assertRollbackCalled();
         record2.assertPrepareCalled().assertCommitNotCalled().assertRollbackCalled();
     }
+
+    @Test
+    public void prepare_whenMultipleItemsAndDurabilityOne_thenRemoveBackupLog() {
+        final String txOwner = localNodeEngine.getLocalMember().getUuid();
+        TransactionOptions options = new TransactionOptions().setTransactionType(TWO_PHASE).setDurability(1);
+        final TransactionImpl tx = new TransactionImpl(localTxService, localNodeEngine, options, txOwner);
+        tx.begin();
+        tx.add(new MockTransactionLogRecord());
+        tx.add(new MockTransactionLogRecord());
+
+        tx.prepare();
+
+        assertPrepared(tx);
+        TxBackupLog log = remoteTxService.txBackupLogs.get(tx.getTxnId());
+        assertNotNull(log);
+
+        cluster[0].shutdown();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertFalse(remoteTxService.txBackupLogs.containsKey(tx.getTxnId()));
+            }
+        });
+    }
+
 }
