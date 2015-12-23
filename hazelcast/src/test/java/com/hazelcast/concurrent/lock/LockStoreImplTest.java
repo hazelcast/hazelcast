@@ -56,7 +56,7 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     public void setUp() {
         mockLockServiceImpl = mock(InternalLockService.class);
         when(mockLockServiceImpl.getMaxLeaseTimeInMillis()).thenReturn(Long.MAX_VALUE);
-        lockStore = new LockStoreImpl(mockLockServiceImpl, OBJECT_NAME_SPACE, BACKUP_COUNT, ASYNC_BACKUP_COUNT);
+        lockStore = new LockStoreImpl(mockLockServiceImpl, OBJECT_NAME_SPACE, BACKUP_COUNT, ASYNC_BACKUP_COUNT, -1);
     }
 
     @Test

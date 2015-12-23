@@ -26,17 +26,19 @@ public interface InternalLockService extends LockService {
      * at the time of eviction.
      *
      * @param namespace namespace of the lock
+     * @param partitionId partitionId the key falls into
      * @param key locked key
      * @param version version of a lock to evict.
      * @param delayMillis delay in ms
      */
-    void scheduleEviction(ObjectNamespace namespace, Data key, int version, long delayMillis);
+    void scheduleEviction(ObjectNamespace namespace, int partitionId, Data key, int version, long delayMillis);
 
     /**
      * Cancel scheduled lock eviction.
      *
      * @param namespace namespace of the lock
+     * @param partitionId partitionId the key falls into
      * @param key locked key
      */
-    void cancelEviction(ObjectNamespace namespace, Data key);
+    void cancelEviction(ObjectNamespace namespace, int partitionId, Data key);
 }
