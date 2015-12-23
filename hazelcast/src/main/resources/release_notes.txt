@@ -75,10 +75,16 @@ a `SAXParse` exception is thrown. [5528]
 
 3. Fixes
 
-*3.6 Fixes*
+*3.6-EA3 Fixes*
 
-This section lists issues solved for Hazelcast 3.6 release.
+This section lists issues solved for Hazelcast 3.6-EA3 (Early Access 3) release.
 
+- `NullPointerException` is thrown for the thread `cached4` in a test which uses `MapLoader`. [7098]
+- The method `loadInternal` of `MapProxySupport` requires `dataKeys`. Hence, a serialization step should be added to `MapProxy.loadAll()`. [7090]
+- Near cache heap cost calculation is not proper when the cache gets concurrent misses. [7057]
+- `IQueue` accepts null values from the Hazelcast Java client. [7048]
+- `WriteBehindMapStore` for a map that has `OBJECT` as the in-memory format causes the entry processors to serialize the objects. [7040]
+- Latest code does not include the file `com.hazelcast.client.impl.protocol.codec.CacheContainsKeyCodec` and build fails.  [7019]
 - Two members of a cluster become masters and ignore each other. [7016]
 - `AbstractCacheRecordStore` should update the field `isOwner` while it is being cleared after migration. [6983]
 - There are memory leaks in the local map statistics and near cache invalidation queues. The map containers also leak memory caused either by the near cache invalidation mechanism (when re-creating objects to check whether the near cache is enabled) or `MapPartitionDestroyOperation` (when re-creating objects and trying to the backup count). [6972]
@@ -106,7 +112,7 @@ This section lists issues solved for Hazelcast 3.6-EA2 (Early Access 2) release.
 - There is a sporadic startup failure in 3.6-EA. [6684]
 - There is no need to use `CacheLoader` inside the client/server side cache proxies. [6676]
 - Fixed wrong calculation of eviction removal size when `PER_NODE` `max-size` policy is used. [6675]
-- If the cluster state is not active `RepartitioningTask` should not be triggered. Otherwise, it causes infinite retries and prevents the member from shtutdown. [6663]
+- If the cluster state is not active `RepartitioningTask` should not be triggered. Otherwise, it causes infinite retries and prevents the member from shutdown. [6663]
 - There are broken XML configuration tests in the Hazelcast client package. [6633]
 - There is a memory leak since the method `publishBathcedEvents` does not remove the events from `batchEvent`. [6618]
 - Custom credentials class is not de-serialized on the server side. [6615]
