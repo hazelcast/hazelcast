@@ -34,7 +34,6 @@ import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.StringUtil;
-import com.hazelcast.wan.impl.WanNoDelayReplication;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -473,7 +472,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                     wanTarget.setGroupPassword(groupPassword);
                 }
                 for (Node targetChild : childElements(nodeTarget)) {
-                    handleWanTargetConfig(wanReplicationConfig, wanTarget, targetChild);
+                    handleWanTargetConfig(wanTarget, targetChild);
                 }
                 wanReplicationConfig.addTargetClusterConfig(wanTarget);
             }
@@ -481,16 +480,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         config.addWanReplicationConfig(wanReplicationConfig);
     }
 
-    private void handleWanTargetConfig(WanReplicationConfig wanReplicationConfig,
-                                       WanTargetClusterConfig wanTarget, Node targetChild) {
+    private void handleWanTargetConfig(WanTargetClusterConfig wanTarget, Node targetChild) {
         final String targetChildName = cleanNodeName(targetChild);
         if ("replication-impl".equals(targetChildName)) {
-            String replicationImpl = getTextContent(targetChild);
-            if (WanNoDelayReplication.class.getName().equals(replicationImpl)
-                    && wanReplicationConfig.isSnapshotEnabled()) {
-                throw new InvalidConfigurationException("snapshot-enabled property "
-                        + "only can be set to true when used with Enterprise Wan Batch Replication");
-            }
             wanTarget.setReplicationImpl(getTextContent(targetChild));
         } else if ("end-points".equals(targetChildName)) {
             for (Node address : childElements(targetChild)) {

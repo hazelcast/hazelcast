@@ -76,15 +76,11 @@ public class WanReplicationServiceImpl implements WanReplicationService {
             int count = 0;
             for (WanTargetClusterConfig targetClusterConfig : targets) {
                 WanReplicationEndpoint target;
-                if (targetClusterConfig.getReplicationImpl() != null) {
-                    try {
-                        target = ClassLoaderUtil
-                                .newInstance(node.getConfigClassLoader(), targetClusterConfig.getReplicationImpl());
-                    } catch (Exception e) {
-                        throw ExceptionUtil.rethrow(e);
-                    }
-                } else {
-                    target = new WanNoDelayReplication();
+                try {
+                    target = ClassLoaderUtil
+                            .newInstance(node.getConfigClassLoader(), targetClusterConfig.getReplicationImpl());
+                } catch (Exception e) {
+                    throw ExceptionUtil.rethrow(e);
                 }
                 String groupName = targetClusterConfig.getGroupName();
                 String password = targetClusterConfig.getGroupPassword();
