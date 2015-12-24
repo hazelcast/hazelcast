@@ -61,7 +61,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         ClientClusterService {
 
     private static final ILogger LOGGER = Logger.getLogger(ClusterListenerSupport.class);
-    private static final long TERMINATE_TIMEOUT_SECONDS = 30;
 
     protected final HazelcastClientInstanceImpl client;
     private final Collection<AddressProvider> addressProviders;
@@ -114,7 +113,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
             final SerializationService ss = client.getSerializationService();
             AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
-            connection.init();
             auth.setOwnerConnection(true);
             //contains remoteAddress and principal
             SerializableCollection collectionWrapper;
@@ -129,6 +127,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             final Data addressData = iter.next();
             final Address address = ss.toObject(addressData);
             connection.setRemoteEndpoint(address);
+            connection.setIsAuthenticatedAsOwner();
             final Data principalData = iter.next();
             principal = ss.toObject(principalData);
         }
@@ -215,7 +214,11 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 if (LOGGER.isFinestEnabled()) {
                     LOGGER.finest("Trying to connect to " + address);
                 }
-                final Connection connection = connectionManager.getOrConnect(address, managerAuthenticator);
+                ClientConnection connection =
+                        (ClientConnection) connectionManager.getOrConnect(address, managerAuthenticator);
+                if (!connection.isAuthenticatedAsOwner()) {
+                    managerAuthenticator.authenticate(connection);
+                }
                 fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 ownerConnectionAddress = connection.getEndPoint();
                 return true;
