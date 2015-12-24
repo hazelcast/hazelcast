@@ -56,7 +56,6 @@ public class ClusterAuthenticator implements Authenticator {
         final ClientPrincipal principal = clusterService.getPrincipal();
         final SerializationService ss = client.getSerializationService();
         AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
-        connection.init();
         //contains remoteAddress and principal
         SerializableCollection collectionWrapper;
         final ClientInvocation clientInvocation = new ClientInvocation(client, auth, connection);

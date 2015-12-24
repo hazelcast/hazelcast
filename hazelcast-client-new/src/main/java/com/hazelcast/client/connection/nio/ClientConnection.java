@@ -58,6 +58,7 @@ public class ClientConnection implements Connection, Closeable {
 
     private volatile Address remoteEndpoint;
     private volatile boolean heartBeating = true;
+    private boolean isAuthenticatedAsOwner;
 
     public ClientConnection(HazelcastClientInstanceImpl client, IOSelector in, IOSelector out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
@@ -69,6 +70,7 @@ public class ClientConnection implements Connection, Closeable {
         this.connectionId = connectionId;
         this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize());
         this.writeHandler = new ClientWriteHandler(this, out, socket.getSendBufferSize());
+        init();
     }
 
     public ClientConnection(HazelcastClientInstanceImpl client,
@@ -110,7 +112,7 @@ public class ClientConnection implements Connection, Closeable {
         return true;
     }
 
-    public void init() throws IOException {
+    private void init() throws IOException {
         final ByteBuffer buffer = ByteBuffer.allocate(6);
         buffer.put(stringToBytes(Protocols.CLIENT_BINARY_NEW));
         buffer.put(stringToBytes(ClientTypes.JAVA));
@@ -191,6 +193,15 @@ public class ClientConnection implements Connection, Closeable {
     public InetSocketAddress getLocalSocketAddress() {
         return (InetSocketAddress) socketChannelWrapper.socket().getLocalSocketAddress();
     }
+
+    public boolean isAuthenticatedAsOwner() {
+        return isAuthenticatedAsOwner;
+    }
+
+    public void setIsAuthenticatedAsOwner() {
+        this.isAuthenticatedAsOwner = true;
+    }
+
 
     protected void innerClose() throws IOException {
         if (socketChannelWrapper.isOpen()) {
