@@ -177,7 +177,7 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
         }
     }
 
-    private int writeBehindQueueSize(HazelcastInstance node, String mapName) {
+    public static int writeBehindQueueSize(HazelcastInstance node, String mapName) {
         int size = 0;
         final NodeEngineImpl nodeEngine = getNode(node).getNodeEngine();
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
