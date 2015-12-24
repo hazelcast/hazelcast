@@ -19,20 +19,18 @@ package com.hazelcast.config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import org.xml.sax.SAXParseException;
 
 import java.io.ByteArrayInputStream;
 import java.util.Properties;
 import java.util.Random;
 
 import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_START_TAG;
-import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -171,7 +169,7 @@ public class InvalidConfigurationTest {
     @Test
     public void testWhenInvalid_SemaphoreInitialPermits() {
         expectInvalid("Value '-1' is not facet-valid with respect to minInclusive '0'");
-        buildConfig("semaphore-initial-permits","-1");
+        buildConfig("semaphore-initial-permits", "-1");
     }
 
     @Test
@@ -200,15 +198,15 @@ public class InvalidConfigurationTest {
     public void testWhenInvalidTcpIpConfiguration() {
         expectInvalid("Duplicate required-member definition found in XML configuration.");
         buildConfig(HAZELCAST_START_TAG +
-            "<network\n>" +
+                "<network\n>" +
                 "<join>\n" +
-                    "<tcp-ip enabled=\"true\">\n" +
-                        "<required-member>127.0.0.1</required-member>\n" +
-                        "<required-member>128.0.0.1</required-member>\n" +
-                    "</tcp-ip>\n" +
+                "<tcp-ip enabled=\"true\">\n" +
+                "<required-member>127.0.0.1</required-member>\n" +
+                "<required-member>128.0.0.1</required-member>\n" +
+                "</tcp-ip>\n" +
                 "</join>\n" +
-            "</network>\n" +
-        "</hazelcast>\n");
+                "</network>\n" +
+                "</hazelcast>\n");
     }
 
     @Test
@@ -223,12 +221,12 @@ public class InvalidConfigurationTest {
                 "</hazelcast>\n");
         buildConfig(HAZELCAST_START_TAG +
                 "<list name=\"default\">\n" +
-                    "<backup-count>1</backup-count>\n" +
-                    "<async-backup-count>0</async-backup-count>\n" +
-                    "<statistics-enabled>false</statistics-enabled>\n" +
-                    "<max-size>0</max-size>\n" +
+                "<backup-count>1</backup-count>\n" +
+                "<async-backup-count>0</async-backup-count>\n" +
+                "<statistics-enabled>false</statistics-enabled>\n" +
+                "<max-size>0</max-size>\n" +
                 "</list>\n" +
-        "</hazelcast>\n");
+                "</hazelcast>\n");
     }
 
     @Test
@@ -242,6 +240,7 @@ public class InvalidConfigurationTest {
     }
 
     @Test
+    @Ignore
     public void testWanConfigSnapshotEnabledForWrongPublisher() {
         expectInvalid(
                 "snapshot-enabled property only can be set to true when used with Enterprise Wan Batch Replication");
