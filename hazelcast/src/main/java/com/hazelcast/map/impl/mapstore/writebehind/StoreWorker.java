@@ -21,9 +21,9 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
@@ -78,7 +78,7 @@ public class StoreWorker implements Runnable {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         int partitionCount = partitionService.getPartitionCount();
-        List<DelayedEntry> entries = new ArrayList<DelayedEntry>();
+        List<DelayedEntry> entries = new ArrayList<DelayedEntry>(partitionCount);
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             InternalPartition partition = partitionService.getPartition(partitionId, false);
@@ -116,7 +116,9 @@ public class StoreWorker implements Runnable {
         int flushCount = getNumberOfFlushedEntries(recordStore);
         WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
 
-        List<DelayedEntry> entries = new ArrayList<DelayedEntry>();
+        final int defaultCapacity = 16;
+        int initialCapacity = Math.max(flushCount, defaultCapacity);
+        List<DelayedEntry> entries = new ArrayList<DelayedEntry>(initialCapacity);
         filterWriteBehindQueue(now, flushCount, entries, queue);
 
         return entries;
