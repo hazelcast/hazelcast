@@ -71,6 +71,7 @@ public class ClientConnection implements Connection, Closeable {
         this.connectionId = connectionId;
         this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize());
         this.writeHandler = new ClientWriteHandler(this, out, socket.getSendBufferSize());
+        init();
     }
 
     public ClientConnection(HazelcastClientInstanceImpl client,
@@ -112,7 +113,7 @@ public class ClientConnection implements Connection, Closeable {
         return true;
     }
 
-    public void init() throws IOException {
+    private void init() throws IOException {
         final ByteBuffer buffer = ByteBuffer.allocate(6);
         buffer.put(stringToBytes(Protocols.CLIENT_BINARY));
         buffer.put(stringToBytes(ClientTypes.JAVA));

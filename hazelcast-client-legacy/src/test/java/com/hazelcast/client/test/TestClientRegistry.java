@@ -206,11 +206,6 @@ public class TestClientRegistry {
         }
 
         @Override
-        public void init() throws IOException {
-
-        }
-
-        @Override
         public long lastReadTimeMillis() {
             return lastReadTime;
         }

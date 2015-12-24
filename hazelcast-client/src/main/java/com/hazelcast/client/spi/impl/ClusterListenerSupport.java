@@ -132,8 +132,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                         serializationVersion);
 
             }
-            connection.init();
-
             ClientMessage response;
             final ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
             final Future<ClientMessage> future = clientInvocation.invokeUrgent();
