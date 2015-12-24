@@ -26,11 +26,9 @@ import com.hazelcast.map.impl.MapServiceContext;
  */
 public class MapOperationProviders {
 
-    private final MapOperationProvider wanAwareProvider;
-
-    private final MapServiceContext mapServiceContext;
-
-    private final MapOperationProvider defaultProvider = new DefaultMapOperationProvider();
+    protected final MapServiceContext mapServiceContext;
+    protected final MapOperationProvider wanAwareProvider;
+    protected final MapOperationProvider defaultProvider = new DefaultMapOperationProvider();
 
     public MapOperationProviders(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
@@ -46,10 +44,6 @@ public class MapOperationProviders {
      */
     public MapOperationProvider getOperationProvider(String name) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(name);
-        if (mapContainer.isWanReplicationEnabled()) {
-            return wanAwareProvider;
-        }
-
-        return defaultProvider;
+        return mapContainer.isWanReplicationEnabled() ? wanAwareProvider : defaultProvider;
     }
 }
