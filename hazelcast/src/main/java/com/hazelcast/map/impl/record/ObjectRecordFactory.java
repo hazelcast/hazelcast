@@ -32,12 +32,16 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
 
     @Override
     public Record<Object> newRecord(Object value) {
+        assert value != null : "value can not be null";
+
         Object objectValue = serializationService.toObject(value);
         return statisticsEnabled ? new ObjectRecordWithStats(objectValue) : new ObjectRecord(objectValue);
     }
 
     @Override
     public void setValue(Record<Object> record, Object value) {
+        assert value != null : "value can not be null";
+
         Object v = value;
         if (value instanceof Data) {
             v = serializationService.toObject(value);

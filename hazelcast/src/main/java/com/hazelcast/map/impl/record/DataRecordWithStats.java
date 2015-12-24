@@ -52,9 +52,4 @@ class DataRecordWithStats extends AbstractRecordWithStats<Data> {
     public void setValue(Data o) {
         value = o;
     }
-
-    @Override
-    public void invalidate() {
-        value = null;
-    }
 }
