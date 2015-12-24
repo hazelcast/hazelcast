@@ -2805,7 +2805,7 @@
 
     <xs:simpleType name="wan-ack-type">
         <xs:restriction base="non-space-string">
-            <xs:enumeration value="ACK_ON_TRANSMIT"/>
+            <xs:enumeration value="ACK_ON_RECEIPT"/>
             <xs:enumeration value="ACK_ON_OPERATION_COMPLETE"/>
         </xs:restriction>
     </xs:simpleType>

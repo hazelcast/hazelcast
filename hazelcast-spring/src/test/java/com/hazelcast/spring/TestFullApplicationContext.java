@@ -561,8 +561,8 @@ public class TestFullApplicationContext {
         assertEquals(wanReplication, wcfg.getTargetClusterConfigs().get(1).getReplicationImplObject());
         WanTargetClusterConfig targetClusterConfig0 = wcfg.getTargetClusterConfigs().get(0);
         WanTargetClusterConfig targetClusterConfig1 = wcfg.getTargetClusterConfigs().get(1);
-        assertEquals(WanAcknowledgeType.ACK_ON_TRANSMIT, targetClusterConfig0.getAcknowledgeType());
-        assertEquals(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE, targetClusterConfig1.getAcknowledgeType());
+        assertEquals(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE, targetClusterConfig0.getAcknowledgeType());
+        assertEquals(WanAcknowledgeType.ACK_ON_RECEIPT, targetClusterConfig1.getAcknowledgeType());
         assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, targetClusterConfig0.getQueueFullBehavior());
         assertEquals(7, targetClusterConfig0.getBatchSize());
         assertEquals(14, targetClusterConfig0.getBatchMaxDelayMillis());

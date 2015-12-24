@@ -23,7 +23,7 @@ import java.util.List;
  */
 public class WanTargetClusterConfig {
 
-    private static final WanAcknowledgeType DEFAULT_ACK_TYPE = WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE;
+    private static final WanAcknowledgeType DEFAULT_ACK_TYPE = WanAcknowledgeType.ACK_ON_RECEIPT;
     private static final WANQueueFullBehavior QUEUE_FULL_BEHAVIOR = WANQueueFullBehavior.DISCARD_AFTER_MUTATION;
     private static final int DEFAULT_BATCH_SIZE = 500;
     private static final long DEFAULT_BATCH_MAX_DELAY_MILLIS = 1000;
