@@ -33,7 +33,6 @@ import java.util.Map;
 /**
  * The client Engine.
  *
- * todo: what is the purpose of the client engine.
  */
 public interface ClientEngine {
 

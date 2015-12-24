@@ -18,6 +18,8 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
+import com.hazelcast.client.ClientEvent;
+import com.hazelcast.client.ClientEventType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
@@ -121,7 +123,11 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
                 }
             }, DESTROY_ENDPOINT_DELAY_MS, TimeUnit.MILLISECONDS);
         }
-        clientEngine.sendClientEvent(endpoint);
+        ClientEvent event = new ClientEvent(endpoint.getUuid(),
+                ClientEventType.DISCONNECTED,
+                endpoint.getSocketAddress(),
+                endpoint.getClientType());
+        clientEngine.sendClientEvent(event);
     }
 
     public void removeEndpoints(String memberUuid) {
