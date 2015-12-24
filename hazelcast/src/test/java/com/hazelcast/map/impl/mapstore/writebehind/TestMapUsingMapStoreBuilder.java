@@ -39,6 +39,8 @@ public class TestMapUsingMapStoreBuilder<K, V> {
 
     private TestHazelcastInstanceFactory instanceFactory;
 
+    private Config config = new Config();
+
     private TestMapUsingMapStoreBuilder() {
     }
 
@@ -127,6 +129,11 @@ public class TestMapUsingMapStoreBuilder<K, V> {
         return this;
     }
 
+    public TestMapUsingMapStoreBuilder<K, V> withConfig(Config config) {
+        this.config = config;
+        return this;
+    }
+
     public IMap<K, V> build() {
         if (backupCount != 0 && backupCount > nodeCount - 1) {
             throw new IllegalArgumentException("backupCount > nodeCount - 1");
@@ -138,7 +145,7 @@ public class TestMapUsingMapStoreBuilder<K, V> {
                 .setWriteBatchSize(writeBatchSize)
                 .setWriteCoalescing(writeCoalescing);
 
-        final Config config = new Config();
+        final Config config = this.config;
         config.getMapConfig(mapName)
                 .setBackupCount(backupCount)
                 .setMapStoreConfig(mapStoreConfig)
