@@ -22,9 +22,9 @@ package com.hazelcast.config;
 public enum WanAcknowledgeType {
 
     /**
-     * ACK when operation is invoked successfully on target cluster
+     * ACK after WAN operation is received by the target cluster (without waiting the result of actual operation invocation.)
      */
-    ACK_ON_TRANSMIT(0),
+    ACK_ON_RECEIPT(0),
 
     /**
      * Wait till the operation is complete on target cluster
