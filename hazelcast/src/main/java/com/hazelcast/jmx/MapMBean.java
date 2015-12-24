@@ -16,18 +16,13 @@
 
 package com.hazelcast.jmx;
 
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEvent;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * Management bean for {@link com.hazelcast.core.IMap}
@@ -35,54 +30,9 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 @ManagedDescription("IMap")
 public class MapMBean extends HazelcastMBean<IMap> {
 
-    private final AtomicLong totalAddedEntryCount = new AtomicLong();
-    private final AtomicLong totalRemovedEntryCount = new AtomicLong();
-    private final AtomicLong totalUpdatedEntryCount = new AtomicLong();
-    private final AtomicLong totalEvictedEntryCount = new AtomicLong();
-    private final String listenerId;
-
     protected MapMBean(IMap managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = service.createObjectName("IMap", managedObject.getName());
-        //todo: using the event system to register number of adds/remove is an very expensive price to pay.
-        EntryListener entryListener = new EntryListener() {
-            public void entryAdded(EntryEvent event) {
-                totalAddedEntryCount.incrementAndGet();
-            }
-
-            public void entryRemoved(EntryEvent event) {
-                totalRemovedEntryCount.incrementAndGet();
-            }
-
-            public void entryUpdated(EntryEvent event) {
-                totalUpdatedEntryCount.incrementAndGet();
-            }
-
-            public void entryEvicted(EntryEvent event) {
-                totalEvictedEntryCount.incrementAndGet();
-            }
-
-            @Override
-            public void mapEvicted(MapEvent event) {
-                totalEvictedEntryCount.addAndGet(event.getNumberOfEntriesAffected());
-            }
-
-            @Override
-            public void mapCleared(MapEvent event) {
-                //TODO should I add totalClearedEntryCount?
-                totalRemovedEntryCount.addAndGet(event.getNumberOfEntriesAffected());
-            }
-        };
-        listenerId = managedObject.addEntryListener(entryListener, false);
-    }
-
-    public void preDeregister() throws Exception {
-        super.preDeregister();
-        try {
-            managedObject.removeEntryListener(listenerId);
-        } catch (Exception ignored) {
-            ignore(ignored);
-        }
     }
 
     @ManagedAnnotation("localOwnedEntryCount")
@@ -246,26 +196,6 @@ public class MapMBean extends HazelcastMBean<IMap> {
     @ManagedDescription("MapConfig")
     public String getConfig() {
         return service.instance.getConfig().findMapConfig(managedObject.getName()).toString();
-    }
-
-    @ManagedAnnotation("totalAddedEntryCount")
-    public long getTotalAddedEntryCount() {
-        return totalAddedEntryCount.get();
-    }
-
-    @ManagedAnnotation("totalRemovedEntryCount")
-    public long getTotalRemovedEntryCount() {
-        return totalRemovedEntryCount.get();
-    }
-
-    @ManagedAnnotation("totalUpdatedEntryCount")
-    public long getTotalUpdatedEntryCount() {
-        return totalUpdatedEntryCount.get();
-    }
-
-    @ManagedAnnotation("totalEvictedEntryCount")
-    public long getTotalEvictedEntryCount() {
-        return totalEvictedEntryCount.get();
     }
 
     @ManagedAnnotation(value = "clear", operation = true)

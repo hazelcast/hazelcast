@@ -16,16 +16,11 @@
 
 package com.hazelcast.jmx;
 
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.MapEvent;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * Management bean for {@link com.hazelcast.core.ReplicatedMap}
@@ -33,57 +28,9 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 @ManagedDescription("ReplicatedMap")
 public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
 
-    private final AtomicLong totalAddedEntryCount = new AtomicLong();
-    private final AtomicLong totalRemovedEntryCount = new AtomicLong();
-    private final AtomicLong totalUpdatedEntryCount = new AtomicLong();
-    private final String listenerId;
-
     protected ReplicatedMapMBean(ReplicatedMapProxy managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = service.createObjectName("ReplicatedMap", managedObject.getName());
-
-        //todo: using the event system to register number of adds/remove is an very expensive price to pay.
-        EntryListener entryListener = new EntryListener() {
-            @Override
-            public void entryAdded(EntryEvent event) {
-                totalAddedEntryCount.incrementAndGet();
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent event) {
-                totalRemovedEntryCount.incrementAndGet();
-            }
-
-            @Override
-            public void entryUpdated(EntryEvent event) {
-                totalUpdatedEntryCount.incrementAndGet();
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent event) {
-            }
-
-            @Override
-            public void mapEvicted(MapEvent event) {
-                //TODO should I add totalEvictedEntryCount
-            }
-
-            @Override
-            public void mapCleared(MapEvent event) {
-                //TODO should I add totalClearedEntryCount
-            }
-        };
-        listenerId = managedObject.addEntryListener(entryListener, false);
-    }
-
-    @Override
-    public void preDeregister() throws Exception {
-        super.preDeregister();
-        try {
-            managedObject.removeEntryListener(listenerId);
-        } catch (Exception ignored) {
-            ignore(ignored);
-        }
     }
 
     @ManagedAnnotation("localOwnedEntryCount")
@@ -210,21 +157,6 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
     @ManagedDescription("MapConfig")
     public String getConfig() {
         return service.instance.getConfig().findMapConfig(managedObject.getName()).toString();
-    }
-
-    @ManagedAnnotation("totalAddedEntryCount")
-    public long getTotalAddedEntryCount() {
-        return totalAddedEntryCount.get();
-    }
-
-    @ManagedAnnotation("totalRemovedEntryCount")
-    public long getTotalRemovedEntryCount() {
-        return totalRemovedEntryCount.get();
-    }
-
-    @ManagedAnnotation("totalUpdatedEntryCount")
-    public long getTotalUpdatedEntryCount() {
-        return totalUpdatedEntryCount.get();
     }
 
     @ManagedAnnotation(value = "clear", operation = true)
