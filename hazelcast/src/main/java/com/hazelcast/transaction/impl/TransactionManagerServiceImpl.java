@@ -42,6 +42,7 @@ import com.hazelcast.transaction.impl.operations.BroadcastTxRollbackOperation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -176,32 +177,43 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     public void memberRemoved(MembershipServiceEvent event) {
         MemberImpl member = event.getMember();
         final String uuid = member.getUuid();
-        logger.info("Committing/rolling-back alive transactions of " + member + ", UUID: " + uuid);
-        nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
-            @Override
-            public void run() {
-                finalizeTransactionsOf(uuid);
-            }
-        });
+        if (nodeEngine.isRunning()) {
+            logger.info("Committing/rolling-back alive transactions of " + member + ", UUID: " + uuid);
+            nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+                @Override
+                public void run() {
+                    finalizeTransactionsOf(uuid);
+                }
+            });
+        } else if (logger.isFinestEnabled()) {
+            logger.finest("Will not commit/roll-back transactions of " + member + ", UUID: " + uuid
+                    + " because this member is not running");
+        }
     }
 
     @Override
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
     }
 
-    private void finalizeTransactionsOf(String uuid) {
-        for (Map.Entry<String, TxBackupLog> entry : txBackupLogs.entrySet()) {
-            finalize(uuid, entry.getKey(), entry.getValue());
+    private void finalizeTransactionsOf(String callerUuid) {
+        final Iterator<Map.Entry<String, TxBackupLog>> it = txBackupLogs.entrySet().iterator();
+
+        while (it.hasNext()) {
+            final Map.Entry<String, TxBackupLog> entry = it.next();
+            final String txnId = entry.getKey();
+            final TxBackupLog log = entry.getValue();
+            if (finalize(callerUuid, txnId, log)) {
+                it.remove();
+            }
         }
     }
 
-    private void finalize(String uuid, String txnId, TxBackupLog log) {
+    private boolean finalize(String uuid, String txnId, TxBackupLog log) {
         OperationService operationService = nodeEngine.getOperationService();
         if (!uuid.equals(log.callerUuid)) {
-            return;
+            return false;
         }
 
-        //TODO shouldn't we remove TxBackupLog from map ?
         if (log.state == ACTIVE) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Rolling-back transaction[id:" + txnId + ", state:ACTIVE] of endpoint " + uuid);
@@ -247,6 +259,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
                 }
             }
         }
+
+        return true;
     }
 
     @Override
