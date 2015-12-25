@@ -72,7 +72,7 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
                 .mapName(mapName)
                 .withMapStore(mapStore)
                 .withNodeCount(nodeCount)
-                .withBackupCount(2)
+                .withBackupCount(1)
                 .withConfig(getConfig())
                 .withNodeFactory(factory)
                 .withWriteDelaySeconds(300);
