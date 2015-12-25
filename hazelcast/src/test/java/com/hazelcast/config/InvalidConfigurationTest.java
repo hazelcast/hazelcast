@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -237,24 +236,6 @@ public class InvalidConfigurationTest {
         buildConfig("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<!DOCTYPE hazelcast [ <!ENTITY e1 \"0123456789\"> ] >\n" +
                 HAZELCAST_START_TAG + "</hazelcast>");
-    }
-
-    @Test
-    @Ignore
-    public void testWanConfigSnapshotEnabledForWrongPublisher() {
-        expectInvalid(
-                "snapshot-enabled property only can be set to true when used with Enterprise Wan Batch Replication");
-        buildConfig(HAZELCAST_START_TAG +
-                "<wan-replication name=\"my-wan-cluster\" snapshot-enabled=\"true\">\n" +
-                "    <target-cluster group-name=\"test-cluster-1\" group-password=\"test-pass\">\n" +
-                "       <replication-impl>com.hazelcast.wan.impl.WanNoDelayReplication</replication-impl>\n" +
-                "       <end-points>\n" +
-                "          <address>20.30.40.50:5701</address>\n" +
-                "          <address>20.30.40.50:5702</address>\n" +
-                "       </end-points>\n" +
-                "    </target-cluster>\n" +
-                "</wan-replication>\n" +
-                "</hazelcast>");
     }
 
     public void testWhenInvalid_CacheBackupCount() {
