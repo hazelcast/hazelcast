@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.AssertTask;
@@ -28,7 +30,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindOnBackupsTest.writeBehindQueueSize;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -38,15 +43,21 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
     @Test
     public void testWriteBehindQueues_flushed_onNodeShutdown() throws Exception {
         int nodeCount = 3;
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
+        String mapName = randomName();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
-        TestMapUsingMapStoreBuilder builder = TestMapUsingMapStoreBuilder.create()
-                .withMapStore(mapStore)
-                .withNodeCount(nodeCount)
-                .withNodeFactory(factory)
-                .withConfig(getConfig())
-                .withWriteDelaySeconds(300);
-        IMap map = builder.build();
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
+        mapStoreConfig.setImplementation(mapStore).setWriteDelaySeconds(3000);
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setBackupCount(0).setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance member = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+
+        IMap map = member.getMap(mapName);
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
@@ -65,18 +76,21 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
     @Test
     public void testWriteBehindQueues_emptied_onBackupNodes() throws Exception {
         int nodeCount = 3;
-        String mapName = randomMapName();
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
+        String mapName = randomName();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
-        TestMapUsingMapStoreBuilder builder = TestMapUsingMapStoreBuilder.create()
-                .mapName(mapName)
-                .withMapStore(mapStore)
-                .withNodeCount(nodeCount)
-                .withBackupCount(1)
-                .withConfig(getConfig())
-                .withNodeFactory(factory)
-                .withWriteDelaySeconds(300);
-        IMap map = builder.build();
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
+        mapStoreConfig.setImplementation(mapStore).setWriteDelaySeconds(3000);
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance member1 = factory.newHazelcastInstance(config);
+        HazelcastInstance member2 = factory.newHazelcastInstance(config);
+        HazelcastInstance member3 = factory.newHazelcastInstance(config);
+
+        IMap map = member1.getMap(mapName);
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
@@ -84,12 +98,13 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
 
         map.flush();
 
-        assertWriteBehindQueuesEmpty(mapName, builder.getNodes());
+        assertWriteBehindQueuesEmpty(mapName, asList(member1, member2, member3));
     }
 
-    protected void assertWriteBehindQueuesEmpty(String mapName, HazelcastInstance[] nodes) {
+    protected void assertWriteBehindQueuesEmpty(String mapName, List<HazelcastInstance> nodes) {
         for (HazelcastInstance instance : nodes) {
             assertEquals(0, writeBehindQueueSize(instance, mapName));
         }
     }
+
 }
