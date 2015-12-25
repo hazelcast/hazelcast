@@ -461,4 +461,40 @@ public class CacheStatsTest extends CacheTestSupport {
         stats.getNearCacheStatistics();
     }
 
+    @Test
+    public void testLocalUpdate() {
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
+        final int ENTRY_COUNT = 100;
+        long start, end;
+
+        start = System.currentTimeMillis();
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.put(i, "Value-" + i);
+        }
+        end = System.currentTimeMillis();
+
+        assertTrue(stats.getLastUpdateTime() >= start);
+        assertTrue(stats.getLastUpdateTime() <= end);
+
+        start = System.currentTimeMillis();
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.remove(i);
+        }
+        end = System.currentTimeMillis();
+
+        assertTrue(stats.getLastUpdateTime() >= start);
+        assertTrue(stats.getLastUpdateTime() <= end);
+
+        long currentLastUpdateTime = stats.getLastUpdateTime();
+        sleepAtLeastMillis(1);
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.remove(i);
+        }
+
+        // Latest removes has no effect since keys are already removed at previous loop
+        assertEquals(currentLastUpdateTime, stats.getLastUpdateTime());
+    }
+
 }

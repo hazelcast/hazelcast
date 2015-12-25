@@ -382,15 +382,14 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
+        if (cacheOnUpdate) {
+            storeInNearCache(keyData, valueData, value);
+        }
         if (!async) {
             try {
                 Object response = future.get();
-                if (nearCache != null) {
-                    if (cacheOnUpdate) {
-                        storeInNearCache(keyData, valueData, value);
-                    } else {
-                        invalidateNearCache(keyData);
-                    }
+                if (nearCache != null && !cacheOnUpdate) {
+                    invalidateNearCache(keyData);
                 }
                 if (statisticsEnabled) {
                     handleStatisticsOnPut(isGet, start, response);
@@ -404,12 +403,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                 future.andThen(new ExecutionCallback<Object>() {
                     @Override
                     public void onResponse(Object responseData) {
-                        if (nearCache != null) {
-                            if (cacheOnUpdate) {
-                                storeInNearCache(keyData, valueData, value);
-                            } else {
-                                invalidateNearCache(keyData);
-                            }
+                        if (nearCache != null && !cacheOnUpdate) {
+                            invalidateNearCache(keyData);
                         }
                         if (statisticsEnabled) {
                             handleStatisticsOnPut(isGet, start, responseData);
@@ -458,15 +453,14 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
         DelegatingFuture delegatingFuture =
                 new DelegatingFuture<Boolean>(future, clientContext.getSerializationService());
+        if (cacheOnUpdate) {
+            storeInNearCache(keyData, valueData, value);
+        }
         if (!async) {
             try {
                 Object response = delegatingFuture.get();
-                if (nearCache != null) {
-                    if (cacheOnUpdate) {
-                        storeInNearCache(keyData, valueData, value);
-                    } else {
-                        invalidateNearCache(keyData);
-                    }
+                if (nearCache != null && !cacheOnUpdate) {
+                    invalidateNearCache(keyData);
                 }
                 if (statisticsEnabled) {
                     handleStatisticsOnPutIfAbsent(start, (Boolean) response);
@@ -480,12 +474,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                 delegatingFuture.andThen(new ExecutionCallback<Object>() {
                     @Override
                     public void onResponse(Object responseData) {
-                        if (nearCache != null) {
-                            if (cacheOnUpdate) {
-                                storeInNearCache(keyData, valueData, value);
-                            } else {
-                                invalidateNearCache(keyData);
-                            }
+                        if (nearCache != null && !cacheOnUpdate) {
+                            invalidateNearCache(keyData);
                         }
                         if (statisticsEnabled) {
                             Object response = clientContext.getSerializationService().toObject(responseData);

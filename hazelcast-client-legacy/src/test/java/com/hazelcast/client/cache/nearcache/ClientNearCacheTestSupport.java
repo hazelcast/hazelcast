@@ -40,10 +40,7 @@ import org.junit.After;
 import org.junit.Before;
 
 import javax.cache.spi.CachingProvider;
-
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -150,6 +147,20 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         return nearCacheTestContext;
     }
 
+    protected NearCacheTestContext createNearCacheTestAndFillWithDataAsync(String cacheName,
+                                                                           NearCacheConfig nearCacheConfig,
+                                                                           boolean putIfAbsent) {
+        NearCacheTestContext nearCacheTestContext = createNearCacheTest(cacheName, nearCacheConfig);
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            if (putIfAbsent) {
+                nearCacheTestContext.cache.putIfAbsentAsync(i, generateValueFromKey(i));
+            } else {
+                nearCacheTestContext.cache.putAsync(i, generateValueFromKey(i));
+            }
+        }
+        return nearCacheTestContext;
+    }
+
     protected void putAndGetFromCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
         NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         final NearCacheTestContext nearCacheTestContext =
@@ -172,11 +183,17 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         }
     }
 
-    protected void putToCacheAndThenGetFromClientNearCacheInternal(InMemoryFormat inMemoryFormat, boolean putIfAbsent) {
+    protected void putToCacheAndThenGetFromClientNearCacheInternal(InMemoryFormat inMemoryFormat,
+                                                                   boolean putIfAbsent, boolean async) {
         NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         nearCacheConfig.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE);
-        final NearCacheTestContext nearCacheTestContext =
-                createNearCacheTestAndFillWithData(DEFAULT_CACHE_NAME, nearCacheConfig, putIfAbsent);
+
+        final NearCacheTestContext nearCacheTestContext;
+        if (async) {
+            nearCacheTestContext = createNearCacheTestAndFillWithDataAsync(DEFAULT_CACHE_NAME, nearCacheConfig, putIfAbsent);
+        } else {
+            nearCacheTestContext = createNearCacheTestAndFillWithData(DEFAULT_CACHE_NAME, nearCacheConfig, putIfAbsent);
+        }
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             String expectedValue = generateValueFromKey(i);
@@ -186,11 +203,19 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
     }
 
     protected void putToCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
-        putToCacheAndThenGetFromClientNearCacheInternal(inMemoryFormat, false);
+        putToCacheAndThenGetFromClientNearCacheInternal(inMemoryFormat, false, false);
     }
 
     protected void putIfAbsentToCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
-        putToCacheAndThenGetFromClientNearCacheInternal(inMemoryFormat, true);
+        putToCacheAndThenGetFromClientNearCacheInternal(inMemoryFormat, true, false);
+    }
+
+    protected void putAsyncToCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
+        putToCacheAndThenGetFromClientNearCacheInternal(inMemoryFormat, false, true);
+    }
+
+    protected void putIfAbsentAsyncToCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
+        putToCacheAndThenGetFromClientNearCacheInternal(inMemoryFormat, true, true);
     }
 
     protected void putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache(InMemoryFormat inMemoryFormat) {
@@ -259,9 +284,9 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
     protected void putToCacheAndGetInvalidationEventWhenNodeShutdown(InMemoryFormat inMemoryFormat) {
         Config config = createConfig();
         config.setProperty(GroupProperties.PROP_CACHE_INVALIDATION_MESSAGE_BATCH_SIZE,
-                           String.valueOf(Integer.MAX_VALUE));
+                String.valueOf(Integer.MAX_VALUE));
         config.setProperty(GroupProperties.PROP_CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS,
-                           String.valueOf(Integer.MAX_VALUE));
+                String.valueOf(Integer.MAX_VALUE));
         HazelcastInstance instanceToShutdown = hazelcastFactory.newHazelcastInstance(config);
 
         warmUpPartitions(serverInstance, instanceToShutdown);
@@ -317,7 +342,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     assertNull(nearCacheTestContext1.nearCache.get(
-                                    nearCacheTestContext1.serializationService.toData(key)));
+                            nearCacheTestContext1.serializationService.toData(key)));
                 }
             });
         }
