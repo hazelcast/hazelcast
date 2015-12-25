@@ -20,7 +20,6 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.nio.serialization.StreamSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.Externalizable;
@@ -47,7 +46,7 @@ import static com.hazelcast.nio.IOUtil.newObjectInputStream;
 
 public final class JavaDefaultSerializers {
 
-    public static final class ExternalizableSerializer extends SingletonSerializer<Externalizable> {
+    public static final class ExternalizableSerializer extends AbstractStreamSerializer<Externalizable> {
 
         private final boolean gzipEnabled;
 
@@ -101,7 +100,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class BigIntegerSerializer extends SingletonSerializer<BigInteger> {
+    public static final class BigIntegerSerializer extends AbstractStreamSerializer<BigInteger> {
 
         @Override
         public int getTypeId() {
@@ -123,7 +122,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class BigDecimalSerializer extends SingletonSerializer<BigDecimal> {
+    public static final class BigDecimalSerializer extends AbstractStreamSerializer<BigDecimal> {
 
         final BigIntegerSerializer bigIntegerSerializer = new BigIntegerSerializer();
 
@@ -148,7 +147,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class DateSerializer extends SingletonSerializer<Date> {
+    public static final class DateSerializer extends AbstractStreamSerializer<Date> {
 
         @Override
         public int getTypeId() {
@@ -166,7 +165,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class ClassSerializer extends SingletonSerializer<Class> {
+    public static final class ClassSerializer extends AbstractStreamSerializer<Class> {
 
         @Override
         public int getTypeId() {
@@ -188,7 +187,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class JavaSerializer extends SingletonSerializer<Object> {
+    public static final class JavaSerializer extends AbstractStreamSerializer<Object> {
 
         private final boolean shared;
         private final boolean gzipEnabled;
@@ -251,7 +250,7 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class EnumSerializer extends SingletonSerializer<Enum> {
+    public static final class EnumSerializer extends AbstractStreamSerializer<Enum> {
 
         @Override
         public int getTypeId() {
@@ -280,12 +279,6 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    private abstract static class SingletonSerializer<T> implements StreamSerializer<T> {
-
-        @Override
-        public void destroy() {
-        }
-    }
 
     private JavaDefaultSerializers() {
     }

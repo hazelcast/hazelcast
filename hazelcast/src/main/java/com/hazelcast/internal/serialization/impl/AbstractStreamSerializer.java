@@ -16,22 +16,11 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.nio.serialization.StreamSerializer;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Serializer;
+abstract class AbstractStreamSerializer<T> implements StreamSerializer<T> {
 
-import java.io.IOException;
-
-interface SerializerAdapter {
-
-    void write(ObjectDataOutput out, Object object) throws IOException;
-
-    Object read(ObjectDataInput in) throws IOException;
-
-    int getTypeId();
-
-    void destroy();
-
-    Serializer getImpl();
+    @Override
+    public void destroy() {
+    }
 }
