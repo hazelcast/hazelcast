@@ -188,14 +188,16 @@ public class ClientInvocation implements Runnable {
         }
 
         Exception exception = (Exception) response;
-        if (!lifecycleService.isRunning()) {
-            clientInvocationFuture.setResponse(new HazelcastClientNotActiveException(exception.getMessage()));
-            return;
-        }
         notifyException(exception);
     }
 
     private void notifyException(Exception exception) {
+
+        if (!lifecycleService.isRunning()) {
+            clientInvocationFuture.setResponse(new HazelcastClientNotActiveException(exception.getMessage()));
+            return;
+        }
+
         if (exception instanceof IOException
                 || exception instanceof HazelcastInstanceNotActiveException
                 || exception instanceof AuthenticationException
