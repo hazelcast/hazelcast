@@ -17,6 +17,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
@@ -24,9 +30,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
@@ -34,9 +37,20 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class PostProcessingMapStoreTest extends HazelcastTestSupport {
 
+    private TestHazelcastInstanceFactory factory;
+
+    @Before
+    public void init() {
+        factory = createHazelcastInstanceFactory(2);
+    }
+
+    @After
+    public void cleanup() {
+        factory.terminateAll();
+    }
+
     @Test
     public void testProcessedValueCarriedToTheBackup() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         String name = randomString();
         Config config = new Config();
         MapConfig mapConfig = config.getMapConfig(name);
@@ -149,7 +163,8 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true).setClassName(IncrementerPostProcessingMapStore.class.getName());
         mapConfig.setMapStoreConfig(mapStoreConfig);
-        HazelcastInstance instance = createHazelcastInstance(config);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        warmUpPartitions(instance);
         return instance.getMap(name);
     }
 
