@@ -52,10 +52,4 @@ class CachedDataRecord extends DataRecord {
     public boolean casCachedValue(Object expectedValue, Object newValue) {
         return CACHED_VALUE.compareAndSet(this, expectedValue, newValue);
     }
-
-    @Override
-    public void invalidate() {
-        super.invalidate();
-        cachedValue = null;
-    }
 }

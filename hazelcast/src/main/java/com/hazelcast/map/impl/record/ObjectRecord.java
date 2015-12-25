@@ -44,9 +44,4 @@ class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
     public void setValue(Object o) {
         value = o;
     }
-
-    @Override
-    public void invalidate() {
-        value = null;
-    }
 }

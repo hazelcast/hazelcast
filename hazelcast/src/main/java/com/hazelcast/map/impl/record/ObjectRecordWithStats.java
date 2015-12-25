@@ -20,11 +20,11 @@ class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
 
     private volatile Object value;
 
-    public ObjectRecordWithStats() {
+    ObjectRecordWithStats() {
         super();
     }
 
-    public ObjectRecordWithStats(Object value) {
+    ObjectRecordWithStats(Object value) {
         super();
         this.value = value;
     }
@@ -37,11 +37,6 @@ class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
     @Override
     public void setValue(Object value) {
         this.value = value;
-    }
-
-    @Override
-    public void invalidate() {
-        value = null;
     }
 
     @Override
