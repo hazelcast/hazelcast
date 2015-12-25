@@ -31,26 +31,34 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 @ManagedDescription("IQueue")
 public class QueueMBean extends HazelcastMBean<IQueue> {
 
+    private final boolean totalEnabled;
+
     private final AtomicLong totalAddedItemCount = new AtomicLong();
     private final AtomicLong totalRemovedItemCount = new AtomicLong();
     private final String registrationId;
 
     protected QueueMBean(IQueue managedObject, ManagementService service) {
         super(managedObject, service);
+        totalEnabled = service.instance.node.groupProperties.ENABLE_JMX_DETAILED.getBoolean();
         objectName = service.createObjectName("IQueue", managedObject.getName());
-        //todo: using the event system to register number of adds/remove is an very expensive price to pay.
-        ItemListener itemListener = new ItemListener() {
-            @Override
-            public void itemAdded(ItemEvent item) {
-                totalAddedItemCount.incrementAndGet();
-            }
 
-            @Override
-            public void itemRemoved(ItemEvent item) {
-                totalRemovedItemCount.incrementAndGet();
-            }
-        };
-        registrationId = managedObject.addItemListener(itemListener, false);
+        if (totalEnabled) {
+            //todo: using the event system to register number of adds/remove is an very expensive price to pay.
+            ItemListener itemListener = new ItemListener() {
+                @Override
+                public void itemAdded(ItemEvent item) {
+                    totalAddedItemCount.incrementAndGet();
+                }
+
+                @Override
+                public void itemRemoved(ItemEvent item) {
+                    totalRemovedItemCount.incrementAndGet();
+                }
+            };
+            registrationId = managedObject.addItemListener(itemListener, false);
+        } else {
+            registrationId = null;
+        }
     }
 
     @ManagedAnnotation("localOwnedItemCount")
@@ -158,10 +166,12 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
 
     public void preDeregister() throws Exception {
         super.preDeregister();
-        try {
-            managedObject.removeItemListener(registrationId);
-        } catch (Exception ignored) {
-            ignore(ignored);
+        if (totalEnabled) {
+            try {
+                managedObject.removeItemListener(registrationId);
+            } catch (Exception ignored) {
+                ignore(ignored);
+            }
         }
     }
 }
