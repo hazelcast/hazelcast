@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -423,18 +424,19 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
                 Cache.Entry<Integer, Integer> e = iter.next();
                 int key = e.getKey();
                 Integer value = e.getValue();
-                if (value != null) {
-                    assertEquals(key, value.intValue());
-                }
+                assertEquals(key, value.intValue());
                 k++;
             }
             assertTrue(k <= size);
+        } catch (NoSuchElementException e) {
+            // `NoSuchElementException` is expected because while iterating over entries,
+            // last element might be removed by worker thread in the test and since there is no more element,
+            // `NoSuchElementException` is thrown which is normal behaviour.
         } finally {
             stop.set(true);
             thread.join();
         }
     }
-
 
     @Test
     public void testRemoveAsync() throws ExecutionException, InterruptedException {
