@@ -221,7 +221,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void onClusterStateChange(ClusterState newState) {
+    public void onClusterStateChange(ClusterState newState, boolean persistentChange) {
     }
 
     @Override
