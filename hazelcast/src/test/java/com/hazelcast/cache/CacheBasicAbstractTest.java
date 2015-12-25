@@ -441,9 +441,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
                 Cache.Entry<Integer, Integer> e = iterator.next();
                 Integer key = e.getKey();
                 Integer value = e.getValue();
-                if (value != null) {
-                    assertEquals(key, value);
-                }
+                assertEquals(key, value);
                 i++;
             }
             if (withoutEviction) {
@@ -451,9 +449,9 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
                 assertThatNoCacheEvictionHappened(cache);
             }
         } catch (NoSuchElementException e) {
-            if (withoutEviction) {
-                fail("Without eviction, there should not be `NoSuchElementException`: " + e);
-            }
+            // `NoSuchElementException` is expected because while iterating over entries,
+            // last element might be removed by worker thread in the test and since there is no more element,
+            // `NoSuchElementException` is thrown which is normal behaviour.
         } finally {
             worker.shutdown();
         }
