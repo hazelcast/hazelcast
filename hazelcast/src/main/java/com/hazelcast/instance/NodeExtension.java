@@ -179,8 +179,10 @@ public interface NodeExtension {
      * Called when cluster state is changed
      *
      * @param newState new state
+     * @param persistentChange status of the change. A cluster state change may be non-persistent if it has been done temporarily
+     *                         during system operations such cluster start etc.
      */
-    void onClusterStateChange(ClusterState newState);
+    void onClusterStateChange(ClusterState newState, boolean persistentChange);
 
     /**
      * Registers given register if it's a known type.
