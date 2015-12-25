@@ -19,6 +19,7 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
+
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
@@ -29,27 +30,34 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 @ManagedDescription("IList")
 public class ListMBean extends HazelcastMBean<IList<?>> {
 
+    private final boolean totalEnabled;
+
     private AtomicLong totalAddedItemCount = new AtomicLong();
     private AtomicLong totalRemovedItemCount = new AtomicLong();
     private final String registrationId;
 
     protected ListMBean(IList<?> managedObject, ManagementService service) {
         super(managedObject, service);
+        totalEnabled = service.instance.node.groupProperties.ENABLE_JMX_DETAILED.getBoolean();
         objectName = service.createObjectName("IList", managedObject.getName());
 
-        //todo: using the event system to register number of adds/remove is an very expensive price to pay.
-        ItemListener itemListener = new ItemListener() {
-            @Override
-            public void itemAdded(ItemEvent item) {
-                totalAddedItemCount.incrementAndGet();
-            }
+        if (totalEnabled) {
+            //todo: using the event system to register number of adds/remove is an very expensive price to pay.
+            ItemListener itemListener = new ItemListener() {
+                @Override
+                public void itemAdded(ItemEvent item) {
+                    totalAddedItemCount.incrementAndGet();
+                }
 
-            @Override
-            public void itemRemoved(ItemEvent item) {
-                totalRemovedItemCount.incrementAndGet();
-            }
-        };
-        registrationId = managedObject.addItemListener(itemListener, false);
+                @Override
+                public void itemRemoved(ItemEvent item) {
+                    totalRemovedItemCount.incrementAndGet();
+                }
+            };
+            registrationId = managedObject.addItemListener(itemListener, false);
+        } else {
+            registrationId = null;
+        }
     }
 
     @ManagedAnnotation(value = "clear", operation = true)
@@ -76,10 +84,12 @@ public class ListMBean extends HazelcastMBean<IList<?>> {
 
     public void preDeregister() throws Exception {
         super.preDeregister();
-        try {
-            managedObject.removeItemListener(registrationId);
-        } catch (Exception ignored) {
-            ignore(ignored);
+        if (totalEnabled) {
+            try {
+                managedObject.removeItemListener(registrationId);
+            } catch (Exception ignored) {
+                ignore(ignored);
+            }
         }
     }
 }

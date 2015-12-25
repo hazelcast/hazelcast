@@ -33,6 +33,8 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 @ManagedDescription("ReplicatedMap")
 public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
 
+    private final boolean totalEnabled;
+
     private final AtomicLong totalAddedEntryCount = new AtomicLong();
     private final AtomicLong totalRemovedEntryCount = new AtomicLong();
     private final AtomicLong totalUpdatedEntryCount = new AtomicLong();
@@ -40,49 +42,56 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
 
     protected ReplicatedMapMBean(ReplicatedMapProxy managedObject, ManagementService service) {
         super(managedObject, service);
+        totalEnabled = service.instance.node.groupProperties.ENABLE_JMX_DETAILED.getBoolean();
         objectName = service.createObjectName("ReplicatedMap", managedObject.getName());
 
-        //todo: using the event system to register number of adds/remove is an very expensive price to pay.
-        EntryListener entryListener = new EntryListener() {
-            @Override
-            public void entryAdded(EntryEvent event) {
-                totalAddedEntryCount.incrementAndGet();
-            }
+        if (totalEnabled) {
+            //todo: using the event system to register number of adds/remove is an very expensive price to pay.
+            EntryListener entryListener = new EntryListener() {
+                @Override
+                public void entryAdded(EntryEvent event) {
+                    totalAddedEntryCount.incrementAndGet();
+                }
 
-            @Override
-            public void entryRemoved(EntryEvent event) {
-                totalRemovedEntryCount.incrementAndGet();
-            }
+                @Override
+                public void entryRemoved(EntryEvent event) {
+                    totalRemovedEntryCount.incrementAndGet();
+                }
 
-            @Override
-            public void entryUpdated(EntryEvent event) {
-                totalUpdatedEntryCount.incrementAndGet();
-            }
+                @Override
+                public void entryUpdated(EntryEvent event) {
+                    totalUpdatedEntryCount.incrementAndGet();
+                }
 
-            @Override
-            public void entryEvicted(EntryEvent event) {
-            }
+                @Override
+                public void entryEvicted(EntryEvent event) {
+                }
 
-            @Override
-            public void mapEvicted(MapEvent event) {
-                //TODO should I add totalEvictedEntryCount
-            }
+                @Override
+                public void mapEvicted(MapEvent event) {
+                    //TODO should I add totalEvictedEntryCount
+                }
 
-            @Override
-            public void mapCleared(MapEvent event) {
-                //TODO should I add totalClearedEntryCount
-            }
-        };
-        listenerId = managedObject.addEntryListener(entryListener, false);
+                @Override
+                public void mapCleared(MapEvent event) {
+                    //TODO should I add totalClearedEntryCount
+                }
+            };
+            listenerId = managedObject.addEntryListener(entryListener, false);
+        } else {
+            listenerId = null;
+        }
     }
 
     @Override
     public void preDeregister() throws Exception {
         super.preDeregister();
-        try {
-            managedObject.removeEntryListener(listenerId);
-        } catch (Exception ignored) {
-            ignore(ignored);
+        if (totalEnabled) {
+            try {
+                managedObject.removeEntryListener(listenerId);
+            } catch (Exception ignored) {
+                ignore(ignored);
+            }
         }
     }
 

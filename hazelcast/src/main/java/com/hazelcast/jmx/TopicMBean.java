@@ -31,20 +31,27 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 @ManagedDescription("ITopic")
 public class TopicMBean extends HazelcastMBean<ITopic> {
 
+    private final boolean totalEnabled;
+
     private final AtomicLong totalMessageCount = new AtomicLong();
     private final String registrationId;
 
     protected TopicMBean(ITopic managedObject, ManagementService service) {
         super(managedObject, service);
+        totalEnabled = service.instance.node.groupProperties.ENABLE_JMX_DETAILED.getBoolean();
         objectName = service.createObjectName("ITopic", managedObject.getName());
 
-        //can't we rely on the statics functionality of the topic instead of relying on the event system?
-        MessageListener messageListener = new MessageListener() {
-            public void onMessage(Message message) {
-                totalMessageCount.incrementAndGet();
-            }
-        };
-        registrationId = managedObject.addMessageListener(messageListener);
+        if (totalEnabled) {
+            //can't we rely on the statics functionality of the topic instead of relying on the event system?
+            MessageListener messageListener = new MessageListener() {
+                public void onMessage(Message message) {
+                    totalMessageCount.incrementAndGet();
+                }
+            };
+            registrationId = managedObject.addMessageListener(messageListener);
+        } else {
+            registrationId = null;
+        }
     }
 
     @ManagedAnnotation("localCreationTime")
@@ -86,10 +93,12 @@ public class TopicMBean extends HazelcastMBean<ITopic> {
     @Override
     public void preDeregister() throws Exception {
         super.preDeregister();
-        try {
-            managedObject.removeMessageListener(registrationId);
-        } catch (Exception ignored) {
-            ignore(ignored);
+        if (totalEnabled) {
+            try {
+                managedObject.removeMessageListener(registrationId);
+            } catch (Exception ignored) {
+                ignore(ignored);
+            }
         }
     }
 }
