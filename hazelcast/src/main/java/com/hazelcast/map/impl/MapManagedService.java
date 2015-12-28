@@ -64,9 +64,7 @@ public class MapManagedService implements ManagedService {
 
         // clear internal resources, these are the resources wholly managed by hazelcast,
         // means they have no external interaction like map-stores.
-        mapServiceContext.clearPartitions();
-        mapServiceContext.getNearCacheProvider().shutdown();
-        mapServiceContext.getMapContainers().clear();
+        mapServiceContext.shutdown();
     }
 
     private class ObjectNamespaceLockStoreInfoConstructorFunction implements ConstructorFunction<ObjectNamespace, LockStoreInfo> {

@@ -18,6 +18,8 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NativeMemoryConfig;
+import com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -146,9 +148,17 @@ public class PartitionContainer {
         }
     }
 
-    public void clear() {
-        for (RecordStore recordStore : maps.values()) {
-            recordStore.clearPartition();
+    public void clear(boolean onShutdown) {
+        NativeMemoryConfig nativeMemoryConfig = mapService.getMapServiceContext().getNodeEngine()
+                .getConfig().getNativeMemoryConfig();
+
+        boolean clearPartitions = !onShutdown
+                || (nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() != MemoryAllocatorType.POOLED);
+
+        if (clearPartitions) {
+            for (RecordStore recordStore : maps.values()) {
+                recordStore.clearPartition();
+            }
         }
         maps.clear();
     }

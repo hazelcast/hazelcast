@@ -318,10 +318,12 @@ public interface ICacheRecordStore {
      *     <li>unregister all listeners.</li>
      * </ul>
      *
+     * @param onShutdown true if {@code close} is called during CacheService shutdown,
+     *                   false otherwise.
      * @see #clear()
      * @see #destroy()
      */
-    void close();
+    void close(boolean onShutdown);
 
     /**
      * Destroy is equivalent to below operations in the given order:
@@ -332,7 +334,7 @@ public interface ICacheRecordStore {
      * </ul>
      *
      * @see #clear()
-     * @see #close()
+     * @see #close(boolean)
      */
     void destroy();
 

@@ -69,7 +69,13 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     MapService getService();
 
-    void clearPartitions();
+    /**
+     * Clears all partition based data allocated by MapService.
+     *
+     * @param onShutdown true if {@code clearPartitions} is called during MapService shutdown,
+     *                   false otherwise.
+     */
+    void clearPartitions(boolean onShutdown);
 
     void destroyMapStores();
 
@@ -78,6 +84,12 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     void destroyMap(String mapName);
 
     void reset();
+
+    /**
+     * Releases internal resources solely managed by Hazelcast. This method is
+     * called when MapService is shutting down.
+     */
+    void shutdown();
 
     NearCacheProvider getNearCacheProvider();
 
