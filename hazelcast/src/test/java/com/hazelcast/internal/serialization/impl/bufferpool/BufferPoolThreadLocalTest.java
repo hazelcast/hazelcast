@@ -1,6 +1,8 @@
 package com.hazelcast.internal.serialization.impl.bufferpool;
 
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -10,10 +12,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.lang.ref.WeakReference;
 import java.util.concurrent.Callable;
 
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -50,10 +55,58 @@ public class BufferPoolThreadLocalTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void clear() {
-        BufferPool pool1 = bufferPoolThreadLocal.get();
+    public void get_whenCleared() throws Exception {
+        // forces the creation of a bufferpool.
+        bufferPoolThreadLocal.get();
+
+        // we kill all strong references.
         bufferPoolThreadLocal.clear();
-        BufferPool pool2 = bufferPoolThreadLocal.get();
+
+        // then eventually when we try to get the pool, we should get a HazelcastInstanceNotActiveException
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                System.gc();
+                try {
+                    bufferPoolThreadLocal.get();
+                    fail();
+                } catch (HazelcastInstanceNotActiveException ignore) {
+                }
+            }
+        });
+    }
+
+
+    // we need to make sure that different instances return different bufferpool (each hz
+    // instance should gets its own bufferpool).
+    @Test
+    public void get_whenDifferentThreadLocals_thenDifferentInstances() throws Exception {
+        BufferPoolThreadLocal bufferPoolThreadLocal2 = new BufferPoolThreadLocal(
+                serializationService, new BufferPoolFactoryImpl());
+
+        BufferPool pool1 = bufferPoolThreadLocal.get();
+        BufferPool pool2 = bufferPoolThreadLocal2.get();
+
         assertNotSame(pool1, pool2);
+    }
+
+    // if clear is called, all strong references to the pool are cut, and therefor eventually the buffer-pool
+    //should be gc'd
+    @Test
+    public void clear() {
+        // store the pool in a weak reference since we don't want to force a strong reference ourselves.
+        final WeakReference<BufferPool> poolRef = new WeakReference<BufferPool>(bufferPoolThreadLocal.get());
+
+        // call clear; kills the strong references.
+        bufferPoolThreadLocal.clear();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                System.gc();
+                // eventually the reference should point to zero; indicating that the pool is gc'ed.
+                assertNull(poolRef.get());
+            }
+        });
     }
 }
