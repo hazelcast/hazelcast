@@ -39,7 +39,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
     @Test
     public void testPhoneHomeParameters() throws Exception {
-
+        assertClusterSizeEventually(1, hz1);
         Node node1 = TestUtil.getNode(hz1);
         PhoneHome phoneHome = new PhoneHome();
         Map<String, String> parameters = phoneHome.phoneHome(node1, "test_version", false);
