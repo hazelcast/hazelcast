@@ -129,22 +129,15 @@ public class MapContainer {
         return new ConstructorFunction<Void, RecordFactory>() {
             @Override
             public RecordFactory createNew(Void notUsedArg) {
-                RecordFactory recordFactory;
                 switch (mapConfig.getInMemoryFormat()) {
                     case BINARY:
-                        recordFactory = new DataRecordFactory(mapConfig, serializationService, partitioningStrategy);
-                        break;
+                        return new DataRecordFactory(mapConfig, serializationService, partitioningStrategy);
                     case OBJECT:
-                        recordFactory = new ObjectRecordFactory(mapConfig, serializationService);
-                        break;
-                    case NATIVE:
-                        throw new IllegalArgumentException("Native storage format is supported in Hazelcast Enterprise only. "
-                                + "Make sure you have Hazelcast Enterprise JARs on your classpath!");
+                        return new ObjectRecordFactory(mapConfig, serializationService);
                     default:
                         throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
                 }
 
-                return recordFactory;
             }
         };
     }

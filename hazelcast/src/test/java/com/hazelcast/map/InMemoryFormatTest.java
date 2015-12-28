@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.nio.ObjectDataInput;
@@ -51,7 +52,7 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
      * if statistics enabled InMemoryFormat.Object does not work
      */
     @Test
-    public void testIssue2622(){
+    public void testIssue2622() {
         final String mapName = randomString();
         Config config = new Config();
         final MapConfig mapConfig = new MapConfig(mapName);
@@ -171,5 +172,27 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         public void readData(final ObjectDataInput in) throws IOException {
             deSerializeCount.incrementAndGet();
         }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNativeIMap_throwsException() throws Exception {
+        Config config = getConfig();
+        config.getMapConfig("default").setInMemoryFormat(InMemoryFormat.NATIVE);
+
+        HazelcastInstance member = createHazelcastInstance(config);
+        member.getMap("default");
+    }
+
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNativeNearCache_throwsException() throws Exception {
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setInMemoryFormat(InMemoryFormat.NATIVE);
+
+        Config config = getConfig();
+        config.getMapConfig("default").setNearCacheConfig(nearCacheConfig);
+
+        HazelcastInstance member = createHazelcastInstance(config);
+        member.getMap("default");
     }
 }

@@ -22,8 +22,10 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
+
 import java.util.Map;
 
+import static com.hazelcast.map.impl.MapConfigValidator.checkInMemoryFormat;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 /**
@@ -44,8 +46,11 @@ class MapRemoteService implements RemoteService {
     @Override
     public DistributedObject createDistributedObject(String name) {
         MapConfig mapConfig = nodeEngine.getConfig().findMapConfig(name);
+        checkInMemoryFormat(mapConfig.getInMemoryFormat());
 
         if (mapConfig.isNearCacheEnabled()) {
+            checkInMemoryFormat(mapConfig.getNearCacheConfig().getInMemoryFormat());
+
             return new NearCachedMapProxyImpl(name, mapServiceContext.getService(), nodeEngine);
         } else {
             return new MapProxyImpl(name, mapServiceContext.getService(), nodeEngine);
