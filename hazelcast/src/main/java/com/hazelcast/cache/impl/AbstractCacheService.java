@@ -114,14 +114,22 @@ public abstract class AbstractCacheService
 
     @Override
     public void reset() {
+        reset(false);
+    }
+
+    private void reset(boolean onShutdown) {
         for (String objectName : configs.keySet()) {
             deleteCache(objectName, true, null, false);
         }
         final CachePartitionSegment[] partitionSegments = segments;
         for (CachePartitionSegment partitionSegment : partitionSegments) {
             if (partitionSegment != null) {
-                partitionSegment.clear();
-                partitionSegment.init();
+                if (onShutdown) {
+                    partitionSegment.shutdown();
+                } else {
+                    partitionSegment.clear();
+                    partitionSegment.init();
+                }
             }
         }
     }
@@ -130,7 +138,7 @@ public abstract class AbstractCacheService
     public void shutdown(boolean terminate) {
         if (!terminate) {
             cacheEventHandler.shutdown();
-            reset();
+            reset(true);
         }
     }
 

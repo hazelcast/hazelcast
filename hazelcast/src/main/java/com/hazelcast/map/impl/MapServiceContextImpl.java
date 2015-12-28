@@ -194,11 +194,11 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public void clearPartitions() {
+    public void clearPartitions(boolean onShutdown) {
         final PartitionContainer[] containers = partitionContainers;
         for (PartitionContainer container : containers) {
             if (container != null) {
-                container.clear();
+                container.clear(onShutdown);
             }
         }
     }
@@ -245,8 +245,15 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void reset() {
-        clearPartitions();
+        clearPartitions(false);
         getNearCacheProvider().reset();
+    }
+
+    @Override
+    public void shutdown() {
+        clearPartitions(true);
+        nearCacheProvider.shutdown();
+        mapContainers.clear();
     }
 
     @Override
