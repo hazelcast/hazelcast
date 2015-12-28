@@ -42,6 +42,8 @@ import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.util.ExceptionUtil;
 
+import static com.hazelcast.map.impl.MapConfigValidator.checkInMemoryFormat;
+
 public class DefaultClientExtension implements ClientExtension {
 
     protected static final ILogger LOGGER = Logger.getLogger(ClientExtension.class);
@@ -117,6 +119,7 @@ public class DefaultClientExtension implements ClientExtension {
             public ClientProxy create(String id) {
                 NearCacheConfig nearCacheConfig = client.getClientConfig().getNearCacheConfig(id);
                 if (nearCacheConfig != null) {
+                    checkInMemoryFormat(nearCacheConfig.getInMemoryFormat());
                     return new NearCachedClientMapProxy(MapService.SERVICE_NAME, id);
                 } else {
                     return new ClientMapProxy(MapService.SERVICE_NAME, id);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.mapreduce.impl;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -26,7 +27,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -34,6 +34,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
+
+import static com.hazelcast.map.impl.MapConfigValidator.checkInMemoryFormat;
 
 /**
  * This {@link com.hazelcast.mapreduce.KeyValueSource} implementation is used in
@@ -79,6 +81,7 @@ public class MapKeyValueSource<K, V>
             return false;
         }
         RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, mapName);
+        checkInMemoryFormat(recordStore.getMapContainer().getMapConfig().getInMemoryFormat());
         iterator = recordStore.iterator();
         return true;
     }
