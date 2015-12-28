@@ -302,7 +302,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @SuppressWarnings("WhileLoopReplaceableByForEach")
     private void testIteratorDuringInsertion(boolean withoutEviction) {
-        final int MAX_SIZE = withoutEviction ? 1000000 : 10000;
+        final int MAX_SIZE = withoutEviction ? 1000000 : 1000;
         final CacheConfig<Integer, Integer> config = getCacheConfigWithMaxSize(MAX_SIZE);
         final ICache<Integer, Integer> cache = createCache(config);
         final int maxSize = withoutEviction
@@ -359,7 +359,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @SuppressWarnings("WhileLoopReplaceableByForEach")
     private void testIteratorDuringUpdate(boolean withoutEviction) {
-        final int MAX_SIZE = withoutEviction ? 1000000 : 10000;
+        final int MAX_SIZE = withoutEviction ? 1000000 : 1000;
         final CacheConfig<Integer, Integer> config = getCacheConfigWithMaxSize(MAX_SIZE);
         final ICache<Integer, Integer> cache = createCache(config);
         final int maxSize = withoutEviction
@@ -414,7 +414,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @SuppressWarnings("WhileLoopReplaceableByForEach")
     private void testIteratorDuringRemoval(boolean withoutEviction) {
-        final int MAX_SIZE = withoutEviction ? 1000000 : 10000;
+        final int MAX_SIZE = withoutEviction ? 1000000 : 1000;
         final CacheConfig<Integer, Integer> config = getCacheConfigWithMaxSize(MAX_SIZE);
         final ICache<Integer, Integer> cache = createCache(config);
         final int maxSize = withoutEviction
