@@ -173,11 +173,12 @@ public class ClientMapNearCacheTest {
     public void testAfterRemoveNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
             clientMap.remove(i, i);
@@ -194,11 +195,12 @@ public class ClientMapNearCacheTest {
     public void testAfterDeleteNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
             clientMap.delete(i);
@@ -215,11 +217,12 @@ public class ClientMapNearCacheTest {
     public void testAfterPutAsyncNearCacheIsInvalidated() throws InterruptedException {
         int mapSize = 1000;
         String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
             clientMap.putAsync(i, i, 1, TimeUnit.SECONDS);
@@ -236,11 +239,12 @@ public class ClientMapNearCacheTest {
     public void testAfterRemoveAsyncNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
             clientMap.removeAsync(i);
@@ -257,11 +261,12 @@ public class ClientMapNearCacheTest {
     public void testAfterTryRemoveNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
             clientMap.tryRemove(i, 5, TimeUnit.SECONDS);
@@ -278,11 +283,12 @@ public class ClientMapNearCacheTest {
     public void testAfterTryPutNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
             clientMap.tryPut(i, i, 5, TimeUnit.SECONDS);
@@ -299,11 +305,12 @@ public class ClientMapNearCacheTest {
     public void testAfterPutTransientNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
             clientMap.putTransient(i, i, 10, TimeUnit.SECONDS);
@@ -320,11 +327,12 @@ public class ClientMapNearCacheTest {
     public void testAfterPutIfAbsentNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
             clientMap.putIfAbsent(i, i, 1, TimeUnit.SECONDS);
@@ -341,11 +349,12 @@ public class ClientMapNearCacheTest {
     public void testAfterReplaceIfSameNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
             clientMap.replace(i, i, i + mapSize);
@@ -362,11 +371,12 @@ public class ClientMapNearCacheTest {
     public void testAfterReplaceNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
             clientMap.replace(i, i + mapSize);
@@ -383,11 +393,12 @@ public class ClientMapNearCacheTest {
     public void testAfterSetNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
             clientMap.set(i, i, 1, TimeUnit.SECONDS);
@@ -404,11 +415,12 @@ public class ClientMapNearCacheTest {
     public void testAfterEvictNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         for (int i = 0; i < mapSize; i++) {
             clientMap.evict(i);
@@ -425,11 +437,12 @@ public class ClientMapNearCacheTest {
     public void testAfterEvictAllNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         clientMap.evictAll();
 
@@ -455,8 +468,9 @@ public class ClientMapNearCacheTest {
         config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
 
-        populateNearCache(clientMap, mapSize);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         clientMap.loadAll(true);
 
@@ -482,10 +496,11 @@ public class ClientMapNearCacheTest {
         config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
 
         HashSet<Integer> keys = new HashSet<Integer>();
         for (int i = 0; i < mapSize; i++) {
-            clientMap.put(i, i);
+            serverMap.put(i, i);
             keys.add(i);
         }
 
@@ -506,14 +521,15 @@ public class ClientMapNearCacheTest {
     public void testAfterPutAllNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
 
         HashMap<Integer, Integer> hashMap = new HashMap<Integer, Integer>();
         for (int i = 0; i < mapSize; i++) {
-            clientMap.put(i, i);
+            serverMap.put(i, i);
             hashMap.put(i, i);
         }
 
@@ -535,11 +551,12 @@ public class ClientMapNearCacheTest {
         final int mapSize = 1000;
         String mapName = randomMapName();
         Random random = new Random();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         int randomKey = random.nextInt(mapSize);
         clientMap.submitToKey(randomKey, new IncrementEntryProcessor());
@@ -556,11 +573,12 @@ public class ClientMapNearCacheTest {
         final int mapSize = 1000;
         String mapName = randomMapName();
         Random random = new Random();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         final CountDownLatch latch = new CountDownLatch(1);
         ExecutionCallback<Integer> callback = new ExecutionCallback<Integer>() {
@@ -590,11 +608,12 @@ public class ClientMapNearCacheTest {
         final int mapSize = 1000;
         String mapName = randomMapName();
         Random random = new Random();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
 
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         int randomKey = random.nextInt(mapSize);
         clientMap.executeOnKey(randomKey, new IncrementEntryProcessor());
@@ -611,12 +630,13 @@ public class ClientMapNearCacheTest {
         int mapSize = 1000;
         String mapName = randomMapName();
 
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(newConfig());
         NearCacheConfig nearCacheConfig = newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName);
         HazelcastInstance client = getClient(hazelcastFactory, nearCacheConfig);
 
         IMap<Integer, Integer> clientMap = client.getMap(mapName);
-        populateNearCache(clientMap, mapSize);
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        putServerMapGetClientMap(serverMap, clientMap, mapSize);
 
         clientMap.destroy();
 
@@ -628,7 +648,6 @@ public class ClientMapNearCacheTest {
             }
         });
     }
-
     @Test
     public void testRemovedKeyValueNotInNearCache() throws Exception {
         IMap<Integer, Integer> map = getNearCachedMapFromClient(newInvalidationEnabledNearCacheConfig());
@@ -978,6 +997,17 @@ public class ClientMapNearCacheTest {
         // populate near cache
         for (int i = 0; i < size; i++) {
             map.get(i);
+        }
+    }
+
+    protected void putServerMapGetClientMap(IMap<Integer, Integer> serverMap,IMap<Integer, Integer> clientMap, int size) {
+
+        for (int i = 0; i < size; i++) {
+            serverMap.put(i, i);
+        }
+        // populate near cache
+        for (int i = 0; i < size; i++) {
+            clientMap.get(i);
         }
     }
 
