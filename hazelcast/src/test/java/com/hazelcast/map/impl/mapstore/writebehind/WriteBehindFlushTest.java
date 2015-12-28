@@ -101,10 +101,15 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
         assertWriteBehindQueuesEmpty(mapName, asList(member1, member2, member3));
     }
 
-    protected void assertWriteBehindQueuesEmpty(String mapName, List<HazelcastInstance> nodes) {
-        for (HazelcastInstance instance : nodes) {
-            assertEquals(0, writeBehindQueueSize(instance, mapName));
-        }
+    protected void assertWriteBehindQueuesEmpty(final String mapName, final List<HazelcastInstance> nodes) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (HazelcastInstance instance : nodes) {
+                    assertEquals(0, writeBehindQueueSize(instance, mapName));
+                }
+            }
+        });
     }
 
 }
