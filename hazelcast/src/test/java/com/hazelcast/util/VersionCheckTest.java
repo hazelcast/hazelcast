@@ -39,9 +39,9 @@ public class VersionCheckTest extends HazelcastTestSupport {
 
     @Test
     public void testVersionCheckParameters() throws Exception {
-        assertClusterSizeEventually(1, hz1);
         Node node1 = TestUtil.getNode(hz1);
         VersionCheck check = new VersionCheck();
+        sleepAtLeastMillis(1);
         Map<String, String> parameters = check.doCheck(node1, "test_version", false);
 
         assertEquals(parameters.get("version"), "test_version");
