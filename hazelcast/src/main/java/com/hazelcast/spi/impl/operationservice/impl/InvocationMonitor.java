@@ -30,7 +30,9 @@ import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.counters.SwCounter;
-
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
@@ -40,7 +42,7 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 /**
  * The InvocationMonitor monitors all pending invocations and determines if there are any problems like timeouts. It uses the
  * {@link InvocationRegistry} to access the pending invocations.
- *
+ * <p/>
  * An experimental feature to support debugging is the slow invocation detector. So it can log any invocation that takes
  * more than x seconds. See {@link GroupProperty#SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS} for more information.
  */
@@ -99,10 +101,10 @@ public class InvocationMonitor {
 
     /**
      * The MonitorThread iterates over all pending invocations and sees what needs to be done
-     *
+     * <p/>
      * But it should also check if a 'is still running' check needs to be done. This removed complexity from
      * the invocation.waitForResponse which is too complicated too understand.
-     *
+     * <p/>
      * This class needs to implement the {@link OperationHostileThread} interface to make sure that the OperationExecutor
      * is not going to schedule any operations on this task due to retry.
      */
@@ -151,9 +153,44 @@ public class InvocationMonitor {
             long now = Clock.currentTimeMillis();
             int backupTimeouts = 0;
             int invocationTimeouts = 0;
-            for (Invocation invocation : invocationRegistry.invocations()) {
+
+            Set<Map.Entry<Long, Invocation>> invocations = invocationRegistry.entrySet();
+            Iterator<Map.Entry<Long, Invocation>> iterator = invocations.iterator();
+            while (iterator.hasNext()) {
                 if (shutdown) {
                     return;
+                }
+                Map.Entry<Long, Invocation> entry = iterator.next();
+                Long callId = entry.getKey();
+                Invocation invocation = entry.getValue();
+
+                /*
+                * The reason for the following if check is a workaround for the problem explained below.
+                *
+                * Problematic scenario :
+                * If an invocation with callId 1 is retried twice for any reason,
+                * two new innovations created and registered to invocation registry with callId’s 2 and 3 respectively.
+                * Both new invocations are sharing the same operation
+                * When one of the new invocations, say the one with callId 2 finishes, it de-registers itself from the
+                * invocation registry.
+                * When doing the de-registration it sets the shared operation’s callId to 0.
+                * After that when the invocation with the callId 3 completes, it tries to de-register itself from
+                * invocation registry
+                * but fails to do so since the invocation callId and the callId on the operation is not matching anymore
+                * When InvocationMonitor thread kicks in, it sees that there is an invocation in the registry,
+                * and asks whether invocation is finished or not.
+                * Even if the remote node replies with invocation is timed out,
+                * It can’t be de-registered from the registry because of aforementioned non-matching callId scenario.
+                *
+                * Workaround:
+                * When InvocationMonitor kicks in, it will do a check for invocations that are completed
+                * but their callId's are not matching with their operations. If any invocation found for that type,
+                * it is removed from the invocation registry.
+                *
+                * */
+                if (!callIdMatches(callId, invocation) && isDone(invocation)) {
+                    iterator.remove();
+                    continue;
                 }
 
                 detectSlowInvocation(now, invocation);
@@ -170,6 +207,14 @@ public class InvocationMonitor {
             backupTimeoutsCount.inc(backupTimeouts);
             normalTimeoutsCount.inc(invocationTimeouts);
             log(backupTimeouts, invocationTimeouts);
+        }
+
+        private boolean callIdMatches(long callId, Invocation invocation) {
+            return callId == invocation.op.getCallId();
+        }
+
+        private boolean isDone(Invocation invocation) {
+            return invocation.invocationFuture.isDone();
         }
 
         private void detectSlowInvocation(long now, Invocation invocation) {
