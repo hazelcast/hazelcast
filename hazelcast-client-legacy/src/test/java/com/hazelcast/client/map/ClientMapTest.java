@@ -298,7 +298,7 @@ public class ClientMapTest {
         future.get();
         assertEquals("value1", map.get("key"));
 
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
         assertNull(map.get("key"));
     }
 
