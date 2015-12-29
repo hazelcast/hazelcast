@@ -20,6 +20,7 @@ import com.hazelcast.test.annotation.RunParallel;
 import org.junit.runner.Runner;
 import org.junit.runners.Suite;
 import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.InitializationError;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -84,9 +85,9 @@ public class HazelcastTestRunner extends Suite {
                 String name = nameFor(namePattern, i, parametersOfSingleTest);
                 AbstractHazelcastClassRunner runner;
                 if (isParallel) {
-                    runner = new HazelcastParallelClassRunner(getTestClass().getJavaClass(), parametersOfSingleTest, name);
+                    runner = createParallelRunner(parametersOfSingleTest, name);
                 } else {
-                    runner = new HazelcastSerialClassRunner(getTestClass().getJavaClass(), parametersOfSingleTest, name);
+                    runner = createSerialRunner(parametersOfSingleTest, name);
                 }
                 runner.setParameterized(true);
                 runners.add(runner);
@@ -108,5 +109,13 @@ public class HazelcastTestRunner extends Suite {
         String methodName = getParametersMethod().getName();
         String message = MessageFormat.format("{0}.{1}() must return an Iterable of arrays.", className, methodName);
         return new Exception(message);
+    }
+
+    protected HazelcastParallelClassRunner createParallelRunner(Object[] parametersOfSingleTest, String name) throws InitializationError {
+        return new HazelcastParallelClassRunner(getTestClass().getJavaClass(), parametersOfSingleTest, name);
+    }
+
+    protected HazelcastSerialClassRunner createSerialRunner(Object[] parametersOfSingleTest, String name) throws InitializationError {
+        return new HazelcastSerialClassRunner(getTestClass().getJavaClass(), parametersOfSingleTest, name);
     }
 }
