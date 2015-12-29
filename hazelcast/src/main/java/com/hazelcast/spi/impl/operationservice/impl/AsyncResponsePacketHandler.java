@@ -22,7 +22,6 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -34,11 +33,11 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * The AsyncResponsePacketHandler is a PacketHandler that asynchronously process operation-response packets.
- *
+ * <p/>
  * So when a response is received from a remote system, it is put in the workQueue of the ResponseThread.
  * Then the ResponseThread takes it from this workQueue and calls the {@link PacketHandler} for the
  * actual processing.
- *
+ * <p/>
  * The reason that the IO thread doesn't immediately deals with the response is that deserializing the
  * {@link com.hazelcast.spi.impl.operationservice.impl.responses.Response} and let the invocation-future
  * deal with the response can be rather expensive currently.
@@ -46,7 +45,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 public class AsyncResponsePacketHandler implements PacketHandler {
 
     private final ResponseThread responseThread;
-    private final BlockingQueue<Packet> workQueue = new LinkedBlockingQueue<Packet>();
+    private final BlockingQueue<Object> workQueue = new LinkedBlockingQueue<Object>();
     private final ILogger logger;
 
     public AsyncResponsePacketHandler(HazelcastThreadGroup threadGroup,
@@ -72,6 +71,11 @@ public class AsyncResponsePacketHandler implements PacketHandler {
         checkTrue(packet.isHeaderSet(HEADER_RESPONSE), "HEADER_RESPONSE should be set");
 
         workQueue.add(packet);
+    }
+
+    public void handle(Runnable runnable) {
+        checkNotNull(runnable, "runnable can't be null");
+        workQueue.add(runnable);
     }
 
     /**
@@ -105,9 +109,9 @@ public class AsyncResponsePacketHandler implements PacketHandler {
 
         private void doRun() {
             for (; ; ) {
-                Packet responsePacket;
+                Object task;
                 try {
-                    responsePacket = workQueue.take();
+                    task = workQueue.take();
                 } catch (InterruptedException e) {
                     if (shutdown) {
                         return;
@@ -119,12 +123,30 @@ public class AsyncResponsePacketHandler implements PacketHandler {
                     return;
                 }
 
-                process(responsePacket);
+                process(task);
             }
         }
 
-        @SuppressFBWarnings({"VO_VOLATILE_INCREMENT" })
-        private void process(Packet responsePacket) {
+        private void process(Object task) {
+            if (task instanceof Packet) {
+                processPacket((Packet) task);
+            }
+            if (task instanceof Runnable) {
+                processRunnable((Runnable) task);
+            }
+        }
+
+        private void processRunnable(Runnable task) {
+            try {
+                task.run();
+            } catch (Throwable e) {
+                inspectOutputMemoryError(e);
+                logger.severe("While processing task...", e);
+            }
+        }
+
+        @SuppressFBWarnings({"VO_VOLATILE_INCREMENT"})
+        private void processPacket(Packet responsePacket) {
             processedResponses++;
             try {
                 responsePacketHandler.handle(responsePacket);
