@@ -27,9 +27,9 @@ import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.BasePutOperation;
 import com.hazelcast.map.impl.operation.BaseRemoveOperation;
+import com.hazelcast.map.impl.operation.DefaultMapOperationProvider;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.operation.MapOperationProviders;
 import com.hazelcast.map.impl.operation.MapPartitionDestroyTask;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.MapQueryEngineImpl;
@@ -102,7 +102,7 @@ class MapServiceContextImpl implements MapServiceContext {
     protected MapEventPublisher mapEventPublisher;
     protected MapService mapService;
     protected EventService eventService;
-    protected MapOperationProviders operationProviders;
+    protected MapOperationProvider operationProvider;
 
     MapServiceContextImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -116,11 +116,7 @@ class MapServiceContextImpl implements MapServiceContext {
         this.mapEventPublisher = createMapEventPublisherSupport();
         this.mapQueryEngine = createMapQueryEngine();
         this.eventService = nodeEngine.getEventService();
-        this.operationProviders = createOperationProviders();
-    }
-
-    MapOperationProviders createOperationProviders() {
-        return new MapOperationProviders(this);
+        this.operationProvider = new DefaultMapOperationProvider();
     }
 
     // this method is overridden in another context.
@@ -153,6 +149,10 @@ class MapServiceContextImpl implements MapServiceContext {
         return ConcurrencyUtil.getOrPutSynchronized(mapContainers, mapName, mapContainers, mapConstructor);
     }
 
+    @Override
+    public MapContainer getOrNullMapContainer(String mapName) {
+        return mapContainers.get(mapName);
+    }
 
     @Override
     public Map<String, MapContainer> getMapContainers() {
@@ -194,11 +194,11 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public void clearPartitions(boolean onShutdown) {
+    public void clearPartitions() {
         final PartitionContainer[] containers = partitionContainers;
         for (PartitionContainer container : containers) {
             if (container != null) {
-                container.clear(onShutdown);
+                container.clear();
             }
         }
     }
@@ -245,15 +245,8 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void reset() {
-        clearPartitions(false);
+        clearPartitions();
         getNearCacheProvider().reset();
-    }
-
-    @Override
-    public void shutdown() {
-        clearPartitions(true);
-        nearCacheProvider.shutdown();
-        mapContainers.clear();
     }
 
     @Override
@@ -507,7 +500,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public MapOperationProvider getMapOperationProvider(String name) {
-        return operationProviders.getOperationProvider(name);
+        return operationProvider;
     }
 
     @Override

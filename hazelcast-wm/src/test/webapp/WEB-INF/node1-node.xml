@@ -59,10 +59,6 @@
             <param-value>false</param-value>
         </init-param>
         <init-param>
-            <param-name>session-ttl-seconds</param-name>
-            <param-value>20</param-value>
-        </init-param>
-        <init-param>
             <param-name>client-config-location</param-name>
             <param-value>/WEB-INF/hazelcast-client.xml</param-value>
         </init-param>

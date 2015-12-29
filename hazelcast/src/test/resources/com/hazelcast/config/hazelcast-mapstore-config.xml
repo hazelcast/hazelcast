@@ -36,7 +36,7 @@
 
     <map name="mapstore-test">
         <map-store enabled="true">
-            <factory-class-name>com.hazelcast.map.impl.mapstore.MapStoreTest$BasicMapStoreFactory</factory-class-name>
+            <factory-class-name>com.hazelcast.map.mapstore.MapStoreTest$BasicMapStoreFactory</factory-class-name>
             <properties>
                 <property name="my-prop-1">true</property>
                 <property name="my-prop-2">foo</property>

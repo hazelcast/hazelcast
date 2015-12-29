@@ -28,6 +28,4 @@ public interface WanReplicationPublisher {
 
     void publishReplicationEvent(WanReplicationEvent wanReplicationEvent);
 
-    void checkWanReplicationQueues();
-
 }

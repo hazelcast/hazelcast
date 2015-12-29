@@ -32,6 +32,7 @@ import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -41,7 +42,6 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -62,6 +62,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -70,7 +73,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientMapTest extends HazelcastTestSupport {
+public class ClientMapTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -82,7 +85,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        Config config = getConfig();
+        Config config = new Config();
         config.getMapConfig("flushMap").
                 setMapStoreConfig(new MapStoreConfig()
                         .setWriteDelaySeconds(1000)
@@ -269,6 +272,33 @@ public class ClientMapTest extends HazelcastTestSupport {
         assertEquals("value1", map.get("key"));
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertNull(map.get("key"));
+    }
+
+    @Test
+    public void testAsyncSet() throws Exception {
+        IMap<String, String> map = createMap();
+        fillMap(map);
+        Future<Void> future = map.setAsync("key3", "value");
+        future.get();
+        assertEquals("value", map.get("key3"));
+    }
+
+    @Test
+    public void testAsyncSetWithTtl() throws Exception {
+        IMap<String, String> map = createMap();
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryEvictedListener<String, String>() {
+            public void entryEvicted(EntryEvent<String, String> event) {
+                latch.countDown();
+            }
+        }, true);
+
+        Future<Void> future = map.setAsync("key", "value1", 3, TimeUnit.SECONDS);
+        future.get();
+        assertEquals("value1", map.get("key"));
+
+        assertOpenEventually(latch);
         assertNull(map.get("key"));
     }
 

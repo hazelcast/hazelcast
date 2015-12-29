@@ -58,9 +58,4 @@ final class WanReplicationPublisherDelegate
     public void publishReplicationEvent(WanReplicationEvent wanReplicationEvent) {
         //NOP
     }
-
-    @Override
-    public void checkWanReplicationQueues() {
-        //NOP
-    }
 }

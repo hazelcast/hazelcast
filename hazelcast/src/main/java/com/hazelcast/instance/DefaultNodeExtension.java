@@ -85,7 +85,7 @@ public class DefaultNodeExtension implements NodeExtension {
         systemLogger.info("Hazelcast " + buildInfo.getVersion()
                 + " (" + build + ") starting at " + node.getThisAddress());
         systemLogger.info("Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.");
-        systemLogger.info("Configured Hazelcast Serialization version : " + buildInfo.getSerializationVersion());
+        systemLogger.info("Configured Hazelcast Serialization version:" + buildInfo.getSerializationVersion());
     }
 
     @Override
@@ -221,17 +221,11 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void onClusterStateChange(ClusterState newState, boolean persistentChange) {
+    public void onClusterStateChange(ClusterState newState) {
     }
 
     @Override
     public boolean registerListener(Object listener) {
-        return false;
-    }
-
-    @Override
-    public boolean triggerForceStart() {
-        logger.warning("Force start is available when hot restart is active!");
         return false;
     }
 }

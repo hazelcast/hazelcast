@@ -42,22 +42,40 @@ import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
+import com.hazelcast.util.scheduler.ScheduleType;
 
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public final class LockServiceImpl implements InternalLockService, ManagedService, RemoteService, MembershipAwareService,
         MigrationAwareService, ClientAwareService {
 
     private final NodeEngine nodeEngine;
     private final LockStoreContainer[] containers;
+    private final ConcurrentMap<ObjectNamespace, EntryTaskScheduler> evictionProcessors
+            = new ConcurrentHashMap<ObjectNamespace, EntryTaskScheduler>();
     private final ConcurrentMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>> constructors
             = new ConcurrentHashMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>>();
+    private final ConstructorFunction<ObjectNamespace, EntryTaskScheduler> schedulerConstructor =
+            new ConstructorFunction<ObjectNamespace, EntryTaskScheduler>() {
+                @Override
+                public EntryTaskScheduler createNew(ObjectNamespace namespace) {
+                    LockEvictionProcessor entryProcessor = new LockEvictionProcessor(nodeEngine, namespace);
+                    ScheduledExecutorService scheduledExecutor =
+                            nodeEngine.getExecutionService().getDefaultScheduledExecutor();
+                    return EntryTaskSchedulerFactory
+                            .newScheduler(scheduledExecutor, entryProcessor, ScheduleType.FOR_EACH);
+                }
+            };
 
     private final long maxLeaseTimeInMillis;
 
@@ -71,8 +89,8 @@ public final class LockServiceImpl implements InternalLockService, ManagedServic
         maxLeaseTimeInMillis = getMaxLeaseTimeInMillis(nodeEngine.getGroupProperties());
     }
 
-    NodeEngine getNodeEngine() {
-        return nodeEngine;
+    public static long getMaxLeaseTimeInMillis(GroupProperties groupProperties) {
+        return groupProperties.getMillis(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS);
     }
 
     @Override
@@ -148,12 +166,16 @@ public final class LockServiceImpl implements InternalLockService, ManagedServic
         container.clearLockStore(namespace);
     }
 
-    public void scheduleEviction(ObjectNamespace namespace, int partitionId, Data key, int version, long delay) {
-        getLockContainer(partitionId).scheduleEviction(namespace, key, version, delay);
+    public void scheduleEviction(ObjectNamespace namespace, Data key, int version, long delay) {
+        EntryTaskScheduler scheduler = getOrPutSynchronized(
+                evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
+        scheduler.schedule(delay, key, version);
     }
 
-    public void cancelEviction(ObjectNamespace namespace, int partitionId, Data key) {
-        getLockContainer(partitionId).cancelEviction(namespace, key);
+    public void cancelEviction(ObjectNamespace namespace, Data key) {
+        EntryTaskScheduler scheduler = getOrPutSynchronized(
+                evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
+        scheduler.cancel(key);
     }
 
     public LockStoreContainer getLockContainer(int partitionId) {
@@ -271,7 +293,7 @@ public final class LockServiceImpl implements InternalLockService, ManagedServic
                 }
 
                 long leaseTime = expirationTime - now;
-                scheduleEviction(ls.getNamespace(), partitionId, lock.getKey(), lock.getVersion(), leaseTime);
+                scheduleEviction(ls.getNamespace(), lock.getKey(), lock.getVersion(), leaseTime);
             }
         }
     }
@@ -313,9 +335,5 @@ public final class LockServiceImpl implements InternalLockService, ManagedServic
     @Override
     public void clientDisconnected(String clientUuid) {
         releaseLocksOwnedBy(clientUuid);
-    }
-
-    public static long getMaxLeaseTimeInMillis(GroupProperties groupProperties) {
-        return groupProperties.getMillis(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS);
     }
 }

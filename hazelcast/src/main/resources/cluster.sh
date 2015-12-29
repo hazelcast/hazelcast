@@ -2,8 +2,8 @@
 
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
    	echo "parameters : "
-   	echo "	-o, --operation	    : Executes cluster-wide operation. Operation can be 'get-state','change-state','shutdown','force-start'."
-    echo "	-s, --state 	    : Updates state of the cluster to new state. New state can be 'active', 'frozen', 'passive'"
+   	echo "	-o, --operation	    : Defines state operation of the script. Operation can be 'get' or 'change'."
+    echo "	-s, --state 	    : Defines new state of the cluster. State can be 'active', 'frozen', 'passive'"
    	echo "	-p, --port  	    : Defines which port hazelcast is running. Default value is '5701'."
    	echo "	-g, --groupname     : Defines groupname of the cluster. Default value is 'dev'."
    	echo "	-P, --password      : Defines password of the cluster. Default value is 'dev-pass'."
@@ -40,7 +40,7 @@ shift # past argument or value
 done
 
 if [ -z "$OPERATION" ]; then
- 	echo "No operation is defined, running script with default operation : 'get-state'."
+ 	echo "No operation is defined, running script with default operation : 'get'."
  	OPERATION="get"
 fi
 
@@ -61,12 +61,12 @@ fi
 
 command -v curl >/dev/null 2>&1 || { echo >&2 "Cluster state script requires curl but it's not installed. Aborting."; exit -1; }
 
-if [ "$OPERATION" != "get-state" ] && [ "$OPERATION" != "change-state" ] && [ "$OPERATION" != "shutdown" ] &&  [ "$OPERATION" != "force-start" ]; then
-    echo "Not a valid cluster operation, valid operations  are 'get-state' || 'change-state' || 'shutdown' || 'force-start'"
+if [ "$OPERATION" != "get" ] && [ "$OPERATION" != "change" ] && [ "$OPERATION" != "shutdown" ]; then
+    echo "Not a valid cluster operation, valid operations  are 'get' || 'change' || 'shutdown'"
     exit 0
 fi
 
-if [ "$OPERATION" = "get-state" ]; then
+if [ "$OPERATION" = "get" ]; then
 	echo "Getting cluster state from member on this machine on port ${PORT}"
 	request="http://127.0.0.1:${PORT}/hazelcast/rest/management/cluster/state"
  	response=$(curl --data "${GROUPNAME}&${PASSWORD}" --silent "${request}");
@@ -89,7 +89,7 @@ if [ "$OPERATION" = "get-state" ]; then
     exit 0
 fi
 
-if [ "$OPERATION" = "change-state" ]; then
+if [ "$OPERATION" = "change" ]; then
 
     if [ -z "$STATE" ]; then
         echo "No new state is defined, Please define new state with --state 'active', 'frozen', 'passive' "
@@ -124,33 +124,6 @@ if [ "$OPERATION" = "change-state" ]; then
     if [ "$STATUS" = "success" ];then
         NEWSTATE=$(echo "${response}" | sed -e 's/^.*"state"[ ]*:[ ]*"//' -e 's/".*//');
         echo "State of the cluster changed to ${NEWSTATE} state"
-        exit 0
-    fi
-
-    echo "No hazelcast cluster is running."
-    exit 0
-fi
-
-if [ "$OPERATION" = "force-start" ]; then
-    echo "You are force starting the cluster. Please make sure you provide valid user/pass."
-    echo "Force starting cluster from member on this machine on port ${PORT}"
-
-    request="http://127.0.0.1:${PORT}/hazelcast/rest/management/cluster/forceStart"
-    response=$(curl --data "${GROUPNAME}&${PASSWORD}" --silent "${request}");
-    STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
-
-    if [ "$STATUS" = "fail" ];then
-       echo "An error occured while force starting the cluster!";
-       exit 0
-    fi
-
-    if [ "$STATUS" = "forbidden" ];then
-        echo "Please make sure you provide valid user/pass.";
-        exit 0
-    fi
-
-    if [ "$STATUS" = "success" ];then
-        echo "Cluster force-start completed!"
         exit 0
     fi
 

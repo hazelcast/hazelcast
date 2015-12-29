@@ -35,7 +35,6 @@ import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
@@ -62,8 +61,8 @@ public final class PhoneHome {
     }
 
     public void check(final Node hazelcastNode, final String version, final boolean isEnterprise) {
-        ILogger logger = hazelcastNode.getLogger(PhoneHome.class);
         if (!hazelcastNode.getGroupProperties().getBoolean(GroupProperty.VERSION_CHECK_ENABLED)) {
+            ILogger logger = hazelcastNode.getLogger(PhoneHome.class);
             logger.warning(GroupProperty.VERSION_CHECK_ENABLED.getName() + " property is deprecated. Please use "
                             + GroupProperty.PHONE_HOME_ENABLED.getName() + " instead to disable phone home.");
             return;
@@ -71,15 +70,11 @@ public final class PhoneHome {
         if (!hazelcastNode.getGroupProperties().getBoolean(GroupProperty.PHONE_HOME_ENABLED)) {
             return;
         }
-        try {
-            hazelcastNode.nodeEngine.getExecutionService().scheduleAtFixedRate(new Runnable() {
-                public void run() {
-                    phoneHome(hazelcastNode, version, isEnterprise);
-                }
-            }, 0, 1, TimeUnit.DAYS);
-        } catch (RejectedExecutionException e) {
-            logger.warning("Could not schedule phone home! Most probably Hazelcast is failed to start.");
-        }
+        hazelcastNode.nodeEngine.getExecutionService().scheduleAtFixedRate(new Runnable() {
+            public void run() {
+                phoneHome(hazelcastNode, version, isEnterprise);
+            }
+        }, 0, 1, TimeUnit.DAYS);
     }
 
     public void shutdown() {

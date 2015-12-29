@@ -56,8 +56,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             } else if (uri.startsWith(URI_SHUTDOWN_CLUSTER_URL)) {
                 handleClusterShutdown(command);
                 return;
-            } else if (uri.startsWith(URI_FORCESTART_CLUSTER_URL)) {
-                handleForceStart(command);
             } else {
                 command.setResponse(HttpCommand.RES_400);
             }
@@ -132,27 +130,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON , stringToBytes(res));
     }
 
-    private void handleForceStart(HttpPostCommand command) throws UnsupportedEncodingException {
-        byte[] data = command.getData();
-        String[] strList = bytesToString(data).split("&");
-        String groupName = URLDecoder.decode(strList[0], "UTF-8");
-        String groupPass = URLDecoder.decode(strList[1], "UTF-8");
-        String res = "{\"status\":\"${STATUS}\"}";
-        try {
-            Node node = textCommandService.getNode();
-            GroupConfig groupConfig = node.getConfig().getGroupConfig();
-            if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
-                res = res.replace("${STATUS}", "forbidden");
-            } else {
-                boolean success = node.getNodeExtension().triggerForceStart();
-                res = res.replace("${STATUS}", success ? "success" : "fail");
-            }
-        } catch (Throwable throwable) {
-            res = res.replace("${STATUS}", "fail");
-        }
-        command.setResponse(HttpCommand.CONTENT_TYPE_JSON , stringToBytes(res));
-        textCommandService.sendResponse(command);
-    }
 
     private void handleClusterShutdown(HttpPostCommand command)  throws UnsupportedEncodingException {
         byte[] data = command.getData();

@@ -19,7 +19,6 @@ package com.hazelcast.mapreduce.aggregation;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,7 +26,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
@@ -118,62 +116,6 @@ public class MultiMapBaseAggregationTest
 
     @Test
     public void testPredicateAggregation()
-            throws Exception {
-
-        String mapName = randomMapName();
-        MultiMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
-
-        Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
-            @Override
-            public Integer provideRandom(Random random) {
-                return random(1000, 2000);
-            }
-        }, Integer.class);
-
-        for (int i = 0; i < values.length; i++) {
-            map.put(i, values[i]);
-        }
-
-        Predicate<Integer, Integer> predicate = Predicates.greaterEqual("this", 1000);
-        Supplier<Integer, Integer, Object> supplier = Supplier.fromPredicate(predicate);
-        Aggregation<Integer, Object, Long> aggregation = Aggregations.count();
-        long count = map.aggregate(supplier, aggregation);
-        assertEquals(values.length, count);
-    }
-
-    private static class Person implements Serializable {
-        Integer age;
-    }
-
-    @Test
-    public void testPredicateAggregation_customExtraction()
-            throws Exception {
-
-        String mapName = randomMapName();
-        MultiMap<Integer, Person> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
-
-        Person[] values = buildPlainValues(new ValueProvider<Person>() {
-            @Override
-            public Person provideRandom(Random random) {
-                Person person = new Person();
-                person.age = random(1000, 2000);
-                return person;
-            }
-        }, Person.class);
-
-        for (int i = 0; i < values.length; i++) {
-            map.put(i, values[i]);
-        }
-
-        Predicate<Integer, Person> predicate = Predicates.greaterEqual("age", 1000);
-        Supplier<Integer, Person, Object> supplier = Supplier.fromPredicate(predicate);
-        Aggregation<Integer, Object, Long> aggregation = Aggregations.count();
-        long count = map.aggregate(supplier, aggregation);
-        assertEquals(values.length, count);
-    }
-
-    @Test
-    public void testCustomPredicateAggregation()
             throws Exception {
 
         String mapName = randomMapName();

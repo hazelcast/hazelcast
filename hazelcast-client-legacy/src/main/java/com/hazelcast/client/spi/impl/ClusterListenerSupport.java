@@ -112,6 +112,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
             final SerializationService ss = client.getSerializationService();
             AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
+            connection.init();
             auth.setOwnerConnection(true);
             //contains remoteAddress and principal
             SerializableList collectionWrapper;

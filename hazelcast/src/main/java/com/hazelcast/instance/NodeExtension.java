@@ -179,10 +179,8 @@ public interface NodeExtension {
      * Called when cluster state is changed
      *
      * @param newState new state
-     * @param persistentChange status of the change. A cluster state change may be non-persistent if it has been done temporarily
-     *                         during system operations such cluster start etc.
      */
-    void onClusterStateChange(ClusterState newState, boolean persistentChange);
+    void onClusterStateChange(ClusterState newState);
 
     /**
      * Registers given register if it's a known type.
@@ -190,13 +188,4 @@ public interface NodeExtension {
      * @return true if listener is registered, false otherwise
      */
     boolean registerListener(Object listener);
-
-    /**
-     * Forces node to start by skipping hot-restart completely and removing all hot-restart data
-     * even if node is still on validation phase or loading hot-restart data.
-     *
-     * @return true if hot restart is enabled and this node knows the master
-     *
-     */
-    boolean triggerForceStart();
 }

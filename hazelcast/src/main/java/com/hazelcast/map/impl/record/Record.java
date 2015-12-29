@@ -34,6 +34,8 @@ public interface Record<V> {
 
     void setValue(V value);
 
+    void invalidate();
+
     RecordStatistics getStatistics();
 
     void setStatistics(RecordStatistics stats);
@@ -56,7 +58,7 @@ public interface Record<V> {
 
     /**
      * Get current cache value or null.
-     * <p/>
+     *
      * Warning: Do not use this method directly as it might expose arbitrary objects acting as a lock.
      * Use {@link Records#getCachedValue(Record)} instead.
      *
@@ -69,7 +71,7 @@ public interface Record<V> {
      * if the current cached value {@code ==} the expected value.
      *
      * @param expectedValue the expected cached value
-     * @param newValue      the new cached value
+     * @param newValue the new cached value
      * @return {@code true} if successful. False return indicates that
      * the actual cached value was not equal to the expected cached value.
      */
@@ -93,14 +95,12 @@ public interface Record<V> {
 
     /**
      * Only used for Hot Restart, HDRecord
-     *
      * @return
      */
     long getSequence();
 
     /**
      * Only used for Hot Restart, HDRecord
-     *
      * @return
      */
     void setSequence(long sequence);

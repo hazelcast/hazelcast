@@ -28,21 +28,13 @@ import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CompletionListener;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -55,34 +47,18 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V> {
 
-    static final int TIMEOUT = 10;
-
     private static final ClientMessageDecoder LOAD_ALL_DECODER = new ClientMessageDecoder() {
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
             return (T) Boolean.TRUE;
         }
     };
-    private static final CompletionListener NULL_COMPLETION_LISTENER = new CompletionListener() {
-        @Override
-        public void onCompletion() {
-        }
-
-        @Override
-        public void onException(Exception e) {
-        }
-    };
-
-    protected final ILogger logger = Logger.getLogger(getClass());
 
     protected final ClientContext clientContext;
     protected final CacheConfig<K, V> cacheConfig;
     //this will represent the name from the user perspective
     protected final String name;
     protected final String nameWithPrefix;
-
-    private final ConcurrentMap<Future, CompletionListener> loadAllCalls
-            = new ConcurrentHashMap<Future, CompletionListener>();
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
@@ -111,24 +87,7 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
         if (!isClosed.compareAndSet(false, true)) {
             return;
         }
-        waitOnGoingLoadAllCallsToFinish();
         closeListeners();
-    }
-
-    private void waitOnGoingLoadAllCallsToFinish() {
-        Iterator<Map.Entry<Future, CompletionListener>> iterator = loadAllCalls.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<Future, CompletionListener> entry = iterator.next();
-            Future f = entry.getKey();
-            CompletionListener completionListener = entry.getValue();
-            try {
-                f.get(TIMEOUT, TimeUnit.SECONDS);
-            } catch (Throwable t) {
-                logger.finest("Error occurred at loadAll operation execution while waiting it to finish on cache close!", t);
-                handleFailureOnCompletionListener(completionListener, t);
-            }
-            iterator.remove();
-        }
     }
 
     public void destroy() {
@@ -207,52 +166,41 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
 
     protected void submitLoadAllTask(final ClientMessage request, final CompletionListener completionListener,
                                      final Set<Data> keys) {
-        final CompletionListener compListener = completionListener != null ? completionListener : NULL_COMPLETION_LISTENER;
-        ClientDelegatingFuture<V> delegatingFuture = null;
         try {
             final long start = System.nanoTime();
-            final ClientInvocationFuture future = new ClientInvocation(
+            ClientInvocationFuture future = new ClientInvocation(
                     (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request).invoke();
             SerializationService serializationService = clientContext.getSerializationService();
-            delegatingFuture = new ClientDelegatingFuture(future, serializationService, LOAD_ALL_DECODER);
-            final Future delFuture = delegatingFuture;
-            loadAllCalls.put(delegatingFuture, compListener);
+            final ClientDelegatingFuture<V> delegatingFuture =
+                    new ClientDelegatingFuture(future, serializationService, LOAD_ALL_DECODER);
             delegatingFuture.andThen(new ExecutionCallback<V>() {
                 @Override
                 public void onResponse(V response) {
-                    loadAllCalls.remove(delFuture);
-                    onLoadAll(keys, response, start, System.nanoTime());
-                    compListener.onCompletion();
+                    if (completionListener != null) {
+                        completionListener.onCompletion();
+                        onLoadAll(keys, response, start, System.nanoTime());
+                    }
                 }
 
                 @Override
                 public void onFailure(Throwable t) {
-                    loadAllCalls.remove(delFuture);
-                    handleFailureOnCompletionListener(compListener, t);
+                    if (completionListener != null) {
+                        completionListener.onException(new CacheException(t));
+                    }
                 }
             });
-        } catch (Throwable t) {
-            if (delegatingFuture != null) {
-                loadAllCalls.remove(delegatingFuture);
-            }
-            handleFailureOnCompletionListener(compListener, t);
-        }
-    }
 
-    private void handleFailureOnCompletionListener(CompletionListener completionListener,
-                                                   Throwable t) {
-        if (t instanceof Exception) {
-            Throwable cause = t.getCause();
-            if (t instanceof ExecutionException && cause instanceof CacheException) {
-                completionListener.onException((CacheException) cause);
-            } else {
-                completionListener.onException((Exception) t);
+        } catch (Exception e) {
+            if (completionListener != null) {
+                completionListener.onException(e);
             }
-        } else {
+        } catch (Throwable t) {
             if (t instanceof OutOfMemoryError) {
                 ExceptionUtil.rethrow(t);
             } else {
-                completionListener.onException(new CacheException(t));
+                if (completionListener != null) {
+                    completionListener.onException(new CacheException(t));
+                }
             }
         }
     }

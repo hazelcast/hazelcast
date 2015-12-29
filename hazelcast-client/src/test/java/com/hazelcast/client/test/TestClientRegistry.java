@@ -163,11 +163,6 @@ public class TestClientRegistry {
                     localAddress, serverNodeEngine, this);
         }
 
-        @Override
-        public void init() throws IOException {
-            //No init for mock connections
-        }
-
         void handleClientMessage(ClientMessage clientMessage) {
             lastReadTime = System.currentTimeMillis();
             getConnectionManager().handleClientMessage(clientMessage, this);
@@ -187,6 +182,11 @@ public class TestClientRegistry {
 
         private ClientMessage readFromPacket(ClientMessage packet) {
             return ClientMessage.createForDecode(packet.buffer(), 0);
+        }
+
+        @Override
+        public void init() throws IOException {
+
         }
 
         @Override

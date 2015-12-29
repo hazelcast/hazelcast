@@ -21,13 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapStoreAdapter;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapService;
@@ -41,24 +35,17 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastTestRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.RunParallel;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -66,23 +53,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
-@RunParallel
-@RunWith(HazelcastTestRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class NearCacheTest extends HazelcastTestSupport {
-
-    @Parameterized.Parameter
-    public boolean batchInvalidationEnabled;
-
-    @Parameterized.Parameters(name = "batchInvalidationEnabled:{0}")
-    public static Iterable<Object[]> parameters() {
-        return Arrays.asList(new Object[]{Boolean.TRUE}, new Object[]{Boolean.FALSE});
-    }
 
     @Test
     public void testBasicUsage() throws Exception {
@@ -135,13 +110,6 @@ public class NearCacheTest extends HazelcastTestSupport {
 
     protected NearCacheConfig newNearCacheConfig() {
         return new NearCacheConfig();
-    }
-
-    @Override
-    protected Config getConfig() {
-        Config config = super.getConfig();
-        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED, String.valueOf(batchInvalidationEnabled));
-        return config;
     }
 
     @Test
@@ -693,7 +661,7 @@ public class NearCacheTest extends HazelcastTestSupport {
             }
         }, callback);
 
-        latch.await(3, TimeUnit.SECONDS);
+        latch.await(3,TimeUnit.SECONDS);
         NearCacheStats nearCacheStats = map.getLocalMapStats().getNearCacheStats();
         assertEquals(mapSize - 1, nearCacheStats.getOwnedEntryCount());
     }

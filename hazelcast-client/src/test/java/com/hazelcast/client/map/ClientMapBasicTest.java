@@ -27,7 +27,6 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -44,6 +43,8 @@ import java.util.TreeSet;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -52,7 +53,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientMapBasicTest extends HazelcastTestSupport {
+public class ClientMapBasicTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -61,7 +62,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        server = hazelcastFactory.newHazelcastInstance(getConfig());
+        server = hazelcastFactory.newHazelcastInstance();
         client = hazelcastFactory.newHazelcastClient();
     }
 
@@ -309,6 +310,72 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
         Future result = map.putAsync(key, newValue, 1, TimeUnit.SECONDS);
         sleepSeconds(2);
         assertEquals(oldValue, result.get());
+        assertEquals(null, map.get(key));
+    }
+
+    @Test
+    public void testSetAsync() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "Key";
+        String value = "Val";
+
+        Future<Void> result = map.setAsync(key, value);
+
+        result.get();
+        assertEquals(value, map.get(key));
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testSetAsync_withKeyNull() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String val = "Val";
+
+        map.setAsync(null, val);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testSetAsync_withValueNull() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "key";
+
+        map.setAsync(key, null);
+    }
+
+    @Test
+    public void testSetAsyncTTL() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "Key";
+        String value = "Val";
+
+        Future<Void> result = map.setAsync(key, value, 5, TimeUnit.MINUTES);
+
+        result.get();
+        assertEquals(value, map.get(key));
+    }
+
+    @Test
+    public void testSetAsyncTTL_afterExpire() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "Key";
+        String value = "Val";
+
+        Future<Void> result = map.setAsync(key, value, 1, TimeUnit.SECONDS);
+        sleepSeconds(2);
+        result.get();
+        assertEquals(null, map.get(key));
+    }
+
+    @Test
+    public void testSetAsyncTTL_afterExpireWhenKeyExists() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "Key";
+        String oldValue = "oldValue";
+        String newValue = "Val";
+
+        map.set(key, oldValue);
+        Future<Void> result = map.setAsync(key, newValue, 1, TimeUnit.SECONDS);
+        sleepSeconds(2);
+        result.get();
         assertEquals(null, map.get(key));
     }
 

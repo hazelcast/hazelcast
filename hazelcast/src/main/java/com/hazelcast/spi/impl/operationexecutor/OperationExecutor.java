@@ -124,11 +124,6 @@ public interface OperationExecutor {
     void runOnAllPartitionThreads(Runnable task);
 
     /**
-     * Interrupts all partition threads.
-     */
-    void interruptAllPartitionThreads();
-
-    /**
      * Checks if the operation is allowed to run on the current thread.
      *
      * @param op the Operation to check

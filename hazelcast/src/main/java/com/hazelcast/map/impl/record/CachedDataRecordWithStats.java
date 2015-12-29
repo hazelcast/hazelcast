@@ -29,11 +29,11 @@ class CachedDataRecordWithStats extends DataRecordWithStats {
 
     private transient volatile Object cachedValue;
 
-    CachedDataRecordWithStats() {
+    public CachedDataRecordWithStats() {
         super();
     }
 
-    CachedDataRecordWithStats(Data value) {
+    public CachedDataRecordWithStats(Data value) {
         super(value);
     }
 
@@ -51,5 +51,11 @@ class CachedDataRecordWithStats extends DataRecordWithStats {
     @Override
     public boolean casCachedValue(Object expectedValue, Object newValue) {
         return CACHED_VALUE.compareAndSet(this, expectedValue, newValue);
+    }
+
+    @Override
+    public void invalidate() {
+        super.invalidate();
+        cachedValue = null;
     }
 }

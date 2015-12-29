@@ -838,12 +838,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                         "          <address>20.30.40.50:5701</address>\n" +
                         "          <address>20.30.40.50:5702</address>\n" +
                         "       </end-points>\n" +
-                        "       <acknowledge-type>ACK_ON_RECEIPT</acknowledge-type>\n" +
-                        "       <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>\n" +
-                        "       <batch-size>7</batch-size>" +
-                        "       <batch-max-delay-millis>14</batch-max-delay-millis>\n" +
-                        "       <queue-capacity>21</queue-capacity>\n" +
-                        "       <response-timeout-millis>28</response-timeout-millis>\n" +
+                        "       <acknowledge-type>ACK_ON_TRANSMIT</acknowledge-type>\n" +
                         "    </target-cluster>\n" +
                         "</wan-replication>\n" +
                         "</hazelcast>";
@@ -860,12 +855,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(2, targetEndpoints.size());
         assertTrue(targetEndpoints.contains("20.30.40.50:5701"));
         assertTrue(targetEndpoints.contains("20.30.40.50:5702"));
-        assertEquals(WanAcknowledgeType.ACK_ON_RECEIPT, targetClusterConfig.getAcknowledgeType());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, targetClusterConfig.getQueueFullBehavior());
-        assertEquals(7, targetClusterConfig.getBatchSize());
-        assertEquals(14, targetClusterConfig.getBatchMaxDelayMillis());
-        assertEquals(21, targetClusterConfig.getQueueCapacity());
-        assertEquals(28, targetClusterConfig.getResponseTimeoutMillis());
+        assertEquals(WanAcknowledgeType.ACK_ON_TRANSMIT, targetClusterConfig.getAcknowledgeType());
     }
 
     @Test
@@ -1235,12 +1225,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testValidNamespace() {
         String xml = HAZELCAST_START_TAG + "</hazelcast>";
-        buildConfig(xml);
-    }
-
-    @Test(expected = InvalidConfigurationException.class)
-    public void testHazelcastTagAppearsTwice() {
-        String xml = HAZELCAST_START_TAG + "<hazelcast/></hazelcast>";
         buildConfig(xml);
     }
 }

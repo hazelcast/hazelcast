@@ -51,4 +51,10 @@ class DataRecord extends AbstractRecord<Data> {
     public void setValue(Data o) {
         value = o;
     }
+
+    @Override
+    public void invalidate() {
+        value = null;
+    }
+
 }

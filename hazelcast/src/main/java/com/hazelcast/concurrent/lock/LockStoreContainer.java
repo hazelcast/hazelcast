@@ -16,41 +16,19 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
-import com.hazelcast.util.scheduler.ScheduleType;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
-
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public final class LockStoreContainer {
 
     private final LockServiceImpl lockService;
     private final int partitionId;
-    private final ConcurrentMap<ObjectNamespace, EntryTaskScheduler> evictionProcessors
-            = new ConcurrentHashMap<ObjectNamespace, EntryTaskScheduler>();
-    private final ConstructorFunction<ObjectNamespace, EntryTaskScheduler> schedulerConstructor =
-            new ConstructorFunction<ObjectNamespace, EntryTaskScheduler>() {
-                @Override
-                public EntryTaskScheduler createNew(ObjectNamespace namespace) {
-                    NodeEngine nodeEngine = lockService.getNodeEngine();
-                    LockEvictionProcessor entryProcessor = new LockEvictionProcessor(nodeEngine, namespace);
-                    ScheduledExecutorService scheduledExecutor =
-                            nodeEngine.getExecutionService().getDefaultScheduledExecutor();
-                    return EntryTaskSchedulerFactory
-                            .newScheduler(scheduledExecutor, entryProcessor, ScheduleType.FOR_EACH);
-                }
-            };
     private final ConcurrentMap<ObjectNamespace, LockStoreImpl> lockStores =
             new ConcurrentHashMap<ObjectNamespace, LockStoreImpl>();
     private final ConstructorFunction<ObjectNamespace, LockStoreImpl> lockStoreConstructor =
@@ -61,9 +39,8 @@ public final class LockStoreContainer {
                     if (ctor != null) {
                         LockStoreInfo info = ctor.createNew(namespace);
                         if (info != null) {
-                            int backupCount = info.getBackupCount();
-                            int asyncBackupCount = info.getAsyncBackupCount();
-                            return new LockStoreImpl(lockService, namespace, backupCount, asyncBackupCount, partitionId);
+                            return new LockStoreImpl(
+                                    lockService, namespace, info.getBackupCount(), info.getAsyncBackupCount());
                         }
                     }
                     throw new IllegalArgumentException("No LockStore constructor is registered!");
@@ -108,17 +85,5 @@ public final class LockStoreContainer {
     public void put(LockStoreImpl ls) {
         ls.setLockService(lockService);
         lockStores.put(ls.getNamespace(), ls);
-    }
-
-    void scheduleEviction(ObjectNamespace namespace, Data key, int version, long delay) {
-        EntryTaskScheduler scheduler = getOrPutSynchronized(
-                evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
-        scheduler.schedule(delay, key, version);
-    }
-
-    void cancelEviction(ObjectNamespace namespace, Data key) {
-        EntryTaskScheduler scheduler = getOrPutSynchronized(
-                evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
-        scheduler.cancel(key);
     }
 }

@@ -56,12 +56,7 @@
                         <hz:address>10.2.1.1:5701</hz:address>
                         <hz:address>10.2.1.2:5701</hz:address>
                     </hz:end-points>
-                    <hz:acknowledge-type>ACK_ON_OPERATION_COMPLETE</hz:acknowledge-type>
-                    <hz:queue-full-behavior>THROW_EXCEPTION</hz:queue-full-behavior>
-                    <hz:batch-size>7</hz:batch-size>
-                    <hz:batch-max-delay-millis>14</hz:batch-max-delay-millis>
-                    <hz:queue-capacity>21</hz:queue-capacity>
-                    <hz:response-timeout-millis>28</hz:response-timeout-millis>
+                    <hz:acknowledge-type>ACK_ON_TRANSMIT</hz:acknowledge-type>
                 </hz:target-cluster>
                 <hz:target-cluster group-name="london" group-password="london-pass">
                     <hz:replication-impl-object ref="dummyWanReplication"/>

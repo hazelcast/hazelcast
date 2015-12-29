@@ -79,7 +79,7 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
         } else {
             store = recordStores.get(name);
             if (store != null) {
-                store.close(false);
+                store.close();
             }
         }
     }
@@ -108,10 +108,19 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
         }
     }
 
-    public void shutdown() {
+    public void destroy() {
         synchronized (mutex) {
             for (ICacheRecordStore store : recordStores.values()) {
-                store.close(true);
+                store.destroy();
+            }
+        }
+        recordStores.clear();
+    }
+
+    public void close() {
+        synchronized (mutex) {
+            for (ICacheRecordStore store : recordStores.values()) {
+                store.close();
             }
         }
     }

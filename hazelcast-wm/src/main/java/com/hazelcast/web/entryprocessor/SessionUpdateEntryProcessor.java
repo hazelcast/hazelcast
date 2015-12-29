@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.web.JvmIdAware;
 import com.hazelcast.web.SessionState;
 import com.hazelcast.web.WebDataSerializerHook;
 
@@ -39,9 +40,10 @@ import java.util.Map;
 
 public final class SessionUpdateEntryProcessor
         implements EntryProcessor<String, SessionState>,
-        EntryBackupProcessor<String, SessionState>, IdentifiedDataSerializable {
+        EntryBackupProcessor<String, SessionState>, IdentifiedDataSerializable, JvmIdAware {
 
     private Map<String, Data> attributes;
+    private String jvmId;
 
     public SessionUpdateEntryProcessor(int size) {
         this.attributes = new HashMap<String, Data>(size);
@@ -60,6 +62,10 @@ public final class SessionUpdateEntryProcessor
         return attributes;
     }
 
+    public void setJvmId(String jvmId) {
+        this.jvmId = jvmId;
+    }
+
     @Override
     public int getFactoryId() {
         return WebDataSerializerHook.F_ID;
@@ -76,6 +82,7 @@ public final class SessionUpdateEntryProcessor
         if (sessionState == null) {
             sessionState = new SessionState();
         }
+        sessionState.addJvmId(jvmId);
         for (Map.Entry<String, Data> attribute : attributes.entrySet()) {
             String name = attribute.getKey();
             Data value = attribute.getValue();
@@ -96,6 +103,7 @@ public final class SessionUpdateEntryProcessor
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(jvmId);
         out.writeInt(attributes.size());
         for (Map.Entry<String, Data> entry : attributes.entrySet()) {
             out.writeUTF(entry.getKey());
@@ -105,6 +113,7 @@ public final class SessionUpdateEntryProcessor
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        jvmId = in.readUTF();
         int attCount = in.readInt();
         attributes = new HashMap<String, Data>(attCount);
         for (int i = 0; i < attCount; i++) {

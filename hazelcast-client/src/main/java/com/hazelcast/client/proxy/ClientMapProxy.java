@@ -168,6 +168,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         }
     };
 
+    private static final ClientMessageDecoder setAsyncResponseDecoder = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return null;
+        }
+    };
+
     private static final ClientMessageDecoder removeAsyncResponseDecoder = new ClientMessageDecoder() {
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
@@ -339,6 +346,33 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
             return new ClientDelegatingFuture<V>(future, getContext().getSerializationService(),
                     putAsyncResponseDecoder);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    @Override
+    public Future<Void> setAsync(final K key, final V value) {
+        return setAsync(key, value, -1, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public Future<Void> setAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
+        final Data keyData = toData(key);
+        final Data valueData = toData(value);
+        return setAsyncInternal(ttl, timeunit, keyData, valueData);
+    }
+
+    protected Future<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
+        ClientMessage request = MapSetCodec.encodeRequest(name, keyData,
+                valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
+        try {
+            ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
+            return new ClientDelegatingFuture<Void>(future, getContext().getSerializationService(),
+                    setAsyncResponseDecoder);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -1191,25 +1225,16 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        Data keyData = toData(key);
-        return executeOnKeyInternal(keyData, entryProcessor);
-    }
-
-    public Object executeOnKeyInternal(Data keyData, EntryProcessor entryProcessor) {
+        final Data keyData = toData(key);
         ClientMessage request = MapExecuteOnKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, ThreadUtil.getThreadId());
         ClientMessage response = invoke(request, keyData);
         MapExecuteOnKeyCodec.ResponseParameters resultParameters = MapExecuteOnKeyCodec.decodeResponse(response);
         return toObject(resultParameters.response);
     }
 
-    @Override
     public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        Data keyData = toData(key);
-        submitToKeyInternal(keyData, entryProcessor, callback);
-    }
-
-    public void submitToKeyInternal(Data keyData, EntryProcessor entryProcessor, final ExecutionCallback callback) {
+        final Data keyData = toData(key);
         ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, ThreadUtil.getThreadId());
         try {
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
@@ -1222,14 +1247,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         }
     }
 
-    @Override
     public Future submitToKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        Data keyData = toData(key);
-        return submitToKeyInternal(keyData, entryProcessor);
-    }
-
-    public Future submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
+        final Data keyData = toData(key);
         ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, ThreadUtil.getThreadId());
 
         try {

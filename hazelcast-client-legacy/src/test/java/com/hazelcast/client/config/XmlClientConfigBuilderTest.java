@@ -333,12 +333,6 @@ public class XmlClientConfigBuilderTest {
         buildConfig(xml);
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public void testHazelcastClientTagAppearsTwice() {
-        String xml = HAZELCAST_CLIENT_START_TAG + "<hazelcast-client/></<hazelcast-client>";
-        buildConfig(xml);
-    }
-
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-config-3.6.xsd");

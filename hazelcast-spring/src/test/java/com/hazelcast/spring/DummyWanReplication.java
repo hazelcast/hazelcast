@@ -44,11 +44,6 @@ public class DummyWanReplication implements WanReplicationEndpoint {
     }
 
     @Override
-    public void checkWanReplicationQueues() {
-
-    }
-
-    @Override
     public void publishReplicationEventBackup(String serviceName, ReplicationEventObject eventObject) {
 
     }
