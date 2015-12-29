@@ -53,6 +53,7 @@ public class InvocationMonitor {
     private final long slowInvocationThresholdMs;
     private final InvocationRegistry invocationRegistry;
     private final ExecutionService executionService;
+    private final AsyncResponsePacketHandler responsePacketExecutor;
     private final MonitorThread monitorThread;
     private final ILogger logger;
     @Probe(name = "invocations.backupTimeouts", level = MANDATORY)
@@ -62,10 +63,11 @@ public class InvocationMonitor {
 
     public InvocationMonitor(InvocationRegistry invocationRegistry, ILogger logger, GroupProperties props,
                              HazelcastThreadGroup hzThreadGroup, ExecutionService executionService,
-                             MetricsRegistry metricsRegistry) {
+                             MetricsRegistry metricsRegistry, AsyncResponsePacketHandler responsePacketExecutor) {
         this.invocationRegistry = invocationRegistry;
         this.logger = logger;
         this.executionService = executionService;
+        this.responsePacketExecutor = responsePacketExecutor;
         this.backupTimeoutMillis = props.getMillis(GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS);
         this.slowInvocationThresholdMs = initSlowInvocationThresholdMs(props);
         this.monitorThread = new MonitorThread(hzThreadGroup);
@@ -93,8 +95,13 @@ public class InvocationMonitor {
 
     public void onMemberLeft(MemberImpl member) {
         // postpone notifying invocations since real response may arrive in the mean time.
-        Runnable task = new OnMemberLeftTask(member);
-        executionService.schedule(task, ON_MEMBER_LEFT_DELAY_MS, TimeUnit.MILLISECONDS);
+        final Runnable task = new OnMemberLeftTask(member);
+        executionService.schedule(new Runnable() {
+            @Override
+            public void run() {
+                responsePacketExecutor.handle(task);
+            }
+        }, ON_MEMBER_LEFT_DELAY_MS, TimeUnit.MILLISECONDS);
     }
 
     /**

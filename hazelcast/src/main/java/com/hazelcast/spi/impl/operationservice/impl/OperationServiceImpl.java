@@ -146,16 +146,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
         this.invocationsRegistry = new InvocationRegistry(nodeEngine, logger, backpressureRegulator, concurrencyLevel);
 
-        this.invocationMonitor = new InvocationMonitor(
-                invocationsRegistry,
-                logger,
-                groupProperties,
-                node.getHazelcastThreadGroup(),
-                nodeEngine.getExecutionService(),
-                nodeEngine.getMetricsRegistry());
-
-        this.operationBackupHandler = new OperationBackupHandler(this);
-
         this.responsePacketExecutor = new AsyncResponsePacketHandler(
                 node.getHazelcastThreadGroup(),
                 logger,
@@ -163,6 +153,18 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
                         logger,
                         node.getSerializationService(),
                         invocationsRegistry));
+
+        this.invocationMonitor = new InvocationMonitor(
+                invocationsRegistry,
+                logger,
+                groupProperties,
+                node.getHazelcastThreadGroup(),
+                nodeEngine.getExecutionService(),
+                nodeEngine.getMetricsRegistry(),
+                responsePacketExecutor);
+
+        this.operationBackupHandler = new OperationBackupHandler(this);
+
 
         this.operationExecutor = new ClassicOperationExecutor(
                 groupProperties,
@@ -439,7 +441,12 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     }
 
     public void reset() {
-        invocationsRegistry.reset();
+        responsePacketExecutor.handle(new Runnable() {
+            @Override
+            public void run() {
+                invocationsRegistry.reset();
+            }
+        });
     }
 
     public void shutdown() {
