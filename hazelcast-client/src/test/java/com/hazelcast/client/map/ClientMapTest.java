@@ -294,11 +294,11 @@ public class ClientMapTest {
             }
         }, true);
 
-        Future<String> future = map.putAsync("key", "value1", 3, TimeUnit.SECONDS);
-        assertNull(future.get());
+        Future<Void> future = map.setAsync("key", "value1", 3, TimeUnit.SECONDS);
+        future.get();
         assertEquals("value1", map.get("key"));
 
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
         assertNull(map.get("key"));
     }
 
