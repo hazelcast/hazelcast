@@ -73,6 +73,4 @@ public interface WanReplicationService
      * @param targetGroupName name of wan target cluster config
      */
     void resume(String name, String targetGroupName);
-
-    void checkWanReplicationQueues(String name);
 }

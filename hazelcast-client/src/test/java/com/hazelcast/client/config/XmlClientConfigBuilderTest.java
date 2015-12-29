@@ -334,12 +334,6 @@ public class XmlClientConfigBuilderTest {
         buildConfig(xml);
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public void testHazelcastClientTagAppearsTwice() {
-        String xml = HAZELCAST_CLIENT_START_TAG + "<hazelcast-client/></<hazelcast-client>";
-        buildConfig(xml);
-    }
-
     static ClientConfig buildConfig(String xml, Properties properties) {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);

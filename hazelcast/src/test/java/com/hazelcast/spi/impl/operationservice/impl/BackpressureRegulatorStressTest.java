@@ -69,7 +69,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         localOperationService = (OperationServiceImpl) getOperationService(local);
     }
 
-    @Test(timeout = 600000)
+    @Test
     public void asyncInvocation() throws Exception {
         test(new StressThreadFactory() {
             @Override
@@ -88,7 +88,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         });
     }
 
-    @Test(timeout = 600000)
+    @Test
     public void asyncInvocation_and_syncBackups() throws Exception{
         test(new StressThreadFactory() {
             @Override
@@ -107,7 +107,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         });
     }
 
-    @Test(timeout = 600000)
+    @Test
     public void asyncInvocation_and_asyncBackups()throws Exception {
         test(new StressThreadFactory() {
             @Override
@@ -126,7 +126,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         });
     }
 
-    @Test(timeout = 600000)
+    @Test
     public void syncInvocation_and_asyncBackups() throws Exception {
         test(new StressThreadFactory() {
             @Override
@@ -145,7 +145,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         });
     }
 
-    @Test(timeout = 600000)
+    @Test
     public void asyncInvocation_and_syncBackups_and_asyncBackups() throws Exception {
         test(new StressThreadFactory() {
             @Override

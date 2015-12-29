@@ -31,11 +31,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 import static com.hazelcast.instance.TestUtil.getNode;
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -181,20 +179,6 @@ public class TestHazelcastInstanceFactory {
         Address address = getNode(instance).address;
         terminateInstance(instance);
         registry.removeInstance(address);
-    }
-
-    public HazelcastInstance getInstance(Address address) {
-        if (mockNetwork) {
-            return registry.getInstance(address);
-        }
-
-        Set<HazelcastInstance> instances = HazelcastInstanceFactory.getAllHazelcastInstances();
-        for (HazelcastInstance instance : instances) {
-            if (address.equals(getAddress(instance))) {
-                return instance;
-            }
-        }
-        return null;
     }
 
     public void shutdownAll() {

@@ -5,11 +5,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
-import com.hazelcast.map.impl.mapstore.AbstractMapStoreTest;
+import com.hazelcast.map.mapstore.AbstractMapStoreTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,8 +47,6 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
 
         final Config config = createNewConfig(mapName, new BrokenLoadSimpleStore(breakMe));
         final HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);
-        hazelcastFactory.newHazelcastInstance(config);
-        hazelcastFactory.newHazelcastInstance(config);
 
         try {
             final IMap<Object, Object> map = server.getMap(mapName);
@@ -64,13 +63,11 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
+    @Ignore
     public void testLoadAll_givenKeys() throws Exception {
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
         hazelcastFactory.newHazelcastInstance(config);
-        hazelcastFactory.newHazelcastInstance(config);
-        hazelcastFactory.newHazelcastInstance(config);
-
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         final IMap<Object, Object> map = client.getMap(mapName);
         populateMap(map, 1000);
@@ -86,8 +83,6 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
     public void testLoadAll_allKeys() throws Exception {
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
-        hazelcastFactory.newHazelcastInstance(config);
-        hazelcastFactory.newHazelcastInstance(config);
         hazelcastFactory.newHazelcastInstance(config);
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         final IMap<Object, Object> map = client.getMap(mapName);

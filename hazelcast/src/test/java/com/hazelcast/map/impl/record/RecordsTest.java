@@ -32,10 +32,12 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertNull;
+import static com.hazelcast.test.TimeConstants.MINUTE;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -81,6 +83,21 @@ public class RecordsTest extends HazelcastTestSupport {
         //we don't need serialization service for the 2nd call
         Object secondDeserilizedValue = Records.getValueOrCachedValue(record, null);
         assertSame(firstDeserilizedValue, secondDeserilizedValue);
+    }
+
+    @Test(timeout = MINUTE)
+    public void givenCachedDataRecord_whenInvalidated_thenGetValueOrCachedValueReturnsNull() {
+        //given
+        String objectPayload = "foo";
+        Data dataPayload = serializationService.toData(objectPayload);
+        CachedDataRecord record = new CachedDataRecord(dataPayload);
+
+        //when
+        record.invalidate();
+
+        //then
+        Object cachedValue = Records.getValueOrCachedValue(record, serializationService);
+        assertNull(cachedValue);
     }
 
     @Test

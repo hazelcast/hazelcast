@@ -302,7 +302,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @SuppressWarnings("WhileLoopReplaceableByForEach")
     private void testIteratorDuringInsertion(boolean withoutEviction) {
-        final int MAX_SIZE = withoutEviction ? 1000000 : 1000;
+        final int MAX_SIZE = withoutEviction ? 1000000 : 10000;
         final CacheConfig<Integer, Integer> config = getCacheConfigWithMaxSize(MAX_SIZE);
         final ICache<Integer, Integer> cache = createCache(config);
         final int maxSize = withoutEviction
@@ -359,7 +359,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @SuppressWarnings("WhileLoopReplaceableByForEach")
     private void testIteratorDuringUpdate(boolean withoutEviction) {
-        final int MAX_SIZE = withoutEviction ? 1000000 : 1000;
+        final int MAX_SIZE = withoutEviction ? 1000000 : 10000;
         final CacheConfig<Integer, Integer> config = getCacheConfigWithMaxSize(MAX_SIZE);
         final ICache<Integer, Integer> cache = createCache(config);
         final int maxSize = withoutEviction
@@ -414,7 +414,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @SuppressWarnings("WhileLoopReplaceableByForEach")
     private void testIteratorDuringRemoval(boolean withoutEviction) {
-        final int MAX_SIZE = withoutEviction ? 1000000 : 1000;
+        final int MAX_SIZE = withoutEviction ? 1000000 : 10000;
         final CacheConfig<Integer, Integer> config = getCacheConfigWithMaxSize(MAX_SIZE);
         final ICache<Integer, Integer> cache = createCache(config);
         final int maxSize = withoutEviction
@@ -441,7 +441,9 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
                 Cache.Entry<Integer, Integer> e = iterator.next();
                 Integer key = e.getKey();
                 Integer value = e.getValue();
-                assertEquals(key, value);
+                if (value != null) {
+                    assertEquals(key, value);
+                }
                 i++;
             }
             if (withoutEviction) {
@@ -449,9 +451,9 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
                 assertThatNoCacheEvictionHappened(cache);
             }
         } catch (NoSuchElementException e) {
-            // `NoSuchElementException` is expected because while iterating over entries,
-            // last element might be removed by worker thread in the test and since there is no more element,
-            // `NoSuchElementException` is thrown which is normal behaviour.
+            if (withoutEviction) {
+                fail("Without eviction, there should not be `NoSuchElementException`: " + e);
+            }
         } finally {
             worker.shutdown();
         }

@@ -16,20 +16,16 @@
 
 package com.hazelcast.mapreduce.aggregation.impl;
 
-import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.query.impl.getters.Extractors;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.Map;
 
 /**
  * The default mapper implementation for most (but not DistinctValues) aggregations.
@@ -89,21 +85,20 @@ class SupplierConsumingMapper<Key, ValueIn, ValueOut>
 
     /**
      * Internal implementation of an map entry with changeable value to prevent
-     * to much object allocation while supplying.
-     * Extends QueryableEntry in order to provide Extractable logic
+     * to much object allocation while supplying
      *
      * @param <K> key type
      * @param <V> value type
-     * @see com.hazelcast.query.impl.QueryableEntry
-     * @see com.hazelcast.query.impl.Extractable
      */
-    private static final class SimpleEntry<K, V> extends QueryableEntry<K, V> {
+    private static final class SimpleEntry<K, V>
+            implements Map.Entry<K, V> {
 
         private K key;
         private V value;
 
-        public SimpleEntry() {
-            this.extractors = new Extractors(Collections.<MapAttributeConfig>emptyList());
+        @Override
+        public K getKey() {
+            return key;
         }
 
         @Override
@@ -113,32 +108,7 @@ class SupplierConsumingMapper<Key, ValueIn, ValueOut>
 
         @Override
         public V setValue(V value) {
-            this.value = value;
-            return value;
-        }
-
-        @Override
-        public K getKey() {
-            return this.key;
-        }
-
-        @Override
-        public Data getKeyData() {
-            // not used in map-reduce
             throw new UnsupportedOperationException();
         }
-
-        @Override
-        public Data getValueData() {
-            // not used in map-reduce
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        protected Object getTargetObject(boolean key) {
-            return key ? this.key : this.value;
-        }
-
     }
-
 }

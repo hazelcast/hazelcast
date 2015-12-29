@@ -17,7 +17,6 @@
 package com.hazelcast.client.map.impl.query;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
@@ -52,8 +51,7 @@ public class ClientQueryAdvancedTest {
     @Test
     public void queryIndexedComparableField_whenEqualsPredicateWithNullValueIsUsed_thenConverterUsesNullObject() {
         //issue 5807
-        Config config = getConfig();
-        hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         final IMap<Integer, SampleObjects.Value> map = client.getMap("default");
 
@@ -69,9 +67,5 @@ public class ClientQueryAdvancedTest {
         final Collection<SampleObjects.Value> emptyFieldValues = map.values(nullPredicate);
         assertThat(emptyFieldValues, hasSize(1));
         assertThat(emptyFieldValues, contains(valueWithNull));
-    }
-
-    protected Config getConfig() {
-        return new Config();
     }
 }

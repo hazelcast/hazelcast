@@ -125,6 +125,7 @@ class StorageImpl<R extends Record> implements Storage<Data, R> {
 
         updateSizeEstimator(-calculateHeapCost(record));
         updateSizeEstimator(-calculateHeapCost(key));
+        record.invalidate();
     }
 
     protected void updateSizeEstimator(long recordSize) {

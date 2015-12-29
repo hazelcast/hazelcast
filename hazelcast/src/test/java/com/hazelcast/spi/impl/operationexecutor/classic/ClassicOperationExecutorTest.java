@@ -117,36 +117,6 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
         awaitBarrier(barrier);
     }
 
-    @Test
-    public void test_interruptAllPartitionThreads() throws Exception {
-        initExecutor();
-
-        int threadCount = executor.getPartitionOperationThreadCount();
-        final CyclicBarrier barrier = new CyclicBarrier(threadCount + 1);
-
-        executor.runOnAllPartitionThreads(new Runnable() {
-            @Override
-            public void run() {
-                // current thread must be a PartitionOperationThread
-                if (Thread.currentThread() instanceof PartitionOperationThread) {
-                    try {
-                        Thread.sleep(Long.MAX_VALUE);
-                    } catch (InterruptedException ignored) {
-                    } finally {
-                        try {
-                            awaitBarrier(barrier);
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                    }
-                }
-            }
-        });
-
-        executor.interruptAllPartitionThreads();
-        awaitBarrier(barrier);
-    }
-
     private static void awaitBarrier(CyclicBarrier barrier) throws Exception {
         barrier.await(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
     }

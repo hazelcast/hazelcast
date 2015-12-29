@@ -72,17 +72,8 @@ public class PartitionCheckIfLoadedOperation extends MapOperation implements Par
 
     @Override
     public boolean returnsResponse() {
-        return !waitForKeyLoad;
-    }
-
-    @Override
-    public void onExecutionFailure(Throwable e) {
-        if (!returnsResponse()) {
-            // In case of execution failure the CallbackResponseSender will be never invoked
-            // and the operation will be never retried. That is the reason why we need to propagate the
-            // exception to the caller manually.
-            sendResponse(e);
-        }
+        // has to return true in all cases in order to enable the default retry invocation mechanism
+        return true;
     }
 
     @Override
@@ -100,6 +91,7 @@ public class PartitionCheckIfLoadedOperation extends MapOperation implements Par
     }
 
     private class CallbackResponseSender implements ExecutionCallback<Boolean> {
+
         @Override
         public void onResponse(Boolean response) {
             sendResponse(response);

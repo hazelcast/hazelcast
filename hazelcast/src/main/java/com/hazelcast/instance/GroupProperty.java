@@ -372,6 +372,49 @@ public enum GroupProperty implements HazelcastProperty {
     MAP_WRITE_BEHIND_QUEUE_CAPACITY("hazelcast.map.write.behind.queue.capacity", 50000),
 
     /**
+     * Defines the event queue capacity for WAN replication.
+     * <p/>
+     * Replication Events are dropped when queue capacity is reached.
+     * Having too big queue capacity may lead to OOME problems.
+     * <p/>
+     * Only valid for Hazelcast Enterprise.
+     */
+    ENTERPRISE_WAN_REP_QUEUE_CAPACITY("hazelcast.enterprise.wanrep.queue.capacity", 100000),
+
+    /**
+     * Defines the maximum number of WAN replication events to be drained and sent to the target cluster in a batch.
+     * <p/>
+     * Batches are sent in sequence to make sure of the order of events. Only one batch of events is sent to a target wan member
+     * at a time. After the batch is sent, an acknowledgement is awaited from the target cluster.
+     * If no-ack is received, the same set of events is sent again to the target cluster until the ack is received. Until this
+     * process is complete, WAN replication events are stored in the wan replication event queue. This queue's size is limited by
+     * {@link #ENTERPRISE_WAN_REP_QUEUE_CAPACITY}. If the queued event count exceeds queue capacity, no back-pressure is applied
+     * and older events in the queue will start dropping.
+     * <p/>
+     * Only valid for Hazelcast Enterprise.
+     */
+    ENTERPRISE_WAN_REP_BATCH_SIZE("hazelcast.enterprise.wanrep.batch.size", 50),
+
+    /**
+     * Defines the batch sending frequency in seconds.
+     * <p/>
+     * When the number of events do not come up to {@link #ENTERPRISE_WAN_REP_BATCH_SIZE} in the given time period (which is
+     * defined by this property), those events are gathered into a batch and sent to target.
+     * <p/>
+     * Only valid for Hazelcast Enterprise.
+     */
+    ENTERPRISE_WAN_REP_BATCH_FREQUENCY_SECONDS("hazelcast.enterprise.wanrep.batchfrequency.seconds", 5, SECONDS),
+
+    /**
+     * Defines timeout duration (in milliseconds) for a WAN replication event before retry.
+     * <p/>
+     * If confirmation is not received in the period of timeout duration, event is resent to target cluster.
+     * <p/>
+     * Only valid for Hazelcast Enterprise.
+     */
+    ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS("hazelcast.enterprise.wanrep.optimeout.millis", 60000, MILLISECONDS),
+
+    /**
      * Defines cache invalidation event batch sending is enabled or not.
      */
     CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED("hazelcast.cache.invalidation.batch.enabled", true),

@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
 import org.apache.log4j.MDC;
 import org.junit.After;
-import org.junit.Test;
+import org.junit.internal.runners.statements.FailOnTimeout;
 import org.junit.internal.runners.statements.RunAfters;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -111,16 +111,13 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
 
     @Override
     protected Statement withPotentialTimeout(FrameworkMethod method, Object test, Statement next) {
-        long timeout = getTimeout(method.getAnnotation(Test.class));
-        return new FailOnTimeoutStatement(method.getName(), next, timeout);
+        Statement statement = super.withPotentialTimeout(method, test, next);
+        if (statement instanceof FailOnTimeout) {
+            return statement;
+        }
+        return new FailOnTimeout(statement, TimeUnit.SECONDS.toMillis(DEFAULT_TEST_TIMEOUT_IN_SECONDS));
     }
 
-    private long getTimeout(Test annotation) {
-        if (annotation == null || annotation.timeout() == 0) {
-            return TimeUnit.SECONDS.toMillis(DEFAULT_TEST_TIMEOUT_IN_SECONDS);
-        }
-        return annotation.timeout();
-    }
 
     @Override
     protected Statement withAfters(FrameworkMethod method, Object target, Statement statement) {

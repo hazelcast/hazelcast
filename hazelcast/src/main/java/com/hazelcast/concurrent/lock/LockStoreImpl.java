@@ -38,29 +38,26 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
 
     private final transient ConstructorFunction<Data, LockResourceImpl> lockConstructor =
             new ConstructorFunction<Data, LockResourceImpl>() {
-                public LockResourceImpl createNew(Data key) {
-                    return new LockResourceImpl(key, LockStoreImpl.this);
-                }
-            };
+        public LockResourceImpl createNew(Data key) {
+            return new LockResourceImpl(key, LockStoreImpl.this);
+        }
+    };
 
     private final ConcurrentMap<Data, LockResourceImpl> locks = new ConcurrentHashMap<Data, LockResourceImpl>();
     private ObjectNamespace namespace;
     private int backupCount;
     private int asyncBackupCount;
-    private int partitionId;
 
     private InternalLockService lockService;
 
     public LockStoreImpl() {
     }
 
-    public LockStoreImpl(InternalLockService lockService, ObjectNamespace name,
-                         int backupCount, int asyncBackupCount, int partitionId) {
-        this.lockService = lockService;
+    public LockStoreImpl(InternalLockService lockService, ObjectNamespace name, int backupCount, int asyncBackupCount) {
         this.namespace = name;
         this.backupCount = backupCount;
         this.asyncBackupCount = asyncBackupCount;
-        this.partitionId = partitionId;
+        this.lockService = lockService;
     }
 
     @Override
@@ -212,11 +209,11 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     void scheduleEviction(Data key, int version, long leaseTime) {
-        lockService.scheduleEviction(namespace, partitionId, key, version, leaseTime);
+        lockService.scheduleEviction(namespace, key, version, leaseTime);
     }
 
     void cancelEviction(Data key) {
-        lockService.cancelEviction(namespace, partitionId, key);
+        lockService.cancelEviction(namespace, key);
     }
 
     void setLockService(LockServiceImpl lockService) {

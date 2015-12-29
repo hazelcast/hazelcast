@@ -164,11 +164,6 @@ public class TestClientRegistry {
                     localAddress, serverNodeEngine, this);
         }
 
-        @Override
-        public void init() throws IOException {
-            //No init for mock connections
-        }
-
         void handlePacket(Packet packet) {
             lastReadTime = System.currentTimeMillis();
             getConnectionManager().handlePacket(packet);
@@ -208,6 +203,11 @@ public class TestClientRegistry {
 
             newPacket.setConn(serverSideConnection);
             return newPacket;
+        }
+
+        @Override
+        public void init() throws IOException {
+
         }
 
         @Override

@@ -103,19 +103,19 @@ public class ClusterStateManager {
             }
             this.state = initialState;
             changeNodeState(initialState);
-            node.getNodeExtension().onClusterStateChange(initialState, false);
+            node.getNodeExtension().onClusterStateChange(initialState);
         } finally {
             clusterServiceLock.unlock();
         }
     }
 
-    void setClusterState(ClusterState newState, boolean persistentChange) {
+    void setClusterState(ClusterState newState) {
         clusterServiceLock.lock();
         try {
             this.state = newState;
             stateLockRef.set(ClusterStateLock.NOT_LOCKED);
             changeNodeState(newState);
-            node.getNodeExtension().onClusterStateChange(newState, persistentChange);
+            node.getNodeExtension().onClusterStateChange(newState);
         } finally {
             clusterServiceLock.unlock();
         }
@@ -206,7 +206,7 @@ public class ClusterStateManager {
             this.state = newState;
             stateLockRef.set(ClusterStateLock.NOT_LOCKED);
             changeNodeState(newState);
-            node.getNodeExtension().onClusterStateChange(newState, true);
+            node.getNodeExtension().onClusterStateChange(newState);
 
             if (newState == ClusterState.ACTIVE) {
                 node.getClusterService().removeMembersDeadWhileClusterIsNotActive();

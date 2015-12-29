@@ -1460,7 +1460,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public void close(boolean onShutdown) {
+    public void close() {
         clear();
         closeListeners();
     }

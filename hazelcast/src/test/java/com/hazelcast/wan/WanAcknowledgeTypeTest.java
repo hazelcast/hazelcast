@@ -9,7 +9,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.config.WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE;
-import static com.hazelcast.config.WanAcknowledgeType.ACK_ON_RECEIPT;
+import static com.hazelcast.config.WanAcknowledgeType.ACK_ON_TRANSMIT;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
@@ -19,7 +19,7 @@ public class WanAcknowledgeTypeTest {
 
     @Test
     public void test() {
-        assertSame(ACK_ON_RECEIPT, WanAcknowledgeType.getById(ACK_ON_RECEIPT.getId()));
+        assertSame(ACK_ON_TRANSMIT, WanAcknowledgeType.getById(ACK_ON_TRANSMIT.getId()));
         assertSame(ACK_ON_OPERATION_COMPLETE, WanAcknowledgeType.getById(ACK_ON_OPERATION_COMPLETE.getId()));
         assertNull(WanAcknowledgeType.getById(-1));
     }

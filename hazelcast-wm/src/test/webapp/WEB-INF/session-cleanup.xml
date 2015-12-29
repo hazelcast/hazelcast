@@ -36,7 +36,7 @@
         </init-param>
         <init-param>
             <param-name>config-location</param-name>
-            <param-value>/WEB-INF/hazelcast_with_max_idle.xml</param-value>
+            <param-value>/WEB-INF/hazelcast.xml</param-value>
         </init-param>
         <init-param>
             <param-name>instance-name</param-name>
@@ -53,10 +53,6 @@
         <init-param>
             <param-name>deferred-write</param-name>
             <param-value>false</param-value>
-        </init-param>
-        <init-param>
-            <param-name>session-ttl-seconds</param-name>
-            <param-value>20</param-value>
         </init-param>
         <init-param>
             <param-name>client-config-location</param-name>

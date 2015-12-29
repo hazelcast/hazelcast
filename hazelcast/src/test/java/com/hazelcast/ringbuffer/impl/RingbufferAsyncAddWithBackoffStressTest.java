@@ -37,7 +37,7 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
     public void whenTTLEnabled() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
                 .setCapacity(200 * 1000)
-                .setTimeToLiveSeconds(2);
+                .setTimeToLiveSeconds(1);
         test(ringbufferConfig);
     }
 
@@ -45,7 +45,7 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
     public void whenLongTTLAndSmallBuffer() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
                 .setCapacity(1000)
-                .setTimeToLiveSeconds(30);
+                .setTimeToLiveSeconds(1);
         test(ringbufferConfig);
     }
 
@@ -53,7 +53,7 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
     public void whenShortTTLAndBigBuffer() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
                 .setCapacity(20 * 1000 * 1000)
-                .setTimeToLiveSeconds(2);
+                .setTimeToLiveSeconds(1);
         test(ringbufferConfig);
     }
 

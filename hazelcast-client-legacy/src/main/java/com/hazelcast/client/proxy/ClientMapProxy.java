@@ -956,21 +956,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        return executeOnKeyInternal(keyData, entryProcessor);
-    }
-
-    public Object executeOnKeyInternal(Data keyData, EntryProcessor entryProcessor) {
         MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData, ThreadUtil.getThreadId());
         return invoke(request, keyData);
     }
 
     public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        Data keyData = toData(key);
-        submitToKeyInternal(keyData, entryProcessor, callback);
-    }
-
-    public void submitToKeyInternal(Data keyData, EntryProcessor entryProcessor, final ExecutionCallback callback) {
+        final Data keyData = toData(key);
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData, ThreadUtil.getThreadId());
         request.setAsSubmitToKey();
         try {
@@ -984,10 +976,6 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public Future submitToKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        return submitToKeyInternal(keyData, entryProcessor);
-    }
-
-    public Future submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData, ThreadUtil.getThreadId());
         request.setAsSubmitToKey();
         try {

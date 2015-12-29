@@ -240,7 +240,8 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
     }
 
     public void accumulateOrSendBatchInvalidation(String mapName, Data key) {
-        if (!mapServiceContext.getMapContainer(mapName).isInvalidationEnabled()) {
+        if (!isServerNearCacheInvalidationEnabled(mapName)
+                && !hasInvalidationListener(mapName)) {
             return;
         }
 
@@ -252,12 +253,19 @@ public class NearCacheInvalidatorImpl implements NearCacheInvalidator {
     }
 
     private boolean isServerNearCacheInvalidationEnabled(String mapName) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        MapContainer mapContainer = mapServiceContext.getOrNullMapContainer(mapName);
+        if (mapContainer == null) {
+            return false;
+        }
         return mapContainer.isServerNearCacheInvalidationEnabled();
     }
 
     protected boolean hasInvalidationListener(String mapName) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        MapContainer mapContainer = mapServiceContext.getOrNullMapContainer(mapName);
+        if (mapContainer == null) {
+            return false;
+        }
+
         return mapContainer.hasInvalidationListener();
     }
 

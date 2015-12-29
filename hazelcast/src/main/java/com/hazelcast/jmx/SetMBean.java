@@ -17,6 +17,11 @@
 package com.hazelcast.jmx;
 
 import com.hazelcast.core.ISet;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * Management bean for {@link com.hazelcast.core.ISet}
@@ -24,9 +29,23 @@ import com.hazelcast.core.ISet;
 @ManagedDescription("ISet")
 public class SetMBean extends HazelcastMBean<ISet> {
 
+    private final AtomicLong totalAddedItemCount = new AtomicLong();
+    private final AtomicLong totalRemovedItemCount = new AtomicLong();
+    private final String registrationId;
+
     protected SetMBean(ISet managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = service.createObjectName("ISet", managedObject.getName());
+        ItemListener itemListener = new ItemListener() {
+            public void itemAdded(ItemEvent item) {
+                totalAddedItemCount.incrementAndGet();
+            }
+
+            public void itemRemoved(ItemEvent item) {
+                totalRemovedItemCount.incrementAndGet();
+            }
+        };
+        registrationId = managedObject.addItemListener(itemListener, false);
     }
 
     @ManagedAnnotation(value = "clear", operation = true)
@@ -45,5 +64,25 @@ public class SetMBean extends HazelcastMBean<ISet> {
     @ManagedDescription("the partitionKey")
     public String getPartitionKey() {
         return managedObject.getPartitionKey();
+    }
+
+    @ManagedAnnotation("totalAddedItemCount")
+    public long getTotalAddedItemCount() {
+        return totalAddedItemCount.get();
+    }
+
+    @ManagedAnnotation("totalRemovedItemCount")
+    public long getTotalRemovedItemCount() {
+        return totalRemovedItemCount.get();
+    }
+
+    @Override
+    public void preDeregister() throws Exception {
+        super.preDeregister();
+        try {
+            managedObject.removeItemListener(registrationId);
+        } catch (Exception ignored) {
+            ignore(ignored);
+        }
     }
 }

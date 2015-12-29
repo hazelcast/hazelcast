@@ -23,11 +23,14 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.web.SessionState;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests to basic session methods. getAttribute,setAttribute,isNew,getAttributeNames etc.
@@ -39,6 +42,9 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class WebFilterBasicTest extends AbstractWebFilterTest {
+
+    @Rule
+    public ExpectedException expectedEx = ExpectedException.none();
 
     public WebFilterBasicTest() {
         super("node1-node.xml", "node2-node.xml");
@@ -57,7 +63,14 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
         executeRequest("write", serverPort1, cookieStore);
         assertEquals("value", executeRequest("readIfExist", serverPort2, cookieStore));
     }
-
+    
+    @Test(timeout = 20000)
+    public void test_getValue() throws Exception {
+        CookieStore cookieStore = new BasicCookieStore();
+        executeRequest("putValue", serverPort1, cookieStore);
+        assertEquals("value", executeRequest("getValue", serverPort2, cookieStore));
+    }
+    
     @Test(timeout = 20000)
     public void test_getAttributeNames_WhenSessionEmpty() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
@@ -72,6 +85,13 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
     }
 
     @Test(timeout = 20000)
+    public void test_setAttribute_whenKeyNull() throws Exception {
+        CookieStore cookieStore = new BasicCookieStore();
+        String response = executeRequest("nullkey", serverPort1, cookieStore);
+        assertTrue(response.contains("java.lang.NullPointerException: name must not be null"));
+    }
+
+    @Test(timeout = 20000)
     public void test_removeAttribute() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
         executeRequest("write", serverPort1, cookieStore);
@@ -79,6 +99,14 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
         assertEquals("null", executeRequest("read", serverPort1, cookieStore));
     }
 
+    @Test(timeout = 20000)
+    public void test_removeValue() throws Exception {
+        CookieStore cookieStore = new BasicCookieStore();
+        executeRequest("write", serverPort1, cookieStore);
+        executeRequest("remove", serverPort2, cookieStore);
+        assertEquals("null", executeRequest("read", serverPort1, cookieStore));
+    }
+    
     @Test(timeout = 20000)
     public void test_clusterMapSize() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
@@ -110,6 +138,20 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
         assertSizeEventually(1, sessionState.getAttributes());
     }
 
+    @Test
+    public void testSessionState_toString() throws Exception {
+        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
+        CookieStore cookieStore = new BasicCookieStore();
+        executeRequest("write", serverPort1, cookieStore);
+        executeRequest("read", serverPort1, cookieStore);
+        assertSizeEventually(1, map);
+        String newSessionId = map.keySet().iterator().next();
+        SessionState sessionState = (SessionState) map.get(newSessionId);
+        assertEquals("SessionState {referenceCount=1, attributes=1\n" +
+                "\tkey[9]\n" +
+                "}", sessionState.toString());
+    }
+
     @Test(timeout = 20000)
     public void test_invalidateSession() throws Exception {
         IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
@@ -138,21 +180,13 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
         assertEquals("false", executeRequest("isNew", serverPort1, cookieStore));
     }
 
-    @Test(timeout = 40000)
+    @Test(timeout = 20000)
     public void test_sessionTimeout() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
         IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
         executeRequest("write", serverPort1, cookieStore);
         executeRequest("timeout", serverPort1, cookieStore);
         assertSizeEventually(0, map);
-    }
-
-    @Test(timeout = 20000)
-    public void testServerRestart() throws Exception {
-        CookieStore cookieStore = new BasicCookieStore();
-        executeRequest("write", serverPort1, cookieStore);
-        server1.restart();
-        assertEquals("value", executeRequest("read", serverPort2, cookieStore));
     }
 
     @Override
