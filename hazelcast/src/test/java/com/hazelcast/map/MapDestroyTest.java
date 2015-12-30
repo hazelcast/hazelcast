@@ -52,6 +52,13 @@ public class MapDestroyTest extends HazelcastTestSupport {
     public void setUp() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         Config config = getConfig();
+
+        // Set Max Parallel Replications to max value, so that the initial partitions can sync as soon possible.
+        // Due to a race condition in object destruction, it can happen that the sync operation takes place
+        // while a map is being destroyed which can result in a memory leak. This will be overhauled as part of
+        // object lifecycle revamp.
+        // For more details, see: https://github.com/hazelcast/hazelcast/issues/7132
+        config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS, String.valueOf(Integer.MAX_VALUE));
         instance1 = factory.newHazelcastInstance(config);
         instance2 = factory.newHazelcastInstance(config);
     }
