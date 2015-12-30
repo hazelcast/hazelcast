@@ -233,6 +233,27 @@ public class ClientMapNearCacheTest {
     }
 
     @Test
+    public void testAfterSetAsyncNearCacheIsInvalidated() throws InterruptedException {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+        hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+
+        final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        populateNearCache(clientMap, mapSize);
+
+        for (int i = 0; i < mapSize; i++) {
+            clientMap.setAsync(i, i, 1, TimeUnit.SECONDS);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                assertThatOwnedEntryCountEquals(clientMap, 0);
+            }
+        });
+    }
+
+    @Test
     public void testAfterRemoveAsyncNearCacheIsInvalidated() {
         int mapSize = 1000;
         String mapName = randomMapName();
