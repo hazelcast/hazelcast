@@ -19,6 +19,8 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
+import com.hazelcast.config.NativeMemoryConfig;
+import com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
@@ -126,7 +128,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void destroy() {
-        clearPartition();
+        clearPartition(false);
         storage.destroy();
     }
 
@@ -238,7 +240,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void clearPartition() {
+    public void clearPartition(boolean onShutdown) {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
@@ -257,7 +259,17 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
         resetAccessSequenceNumber();
         mapDataStore.clear();
-        storage.clear();
+
+        if (onShutdown) {
+            NativeMemoryConfig nativeMemoryConfig = nodeEngine.getConfig().getNativeMemoryConfig();
+            boolean clear = (nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() != MemoryAllocatorType.POOLED);
+            if (clear) {
+                storage.clear();
+            }
+            storage.destroy();
+        } else {
+            storage.clear();
+        }
     }
 
     /**
