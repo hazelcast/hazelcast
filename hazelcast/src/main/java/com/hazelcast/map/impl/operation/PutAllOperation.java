@@ -26,7 +26,6 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -52,13 +51,9 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     private List<Map.Entry<Data, Data>> backupEntries;
     private List<RecordInfo> backupRecordInfos;
     private transient RecordStore recordStore;
+    private List<Data> invalidationKeys;
 
     public PutAllOperation() {
-    }
-
-    public PutAllOperation(String name, MapEntries mapEntries) {
-        super(name);
-        this.mapEntries = mapEntries;
     }
 
     public PutAllOperation(String name, MapEntries mapEntries, boolean initialLoad) {
@@ -71,22 +66,17 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     public void run() {
         backupRecordInfos = new ArrayList<RecordInfo>(mapEntries.size());
         backupEntries = new ArrayList<Map.Entry<Data, Data>>(mapEntries.size());
-        int partitionId = getPartitionId();
-        recordStore = mapServiceContext.getRecordStore(partitionId, name);
-        InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+        recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
+
         for (Map.Entry<Data, Data> entry : mapEntries) {
-            put(partitionId, partitionService, entry);
+            put(entry);
         }
-        invalidateNearCaches(mapEntries);
     }
 
-    private boolean put(int partitionId, InternalPartitionService partitionService, Map.Entry<Data, Data> entry) {
+    private boolean put(Map.Entry<Data, Data> entry) {
         Data dataKey = entry.getKey();
-        if (partitionId != partitionService.getPartitionId(dataKey)) {
-            return false;
-        }
-
         Data dataValue = entry.getValue();
+
         Object oldValue = null;
         if (initialLoad) {
             recordStore.putFromLoad(dataKey, dataValue, -1);
@@ -110,7 +100,25 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         backupRecordInfos.add(replicationInfo);
         evict();
 
+        addInvalidation(dataKey);
+
         return true;
+    }
+
+    private void addInvalidation(Data dataKey) {
+        if (mapContainer.isNearCacheEnabled()) {
+            if (invalidationKeys == null) {
+                invalidationKeys = new ArrayList<Data>(mapEntries.size());
+            }
+            invalidationKeys.add(dataKey);
+        }
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        invalidateNearCache(invalidationKeys);
+
+        super.afterRun();
     }
 
     private Data getValueOrPostProcessedValue(Data dataKey, Data dataValue) {
@@ -123,15 +131,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
 
     private boolean shouldWanReplicate() {
         return mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null;
-    }
-
-    protected final void invalidateNearCaches(MapEntries mapEntries) {
-        List<Data> keys = new ArrayList<Data>(mapEntries.size());
-        for (Map.Entry<Data, Data> mapEntry : mapEntries) {
-            keys.add(mapEntry.getKey());
-        }
-
-        invalidateNearCache(keys);
     }
 
     protected void evict() {

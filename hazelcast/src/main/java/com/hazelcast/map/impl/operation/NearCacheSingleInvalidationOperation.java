@@ -16,42 +16,37 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.nearcache.AbstractNearCacheInvalidator;
+import com.hazelcast.map.impl.nearcache.NearCacheInvalidator;
+import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class InvalidateNearCacheOperation extends AbstractOperation implements MutatingOperation {
+public class NearCacheSingleInvalidationOperation extends MapOperation implements MutatingOperation {
 
     private Data key;
-    private String mapName;
 
-    public InvalidateNearCacheOperation(String mapName, Data key) {
+    public NearCacheSingleInvalidationOperation(String mapName, Data key) {
+        super(mapName);
         this.key = key;
-        this.mapName = mapName;
     }
 
-    public InvalidateNearCacheOperation() {
+    public NearCacheSingleInvalidationOperation() {
     }
 
     @Override
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
-    }
-
     public void run() {
-        MapService mapService = getService();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        if (mapServiceContext.getMapContainer(mapName).isNearCacheEnabled()) {
-            mapServiceContext.getNearCacheProvider().getNearCacheInvalidator().invalidateLocalNearCache(mapName, key);
+        if (mapContainer.isNearCacheEnabled()) {
+            NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
+            NearCacheInvalidator nearCacheInvalidator = nearCacheProvider.getNearCacheInvalidator();
+            ((AbstractNearCacheInvalidator) nearCacheInvalidator).invalidateLocal(name, key, null);
         } else {
             getLogger().warning("Cache clear operation has been accepted while near cache is not enabled for "
-                    + mapName + " map. Possible configuration conflict among nodes.");
+                    + name + " map. Possible configuration conflict among nodes.");
         }
     }
 
@@ -63,21 +58,13 @@ public class InvalidateNearCacheOperation extends AbstractOperation implements M
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        mapName = in.readUTF();
         key = in.readData();
     }
 
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(mapName);
         out.writeData(key);
     }
 
-    @Override
-    protected void toString(StringBuilder sb) {
-        super.toString(sb);
-
-        sb.append(", name=").append(mapName);
-    }
 }

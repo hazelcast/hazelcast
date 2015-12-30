@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,39 +25,35 @@ import java.util.List;
 
 public class BatchNearCacheInvalidation extends Invalidation {
 
-    private List<Data> dataList;
+    private List<SingleNearCacheInvalidation> invalidations;
 
     public BatchNearCacheInvalidation() {
     }
 
     public BatchNearCacheInvalidation(String mapName, int size) {
-        this(mapName, size, null);
+        this(mapName, new ArrayList<SingleNearCacheInvalidation>(size));
     }
 
-    public BatchNearCacheInvalidation(String mapName, int size, String sourceUuid) {
-        this(mapName, new ArrayList(size), sourceUuid);
+    public BatchNearCacheInvalidation(String mapName, List<SingleNearCacheInvalidation> invalidations) {
+        super(mapName, null);
+        this.invalidations = invalidations;
     }
 
-    public BatchNearCacheInvalidation(String mapName, List<Data> dataList, String sourceUuid) {
-        super(mapName, sourceUuid);
-        this.dataList = dataList;
+    public void add(SingleNearCacheInvalidation invalidation) {
+        invalidations.add(invalidation);
     }
 
-    public void add(Data key) {
-        dataList.add(key);
-    }
-
-    public List<Data> getDataList() {
-        return dataList;
+    public List<SingleNearCacheInvalidation> getInvalidations() {
+        return invalidations;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
 
-        out.writeInt(dataList.size());
-        for (Data key : dataList) {
-            out.writeData(key);
+        out.writeInt(invalidations.size());
+        for (SingleNearCacheInvalidation singleNearCacheInvalidation : invalidations) {
+            singleNearCacheInvalidation.writeData(out);
         }
 
     }
@@ -69,11 +64,14 @@ public class BatchNearCacheInvalidation extends Invalidation {
 
         int size = in.readInt();
         if (size != 0) {
-            List<Data> keysToBeInvalidated = new ArrayList<Data>(size);
+            List<SingleNearCacheInvalidation> invalidations = new ArrayList<SingleNearCacheInvalidation>(size);
             for (int i = 0; i < size; i++) {
-                keysToBeInvalidated.add(in.readData());
+                SingleNearCacheInvalidation invalidation = new SingleNearCacheInvalidation();
+                invalidation.readData(in);
+
+                invalidations.add(invalidation);
             }
-            dataList = keysToBeInvalidated;
+            this.invalidations = invalidations;
         }
     }
 

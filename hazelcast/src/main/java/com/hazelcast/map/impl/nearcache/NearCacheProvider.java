@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapManagedService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -29,6 +30,9 @@ import com.hazelcast.util.ConstructorFunction;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 
 /**
  * Provides near cache specific functionality.
@@ -55,7 +59,19 @@ public class NearCacheProvider {
     public NearCacheProvider(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
-        this.nearCacheInvalidator = new NearCacheInvalidatorImpl(mapServiceContext, this);
+        this.nearCacheInvalidator = createNearCacheInvalidator(mapServiceContext);
+    }
+
+    protected NearCacheInvalidator createNearCacheInvalidator(MapServiceContext mapServiceContext) {
+        return isBatchingEnabled() ? new BatchInvalidator(mapServiceContext, this)
+                : new NonStopInvalidator(mapServiceContext, this);
+    }
+
+
+    private boolean isBatchingEnabled() {
+        GroupProperties groupProperties = nodeEngine.getGroupProperties();
+        int batchSize = groupProperties.getInteger(MAP_INVALIDATION_MESSAGE_BATCH_SIZE);
+        return groupProperties.getBoolean(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED) && batchSize > 1;
     }
 
     public NearCache getOrCreateNearCache(String mapName) {
@@ -100,7 +116,7 @@ public class NearCacheProvider {
             nearCache.destroy();
         }
 
-        nearCacheInvalidator.flushAndRemoveInvalidationQueue(mapName);
+        nearCacheInvalidator.destroy(mapName);
     }
 
     public Object getFromNearCache(String mapName, Data key) {

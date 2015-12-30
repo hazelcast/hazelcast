@@ -34,6 +34,8 @@ import java.util.List;
 
 import static com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.encodeIMapBatchInvalidationEvent;
 import static com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.encodeIMapInvalidationEvent;
+import static com.hazelcast.map.impl.nearcache.BatchInvalidator.getKeysExcludingSource;
+import static com.hazelcast.util.CollectionUtil.isEmpty;
 
 public class MapAddNearCacheEntryListenerMessageTask
         extends AbstractMapAddEntryListenerMessageTask<MapAddNearCacheEntryListenerCodec.RequestParameters> {
@@ -90,32 +92,27 @@ public class MapAddNearCacheEntryListenerMessageTask
 
         @Override
         public void onInvalidate(Invalidation event) {
-            if (!endpoint.isAlive()
-                    || endpoint.getUuid().equals(event.getSourceUuid())) {
+            if (!endpoint.isAlive()) {
                 return;
             }
 
+            sendEvent(event);
+        }
+
+        private void sendEvent(Invalidation event) {
             if (event instanceof BatchNearCacheInvalidation) {
-                List<Data> keys = ((BatchNearCacheInvalidation) event).getDataList();
-                sendClientMessage(parameters.name, encodeIMapBatchInvalidationEvent(keys));
-                return;
+                List<Data> keys = getKeysExcludingSource(((BatchNearCacheInvalidation) event), endpoint.getUuid());
+                if (!isEmpty(keys)) {
+                    sendClientMessage(parameters.name, encodeIMapBatchInvalidationEvent(keys));
+                }
+            } else if (!endpoint.getUuid().equals(event.getSourceUuid())) {
+                if (event instanceof SingleNearCacheInvalidation) {
+                    Data key = ((SingleNearCacheInvalidation) event).getKey();
+                    sendClientMessage(key, encodeIMapInvalidationEvent(key));
+                } else if (event instanceof CleaningNearCacheInvalidation) {
+                    sendClientMessage(parameters.name, encodeIMapInvalidationEvent(null));
+                }
             }
-
-            if (event instanceof SingleNearCacheInvalidation) {
-                Data key = ((SingleNearCacheInvalidation) event).getKey();
-                sendClientMessage(key, encodeIMapInvalidationEvent(key));
-                return;
-            }
-
-            if (event instanceof CleaningNearCacheInvalidation) {
-                // null key means near cache has to remove all entries in it.
-                // see ClientMapAddNearCacheEventHandler.
-                sendClientMessage(parameters.name, encodeIMapInvalidationEvent(null));
-                return;
-            }
-
-            throw new IllegalArgumentException("Unexpected event received [" + event + ']');
         }
     }
-
 }

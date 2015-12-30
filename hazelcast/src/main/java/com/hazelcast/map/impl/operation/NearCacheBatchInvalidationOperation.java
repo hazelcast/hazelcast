@@ -16,13 +16,12 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.nearcache.AbstractNearCacheInvalidator;
+import com.hazelcast.map.impl.nearcache.NearCacheInvalidator;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
@@ -31,34 +30,27 @@ import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class NearCacheKeySetInvalidationOperation extends AbstractOperation implements MutatingOperation {
-    private MapService mapService;
+public class NearCacheBatchInvalidationOperation extends MapOperation implements MutatingOperation {
+
     private List<Data> keys;
-    private String mapName;
 
-    public NearCacheKeySetInvalidationOperation() {
+    public NearCacheBatchInvalidationOperation() {
     }
 
-    public NearCacheKeySetInvalidationOperation(String mapName, List<Data> keys) {
+    public NearCacheBatchInvalidationOperation(String mapName, List<Data> keys) {
+        super(mapName);
         this.keys = checkNotNull(keys);
-        this.mapName = mapName;
-    }
-
-    @Override
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
     }
 
     @Override
     public void run() {
-        mapService = getService();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        if (mapServiceContext.getMapContainer(mapName).isNearCacheEnabled()) {
+        if (mapContainer.isNearCacheEnabled()) {
             NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-            nearCacheProvider.getNearCacheInvalidator().invalidateLocalNearCache(mapName, keys);
+            NearCacheInvalidator nearCacheInvalidator = nearCacheProvider.getNearCacheInvalidator();
+            ((AbstractNearCacheInvalidator) nearCacheInvalidator).invalidateLocal(name, null, keys);
         } else {
             getLogger().warning("Cache clear operation has been accepted while near cache is not enabled for "
-                    + mapName + " map. Possible configuration conflict among nodes.");
+                    + name + " map. Possible configuration conflict among nodes.");
         }
     }
 
@@ -70,7 +62,6 @@ public class NearCacheKeySetInvalidationOperation extends AbstractOperation impl
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(mapName);
         out.writeInt(keys.size());
         for (Data key : keys) {
             out.writeData(key);
@@ -80,7 +71,6 @@ public class NearCacheKeySetInvalidationOperation extends AbstractOperation impl
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        mapName = in.readUTF();
         int size = in.readInt();
         List<Data> keys = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
@@ -88,12 +78,5 @@ public class NearCacheKeySetInvalidationOperation extends AbstractOperation impl
             keys.add(key);
         }
         this.keys = keys;
-    }
-
-    @Override
-    protected void toString(StringBuilder sb) {
-        super.toString(sb);
-
-        sb.append(", name=").append(mapName);
     }
 }

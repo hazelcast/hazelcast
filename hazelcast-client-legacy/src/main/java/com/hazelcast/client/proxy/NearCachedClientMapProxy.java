@@ -385,11 +385,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         @Override
         public void handle(Object event) {
             if (event instanceof BatchNearCacheInvalidation) {
-                List<Data> keys = ((BatchNearCacheInvalidation) event).getDataList();
-                for (Data key : keys) {
-                    nearCache.remove(key);
+                List<SingleNearCacheInvalidation> invalidations = ((BatchNearCacheInvalidation) event).getInvalidations();
+                for (SingleNearCacheInvalidation invalidation : invalidations) {
+                    nearCache.remove(invalidation.getKey());
                 }
-
                 return;
             }
 
