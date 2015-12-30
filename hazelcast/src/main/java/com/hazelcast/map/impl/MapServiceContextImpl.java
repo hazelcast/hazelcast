@@ -177,7 +177,7 @@ class MapServiceContextImpl implements MapServiceContext {
         final PartitionContainer container = partitionContainers[partitionId];
         if (container != null) {
             for (RecordStore mapPartition : container.getMaps().values()) {
-                mapPartition.clearPartition();
+                mapPartition.clearPartition(false);
             }
             container.getMaps().clear();
         }
