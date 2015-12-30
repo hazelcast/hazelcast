@@ -244,14 +244,14 @@ public class InternalPartitionServiceLiteMemberTest
      * GRACEFUL SHUTDOWN
      **/
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void test_liteMemberCanShutdownSafely_withClusterSize1() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance lite = factory.newHazelcastInstance(liteMemberConfig);
         lite.getLifecycleService().shutdown();
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void test_liteMemberCanShutdownSafely_withClusterSize2() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance lite1 = factory.newHazelcastInstance(liteMemberConfig);
@@ -259,7 +259,7 @@ public class InternalPartitionServiceLiteMemberTest
         lite1.getLifecycleService().shutdown();
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void test_liteMemberCanShutdownSafely_whenDataMemberExistsInCluster() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance lite = factory.newHazelcastInstance(liteMemberConfig);
@@ -270,7 +270,7 @@ public class InternalPartitionServiceLiteMemberTest
         lite.getLifecycleService().shutdown();
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void test_dataMemberCanShutdownSafely_withClusterSize1() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance master = factory.newHazelcastInstance();
@@ -278,7 +278,7 @@ public class InternalPartitionServiceLiteMemberTest
         master.getLifecycleService().shutdown();
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void test_dataMemberCanShutdownSafely_whenOnlyLiteMemberExistsInCluster() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance master = factory.newHazelcastInstance();
@@ -293,14 +293,14 @@ public class InternalPartitionServiceLiteMemberTest
      * TERMINATE
      **/
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void test_liteMemberCanTerminate_withClusterSize1() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance lite = factory.newHazelcastInstance(liteMemberConfig);
         lite.getLifecycleService().terminate();
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void test_liteMemberCanTerminate_withClusterSize2() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance lite1 = factory.newHazelcastInstance(liteMemberConfig);
@@ -312,7 +312,7 @@ public class InternalPartitionServiceLiteMemberTest
         lite1.getLifecycleService().terminate();
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void test_liteMemberCanTerminate_whenDataMemberExistsInCluster() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance lite = factory.newHazelcastInstance(liteMemberConfig);
@@ -323,7 +323,7 @@ public class InternalPartitionServiceLiteMemberTest
         lite.getLifecycleService().terminate();
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void test_dataMemberCanTerminate_withClusterSize1() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance master = factory.newHazelcastInstance();
@@ -331,7 +331,7 @@ public class InternalPartitionServiceLiteMemberTest
         master.getLifecycleService().terminate();
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void test_dataMemberCanTerminate_whenOnlyLiteMemberExistsInCluster() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance master = factory.newHazelcastInstance();
