@@ -16,16 +16,15 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,9 +32,17 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
-import static org.junit.Assert.*;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -45,7 +52,8 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     private static final int BACKUP_COUNT = 0;
     private static final int ASYNC_BACKUP_COUNT = 0;
 
-    private InternalLockService mockLockServiceImpl;
+    private LockService mockLockServiceImpl;
+    private EntryTaskScheduler mockScheduler;
     private LockStoreImpl lockStore;
 
     private Data key = new HeapData();
@@ -56,21 +64,10 @@ public class LockStoreImplTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        mockLockServiceImpl = mock(InternalLockService.class);
+        mockLockServiceImpl = mock(LockService.class);
         when(mockLockServiceImpl.getMaxLeaseTimeInMillis()).thenReturn(Long.MAX_VALUE);
-        lockStore = new LockStoreImpl(mockLockServiceImpl, OBJECT_NAME_SPACE, BACKUP_COUNT, ASYNC_BACKUP_COUNT, -1);
-    }
-
-    @Test
-    public void givenPartitionIsSetToX_whenSerializedAndDeserilized_thenPartitionIsStillX() throws NoSuchFieldException, IllegalAccessException {
-        int partitionId = Integer.MAX_VALUE;
-        LockStoreImpl original = new LockStoreImpl(mockLockServiceImpl, OBJECT_NAME_SPACE, BACKUP_COUNT, ASYNC_BACKUP_COUNT, partitionId);
-
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        Data serialized = serializationService.toData(original);
-        LockStoreImpl deserialized = serializationService.toObject(serialized);
-
-        assertFieldEqualsTo(deserialized, "partitionId", partitionId);
+        mockScheduler = mock(EntryTaskScheduler.class);
+        lockStore = new LockStoreImpl(mockLockServiceImpl, OBJECT_NAME_SPACE, mockScheduler, BACKUP_COUNT, ASYNC_BACKUP_COUNT);
     }
 
     @Test

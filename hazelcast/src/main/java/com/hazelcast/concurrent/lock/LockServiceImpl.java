@@ -51,7 +51,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
-public final class LockServiceImpl implements InternalLockService, ManagedService, RemoteService, MembershipAwareService,
+public final class LockServiceImpl implements LockService, ManagedService, RemoteService, MembershipAwareService,
         MigrationAwareService, ClientAwareService {
 
     private final NodeEngine nodeEngine;
@@ -148,13 +148,6 @@ public final class LockServiceImpl implements InternalLockService, ManagedServic
         container.clearLockStore(namespace);
     }
 
-    public void scheduleEviction(ObjectNamespace namespace, int partitionId, Data key, int version, long delay) {
-        getLockContainer(partitionId).scheduleEviction(namespace, key, version, delay);
-    }
-
-    public void cancelEviction(ObjectNamespace namespace, int partitionId, Data key) {
-        getLockContainer(partitionId).cancelEviction(namespace, key);
-    }
 
     public LockStoreContainer getLockContainer(int partitionId) {
         return containers[partitionId];
@@ -271,7 +264,7 @@ public final class LockServiceImpl implements InternalLockService, ManagedServic
                 }
 
                 long leaseTime = expirationTime - now;
-                scheduleEviction(ls.getNamespace(), partitionId, lock.getKey(), lock.getVersion(), leaseTime);
+                ls.scheduleEviction(lock.getKey(), lock.getVersion(), leaseTime);
             }
         }
     }
