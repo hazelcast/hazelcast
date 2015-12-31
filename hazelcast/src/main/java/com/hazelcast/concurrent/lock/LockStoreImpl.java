@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.scheduler.EntryTaskScheduler;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -38,26 +39,27 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
 
     private final transient ConstructorFunction<Data, LockResourceImpl> lockConstructor =
             new ConstructorFunction<Data, LockResourceImpl>() {
-        public LockResourceImpl createNew(Data key) {
-            return new LockResourceImpl(key, LockStoreImpl.this);
-        }
-    };
+                public LockResourceImpl createNew(Data key) {
+                    return new LockResourceImpl(key, LockStoreImpl.this);
+                }
+            };
 
     private final ConcurrentMap<Data, LockResourceImpl> locks = new ConcurrentHashMap<Data, LockResourceImpl>();
     private ObjectNamespace namespace;
     private int backupCount;
     private int asyncBackupCount;
 
-    private LockServiceImpl lockService;
+
+    private EntryTaskScheduler entryTaskScheduler;
 
     public LockStoreImpl() {
     }
 
-    public LockStoreImpl(LockServiceImpl lockService, ObjectNamespace name, int backupCount, int asyncBackupCount) {
+    public LockStoreImpl(ObjectNamespace name, EntryTaskScheduler entryTaskScheduler, int backupCount, int asyncBackupCount) {
         this.namespace = name;
+        this.entryTaskScheduler = entryTaskScheduler;
         this.backupCount = backupCount;
         this.asyncBackupCount = asyncBackupCount;
-        this.lockService = lockService;
     }
 
     public boolean lock(Data key, String caller, long threadId) {
@@ -219,19 +221,20 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     void scheduleEviction(Data key, int version, long leaseTime) {
-        lockService.scheduleEviction(namespace, key, version, leaseTime);
+        entryTaskScheduler.schedule(leaseTime, key, version);
     }
 
     void cancelEviction(Data key) {
-        lockService.cancelEviction(namespace, key);
+        entryTaskScheduler.cancel(key);
     }
 
-    void setLockService(LockServiceImpl lockService) {
-        this.lockService = lockService;
+    void setEntryTaskScheduler(EntryTaskScheduler entryTaskScheduler) {
+        this.entryTaskScheduler = entryTaskScheduler;
     }
 
     public void clear() {
         locks.clear();
+        entryTaskScheduler.cancelAll();
     }
 
     public ObjectNamespace getNamespace() {
