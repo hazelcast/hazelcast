@@ -25,6 +25,8 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.util.List;
 
+import static com.hazelcast.util.CollectionUtil.isEmpty;
+
 public abstract class MapOperation extends AbstractNamedOperation {
 
     protected transient MapService mapService;
@@ -79,19 +81,19 @@ public abstract class MapOperation extends AbstractNamedOperation {
     }
 
     protected final void invalidateNearCache(List<Data> keys) {
-        if (!mapContainer.isInvalidationEnabled()) {
+        if (!mapContainer.isInvalidationEnabled() || isEmpty(keys)) {
             return;
         }
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        nearCacheProvider.getNearCacheInvalidator().invalidateNearCaches(name, keys, getCallerUuid());
+        nearCacheProvider.getNearCacheInvalidator().invalidate(name, keys, getCallerUuid());
     }
 
     protected final void invalidateNearCache(Data key) {
-        if (!mapContainer.isInvalidationEnabled()) {
+        if (!mapContainer.isInvalidationEnabled() || key == null) {
             return;
         }
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        nearCacheProvider.getNearCacheInvalidator().invalidateNearCaches(name, key, getCallerUuid());
+        nearCacheProvider.getNearCacheInvalidator().invalidate(name, key, getCallerUuid());
     }
 
     protected final void clearNearCache(boolean owner) {
@@ -99,6 +101,6 @@ public abstract class MapOperation extends AbstractNamedOperation {
             return;
         }
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        nearCacheProvider.getNearCacheInvalidator().clearNearCaches(name, owner, getCallerUuid());
+        nearCacheProvider.getNearCacheInvalidator().clear(name, owner, getCallerUuid());
     }
 }

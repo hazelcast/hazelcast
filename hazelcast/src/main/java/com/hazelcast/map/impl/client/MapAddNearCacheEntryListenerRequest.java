@@ -18,11 +18,16 @@ package com.hazelcast.map.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.map.impl.MapPortableHook;
+import com.hazelcast.map.impl.nearcache.BatchNearCacheInvalidation;
 import com.hazelcast.map.impl.nearcache.Invalidation;
 import com.hazelcast.map.impl.nearcache.InvalidationListener;
+import com.hazelcast.map.impl.nearcache.SingleNearCacheInvalidation;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
-import static com.hazelcast.map.impl.nearcache.NearCacheInvalidatorImpl.getOrderKey;
+import static com.hazelcast.map.impl.nearcache.NonStopInvalidator.getOrderKey;
 
 
 /**
@@ -61,12 +66,46 @@ public class MapAddNearCacheEntryListenerRequest extends MapAddEntryListenerRequ
 
         @Override
         public void onInvalidate(Invalidation event) {
-            if (!endpoint.isAlive()
-                    || endpoint.getUuid().equals(event.getSourceUuid())) {
+            if (!endpoint.isAlive()) {
                 return;
             }
 
+            event = getFilteredEventOrNull(event);
+            sendEvent(event);
+        }
 
+        protected Invalidation getFilteredEventOrNull(Invalidation event) {
+
+            if (event instanceof BatchNearCacheInvalidation) {
+                return newEventOrNull(event);
+            }
+
+            if (!endpoint.getUuid().equals(event.getSourceUuid())) {
+                return event;
+            }
+
+            return null;
+        }
+
+        protected BatchNearCacheInvalidation newEventOrNull(Invalidation event) {
+            List<SingleNearCacheInvalidation> invalidations = ((BatchNearCacheInvalidation) event).getInvalidations();
+
+            List<SingleNearCacheInvalidation> newList = null;
+            for (SingleNearCacheInvalidation invalidation : invalidations) {
+                if (!endpoint.getUuid().equals(invalidation.getSourceUuid())) {
+                    if (newList == null) {
+                        newList = new ArrayList<SingleNearCacheInvalidation>(invalidations.size());
+                    }
+                    newList.add(invalidation);
+                }
+            }
+            return newList == null ? null : new BatchNearCacheInvalidation(mapName, newList);
+        }
+
+        protected void sendEvent(Invalidation event) {
+            if (event == null) {
+                return;
+            }
             Object partitionKey = getOrderKey(mapName, event);
             endpoint.sendEvent(partitionKey, event, callId);
         }
