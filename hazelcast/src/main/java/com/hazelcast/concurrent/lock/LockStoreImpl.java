@@ -311,6 +311,7 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(partitionId);
         out.writeObject(namespace);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
@@ -325,6 +326,7 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        partitionId = in.readInt();
         namespace = in.readObject();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
