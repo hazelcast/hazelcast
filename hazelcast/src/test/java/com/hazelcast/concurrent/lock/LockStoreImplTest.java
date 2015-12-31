@@ -16,6 +16,8 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.spi.DefaultObjectNamespace;
@@ -57,6 +59,18 @@ public class LockStoreImplTest extends HazelcastTestSupport {
         mockLockServiceImpl = mock(InternalLockService.class);
         when(mockLockServiceImpl.getMaxLeaseTimeInMillis()).thenReturn(Long.MAX_VALUE);
         lockStore = new LockStoreImpl(mockLockServiceImpl, OBJECT_NAME_SPACE, BACKUP_COUNT, ASYNC_BACKUP_COUNT, -1);
+    }
+
+    @Test
+    public void givenPartitionIsSetToX_whenSerializedAndDeserilized_thenPartitionIsStillX() throws NoSuchFieldException, IllegalAccessException {
+        int partitionId = Integer.MAX_VALUE;
+        LockStoreImpl original = new LockStoreImpl(mockLockServiceImpl, OBJECT_NAME_SPACE, BACKUP_COUNT, ASYNC_BACKUP_COUNT, partitionId);
+
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        Data serialized = serializationService.toData(original);
+        LockStoreImpl deserialized = serializationService.toObject(serialized);
+
+        assertFieldEqualsTo(deserialized, "partitionId", partitionId);
     }
 
     @Test
@@ -452,4 +466,5 @@ public class LockStoreImplTest extends HazelcastTestSupport {
         referenceId++;
         return isUnlocked;
     }
+
 }

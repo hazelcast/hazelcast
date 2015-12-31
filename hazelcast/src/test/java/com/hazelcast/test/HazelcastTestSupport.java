@@ -43,6 +43,7 @@ import org.junit.Assert;
 import org.junit.ComparisonFailure;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -807,6 +808,20 @@ public abstract class HazelcastTestSupport {
                 }
             }
         }, timeoutInSeconds);
+    }
+
+    public static void assertFieldEqualsTo(Object object, String fieldName, Object expectedValue) {
+        Class<?> clazz = object.getClass();
+        try {
+            Field field = clazz.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            Object actualValue = field.get(object);
+            assertEquals(expectedValue, actualValue);
+        } catch (NoSuchFieldException e) {
+            fail("Class " + clazz + " does not have field named " + fieldName + " declared");
+        } catch (IllegalAccessException e) {
+            fail("Cannot access field " + fieldName + " on class " + clazz);
+        }
     }
 
     public static void assertTrueFiveSeconds(AssertTask task) {
