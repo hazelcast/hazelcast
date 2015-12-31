@@ -11,8 +11,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -21,11 +19,13 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class MapPartitionLostListenerStressTest extends AbstractPartitionLostListenerTest {
+public class MapPartitionLostListenerStressTest
+        extends AbstractPartitionLostListenerTest {
 
-    public static class EventCollectingMapPartitionLostListener implements MapPartitionLostListener {
+    public static class EventCollectingMapPartitionLostListener
+            implements MapPartitionLostListener {
 
-        private final List<MapPartitionLostEvent> events = Collections.synchronizedList(new LinkedList<MapPartitionLostEvent>());
+        private final List<MapPartitionLostEvent> events = new ArrayList<MapPartitionLostEvent>();
 
         private final int backupCount;
 
@@ -34,14 +34,12 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
         }
 
         @Override
-        public void partitionLost(MapPartitionLostEvent event) {
+        public synchronized void partitionLost(MapPartitionLostEvent event) {
             this.events.add(event);
         }
 
-        public List<MapPartitionLostEvent> getEvents() {
-            synchronized (events) {
-                return new ArrayList<MapPartitionLostEvent>(events);
-            }
+        public synchronized List<MapPartitionLostEvent> getEvents() {
+            return new ArrayList<MapPartitionLostEvent>(events);
         }
 
         public int getBackupCount() {
@@ -58,46 +56,55 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
     }
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when1NodeCrashed_withoutData() throws InterruptedException {
+    public void test_mapPartitionLostListenerInvoked_when1NodeCrashed_withoutData()
+            throws InterruptedException {
         testMapPartitionLostListener(1, false);
     }
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when1NodeCrashed_withData() throws InterruptedException {
+    public void test_mapPartitionLostListenerInvoked_when1NodeCrashed_withData()
+            throws InterruptedException {
         testMapPartitionLostListener(1, true);
     }
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when2NodesCrashed_withoutData() throws InterruptedException {
+    public void test_mapPartitionLostListenerInvoked_when2NodesCrashed_withoutData()
+            throws InterruptedException {
         testMapPartitionLostListener(2, false);
     }
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when2NodesCrashed_withData() throws InterruptedException {
+    public void test_mapPartitionLostListenerInvoked_when2NodesCrashed_withData()
+            throws InterruptedException {
         testMapPartitionLostListener(2, true);
     }
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when3NodesCrashed_withoutData() throws InterruptedException {
+    public void test_mapPartitionLostListenerInvoked_when3NodesCrashed_withoutData()
+            throws InterruptedException {
         testMapPartitionLostListener(3, false);
     }
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when3NodesCrashed_withData() throws InterruptedException {
+    public void test_mapPartitionLostListenerInvoked_when3NodesCrashed_withData()
+            throws InterruptedException {
         testMapPartitionLostListener(3, true);
     }
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when4NodesCrashed_withoutData() throws InterruptedException {
+    public void test_mapPartitionLostListenerInvoked_when4NodesCrashed_withoutData()
+            throws InterruptedException {
         testMapPartitionLostListener(4, false);
     }
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when4NodesCrashed_withData() throws InterruptedException {
+    public void test_mapPartitionLostListenerInvoked_when4NodesCrashed_withData()
+            throws InterruptedException {
         testMapPartitionLostListener(4, true);
     }
 
-    private void testMapPartitionLostListener(int numberOfNodesToCrash, boolean withData) throws InterruptedException {
+    private void testMapPartitionLostListener(int numberOfNodesToCrash, boolean withData)
+            throws InterruptedException {
         List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
 
         List<HazelcastInstance> survivingInstances = new ArrayList<HazelcastInstance>(instances);
@@ -157,8 +164,8 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
             int failedPartitionId = event.getPartitionId();
             Integer survivingReplicaIndex = survivingPartitions.get(failedPartitionId);
             if (survivingReplicaIndex != null) {
-                String message = log + ", PartitionId: " + failedPartitionId
-                        + " SurvivingReplicaIndex: " + survivingReplicaIndex + " Event: " + event.toString();
+                String message = log + ", PartitionId: " + failedPartitionId + " SurvivingReplicaIndex: " + survivingReplicaIndex
+                        + " Event: " + event.toString();
                 assertTrue(message, survivingReplicaIndex > listener.getBackupCount());
             }
         }
