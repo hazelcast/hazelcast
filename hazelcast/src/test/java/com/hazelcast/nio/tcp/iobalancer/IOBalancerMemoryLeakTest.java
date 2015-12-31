@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp.iobalancer;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
@@ -45,7 +46,9 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
 
     @Test
     public void testEachConnectionUseDifferentSelectorEventually() throws IOException {
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        Config config = new Config();
+        config.getGroupConfig().setName(randomName());
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) getConnectionManager(instance);
         for (int i = 0; i < 100; i++) {
