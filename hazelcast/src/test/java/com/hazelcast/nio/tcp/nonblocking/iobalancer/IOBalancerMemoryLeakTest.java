@@ -48,6 +48,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
     @Test
     public void testMemoryLeak() throws IOException {
         Config config = new Config();
+        config.getGroupConfig().setName(randomName());
         config.setProperty(GroupProperty.REST_ENABLED, "true");
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
