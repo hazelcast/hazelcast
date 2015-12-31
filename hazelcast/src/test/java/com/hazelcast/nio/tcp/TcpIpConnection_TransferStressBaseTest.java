@@ -140,6 +140,7 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
     }
 
     public class WriteThread extends TestThread {
+
         private final Random random = new Random();
         private final SocketWriter writeHandler;
         private long normalPackets;
@@ -153,6 +154,7 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
         @Override
         public void doRun() throws Throwable {
             long prev = System.currentTimeMillis();
+
             while (!stop.get()) {
                 Packet packet = nextPacket();
                 if (packet.isUrgent()) {
@@ -161,7 +163,6 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
                     normalPackets++;
                 }
                 writeHandler.offer(packet);
-
 
                 long now = System.currentTimeMillis();
                 if (now > prev + 2000) {
@@ -174,16 +175,17 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
                     continue;
                 }
 
-                for (; ; ) {
+                for (;;) {
                     sleep(random.nextInt(5));
-                    if (getUsage() < 10) {
-                        //logger.info("Pausing");
+                    if (getUsage() < 10 || stop.get()) {
                         break;
                     }
                 }
             }
 
-            logger.info("Finished, normal packets written: " + normalPackets + " urgent packets written:" + urgentPackets);
+            logger.info("Finished, normal packets written: " + normalPackets
+                    + " urgent packets written:" + urgentPackets
+                    + " total frames pending:" + writeHandler.totalFramesPending());
         }
 
         private double getUsage() {
@@ -198,5 +200,7 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
             }
             return packet;
         }
+
     }
+
 }
