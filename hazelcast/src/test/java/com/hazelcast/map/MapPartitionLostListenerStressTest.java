@@ -11,8 +11,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +25,7 @@ public class MapPartitionLostListenerStressTest
     public static class EventCollectingMapPartitionLostListener
             implements MapPartitionLostListener {
 
-        private final List<MapPartitionLostEvent> events = Collections.synchronizedList(new LinkedList<MapPartitionLostEvent>());
+        private final List<MapPartitionLostEvent> events = new ArrayList<MapPartitionLostEvent>();
 
         private final int backupCount;
 
@@ -36,14 +34,12 @@ public class MapPartitionLostListenerStressTest
         }
 
         @Override
-        public void partitionLost(MapPartitionLostEvent event) {
+        public synchronized void partitionLost(MapPartitionLostEvent event) {
             this.events.add(event);
         }
 
-        public List<MapPartitionLostEvent> getEvents() {
-            synchronized (events) {
-                return new ArrayList<MapPartitionLostEvent>(events);
-            }
+        public synchronized List<MapPartitionLostEvent> getEvents() {
+            return new ArrayList<MapPartitionLostEvent>(events);
         }
 
         public int getBackupCount() {
