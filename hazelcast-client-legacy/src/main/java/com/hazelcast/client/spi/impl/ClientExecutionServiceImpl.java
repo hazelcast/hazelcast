@@ -193,4 +193,8 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
             LOGGER.warning(name + " executor await termination is interrupted", e);
         }
     }
+
+    public ExecutorService getInternalExecutor() {
+        return internalExecutor;
+    }
 }

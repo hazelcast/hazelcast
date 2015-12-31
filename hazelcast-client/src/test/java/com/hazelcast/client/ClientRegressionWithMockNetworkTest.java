@@ -54,7 +54,6 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -627,6 +626,36 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
             public void stateChanged(LifecycleEvent event) {
                 if (event.getState() == LifecycleState.CLIENT_DISCONNECTED) {
                     map.get(1);
+                    latch.countDown();
+                }
+            }
+        });
+
+        instance.shutdown();
+        assertOpenEventually(latch);
+    }
+
+    @Test
+    public void testDeadlock_WhenDoingOperationFromLifecycleListenerWithInitialPartitionTable() {
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        final ClientConfig clientConfig = new ClientConfig();
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig.setExecutorPoolSize(1));
+
+        hazelcastFactory.newHazelcastInstance();
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        final IMap<Object, Object> map = client.getMap(randomMapName());
+
+        // Let the partition table retrieved the first time
+        map.get(1);
+
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleState.CLIENT_DISCONNECTED) {
+                    for (int i = 0; i < 1000; i++) {
+                        map.get(i);
+                    }
                     latch.countDown();
                 }
             }
