@@ -22,12 +22,15 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 
 import static junit.framework.Assert.assertEquals;
 
@@ -109,14 +112,14 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         assertSizeEventually(SimpleMapStore.MAX_KEYS, map);
     }
 
-    @Test(timeout = 120000)
+    @Test
     public void mapSize_After_MapStore_OperationQueue_OverFlow_Test() throws Exception {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
 
-        final MapStoreBackup store = new MapStoreBackup();
-        final int delaySeconds = 4;
+        MapStoreBackup store = new MapStoreBackup();
+        int delaySeconds = Integer.MAX_VALUE;
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(store);
         mapStoreConfig.setWriteDelaySeconds(delaySeconds);
@@ -129,16 +132,27 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
-        final IMap map = client.getMap(MAP_NAME);
+        IMap map = client.getMap(MAP_NAME);
 
-
-        final int max = getMaxCapacity(server) + 1;
-        for (int i = 0; i < max; i++) {
-            map.putAsync(i, i);
+        int maxCapacity = getMaxCapacity(server);
+        List<Future> futures = new ArrayList<Future>(maxCapacity * 2);
+        for (int i = 0; i < maxCapacity * 2; i++) {
+            Future future = map.putAsync(i, i);
+            futures.add(future);
         }
 
-        Thread.sleep(1000 * (delaySeconds + 1));
-        assertEquals(max - 1, map.size());
+        int success = 0;
+        for (Future future : futures) {
+            try {
+                future.get();
+                success++;
+            } catch (ReachedMaxSizeException e) {
+                //ignore
+            }
+        }
+
+        assertEquals(success, maxCapacity);
+        assertEquals(map.size(), maxCapacity);
     }
 
     @Test(expected = ReachedMaxSizeException.class, timeout = 120000)
