@@ -18,10 +18,8 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.logging.ILogger;
@@ -35,6 +33,7 @@ import com.hazelcast.partition.client.PartitionsResponse;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -66,20 +65,19 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     public void start() {
-        ClientExecutionService clientExecutionService = client.getClientExecutionService();
-        clientExecutionService.scheduleWithFixedDelay(new RefreshTask(), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
+        ClientExecutionServiceImpl clientExecutionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
+        // Use internal execution service for all partition refresh process (Do not use the user executor thread)
+        ExecutorService internalExecutor = clientExecutionService.getInternalExecutor();
+        clientExecutionService.scheduleWithFixedDelay(new RefreshTask(internalExecutor), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
     }
 
     public void refreshPartitions() {
-        if (!updating.compareAndSet(false, true)) {
-            return;
-        }
-        ClientExecutionService executionService = client.getClientExecutionService();
+        ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         try {
-            ICompletableFuture future = executionService.submit(new RefreshTask());
-            future.andThen(refreshTaskCallback);
+            // Use internal execution service for all partition refresh process (Do not use the user executor thread)
+            ExecutorService internalExecutor = executionService.getInternalExecutor();
+            executionService.submitInternal(new RefreshTask(internalExecutor));
         } catch (RejectedExecutionException ignored) {
-            updating.set(false);
             EmptyStatement.ignore(ignored);
         }
     }
@@ -143,6 +141,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     private boolean processPartitionResponse(PartitionsResponse response) {
+        LOGGER.finest("Processing partition response.");
         Address[] members = response.getMembers();
         int[] ownerIndexes = response.getOwnerIndexes();
         if (partitionCount == 0) {
@@ -226,6 +225,11 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     private class RefreshTask implements Runnable {
+        private ExecutorService executionService;
+
+        public RefreshTask(ExecutorService service) {
+            this.executionService = service;
+        }
 
         @Override
         public void run() {
@@ -238,9 +242,17 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
                 updating.set(false);
                 return;
             }
-            ClientInvocationFuture clientInvocationFuture = getPartitionsFrom(connection);
-            clientInvocationFuture.andThen(refreshTaskCallback);
 
+            try {
+                ClientInvocationFuture clientInvocationFuture = getPartitionsFrom(connection);
+                clientInvocationFuture.andThen(refreshTaskCallback, executionService);
+            } catch (Exception e) {
+                if (client.getLifecycleService().isRunning()) {
+                    LOGGER.warning("Error while fetching cluster partition table!", e);
+                }
+            } finally {
+                updating.set(false);
+            }
         }
     }
 
