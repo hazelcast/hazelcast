@@ -32,10 +32,10 @@ public class HumanFriendlyProbeRendererTest extends HazelcastTestSupport {
 
         String s = renderer.getResult();
 
-        assertEquals("long=1\n" +
-                "double=2.0\n" +
-                "exception=somemessage\n" +
-                "novalue=NA\n", s);
+        assertEquals("long = 1\n" +
+                "double = 2.0000e+00\n" +
+                "exception = somemessage\n" +
+                "novalue = NA\n", s);
     }
 
 }

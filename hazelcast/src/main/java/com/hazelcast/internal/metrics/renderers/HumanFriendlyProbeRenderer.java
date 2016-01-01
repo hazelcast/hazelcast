@@ -21,8 +21,8 @@ package com.hazelcast.internal.metrics.renderers;
  *
  * The output will be something like:
  * <code>
- *     a=1
- *     b=2
+ *     longVal = 9,980,213
+ *     doubleVal = 9.9802e+06
  * </code>
  */
 public class HumanFriendlyProbeRenderer implements ProbeRenderer {
@@ -36,22 +36,22 @@ public class HumanFriendlyProbeRenderer implements ProbeRenderer {
 
     @Override
     public void renderLong(String name, long value) {
-        sb.append(name).append('=').append(value).append('\n');
+        sb.append(String.format("%s = %,d%n", name, value));
     }
 
     @Override
     public void renderDouble(String name, double value) {
-        sb.append(name).append('=').append(value).append('\n');
+        sb.append(String.format("%s = %.4e%n", name, value));
     }
 
     @Override
     public void renderException(String name, Exception e) {
-        sb.append(name).append('=').append(e.getMessage()).append('\n');
+        sb.append(name).append(" = ").append(e.getMessage()).append('\n');
     }
 
     @Override
     public void renderNoValue(String name) {
-        sb.append(name).append('=').append("NA").append('\n');
+        sb.append(name).append(" = NA\n");
     }
 
     @Override
