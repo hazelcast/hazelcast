@@ -14,7 +14,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,11 +42,9 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class PerformanceMonitorTest extends HazelcastTestSupport {
 
-    private PerformanceMonitor performanceMonitor;
     private PerformanceLogFile performanceLogFile;
     private InternalOperationService operationService;
     private MetricsRegistry metricsRegistry;
-    private HazelcastInstance hz;
 
     @Before
     public void setup() {
@@ -60,9 +57,9 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
         config.setProperty(SLOW_OPERATION_DETECTOR_ENABLED, "true");
         config.setProperty(SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "2000");
 
-        hz = createHazelcastInstance(config);
+        HazelcastInstance hz = createHazelcastInstance(config);
 
-        performanceMonitor = getPerformanceMonitor(hz);
+        PerformanceMonitor performanceMonitor = getPerformanceMonitor(hz);
         performanceLogFile = performanceMonitor.performanceLogFile;
         operationService = getOperationService(hz);
         metricsRegistry = getMetricsRegistry(hz);
@@ -190,11 +187,11 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
         });
     }
 
-    private void assertNotExist(File file) {
+    private static void assertNotExist(File file) {
         assertFalse("file:" + file + " should not exist", file.exists());
     }
 
-    private void assertExist(File file) {
+    private static void assertExist(File file) {
         assertTrue("file:" + file + " should exist", file.exists());
     }
 
@@ -228,7 +225,7 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
 
                 while (line != null) {
                     sb.append(line);
-                    sb.append("\n");
+                    sb.append('\n');
                     line = br.readLine();
                 }
                 return sb.toString();
