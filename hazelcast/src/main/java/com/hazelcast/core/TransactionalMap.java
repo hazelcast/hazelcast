@@ -20,7 +20,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.transaction.TransactionalObject;
 
 import java.util.Collection;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -194,14 +193,14 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
      *
      * @see IMap#keySet()
      */
-    Set<K> keySet();
+    //Set<K> keySet();
 
     /**
      * Transactional implementation of {@link IMap#keySet(com.hazelcast.query.Predicate)}.
      *
      * @see IMap#keySet(com.hazelcast.query.Predicate)
      */
-    Set<K> keySet(Predicate predicate);
+    //Set<K> keySet(Predicate predicate);
 
     /**
      * Transactional implementation of {@link IMap#values()}.

@@ -72,8 +72,9 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
         this(name, requestType, key, value);
         this.newValue = newValue;
     }
+
     public AbstractTxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value,
-            long ttl, TimeUnit timeUnit) {
+                                 long ttl, TimeUnit timeUnit) {
         this(name, requestType, key, value);
         this.ttl = timeUnit == null ? ttl : timeUnit.toMillis(ttl);
     }
@@ -85,8 +86,7 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
         return innerCallInternal(map);
     }
 
-
-    private Object innerCallInternal(final TransactionalMap map) {
+    protected Object innerCallInternal(final TransactionalMap map) {
         Object result = null;
         switch (requestType) {
             case CONTAINS_KEY:
@@ -204,108 +204,102 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
 
     public enum TxnMapRequestType {
         CONTAINS_KEY(1) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapReadPermission(name);
             }
         },
 
         GET(2) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapReadPermission(name);
             }
         },
         SIZE(3) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapReadPermission(name);
             }
         },
         PUT(4) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapLockedWritePermission(name);
             }
         },
         PUT_IF_ABSENT(5) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapLockedWritePermission(name);
             }
         },
         REPLACE(6) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapLockedWritePermission(name);
             }
         },
         REPLACE_IF_SAME(7) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapLockedWritePermission(name);
             }
         },
         SET(8) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapLockedWritePermission(name);
             }
         },
         REMOVE(9) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapLockedRemovePermission(name);
             }
         },
         DELETE(10) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapLockedRemovePermission(name);
             }
         },
         REMOVE_IF_SAME(11) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapLockedRemovePermission(name);
             }
         },
         KEYSET(12) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapReadPermission(name);
             }
         },
         KEYSET_BY_PREDICATE(13) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapReadPermission(name);
             }
         },
         VALUES(14) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapReadPermission(name);
             }
         },
         VALUES_BY_PREDICATE(15) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapReadPermission(name);
             }
         },
         GET_FOR_UPDATE(16) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapLockedReadPermission(name);
             }
         },
         PUT_WITH_TTL(17) {
-            @Override
-            Permission getRequiredPermission(String name) {
+            @Override Permission getRequiredPermission(String name) {
+                return getMapLockedWritePermission(name);
+            }
+        },
+        GET_ALL(18) {
+            @Override Permission getRequiredPermission(String name) {
+                return getMapReadPermission(name);
+            }
+        },
+        PUT_ALL(19) {
+            @Override Permission getRequiredPermission(String name) {
                 return getMapLockedWritePermission(name);
             }
         };
+
         int type;
 
         TxnMapRequestType(int i) {

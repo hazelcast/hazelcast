@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -75,6 +76,23 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     }
 
     @Override
+    public Map<K, V> getAll(Set<K> keys) {
+//        final Set<Data> dataKeySet = new HashSet<Data>(keys.size());
+//        for (K key : keys) {
+//            dataKeySet.add(toData(key));
+//        }
+//        TxnMapRequestWithKeySet request = new TxnMapRequestWithKeySet(getName(),
+//                TxnMapRequest.TxnMapRequestType.GET_ALL, dataKeySet);
+//        Map<Data, Data> dataMap = invoke(request);
+//        Map<K, V> result = new HashMap<K, V>(dataMap.size());
+//        for (Map.Entry<Data, Data> entry: dataMap.entrySet()) {
+//            result.put((K) toObject(entry.getKey()), (V) toObject(entry.getValue()));
+//        }
+//        return result;
+        return null;
+    }
+
+    @Override
     public V getForUpdate(Object key) {
         ClientMessage request = TransactionalMapGetForUpdateCodec.encodeRequest(name, getTransactionId(),
                 ThreadUtil.getThreadId(), toData(key));
@@ -98,6 +116,18 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     @Override
     public V put(K key, V value) {
         return put(key, value, -1, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public void putAll(Map<? extends K, ? extends V> entries) {
+//        final Map<Data, Data> dataMap = new HashMap<Data, Data>(entries.size());
+//        for (Object o : entries.entrySet()) {
+//            Map.Entry<K, V> entry = (Map.Entry<K, V>) o;
+//            dataMap.put(toData(entry.getKey()), toData(entry.getValue()));
+//        }
+//        TxnMapRequestWithDataMap request = new TxnMapRequestWithDataMap(getName(),
+//                TxnMapRequest.TxnMapRequestType.PUT_ALL, dataMap);
+//        invoke(request);
     }
 
     @Override
