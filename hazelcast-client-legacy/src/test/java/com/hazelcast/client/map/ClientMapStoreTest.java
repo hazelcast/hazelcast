@@ -31,9 +31,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
@@ -147,8 +149,8 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
             try {
                 future.get();
                 success++;
-            } catch (ReachedMaxSizeException e) {
-                //ignore
+            } catch (ExecutionException e) {
+                assertTrue(e.getCause() instanceof ReachedMaxSizeException);
             }
         }
 
