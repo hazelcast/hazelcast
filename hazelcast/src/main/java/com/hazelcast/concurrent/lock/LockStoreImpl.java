@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.scheduler.EntryTaskScheduler;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -47,20 +48,20 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     private ObjectNamespace namespace;
     private int backupCount;
     private int asyncBackupCount;
-    private int partitionId;
 
-    private InternalLockService lockService;
+    private LockService lockService;
+    private EntryTaskScheduler entryTaskScheduler;
 
     public LockStoreImpl() {
     }
 
-    public LockStoreImpl(InternalLockService lockService, ObjectNamespace name,
-                         int backupCount, int asyncBackupCount, int partitionId) {
+    public LockStoreImpl(LockService lockService, ObjectNamespace name,
+                         EntryTaskScheduler entryTaskScheduler, int backupCount, int asyncBackupCount) {
         this.lockService = lockService;
         this.namespace = name;
+        this.entryTaskScheduler = entryTaskScheduler;
         this.backupCount = backupCount;
         this.asyncBackupCount = asyncBackupCount;
-        this.partitionId = partitionId;
     }
 
     @Override
@@ -212,19 +213,24 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     void scheduleEviction(Data key, int version, long leaseTime) {
-        lockService.scheduleEviction(namespace, partitionId, key, version, leaseTime);
+        entryTaskScheduler.schedule(leaseTime, key, version);
     }
 
     void cancelEviction(Data key) {
-        lockService.cancelEviction(namespace, partitionId, key);
+        entryTaskScheduler.cancel(key);
     }
 
     void setLockService(LockServiceImpl lockService) {
         this.lockService = lockService;
     }
 
+    void setEntryTaskScheduler(EntryTaskScheduler entryTaskScheduler) {
+        this.entryTaskScheduler = entryTaskScheduler;
+    }
+
     public void clear() {
         locks.clear();
+        entryTaskScheduler.cancelAll();
     }
 
     public ObjectNamespace getNamespace() {
@@ -311,7 +317,6 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(partitionId);
         out.writeObject(namespace);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
@@ -326,7 +331,6 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        partitionId = in.readInt();
         namespace = in.readObject();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
