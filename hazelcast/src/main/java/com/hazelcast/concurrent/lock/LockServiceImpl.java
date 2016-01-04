@@ -38,39 +38,21 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
-import com.hazelcast.util.scheduler.ScheduleType;
 
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public final class LockServiceImpl implements LockService, ManagedService, RemoteService, MembershipAwareService,
         MigrationAwareService, ClientAwareService {
 
     private final NodeEngine nodeEngine;
     private final LockStoreContainer[] containers;
-    private final ConcurrentMap<ObjectNamespace, EntryTaskScheduler> evictionProcessors
-            = new ConcurrentHashMap<ObjectNamespace, EntryTaskScheduler>();
     private final ConcurrentMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>> constructors
             = new ConcurrentHashMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>>();
-    private final ConstructorFunction<ObjectNamespace, EntryTaskScheduler> schedulerConstructor =
-            new ConstructorFunction<ObjectNamespace, EntryTaskScheduler>() {
-                @Override
-                public EntryTaskScheduler createNew(ObjectNamespace namespace) {
-                    LockEvictionProcessor entryProcessor = new LockEvictionProcessor(nodeEngine, namespace);
-                    ScheduledExecutorService scheduledExecutor =
-                            nodeEngine.getExecutionService().getDefaultScheduledExecutor();
-                    return EntryTaskSchedulerFactory
-                            .newScheduler(scheduledExecutor, entryProcessor, ScheduleType.FOR_EACH);
-                }
-            };
 
     public LockServiceImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -148,17 +130,6 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         container.clearLockStore(namespace);
     }
 
-    public void scheduleEviction(ObjectNamespace namespace, Data key, int version, long delay) {
-        EntryTaskScheduler scheduler = getOrPutSynchronized(
-                evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
-        scheduler.schedule(delay, key, version);
-    }
-
-    public void cancelEviction(ObjectNamespace namespace, Data key) {
-        EntryTaskScheduler scheduler = getOrPutSynchronized(
-                evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
-        scheduler.cancel(key);
-    }
 
     public LockStoreContainer getLockContainer(int partitionId) {
         return containers[partitionId];
@@ -262,7 +233,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
                 }
 
                 long leaseTime = expirationTime - now;
-                scheduleEviction(ls.getNamespace(), lock.getKey(), 0, leaseTime);
+                ls.scheduleEviction(lock.getKey(), 0, leaseTime);
             }
         }
     }
@@ -306,4 +277,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         releaseLocksOf(clientUuid);
     }
 
+    public NodeEngine getNodeEngine() {
+        return nodeEngine;
+    }
 }
