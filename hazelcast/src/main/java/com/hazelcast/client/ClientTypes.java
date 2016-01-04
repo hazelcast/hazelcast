@@ -44,7 +44,7 @@ public final class ClientTypes {
     /**
      * PYTHON client protocol id
      */
-    public static final String PYTHON = "PHY";
+    public static final String PYTHON = "PYH";
 
     /**
      * RUBY client protocol id
