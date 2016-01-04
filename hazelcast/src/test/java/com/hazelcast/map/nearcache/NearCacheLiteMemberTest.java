@@ -437,7 +437,7 @@ public class NearCacheLiteMemberTest {
                 final int size = nearCache.size();
                 assertEquals("lite member near cache size should be 0 after evict but was " + size, 0, size);
             }
-        }, 10);
+        });
     }
 
     private static Data toData(final HazelcastInstance instance, final Object obj) {
