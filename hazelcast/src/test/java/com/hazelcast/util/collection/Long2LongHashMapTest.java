@@ -18,7 +18,6 @@
 package com.hazelcast.util.collection;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.collection.Long2LongHashMap.LongLongCursor;
@@ -35,7 +34,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static java.lang.Long.MAX_VALUE;
 import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -184,9 +182,9 @@ public class Long2LongHashMapTest {
 
         final Iterator<Entry<Long, Long>> it = entrySet.iterator();
         assertTrue(it.hasNext());
-        assertEntryIs(it.next(), 2L, 3L);
-        assertTrue(it.hasNext());
         assertEntryIs(it.next(), 1L, 1L);
+        assertTrue(it.hasNext());
+        assertEntryIs(it.next(), 2L, 3L);
         assertFalse(it.hasNext());
     }
 
