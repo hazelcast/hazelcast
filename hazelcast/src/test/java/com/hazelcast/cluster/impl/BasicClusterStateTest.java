@@ -347,12 +347,12 @@ public class BasicClusterStateTest
         map.get(1);
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 300000)
     public void test_noMigration_whenNodeLeaves_onClusterState_FROZEN() {
         testNoMigrationWhenNodeLeaves(ClusterState.FROZEN);
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 300000)
     public void test_noMigration_whenNodeLeaves_onClusterState_PASSIVE() {
         testNoMigrationWhenNodeLeaves(ClusterState.PASSIVE);
     }
