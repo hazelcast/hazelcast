@@ -31,9 +31,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Entry processor which updates SessionState attributes stored in distributed map and
- * adds current jvmId into SessionState If value of attribute is set to null. It is removed from
- * SessionState.attribute map.
+ * Entry processor which updates SessionState attributes stored in distributed map
+ * If value of attribute is set to null. It is removed from SessionState.attribute map.
  * See SessionUpdateEntryProcessor.process
  */
 

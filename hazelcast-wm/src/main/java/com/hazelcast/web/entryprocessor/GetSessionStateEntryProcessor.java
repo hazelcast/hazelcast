@@ -28,8 +28,7 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Entry processor which return SessionState object stored in distributed map and
- * adds current jvmId into SessionState. See GetSessionStateEntryProcessor.process
+ * Entry processor which return SessionState object stored in distributed map
  */
 
 public final class GetSessionStateEntryProcessor implements EntryProcessor<String, SessionState>,

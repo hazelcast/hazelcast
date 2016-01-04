@@ -29,8 +29,7 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Entry processor which return attributes of SessionState values and
- * adds current jvmId into SessionState. See GetAttributeEntryProcessor.process
+ * Entry processor which return attributes of SessionState values
  */
 
 public final class GetAttributeEntryProcessor implements EntryProcessor<String, SessionState>,

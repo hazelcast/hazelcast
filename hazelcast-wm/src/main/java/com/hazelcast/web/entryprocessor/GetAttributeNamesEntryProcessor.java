@@ -29,8 +29,7 @@ import java.util.HashSet;
 import java.util.Map;
 
 /**
- * Entry processor which return attributes keySet of SessionState values and
- * adds current jvmId into SessionState. See GetAttributeNamesEntryProcessor.process
+ * Entry processor which return attributes keySet of SessionState values
  */
 
 public final class GetAttributeNamesEntryProcessor implements EntryProcessor<String, SessionState>,

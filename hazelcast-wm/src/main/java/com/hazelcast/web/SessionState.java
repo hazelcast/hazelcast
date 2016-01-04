@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Wrapper class which holds session attributes and jvmIds
+ * Wrapper class which holds session attributes
  */
 
 public class SessionState implements IdentifiedDataSerializable {
