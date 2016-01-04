@@ -28,10 +28,6 @@ public class RemoveOperation extends BaseRemoveOperation implements IdentifiedDa
     public RemoveOperation() {
     }
 
-    public RemoveOperation(String name, Data dataKey) {
-        super(name, dataKey);
-    }
-
     public RemoveOperation(String name, Data dataKey, boolean disableWanReplicationEvent) {
         super(name, dataKey, disableWanReplicationEvent);
     }

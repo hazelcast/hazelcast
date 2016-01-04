@@ -79,7 +79,7 @@ public class MapRemoveRequest extends MapKeyBasedClientRequest implements Portab
     }
 
     protected Operation prepareOperation() {
-        MapOperation op = getOperationProvider().createRemoveOperation(name, key);
+        MapOperation op = getOperationProvider().createRemoveOperation(name, key, false);
         op.setThreadId(threadId);
         return op;
     }

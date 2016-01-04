@@ -43,8 +43,6 @@ public interface MapOperationProvider {
 
     MapOperation createPutTransientOperation(String name, Data key, Data value, long ttl);
 
-    MapOperation createRemoveOperation(String name, Data key);
-
     MapOperation createRemoveOperation(String name, Data key, boolean disableWanReplicationEvent);
 
     MapOperation createTryRemoveOperation(String name, Data dataKey, long timeout);
