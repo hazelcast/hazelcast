@@ -227,7 +227,7 @@ public class MapLockTest extends HazelcastTestSupport {
         assertOpenEventually(latch);
     }
 
-    @Test(timeout = 1000 * 15, expected = IllegalMonitorStateException.class)
+    @Test(timeout = 1000 * 30, expected = IllegalMonitorStateException.class)
     public void testLockOwnership() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final Config config = getConfig();
