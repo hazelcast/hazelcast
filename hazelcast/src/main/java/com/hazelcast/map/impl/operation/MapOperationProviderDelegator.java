@@ -30,7 +30,7 @@ import java.util.Set;
 /**
  * Base class which basically delegates all method calls to underlying {@link MapOperationProvider}
  * to prevent extending classes to override all methods.
- *
+ * <p/>
  * See {@link WANAwareOperationProvider} for an example.
  */
 public abstract class MapOperationProviderDelegator implements MapOperationProvider {
@@ -60,11 +60,6 @@ public abstract class MapOperationProviderDelegator implements MapOperationProvi
     @Override
     public MapOperation createPutTransientOperation(String name, Data key, Data value, long ttl) {
         return getDelegate().createPutTransientOperation(name, key, value, ttl);
-    }
-
-    @Override
-    public MapOperation createRemoveOperation(String name, Data key) {
-        return getDelegate().createRemoveOperation(name, key);
     }
 
     @Override

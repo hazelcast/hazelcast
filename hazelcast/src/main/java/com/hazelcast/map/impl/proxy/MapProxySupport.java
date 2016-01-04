@@ -443,7 +443,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     protected Data removeInternal(Data key) {
-        MapOperation operation = operationProvider.createRemoveOperation(name, key);
+        MapOperation operation = operationProvider.createRemoveOperation(name, key, false);
         return (Data) invokeOperation(key, operation);
     }
 
@@ -465,7 +465,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected ICompletableFuture<Data> removeAsyncInternal(final Data key) {
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        MapOperation operation = operationProvider.createRemoveOperation(name, key);
+        MapOperation operation = operationProvider.createRemoveOperation(name, key, false);
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
             long startTime = System.currentTimeMillis();

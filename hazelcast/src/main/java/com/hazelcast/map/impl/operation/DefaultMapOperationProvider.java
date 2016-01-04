@@ -69,11 +69,6 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createRemoveOperation(String name, Data key) {
-        return new RemoveOperation(name, key);
-    }
-
-    @Override
     public MapOperation createRemoveOperation(String name, Data key, boolean disableWanReplicationEvent) {
         return new RemoveOperation(name, key, disableWanReplicationEvent);
     }

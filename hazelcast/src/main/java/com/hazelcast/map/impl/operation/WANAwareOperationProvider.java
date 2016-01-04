@@ -77,12 +77,6 @@ public class WANAwareOperationProvider extends MapOperationProviderDelegator {
     }
 
     @Override
-    public MapOperation createRemoveOperation(String name, Data key) {
-        checkWanReplicationQueues(name);
-        return getDelegate().createRemoveOperation(name, key);
-    }
-
-    @Override
     public MapOperation createRemoveOperation(String name, Data key, boolean disableWanReplicationEvent) {
         checkWanReplicationQueues(name);
         return getDelegate().createRemoveOperation(name, key, disableWanReplicationEvent);
