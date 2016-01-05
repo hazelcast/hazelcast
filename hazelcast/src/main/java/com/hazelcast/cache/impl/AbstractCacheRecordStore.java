@@ -312,7 +312,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         onProcessExpiredEntry(key, removedRecord, removedRecord.getExpirationTime(), now, source, origin);
         if (isEventsEnabled()) {
             publishEvent(createCacheExpiredEvent(keyEventData, recordEventData,
-                    CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE, origin, IGNORE_COMPLETION));
+                         CacheRecord.TIME_NOT_AVAILABLE, origin, IGNORE_COMPLETION));
         }
         return true;
     }
@@ -335,7 +335,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         onProcessExpiredEntry(key, removedRecord, expiryTime, now, source, origin);
         if (isEventsEnabled()) {
             publishEvent(createCacheExpiredEvent(keyEventData, recordEventData,
-                                                 CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
+                                                 CacheRecord.TIME_NOT_AVAILABLE,
                                                  origin, IGNORE_COMPLETION));
         }
         return null;
@@ -390,7 +390,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected long updateAccessDuration(Data key, R record, ExpiryPolicy expiryPolicy, long now) {
-        long expiryTime = -1L;
+        long expiryTime = CacheRecord.TIME_NOT_AVAILABLE;
         try {
             Duration expiryDuration = expiryPolicy.getExpiryForAccess();
             if (expiryDuration != null) {
@@ -530,7 +530,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             return createRecord(key, value, expiryTime, now, disableWriteThrough, completionId, origin);
         }
         if (isEventsEnabled()) {
-            publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
+            publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.TIME_NOT_AVAILABLE,
                                                   origin, completionId));
         }
         return null;
@@ -572,11 +572,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         Data dataValue = null;
         Object recordValue = value;
         try {
-            record.setExpirationTime(expiryTime);
-
+            if (expiryTime != CacheRecord.TIME_NOT_AVAILABLE) {
+                record.setExpirationTime(expiryTime);
+            }
             if (isExpiredAt(expiryTime, now)) {
                 // No need to update record value if it is expired
-
                 if (!disableWriteThrough) {
                     writeThroughCache(key, value);
                 }
@@ -671,7 +671,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected boolean updateRecordWithExpiry(Data key, Object value, R record, ExpiryPolicy expiryPolicy, long now,
                                              boolean disableWriteThrough, int completionId, String source, String origin) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
-        long expiryTime = CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE;
+        long expiryTime = CacheRecord.TIME_NOT_AVAILABLE;
         try {
             Duration expiryDuration = expiryPolicy.getExpiryForUpdate();
             if (expiryDuration != null) {
@@ -716,7 +716,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             onDeleteRecord(key, record, dataValue, record != null);
             if (isEventsEnabled()) {
                 publishEvent(createCacheRemovedEvent(eventDataKey, eventDataValue,
-                                                     CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE, origin, completionId));
+                                                     CacheRecord.TIME_NOT_AVAILABLE, origin, completionId));
             }
             return record != null;
         } catch (Throwable error) {
@@ -1003,8 +1003,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy,
-                            String source, int completionId) {
+    public Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy, String source, int completionId) {
         return put(key, value, expiryPolicy, source, true, false, completionId);
     }
 
@@ -1195,7 +1194,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         try {
             if (recordNotExistOrExpired(record, now)) {
                 if (isEventsEnabled()) {
-                    publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
+                    publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.TIME_NOT_AVAILABLE,
                                                           origin, completionId));
                 }
             } else {
@@ -1242,7 +1241,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             }
             if (!removed) {
                 if (isEventsEnabled()) {
-                    publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
+                    publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.TIME_NOT_AVAILABLE,
                                                           origin, completionId));
                 }
             }
@@ -1286,7 +1285,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             if (recordNotExistOrExpired(record, now)) {
                 obj = null;
                 if (isEventsEnabled()) {
-                    publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
+                    publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.TIME_NOT_AVAILABLE,
                                                           origin, completionId));
                 }
             } else {
