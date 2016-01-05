@@ -19,21 +19,20 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.Assert.assertEquals;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -45,6 +44,7 @@ public class EntryListenerConfigTest extends HazelcastTestSupport {
 
     private String mapName = randomMapName();
     private EntryListenerConfig listenerConfig = new EntryListenerConfig();
+    private HazelcastInstance instance;
 
     @Before
     public void setUp() throws Exception {
@@ -59,32 +59,23 @@ public class EntryListenerConfigTest extends HazelcastTestSupport {
     @Test
     public void testMapListenerAddition_withClassName() throws Exception {
         listenerConfig.setClassName(TestMapListener.class.getCanonicalName());
-        IMap<Integer, Integer> map = getIMap();
+        createInstanceAndInitializeListeners();
 
-        map.put(1, 1);
-        map.remove(1);
-
-        assertReceivedEventCount(2, TestMapListener.EVENT_COUNT);
+        assertListenerRegisteration();
     }
 
     @Test
     public void testMapListenerAddition_withImplementation() throws Exception {
         listenerConfig.setImplementation(new TestMapListener());
-        IMap<Integer, Integer> map = getIMap();
+        createInstanceAndInitializeListeners();
 
-        map.put(1, 1);
-        map.remove(1);
-
-        assertReceivedEventCount(2, TestMapListener.EVENT_COUNT);
+        assertListenerRegisteration();
     }
 
     @Test
     public void testHazelcastInstanceAwareness_whenMapListenerAdded_withImplementation() throws Exception {
         listenerConfig.setImplementation(new TestMapListener());
-        IMap<Integer, Integer> map = getIMap();
-
-        map.put(1, 1);
-        map.remove(1);
+        createInstanceAndInitializeListeners();
 
         assertInstanceSet(TestMapListener.INSTANCE_AWARE);
     }
@@ -92,10 +83,7 @@ public class EntryListenerConfigTest extends HazelcastTestSupport {
     @Test
     public void testHazelcastInstanceAwareness_whenMapListenerAdded_withClassName() throws Exception {
         listenerConfig.setClassName(TestMapListener.class.getCanonicalName());
-        IMap<Integer, Integer> map = getIMap();
-
-        map.put(1, 1);
-        map.remove(1);
+        createInstanceAndInitializeListeners();
 
         assertInstanceSet(TestMapListener.INSTANCE_AWARE);
     }
@@ -104,33 +92,24 @@ public class EntryListenerConfigTest extends HazelcastTestSupport {
     @Test
     public void testEntryListenerAddition_withClassName() throws Exception {
         listenerConfig.setClassName(TestEntryListener.class.getCanonicalName());
-        IMap<Integer, Integer> map = getIMap();
+        createInstanceAndInitializeListeners();
 
-        map.put(1, 1);
-        map.remove(1);
-
-        assertReceivedEventCount(2, TestEntryListener.EVENT_COUNT);
-
+        assertListenerRegisteration();
     }
 
     @Test
     public void testEntryListenerAddition_withImplementation() throws Exception {
         listenerConfig.setImplementation(new TestEntryListener());
-        IMap<Integer, Integer> map = getIMap();
+        createInstanceAndInitializeListeners();
 
-        map.put(1, 1);
-        map.remove(1);
-
-        assertReceivedEventCount(2, TestEntryListener.EVENT_COUNT);
+        assertListenerRegisteration();
     }
+
 
     @Test
     public void testHazelcastInstanceAwareness_whenEntryListenerAdded_withImplementation() throws Exception {
         listenerConfig.setImplementation(new TestEntryListener());
-        IMap<Integer, Integer> map = getIMap();
-
-        map.put(1, 1);
-        map.remove(1);
+        createInstanceAndInitializeListeners();
 
         assertInstanceSet(TestEntryListener.INSTANCE_AWARE);
     }
@@ -138,33 +117,26 @@ public class EntryListenerConfigTest extends HazelcastTestSupport {
     @Test
     public void testHazelcastInstanceAwareness_whenEntryListenerAdded_withClassName() throws Exception {
         listenerConfig.setClassName(TestEntryListener.class.getCanonicalName());
-        IMap<Integer, Integer> map = getIMap();
-
-        map.put(1, 1);
-        map.remove(1);
+        createInstanceAndInitializeListeners();
 
         assertInstanceSet(TestEntryListener.INSTANCE_AWARE);
     }
 
-    private IMap<Integer, Integer> getIMap() {
+    private void createInstanceAndInitializeListeners() {
         MapConfig mapConfig = new MapConfig(mapName);
         mapConfig.getEntryListenerConfigs().add(listenerConfig);
-
         Config config = new Config().addMapConfig(mapConfig);
 
-        HazelcastInstance node = createHazelcastInstance(config);
+        instance = createHazelcastInstance(config);
+        instance.getMap(mapName);
 
-        return node.getMap(mapName);
     }
 
-    private void assertReceivedEventCount(final int expectedEventCount, final AtomicInteger actualEventCount) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expectedEventCount, actualEventCount.get());
-            }
-        });
+    private void assertListenerRegisteration() {
+        boolean hasEventRegistration = getEventService().hasEventRegistration(SERVICE_NAME, mapName);
+        assertTrue("Listener should be registered", hasEventRegistration);
     }
+
 
     private void assertInstanceSet(final AtomicBoolean instanceSet) {
         assertTrueEventually(new AssertTask() {
@@ -175,11 +147,14 @@ public class EntryListenerConfigTest extends HazelcastTestSupport {
         });
     }
 
-    private void init() {
-        TestMapListener.EVENT_COUNT.set(0);
-        TestMapListener.INSTANCE_AWARE.set(false);
+    private EventService getEventService() {
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance);
+        return nodeEngineImpl.getEventService();
+    }
 
-        TestEntryListener.EVENT_COUNT.set(0);
+
+    private void init() {
+        TestMapListener.INSTANCE_AWARE.set(false);
         TestEntryListener.INSTANCE_AWARE.set(false);
     }
 
