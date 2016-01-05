@@ -30,8 +30,9 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.counters.SwCounter;
-
 import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -155,6 +156,15 @@ public class InvocationRegistry {
 
     public Collection<Invocation> invocations() {
         return invocations.values();
+    }
+
+    /**
+     * Intention to expose the entry set is to mutate it.
+     *
+     * @return set of invocations in this registry
+     */
+    public Set<Map.Entry<Long, Invocation>> entrySet() {
+        return invocations.entrySet();
     }
 
     /**
