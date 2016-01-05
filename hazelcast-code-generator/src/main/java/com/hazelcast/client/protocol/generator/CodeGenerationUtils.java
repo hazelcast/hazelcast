@@ -18,6 +18,7 @@ package com.hazelcast.client.protocol.generator;
 
 import javax.lang.model.element.TypeElement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -86,6 +87,11 @@ public final class CodeGenerationUtils {
         put("com.hazelcast.cluster.client.MemberAttributeChange", "MemberAttributeChange");
         put("com.hazelcast.map.impl.SimpleEntryView", "EntryView");
     }};
+
+    private static final List<String> PYTHON_RESERVED_WORDS = Arrays
+            .asList("and", "del", "from", "not", "while", "as", "elif", "global", "or", "with", "assert", "else", "if", "pass",
+                    "yield", "break", "except", "import", "print", "class", "exec", "in", "raise", "continue", "finally", "is",
+                    "return", "def", "for", "lambda", "try");
 
     private CodeGenerationUtils() {
     }
@@ -345,5 +351,15 @@ public final class CodeGenerationUtils {
 
     public static String convertToSnakeCase(String camelCase) {
         return camelCase.replaceAll("(.)(\\p{Upper})", "$1_$2").toLowerCase();
+    }
+
+    public static String escape(String str, Lang lang) {
+        switch (lang) {
+            case PY:
+                return PYTHON_RESERVED_WORDS.contains(str) ? str + "_" : str;
+            default:
+                //TODO add other lang reserved words
+                return str;
+        }
     }
 }

@@ -1,7 +1,7 @@
-from hazelcast.serialization.data import *
 from hazelcast.serialization.bits import *
 from hazelcast.protocol.client_message import ClientMessage
 from hazelcast.protocol.custom_codec import *
+from hazelcast.util import ImmutableLazyDataList
 from hazelcast.protocol.codec.${util.convertToSnakeCase(model.parentName)}_message_type import *
 <#if model.events?has_content>
 from hazelcast.protocol.event_response_const import *
@@ -35,18 +35,22 @@ def encode_request(<#list model.requestParams as param>${util.convertToSnakeCase
 
 
 <#--************************ RESPONSE ********************************************************-->
-def decode_response(client_message):
+<#if model.responseParams?has_content>
+def decode_response(client_message, to_object=None):
     """ Decode response from client message"""
     parameters = dict(<#list model.responseParams as p>${util.convertToSnakeCase(p.name)}=None<#if p_has_next>, </#if></#list>)
 <#list model.responseParams as p>
 <@getterText varName=util.convertToSnakeCase(p.name) type=p.type isNullable=p.nullable indent=1/>
 </#list>
     return parameters
+<#else>
+# Empty decode_response(client_message), this message has no parameters to decode
+</#if>
 
 
 <#--************************ EVENTS ********************************************************-->
 <#if model.events?has_content>
-def handle(client_message, <#list model.events as event>handle_event_${event.name?lower_case} = None<#if event_has_next>, </#if></#list>):
+def handle(client_message, <#list model.events as event>handle_event_${event.name?lower_case} = None<#if event_has_next>, </#if></#list>, to_object=None):
     """ Event handler """
     message_type = client_message.get_message_type()
     <#list model.events as event>
@@ -54,7 +58,7 @@ def handle(client_message, <#list model.events as event>handle_event_${event.nam
         <#list event.eventParams as p>
 <@getterText varName=util.convertToSnakeCase(p.name) type=p.type isNullable=p.nullable isEvent=true indent=2/>
         </#list>
-        handle_event_${event.name?lower_case}(<#list event.eventParams as param>${util.convertToSnakeCase(param.name)}<#if param_has_next>, </#if></#list>)
+        handle_event_${event.name?lower_case}(<#list event.eventParams as param>${util.convertToSnakeCase(param.name)}=${util.convertToSnakeCase(param.name)}<#if param_has_next>, </#if></#list>)
     </#list>
 </#if>
 
@@ -158,7 +162,7 @@ ${""?left_pad(indent * 4)}for ${itemTypeVar} in ${varName}:
 ${""?left_pad(indent * 4)}client_message.append_int(len(${varName}))
 ${""?left_pad(indent * 4)}for key, value in ${varName}.iteritems():
     <@setterTextInternal varName="key"  type=keyType indent=(indent + 1)/>
-    <@setterTextInternal varName="val"  type=valueType indent=(indent + 1)/>
+    <@setterTextInternal varName="value"  type=valueType indent=(indent + 1)/>
     </#if>
 </#macro>
 
@@ -173,32 +177,33 @@ ${""?left_pad(indent * 4)}if not client_message.read_bool():
 </#if>
 </#macro>
 
-<#macro getterTextInternal varName varType isEvent indent>
+<#macro getterTextInternal varName varType indent isEvent=false isCollection=false>
 <#local cat= util.getTypeCategory(varType)>
+<#local isDeserial= !(isEvent || isCollection)>
 <#switch cat>
     <#case "OTHER">
         <#switch varType>
             <#case util.DATA_FULL_NAME>
-${""?left_pad(indent * 4)}<#if !isEvent>parameters['${varName}']<#else>${varName}</#if> = client_message.read_data()
+${""?left_pad(indent * 4)}<#if !(isEvent || isCollection)>parameters['${varName}']<#else>${varName}</#if> = <#if isDeserial>to_object(</#if>client_message.read_data()<#if isDeserial>)</#if>
                 <#break >
             <#case "java.lang.Integer">
-${""?left_pad(indent * 4)}<#if !isEvent>parameters['${varName}']<#else>${varName}</#if> = client_message.read_int()
+${""?left_pad(indent * 4)}<#if !(isEvent || isCollection)>parameters['${varName}']<#else>${varName}</#if> = client_message.read_int()
                 <#break >
             <#case "java.lang.Boolean">
-${""?left_pad(indent * 4)}<#if !isEvent>parameters['${varName}']<#else>${varName}</#if> = client_message.read_bool()
+${""?left_pad(indent * 4)}<#if !(isEvent || isCollection)>parameters['${varName}']<#else>${varName}</#if> = client_message.read_bool()
                 <#break >
             <#case "java.lang.String">
-${""?left_pad(indent * 4)}<#if !isEvent>parameters['${varName}']<#else>${varName}</#if> = client_message.read_str()
+${""?left_pad(indent * 4)}<#if !(isEvent || isCollection)>parameters['${varName}']<#else>${varName}</#if> = client_message.read_str()
                 <#break >
             <#case "java.util.Map.Entry<com.hazelcast.nio.serialization.Data,com.hazelcast.nio.serialization.Data>">
-${""?left_pad(indent * 4)}<#if !isEvent>parameters['${varName}']<#else>${varName}</#if> = client_message.read_map_entry()
+${""?left_pad(indent * 4)}<#if !(isEvent || isCollection)>parameters['${varName}']<#else>${varName}</#if> = (<#if isDeserial>to_object(</#if>client_message.read_data()<#if isDeserial>)</#if>, <#if isDeserial>to_object(</#if>client_message.read_data()<#if isDeserial>)</#if>)
                 <#break >
             <#default>
-${""?left_pad(indent * 4)}<#if !isEvent>parameters['${varName}']<#else>${varName}</#if> = client_message.read_${util.getPythonType(varType)}()
+${""?left_pad(indent * 4)}<#if !(isEvent || isCollection)>parameters['${varName}']<#else>${varName}</#if> = client_message.read_${util.getPythonType(varType)}()
         </#switch>
         <#break >
     <#case "CUSTOM">
-${""?left_pad(indent * 4)}<#if !isEvent>parameters['${varName}']<#else>${varName}</#if> = ${util.getTypeCodec(varType)?split(".")?last}.decode(client_message)
+${""?left_pad(indent * 4)}<#if !(isEvent || isCollection)>parameters['${varName}']<#else>${varName}</#if> = ${util.getTypeCodec(varType)?split(".")?last}.decode(client_message, to_object)
         <#break >
     <#case "COLLECTION">
     <#case "ARRAY">
@@ -210,10 +215,10 @@ ${""?left_pad(indent * 4)}<#if !isEvent>parameters['${varName}']<#else>${varName
 ${""?left_pad(indent * 4)}${sizeVariableName} = client_message.read_int()
 ${""?left_pad(indent * 4)}${varName} = []
 ${""?left_pad(indent * 4)}for ${indexVariableName} in xrange(0, ${sizeVariableName}):
-                            <@getterTextInternal varName=itemVariableName varType=itemVariableType isEvent=true indent=(indent +1)/>
+                            <@getterTextInternal varName=itemVariableName varType=itemVariableType isEvent=isEvent isCollection=true indent=(indent +1)/>
 ${""?left_pad(indent * 4)}    ${varName}.append(${itemVariableName})
-<#if !isEvent>
-${""?left_pad(indent * 4)}parameters['${varName}'] = ${varName}
+<#if !(isEvent || isCollection)>
+${""?left_pad(indent * 4)}parameters['${varName}'] = ImmutableLazyDataList(${varName}, to_object)
 </#if>
         <#break >
     <#case "MAP">
