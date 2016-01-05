@@ -118,7 +118,7 @@ public class IsStillRunningService {
             nodeEngine.getExecutionService().execute(SYSTEM_EXECUTOR,
                     new InvokeIsStillRunningOperationRunnable(invocation, isStillExecuting, callback));
         } catch (Exception e) {
-            invocation.logger.warning("While asking 'is-executing': " + toString(), e);
+            invocation.logger.warning("While asking 'is-executing': " + invocation, e);
         }
     }
 
