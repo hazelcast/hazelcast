@@ -33,7 +33,9 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
-
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -271,6 +273,10 @@ public class InvocationRegistry {
         inspectionThread.join(timeoutMillis);
     }
 
+    public Collection<Invocation> invocations() {
+        return invocations.values();
+    }
+
     /**
      * The InspectionThread iterates over all pending invocations and sees what needs to be done:
      * - currently it only checks for timeouts
@@ -328,9 +334,41 @@ public class InvocationRegistry {
             // todo: these 2 measurements should be added to the black-box.
             int backupTimeouts = 0;
             int invocationTimeouts = 0;
-            for (Invocation invocation : invocations.values()) {
+            Iterator<Map.Entry<Long, Invocation>> iterator = invocations.entrySet().iterator();
+            while (iterator.hasNext()) {
                 if (shutdown) {
                     return;
+                }
+                Map.Entry<Long, Invocation> entry = iterator.next();
+                Long callId = entry.getKey();
+                Invocation invocation = entry.getValue();
+                /*
+                * The reason for the following if check is a workaround for the problem explained below.
+                *
+                * Problematic scenario :
+                * If an invocation with callId 1 is retried twice for any reason,
+                * two new innovations created and registered to invocation registry with callId’s 2 and 3 respectively.
+                * Both new invocations are sharing the same operation
+                * When one of the new invocations, say the one with callId 2 finishes, it de-registers itself from the
+                * invocation registry.
+                * When doing the de-registration it sets the shared operation’s callId to 0.
+                * After that when the invocation with the callId 3 completes, it tries to de-register itself from
+                * invocation registry
+                * but fails to do so since the invocation callId and the callId on the operation is not matching anymore
+                * When InvocationMonitor thread kicks in, it sees that there is an invocation in the registry,
+                * and asks whether invocation is finished or not.
+                * Even if the remote node replies with invocation is timed out,
+                * It can’t be de-registered from the registry because of aforementioned non-matching callId scenario.
+                *
+                * Workaround:
+                * When InvocationMonitor kicks in, it will do a check for invocations that are completed
+                * but their callId's are not matching with their operations. If any invocation found for that type,
+                * it is removed from the invocation registry.
+                *
+                * */
+                if (!callIdMatches(callId, invocation) && isInvocationDone(invocation)) {
+                    iterator.remove();
+                    continue;
                 }
 
                 detectSlowInvocation(now, invocation);
@@ -345,6 +383,14 @@ public class InvocationRegistry {
             }
 
             log(backupTimeouts, invocationTimeouts);
+        }
+
+        private boolean callIdMatches(long callId, Invocation invocation) {
+            return callId == invocation.op.getCallId();
+        }
+
+        private boolean isInvocationDone(Invocation invocation) {
+            return invocation.invocationFuture.isDone();
         }
 
         private void detectSlowInvocation(long now, Invocation invocation) {
