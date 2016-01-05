@@ -21,45 +21,36 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.MapEvent;
-
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestEntryListener implements EntryListener, HazelcastInstanceAware {
 
-    public static final AtomicInteger EVENT_COUNT = new AtomicInteger();
     public static final AtomicBoolean INSTANCE_AWARE = new AtomicBoolean();
 
     private HazelcastInstance instance;
 
     @Override
     public void entryAdded(EntryEvent event) {
-        EVENT_COUNT.incrementAndGet();
     }
 
     @Override
     public void entryEvicted(EntryEvent event) {
-        EVENT_COUNT.incrementAndGet();
     }
 
     @Override
     public void entryRemoved(EntryEvent event) {
-        EVENT_COUNT.incrementAndGet();
     }
 
     @Override
     public void entryUpdated(EntryEvent event) {
-        EVENT_COUNT.incrementAndGet();
     }
 
     @Override
     public void mapCleared(MapEvent event) {
-        EVENT_COUNT.incrementAndGet();
     }
 
     @Override
     public void mapEvicted(MapEvent event) {
-        EVENT_COUNT.incrementAndGet();
     }
 
     @Override
