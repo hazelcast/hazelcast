@@ -637,7 +637,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected boolean updateRecordWithExpiry(Data key, Object value, R record, long expiryTime, long now,
                                              boolean disableWriteThrough, int completionId, String source, String origin) {
-        record.setExpirationTime(expiryTime);
+        if (expiryTime != CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE) {
+            record.setExpirationTime(expiryTime);
+        }
         if (!disableWriteThrough) {
             writeThroughCache(key, value);
         }
