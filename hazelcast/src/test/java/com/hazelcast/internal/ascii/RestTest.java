@@ -239,4 +239,45 @@ public class RestTest extends HazelcastTestSupport{
             }
         });
     }
+
+    @Test
+    public void testListNodes() throws IOException {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance1);
+
+        assertTrue(instance1.getLifecycleService().isRunning());
+        assertTrue(instance2.getLifecycleService().isRunning());
+        assertTrue(instance3.getLifecycleService().isRunning());
+        assertEquals("{\"status\":\"success\"}", communicator.listClusterNodes("dev", "dev-pass"));
+//        assertTrueEventually(new AssertTask() {
+//            @Override
+//            public void run()
+//                    throws Exception {
+//                assertFalse(instance1.getLifecycleService().isRunning());
+//                assertFalse(instance2.getLifecycleService().isRunning());
+//                assertFalse(instance3.getLifecycleService().isRunning());
+//            }
+//        });
+    }
+
+//    @Test
+//    public void testKillNode() throws IOException {
+//        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+//        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+//        final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+//        HTTPCommunicator communicator = new HTTPCommunicator(instance1);
+//
+//        assertEquals(HttpURLConnection.HTTP_OK, communicator.shutdownCluster("dev", "dev-pass"));
+//        assertTrueEventually(new AssertTask() {
+//            @Override
+//            public void run()
+//                    throws Exception {
+//                assertFalse(instance1.getLifecycleService().isRunning());
+//                assertFalse(instance2.getLifecycleService().isRunning());
+//                assertFalse(instance3.getLifecycleService().isRunning());
+//            }
+//        });
+//    }
 }
