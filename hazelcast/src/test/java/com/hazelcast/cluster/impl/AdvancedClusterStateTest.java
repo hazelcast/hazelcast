@@ -131,7 +131,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         clusterStateManager.lockClusterState(ClusterState.FROZEN, node.getThisAddress(), "fakeTxn", timeoutInMillis, partitionStateVersion);
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void changeClusterState_shouldFail_whenInitiatorDies_beforePrepare() throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances();
@@ -161,7 +161,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         });
     }
 
-    @Test
+    @Test(timeout = 120000)
     public void changeClusterState_shouldNotFail_whenInitiatorDies_afterPrepare() throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances();
@@ -192,7 +192,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         });
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void changeClusterState_shouldFail_withoutBackup_whenInitiatorDies_beforePrepare() throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances();
@@ -222,7 +222,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         });
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void changeClusterState_shouldFail_withoutBackup_whenInitiatorDies_afterPrepare() throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances();
