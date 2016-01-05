@@ -14,6 +14,7 @@ import javax.cache.Cache;
 import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.configuration.MutableConfiguration;
+import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
@@ -306,8 +307,8 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         final CacheConfig<Integer, Integer> config = getCacheConfigWithMaxSize(MAX_SIZE);
         final ICache<Integer, Integer> cache = createCache(config);
         final int maxSize = withoutEviction
-                                ? getMaxCacheSizeWithoutEviction(config)
-                                : getMaxCacheSizeWithEviction(config);
+                ? getMaxCacheSizeWithoutEviction(config)
+                : getMaxCacheSizeWithEviction(config);
 
         // we prefill the cache with half of the max size, so there will be new inserts from the AbstractCacheWorker
         int prefillSize = maxSize / 2;
@@ -815,5 +816,23 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         }
 
         abstract void doRun(Random random);
+    }
+
+    // https://github.com/hazelcast/hazelcast/issues/7236
+    @Test
+    public void expiryTimeShouldNotBeChangedOnUpdateWhenCreatedExpiryPolicyIsUsed() {
+        final int CRETAED_EXPIRY_TIME_IN_MSEC = 1000;
+
+        Duration duration = new Duration(TimeUnit.MILLISECONDS, CRETAED_EXPIRY_TIME_IN_MSEC);
+        CacheConfig<Integer, String> cacheConfig = new CacheConfig<Integer, String>();
+        cacheConfig.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(duration));
+
+        Cache<Integer, String> cache = createCache(cacheConfig);
+        cache.put(1, "value");
+        cache.put(1, "value");
+
+        sleepAtLeastMillis(CRETAED_EXPIRY_TIME_IN_MSEC + 1);
+
+        assertNull(cache.get(1));
     }
 }

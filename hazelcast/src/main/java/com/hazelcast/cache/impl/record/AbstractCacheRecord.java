@@ -32,9 +32,9 @@ import java.io.IOException;
  */
 public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, DataSerializable {
 
-    protected long creationTime = -1;
-    protected volatile long expirationTime = -1;
-    protected volatile long accessTime = -1;
+    protected long creationTime = TIME_NOT_AVAILABLE;
+    protected volatile long expirationTime = TIME_NOT_AVAILABLE;
+    protected volatile long accessTime = TIME_NOT_AVAILABLE;
     protected volatile int accessHit;
 
     protected AbstractCacheRecord() {
@@ -98,7 +98,7 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, DataSeri
 
     @Override
     public boolean isExpiredAt(long now) {
-        return expirationTime > -1 && expirationTime <= now;
+        return expirationTime > TIME_NOT_AVAILABLE && expirationTime <= now;
     }
 
     @Override

@@ -103,8 +103,8 @@ public final class CacheEventContextUtil {
     }
 
     public static CacheEventContext createCacheRemovedEvent(Data dataKey) {
-        return createCacheRemovedEvent(dataKey, null, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE, null,
-                MutableOperation.IGNORE_COMPLETION);
+        return createCacheRemovedEvent(dataKey, null, CacheRecord.TIME_NOT_AVAILABLE, null,
+                                       MutableOperation.IGNORE_COMPLETION);
     }
 
     public static CacheEventContext createBaseEventContext(CacheEventType eventType, Data dataKey,
