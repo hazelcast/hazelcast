@@ -190,6 +190,13 @@ public class HTTPCommunicator {
         return urlConnection.getResponseCode();
     }
 
+    public String listClusterNodes(String groupName, String groupPassword) throws IOException {
+
+        String url = address + "management/cluster/nodes";
+        return doPost(url, groupName, groupPassword);
+
+    }
+
     private String doGet(final String url) throws IOException {
         HttpURLConnection httpUrlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         try {

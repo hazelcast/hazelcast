@@ -216,4 +216,9 @@ public interface Cluster {
      * @since 3.6
      */
     void shutdown(TransactionOptions transactionOptions);
+
+    /**
+     * Lists info about the nodes
+     */
+    void listNodes();
 }

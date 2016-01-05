@@ -869,6 +869,16 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         shutdownNodes();
     }
 
+    @Override
+    public void listNodes() {
+
+        System.out.println("LISTING NODES");
+        Collection<Member> members = getMembers();
+        for(Member member: members){
+            System.out.println(member.toString());
+        }
+    }
+
     private void shutdownNodes() {
         final Operation op = new ShutdownNodeOperation();
 
