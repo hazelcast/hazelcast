@@ -18,6 +18,7 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
+import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
@@ -78,7 +79,7 @@ public class ClientHeartbeatMonitor implements Runnable {
     }
 
     private void monitor(String memberUuid, ClientEndpointImpl clientEndpoint) {
-        if (clientEndpoint.isFirstConnection()) {
+        if (clientEndpoint.isFirstConnection() && ClientType.CPP.equals(clientEndpoint.getClientType())) {
             return;
         }
 
