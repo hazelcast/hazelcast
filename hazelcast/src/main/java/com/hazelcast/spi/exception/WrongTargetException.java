@@ -32,7 +32,7 @@ public class WrongTargetException extends RetryableHazelcastException {
 
     public WrongTargetException(Address thisAddress, Address target, int partitionId, int replicaIndex,
                                 String operationName, String serviceName) {
-        super("WrongTarget! this:" + thisAddress + ", target:" + target
+        super("WrongTarget! this: " + thisAddress + ", target: " + target
                 + ", partitionId: " + partitionId + ", replicaIndex: " + replicaIndex
                 + ", operation: " + operationName + ", service: " + serviceName);
 

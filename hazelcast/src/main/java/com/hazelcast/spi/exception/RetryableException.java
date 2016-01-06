@@ -21,5 +21,4 @@ package com.hazelcast.spi.exception;
  * where the partition has just moved to another machine.
  */
 public interface RetryableException {
-
 }

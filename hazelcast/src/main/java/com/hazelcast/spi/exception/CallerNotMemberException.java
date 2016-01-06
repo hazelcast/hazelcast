@@ -26,7 +26,7 @@ public class CallerNotMemberException extends RetryableHazelcastException {
 
     public CallerNotMemberException(Address thisAddress, Address caller, int partitionId,
             String operationName, String serviceName) {
-        super("Not Member! This: " + thisAddress + ", caller: " + caller + ", partitionId: " + partitionId
+        super("Not Member! this: " + thisAddress + ", caller: " + caller + ", partitionId: " + partitionId
                 + ", operation: " + operationName + ", service: " + serviceName);
     }
 
