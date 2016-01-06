@@ -902,6 +902,57 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
+
+    @Test
+    public void testInstanceAwareness_onOwnerAndBackup() {
+        String mapName = "default";
+        Config cfg = getConfig();
+        cfg.getMapConfig(mapName).setReadBackupData(true);
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        IMap map1 = instance1.getMap(mapName);
+        IMap map2 = instance2.getMap(mapName);
+
+        String keyOn1 = generateKeyNotOwnedBy(instance1);
+        map1.executeOnKey(keyOn1, new UuidSetterEntryProcessor());
+
+        assertEquals(instance1.getCluster().getLocalMember().getUuid(), map1.get(keyOn1));
+        assertEquals(instance2.getCluster().getLocalMember().getUuid(), map2.get(keyOn1));
+
+    }
+
+    private static class UuidSetterEntryProcessor implements EntryProcessor, HazelcastInstanceAware, EntryBackupProcessor {
+
+        private transient HazelcastInstance hz;
+
+        private UuidSetterEntryProcessor() {
+        }
+
+        @Override
+        public Object process(Map.Entry entry) {
+            String uuid = hz.getCluster().getLocalMember().getUuid();
+            return entry.setValue(uuid);
+        }
+
+        @Override
+        public EntryBackupProcessor getBackupProcessor() {
+            return this;
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hz = hazelcastInstance;
+        }
+
+        @Override
+        public void processBackup(Map.Entry entry) {
+            process(entry);
+        }
+    }
+
     @Test
     public void testIssue1022() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);

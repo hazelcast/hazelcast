@@ -27,10 +27,14 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.map.impl.operation.DefaultMapOperationProvider;
+import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
@@ -738,6 +742,54 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertEquals("11", map2.get("1"));
         assertEquals("2", map1.get("2"));
         assertEquals("2", map2.get("2"));
+    }
+
+    @Category(NightlyTest.class)
+    @Test(expected = OperationTimeoutException.class)
+    public void test_containsKey_throwsException_whenKeyLockedInTxn() throws TransactionException, InterruptedException {
+        final String mapName = "default";
+
+        Config config = getConfig();
+        final HazelcastInstance instance = createHazelcastInstance(config);
+        final IMap map = instance.getMap(mapName);
+        map.put(1, 1);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                instance.executeTransaction(options, new TransactionalTask<Boolean>() {
+                    public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                        TransactionalMap<Object, Object> txMap = context.getMap(mapName);
+                        txMap.getForUpdate(1);
+
+                        latch.countDown();
+                        sleepSeconds(Integer.MAX_VALUE);
+                        return null;
+                    }
+                });
+
+            }
+        }).start();
+
+        assertOpenEventually(latch);
+        // this is used to set wait-timeout for contains-key operation.
+        ((MapProxyImpl) map).setOperationProvider(new WaitTimeoutSetterMapOperationProvider());
+
+        map.containsKey(1);
+    }
+
+    private static class WaitTimeoutSetterMapOperationProvider extends DefaultMapOperationProvider {
+
+        public WaitTimeoutSetterMapOperationProvider() {
+        }
+
+        @Override
+        public MapOperation createContainsKeyOperation(String name, Data dataKey) {
+            MapOperation containsKeyOperation = super.createContainsKeyOperation(name, dataKey);
+            containsKeyOperation.setWaitTimeout(TimeUnit.SECONDS.toMillis(20));
+            return containsKeyOperation;
+        }
     }
 
     @Test

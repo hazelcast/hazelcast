@@ -17,6 +17,7 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
@@ -57,11 +58,17 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     private HazelcastInstance client;
-    private HazelcastInstance server;
+
+    private HazelcastInstance member1;
+    private HazelcastInstance member2;
 
     @Before
     public void setup() {
-        server = hazelcastFactory.newHazelcastInstance(getConfig());
+        Config config = getConfig();
+
+        member1 = hazelcastFactory.newHazelcastInstance(config);
+        member2 = hazelcastFactory.newHazelcastInstance(config);
+
         client = hazelcastFactory.newHazelcastClient();
     }
 
@@ -293,8 +300,8 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
         String value = "Val";
 
         Future result = map.putAsync(key, value, 1, TimeUnit.SECONDS);
-        sleepSeconds(2);
         assertEquals(null, result.get());
+        sleepSeconds(2);
         assertEquals(null, map.get(key));
     }
 
@@ -307,8 +314,9 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
 
         map.put(key, oldValue);
         Future result = map.putAsync(key, newValue, 1, TimeUnit.SECONDS);
-        sleepSeconds(2);
+
         assertEquals(oldValue, result.get());
+        sleepSeconds(2);
         assertEquals(null, map.get(key));
     }
 
@@ -1085,7 +1093,8 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
     @Test
     public void testMapStatistics_withClientOperations() {
         String mapName = randomString();
-        LocalMapStats serverMapStats = server.getMap(mapName).getLocalMapStats();
+        LocalMapStats stats1 = member1.getMap(mapName).getLocalMapStats();
+        LocalMapStats stats2 = member2.getMap(mapName).getLocalMapStats();
 
         IMap<Integer, Integer> map = client.getMap(mapName);
         int operationCount = 1123;
@@ -1095,12 +1104,12 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
             map.remove(i);
         }
 
-        assertEquals("put count", operationCount, serverMapStats.getPutOperationCount());
-        assertEquals("get count", operationCount, serverMapStats.getGetOperationCount());
-        assertEquals("remove count", operationCount, serverMapStats.getRemoveOperationCount());
-        assertTrue("put latency", 0 < serverMapStats.getTotalPutLatency());
-        assertTrue("get latency", 0 < serverMapStats.getTotalGetLatency());
-        assertTrue("remove latency", 0 < serverMapStats.getTotalRemoveLatency());
+        assertEquals("put count", operationCount, stats1.getPutOperationCount() + stats2.getPutOperationCount());
+        assertEquals("get count", operationCount, stats1.getGetOperationCount() + stats2.getGetOperationCount());
+        assertEquals("remove count", operationCount, stats1.getRemoveOperationCount() + stats2.getRemoveOperationCount());
+        assertTrue("put latency", 0 < stats1.getTotalPutLatency() + stats2.getTotalPutLatency());
+        assertTrue("get latency", 0 < stats1.getTotalGetLatency() + stats2.getTotalGetLatency());
+        assertTrue("remove latency", 0 < stats1.getTotalRemoveLatency() + stats2.getTotalRemoveLatency());
     }
 
     @Test(expected = UnsupportedOperationException.class)
