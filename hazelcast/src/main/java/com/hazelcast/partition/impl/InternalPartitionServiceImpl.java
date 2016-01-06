@@ -86,11 +86,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -148,8 +146,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Probe
     private final AtomicInteger stateVersion = new AtomicInteger();
-    @Probe(name = "migrationQueueSize")
-    private final BlockingQueue<Runnable> migrationQueue = new LinkedBlockingQueue<Runnable>();
+
+    private final MigrationQueue migrationQueue = new MigrationQueue();
     private final AtomicBoolean migrationAllowed = new AtomicBoolean(true);
     @Probe(name = "lastRepartitionTime")
     private final AtomicLong lastRepartitionTime = new AtomicLong();
@@ -1254,8 +1252,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public boolean hasOnGoingMigrationLocal() {
-        return !activeMigrations.isEmpty() || !migrationQueue.isEmpty()
-                || migrationThread.isMigrating();
+        return !activeMigrations.isEmpty() || migrationQueue.isNonEmpty()
+                || migrationQueue.hasMigrationTasks();
     }
 
     private boolean isReplicaInSyncState() {
@@ -1650,6 +1648,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     @Override
+    @Probe(name = "migrationQueueSize")
     public long getMigrationQueueSize() {
         return migrationQueue.size();
     }
@@ -1809,7 +1808,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         @Override
         public void run() {
             if (node.isMaster() && node.getState() == NodeState.ACTIVE) {
-                if (!migrationQueue.isEmpty() && isMigrationAllowed()) {
+                if (migrationQueue.isNonEmpty() && isMigrationAllowed()) {
                     logger.info("Remaining migration tasks in queue => " + migrationQueue.size());
                 }
                 publishPartitionRuntimeState();
@@ -1924,10 +1923,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         private void migratePartitionToNewOwner(int partitionId, Address[] replicas, Address currentOwner, Address newOwner) {
             MigrationInfo info = new MigrationInfo(partitionId, currentOwner, newOwner);
             MigrateTask migrateTask = new MigrateTask(info, replicas);
-            boolean offered = migrationQueue.offer(migrateTask);
-            if (!offered) {
-                logger.severe("Failed to offer: " + migrateTask);
-            }
+            migrationQueue.add(migrateTask);
         }
 
         private void assignNewPartitionOwner(int partitionId, Address[] replicas, InternalPartitionImpl currentPartition,
@@ -1947,7 +1943,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
-    private class MigrateTask implements Runnable {
+    class MigrateTask implements Runnable {
         final MigrationInfo migrationInfo;
         final Address[] addresses;
 
@@ -2077,7 +2073,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     private class MigrationThread extends Thread implements Runnable {
         private final long sleepTime = max(250L, partitionMigrationInterval);
-        private volatile boolean migrating;
 
         MigrationThread(Node node) {
             super(node.getHazelcastThreadGroup().getInternalThreadGroup(),
@@ -2102,7 +2097,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
 
         private void doRun() throws InterruptedException {
-            for (; ; ) {
+            for (; ;) {
                 if (!isMigrationAllowed()) {
                     break;
                 }
@@ -2118,8 +2113,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
             boolean hasNoTasks = migrationQueue.isEmpty();
             if (hasNoTasks) {
-                if (migrating) {
-                    migrating = false;
+                if (!migrationQueue.hasMigrationTasks()) {
                     logger.info("All migration tasks have been completed, queues are empty.");
                 }
                 evictCompletedMigrations();
@@ -2130,15 +2124,18 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
 
         boolean processTask(Runnable r) {
-            if (r == null || isInterrupted()) {
-                return false;
-            }
-            migrating = (r instanceof MigrateTask);
             try {
+                if (r == null || isInterrupted()) {
+                    return false;
+                }
+
                 r.run();
             } catch (Throwable t) {
                 logger.warning(t);
+            } finally {
+                migrationQueue.afterTaskCompletion(r);
             }
+
             return true;
         }
 
@@ -2147,9 +2144,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             interrupt();
         }
 
-        boolean isMigrating() {
-            return migrating;
-        }
     }
 
     private static final class InternalPartitionListener implements PartitionListener {
