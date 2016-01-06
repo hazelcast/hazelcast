@@ -2097,6 +2097,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
 
         private void doRun() throws InterruptedException {
+            boolean migrating = false;
             for (; ;) {
                 if (!isMigrationAllowed()) {
                     break;
@@ -2106,14 +2107,15 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     break;
                 }
 
+                migrating |= r instanceof MigrateTask;
                 processTask(r);
                 if (partitionMigrationInterval > 0) {
                     Thread.sleep(partitionMigrationInterval);
                 }
             }
-            boolean hasNoTasks = migrationQueue.isEmpty();
+            boolean hasNoTasks = !migrationQueue.hasMigrationTasks();
             if (hasNoTasks) {
-                if (!migrationQueue.hasMigrationTasks()) {
+                if (migrating) {
                     logger.info("All migration tasks have been completed, queues are empty.");
                 }
                 evictCompletedMigrations();
