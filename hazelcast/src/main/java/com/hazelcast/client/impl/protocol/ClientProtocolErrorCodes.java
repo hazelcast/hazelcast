@@ -96,6 +96,7 @@ public final class ClientProtocolErrorCodes {
     public static final int NO_DATA_MEMBER = 71;
     public static final int REPLICATED_MAP_CANT_BE_CREATED = 72;
     public static final int MAX_MESSAGE_SIZE_EXCEEDED = 73;
+    public static final int WAN_REPLICATION_QUEUE_FULL = 74;
 
     private ClientProtocolErrorCodes() {
     }
