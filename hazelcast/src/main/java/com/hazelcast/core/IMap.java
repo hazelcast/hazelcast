@@ -75,6 +75,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
     /**
      * {@inheritDoc}
+     *
+     * No atomicity guarantees are given. It could be that in case of failure some of the key/value-pairs get written, while
+     * others are not.
+     */
+    void putAll(Map<? extends K, ? extends V> m);
+
+    /**
+     * {@inheritDoc}
      * <p/>
      * <p><b>Warning:</b></p>
      * <p>                                                                                      ˆ
