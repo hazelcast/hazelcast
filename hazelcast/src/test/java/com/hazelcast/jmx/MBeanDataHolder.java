@@ -6,13 +6,10 @@ import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
-import javax.management.AttributeNotFoundException;
 import javax.management.InstanceNotFoundException;
-import javax.management.MBeanException;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import javax.management.ReflectionException;
 import java.lang.management.ManagementFactory;
 import java.util.Hashtable;
 
@@ -22,7 +19,7 @@ import static org.junit.Assert.fail;
 /**
  * Holds the Hazelcast instance and MBean server and provides some utility functions for accessing the MBeans.
  */
-public final class MBeanDataHolder {
+final class MBeanDataHolder {
 
     private HazelcastInstance hz;
     private MBeanServer mbs;
@@ -30,14 +27,14 @@ public final class MBeanDataHolder {
     /**
      * Initialize with new hazelcast instance and MBean server
      */
-    public MBeanDataHolder(TestHazelcastInstanceFactory factory) {
+    MBeanDataHolder(TestHazelcastInstanceFactory factory) {
         Config config = new Config();
         config.setProperty(GroupProperty.ENABLE_JMX, "true");
         hz = factory.newHazelcastInstance(config);
         mbs = ManagementFactory.getPlatformMBeanServer();
     }
 
-    public void assertMBeanExistEventually(final String type, final String name) {
+    void assertMBeanExistEventually(final String type, final String name) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -73,8 +70,7 @@ public final class MBeanDataHolder {
      * @param attributeName Name of attribute to query, e.g. "size"
      * @return Value to get
      */
-    public Object getMBeanAttribute(final String type, final String objectName, String attributeName)
-            throws MalformedObjectNameException, AttributeNotFoundException, MBeanException, ReflectionException, InstanceNotFoundException {
+    Object getMBeanAttribute(final String type, final String objectName, String attributeName) throws Exception {
         return mbs.getAttribute(getObjectName(type, objectName), attributeName);
     }
 
@@ -89,8 +85,8 @@ public final class MBeanDataHolder {
      *                      May be null for methods without parameters.
      * @return Value to get
      */
-    public Object invokeMBeanOperation(final String type, final String objectName, String operationName, Object[] params, String[] signature)
-            throws MalformedObjectNameException, AttributeNotFoundException, MBeanException, ReflectionException, InstanceNotFoundException {
+    Object invokeMBeanOperation(final String type, final String objectName, String operationName, Object[] params,
+                                String[] signature) throws Exception {
         return mbs.invoke(getObjectName(type, objectName), operationName, params, signature);
     }
 

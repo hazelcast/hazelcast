@@ -3,6 +3,7 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.ILock;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
@@ -13,6 +14,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -22,13 +24,25 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelTest.class})
 public class LockMBeanTest extends HazelcastTestSupport {
 
-    private MBeanDataHolder holder = new MBeanDataHolder(createHazelcastInstanceFactory(1));
-    private ILock lock = holder.getHz().getLock("lock");
+    private static final String TYPE_NAME = "ILock";
+
+    private TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(1);
+    private MBeanDataHolder holder = new MBeanDataHolder(hazelcastInstanceFactory);
+
+    private ILock lock;
+    private String objectName;
 
     @Before
-    public void ensureMBeanCreated() throws Exception {
-        // --- Check that mbean gets created at all
-        holder.assertMBeanExistEventually("ILock", lock.getName());
+    public void setUp() {
+        lock = holder.getHz().getLock("lock");
+        objectName = lock.getName();
+
+        holder.assertMBeanExistEventually(TYPE_NAME, objectName);
+    }
+
+    @After
+    public void tearDown() {
+        hazelcastInstanceFactory.shutdownAll();
     }
 
     @Test
@@ -36,8 +50,8 @@ public class LockMBeanTest extends HazelcastTestSupport {
         lock.lock(1000, TimeUnit.MILLISECONDS);
         lock.lock(1000, TimeUnit.MILLISECONDS);
 
-        // --- Check number of times locked (locked twice now)
-        int lockCount = (Integer) holder.getMBeanAttribute("ILock", lock.getName(), "lockCount");
+        // check number of times locked (locked twice now)
+        int lockCount = getIntegerAttribute("lockCount");
 
         assertEquals(2, lockCount);
     }
@@ -46,7 +60,7 @@ public class LockMBeanTest extends HazelcastTestSupport {
     public void testMBeanHasLeaseTime_whenLockedWithLeaseTime_remainingLeaseTimeCannotBeGreaterThanOriginal() throws Exception {
         lock.lock(1000, TimeUnit.MILLISECONDS);
 
-        long remainingLeaseTime = (Long) holder.getMBeanAttribute("ILock", lock.getName(), "remainingLeaseTime");
+        long remainingLeaseTime = getLongAttribute("remainingLeaseTime");
         assertFalse(remainingLeaseTime > 1000);
     }
 
@@ -55,7 +69,7 @@ public class LockMBeanTest extends HazelcastTestSupport {
         lock.lock(1000, TimeUnit.MILLISECONDS);
 
         boolean isLocked = lock.isLockedByCurrentThread();
-        long remainingLeaseTime = (Long) holder.getMBeanAttribute("ILock", lock.getName(), "remainingLeaseTime");
+        long remainingLeaseTime = getLongAttribute("remainingLeaseTime");
         boolean hasRemainingLease = remainingLeaseTime > 0;
         assertTrue(isLocked || !hasRemainingLease);
     }
@@ -65,10 +79,10 @@ public class LockMBeanTest extends HazelcastTestSupport {
     public void testMBeanHasLeaseTime_whenLockedWithLeaseTime_eitherHasRemainingLeaseOrIsUnlocked() throws Exception {
         lock.lock(1000, TimeUnit.MILLISECONDS);
 
-        long remainingLeaseTime = (Long) holder.getMBeanAttribute("ILock", lock.getName(), "remainingLeaseTime");
+        long remainingLeaseTime = getLongAttribute("remainingLeaseTime");
         boolean hasLeaseRemaining = remainingLeaseTime > 0;
         boolean isLocked = lock.isLockedByCurrentThread();
-        assertTrue((isLocked && hasLeaseRemaining) || !isLocked);
+        assertTrue(!isLocked || hasLeaseRemaining);
     }
 
     @Test
@@ -76,7 +90,7 @@ public class LockMBeanTest extends HazelcastTestSupport {
         lock.lock(1000, TimeUnit.MILLISECONDS);
         long startTime = Clock.currentTimeMillis();
 
-        long remainingLeaseTime = (Long) holder.getMBeanAttribute("ILock", lock.getName(), "remainingLeaseTime");
+        long remainingLeaseTime = getLongAttribute("remainingLeaseTime");
         long timePassed = Clock.currentTimeMillis() - startTime;
         boolean hasLeaseRemaining = remainingLeaseTime > 0;
 
@@ -87,8 +101,16 @@ public class LockMBeanTest extends HazelcastTestSupport {
     public void testIsNotLocked_whenMBeanForceUnlocked() throws Exception {
         lock.lock(1000, TimeUnit.MILLISECONDS);
 
-        holder.invokeMBeanOperation("ILock", lock.getName(), "forceUnlock", null, null);
+        holder.invokeMBeanOperation(TYPE_NAME, objectName, "forceUnlock", null, null);
 
-        assertFalse("Lock is locked", lock.isLocked());
+        assertFalse("Lock is still locked, although forceUnlock has been called", lock.isLocked());
+    }
+
+    private Long getLongAttribute(String name) throws Exception {
+        return (Long) holder.getMBeanAttribute(TYPE_NAME, objectName, name);
+    }
+
+    private Integer getIntegerAttribute(String name) throws Exception {
+        return (Integer) holder.getMBeanAttribute(TYPE_NAME, objectName, name);
     }
 }
