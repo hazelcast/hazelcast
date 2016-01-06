@@ -81,5 +81,4 @@ public class PredicateTestUtils {
     public static String setAttributeName(AbstractPredicate predicate, String attributeName) {
         return predicate.attributeName = attributeName;
     }
-
 }

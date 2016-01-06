@@ -56,10 +56,9 @@ public class FlatteningVisitorTest {
         useConverter(INTEGER_CONVERTER);
     }
 
-
     @Test
     public void visitAndPredicate_whenHasInnerAndPredicate_thenFlattenIt() {
-        //(a1 = 1 and (a2 = 2 and a3 = 3))  -->  (a1 = 1 and a2 = 2 and a3 = 3)
+        // (a1 = 1 and (a2 = 2 and a3 = 3))  -->  (a1 = 1 and a2 = 2 and a3 = 3)
 
         Predicate a1 = equal("a1", 1);
         Predicate a2 = equal("a2", 2);
@@ -75,7 +74,7 @@ public class FlatteningVisitorTest {
 
     @Test
     public void visitOrPredicate_whenHasInnerOrPredicate_thenFlattenIt() {
-        //(a1 = 1 or (a2 = 2 or a3 = 3))  -->  (a1 = 1 or a2 = 2 or a3 = 3)
+        // (a1 = 1 or (a2 = 2 or a3 = 3))  -->  (a1 = 1 or a2 = 2 or a3 = 3)
 
         Predicate a1 = equal("a1", 1);
         Predicate a2 = equal("a2", 2);
@@ -91,7 +90,7 @@ public class FlatteningVisitorTest {
 
     @Test
     public void visitNotPredicate_whenContainsNegatablePredicate_thenFlattenIt() {
-        //(not(equals(foo, 1)))  -->  (notEquals(foo, 1))
+        // (not(equals(foo, 1)))  -->  (notEquals(foo, 1))
 
         Predicate negated = mock(Predicate.class);
         NegatablePredicate negatablePredicate = mock(NegatablePredicate.class, withSettings().extraInterfaces(Predicate.class));
@@ -110,5 +109,4 @@ public class FlatteningVisitorTest {
     private void disbledConverter() {
         when(mockIndex.getConverter()).thenReturn(null);
     }
-
 }

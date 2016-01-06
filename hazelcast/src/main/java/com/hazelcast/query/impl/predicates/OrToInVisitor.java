@@ -136,5 +136,4 @@ public class OrToInVisitor extends AbstractVisitor {
         }
         return candidates;
     }
-
 }

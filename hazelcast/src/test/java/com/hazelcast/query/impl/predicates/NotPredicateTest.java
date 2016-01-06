@@ -22,8 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.FalsePredicate;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,9 +32,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
-import java.util.Set;
 
+import static com.hazelcast.query.impl.predicates.PredicateTestUtils.createMockVisitablePredicate;
+import static com.hazelcast.query.impl.predicates.PredicateTestUtils.createPassthroughVisitor;
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -83,5 +85,31 @@ public class NotPredicateTest {
 
         NotPredicate found = assertInstanceOf(NotPredicate.class, result);
         assertInstanceOf(TruePredicate.class, found.predicate);
+    }
+
+    @Test
+    public void accept_whenNullPredicate_thenReturnItself() {
+        Visitor mockVisitor = createPassthroughVisitor();
+        Indexes mockIndexes = mock(Indexes.class);
+
+        NotPredicate notPredicate = new NotPredicate(null);
+        NotPredicate result = (NotPredicate) notPredicate.accept(mockVisitor, mockIndexes);
+
+        assertThat(result, sameInstance(notPredicate));
+    }
+
+    @Test
+    public void accept_whenPredicateChangedOnAccept_thenReturnAndNewNotPredicate() {
+        Visitor mockVisitor = createPassthroughVisitor();
+        Indexes mockIndexes = mock(Indexes.class);
+
+        Predicate transformed = mock(Predicate.class);
+        Predicate predicate = createMockVisitablePredicate(transformed);
+
+        NotPredicate notPredicate = new NotPredicate(predicate);
+        NotPredicate result = (NotPredicate) notPredicate.accept(mockVisitor, mockIndexes);
+
+        assertThat(result, not(sameInstance(notPredicate)));
+        assertThat(result.predicate, equalTo(transformed));
     }
 }

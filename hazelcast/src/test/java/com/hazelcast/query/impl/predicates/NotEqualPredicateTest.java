@@ -53,8 +53,8 @@ public class NotEqualPredicateTest {
     }
 
     @Test
-    public void hasDefaultContructor() {
-        //it's needed for serialization, it will fail when default constructor is removed by mistake
+    public void hasDefaultConstructor() {
+        // it's needed for serialization, it will fail when default constructor is removed by mistake
         new NotEqualPredicate();
     }
 

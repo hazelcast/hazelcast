@@ -32,11 +32,11 @@ import static com.hazelcast.query.impl.predicates.PredicateTestUtils.createMockV
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.createPassthroughVisitor;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.hamcrest.CoreMatchers.sameInstance;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -97,7 +97,6 @@ public class AndPredicateTest {
         Predicate[] innerPredicates = new Predicate[1];
         innerPredicates[0] = innerPredicate;
 
-
         AndPredicate andPredicate = new AndPredicate(innerPredicates);
         AndPredicate result = (AndPredicate) andPredicate.accept(mockVisitor, mockIndexes);
 
@@ -121,8 +120,4 @@ public class AndPredicateTest {
 
         assertThat(result, sameInstance(delegate));
     }
-
-
-
-
 }

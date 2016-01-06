@@ -81,7 +81,7 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     private static final String ATTRIBUTE = "DUMMY_ATTRIBUTE_IGNORED";
 
-    final SerializationService ss = new DefaultSerializationServiceBuilder().build();
+    private final SerializationService ss = new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void testAndPredicate_whenFirstIndexAwarePredicateIsNotIndexed() throws Exception {
@@ -134,7 +134,6 @@ public class PredicatesTest extends HazelcastTestSupport {
         assertPredicateTrue(equal(ATTRIBUTE, 15.22), 15.22);
         assertPredicateFalse(equal(ATTRIBUTE, 16), 15);
     }
-
 
     @Test
     public void testAnd() {
@@ -242,7 +241,6 @@ public class PredicatesTest extends HazelcastTestSupport {
         assertPredicateTrue(like(ATTRIBUTE, "J.-*.*\\%"), "J.-*.*%");
         assertPredicateTrue(like(ATTRIBUTE, "J\\_"), "J_");
         assertPredicateTrue(like(ATTRIBUTE, "J%"), "Java");
-
     }
 
     @Test
@@ -313,15 +311,13 @@ public class PredicatesTest extends HazelcastTestSupport {
     public void testNotEqualsPredicateDoesNotUseIndex() {
         Index dummyIndex = new IndexImpl("foo", false, ss, Extractors.empty());
         QueryContext mockQueryContext = mock(QueryContext.class);
-        when(mockQueryContext.getIndex(anyString())).
-                thenReturn(dummyIndex);
+        when(mockQueryContext.getIndex(anyString())).thenReturn(dummyIndex);
 
         NotEqualPredicate p = new NotEqualPredicate("foo", "bar");
 
         boolean indexed = p.isIndexed(mockQueryContext);
         assertFalse(indexed);
     }
-
 
     private class DummyEntry extends QueryEntry {
 

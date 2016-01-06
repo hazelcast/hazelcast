@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import static org.junit.Assert.assertSame;
@@ -36,13 +35,14 @@ import static org.mockito.Mockito.mock;
 public class AbstractVisitorTest {
 
     @Test
-    public void testAllVisitMethodReturnTheOriginalPredicate() throws IllegalAccessException, InstantiationException, InvocationTargetException {
+    public void testAllVisitMethodReturnTheOriginalPredicate() throws Exception {
         // Contract of AbstractVisitor mandates to return original predicate
         // for all methods on Visitor interface.
 
         // This test makes sure if a new method is added into Visitor interface
         // then it's added to AbstractVisitor and honour its contract
-        AbstractVisitor visitor = new AbstractVisitor() {     };
+        AbstractVisitor visitor = new AbstractVisitor() {
+        };
         Method[] methods = Visitor.class.getMethods();
         for (Method method : methods) {
             Class<?> predicateType = method.getParameterTypes()[0];
@@ -54,5 +54,4 @@ public class AbstractVisitorTest {
                     "See contract of " + AbstractVisitor.class.getSimpleName(), predicate, result);
         }
     }
-
 }

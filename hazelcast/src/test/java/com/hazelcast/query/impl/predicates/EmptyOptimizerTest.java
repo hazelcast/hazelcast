@@ -41,5 +41,4 @@ public class EmptyOptimizerTest {
         Predicate result = emptyOptimizer.optimize(predicate, indexes);
         assertSame(predicate, result);
     }
-
 }
