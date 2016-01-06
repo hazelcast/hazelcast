@@ -438,12 +438,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         }
 
         private void logProcessingFailure(ClientRequest request, Throwable e) {
-            Level level = nodeEngine.isRunning() ? Level.SEVERE : Level.FINEST;
-            if (logger.isLoggable(level)) {
+            if (logger.isLoggable(Level.FINEST)) {
                 if (request == null) {
-                    logger.log(level, e.getMessage(), e);
+                    logger.log(Level.FINEST, e.getMessage(), e);
                 } else {
-                    logger.log(level, "While executing request: " + request + " -> " + e.getMessage(), e);
+                    logger.log(Level.FINEST, "While executing request: " + request + " -> " + e.getMessage(), e);
                 }
             }
         }
