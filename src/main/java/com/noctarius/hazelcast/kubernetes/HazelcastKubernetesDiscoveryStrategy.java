@@ -45,7 +45,7 @@ final class HazelcastKubernetesDiscoveryStrategy
         String serviceName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_NAME);
         String namespace = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE);
 
-        if (serviceDns != null && (serviceName == null || namespace == null)) {
+        if (serviceDns == null && (serviceName == null || namespace == null)) {
             throw new RuntimeException(
                     "For kubernetes discovery either 'service-dns' or " + "'service-name' and 'namespace' must be set");
         }
