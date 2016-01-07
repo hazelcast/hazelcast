@@ -56,19 +56,6 @@ public final class KubernetesProperties {
     public static final PropertyDefinition SERVICE_DNS = property("service-dns", STRING);
 
     /**
-     * <p>Configuration key: <tt>service-dns-ip-type</tt></p>
-     * Defines the type of the IP address DNS entry (A for IPv4 or or AAAA for IPv6).<br/>
-     * Possible values are:
-     * <ul>
-     * <li>IPV4</li>
-     * <li>IPV6</li>
-     * <li>empty or not available</li>
-     * </ul>
-     * <b>Defaults to IPV4</b>
-     */
-    public static final PropertyDefinition SERVICE_DNS_IP_TYPE = property("service-dns-ip-type", new IpTypeConverter());
-
-    /**
      * <p>Configuration key: <tt>service-name</tt></p>
      * Defines the service name of the POD to lookup through the Service Discovery REST API of Kubernetes.
      */
@@ -86,42 +73,5 @@ public final class KubernetesProperties {
 
     private static PropertyDefinition property(String key, TypeConverter typeConverter) {
         return new SimplePropertyDefinition(key, true, typeConverter);
-    }
-
-    /**
-     * Possible values for {@link #SERVICE_DNS_IP_TYPE}.
-     */
-    public enum IpType {
-        /**
-         * Activates IPV4 DNS record lookup
-         */
-        IPV4,
-
-        /**
-         * Activates IPV6 DNS record lookup
-         */
-        IPV6
-    }
-
-    private static class IpTypeConverter
-            implements TypeConverter {
-
-        public Comparable convert(Comparable value) {
-            if (!(value instanceof String)) {
-                throw new RuntimeException("Cannot convert from type '" + value.getClass() + "'");
-            }
-
-            String v = (String) value;
-            if (v == null || v.length() == 0) {
-                return IpType.IPV4;
-            }
-
-            IpType ipType = IpType.valueOf(v.toUpperCase());
-            if (ipType == null) {
-                throw new RuntimeException("service-name-ip-type must either be IPV4, IPV6 or empty");
-            }
-
-            return ipType;
-        }
     }
 }

@@ -28,11 +28,9 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.IpType;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_SYSTEM_PREFIX;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.NAMESPACE;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS_IP_TYPE;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
 
 final class HazelcastKubernetesDiscoveryStrategy
@@ -44,7 +42,6 @@ final class HazelcastKubernetesDiscoveryStrategy
 
     HazelcastKubernetesDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
         String serviceDns = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_DNS);
-        IpType serviceDnsIpType = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_DNS_IP_TYPE, IpType.IPV4);
         String serviceName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_NAME);
         String namespace = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE);
 
@@ -55,14 +52,13 @@ final class HazelcastKubernetesDiscoveryStrategy
 
         logger.info("Kubernetes Discovery properties: { "
                 + "service-dns: " + serviceDns + ", "
-                + "service-dns-ip-type: " + serviceDnsIpType.name() + ", "
                 + "service-name: " + serviceName + ", "
                 + "namespace: " + namespace
                 + "}");
 
         EndpointResolver endpointResolver;
         if (serviceDns != null) {
-            endpointResolver = new DnsEndpointResolver(logger, serviceDns, serviceDnsIpType);
+            endpointResolver = new DnsEndpointResolver(logger, serviceDns);
         } else {
             endpointResolver = new ServiceEndpointResolver(logger, serviceName, namespace);
         }

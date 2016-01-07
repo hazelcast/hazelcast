@@ -135,8 +135,6 @@ link:https://github.com/kubernetes/kubernetes/tree/v1.0.6/cluster/addons/dns[Kub
           <properties>
             <!-- configure discovery service API lookup -->
             <property name="service-dns">MY-SERVICE-DNS-NAME</property>
-            <!-- legal values are IPV4, IPV6 or empty (which defaults to IPV4) -->
-            <property name="service-dns-ip-type">IPV4</property>
           </properties>
         </discovery-strategy>
       </discovery-strategies>
