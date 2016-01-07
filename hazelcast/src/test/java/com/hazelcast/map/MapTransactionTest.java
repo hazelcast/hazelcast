@@ -744,7 +744,6 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertEquals("2", map2.get("2"));
     }
 
-    @Category(NightlyTest.class)
     @Test(expected = OperationTimeoutException.class)
     public void test_containsKey_throwsException_whenKeyLockedInTxn() throws TransactionException, InterruptedException {
         final String mapName = "default";
@@ -787,7 +786,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         @Override
         public MapOperation createContainsKeyOperation(String name, Data dataKey) {
             MapOperation containsKeyOperation = super.createContainsKeyOperation(name, dataKey);
-            containsKeyOperation.setWaitTimeout(TimeUnit.SECONDS.toMillis(20));
+            containsKeyOperation.setWaitTimeout(TimeUnit.SECONDS.toMillis(3));
             return containsKeyOperation;
         }
     }
