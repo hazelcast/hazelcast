@@ -66,7 +66,7 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
 
         Map.Entry entry = createMapEntry(dataKey, oldValue);
 
-        processBackup(entry);
+        entryProcessor.processBackup(entry);
 
         if (noOpBackup(entry)) {
             return;
@@ -88,7 +88,7 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         final Data key = dataKey;
 
         if (EntryEventType.REMOVED == eventType) {
-            mapEventPublisher.publishWanReplicationRemoveBackup(name, key, getNow());
+            mapEventPublisher.publishWanReplicationRemoveBackup(name, key, Clock.currentTimeMillis());
         } else {
             final Record record = recordStore.getRecord(key);
             if (record != null) {
@@ -104,15 +104,6 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         evict();
     }
 
-    @Override
-    public Object getResponse() {
-        return true;
-    }
-
-    private void processBackup(Map.Entry entry) {
-        entryProcessor.processBackup(entry);
-    }
-
     private boolean entryRemovedBackup(Map.Entry entry) {
         final Object value = entry.getValue();
         if (value == null) {
@@ -123,14 +114,10 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         return false;
     }
 
-    private boolean entryAddedOrUpdatedBackup(Map.Entry entry) {
-        final Object value = entry.getValue();
-        if (value != null) {
-            recordStore.putBackup(dataKey, value);
-            publishWanReplicationEvent(EntryEventType.UPDATED);
-            return true;
-        }
-        return false;
+    private void entryAddedOrUpdatedBackup(Map.Entry entry) {
+        Object value = entry.getValue();
+        recordStore.putBackup(dataKey, value);
+        publishWanReplicationEvent(EntryEventType.UPDATED);
     }
 
     /**
@@ -145,10 +132,6 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
 
     private Map.Entry createMapEntry(Data key, Object value) {
         return new LazyMapEntry(key, value, getNodeEngine().getSerializationService());
-    }
-
-    private long getNow() {
-        return Clock.currentTimeMillis();
     }
 
     @Override

@@ -128,11 +128,13 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected final MapServiceContext mapServiceContext;
     protected final InternalPartitionService partitionService;
     protected final Address thisAddress;
-    protected final MapOperationProvider operationProvider;
     protected final MapContainer mapContainer;
     protected final OperationService operationService;
     protected final SerializationService serializationService;
     protected final boolean statisticsEnabled;
+
+    // not final for testing purposes.
+    protected MapOperationProvider operationProvider;
 
     protected MapProxySupport(String name, MapService service, NodeEngine nodeEngine) {
         super(nodeEngine, service);
@@ -1042,6 +1044,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     }
 
-
+    public void setOperationProvider(MapOperationProvider operationProvider) {
+        this.operationProvider = operationProvider;
+    }
 }
 
