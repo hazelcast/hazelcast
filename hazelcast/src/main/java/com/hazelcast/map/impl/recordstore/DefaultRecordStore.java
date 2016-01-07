@@ -84,7 +84,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     public void startLoading() {
         if (mapStoreContext.isMapLoader()) {
-            loadingFutures.add(keyLoader.startInitialLoad(mapStoreContext, partitionId));
+            loadingFutures.addAll(keyLoader.startInitialLoad(mapStoreContext, partitionId));
         }
     }
 
@@ -96,8 +96,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void loadAll(boolean replaceExistingValues) {
         logger.info("Starting to load all keys for map " + name + " on partitionId=" + partitionId);
-        Future<?> loadingKeysFuture = keyLoader.startLoading(mapStoreContext, replaceExistingValues);
-        loadingFutures.add(loadingKeysFuture);
+        loadingFutures.addAll(keyLoader.startLoading(mapStoreContext, replaceExistingValues));
     }
 
     @Override
