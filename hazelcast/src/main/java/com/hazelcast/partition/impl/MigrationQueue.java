@@ -16,6 +16,8 @@
 
 package com.hazelcast.partition.impl;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -33,6 +35,8 @@ class MigrationQueue {
 
     private final BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
 
+    @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED",
+            justification = "offer will always be successful since queue is unbounded")
     public void add(Runnable task) {
         if (task instanceof InternalPartitionServiceImpl.MigrateTask) {
             migrateTaskCount.incrementAndGet();
