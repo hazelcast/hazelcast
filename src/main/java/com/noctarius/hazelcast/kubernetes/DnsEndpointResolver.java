@@ -21,36 +21,32 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
-import org.xbill.DNS.AAAARecord;
-import org.xbill.DNS.ARecord;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Record;
+import org.xbill.DNS.SRVRecord;
 import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Type;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.IpType;
 
 final class DnsEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
 
     private static final ILogger LOGGER = Logger.getLogger(DnsEndpointResolver.class);
 
     private final String serviceDns;
-    private final IpType serviceDnsIpType;
 
-    public DnsEndpointResolver(ILogger logger, String serviceDns, IpType serviceDnsIpType) {
+    public DnsEndpointResolver(ILogger logger, String serviceDns) {
         super(logger);
         this.serviceDns = serviceDns;
-        this.serviceDnsIpType = serviceDnsIpType;
     }
 
     List<DiscoveryNode> resolve() {
         try {
-            Lookup lookup = buildLookup();
+            Lookup lookup = new Lookup(serviceDns, Type.SRV);
             Record[] records = lookup.run();
 
             if (lookup.getResult() != Lookup.SUCCESSFUL) {
@@ -60,16 +56,18 @@ final class DnsEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.End
 
             List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
             for (Record record : records) {
-                if (record.getType() != Type.A && record.getType() != Type.AAAA) {
+                // Should be a safe cast as we've looked up only SRV records.
+                SRVRecord srv = (SRVRecord) record;
+                InetAddress inetAddress = getAddress(srv);
+
+                if (inetAddress == null) {
                     continue;
                 }
 
-                InetAddress inetAddress = getInetAddress(record);
-
-                int port = getServicePort(null);
+                int port = srv.getPort();
 
                 Address address = new Address(inetAddress, port);
-                discoveredNodes.add(new SimpleDiscoveryNode(address, Collections.<String, Object>emptyMap()));
+                discoveredNodes.add(new SimpleDiscoveryNode(address));
             }
 
             return discoveredNodes;
@@ -78,17 +76,11 @@ final class DnsEndpointResolver extends HazelcastKubernetesDiscoveryStrategy.End
         }
     }
 
-    private InetAddress getInetAddress(Record record) {
-        if (record.getType() == Type.A) {
-            return ((ARecord) record).getAddress();
+    private InetAddress getAddress(SRVRecord srv) {
+        try {
+            return org.xbill.DNS.Address.getByName(srv.getTarget().canonicalize().toString(true));
+        } catch (UnknownHostException e) {
+            return null;
         }
-        return ((AAAARecord) record).getAddress();
-    }
-
-    private Lookup buildLookup() throws TextParseException {
-        if (serviceDnsIpType == IpType.IPV6) {
-            return new Lookup(serviceDns, Type.AAAA);
-        }
-        return new Lookup(serviceDns, Type.A);
     }
 }

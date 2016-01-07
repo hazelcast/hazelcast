@@ -38,7 +38,6 @@ public class HazelcastKubernetesDiscoveryStrategyFactory implements DiscoveryStr
     static {
         List<PropertyDefinition> propertyDefinitions = new ArrayList<PropertyDefinition>();
         propertyDefinitions.add(KubernetesProperties.SERVICE_DNS);
-        propertyDefinitions.add(KubernetesProperties.SERVICE_DNS_IP_TYPE);
         propertyDefinitions.add(KubernetesProperties.SERVICE_NAME);
         propertyDefinitions.add(KubernetesProperties.NAMESPACE);
         PROPERTY_DEFINITIONS = Collections.unmodifiableCollection(propertyDefinitions);
