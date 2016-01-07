@@ -61,6 +61,8 @@ final class WanReplicationPublisherDelegate
 
     @Override
     public void checkWanReplicationQueues() {
-        //NOP
+        for (WanReplicationEndpoint endpoint : endpoints) {
+            endpoint.checkWanReplicationQueues();
+        }
     }
 }
