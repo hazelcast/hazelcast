@@ -32,8 +32,10 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.DefaultMapOperationProvider;
 import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
@@ -772,20 +774,27 @@ public class MapTransactionTest extends HazelcastTestSupport {
         }).start();
 
         assertOpenEventually(latch);
+
         // this is used to set wait-timeout for contains-key operation.
-        ((MapProxyImpl) map).setOperationProvider(new WaitTimeoutSetterMapOperationProvider());
+        MapProxyImpl mapProxy = (MapProxyImpl) map;
+        MapOperationProvider operationProvider
+                = ((MapService) mapProxy.getService()).getMapServiceContext().getMapOperationProvider(mapName);
+        mapProxy.setOperationProvider(new WaitTimeoutSetterMapOperationProvider(operationProvider));
 
         map.containsKey(1);
     }
 
     private static class WaitTimeoutSetterMapOperationProvider extends DefaultMapOperationProvider {
 
-        public WaitTimeoutSetterMapOperationProvider() {
+        private final MapOperationProvider operationProvider;
+
+        public WaitTimeoutSetterMapOperationProvider(MapOperationProvider operationProvider) {
+            this.operationProvider = operationProvider;
         }
 
         @Override
         public MapOperation createContainsKeyOperation(String name, Data dataKey) {
-            MapOperation containsKeyOperation = super.createContainsKeyOperation(name, dataKey);
+            MapOperation containsKeyOperation = operationProvider.createContainsKeyOperation(name, dataKey);
             containsKeyOperation.setWaitTimeout(TimeUnit.SECONDS.toMillis(3));
             return containsKeyOperation;
         }
