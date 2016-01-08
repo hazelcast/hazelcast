@@ -184,8 +184,10 @@ public class MapKeyLoader {
                 @Override
                 public void run() {
                     Operation op = new PartitionCheckIfLoadedOperation(mapName, true);
-                    opService.<Boolean>invokeOnPartition(SERVICE_NAME, op, mapNamePartition)
-                            .andThen(ifLoadedCallback());
+                    opService.<Boolean>invokeOnPartition(SERVICE_NAME, op, mapNamePartition);
+                    // The RECEIVER triggering cannot update the state of the partition - otherwise there are races
+                    // between this update and the update sent by the SENDER partition.
+                    // It manifests itself here: https://github.com/hazelcast/hazelcast/issues/5453
                 }
             });
         }
@@ -336,27 +338,6 @@ public class MapKeyLoader {
 
     public void setMapOperationProvider(MapOperationProvider operationProvider) {
         this.operationProvider = operationProvider;
-    }
-
-    private ExecutionCallback<Boolean> ifLoadedCallback() {
-        return new ExecutionCallback<Boolean>() {
-            @Override
-            public void onResponse(Boolean response) {
-                if (response) {
-                    sendLoadCompleted(null);
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                sendLoadCompleted(t);
-            }
-        };
-    }
-
-    private void sendLoadCompleted(Throwable t) {
-        Operation op = new LoadStatusOperation(mapName, t);
-        opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
     }
 
     private static final class LoadFinishedFuture extends AbstractCompletableFuture<Boolean>
