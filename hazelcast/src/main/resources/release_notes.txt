@@ -75,6 +75,20 @@ a `SAXParse` exception is thrown. [5528]
 
 3. Fixes
 
+*3.6-RC1 Fixes*
+
+This section lists issues solved for Hazelcast 3.6-RC1 release.
+
+- On WAN Replication Queue overrun, a WANReplicationQueueFullException is expected, but instead, the client receives an UndefinedErrorCodeException.[7241]
+- When using Hazelcast as a JCache provider: As JSR-107 Javadoc states, an update should not reset expiry time for CreatedExpiryPolicy. However, when a cache entry is updated, it does not expire. [7236]
+- Default WAN acknowledge type should be ACK_ON_RECEIPT. [7160]
+- NullPointerException is thrown in ClientRegressionWithMockNetworkTest. [7148]
+- Changing clusters in the Management Center does not update/refresh the cluster members in the Scripting tab. [7119]
+- A fix is needed for operation retries in PartitionCheckIfLoadedOperation. [7114]
+- WAN Queue counts in the Management Center for Hazelcast 3.6-EA3 are not correct. [7100]
+- Hazelcast 3.6 Reference Manual is not correct for its Enterprise WAN Replication content. [7099]
+
+
 *3.6-EA3 Fixes*
 
 This section lists issues solved for Hazelcast 3.6-EA3 (Early Access 3) release.
