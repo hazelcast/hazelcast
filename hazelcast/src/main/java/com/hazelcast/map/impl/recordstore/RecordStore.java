@@ -328,7 +328,7 @@ public interface RecordStore<R extends Record> {
     /**
      * This can be used to release unused resources.
      */
-    void dispose();
+    void disposeDeferredBlocks();
 
     void destroy();
 

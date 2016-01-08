@@ -214,8 +214,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public void dispose() {
-        storage.dispose();
+    public void disposeDeferredBlocks() {
+        storage.disposeDeferredBlocks();
     }
 
     public Storage<Data, ? extends Record> getStorage() {

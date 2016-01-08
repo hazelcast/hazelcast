@@ -53,5 +53,5 @@ public interface Storage<K, R> {
 
     void setSizeEstimator(SizeEstimator sizeEstimator);
 
-    void dispose();
+    void disposeDeferredBlocks();
 }

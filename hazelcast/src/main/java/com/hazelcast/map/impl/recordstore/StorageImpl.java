@@ -140,7 +140,7 @@ class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public void dispose() {
+    public void disposeDeferredBlocks() {
         // NOP intentionally.
     }
 
