@@ -104,23 +104,25 @@ public class EvictionConfig
      */
     public enum MaxSizePolicy {
         /**
-         * Decide maximum entry count according to node
+         * Policy based on maximum number of entries stored per data structure (map, cache etc)
          */
         ENTRY_COUNT,
         /**
-         * Decide maximum size with use native memory size
+         * Policy based on maximum used native memory in megabytes per data structure (map, cache etc)
+         * on each Hazelcast instance
          */
         USED_NATIVE_MEMORY_SIZE,
         /**
-         * Decide maximum size with use native memory percentage
+         * Policy based on maximum used native memory percentage per data structure (map, cache etc)
+         * on each Hazelcast instance
          */
         USED_NATIVE_MEMORY_PERCENTAGE,
         /**
-         * Decide minimum free native memory size to trigger cleanup
+         * Policy based on minimum free native memory in megabytes per Hazelcast instance
          */
         FREE_NATIVE_MEMORY_SIZE,
         /**
-         * Decide minimum free native memory percentage to trigger cleanup
+         * Policy based on minimum free native memory percentage per Hazelcast instance
          */
         FREE_NATIVE_MEMORY_PERCENTAGE
     }
