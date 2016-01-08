@@ -391,6 +391,9 @@
                                             When max. size is reached, specified percentage of the map will be evicted.
                                             Any integer between 0 and 100. If 25 is set for example, 25% of the
                                             entries will get evicted.
+                                            Beware that eviction mechanism is different for NATIVE in-memory format.
+                                            (It uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
+                                            For this in-memory format, `minEvictionCheckMillis` has no effect
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -399,6 +402,9 @@
                                         <xs:documentation>
                                             Minimum time in milliseconds which should pass before checking if a
                                             partition of this map is evictable or not. Default value is 100 millis.
+                                            Beware that eviction mechanism is different for NATIVE in-memory format.
+                                            (It uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
+                                            For this in-memory format, `minEvictionCheckMillis` has no effect
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
