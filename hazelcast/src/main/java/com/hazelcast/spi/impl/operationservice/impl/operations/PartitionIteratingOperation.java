@@ -110,6 +110,13 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         return new PartitionResponse(results);
     }
 
+    @Override
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", operationFactory=").append(operationFactory);
+    }
+
     private static class ResponseQueue implements OperationResponseHandler {
         final BlockingQueue b = ResponseQueueFactory.newResponseQueue();
 
