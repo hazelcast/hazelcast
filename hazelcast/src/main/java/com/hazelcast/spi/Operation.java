@@ -577,7 +577,7 @@ public abstract class Operation implements DataSerializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(getClass().getName()).append('{');
-        sb.append("identityHash='").append(System.identityHashCode(this));
+        sb.append("identityHash=").append(System.identityHashCode(this));
         sb.append(", serviceName='").append(getServiceName()).append('\'');
         sb.append(", partitionId=").append(partitionId);
         sb.append(", replicaIndex=").append(replicaIndex);
