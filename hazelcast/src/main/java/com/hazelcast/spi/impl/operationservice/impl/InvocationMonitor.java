@@ -195,7 +195,7 @@ public class InvocationMonitor {
 
                 detectSlowInvocation(now, invocation);
 
-                if (checkInvocationTimeout(invocation)) {
+                if (checkHeartBean(invocation)) {
                     invocationTimeouts++;
                 }
 
@@ -227,12 +227,12 @@ public class InvocationMonitor {
             }
         }
 
-        private boolean checkInvocationTimeout(Invocation invocation) {
+        private boolean checkHeartBean(Invocation invocation) {
             try {
-                return invocation.checkInvocationTimeout();
+                return invocation.checkHeartBeat();
             } catch (Throwable t) {
                 inspectOutputMemoryError(t);
-                logger.severe("Failed to handle operation timeout of invocation:" + invocation, t);
+                logger.severe("Failed to check heartbeat of invocation:" + invocation, t);
                 return false;
             }
         }

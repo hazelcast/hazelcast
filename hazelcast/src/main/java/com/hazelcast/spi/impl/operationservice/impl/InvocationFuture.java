@@ -268,11 +268,11 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             }
         } else {
             if (response instanceof Data) {
-                if (invocation.deserialize) {
-                    response = invocation.nodeEngine.toObject(response);
-                } else {
+                if (!invocation.deserialize) {
                     return (E) response;
                 }
+
+                response = invocation.nodeEngine.toObject(response);
             }
 
             if (response instanceof Throwable) {
