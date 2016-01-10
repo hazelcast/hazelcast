@@ -195,7 +195,7 @@ public class InvocationMonitor {
 
                 detectSlowInvocation(now, invocation);
 
-                if (checkHeartBean(invocation)) {
+                if (checkHeartBeat(invocation)) {
                     invocationTimeouts++;
                 }
 
@@ -227,7 +227,7 @@ public class InvocationMonitor {
             }
         }
 
-        private boolean checkHeartBean(Invocation invocation) {
+        private boolean checkHeartBeat(Invocation invocation) {
             try {
                 return invocation.checkHeartBeat();
             } catch (Throwable t) {
