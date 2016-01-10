@@ -55,5 +55,4 @@ public interface WaitNotifyService {
      */
     void notify(Notifier notifier);
 
-
 }

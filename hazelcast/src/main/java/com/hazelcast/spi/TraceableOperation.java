@@ -19,7 +19,7 @@ package com.hazelcast.spi;
 /**
  * Operation which has a traceable identifier
  *
- * @deprecated since 3.6
+ * @deprecated since 3.7
  */
 public interface TraceableOperation {
 

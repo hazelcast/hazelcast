@@ -17,7 +17,7 @@
 package com.hazelcast.core;
 
 /**
- * A {@link OperationTimeoutException} that is thrown in the cases that the system can't determine what
+ * A {@link OperationTimeoutException} that is thrown in the case that the system can't determine what
  * happened with an operation.
  */
 public class DeadOperationException extends OperationTimeoutException {

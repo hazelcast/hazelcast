@@ -583,10 +583,18 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
             return false;
         }
 
+        //todo: what about other 'blocking' operations like executor.execute op?
+
         WaitSupport blockingOperation = (WaitSupport) op;
 
         // todo: explain about repeating? Currently the operation is just send, but there is no failover mechanism in place
         // however the invocation does get an interrupt request per scan.
+
+        // todo: currently most of the waitkeys are very expensive to deserialize due to litter.
+
+        // todo: if we scan every second, and an operation is interrupted, then every second an interrupt operation is send.
+        // perhaps better to collection them into a single 'packet' like the operation heartbeat.
+        // perhaps better to not send every invocation every time
 
         Operation interruptOperation = new InterruptOperation(blockingOperation.getWaitKey(), op.getCallId());
         //todo: what about operations for a member; but not for a partition?
@@ -595,7 +603,6 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         operationService.send(interruptOperation, invTarget);
         return true;
     }
-
 
     boolean checkBackupTimeout(long timeoutMillis) {
         // If the backups have completed, we are done.

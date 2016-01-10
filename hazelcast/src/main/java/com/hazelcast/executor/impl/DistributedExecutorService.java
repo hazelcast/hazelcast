@@ -123,7 +123,6 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             if (uuid != null) {
                 submittedTasks.remove(uuid);
             }
-
             processor.sendResponse(e);
         }
     }
@@ -191,7 +190,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     private final class CallableProcessor extends FutureTask implements Runnable {
         //is being used through the RESPONSE_FLAG. Can't be private due to reflection constraint.
-        volatile Boolean responseFlag = FALSE;
+        volatile Boolean responseFlag = Boolean.FALSE;
 
         private final String name;
         private final String uuid;
