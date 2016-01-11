@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
@@ -38,6 +39,7 @@ import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 
 import java.io.Closeable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -128,7 +130,7 @@ public class MapKeyLoader {
         this.execService = execService;
     }
 
-    public Future startInitialLoad(MapStoreContext mapStoreContext, int partitionId) {
+    public List<Future> startInitialLoad(MapStoreContext mapStoreContext, int partitionId) {
 
         this.partitionId = partitionId;
         this.mapNamePartition = partitionService.getPartitionId(toData.apply(mapName));
@@ -144,14 +146,14 @@ public class MapKeyLoader {
             case RECEIVER:
                 return triggerLoading();
             default:
-                return loadFinished;
+                return Arrays.<Future>asList(loadFinished);
         }
     }
 
     /**
      * Sends keys to all partitions in batches.
      */
-    public Future<?> sendKeys(final MapStoreContext mapStoreContext, final boolean replaceExistingValues) {
+    public List<Future> sendKeys(final MapStoreContext mapStoreContext, final boolean replaceExistingValues) {
 
         if (loadFinished.isDone()) {
 
@@ -165,16 +167,18 @@ public class MapKeyLoader {
                 }
             });
 
-            execService.asCompletableFuture(sent).andThen(loadFinished);
+            ICompletableFuture completableSent = execService.asCompletableFuture(sent);
+            completableSent.andThen(loadFinished);
+            return Arrays.<Future>asList(completableSent, loadFinished);
         }
 
-        return loadFinished;
+        return Arrays.<Future>asList(loadFinished);
     }
 
     /**
      * Check if loaded on SENDER partition. Triggers key loading if it hadn't started
      */
-    public Future triggerLoading() {
+    public List<Future> triggerLoading() {
 
         if (loadFinished.isDone()) {
 
@@ -190,15 +194,15 @@ public class MapKeyLoader {
             });
         }
 
-        return loadFinished;
+        return Arrays.<Future>asList(loadFinished);
     }
 
-    public Future<?> startLoading(MapStoreContext mapStoreContext, boolean replaceExistingValues) {
+    public List<Future> startLoading(MapStoreContext mapStoreContext, boolean replaceExistingValues) {
 
         role.nextOrStay(Role.SENDER);
 
         if (state.is(State.LOADING)) {
-            return loadFinished;
+            return Arrays.<Future>asList(loadFinished);
         }
         state.next(State.LOADING);
 
@@ -356,7 +360,14 @@ public class MapKeyLoader {
 
     private void sendLoadCompleted(Throwable t) {
         Operation op = new LoadStatusOperation(mapName, t);
-        opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
+        // https://github.com/hazelcast/hazelcast/issues/5453
+        // In general this invocation is supposed to update the local record store on the partition thread.
+        // If invoked by the SENDER_BACKUP however it's a remote call to the partition owner - which is also the SENDER.
+        // It's not desired that the SENDER_BACKUP updates the loading status that's orchestrated by the SENDER.
+        // It may lead to unexpected behavior and races between the sendKeys() method and this method.
+        if (partitionService.isPartitionOwner(partitionId)) {
+            opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
+        }
     }
 
     private static final class LoadFinishedFuture extends AbstractCompletableFuture<Boolean>
