@@ -356,7 +356,14 @@ public class MapKeyLoader {
 
     private void sendLoadCompleted(Throwable t) {
         Operation op = new LoadStatusOperation(mapName, t);
-        opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
+        // https://github.com/hazelcast/hazelcast/issues/5453
+        // In general this invocation is supposed to update the local record store on the partition thread.
+        // If invoked by the SENDER_BACKUP however it's a remote call to the partition owner - which is also the SENDER.
+        // It's not desired that the SENDER_BACKUP updates the loading status that's orchestrated by the SENDER.
+        // It may lead to unexpected behavior and races between the sendKeys() method and this method.
+        if (partitionService.isPartitionOwner(partitionId)) {
+            opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
+        }
     }
 
     private static final class LoadFinishedFuture extends AbstractCompletableFuture<Boolean>
