@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.topic.impl.reliable;
+package com.hazelcast.client.topic;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientReliableTopicConfig;
+import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.proxy.ClientReliableTopicProxy;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import com.hazelcast.topic.impl.reliable.TopicOverloadAbstractTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,30 +38,38 @@ import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class TopicOverloadTest extends TopicOverloadAbstractTest {
+public class ClientReliableTopicOverloadTest extends TopicOverloadAbstractTest {
+
+    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @Before
     public void setupCluster() {
         Config config = new Config();
         config.addRingBufferConfig(new RingbufferConfig("when*")
                 .setCapacity(100).setTimeToLiveSeconds(5));
-        config.addReliableTopicConfig(new ReliableTopicConfig("whenError_*")
+        hazelcastFactory.newHazelcastInstance(config);
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.addReliableTopicConfig(new ClientReliableTopicConfig("whenError_*")
                 .setTopicOverloadPolicy(TopicOverloadPolicy.ERROR));
-        config.addReliableTopicConfig(new ReliableTopicConfig("whenDiscardOldest_*")
+        clientConfig.addReliableTopicConfig(new ClientReliableTopicConfig("whenDiscardOldest_*")
                 .setTopicOverloadPolicy(TopicOverloadPolicy.DISCARD_OLDEST));
-        config.addReliableTopicConfig(new ReliableTopicConfig("whenDiscardNewest_*")
+        clientConfig.addReliableTopicConfig(new ClientReliableTopicConfig("whenDiscardNewest_*")
                 .setTopicOverloadPolicy(TopicOverloadPolicy.DISCARD_NEWEST));
-        config.addReliableTopicConfig(new ReliableTopicConfig("whenBlock_*")
+        clientConfig.addReliableTopicConfig(new ClientReliableTopicConfig("whenBlock_*")
                 .setTopicOverloadPolicy(TopicOverloadPolicy.BLOCK));
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
-        HazelcastInstance hz = createHazelcastInstance(config);
-
-        serializationService = getSerializationService(hz);
+        serializationService = ((HazelcastClientProxy) client).getSerializationService();
 
         String topicName = getTestMethodName();
-        topic = hz.<String>getReliableTopic(topicName);
+        topic = client.<String>getReliableTopic(topicName);
 
-        ringbuffer = ((ReliableTopicProxy<String>) topic).ringbuffer;
+        ringbuffer = ((ClientReliableTopicProxy<String>) topic).getRingbuffer();
+    }
+
+    @After
+    public void terminate() {
+        hazelcastFactory.terminateAll();
     }
 
 

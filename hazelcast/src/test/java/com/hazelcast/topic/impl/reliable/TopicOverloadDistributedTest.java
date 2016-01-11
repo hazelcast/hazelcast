@@ -32,7 +32,7 @@ import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class TopicOverloadTest extends TopicOverloadAbstractTest {
+public class TopicOverloadDistributedTest extends TopicOverloadAbstractTest {
 
     @Before
     public void setupCluster() {
@@ -48,8 +48,9 @@ public class TopicOverloadTest extends TopicOverloadAbstractTest {
         config.addReliableTopicConfig(new ReliableTopicConfig("whenBlock_*")
                 .setTopicOverloadPolicy(TopicOverloadPolicy.BLOCK));
 
-        HazelcastInstance hz = createHazelcastInstance(config);
-
+        HazelcastInstance[] hazelcastInstances = createHazelcastInstanceFactory(2).newInstances(config);
+        HazelcastInstance hz = hazelcastInstances[0];
+        warmUpPartitions(hazelcastInstances);
         serializationService = getSerializationService(hz);
 
         String topicName = getTestMethodName();
@@ -57,6 +58,5 @@ public class TopicOverloadTest extends TopicOverloadAbstractTest {
 
         ringbuffer = ((ReliableTopicProxy<String>) topic).ringbuffer;
     }
-
 
 }

@@ -57,11 +57,8 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     public static final int MAX_BACKOFF = 2000;
     public static final int INITIAL_BACKOFF_MS = 100;
 
-    protected final ILogger logger = Logger.getLogger(getClass());
-
-    private final ConcurrentMap<String, MessageRunner> runnersMap
-            = new ConcurrentHashMap<String, MessageRunner>();
-
+    private final ConcurrentMap<String, MessageRunner> runnersMap = new ConcurrentHashMap<String, MessageRunner>();
+    private final ILogger logger = Logger.getLogger(getClass());
     private final String name;
     private final Ringbuffer ringbuffer;
     private final SerializationService serializationService;
@@ -179,6 +176,11 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     @Override
     public LocalTopicStats getLocalTopicStats() {
         throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
+    }
+
+
+    public Ringbuffer getRingbuffer() {
+        return ringbuffer;
     }
 
     @Override
