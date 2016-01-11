@@ -150,7 +150,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
                 future.get();
                 success++;
             } catch (ExecutionException e) {
-                assertTrue(e.getCause() instanceof ReachedMaxSizeException);
+                assertInstanceOf(ReachedMaxSizeException.class, e);
             }
         }
 
