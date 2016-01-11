@@ -19,13 +19,16 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.MapLoader;
+import com.hazelcast.core.Member;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.operation.LoadStatusOperation;
 import com.hazelcast.map.impl.operation.LoadStatusOperationFactory;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -132,7 +135,7 @@ public class MapKeyLoader {
 
         this.partitionId = partitionId;
         this.mapNamePartition = partitionService.getPartitionId(toData.apply(mapName));
-        Role newRole = assignRole(partitionService, mapNamePartition, partitionId);
+        Role newRole = calculateRole();
 
         role.nextOrStay(newRole);
         state.next(State.LOADING);
@@ -146,6 +149,21 @@ public class MapKeyLoader {
             default:
                 return loadFinished;
         }
+    }
+
+    private Role calculateRole() {
+        boolean isPartitionOwner = partitionService.isPartitionOwner(partitionId);
+        boolean isMapNamePartition = partitionId == mapNamePartition;
+        boolean isMapNamePartitionFirstReplica = false;
+        if (hasBackup && isMapNamePartition) {
+            InternalPartition partition = partitionService.getPartition(partitionId);
+            Address firstReplicaAddress = partition.getReplicaAddress(1);
+            Member member = partitionService.getMember(firstReplicaAddress);
+            if (member != null) {
+                isMapNamePartitionFirstReplica = member.localMember();
+            }
+        }
+        return assignRole(isPartitionOwner, isMapNamePartition, isMapNamePartitionFirstReplica);
     }
 
     /**
