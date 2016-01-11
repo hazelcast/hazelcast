@@ -1,4 +1,4 @@
-package com.hazelcast.cache.eviction;
+package com.hazelcast.internal.eviction;
 
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.EvictionCandidate;
