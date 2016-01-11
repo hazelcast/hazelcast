@@ -244,12 +244,12 @@ public class ClientConfig {
      * @return the found config. If none is found, a default configured one is returned.
      */
     public ClientReliableTopicConfig getReliableTopicConfig(String name) {
-        ClientReliableTopicConfig nearCacheConfig = lookupByPattern(reliableTopicConfigMap, name);
-        if (nearCacheConfig == null) {
-            nearCacheConfig = new ClientReliableTopicConfig(name);
-            addReliableTopicConfig(nearCacheConfig);
+        ClientReliableTopicConfig reliableTopicConfig = lookupByPattern(reliableTopicConfigMap, name);
+        if (reliableTopicConfig == null) {
+            reliableTopicConfig = new ClientReliableTopicConfig(name);
+            addReliableTopicConfig(reliableTopicConfig);
         }
-        return nearCacheConfig;
+        return reliableTopicConfig;
     }
 
     /**

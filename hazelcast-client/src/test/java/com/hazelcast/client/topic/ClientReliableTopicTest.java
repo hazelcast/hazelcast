@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.client.topic;
 
 import com.hazelcast.client.proxy.ClientReliableTopicProxy;
@@ -10,7 +26,8 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerMock;
 import com.hazelcast.util.Clock;
 import org.junit.After;
@@ -33,20 +50,17 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(NightlyTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ClientReliableTopicTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     private HazelcastInstance client;
-    private HazelcastInstance server;
 
     @Before
     public void setup() {
-        setLoggingLog4j();
         Config config = new Config();
-
-        server = hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
         client = hazelcastFactory.newHazelcastClient();
     }
 
@@ -57,7 +71,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
     @Test
     public void testCreation() {
-        ITopic topic = client.getReliableTopic("foo");
+        ITopic topic = client.getReliableTopic(randomString());
         assertInstanceOf(ClientReliableTopicProxy.class, topic);
     }
 
@@ -65,13 +79,13 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void addMessageListener_whenNull() {
-        ITopic topic = client.getReliableTopic("foo");
+        ITopic topic = client.getReliableTopic(randomString());
         topic.addMessageListener(null);
     }
 
     @Test
     public void addMessageListener() {
-        ITopic topic = client.getReliableTopic("foo");
+        ITopic topic = client.getReliableTopic(randomString());
         String id = topic.addMessageListener(new ReliableMessageListenerMock());
         assertNotNull(id);
     }
@@ -80,13 +94,13 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void removeMessageListener_whenNull() {
-        ITopic topic = client.getReliableTopic("foo");
+        ITopic topic = client.getReliableTopic(randomString());
         topic.removeMessageListener(null);
     }
 
     @Test
     public void removeMessageListener_whenExisting() {
-        ITopic topic = client.getReliableTopic("foo");
+        ITopic topic = client.getReliableTopic(randomString());
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         String id = topic.addMessageListener(listener);
 
@@ -105,7 +119,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
     @Test
     public void removeMessageListener_whenNonExisting() {
-        ITopic topic = client.getReliableTopic("foo");
+        ITopic topic = client.getReliableTopic(randomString());
         boolean result = topic.removeMessageListener(UUID.randomUUID().toString());
 
         assertFalse(result);
@@ -113,7 +127,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
     @Test
     public void removeMessageListener_whenAlreadyRemoved() {
-        ITopic topic = client.getReliableTopic("foo");
+        ITopic topic = client.getReliableTopic(randomString());
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         String id = topic.addMessageListener(listener);
         topic.removeMessageListener(id);
@@ -136,7 +150,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
     @Test
     public void publishSingle() throws InterruptedException {
-        ITopic topic = client.getReliableTopic("foo");
+        ITopic topic = client.getReliableTopic(randomString());
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         topic.addMessageListener(listener);
         final String msg = "foobar";
@@ -152,7 +166,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
     @Test
     public void publishNull() throws InterruptedException {
-        ITopic topic = client.getReliableTopic("foo");
+        ITopic topic = client.getReliableTopic(randomString());
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         topic.addMessageListener(listener);
         topic.publish(null);
@@ -168,7 +182,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
     @Test
     public void publishMultiple() throws InterruptedException {
-        ITopic topic = client.getReliableTopic("foo");
+        ITopic topic = client.getReliableTopic(randomString());
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         topic.addMessageListener(listener);
 
@@ -191,12 +205,13 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
     @Test
     public void testMessageFieldSetCorrectly() {
-        ITopic topic = client.getReliableTopic("foo");
+        ITopic topic = client.getReliableTopic(randomString());
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
         topic.addMessageListener(listener);
 
         final long beforePublishTime = Clock.currentTimeMillis();
-        topic.publish("foo");
+        final String messageStr = randomString();
+        topic.publish(messageStr);
         final long afterPublishTime = Clock.currentTimeMillis();
 
         assertTrueEventually(new AssertTask() {
@@ -205,7 +220,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
                 assertEquals(1, listener.messages.size());
                 Message<String> message = listener.messages.get(0);
 
-                assertEquals("foo", message.getMessageObject());
+                assertEquals(messageStr, message.getMessageObject());
                 assertEquals(null, message.getPublishingMember());
 
                 long actualPublishTime = message.getPublishTime();
@@ -219,7 +234,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
     // it got registered. We'll only see the messages after it got registered.
     @Test
     public void testAlwaysStartAfterTail() {
-        final ITopic topic = client.getReliableTopic("foo");
+        final ITopic topic = client.getReliableTopic(randomString());
         topic.publish("1");
         topic.publish("2");
         topic.publish("3");
@@ -248,17 +263,16 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
     @Test
     public void testListener() throws InterruptedException {
         ITopic topic = client.getReliableTopic(randomString());
-
-        final CountDownLatch latch = new CountDownLatch(10);
+        int messageCount = 10;
+        final CountDownLatch latch = new CountDownLatch(messageCount);
         MessageListener listener = new MessageListener() {
             public void onMessage(Message message) {
-                System.out.println("Message received");
                 latch.countDown();
             }
         };
         topic.addMessageListener(listener);
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < messageCount; i++) {
             topic.publish(i);
         }
         assertTrue(latch.await(20, TimeUnit.SECONDS));
