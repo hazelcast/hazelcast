@@ -20,6 +20,7 @@ import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
+import com.hazelcast.client.impl.protocol.parameters.ErrorCodec;
 import com.hazelcast.cluster.impl.ConfigMismatchException;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -470,7 +471,7 @@ public class ClientExceptionFactory {
         register(ClientProtocolErrorCodes.URI_SYNTAX, URISyntaxException.class, new ExceptionFactory() {
             @Override
             public Throwable createException(String message, Throwable cause) {
-                return new URISyntaxException(null, message, -1);
+                return new URISyntaxException("not available", message);
             }
         });
         register(ClientProtocolErrorCodes.UTF_DATA_FORMAT, UTFDataFormatException.class, new ExceptionFactory() {
@@ -546,16 +547,35 @@ public class ClientExceptionFactory {
 
     }
 
-    public Throwable createException(int errorCode, String className, String message, StackTraceElement[] stackTrace
-            , int causeErrorCode, String causeClassName) {
+    public Throwable createException(ClientMessage clientMessage) {
+        ErrorCodec parameters = ErrorCodec.decode(clientMessage);
         Throwable cause = null;
-        if (causeClassName != null) {
-            cause = createException(causeErrorCode, causeClassName, null, null);
+        if (parameters.causeClassName != null) {
+            cause = createException(parameters.causeErrorCode, parameters.causeClassName, null, null);
         }
 
-        Throwable throwable = createException(errorCode, className, message, cause);
-        throwable.setStackTrace(stackTrace);
+        Throwable throwable = createException(parameters.errorCode, parameters.className, parameters.message, cause);
+        throwable.setStackTrace(parameters.stackTrace);
         return throwable;
+    }
+
+    public ClientMessage createExceptionMessage(Throwable throwable) {
+        int errorCode = getErrorCode(throwable);
+        String message = throwable.getMessage();
+        StackTraceElement[] stackTrace = throwable.getStackTrace();
+        Throwable cause = throwable.getCause();
+        boolean hasCause = cause != null;
+        String className = throwable.getClass().getName();
+        if (hasCause) {
+            int causeErrorCode = getErrorCode(cause);
+            String causeClassName = cause.getClass().getName();
+            return ErrorCodec.encode(errorCode, className, message, stackTrace,
+                    causeErrorCode, causeClassName);
+        } else {
+            return ErrorCodec.encode(errorCode, className, message, stackTrace,
+                    ClientProtocolErrorCodes.UNDEFINED, null);
+        }
+
     }
 
     private Throwable createException(int errorCode, String className, String message, Throwable cause) {
@@ -575,7 +595,7 @@ public class ClientExceptionFactory {
     }
 
 
-    public int getErrorCode(Throwable e) {
+    private int getErrorCode(Throwable e) {
         Integer errorCode = classToInt.get(e.getClass());
         if (errorCode == null) {
             return ClientProtocolErrorCodes.UNDEFINED;

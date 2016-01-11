@@ -23,8 +23,6 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes;
-import com.hazelcast.client.impl.protocol.parameters.ErrorCodec;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -192,26 +190,6 @@ public abstract class AbstractMessageTask<P>
         }
     }
 
-    private ClientMessage createExceptionMessage(Throwable throwable) {
-        ClientExceptionFactory clientExceptionFactory = clientEngine.getClientExceptionFactory();
-        int errorCode = clientExceptionFactory.getErrorCode(throwable);
-        String message = throwable.getMessage();
-        StackTraceElement[] stackTrace = throwable.getStackTrace();
-        Throwable cause = throwable.getCause();
-        boolean hasCause = cause != null;
-        String className = throwable.getClass().getName();
-        if (hasCause) {
-            int causeErrorCode = clientExceptionFactory.getErrorCode(cause);
-            String causeClassName = cause.getClass().getName();
-            return ErrorCodec.encode(errorCode, className, message, stackTrace,
-                    causeErrorCode, causeClassName);
-        } else {
-            return ErrorCodec.encode(errorCode, className, message, stackTrace,
-                    ClientProtocolErrorCodes.UNDEFINED, null);
-        }
-
-    }
-
     protected abstract void processMessage();
 
     protected void sendResponse(Object response) {
@@ -235,7 +213,8 @@ public abstract class AbstractMessageTask<P>
     }
 
     protected void sendClientMessage(Throwable throwable) {
-        ClientMessage exception = createExceptionMessage(ExceptionUtil.peel(throwable));
+        ClientExceptionFactory exceptionFactory = clientEngine.getClientExceptionFactory();
+        ClientMessage exception = exceptionFactory.createExceptionMessage(ExceptionUtil.peel(throwable));
         sendClientMessage(exception);
     }
 
