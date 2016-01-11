@@ -30,14 +30,18 @@ import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.counters.SwCounter;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.util.counters.SwCounter.newSwCounter;
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.INFO;
 
 /**
  * The InvocationMonitor monitors all pending invocations and determines if there are any problems like timeouts. It uses the
@@ -153,10 +157,13 @@ public class InvocationMonitor {
             long now = Clock.currentTimeMillis();
             int backupTimeouts = 0;
             int invocationTimeouts = 0;
+            int invocationCount = 0;
 
             Set<Map.Entry<Long, Invocation>> invocations = invocationRegistry.entrySet();
             Iterator<Map.Entry<Long, Invocation>> iterator = invocations.iterator();
             while (iterator.hasNext()) {
+                invocationCount++;
+
                 if (shutdown) {
                     return;
                 }
@@ -206,7 +213,7 @@ public class InvocationMonitor {
 
             backupTimeoutsCount.inc(backupTimeouts);
             normalTimeoutsCount.inc(invocationTimeouts);
-            log(backupTimeouts, invocationTimeouts);
+            log(invocationCount, backupTimeouts, invocationTimeouts);
         }
 
         private boolean callIdMatches(long callId, Invocation invocation) {
@@ -247,9 +254,18 @@ public class InvocationMonitor {
             }
         }
 
-        private void log(int backupTimeouts, int invocationTimeouts) {
+        private void log(int invocationCount, int backupTimeouts, int invocationTimeouts) {
+            Level logLevel = null;
             if (backupTimeouts > 0 || invocationTimeouts > 0) {
-                logger.info("Handled " + invocationTimeouts + " invocation timeouts and " + backupTimeouts + " backupTimeouts");
+                logLevel = INFO;
+            } else if (logger.isFineEnabled()) {
+                logLevel = FINE;
+            }
+
+            if (logLevel != null) {
+                logger.log(logLevel, "Invocations:" + invocationCount
+                        + " timeouts:" + invocationTimeouts
+                        + " backup-timeouts:" + backupTimeouts);
             }
         }
     }

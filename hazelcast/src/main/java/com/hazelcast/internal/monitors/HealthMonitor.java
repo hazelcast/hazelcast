@@ -54,6 +54,7 @@ public class HealthMonitor {
     private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
     private static final double PERCENTAGE_MULTIPLIER = 100d;
     private static final double THRESHOLD_PERCENTAGE = 70;
+    private static final double THRESHOLD_INVOCATIONS = 1000;
 
     final HealthMetrics healthMetrics;
 
@@ -279,6 +280,10 @@ public class HealthMonitor {
             }
 
             if (operationServicePendingInvocationsPercentage.read() > THRESHOLD_PERCENTAGE) {
+                return true;
+            }
+
+            if (operationServicePendingInvocationsCount.read() > THRESHOLD_INVOCATIONS) {
                 return true;
             }
 
