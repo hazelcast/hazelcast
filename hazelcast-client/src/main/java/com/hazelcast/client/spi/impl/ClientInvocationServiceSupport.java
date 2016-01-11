@@ -336,11 +336,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             }
             callIdSequence.complete();
             if (ErrorCodec.TYPE == clientMessage.getMessageType()) {
-                ErrorCodec exParameters = ErrorCodec.decode(clientMessage);
-                Throwable exception =
-                        clientExceptionFactory.createException(exParameters.errorCode, exParameters.className,
-                                exParameters.message, exParameters.stackTrace,
-                                exParameters.causeErrorCode, exParameters.causeClassName);
+                Throwable exception = clientExceptionFactory.createException(clientMessage);
                 future.notifyException(exception);
             } else {
                 future.notify(clientMessage);
