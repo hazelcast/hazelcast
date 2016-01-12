@@ -497,7 +497,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected R createRecord(Data key, Object value, long expiryTime,
                              long now, boolean disableWriteThrough, int completionId, String origin) {
-        R record = createRecord(value, expiryTime);
+        R record = createRecord(value, now, expiryTime);
         try {
             doPutRecord(key, record);
         } catch (Throwable error) {
