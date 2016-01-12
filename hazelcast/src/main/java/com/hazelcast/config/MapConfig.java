@@ -309,6 +309,9 @@ public class MapConfig {
      * When maximum size is reached, the specified percentage of the map will be evicted.
      * Any integer between 0 and 100 is allowed.
      * For example, if 25 is set, 25% of the entries will be evicted.
+     * <p/>
+     * Beware that eviction mechanism is different for NATIVE in-memory format (It uses a probabilistic algorithm
+     * based on sampling. Please see documentation for further details) and this parameter has no effect.
      *
      * @param evictionPercentage the evictionPercentage to set: the specified percentage of the map to be evicted
      * @throws IllegalArgumentException if evictionPercentage is not in the 0-100 range.
@@ -340,6 +343,9 @@ public class MapConfig {
      * Sets the minimum time in milliseconds which should pass before asking if a partition of this map is evictable or not.
      * <p/>
      * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
+     * <p/>
+     * Beware that eviction mechanism is different for NATIVE in-memory format (It uses a probabilistic algorithm
+     * based on sampling. Please see documentation for further details) and this parameter has no effect.
      *
      * @param minEvictionCheckMillis time in milliseconds that should pass before asking for the next eviction
      * @since 3.3
@@ -676,7 +682,6 @@ public class MapConfig {
     }
 
     /**
-     *
      * @return
      * @deprecated user {@link #getQueryCacheConfigs()} instead.
      */
@@ -685,14 +690,13 @@ public class MapConfig {
     }
 
     /**
-     *
      * Enable de-serialized value caching when evaluating predicates. It has no effect when {@link InMemoryFormat}
      * is {@link InMemoryFormat#OBJECT} or when {@link com.hazelcast.nio.serialization.Portable} serialization is used.
      *
      * @param optimizeQueries
      * @return this {@code MapConfig} instance.
-     * @deprecated use {@link #setCacheDeserializedValues(CacheDeserializedValues)} instead
      * @see {@link CacheDeserializedValues}
+     * @deprecated use {@link #setCacheDeserializedValues(CacheDeserializedValues)} instead
      */
     public MapConfig setOptimizeQueries(boolean optimizeQueries) {
         validateSetOptimizeQueriesOption(optimizeQueries);
@@ -724,8 +728,8 @@ public class MapConfig {
      *
      * @param cacheDeserializedValues
      * @return this {@code MapConfig} instance.
-     * @since 3.6
      * @see {@link CacheDeserializedValues}
+     * @since 3.6
      */
     public MapConfig setCacheDeserializedValues(CacheDeserializedValues cacheDeserializedValues) {
         validateCacheDeserializedValuesOption(cacheDeserializedValues);
@@ -757,6 +761,7 @@ public class MapConfig {
 
     /**
      * Gets the {@code HotRestartConfig} for this {@code MapConfig}
+     *
      * @return hot restart config
      */
     public HotRestartConfig getHotRestartConfig() {
@@ -765,6 +770,7 @@ public class MapConfig {
 
     /**
      * Sets the {@code HotRestartConfig} for this {@code MapConfig}
+     *
      * @param hotRestartConfig hot restart config
      * @return this {@code MapConfig} instance
      */

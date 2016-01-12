@@ -224,6 +224,9 @@
                         When the map reaches maximum size, this specified percentage of the map will be evicted. Set to any
                         integer between 0 and 100.
                         For example, if 25 is set, 25% of the entries are evicted.
+                        Beware that eviction mechanism is different for NATIVE in-memory format.
+                        (It uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
+                        For this in-memory format, `minEvictionCheckMillis` has no effect
                     </xs:documentation>
                 </xs:annotation>
                 <xs:simpleType>
@@ -240,6 +243,9 @@
                         Minimum time in milliseconds which should pass before checking
                         if a partition of this map is evictable or not.
                         Default value is 100 millis.
+                        Beware that eviction mechanism is different for NATIVE in-memory format.
+                        (It uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
+                        For this in-memory format, `minEvictionCheckMillis` has no effect
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2637,7 +2643,7 @@
 
 						4 merge policy implementations for IMap and 2 merge policy implementations for
 						ICache are provided out of the box.
-						
+
 						IMap has the following merge policies:
 						com.hazelcast.map.merge.PutIfAbsentMapMergePolicy: Incoming entry merges from the
                         source map to the target map if it does not exist in the target map.
@@ -2649,7 +2655,7 @@
 						source map to the target map if the source entry has been updated more recently
 						than the target entry. Please note that this merge policy can only be used when the
 						clusters' clocks are in sync.
-						
+
 						ICache has the following merge policies:
 						com.hazelcast.cache.merge.HigherHitsCacheMergePolicy: Incoming entry merges from
 						the source cache to the target cache if the source entry has more hits than the

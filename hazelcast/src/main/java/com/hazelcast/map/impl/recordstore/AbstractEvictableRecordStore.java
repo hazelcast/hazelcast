@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.core.EntryEventType.EXPIRED;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateExpirationWithDelay;
@@ -226,6 +227,12 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * otherwise <code>false</code>
      */
     private boolean inEvictableTimeWindow(long now) {
+        if (NATIVE == inMemoryFormat) {
+            // Beware that eviction mechanism is different for NATIVE in-memory format. " +
+            // For this in-memory-format `minEvictionCheckMillis` has no effect".
+            return true;
+        }
+
         long minEvictionCheckMillis = getMinEvictionCheckMillis();
         return minEvictionCheckMillis == 0L
                 || (now - lastEvictionTime) > minEvictionCheckMillis;
