@@ -17,46 +17,39 @@
 package com.hazelcast.client.quorum.cache;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.nio.Address;
 import com.hazelcast.quorum.PartitionedCluster;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import javax.cache.processor.EntryProcessor;
-import javax.cache.processor.EntryProcessorException;
-import javax.cache.processor.EntryProcessorResult;
-import javax.cache.processor.MutableEntry;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import javax.cache.processor.EntryProcessor;
+import javax.cache.processor.EntryProcessorException;
+import javax.cache.processor.EntryProcessorResult;
+import javax.cache.processor.MutableEntry;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
+import static com.hazelcast.client.quorum.QuorumTestUtil.getClientConfig;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ClientCacheReadWriteQuorumTest
         extends HazelcastTestSupport {
 
@@ -100,6 +93,15 @@ public class ClientCacheReadWriteQuorumTest
         initializeClients();
         initializeCaches();
         cluster.splitFiveMembersThreeAndTwo();
+        verifyClients();
+    }
+
+    private static void verifyClients() {
+        assertClusterSizeEventually(3, c1);
+        assertClusterSizeEventually(3, c2);
+        assertClusterSizeEventually(3, c3);
+        assertClusterSizeEventually(2, c4);
+        assertClusterSizeEventually(2, c5);
     }
 
     private static void initializeClients() {
@@ -118,19 +120,11 @@ public class ClientCacheReadWriteQuorumTest
         cachingProvider5 = HazelcastClientCachingProvider.createCachingProvider(c5);
 
         final String cacheName = CACHE_NAME_PREFIX + randomString();
-        cache1 = (ICache)cachingProvider1.getCacheManager().getCache(cacheName);
-        cache2 = (ICache)cachingProvider2.getCacheManager().getCache(cacheName);
-        cache3 = (ICache)cachingProvider3.getCacheManager().getCache(cacheName);
-        cache4 = (ICache)cachingProvider4.getCacheManager().getCache(cacheName);
-        cache5 = (ICache)cachingProvider5.getCacheManager().getCache(cacheName);
-    }
-
-    private static ClientConfig getClientConfig(HazelcastInstance instance) {
-        ClientConfig clientConfig = new ClientConfig();
-        Address address = getNode(instance).address;
-        clientConfig.getNetworkConfig().addAddress(address.getHost() + ":" + address.getPort());
-        clientConfig.getGroupConfig().setName(instance.getConfig().getGroupConfig().getName());
-        return clientConfig;
+        cache1 = (ICache) cachingProvider1.getCacheManager().getCache(cacheName);
+        cache2 = (ICache) cachingProvider2.getCacheManager().getCache(cacheName);
+        cache3 = (ICache) cachingProvider3.getCacheManager().getCache(cacheName);
+        cache4 = (ICache) cachingProvider4.getCacheManager().getCache(cacheName);
+        cache5 = (ICache) cachingProvider5.getCacheManager().getCache(cacheName);
     }
 
     @AfterClass
@@ -316,7 +310,7 @@ public class ClientCacheReadWriteQuorumTest
     }
 
     @Test(expected = ExecutionException.class)
-    public void testGetAndRemoveAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception{
+    public void testGetAndRemoveAsyncOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
         Future<String> foo = cache4.getAndRemoveAsync(1);
         foo.get();
     }
@@ -371,7 +365,7 @@ public class ClientCacheReadWriteQuorumTest
 
     @Test
     public void testReplaceAsyncOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future<Boolean> foo =cache1.replaceAsync(1, "");
+        Future<Boolean> foo = cache1.replaceAsync(1, "");
         foo.get();
     }
 
