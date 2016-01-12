@@ -322,6 +322,18 @@ public class MapKeyLoader {
         }
     }
 
+    private void sendLoadCompleted(Throwable t) {
+        Operation op = new LoadStatusOperation(mapName, t);
+        // This updates the local record store on the partition thread.
+        // If invoked by the SENDER_BACKUP however it's the replica index has to be set to 1, otherwise
+        // it will be a remote call to the SENDER who is the owner of the given partitionId.
+        if (hasBackup && role.is(Role.SENDER_BACKUP)) {
+            opService.createInvocationBuilder(SERVICE_NAME, op, partitionId).setReplicaIndex(1).invoke();
+        } else {
+            opService.createInvocationBuilder(SERVICE_NAME, op, partitionId).invoke();
+        }
+    }
+
     public void setMaxBatch(int maxBatch) {
         this.maxBatch = maxBatch;
     }
@@ -352,11 +364,6 @@ public class MapKeyLoader {
                 sendLoadCompleted(t);
             }
         };
-    }
-
-    private void sendLoadCompleted(Throwable t) {
-        Operation op = new LoadStatusOperation(mapName, t);
-        opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
     }
 
     private static final class LoadFinishedFuture extends AbstractCompletableFuture<Boolean>
