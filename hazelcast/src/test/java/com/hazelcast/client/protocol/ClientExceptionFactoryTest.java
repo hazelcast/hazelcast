@@ -34,6 +34,7 @@ import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.mapreduce.RemoteMapReduceException;
 import com.hazelcast.mapreduce.TopologyChangedException;
+import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.query.QueryException;
@@ -180,7 +181,11 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new NoDataMemberInClusterException(randomString())},
                 new Object[]{new ReplicatedMapCantBeCreatedOnLiteMemberException(randomString())},
                 new Object[]{new MaxMessageSizeExceeded()},
-                new Object[]{new WANReplicationQueueFullException(randomString())});
+                new Object[]{new WANReplicationQueueFullException(randomString())},
+                new Object[]{new AssertionError(randomString())},
+                new Object[]{new OutOfMemoryError(randomString())},
+                new Object[]{new StackOverflowError(randomString())},
+                new Object[]{new NativeOutOfMemoryError(randomString())});
 
     }
 

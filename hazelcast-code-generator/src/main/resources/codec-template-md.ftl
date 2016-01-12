@@ -188,6 +188,15 @@ The following error codes are defined in the system:
 |ACCESS_CONTROL|68|Indicates that a requested access to a system resource is denied.|
 |LOGIN|69||
 |UNSUPPORTED_CALLBACK|70|Signals that a CallbackHandler does not recognize a particular Callback.|
+|NO_DATA_MEMBER|71|Thrown when there is no data member in the cluster to assign partitions.|
+|REPLICATED_MAP_CANT_BE_CREATED|72|Thrown when {@link com.hazelcast.core.HazelcastInstance#getReplicatedMap(String)} is invoked on a lite member..|
+|MAX_MESSAGE_SIZE_EXCEEDED|73|* Thrown when client message size exceeds Integer.MAX_VALUE.|
+|WAN_REPLICATION_QUEUE_FULL|74|Thrown when the wan replication queues are full.|
+|ASSERTION_ERROR|75|Thrown to indicate that an assertion has failed.|
+|OUT_OF_MEMORY_ERROR|76|Thrown when the Java Virtual Machine cannot allocate an object because it is out of memory, and no more memory could be made available by the garbage collector.|
+|STACK_OVERFLOW_ERROR|77|Thrown when a stack overflow occurs because an application recurses too deeply.|
+|NATIVE_OUT_OF_MEMORY_ERROR|78|Thrown when Hazelcast cannot allocate required native memory.|
+
 
 <#list model?keys as key>
 <#assign map=model?values[key_index]?values/>

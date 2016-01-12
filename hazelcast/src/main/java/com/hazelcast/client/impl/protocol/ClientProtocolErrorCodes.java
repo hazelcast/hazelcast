@@ -97,6 +97,10 @@ public final class ClientProtocolErrorCodes {
     public static final int REPLICATED_MAP_CANT_BE_CREATED = 72;
     public static final int MAX_MESSAGE_SIZE_EXCEEDED = 73;
     public static final int WAN_REPLICATION_QUEUE_FULL = 74;
+    public static final int ASSERTION_ERROR = 75;
+    public static final int OUT_OF_MEMORY_ERROR = 76;
+    public static final int STACK_OVERFLOW_ERROR = 77;
+    public static final int NATIVE_OUT_OF_MEMORY_ERROR = 78;
 
     private ClientProtocolErrorCodes() {
     }

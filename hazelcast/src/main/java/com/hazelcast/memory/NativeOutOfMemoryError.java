@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.exception;
-
-import com.hazelcast.core.HazelcastException;
+package com.hazelcast.memory;
 
 /**
- * Thrown when client message size exceeds Integer.MAX_VALUE
+ * Thrown when Hazelcast cannot allocate required native memory.
  */
-public class MaxMessageSizeExceeded
-        extends HazelcastException {
-    public MaxMessageSizeExceeded() {
-        super("The size of the message exceeds the maximum value of " + Integer.MAX_VALUE + " bytes.");
+public class NativeOutOfMemoryError extends Error {
+
+    public NativeOutOfMemoryError() {
+    }
+
+    public NativeOutOfMemoryError(String message) {
+        super(message);
+    }
+
+    public NativeOutOfMemoryError(String message, Throwable cause) {
+        super(message, cause);
     }
 }
+

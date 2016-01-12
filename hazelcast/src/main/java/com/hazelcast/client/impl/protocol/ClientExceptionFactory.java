@@ -34,6 +34,7 @@ import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.mapreduce.RemoteMapReduceException;
 import com.hazelcast.mapreduce.TopologyChangedException;
+import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.query.QueryException;
@@ -538,6 +539,31 @@ public class ClientExceptionFactory {
             @Override
             public Throwable createException(String message, Throwable cause) {
                 return new WANReplicationQueueFullException(message);
+            }
+        });
+
+        register(ClientProtocolErrorCodes.ASSERTION_ERROR, AssertionError.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new AssertionError(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.OUT_OF_MEMORY_ERROR, OutOfMemoryError.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new OutOfMemoryError(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.STACK_OVERFLOW_ERROR, StackOverflowError.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new StackOverflowError(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.NATIVE_OUT_OF_MEMORY_ERROR, NativeOutOfMemoryError.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new NativeOutOfMemoryError(message, cause);
             }
         });
     }
