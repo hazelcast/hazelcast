@@ -63,7 +63,9 @@ public class QuorumImpl implements Quorum {
     }
 
     public void update(Collection<Member> members) {
-        setLocalResult(quorumFunction.apply(members));
+        boolean presence = quorumFunction.apply(members);
+        setLocalResult(presence);
+        updateLastResultAndFireEvent(members, presence);
     }
 
     public String getName() {
