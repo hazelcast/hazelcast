@@ -43,7 +43,7 @@ public class CompareAndSetOperation extends AtomicLongBackupAwareOperation {
     public void run() throws Exception {
         AtomicLongContainer atomicLongContainer = getLongContainer();
         returnValue = atomicLongContainer.compareAndSet(expect, update);
-        shouldBackup = !returnValue;
+        shouldBackup = returnValue;
     }
 
     @Override
