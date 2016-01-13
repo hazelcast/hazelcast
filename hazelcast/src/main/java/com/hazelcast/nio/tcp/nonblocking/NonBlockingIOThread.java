@@ -40,6 +40,8 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     private static final int SELECT_WAIT_TIME_MILLIS = 5000;
     private static final int SELECT_FAILURE_PAUSE_MILLIS = 1000;
 
+    public static final int MAXIMUM_ITEMS_TAKEN_FROM_TASK_QUEUE_RENAME_ME_I_AM_SILLY = Integer.getInteger("ioselector.batchsize", 10);
+
     @Probe(name = "taskQueueSize")
     private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<Runnable>();
     @Probe
@@ -198,9 +200,9 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
 
     private void runSelectLoop() throws IOException {
         while (!isInterrupted()) {
-            processTaskQueue();
+            boolean queueFullyProcessed = processTaskQueue();
 
-            int selectedKeys = selector.select(SELECT_WAIT_TIME_MILLIS);
+            int selectedKeys = queueFullyProcessed ? selector.select(SELECT_WAIT_TIME_MILLIS) : selector.selectNow();
             if (selectedKeys > 0) {
                 lastSelectTimeMs = currentTimeMillis();
                 handleSelectionKeys();
@@ -220,14 +222,18 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
         }
     }
 
-    private void processTaskQueue() {
-        while (!isInterrupted()) {
+    /**
+     * @return true is all tasks have been processed
+     */
+    private boolean processTaskQueue() {
+        for (int i = 0; i < MAXIMUM_ITEMS_TAKEN_FROM_TASK_QUEUE_RENAME_ME_I_AM_SILLY && !isInterrupted(); i++) {
             Runnable task = taskQueue.poll();
             if (task == null) {
-                return;
+                return true;
             }
             executeTask(task);
         }
+        return false;
     }
 
     private void executeTask(Runnable task) {
