@@ -34,7 +34,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -69,6 +68,32 @@ public class QuorumListenerTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testQuorumFailureEventFiredWhenNodeCountDropsBelowThreshold() throws Exception {
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        Config config = new Config();
+        QuorumListenerConfig listenerConfig = new QuorumListenerConfig();
+        listenerConfig.setImplementation(new QuorumListener() {
+            public void onChange(QuorumEvent quorumEvent) {
+                if (!quorumEvent.isPresent()) {
+                    countDownLatch.countDown();
+                }
+            }
+        });
+        String mapName = randomMapName();
+        String quorumName = randomString();
+        QuorumConfig quorumConfig = new QuorumConfig(quorumName, true, 3);
+        quorumConfig.addListenerConfig(listenerConfig);
+        config.getMapConfig(mapName).setQuorumName(quorumName);
+        config.addQuorumConfig(quorumConfig);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance();
+        HazelcastInstance instance3 = factory.newHazelcastInstance();
+        instance3.shutdown();
+        assertOpenEventually(countDownLatch, 15);
+    }
+
+    @Test
     public void testQuorumEventsFiredWhenNodeCountBelowThenAboveThreshold() throws Exception {
         final CountDownLatch belowLatch = new CountDownLatch(1);
         final CountDownLatch aboveLatch = new CountDownLatch(1);
@@ -91,16 +116,9 @@ public class QuorumListenerTest extends HazelcastTestSupport {
         config.addQuorumConfig(quorumConfig);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        IMap<Object, Object> map = instance1.getMap(mapName);
-        try {
-            map.put(generateKeyOwnedBy(instance1), 1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        assertOpenEventually(belowLatch, 15);
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        assertOpenEventually(belowLatch, 15);
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
-        map.put(generateKeyOwnedBy(instance1), 1);
         assertOpenEventually(aboveLatch);
     }
 
@@ -141,18 +159,6 @@ public class QuorumListenerTest extends HazelcastTestSupport {
         HazelcastInstance h1 = factory.newHazelcastInstance(config);
         HazelcastInstance h2 = factory.newHazelcastInstance(config);
 
-        IMap<Object, Object> fourNode = h1.getMap("fourNode");
-        IMap<Object, Object> threeNode = h1.getMap("threeNode");
-        try {
-            threeNode.put(generateKeyOwnedBy(h1), "bar");
-            fail();
-        } catch (Exception e) {
-        }
-        try {
-            fourNode.put(generateKeyOwnedBy(h1), "bar");
-            fail();
-        } catch (Exception e) {
-        }
         assertOpenEventually(quorumFailureLatch);
 
     }
@@ -184,15 +190,10 @@ public class QuorumListenerTest extends HazelcastTestSupport {
         });
         config.getMapConfig(mapName).setQuorumName(quorumName);
         config.addQuorumConfig(quorumConfig);
-        HazelcastInstance instance = createHazelcastInstance(config);
-        QuorumService quorumService = instance.getQuorumService();
-        Quorum quorum = quorumService.getQuorum(quorumName);
-        IMap<Object, Object> map = instance.getMap(mapName);
-        try {
-            map.put(generateKeyOwnedBy(instance), 1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance();
         assertOpenEventually(countDownLatch, 15);
 
     }
@@ -221,12 +222,6 @@ public class QuorumListenerTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-        IMap<Object, Object> map = instance1.getMap(mapName);
-        try {
-            map.put(generateKeyOwnedBy(instance1), 1);
-        } catch (Exception e) {
-
-        }
         assertOpenEventually(belowLatch);
     }
 }
