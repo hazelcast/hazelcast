@@ -222,15 +222,30 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
         }
     }
 
+    private Runnable pending;
+
     /**
      * @return true is all tasks have been processed
      */
     private boolean processTaskQueue() {
+        Runnable first = pending;
+
+        if (first != null) {
+            executeTask(first);
+            pending = null;
+        }
+
         for (int i = 0; i < MAXIMUM_ITEMS_TAKEN_FROM_TASK_QUEUE_RENAME_ME_I_AM_SILLY && !isInterrupted(); i++) {
             Runnable task = taskQueue.poll();
             if (task == null) {
                 return true;
+            } else if (first == null) {
+                first = task;
+            } else if (first == task) {
+                pending = first;
+                return false;
             }
+
             executeTask(task);
         }
         return false;
