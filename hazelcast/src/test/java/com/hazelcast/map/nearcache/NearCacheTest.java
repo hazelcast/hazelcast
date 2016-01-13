@@ -28,6 +28,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapService;
@@ -35,6 +36,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
@@ -403,7 +405,7 @@ public class NearCacheTest extends HazelcastTestSupport {
     @Test
     public void testGetAll() throws Exception {
         int mapSize = 1000;
-        int expectedNearCacheHits = 400;
+        int expectedNearCacheHits = 0;
         String mapName = "testGetAllWithNearCache";
 
         Config config = getConfig();
@@ -413,8 +415,14 @@ public class NearCacheTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance[] instances = hazelcastInstanceFactory.newInstances(config);
 
+        warmUpPartitions(instances);
+
+        HazelcastInstance hazelcastInstance = instances[0];
+        Node node = TestUtil.getNode(hazelcastInstance);
+        InternalPartitionService partitionService = node.getNodeEngine().getPartitionService();
+
         // Populate map
-        IMap<Integer, Integer> map = instances[0].getMap(mapName);
+        IMap<Integer, Integer> map = hazelcastInstance.getMap(mapName);
         HashSet<Integer> keys = new HashSet<Integer>();
         for (int i = 0; i < mapSize; i++) {
             map.put(i, i);
@@ -424,6 +432,11 @@ public class NearCacheTest extends HazelcastTestSupport {
         // Populate near cache
         for (int i = 0; i < mapSize; i++) {
             map.get(i);
+            int partitionId = partitionService.getPartitionId(i);
+            if (!partitionService.isPartitionOwner(partitionId)) {
+                // Map proxy stores non-owned entries (belong to partition which its not owner) inside its near-cache
+                expectedNearCacheHits++;
+            }
         }
 
         // Generate near cache hits
@@ -434,10 +447,9 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         // Check near cache hits
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-        assertTrue(
-                String.format("Near cache hits should be > %d but were %d", expectedNearCacheHits, stats.getHits()),
-                stats.getHits() > expectedNearCacheHits
-        );
+        assertEquals(
+                String.format("Near cache hits should be %d but were %d", expectedNearCacheHits, stats.getHits()),
+                expectedNearCacheHits, stats.getHits());
     }
 
     @Test
