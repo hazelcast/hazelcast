@@ -191,10 +191,35 @@ public class ServiceLoaderTest {
         assertEquals(1, implementations.size());
     }
 
-    public static interface ServiceLoaderTestInterface {
+    @Test
+    public void loadServicesWithSpaceInURL()
+            throws Exception {
+
+        Class<ServiceLoaderSpacesTestInterface> type = ServiceLoaderSpacesTestInterface.class;
+        String factoryId = "com.hazelcast.ServiceLoaderSpacesTestInterface";
+
+        ClassLoader given = new URLClassLoader(new URL[] { new URL(ClassLoader.getSystemResource("test with spaces").toExternalForm().replace("%20", " ") + "/") });
+
+        Set<ServiceLoaderSpacesTestInterface> implementations = new HashSet<ServiceLoaderSpacesTestInterface>();
+        Iterator<ServiceLoaderSpacesTestInterface> iterator = ServiceLoader.iterator(type, factoryId, given);
+        while (iterator.hasNext()) {
+            implementations.add(iterator.next());
+        }
+
+        assertEquals(1, implementations.size());
+    }
+
+    public interface ServiceLoaderTestInterface {
     }
 
     public static class ServiceLoaderTestInterfaceImpl
             implements ServiceLoaderTestInterface {
+    }
+
+    public interface ServiceLoaderSpacesTestInterface {
+    }
+
+    public static class ServiceLoaderSpacesTestInterfaceImpl
+            implements ServiceLoaderSpacesTestInterface {
     }
 }
