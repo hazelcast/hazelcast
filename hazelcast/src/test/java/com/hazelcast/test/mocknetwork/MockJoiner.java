@@ -22,9 +22,9 @@ import com.hazelcast.cluster.impl.ClusterJoinManager;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.junit.Assert;
 
 class MockJoiner extends AbstractJoiner {
 
@@ -40,48 +40,60 @@ class MockJoiner extends AbstractJoiner {
     }
 
     public void doJoin() {
-        NodeEngineImpl nodeEngine = null;
         synchronized (joinerLock) {
-            for (Address address : joinAddresses) {
-                NodeEngineImpl ne = nodes.get(address);
-                if (ne != null && ne.isRunning() && ne.getNode().joined()) {
-                    nodeEngine = ne;
+            Address master;
+
+            final ClusterJoinManager clusterJoinManager = node.clusterService.getClusterJoinManager();
+            for (int i = 0; !node.joined() && node.isRunning() && i < 2000; i++) {
+                try {
+                    master = node.getMasterAddress();
+                    if (master == null) {
+                        master = findCurrentMasterAddress();
+                        node.setMasterAddress(master);
+                    }
+
+                    Assert.assertNotNull(master);
+                    if (master.equals(node.getThisAddress())) {
+                        node.setJoined();
+                        node.setAsMaster();
+                        break;
+                    }
+
+                    clusterJoinManager.sendJoinRequest(master, true);
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                     break;
                 }
             }
-            Address master = null;
-            if (nodeEngine != null) {
-                if (nodeEngine.getNode().isMaster()) {
-                    master = nodeEngine.getThisAddress();
-                } else {
-                    master = nodeEngine.getMasterAddress();
-                }
-            }
-            if (master == null) {
-                master = node.getThisAddress();
-            }
-            node.setMasterAddress(master);
-            if (node.getMasterAddress().equals(node.getThisAddress())) {
-                node.setJoined();
-                node.setAsMaster();
-            } else {
-                final ClusterJoinManager clusterJoinManager = node.clusterService.getClusterJoinManager();
-
-                for (int i = 0; !node.joined() && node.isRunning() && i < 2000; i++) {
-                    try {
-                        clusterJoinManager.sendJoinRequest(node.getMasterAddress(), true);
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                        break;
-                    }
-                }
-                if (!node.joined()) {
-                    logger.severe("Node[" + node.getThisAddress() + "] should have been joined to " + node.getMasterAddress());
-                    node.shutdown(true);
-                }
+            if (!node.joined()) {
+                logger.severe("Node[" + node.getThisAddress() + "] should have been joined to " + node.getMasterAddress());
+                node.shutdown(true);
             }
         }
+    }
+
+    private Address findCurrentMasterAddress() {
+        NodeEngineImpl nodeEngine = null;
+        for (Address address : joinAddresses) {
+            NodeEngineImpl ne = nodes.get(address);
+            if (ne != null && ne.isRunning() && ne.getNode().joined()) {
+                nodeEngine = ne;
+                break;
+            }
+        }
+        Address master = null;
+        if (nodeEngine != null) {
+            if (nodeEngine.getNode().isMaster()) {
+                master = nodeEngine.getThisAddress();
+            } else {
+                master = nodeEngine.getMasterAddress();
+            }
+        }
+        if (master == null) {
+            master = node.getThisAddress();
+        }
+        return master;
     }
 
     public void searchForOtherClusters() {
