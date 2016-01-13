@@ -68,7 +68,7 @@ public class WanReplicationEvent
      *
      * @return the event object.
      */
-    public Object getEventObject() {
+    public ReplicationEventObject getEventObject() {
         return eventObject;
     }
 
