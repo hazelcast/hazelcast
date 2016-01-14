@@ -106,14 +106,14 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
 
     @Override
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        final int heartBeatInterval = invocation.getHeartBeatInterval();
+        long heartBeatIntervalMillis = invocation.getHeartBeatIntervalMillis();
         if (response == null) {
             long waitMillis = unit.toMillis(timeout);
             if (waitMillis > 0) {
                 synchronized (this) {
                     while (waitMillis > 0 && response == null) {
                         long start = Clock.currentTimeMillis();
-                        this.wait(Math.min(heartBeatInterval, waitMillis));
+                        this.wait(Math.min(heartBeatIntervalMillis, waitMillis));
                         long elapsed = Clock.currentTimeMillis() - start;
                         waitMillis -= elapsed;
                         if (!invocation.isConnectionHealthy(elapsed)) {

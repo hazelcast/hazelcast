@@ -112,11 +112,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         connectionTimeout = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
 
         ClientProperties clientProperties = client.getClientProperties();
-        long timeout = clientProperties.getMillis(HEARTBEAT_TIMEOUT);
-        this.heartBeatTimeout = timeout > 0 ? timeout : Integer.parseInt(HEARTBEAT_TIMEOUT.getDefaultValue());
-
-        long interval = clientProperties.getMillis(HEARTBEAT_INTERVAL);
-        heartBeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
+        heartBeatTimeout = clientProperties.getMillis(HEARTBEAT_TIMEOUT);
+        heartBeatInterval = clientProperties.getMillis(HEARTBEAT_INTERVAL);
 
         executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
 

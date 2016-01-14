@@ -161,6 +161,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
         clientProperties = new ClientProperties(config);
+        clientProperties.setLogger(Logger.getLogger(ClientProperties.class));
         serializationService = clientExtension.createSerializationService();
         proxyManager = new ProxyManager(this);
         executionService = initExecutionService();

@@ -188,13 +188,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         long mergeFirstRunDelayMs = node.groupProperties.getMillis(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS);
-        mergeFirstRunDelayMs = (mergeFirstRunDelayMs > 0 ? mergeFirstRunDelayMs : DEFAULT_MERGE_RUN_DELAY_MILLIS);
 
         ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.register(EXECUTOR_NAME, 2, CLUSTER_EXECUTOR_QUEUE_CAPACITY, ExecutorType.CACHED);
 
         long mergeNextRunDelayMs = node.groupProperties.getMillis(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS);
-        mergeNextRunDelayMs = (mergeNextRunDelayMs > 0 ? mergeNextRunDelayMs : DEFAULT_MERGE_RUN_DELAY_MILLIS);
         executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new SplitBrainHandler(node), mergeFirstRunDelayMs,
                 mergeNextRunDelayMs, TimeUnit.MILLISECONDS);
 
@@ -875,8 +873,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         logger.info("Sending shutting down operations to all members...");
 
         Collection<Member> members = getMembers(NON_LOCAL_MEMBER_SELECTOR);
-        final long timeout = node.groupProperties.getNanos(GroupProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
-        final long startTime = System.nanoTime();
+        long timeout = node.groupProperties.getNanos(GroupProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
+        long startTime = System.nanoTime();
 
         while ((System.nanoTime() - startTime) < timeout && !members.isEmpty()) {
             for (Member member : members) {

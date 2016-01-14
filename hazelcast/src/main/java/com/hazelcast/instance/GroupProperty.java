@@ -355,7 +355,8 @@ public enum GroupProperty implements HazelcastProperty {
      * <p/>
      * The default is -1 indicating there is no detection.
      */
-    SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS("hazelcast.slow.invocation.detector.threshold.millis", -1, MILLISECONDS),
+    SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS("hazelcast.slow.invocation.detector.threshold.millis", -1, MILLISECONDS,
+            DISABLEABLE.YES),
 
     LOCK_MAX_LEASE_TIME_SECONDS("hazelcast.lock.max.lease.time.seconds", Long.MAX_VALUE, SECONDS),
 
@@ -492,7 +493,7 @@ public enum GroupProperty implements HazelcastProperty {
      * <p/>
      * The feature can be disabled by setting its value to <tt>-1</tt> (which is the default value).
      */
-    QUERY_RESULT_SIZE_LIMIT("hazelcast.query.result.size.limit", -1),
+    QUERY_RESULT_SIZE_LIMIT("hazelcast.query.result.size.limit", -1, DISABLEABLE.YES),
 
     /**
      * Maximum value of local partitions to trigger local pre-check for {@link TruePredicate} query operations on maps.
@@ -508,7 +509,7 @@ public enum GroupProperty implements HazelcastProperty {
      *
      * @see #QUERY_RESULT_SIZE_LIMIT
      */
-    QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK("hazelcast.query.max.local.partition.limit.for.precheck", 3),
+    QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK("hazelcast.query.max.local.partition.limit.for.precheck", 3, DISABLEABLE.YES),
 
     /**
      * Type of Query Optimizer.
@@ -554,6 +555,8 @@ public enum GroupProperty implements HazelcastProperty {
     private final String defaultValue;
     private final TimeUnit timeUnit;
     private final GroupProperty parent;
+    private DISABLEABLE disablable = DISABLEABLE.NO;
+    private enum DISABLEABLE { YES, NO }
 
     GroupProperty(String name) {
         this(name, (String) null);
@@ -572,7 +575,7 @@ public enum GroupProperty implements HazelcastProperty {
     }
 
     GroupProperty(String name, String defaultValue) {
-        this(name, defaultValue, null);
+        this(name, defaultValue, null, DISABLEABLE.NO);
     }
 
     GroupProperty(String name, Integer defaultValue, TimeUnit timeUnit) {
@@ -584,11 +587,49 @@ public enum GroupProperty implements HazelcastProperty {
     }
 
     GroupProperty(String name, String defaultValue, TimeUnit timeUnit) {
-        this(name, defaultValue, timeUnit, null);
+        this(name, defaultValue, timeUnit, null, DISABLEABLE.NO);
     }
 
     GroupProperty(String name, GroupProperty groupProperty) {
         this(name, groupProperty.getDefaultValue(), groupProperty.timeUnit, groupProperty);
+    }
+
+    GroupProperty(String name, boolean defaultValue, DISABLEABLE disablable) {
+        this(name, defaultValue ? "true" : "false", disablable);
+    }
+
+    GroupProperty(String name, Integer defaultValue, DISABLEABLE disablable) {
+        this(name, String.valueOf(defaultValue), disablable);
+    }
+
+    GroupProperty(String name, Byte defaultValue, DISABLEABLE disablable) {
+        this(name, String.valueOf(defaultValue), disablable);
+    }
+
+    GroupProperty(String name, String defaultValue, DISABLEABLE disablable) {
+        this(name, defaultValue, null, disablable);
+    }
+
+    GroupProperty(String name, Integer defaultValue, TimeUnit timeUnit, DISABLEABLE disablable) {
+        this(name, String.valueOf(defaultValue), timeUnit, disablable);
+    }
+
+    GroupProperty(String name, Long defaultValue, TimeUnit timeUnit, DISABLEABLE disablable) {
+        this(name, Long.toString(defaultValue), timeUnit, disablable);
+    }
+
+    GroupProperty(String name, String defaultValue, TimeUnit timeUnit, DISABLEABLE disablable) {
+        this(name, defaultValue, timeUnit, null, disablable);
+    }
+
+    GroupProperty(String name, String defaultValue, TimeUnit timeUnit, GroupProperty parent, DISABLEABLE disablable) {
+        this.disablable = disablable;
+        checkHasText(name, "The property name cannot be null or empty!");
+
+        this.name = name;
+        this.defaultValue = defaultValue;
+        this.timeUnit = timeUnit;
+        this.parent = parent;
     }
 
     GroupProperty(String name, String defaultValue, TimeUnit timeUnit, GroupProperty parent) {
@@ -646,5 +687,10 @@ public enum GroupProperty implements HazelcastProperty {
     @Override
     public String toString() {
         return name;
+    }
+
+    @Override
+    public boolean isDisablable() {
+        return DISABLEABLE.YES == disablable;
     }
 }

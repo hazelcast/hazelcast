@@ -45,6 +45,10 @@ public interface ClientInvocationService {
 
     void handlePacket(Packet packet);
 
+    long getHeartBeatIntervalMillis();
+
+    long getClientInvocationTimeoutMillis();
+
     void cleanConnectionResources(ClientConnection connection);
 
     //TODO just to be called by stabilizer at the moment

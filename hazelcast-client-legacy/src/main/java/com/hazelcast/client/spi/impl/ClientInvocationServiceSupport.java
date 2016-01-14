@@ -17,6 +17,7 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.HazelcastClientNotActiveException;
+import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -51,11 +52,14 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 
+import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_INTERVAL;
+import static com.hazelcast.client.config.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 import static com.hazelcast.client.config.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 
 
 abstract class ClientInvocationServiceSupport implements ClientInvocationService, ConnectionListener {
+
 
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED = 10;
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD = 5000;
@@ -68,7 +72,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     private ResponseThread responseThread;
     private final ConcurrentMap<Long, ClientInvocation> callIdMap
             = new ConcurrentHashMap<Long, ClientInvocation>();
-
+    private final long heartBeatIntervalMillis;
+    private final long clientInvocationTimeoutMillis;
     private final CallIdSequence callIdSequence;
     private volatile boolean isShutdown;
 
@@ -77,6 +82,10 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         this.client = client;
         int maxAllowedConcurrentInvocations = client.getClientProperties().getInteger(MAX_CONCURRENT_INVOCATIONS);
         callIdSequence = new CallIdSequence.CallIdSequenceFailFast(maxAllowedConcurrentInvocations);
+
+        ClientProperties clientProperties = client.getClientProperties();
+        clientInvocationTimeoutMillis = clientProperties.getMillis(INVOCATION_TIMEOUT_SECONDS);
+        heartBeatIntervalMillis = clientProperties.getMillis(HEARTBEAT_INTERVAL);
     }
 
     @Override
@@ -99,6 +108,16 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     @Override
     public boolean isRedoOperation() {
         return client.getClientConfig().getNetworkConfig().isRedoOperation();
+    }
+
+    @Override
+    public long getHeartBeatIntervalMillis() {
+        return heartBeatIntervalMillis;
+    }
+
+    @Override
+    public long getClientInvocationTimeoutMillis() {
+        return clientInvocationTimeoutMillis;
     }
 
     protected void send(ClientInvocation invocation, ClientConnection connection) throws IOException {

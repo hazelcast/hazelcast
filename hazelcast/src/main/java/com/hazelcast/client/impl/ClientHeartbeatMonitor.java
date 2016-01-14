@@ -37,7 +37,6 @@ import java.util.logging.Level;
 public class ClientHeartbeatMonitor implements Runnable {
 
     private static final int HEART_BEAT_CHECK_INTERVAL_SECONDS = 10;
-    private static final int DEFAULT_CLIENT_HEARTBEAT_TIMEOUT_SECONDS = 60;
 
     private final ClientEndpointManagerImpl clientEndpointManager;
     private final ClientEngine clientEngine;
@@ -52,16 +51,8 @@ public class ClientHeartbeatMonitor implements Runnable {
         this.clientEndpointManager = endpointManager;
         this.clientEngine = clientEngine;
         this.executionService = executionService;
-        this.heartbeatTimeoutSeconds = getHeartBeatTimeout(groupProperties);
-    }
-
-    private long getHeartBeatTimeout(GroupProperties groupProperties) {
-        long configuredTimeout = groupProperties.getSeconds(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS);
-        if (configuredTimeout > 0) {
-            return configuredTimeout;
-        }
-
-        return DEFAULT_CLIENT_HEARTBEAT_TIMEOUT_SECONDS;
+        this.heartbeatTimeoutSeconds =
+                groupProperties.getSeconds(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS);
     }
 
     public void start() {

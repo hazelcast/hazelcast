@@ -111,16 +111,12 @@ public class BackpressureRegulator {
     }
 
     private int getSyncWindow(GroupProperties props) {
-        int syncWindow = props.getInteger(BACKPRESSURE_SYNCWINDOW);
-        if (enabled && syncWindow <= 0) {
-            throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_SYNCWINDOW + "' with a value smaller than 1");
-        }
-        return syncWindow;
+        return props.getInteger(BACKPRESSURE_SYNCWINDOW);
     }
 
     private int getBackoffTimeoutMs(GroupProperties props) {
         int backoffTimeoutMs = (int) props.getMillis(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS);
-        if (enabled && backoffTimeoutMs < 0) {
+        if (enabled) {
             throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS
                     + "' with a value smaller than 0");
         }
@@ -129,11 +125,6 @@ public class BackpressureRegulator {
 
     private int getMaxConcurrentInvocations(GroupProperties props) {
         int invocationsPerPartition = props.getInteger(BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION);
-        if (invocationsPerPartition < 1) {
-            throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION
-                    + "' with a value smaller than 1");
-        }
-
         return (partitionCount + 1) * invocationsPerPartition;
     }
 
@@ -172,7 +163,7 @@ public class BackpressureRegulator {
      * <p/>
      * Once and a while for every BackupAwareOperation with one or more async backups, these async backups are transformed
      * into a sync backup.
-     *
+     * <p/>
      * For {@link com.hazelcast.spi.UrgentSystemOperation} no sync will be forced.
      *
      * @param backupAwareOp The BackupAwareOperation to check.
