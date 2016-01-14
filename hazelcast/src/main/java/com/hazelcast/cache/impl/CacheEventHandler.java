@@ -20,10 +20,12 @@ import com.hazelcast.cache.impl.client.CacheBatchInvalidationMessage;
 import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
@@ -63,14 +65,18 @@ class CacheEventHandler {
                     groupProperties.getInteger(CACHE_INVALIDATION_MESSAGE_BATCH_SIZE);
             int invalidationMessageBatchFreq =
                     groupProperties.getInteger(CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS);
-            cacheBatchInvalidationMessageSenderScheduler = nodeEngine.getExecutionService()
+            ExecutionService executionService = nodeEngine.getExecutionService();
+            CacheBatchInvalidationMessageSender batchInvalidationMessageSender
+                    = new CacheBatchInvalidationMessageSender();
+            cacheBatchInvalidationMessageSenderScheduler = executionService
                     .scheduleAtFixedRate(ICacheService.SERVICE_NAME + ":cacheBatchInvalidationMessageSender",
-                                         new CacheBatchInvalidationMessageSender(),
+                                         batchInvalidationMessageSender,
                                          invalidationMessageBatchFreq,
                                          invalidationMessageBatchFreq,
-                                          TimeUnit.SECONDS);
+                                         TimeUnit.SECONDS);
         }
-        nodeEngine.getHazelcastInstance().getLifecycleService().addLifecycleListener(new LifecycleListener() {
+        LifecycleService lifecycleService = nodeEngine.getHazelcastInstance().getLifecycleService();
+        lifecycleService.addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
                 if (event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
@@ -105,16 +111,13 @@ class CacheEventHandler {
                 eventData = eventSet;
                 break;
             case EVICTED:
-                eventData = new CacheEventDataImpl(cacheName, CacheEventType.EVICTED,
-                                                   cacheEventContext.getDataKey(), null, null, false);
-                break;
             case INVALIDATED:
-                eventData = new CacheEventDataImpl(cacheName, CacheEventType.INVALIDATED,
-                                                   cacheEventContext.getDataKey(), null, null, false);
+                eventData = new CacheEventDataImpl(cacheName, eventType, cacheEventContext.getDataKey(),
+                                                   null, null, false);
                 break;
             case COMPLETED:
                 CacheEventData completedEventData =
-                        new CacheEventDataImpl(cacheName, CacheEventType.COMPLETED, cacheEventContext.getDataKey(),
+                        new CacheEventDataImpl(cacheName, eventType, cacheEventContext.getDataKey(),
                                                cacheEventContext.getDataValue(), null, false);
                 eventSet = new CacheEventSet(eventType, cacheEventContext.getCompletionId());
                 eventSet.addEventData(completedEventData);
@@ -124,8 +127,8 @@ class CacheEventHandler {
                 throw new IllegalArgumentException(
                         "Event Type not defined to create an eventData during publish : " + eventType.name());
         }
-        nodeEngine.getEventService().publishEvent(ICacheService.SERVICE_NAME, candidates,
-                                                  eventData, cacheEventContext.getOrderKey());
+        eventService.publishEvent(ICacheService.SERVICE_NAME, candidates,
+                                  eventData, cacheEventContext.getOrderKey());
     }
 
     void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey) {
@@ -135,7 +138,7 @@ class CacheEventHandler {
         if (candidates.isEmpty()) {
             return;
         }
-        nodeEngine.getEventService().publishEvent(ICacheService.SERVICE_NAME, candidates, eventSet, orderKey);
+        eventService.publishEvent(ICacheService.SERVICE_NAME, candidates, eventSet, orderKey);
     }
 
     void sendInvalidationEvent(String name, Data key, String sourceUuid) {
@@ -233,17 +236,16 @@ class CacheEventHandler {
                 if (currentThread.isInterrupted()) {
                     break;
                 }
-                String cacheName = entry.getKey();
                 InvalidationEventQueue invalidationMessageQueue = entry.getValue();
                 if (invalidationMessageQueue.size() > 0) {
-                    flushInvalidationMessages(cacheName, invalidationMessageQueue);
+                    flushInvalidationMessages(entry.getKey(), invalidationMessageQueue);
                 }
             }
         }
 
     }
 
-    private static class InvalidationEventQueue extends ConcurrentLinkedQueue<CacheSingleInvalidationMessage> {
+    static class InvalidationEventQueue extends ConcurrentLinkedQueue<CacheSingleInvalidationMessage> {
 
         private final AtomicInteger elementCount = new AtomicInteger(0);
         private final AtomicBoolean flushingInProgress = new AtomicBoolean(false);
