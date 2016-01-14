@@ -1,15 +1,14 @@
 package com.hazelcast.concurrent.idgen;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import org.junit.Before;
-import org.junit.Test;
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.test.HazelcastTestSupport;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public abstract class IdGeneratorAbstractTest extends HazelcastTestSupport {
 
@@ -22,7 +21,7 @@ public abstract class IdGeneratorAbstractTest extends HazelcastTestSupport {
         idGenerator = newInstance();
     }
 
-    protected IdGenerator newInstance(){
+    protected IdGenerator newInstance() {
         HazelcastInstance local = instances[0];
         HazelcastInstance target = instances[instances.length - 1];
         String name = generateKeyOwnedBy(target);
@@ -77,7 +76,7 @@ public abstract class IdGeneratorAbstractTest extends HazelcastTestSupport {
     @Test
     public void testGeneratingMultipleBlocks() {
         long expected = 0;
-        for (int k = 0; k < 3 * IdGeneratorProxy.BLOCK_SIZE; k++) {
+        for (int k = 0; k < 3 * IdGeneratorImpl.BLOCK_SIZE; k++) {
             assertEquals(expected, idGenerator.newId());
             expected++;
         }
