@@ -223,7 +223,11 @@ public class MapKeyLoader {
         return sendKeys(mapStoreContext, replaceExistingValues);
     }
 
-    public void trackLoading(boolean lastBatch, Throwable exception) {
+    public Future<?> trackLoading(boolean lastBatch, Throwable exception) {
+        if (lastBatch && loadFinished.isDone()) {
+            loadFinished = new LoadFinishedFuture();
+        }
+
         if (lastBatch) {
             state.nextOrStay(State.LOADED);
             if (exception != null) {
@@ -234,6 +238,8 @@ public class MapKeyLoader {
         } else if (state.is(State.LOADED)) {
             state.next(State.LOADING);
         }
+
+        return loadFinished;
     }
 
     /**

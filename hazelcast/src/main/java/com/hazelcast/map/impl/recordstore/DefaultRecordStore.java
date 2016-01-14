@@ -70,7 +70,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     protected final RecordStoreLoader recordStoreLoader;
     protected final MapKeyLoader keyLoader;
     // loadingFutures are modified by partition threads and could be accessed by query threads
-    protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<Future>();
+    protected final Collection<Future> keyLoadingFutures = new ConcurrentLinkedQueue<Future>();
+    protected final Collection<Future> valueLoadingFutures = new ConcurrentLinkedQueue<Future>();
 
     public DefaultRecordStore(MapContainer mapContainer, int partitionId,
                               MapKeyLoader keyLoader, ILogger logger) {
@@ -84,38 +85,53 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     public void startLoading() {
         if (mapStoreContext.isMapLoader()) {
-            loadingFutures.add(keyLoader.startInitialLoad(mapStoreContext, partitionId));
+            Future<?> loadingKeysFuture = keyLoader.startInitialLoad(mapStoreContext, partitionId);
+            registerKeyLoaderFuture(loadingKeysFuture);
         }
     }
 
     @Override
     public boolean isLoaded() {
-        return FutureUtil.allDone(loadingFutures);
+        return FutureUtil.allDone(keyLoadingFutures) && FutureUtil.allDone(valueLoadingFutures);
     }
 
     @Override
     public void loadAll(boolean replaceExistingValues) {
         logger.info("Starting to load all keys for map " + name + " on partitionId=" + partitionId);
         Future<?> loadingKeysFuture = keyLoader.startLoading(mapStoreContext, replaceExistingValues);
-        loadingFutures.add(loadingKeysFuture);
+        registerKeyLoaderFuture(loadingKeysFuture);
     }
 
     @Override
     public void loadAllFromStore(List<Data> keys, boolean replaceExistingValues) {
         if (!keys.isEmpty()) {
             Future f = recordStoreLoader.loadValues(keys, replaceExistingValues);
-            loadingFutures.add(f);
+            valueLoadingFutures.add(f);
         }
 
-        keyLoader.trackLoading(false, null);
+        Future<?> loadingKeysFuture = keyLoader.trackLoading(false, null);
+        registerKeyLoaderFuture(loadingKeysFuture);
     }
 
     @Override
     public void updateLoadStatus(boolean lastBatch, Throwable exception) {
-        keyLoader.trackLoading(lastBatch, exception);
+        Future<?> loadingKeysFuture = keyLoader.trackLoading(lastBatch, exception);
+        registerKeyLoaderFuture(loadingKeysFuture);
 
         if (lastBatch) {
             logger.finest("Completed loading map " + name + " on partitionId=" + partitionId);
+        }
+    }
+
+    private void registerKeyLoaderFuture(Future<?> toRegister) {
+        for (Iterator<Future> it = keyLoadingFutures.iterator(); it.hasNext(); ) {
+            Future registered = it.next();
+            if (registered.isDone()) {
+                it.remove();
+            }
+        }
+        if (!keyLoadingFutures.contains(toRegister)) {
+            keyLoadingFutures.add(toRegister);
         }
     }
 
@@ -139,21 +155,23 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void checkIfLoaded() {
-        if (loadingFutures.isEmpty()) {
+        if (keyLoadingFutures.isEmpty() && valueLoadingFutures.isEmpty()) {
             return;
         }
 
         if (isLoaded()) {
-            List<Future> doneFutures = null;
+            List<Future> doneFutures = new ArrayList<Future>();
             try {
-                doneFutures = FutureUtil.getAllDone(loadingFutures);
+                doneFutures.addAll(FutureUtil.getAllDone(keyLoadingFutures));
+                doneFutures.addAll(FutureUtil.getAllDone(valueLoadingFutures));
                 // check all finished loading futures for exceptions
                 FutureUtil.checkAllDone(doneFutures);
             } catch (Exception e) {
                 logger.severe("Exception while loading map " + name, e);
                 ExceptionUtil.rethrow(e);
             } finally {
-                loadingFutures.removeAll(doneFutures);
+                keyLoadingFutures.removeAll(doneFutures);
+                valueLoadingFutures.removeAll(doneFutures);
             }
         } else {
             keyLoader.triggerLoadingWithDelay();
