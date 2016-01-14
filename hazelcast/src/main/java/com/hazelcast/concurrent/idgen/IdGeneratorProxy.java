@@ -21,63 +21,29 @@ import com.hazelcast.core.IdGenerator;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
-
 public class IdGeneratorProxy
         extends AbstractDistributedObject<IdGeneratorService>
         implements IdGenerator {
 
-    public static final int BLOCK_SIZE = 10000;
-
-    private static final AtomicIntegerFieldUpdater<IdGeneratorProxy> RESIDUE_UPDATER = AtomicIntegerFieldUpdater
-            .newUpdater(IdGeneratorProxy.class, "residue");
-    private static final AtomicLongFieldUpdater<IdGeneratorProxy> LOCAL_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(IdGeneratorProxy.class, "local");
-
     private final String name;
-    private final IAtomicLong blockGenerator;
-    private volatile int residue = BLOCK_SIZE;
-    private volatile long local = -1L;
+
+    private final IdGeneratorImpl idGeneratorImpl;
+
 
     public IdGeneratorProxy(IAtomicLong blockGenerator, String name, NodeEngine nodeEngine, IdGeneratorService service) {
         super(nodeEngine, service);
         this.name = name;
-        this.blockGenerator = blockGenerator;
+        this.idGeneratorImpl = new IdGeneratorImpl(blockGenerator);
     }
 
     @Override
     public boolean init(long id) {
-        if (id < 0) {
-            return false;
-        }
-        long step = (id / BLOCK_SIZE);
-
-        synchronized (this) {
-            boolean init = blockGenerator.compareAndSet(0, step + 1);
-            if (init) {
-                LOCAL_UPDATER.set(this, step);
-                RESIDUE_UPDATER.set(this, (int) (id % BLOCK_SIZE) + 1);
-            }
-            return init;
-        }
+        return idGeneratorImpl.init(id);
     }
 
     @Override
     public long newId() {
-        int value = RESIDUE_UPDATER.getAndIncrement(this);
-        if (value >= BLOCK_SIZE) {
-            synchronized (this) {
-                value = residue;
-                if (value >= BLOCK_SIZE) {
-                    LOCAL_UPDATER.set(this, blockGenerator.getAndIncrement());
-                    RESIDUE_UPDATER.set(this, 0);
-                }
-                //todo: we need to get rid of this.
-                return newId();
-            }
-        }
-        return local * BLOCK_SIZE + value;
+        return idGeneratorImpl.newId();
     }
 
     @Override
@@ -92,10 +58,6 @@ public class IdGeneratorProxy
 
     @Override
     protected void postDestroy() {
-        blockGenerator.destroy();
-
-        //todo: this behavior is racy; imagine what happens when destroy is called by different threads
-        LOCAL_UPDATER.set(this, -1);
-        RESIDUE_UPDATER.set(this, BLOCK_SIZE);
+        idGeneratorImpl.destroy();
     }
 }
