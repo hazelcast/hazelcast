@@ -16,111 +16,144 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import static java.lang.String.format;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
+import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT;
+import static com.hazelcast.internal.monitors.PerformanceMonitorPlugin.DISABLED;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.System.arraycopy;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * The PerformanceMonitor is a tool that provides insights in internal metrics. Currently the content of the
- * {@link MetricsRegistry} is being dumped.
+ * The PerformanceMonitor is a debugging tool that provides insight in all kinds of potential performance and stability issues.
+ * The actual logic to provide such insights, is placed in the {@link PerformanceMonitorPlugin}.
  */
 public class PerformanceMonitor {
 
-    final MetricsRegistry metricRegistry;
-    final HazelcastInstanceImpl hazelcastInstance;
-    final ILogger logger;
-    final InternalOperationService operationService;
-    final PerformanceLogFile performanceLogFile;
-    final boolean humanFriendlyFormat;
-    private final Node node;
-    private final MonitorThread monitorThread;
+    final NodeEngineImpl nodeEngine;
+    final boolean singleLine;
+    PerformanceLog performanceLog;
+    final AtomicReference<PerformanceMonitorPlugin[]> staticTasks = new AtomicReference<PerformanceMonitorPlugin[]>(
+            new PerformanceMonitorPlugin[0]
+    );
+
+    private final ILogger logger;
     private final boolean enabled;
+    private ScheduledExecutorService scheduler;
 
-    public PerformanceMonitor(HazelcastInstanceImpl hazelcastInstance) {
-        this.hazelcastInstance = hazelcastInstance;
-        this.node = hazelcastInstance.node;
-        this.operationService = node.nodeEngine.getOperationService();
-        this.logger = node.getLogger(PerformanceMonitor.class);
-        this.metricRegistry = hazelcastInstance.node.nodeEngine.getMetricsRegistry();
-        this.enabled = node.getGroupProperties().getBoolean(GroupProperty.PERFORMANCE_MONITOR_ENABLED);
-        this.humanFriendlyFormat = node.getGroupProperties().getBoolean(GroupProperty.PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT);
-        this.performanceLogFile = new PerformanceLogFile(this);
-        this.monitorThread = initMonitorThread();
+    public PerformanceMonitor(NodeEngineImpl nodeEngine) {
+        this.nodeEngine = nodeEngine;
+        this.logger = nodeEngine.getLogger(PerformanceMonitor.class);
+        GroupProperties props = nodeEngine.getGroupProperties();
+        this.enabled = props.getBoolean(PERFORMANCE_MONITOR_ENABLED);
+        this.singleLine = !props.getBoolean(PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT);
     }
 
-    private MonitorThread initMonitorThread() {
+
+    /**
+     * Registers a MonitorTask to it will be scheduled.
+     *
+     * This method is threadsafe.
+     *
+     * There is no checking for duplicate registration.
+     *
+     * If the PerformanceMonitor is disabled, the call is ignored.
+     *
+     * @param plugin the monitorTask to register
+     * @throws NullPointerException if monitorTask is null.
+     */
+    public void register(PerformanceMonitorPlugin plugin) {
+        checkNotNull(plugin, "monitorTask can't be null");
+
         if (!enabled) {
-            return null;
+            return;
         }
 
-        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
-        int delaySeconds = node.getGroupProperties().getSeconds(GroupProperty.PERFORMANCE_MONITOR_DELAY_SECONDS);
+        long periodMillis = plugin.getPeriodMillis();
+        if (periodMillis < -1) {
+            throw new IllegalArgumentException(plugin + " can't return a periodMillis smaller than -1");
+        }
 
-        return new MonitorThread(threadGroup, delaySeconds);
+        logger.finest(plugin.getClass().toString() + " is " + (periodMillis == DISABLED ? "disabled" : "enabled"));
+
+        if (periodMillis == DISABLED) {
+            return;
+        }
+
+        plugin.onStart();
+
+        if (periodMillis > 0) {
+            // it is a periodic task
+            scheduler.scheduleAtFixedRate(new MonitorTaskRunnable(plugin), 0, periodMillis, MILLISECONDS);
+        } else {
+            addStaticPlugin(plugin);
+        }
     }
 
-    public PerformanceMonitor start() {
-        if (!enabled) {
-            logger.finest("PerformanceMonitor disabled");
-            return this;
+    private void addStaticPlugin(PerformanceMonitorPlugin plugin) {
+        for (; ; ) {
+            PerformanceMonitorPlugin[] oldPlugins = staticTasks.get();
+            PerformanceMonitorPlugin[] newPlugins = new PerformanceMonitorPlugin[oldPlugins.length + 1];
+            arraycopy(oldPlugins, 0, newPlugins, 0, oldPlugins.length);
+            newPlugins[oldPlugins.length] = plugin;
+            if (staticTasks.compareAndSet(oldPlugins, newPlugins)) {
+                break;
+            }
         }
+    }
+
+    public void start() {
+        if (!enabled) {
+            return;
+        }
+
+        this.performanceLog = new PerformanceLog(this);
+        this.scheduler = new ScheduledThreadPoolExecutor(1, new PerformanceMonitorThreadFactory());
 
         logger.info("PerformanceMonitor started");
-
-        if (!node.getGroupProperties().getBoolean(GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED)) {
-            logger.info(format("To enable the SlowOperationDetector in the Performance log,"
-                    + " set the following property: -D%s=true", GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED));
-        }
-
-        monitorThread.start();
-        return this;
     }
 
-    private final class MonitorThread extends Thread {
-        private static final int DELAY_MILLIS = 1000;
-        private final int delaySeconds;
+    public void shutdown() {
+        if (!enabled) {
+            return;
+        }
 
-        private MonitorThread(HazelcastThreadGroup threadGroup, int delaySeconds) {
-            super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("PerformanceMonitor"));
-            this.delaySeconds = delaySeconds;
+        if (scheduler != null) {
+            scheduler.shutdownNow();
+        }
+    }
+
+    class MonitorTaskRunnable implements Runnable {
+        private final PerformanceMonitorPlugin plugin;
+
+        public MonitorTaskRunnable(PerformanceMonitorPlugin plugin) {
+            this.plugin = plugin;
         }
 
         @Override
         public void run() {
-            try {
-                while (node.getState() == NodeState.ACTIVE) {
-                    performanceLogFile.render();
-                    sleep();
-                }
-
-                // always write the sensors at the end when shutting down.
-                performanceLogFile.render();
-            } catch (Throwable t) {
-                logger.warning(t.getMessage(), t);
-            }
+            performanceLog.render(plugin);
         }
+    }
 
-        private void sleep() {
-            for (int k = 0; k < delaySeconds; k++) {
-                try {
-                    Thread.sleep(DELAY_MILLIS);
-                } catch (InterruptedException e) {
-                    // we can eat the interrupt since we'll check node.isActive.
-                    return;
-                }
+    private class PerformanceMonitorThreadFactory implements ThreadFactory {
+        private final HazelcastThreadGroup hzThreadGroup = nodeEngine.getNode().getHazelcastThreadGroup();
 
-                if (performanceLogFile.isRenderingForced()) {
-                    logger.info("Detected a request to update the Performance Log");
-                    return;
-                }
-            }
+        @Override
+        public Thread newThread(Runnable target) {
+            return new Thread(
+                    hzThreadGroup.getInternalThreadGroup(),
+                    target,
+                    hzThreadGroup.getThreadNamePrefix("PerformanceMonitorThread"));
         }
     }
 }

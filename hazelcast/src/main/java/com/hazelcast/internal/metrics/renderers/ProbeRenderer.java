@@ -21,8 +21,6 @@ package com.hazelcast.internal.metrics.renderers;
  */
 public interface ProbeRenderer {
 
-    void start();
-
     void renderLong(String name, long value);
 
     void renderDouble(String name, double value);
@@ -31,7 +29,4 @@ public interface ProbeRenderer {
 
     void renderNoValue(String name);
 
-    void finish();
-
-    String getResult();
 }

@@ -114,14 +114,7 @@ public enum GroupProperty implements HazelcastProperty {
      */
     PERFORMANCE_METRICS_LEVEL("hazelcast.performance.metric.level", ProbeLevel.MANDATORY.name()),
 
-    /**
-     * The delay in seconds between monitor of the performance.
-     * <p/>
-     * The default is 30 seconds.
-     */
-    PERFORMANCE_MONITOR_DELAY_SECONDS("hazelcast.performance.monitor.delay.seconds", 30, SECONDS),
-
-    /**
+     /**
      * The PerformanceMonitor uses a rolling file approach to prevent eating too much disk space.
      * <p/>
      * This property sets the maximum size in MB for a single file.
@@ -147,6 +140,75 @@ public enum GroupProperty implements HazelcastProperty {
      * The default is true.
      */
     PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT("hazelcast.performance.monitor.human.friendly.format", true),
+
+    /**
+     * The period in seconds the PerformanceMonitor SlowOperationPlugin runs.
+     *
+     * With the slow operation plugin, slow executing operation can be found. This is done by checking
+     * on the caller side which operations take a lot of time executing.
+     *
+     * This plugin is very cheap to use.
+     *
+     * If set to 0, the plugin is disabled.
+     */
+    PERFORMANCE_MONITOR_SLOW_OPERATIONS_PERIOD_SECONDS(
+            "hazelcast.performance.monitor.slowoperations.period.seconds", 60, SECONDS),
+
+    /**
+     * The period in seconds the PerformanceMonitor PendingInvocationPlugin runs.
+     *
+     * With the pending invocation plugins an aggregation is made per type of operation how many pending
+     * invocations there are.
+     *
+     * This plugin is very cheap to use.
+     *
+     * If set to 0, the plugin is disabled.
+     */
+    PERFORMANCE_MONITOR_PENDING_INVOCATIONS_PERIOD_SECONDS(
+            "hazelcast.performance.monitor.pending.invocations.period.seconds", 0, SECONDS),
+
+    /**
+     * The minimum number of invocations per type of operation before it start logging this particular operation.
+     */
+    PERFORMANCE_MONITOR_PENDING_INVOCATIONS_THRESHOLD("hazelcast.performance.monitor.pending.invocations.threshold", 1),
+
+
+    /**
+     * The period in seconds the PerformanceMonitor OverloadedConnectionPlugin runs.
+     *
+     * With the OverloadedConnectionsPlugin one can see what is going on inside a connection with a huge
+     * number of pending packets. It makes use of sampling to give some impression of the content.
+     *
+     * This plugin can be very expensive to use and should only be used as a debugging aid; should not be
+     * used in production due to the fact that packets could be deserialized.
+     *
+     * If set to 0, the plugin is disabled.
+     */
+    PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_PERIOD_SECONDS(
+            "hazelcast.performance.monitor.overloaded.connections.period.seconds", 0, SECONDS),
+
+    /**
+     * The minimum number of packets in the connection before it is considered to be overloaded.
+     */
+    PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_THRESHOLD("hazelcast.performance.monitor.overloaded.connections.threshold", 10000),
+
+    /**
+     * The number of samples to take from a single overloaded connection. Increasing the number of packes gives
+     * more accurracy of the content, but it will come at greater price.
+     */
+    PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_SAMPLES("hazelcast.performance.monitor.overloaded.connections.samples", 1000),
+
+    /**
+     * The period in seconds the PerformanceMonitor MetricsPlugin runs.
+     *
+     * The MetricsPlugin does nothing more than frequently writing the content of the MetricsRegistry
+     * to the logfile. For debugging purposes make sure the {@link #PERFORMANCE_METRICS_LEVEL} is set to debug.
+     *
+     * This plugin is very cheap to use.
+     *
+     * If set to 0, the plugin is disabled.
+     */
+    PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS("hazelcast.performance.monitor.metrics.period.seconds", 60, SECONDS),
 
     /**
      * The number of threads doing socket input and the number of threads doing socket output.

@@ -33,6 +33,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public final class OperatingSystemMetricSet {
 
     private static final double PERCENTAGE_MULTIPLIER = 100d;
+    private static final Object[] EMPTY_ARGS = new Object[0];
 
     private OperatingSystemMetricSet() {
     }
@@ -83,7 +84,7 @@ public final class OperatingSystemMetricSet {
                     new LongProbeFunction() {
                         @Override
                         public long get(Object bean) throws Exception {
-                            return (Long) method.invoke(bean);
+                            return (Long) method.invoke(bean, EMPTY_ARGS);
                         }
                     });
         } else {
@@ -91,7 +92,7 @@ public final class OperatingSystemMetricSet {
                     new DoubleProbeFunction() {
                         @Override
                         public double get(Object bean) throws Exception {
-                            return (Double) method.invoke(bean);
+                            return (Double) method.invoke(bean, EMPTY_ARGS);
                         }
                     });
         }

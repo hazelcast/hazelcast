@@ -55,12 +55,14 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
 
     private static final long TIMEOUT = 3;
 
+    @SuppressWarnings("checkstyle:visibilitymodifier")
+    @Probe(name = "out.writeQueueSize")
+    public final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
+    @SuppressWarnings("checkstyle:visibilitymodifier")
+    @Probe(name = "out.priorityWriteQueueSize")
+    public final Queue<OutboundFrame> urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
     @Probe(name = "out.eventCount")
     private final SwCounter eventCount = newSwCounter();
-    @Probe(name = "out.writeQueueSize")
-    private final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
-    @Probe(name = "out.priorityWriteQueueSize")
-    private final Queue<OutboundFrame> urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
     private ByteBuffer outputBuffer;
     @Probe(name = "out.bytesWritten")

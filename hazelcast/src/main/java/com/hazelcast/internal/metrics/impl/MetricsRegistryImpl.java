@@ -234,11 +234,9 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     public void render(ProbeRenderer renderer) {
         checkNotNull(renderer, "renderer can't be null");
 
-        renderer.start();
         for (ProbeInstance probeInstance : getSortedProbeInstances()) {
             render(renderer, probeInstance);
         }
-        renderer.finish();
     }
 
     /**
