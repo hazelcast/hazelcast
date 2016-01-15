@@ -124,6 +124,11 @@
 
     <load-balancer type="random"/>
 
+    <!--
+        Beware that near-cache eviction configuration is different for NATIVE in-memory format.
+        Proper eviction configuration example for NATIVE in-memory format :
+           `<eviction max-size-policy="USED_NATIVE_MEMORY_SIZE" eviction-policy="LFU" size="60"/>`
+    -->
     <near-cache name="default">
         <max-size>2000</max-size>
         <time-to-live-seconds>90</time-to-live-seconds>
