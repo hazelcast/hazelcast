@@ -27,11 +27,6 @@ public final class Protocols {
     public static final String CLUSTER = "HZC";
 
     /**
-     * Protocol that is used for clients(java, c++ , c# client)
-     */
-    public static final String CLIENT_BINARY = "CB1";
-
-    /**
      * New Client Protocol that is used for clients(java, c++ , c# client)
      */
     public static final String CLIENT_BINARY_NEW = "CB2";

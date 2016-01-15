@@ -16,15 +16,12 @@
 
 package com.hazelcast.mapreduce.impl;
 
-import com.hazelcast.mapreduce.impl.client.ClientCancellationRequest;
-import com.hazelcast.mapreduce.impl.client.ClientJobProcessInformationRequest;
-import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
+import com.hazelcast.internal.serialization.PortableHook;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.internal.serialization.PortableHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
@@ -41,9 +38,6 @@ public class MapReducePortableHook
     //CHECKSTYLE:OFF
     public static final int F_ID = FactoryIdHelper.getFactoryId(MAP_REDUCE_PORTABLE_FACTORY, MAP_REDUCE_PORTABLE_FACTORY_ID);
 
-    public static final int CLIENT_JOB_PROCESS_INFO_REQUEST = 1;
-    public static final int CLIENT_CANCELLATION_REQUEST = 2;
-    public static final int CLIENT_MAP_REDUCE_REQUEST = 3;
     public static final int TRANSFERABLE_PROCESS_INFORMATION = 4;
     //CHECKSTYLE:ON
 
@@ -61,24 +55,6 @@ public class MapReducePortableHook
             private final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[LENGTH];
 
             {
-                constructors[CLIENT_JOB_PROCESS_INFO_REQUEST] = new ConstructorFunction<Integer, Portable>() {
-                    @Override
-                    public Portable createNew(Integer arg) {
-                        return new ClientJobProcessInformationRequest();
-                    }
-                };
-                constructors[CLIENT_CANCELLATION_REQUEST] = new ConstructorFunction<Integer, Portable>() {
-                    @Override
-                    public Portable createNew(Integer arg) {
-                        return new ClientCancellationRequest();
-                    }
-                };
-                constructors[CLIENT_MAP_REDUCE_REQUEST] = new ConstructorFunction<Integer, Portable>() {
-                    @Override
-                    public Portable createNew(Integer arg) {
-                        return new ClientMapReduceRequest();
-                    }
-                };
                 constructors[TRANSFERABLE_PROCESS_INFORMATION] = new ConstructorFunction<Integer, Portable>() {
                     @Override
                     public Portable createNew(Integer arg) {

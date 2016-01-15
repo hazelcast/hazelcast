@@ -16,13 +16,7 @@
 
 package com.hazelcast.client.impl.client;
 
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
-
-import java.io.IOException;
-
-public final class ClientPrincipal implements Portable {
+public final class ClientPrincipal {
 
     private String uuid;
     private String ownerUuid;
@@ -41,28 +35,6 @@ public final class ClientPrincipal implements Portable {
 
     public String getOwnerUuid() {
         return ownerUuid;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return ClientPortableHook.ID;
-    }
-
-    @Override
-    public int getClassId() {
-        return ClientPortableHook.PRINCIPAL;
-    }
-
-    @Override
-    public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("uuid", uuid);
-        writer.writeUTF("ownerUuid", ownerUuid);
-    }
-
-    @Override
-    public void readPortable(PortableReader reader) throws IOException {
-        uuid = reader.readUTF("uuid");
-        ownerUuid = reader.readUTF("ownerUuid");
     }
 
     @Override

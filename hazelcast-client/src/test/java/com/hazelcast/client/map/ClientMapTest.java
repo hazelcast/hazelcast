@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.impl.client.AuthenticationRequest;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.map.helpers.GenericEvent;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
@@ -36,9 +36,12 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.NamedPortable;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.TestSerializationConstants;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -93,7 +96,16 @@ public class ClientMapTest extends HazelcastTestSupport {
                         .setImplementation(transientMapStore));
 
         server = hazelcastFactory.newHazelcastInstance(config);
-        client = hazelcastFactory.newHazelcastClient(null);
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getSerializationConfig()
+                    .addPortableFactory(TestSerializationConstants.PORTABLE_FACTORY_ID, new PortableFactory() {
+                        public Portable create(int classId) {
+                            return new NamedPortable();
+                        }
+
+                    });
+        client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
     @After
@@ -649,7 +661,7 @@ public class ClientMapTest extends HazelcastTestSupport {
     @Test
     @SuppressWarnings("deprecation")
     public void testPredicateListenerWithPortableKey() throws InterruptedException {
-        IMap<AuthenticationRequest, Integer> tradeMap = createMap();
+        IMap<Portable, Integer> tradeMap = createMap();
 
         final AtomicInteger atomicInteger = new AtomicInteger(0);
         final CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -660,9 +672,10 @@ public class ClientMapTest extends HazelcastTestSupport {
                 countDownLatch.countDown();
             }
         };
-        AuthenticationRequest key = new AuthenticationRequest(new UsernamePasswordCredentials("a", "b"));
+
+        NamedPortable key = new NamedPortable("a", 1);
         tradeMap.addEntryListener(listener, key, true);
-        AuthenticationRequest key2 = new AuthenticationRequest(new UsernamePasswordCredentials("a", "c"));
+        NamedPortable key2 = new NamedPortable("b", 2);
         tradeMap.put(key2, 1);
 
         assertFalse(countDownLatch.await(5, TimeUnit.SECONDS));

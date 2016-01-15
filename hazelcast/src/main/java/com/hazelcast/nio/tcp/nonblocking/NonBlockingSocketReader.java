@@ -21,11 +21,10 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.TextReadHandler;
 import com.hazelcast.nio.tcp.NewClientReadHandler;
-import com.hazelcast.nio.tcp.OldClientReadHandler;
-import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.ReadHandler;
-import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.SocketWriter;
+import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.util.counters.Counter;
 import com.hazelcast.util.counters.SwCounter;
 
@@ -38,7 +37,6 @@ import java.nio.channels.SelectionKey;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.nio.ConnectionType.MEMBER;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
-import static com.hazelcast.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.util.Clock.currentTimeMillis;
@@ -207,10 +205,6 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
                 connection.setType(MEMBER);
                 socketWriter.setProtocol(CLUSTER);
                 readHandler = ioService.createReadHandler(connection);
-            } else if (CLIENT_BINARY.equals(protocol)) {
-                configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
-                socketWriter.setProtocol(CLIENT_BINARY);
-                readHandler = new OldClientReadHandler(connection, ioService);
             } else if (CLIENT_BINARY_NEW.equals(protocol)) {
                 configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
                 socketWriter.setProtocol(CLIENT_BINARY_NEW);

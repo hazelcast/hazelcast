@@ -85,13 +85,6 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>hazelcast-client-legacy/target</directory>
-            <outputDirectory>/lib/</outputDirectory>
-            <includes>
-                <include>hazelcast-client-legacy-${project.version}.jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>hazelcast/target/</directory>
             <outputDirectory>/lib/</outputDirectory>
             <includes>

@@ -102,11 +102,6 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public void handleClientPacket(Packet p) {
-        node.clientEngine.handlePacket(p);
-    }
-
-    @Override
     public void handleClientMessage(ClientMessage cm, Connection connection) {
         node.clientEngine.handleClientMessage(cm, connection);
     }

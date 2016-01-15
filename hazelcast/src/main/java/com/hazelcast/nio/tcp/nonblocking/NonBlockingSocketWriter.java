@@ -18,11 +18,10 @@ package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.OutboundFrame;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.ascii.TextWriteHandler;
 import com.hazelcast.nio.tcp.NewClientWriteHandler;
-import com.hazelcast.nio.tcp.OldClientWriteHandler;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
@@ -41,7 +40,6 @@ import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
-import static com.hazelcast.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.util.Clock.currentTimeMillis;
@@ -178,9 +176,6 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
                 writeHandler = ioService.createWriteHandler(connection);
                 outputBuffer.put(stringToBytes(CLUSTER));
                 registerOp(SelectionKey.OP_WRITE);
-            } else if (CLIENT_BINARY.equals(protocol)) {
-                configureBuffers(ioService.getSocketClientSendBufferSize() * KILO_BYTE);
-                writeHandler = new OldClientWriteHandler();
             } else if (CLIENT_BINARY_NEW.equals(protocol)) {
                 configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
                 writeHandler = new NewClientWriteHandler();

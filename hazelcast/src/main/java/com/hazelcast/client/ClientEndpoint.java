@@ -38,13 +38,6 @@ public interface ClientEndpoint extends Client {
      */
     boolean isAlive();
 
-    //TODO remove after requests removed
-    void sendResponse(Object response, long callId);
-
-    //TODO remove after requests removed
-    void sendEvent(Object key, Object event, long callId);
-
-
     /**
      * Adds a remove callable to be called when endpoint is destroyed to clean related listener
      * Following line will be called when endpoint destroyed :
