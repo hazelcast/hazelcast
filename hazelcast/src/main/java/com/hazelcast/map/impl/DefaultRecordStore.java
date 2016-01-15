@@ -653,7 +653,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public Data readBackupData(Data key) {
+    public Object readBackup(Data key) {
         final long now = getNow();
 
         final Record record = getRecord(key);
@@ -672,7 +672,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         final Object value = record.getValue();
         mapServiceContext.interceptAfterGet(name, value);
         // this serialization step is needed not to expose the object, see issue 1292
-        return mapServiceContext.toData(value);
+        return value;
+    }
+
+    @Override
+    public Data readBackupData(Data key) {
+        Object data = readBackup(key);
+        if (data == null) {
+            return null;
+        }
+        return mapServiceContext.toData(data);
     }
 
     @Override

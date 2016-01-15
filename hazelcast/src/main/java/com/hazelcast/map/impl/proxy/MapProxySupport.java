@@ -23,6 +23,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
@@ -156,6 +157,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected final PartitioningStrategy partitionStrategy;
     private MapServiceContext mapServiceContext;
     private InternalPartitionService partitionService;
+    private final boolean defensiveCopyObjectMemoryFormat;
 
     protected MapProxySupport(final String name, final MapService service, NodeEngine nodeEngine) {
         super(nodeEngine, service);
@@ -165,6 +167,11 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         localMapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         this.partitionService = getNodeEngine().getPartitionService();
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+        boolean defensiveCopy = getMapConfig().isDefensiveCopyObjectMemoryFormat();
+        if (!InMemoryFormat.OBJECT.equals(getMapConfig().getInMemoryFormat())) {
+            defensiveCopy = true;
+        }
+        defensiveCopyObjectMemoryFormat = defensiveCopy;
     }
 
     @Override
@@ -268,7 +275,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
         // todo action for read-backup true is not well tested.
         if (mapConfig.isReadBackupData()) {
-            final Object fromBackup = readBackupDataOrNull(key);
+            final Object fromBackup = readBackup(key);
             if (fromBackup != null) {
                 return fromBackup;
             }
@@ -283,6 +290,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             }
         }
         return value;
+    }
+
+    private Object readBackup(Data key) {
+        final Object toReturn;
+        if (defensiveCopyObjectMemoryFormat) {
+            toReturn = readBackupDataOrNull(key);
+        } else {
+            toReturn = readBackupOrNull(key);
+        }
+        return toReturn;
     }
 
     private boolean notOwnerPartitionForKey(Data key) {
@@ -348,7 +365,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return NearCache.NULL_OBJECT.equals(cached);
     }
 
-    private Data readBackupDataOrNull(Data key) {
+    private RecordStore getRecordStore(Data key) {
         final MapService mapService = getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
@@ -361,6 +378,22 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
         final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         final RecordStore recordStore = partitionContainer.getExistingRecordStore(name);
+        if (recordStore == null) {
+            return null;
+        }
+        return recordStore;
+    }
+
+    private Object readBackupOrNull(Data key) {
+        RecordStore recordStore = getRecordStore(key);
+        if (recordStore == null) {
+            return null;
+        }
+        return recordStore.readBackup(key);
+    }
+
+    private Data readBackupDataOrNull(Data key) {
+        RecordStore recordStore = getRecordStore(key);
         if (recordStore == null) {
             return null;
         }
