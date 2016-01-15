@@ -23,7 +23,9 @@ import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
+import com.hazelcast.util.MutableInteger;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,6 +34,8 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Integer.getInteger;
 import static java.util.Collections.synchronizedSet;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -43,22 +47,26 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class PacketSampler extends Thread {
     // the delay between taking samples. Sampling has quite a lot of overhead, so doing it too frequent, will change
     // the behavior of the system.
-    private static final int INTERVAL_SECONDS = Integer.getInteger("hazelcast.io.packetSampler.intervalSeconds", 0);
+    private static final int INTERVAL_SECONDS = getInteger("hazelcast.io.packetSampler.intervalSeconds", 0);
     // the minimum number of packets in the write queue. If there are less packets than the threshold, the connection
     // isn't sampled.
-    private static final int THRESHOLD = Integer.getInteger("hazelcast.io.packetSampler.threshold", 10000);
+    private static final int THRESHOLD = getInteger("hazelcast.io.packetSampler.threshold", 10000);
     // the number of samples taken. The more samples, the more precise the information, but the more overhead (since it
     // involves deserialization).
-    private static final int SAMPLE_COUNT = Integer.getInteger("hazelcast.io.packetSampler.sampleCount", 1000);
+    private static final int SAMPLE_COUNT = getInteger("hazelcast.io.packetSampler.sampleCount", 1000);
+    // if the output should be put on a single line, or spread over multiple lines
+    private static final boolean ONE_LINER = parseBoolean(System.getProperty("hazelcast.io.packetSampler.oneLiner", "false"));
+    private static final double HUNDRED = 100d;
 
     private volatile boolean stop;
     private final ILogger logger;
     private final IOService ioService;
     private final StringBuilder sb = new StringBuilder();
-    private final Map<String, Integer> occurrenceMap = new HashMap<String, Integer>();
+    private final Map<String, MutableInteger> occurrenceMap = new HashMap<String, MutableInteger>();
     private final ArrayList<OutboundFrame> packets = new ArrayList<OutboundFrame>();
     private final Random random = new Random();
     private final Set<TcpIpConnection> connections = synchronizedSet(new HashSet<TcpIpConnection>());
+    private final NumberFormat defaultFormat = NumberFormat.getPercentInstance();
 
     public PacketSampler(
             HazelcastThreadGroup hazelcastThreadGroup,
@@ -116,25 +124,72 @@ public class PacketSampler extends Thread {
         NonBlockingSocketWriter writer = (NonBlockingSocketWriter) connection.getSocketWriter();
         Queue<OutboundFrame> q = priority ? writer.urgentWriteQueue : writer.writeQueue;
 
-        if (!sample(q)) {
+        int sampleCount = sample(q);
+        if (sampleCount < 0) {
             return;
         }
 
-        sb.append("\n\t").append(connection).append('\n');
-        if (priority) {
-            sb.append("\turgent-packets:").append(packets.size()).append('\n');
+        if (ONE_LINER) {
+            samplesToOneLineString(connection, priority, sampleCount);
         } else {
-            sb.append("\tpackets:").append(packets.size()).append('\n');
-        }
-        sb.append("\tsample-count:").append(occurrenceMap.size()).append('\n');
-        sb.append("\tsamples:\n");
-
-        for (Map.Entry<String, Integer> entry : occurrenceMap.entrySet()) {
-            sb.append('\t').append('\t').append(entry.getKey()).append('=').append(entry.getValue()).append('\n');
+            samplesToString(connection, priority, sampleCount);
         }
 
         logger.info(sb.toString());
     }
+
+    private void samplesToString(TcpIpConnection connection, boolean priority, int sampleCount) {
+        sb.append("\n\t").append(connection).append('\n');
+        if (priority) {
+            sb.append("\turgentPackets:").append(packets.size()).append('\n');
+        } else {
+            sb.append("\tpackets:").append(packets.size()).append('\n');
+        }
+        sb.append("\ttotalSampleCount:").append(sampleCount).append('\n');
+        sb.append("\tsamples:\n");
+
+        defaultFormat.setMinimumFractionDigits(3);
+        for (Map.Entry<String, MutableInteger> entry : occurrenceMap.entrySet()) {
+            String key = entry.getKey();
+            int value = entry.getValue().value;
+            double percentage = (1d * value) / sampleCount;
+
+            sb.append('\t').append('\t').append(key)
+                    .append(" sampleCount:").append(value)
+                    .append(" ").append(defaultFormat.format(percentage)).append('\n');
+        }
+    }
+
+    private void samplesToOneLineString(TcpIpConnection connection, boolean priority, int sampleCount) {
+        sb.append(connection).append("(");
+        if (priority) {
+            sb.append("urgentPackets=").append(packets.size()).append(',');
+        } else {
+            sb.append("packets=").append(packets.size()).append(',');
+        }
+        sb.append("totalSampleCount=").append(sampleCount).append(',');
+        sb.append("samples=[");
+
+        boolean first = true;
+        for (Map.Entry<String, MutableInteger> entry : occurrenceMap.entrySet()) {
+            String key = entry.getKey();
+            int value = entry.getValue().value;
+            double percentage = (HUNDRED * value) / sampleCount;
+
+            if (first) {
+                first = false;
+            } else {
+                sb.append(',');
+            }
+
+            sb.append(key).append("[")
+                    .append("sampleCount=").append(value)
+                    .append(",percentage=").append(percentage)
+                    .append(']');
+        }
+        sb.append(']');
+    }
+
 
     private void clear() {
         sb.setLength(0);
@@ -142,32 +197,39 @@ public class PacketSampler extends Thread {
         packets.clear();
     }
 
-    private boolean sample(Queue<OutboundFrame> q) {
+    /**
+     * Samples the queue.
+     *
+     * @param q the queue to sample.
+     * @return the number of samples. If there were not sufficient samples, -1 is returned.
+     */
+    private int sample(Queue<OutboundFrame> q) {
         for (OutboundFrame frame : q) {
             packets.add(frame);
         }
 
         if (packets.size() < THRESHOLD) {
-            return false;
+            return -1;
         }
 
         int sampleCount = Math.min(SAMPLE_COUNT, packets.size());
-
+        int actualSampleCount = 0;
         for (int k = 0; k < sampleCount; k++) {
             OutboundFrame packet = packets.get(random.nextInt(packets.size()));
             String key = toKey(packet);
 
             if (key != null) {
-                Integer value = occurrenceMap.get(key);
-                if (value == null) {
-                    value = 0;
+                actualSampleCount++;
+                MutableInteger counter = occurrenceMap.get(key);
+                if (counter == null) {
+                    counter = new MutableInteger();
+                    occurrenceMap.put(key, counter);
                 }
-                value++;
-                occurrenceMap.put(key, value);
+                counter.value++;
             }
         }
 
-        return true;
+        return actualSampleCount;
     }
 
     private String toKey(OutboundFrame packet) {
