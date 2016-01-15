@@ -10,7 +10,11 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.MapStoreFactory;
+import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.mapstore.writebehind.TestMapUsingMapStoreBuilder;
+import com.hazelcast.nio.Address;
+import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -34,6 +38,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -48,6 +53,54 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MapLoaderTest extends HazelcastTestSupport {
+
+    @Test
+    public void testSenderAndBackupTerminates_AfterInitialLoad() throws InterruptedException {
+        String name = randomString();
+        Config config = new Config();
+        MapConfig mapConfig = config.getMapConfig(name);
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new DummyMapLoader());
+        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(5);
+        HazelcastInstance[] instances = instanceFactory.newInstances(config);
+
+        IMap<Object, Object> map = instances[0].getMap(name);
+        map.clear();
+
+        HazelcastInstance[] ownerAndReplicas = findOwnerAndReplicas(instances, name);
+        ownerAndReplicas[0].getLifecycleService().terminate();
+        ownerAndReplicas[1].getLifecycleService().terminate();
+
+        map = ownerAndReplicas[3].getMap(name);
+        map.loadAll(false);
+        assertEquals(DummyMapLoader.SIZE, map.size());
+    }
+
+
+    private HazelcastInstance[] findOwnerAndReplicas(HazelcastInstance[] instances, String name) {
+        Node node = getNode(instances[0]);
+        InternalPartitionService partitionService = node.getPartitionService();
+        int partitionId = partitionService.getPartitionId(name);
+        InternalPartition partition = partitionService.getPartition(partitionId);
+        HazelcastInstance[] ownerAndReplicas = new HazelcastInstance[instances.length];
+        for (int i = 0; i < instances.length; i++) {
+            ownerAndReplicas[i] = getInstanceForAddress(instances, partition.getReplicaAddress(i));
+        }
+        return ownerAndReplicas;
+    }
+
+    private HazelcastInstance getInstanceForAddress(HazelcastInstance[] instances, Address address) {
+        for (HazelcastInstance instance : instances) {
+            Address instanceAddress = instance.getCluster().getLocalMember().getAddress();
+            if (address.equals(instanceAddress)) {
+                return instance;
+            }
+        }
+        throw new IllegalArgumentException();
+    }
 
     //https://github.com/hazelcast/hazelcast/issues/1770
     @Test
@@ -123,7 +176,6 @@ public class MapLoaderTest extends HazelcastTestSupport {
         assertLoadAllKeysCount(loader, 1);
         assertPredicateResultCorrect(map, predicate);
     }
-
 
     @Test
     public void testGetAll_putsLoadedItemsToIMap() throws Exception {
@@ -228,38 +280,45 @@ public class MapLoaderTest extends HazelcastTestSupport {
         });
     }
 
-    private class NodeBuilder {
-        private final int nodeCount;
-        private final Config config;
-        private final Random random = new Random();
-        private final TestHazelcastInstanceFactory factory;
-        private HazelcastInstance[] nodes;
+    private static class DummyMapLoader implements MapLoader<Integer, Integer> {
 
-        public NodeBuilder(int nodeCount, Config config) {
-            this.nodeCount = nodeCount;
-            this.config = config;
-            this.factory = createHazelcastInstanceFactory(nodeCount);
+        static final int SIZE = 1000;
+
+        final Map<Integer, Integer> map = new ConcurrentHashMap<Integer, Integer>(SIZE);
+
+        public DummyMapLoader() {
+            for (int i = 0; i < SIZE; i++) {
+                map.put(i, i);
+            }
         }
 
-        public NodeBuilder build() {
-            nodes = factory.newInstances(config);
-            return this;
+        @Override
+        public Integer load(Integer key) {
+            return map.get(key);
         }
 
-        public HazelcastInstance getRandomNode() {
-            final int nodeIndex = random.nextInt(nodeCount);
-            return nodes[nodeIndex];
+        @Override
+        public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
+            HashMap<Integer, Integer> hashMap = new HashMap<Integer, Integer>();
+            for (Integer key : keys) {
+                hashMap.put(key, map.get(key));
+            }
+            return hashMap;
+        }
+
+        @Override
+        public Iterable<Integer> loadAllKeys() {
+            return map.keySet();
         }
     }
 
     public static class SampleIndexableObjectMapLoader
             implements MapLoader<Integer, SampleIndexableObject>, MapStoreFactory<Integer, SampleIndexableObject> {
 
+        volatile boolean preloadValues = false;
         private SampleIndexableObject[] values = new SampleIndexableObject[10];
         private Set<Integer> keys = new HashSet<Integer>();
         private AtomicInteger loadAllKeysCallCount = new AtomicInteger(0);
-
-        volatile boolean preloadValues = false;
 
         public SampleIndexableObjectMapLoader() {
             for (int i = 0; i < 10; i++) {
@@ -342,6 +401,30 @@ public class MapLoaderTest extends HazelcastTestSupport {
         @Override
         public Map loadAll(Collection keys) {
             return Collections.singletonMap("key", "value");
+        }
+    }
+
+    private class NodeBuilder {
+        private final int nodeCount;
+        private final Config config;
+        private final Random random = new Random();
+        private final TestHazelcastInstanceFactory factory;
+        private HazelcastInstance[] nodes;
+
+        public NodeBuilder(int nodeCount, Config config) {
+            this.nodeCount = nodeCount;
+            this.config = config;
+            this.factory = createHazelcastInstanceFactory(nodeCount);
+        }
+
+        public NodeBuilder build() {
+            nodes = factory.newInstances(config);
+            return this;
+        }
+
+        public HazelcastInstance getRandomNode() {
+            final int nodeIndex = random.nextInt(nodeCount);
+            return nodes[nodeIndex];
         }
     }
 
