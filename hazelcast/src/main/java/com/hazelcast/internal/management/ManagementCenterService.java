@@ -351,8 +351,7 @@ public class ManagementCenterService {
             } catch (Throwable throwable) {
                 inspectOutputMemoryError(throwable);
                 if (!(throwable instanceof InterruptedException)) {
-                    logger.warning("Hazelcast Management Center Service will be shutdown due to exception.", throwable);
-                    shutdown();
+                    logger.warning("Exception occurred while calculating stats", throwable);
                 }
             }
         }
