@@ -67,18 +67,17 @@ final class MBeans {
 
     static HazelcastMBean createHazelcastMBeanOrNull(DistributedObject distributedObject,
                                                      ManagementService managementService) {
-        MBeanFactory mBeanFactory = getMBeanFactory(distributedObject);
+        MBeanFactory mBeanFactory = getMBeanFactory(distributedObject.getServiceName());
         return mBeanFactory == null ? null : mBeanFactory.createNew(distributedObject, managementService);
     }
 
-    static String getObjectTypeOrNull(DistributedObject distributedObject) {
-        MBeanFactory mBeanFactory = getMBeanFactory(distributedObject);
+    static String getObjectTypeOrNull(String serviceName) {
+        MBeanFactory mBeanFactory = getMBeanFactory(serviceName);
         return mBeanFactory == null ? null : mBeanFactory.getObjectType();
     }
 
 
-    private static MBeanFactory getMBeanFactory(DistributedObject distributedObject) {
-        String serviceName = distributedObject.getServiceName();
+    private static MBeanFactory getMBeanFactory(String serviceName) {
         return MBEAN_FACTORY_TYPES_REGISTRY.get(serviceName);
     }
 
