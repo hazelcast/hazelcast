@@ -14,6 +14,7 @@ import java.lang.management.ManagementFactory;
 import java.util.Hashtable;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 /**
@@ -44,6 +45,16 @@ final class MBeanDataHolder {
                 } catch (InstanceNotFoundException e) {
                     fail(e.getMessage());
                 }
+            }
+        });
+    }
+
+    void assertMBeanNotExistEventually(final String type, final String name) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                ObjectName object = getObjectName(type, name);
+                assertFalse(mbs.isRegistered(object));
             }
         });
     }

@@ -123,7 +123,7 @@ public class ManagementService implements DistributedObjectListener {
 
     @Override
     public void distributedObjectDestroyed(DistributedObjectEvent event) {
-        unregisterDistributedObject(event.getDistributedObject());
+        unregisterDistributedObject(event.getServiceName(), (String) event.getObjectName());
     }
 
     private void registerDistributedObject(DistributedObject distributedObject) {
@@ -150,17 +150,17 @@ public class ManagementService implements DistributedObjectListener {
 
     }
 
-    private void unregisterDistributedObject(DistributedObject distributedObject) {
-        final String objectType = getObjectTypeOrNull(distributedObject);
+    private void unregisterDistributedObject(String serviceName, String objectName) {
+        final String objectType = getObjectTypeOrNull(serviceName);
         if (objectType == null) {
             return;
         }
 
-        ObjectName objectName = createObjectName(objectType, distributedObject.getName());
+        ObjectName beanName = createObjectName(objectType, objectName);
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        if (mbs.isRegistered(objectName)) {
+        if (mbs.isRegistered(beanName)) {
             try {
-                mbs.unregisterMBean(objectName);
+                mbs.unregisterMBean(beanName);
             } catch (Exception e) {
                 logger.warning("Error while un-registering " + objectName, e);
             }
