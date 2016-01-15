@@ -125,8 +125,8 @@ public abstract class OperationThread extends HazelcastManagedThread {
     }
 
     private void processPartitionSpecificRunnable(PartitionSpecificRunnable runnable) {
-        currentOperationRunner = getOperationRunner(runnable.getPartitionId());
         try {
+            currentOperationRunner = getOperationRunner(runnable.getPartitionId());
             currentOperationRunner.run(runnable);
         } catch (Throwable e) {
             inspectOutputMemoryError(e);
@@ -137,8 +137,8 @@ public abstract class OperationThread extends HazelcastManagedThread {
     }
 
     private void processPacket(Packet packet) {
-        currentOperationRunner = getOperationRunner(packet.getPartitionId());
         try {
+            currentOperationRunner = getOperationRunner(packet.getPartitionId());
             currentOperationRunner.run(packet);
         } catch (Throwable e) {
             inspectOutputMemoryError(e);
@@ -149,8 +149,8 @@ public abstract class OperationThread extends HazelcastManagedThread {
     }
 
     private void processOperation(Operation operation) {
-        currentOperationRunner = getOperationRunner(operation.getPartitionId());
         try {
+            currentOperationRunner = getOperationRunner(operation.getPartitionId());
             currentOperationRunner.run(operation);
         } catch (Throwable e) {
             inspectOutputMemoryError(e);
