@@ -6,9 +6,6 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
-import java.lang.management.ManagementFactory;
-import java.util.Hashtable;
-
 import javax.management.AttributeNotFoundException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanException;
@@ -16,9 +13,11 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
+import java.lang.management.ManagementFactory;
+import java.util.Hashtable;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 /**
@@ -48,6 +47,16 @@ public final class JmxTestDataHolder {
                 } catch (InstanceNotFoundException e) {
                     fail(e.getMessage());
                 }
+            }
+        });
+    }
+
+    public void assertMBeanNotExistEventually(final String type, final String name) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                ObjectName object = getObjectName(type, name);
+                assertFalse(mbs.isRegistered(object));
             }
         });
     }
