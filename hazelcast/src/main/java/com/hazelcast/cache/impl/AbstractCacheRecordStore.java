@@ -32,7 +32,9 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
@@ -42,10 +44,8 @@ import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.configuration.Factory;
-import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
-import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheLoaderException;
 import javax.cache.integration.CacheWriter;
@@ -79,7 +79,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final int partitionId;
     protected final int partitionCount;
     protected final NodeEngine nodeEngine;
-    protected final InternalPartitionService partitionService;
     protected final AbstractCacheService cacheService;
     protected final CacheConfig cacheConfig;
     protected CRM records;
@@ -98,6 +97,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final EvictionChecker evictionChecker;
     protected final EvictionStrategy<Data, R, CRM> evictionStrategy;
     protected final boolean wanReplicationEnabled;
+    protected boolean primary;
 
     //CHECKSTYLE:OFF
     public AbstractCacheRecordStore(final String name, final int partitionId, final NodeEngine nodeEngine,
@@ -105,8 +105,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         this.name = name;
         this.partitionId = partitionId;
         this.nodeEngine = nodeEngine;
-        this.partitionService = nodeEngine.getPartitionService();
-        this.partitionCount = partitionService.getPartitionCount();
+        this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.cacheService = cacheService;
         this.cacheConfig = cacheService.getCacheConfig(name);
         this.cacheContext = cacheService.getOrCreateCacheContext(name);
@@ -151,8 +150,23 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (defaultExpiryPolicy instanceof Closeable) {
             cacheService.addCacheResource(name, (Closeable) defaultExpiryPolicy);
         }
+
+        init();
     }
     //CHECKSTYLE:ON
+
+    private boolean isPrimary() {
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        InternalPartition partition = partitionService.getPartition(partitionId, false);
+        Address owner = partition.getOwnerOrNull();
+        Address thisAddress = nodeEngine.getThisAddress();
+        return owner != null && owner.equals(thisAddress);
+    }
+
+    @Override
+    public void init() {
+        primary = isPrimary();
+    }
 
     protected boolean isReadThrough() {
         return cacheConfig.isReadThrough();
@@ -217,7 +231,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected boolean isInvalidationEnabled() {
-        return cacheContext.getInvalidationListenerCount() > 0;
+        return primary && cacheContext.getInvalidationListenerCount() > 0;
     }
 
     @Override
@@ -477,14 +491,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
-    protected ExpiryPolicy ttlToExpirePolicy(long ttl) {
-        if (ttl >= 0) {
-            return new ModifiedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS, ttl));
-        } else {
-            return new CreatedExpiryPolicy(Duration.ETERNAL);
-        }
-    }
-
     protected R createRecord(long expiryTime) {
         return createRecord(null, Clock.currentTimeMillis(), expiryTime);
     }
@@ -553,16 +559,14 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return createRecordWithExpiry(key, value, expiryTime, now, disableWriteThrough, completionId, origin);
     }
 
-    protected void onCreateRecordWithExpiryError(Data key, Object value, long expiryTime, long now,
-                                                 boolean disableWriteThrough, int completionId, String origin,
-                                                 R record, Throwable error) {
+    protected void onCreateRecordWithExpiryError(Data key, Object value, long expiryTime, long now, boolean disableWriteThrough,
+                                                 int completionId, String origin, R record, Throwable error) {
     }
 
     protected void onUpdateRecord(Data key, R record, Object value, Data oldDataValue) {
     }
 
-    protected void onUpdateRecordError(Data key, R record, Object value, Data newDataValue,
-                                       Data oldDataValue, Throwable error) {
+    protected void onUpdateRecordError(Data key, R record, Object value, Data newDataValue, Data oldDataValue, Throwable error) {
     }
 
     protected R updateRecord(Data key, R record, Object value, int completionId) {
@@ -605,16 +609,13 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             Data eventDataKey = toEventData(key);
             Data eventDataValue = toEventData(dataValue);
             Data eventDataOldValue = toEventData(dataOldValue);
-
             record.setValue(recordValue);
             onUpdateRecord(key, record, value, dataOldValue);
             updateHasExpiringEntry(record);
             invalidateEntry(key, source);
-
             if (isEventsEnabled()) {
                 publishEvent(createCacheUpdatedEvent(eventDataKey, eventDataValue, eventDataOldValue,
-                                                     record.getExpirationTime(), record.getAccessHit(),
-                                                     origin, completionId));
+                                                     record.getExpirationTime(), record.getAccessHit(), origin, completionId));
             }
             return record;
         } catch (Throwable error) {
@@ -674,8 +675,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         } catch (Exception e) {
             EmptyStatement.ignore(e);
         }
-        return updateRecordWithExpiry(key, value, record, expiryTime, now,
-                                      disableWriteThrough, completionId, source, origin);
+        return updateRecordWithExpiry(key, value, record, expiryTime, now, disableWriteThrough, completionId, source, origin);
     }
 
     protected void onDeleteRecord(Data key, R record, Data dataValue, boolean deleted) {
@@ -1033,8 +1033,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                     publishEvent(createCacheCompleteEvent(toEventData(key), completionId));
                 }
             }
-            onPutIfAbsent(key, value, expiryPolicy, source, disableWriteThrough,
-                          record, isExpired, saved);
+            onPutIfAbsent(key, value, expiryPolicy, source, disableWriteThrough, record, isExpired, saved);
             if (saved) {
                 updateHasExpiringEntry(record);
             }
@@ -1050,8 +1049,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy,
-                               String source, int completionId) {
+    public boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy, String source, int completionId) {
         return putIfAbsent(key, value, expiryPolicy, source, false, completionId);
     }
 
@@ -1496,5 +1494,4 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             return maxSizeChecker != null && maxSizeChecker.isReachedToMaxSize();
         }
     }
-
 }

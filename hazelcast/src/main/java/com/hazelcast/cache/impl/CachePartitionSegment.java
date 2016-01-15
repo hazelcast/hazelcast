@@ -91,6 +91,14 @@ public final class CachePartitionSegment {
         }
     }
 
+    public void init() {
+        synchronized (mutex) {
+            for (ICacheRecordStore cache : caches.values()) {
+                cache.init();
+            }
+        }
+    }
+
     public void clear() {
         synchronized (mutex) {
             for (ICacheRecordStore cache : caches.values()) {

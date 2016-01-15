@@ -307,6 +307,11 @@ public interface ICacheRecordStore {
     void removeAll(Set<Data> keys, int completionId);
 
     /**
+     * Initializes record store.
+     */
+    void init();
+
+    /**
      * Destroy is equivalent to below operations in the given order:
      * <ul>
      *     <li>clear all.</li>
