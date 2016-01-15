@@ -224,12 +224,20 @@
             the map will be evicted. Any integer between 0 and 100.
             If 25 is set for example, 25% of the entries will
             get evicted.
+
+            Beware that eviction mechanism is different for NATIVE in-memory format.
+            (It uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
+            For this in-memory format, `eviction-percentage` has no effect
         -->
         <eviction-percentage>25</eviction-percentage>
         <!--
             Minimum time in milliseconds which should pass before checking
             if a partition of this map is evictable or not.
             Default value is 100 millis.
+
+            Beware that eviction mechanism is different for NATIVE in-memory format.
+            (It uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
+            For this in-memory format, `minEvictionCheckMillis` has no effect
         -->
         <min-eviction-check-millis>100</min-eviction-check-millis>
 
@@ -247,6 +255,8 @@
             com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
             com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
             com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
+
+            Beware that `merge-policy` is not supported for NATIVE in-memory format.
         -->
         <merge-policy>com.hazelcast.map.merge.PutIfAbsentMapMergePolicy</merge-policy>
 
@@ -268,6 +278,11 @@
             </properties>
         </map-store>
 
+        <!--
+            Beware that near-cache eviction configuration is different for NATIVE in-memory format.
+            Proper eviction configuration example for NATIVE in-memory format :
+               `<eviction max-size-policy="USED_NATIVE_MEMORY_SIZE" eviction-policy="LFU" size="60"/>`
+        -->
         <near-cache>
             <max-size>10000</max-size>
             <time-to-live-seconds>0</time-to-live-seconds>
