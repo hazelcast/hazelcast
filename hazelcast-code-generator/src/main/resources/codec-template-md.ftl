@@ -117,7 +117,6 @@ The following error codes are defined in the system:
 
 | Error Name| Error Code| Description|
 |-----------|-----------|------------|
-|UNDEFINED|0|The error is not in the defined list of protocol errors.|
 |ARRAY_INDEX_OUT_OF_BOUNDS|1|Thrown to indicate that an array has been accessed with an illegal index. The index is either negative or greater than or equal to the size of the array.|
 |ARRAY_STORE|2| Thrown to indicate that an attempt has been made to store the wrong type of object into an array of objects. For example, the following code generates an ArrayStoreException:<br>Object x[] = new String[3];<br>x[0] = new Integer(0);|
 |AUTHENTICATION|3|The authentication failed.|
@@ -197,6 +196,8 @@ The following error codes are defined in the system:
 |STACK_OVERFLOW_ERROR|77|Thrown when a stack overflow occurs because an application recurses too deeply.|
 |NATIVE_OUT_OF_MEMORY_ERROR|78|Thrown when Hazelcast cannot allocate required native memory.|
 
+
+Please note that there may be error messages with an error code which is not listed in this table. The client can handle this situation differently based on the particular implementation (e.g. throw an unknown error code exception).
 
 <#list model?keys as key>
 <#assign map=model?values[key_index]?values/>
