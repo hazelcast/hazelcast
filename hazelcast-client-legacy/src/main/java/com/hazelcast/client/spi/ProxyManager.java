@@ -256,8 +256,7 @@ public final class ProxyManager {
 
     private long getRetryCountLimit() {
         ClientProperties clientProperties = client.getClientProperties();
-        int waitTime = clientProperties.getSeconds(INVOCATION_TIMEOUT_SECONDS);
-        long retryTimeoutInSeconds = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
+        long retryTimeoutInSeconds = clientProperties.getSeconds(INVOCATION_TIMEOUT_SECONDS);
         return retryTimeoutInSeconds / ClientInvocation.RETRY_WAIT_TIME_IN_SECONDS;
     }
 

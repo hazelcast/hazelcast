@@ -18,7 +18,6 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.HazelcastClientNotActiveException;
-import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
@@ -40,9 +39,6 @@ import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_INTERVAL;
-import static com.hazelcast.client.config.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
-
 public class ClientInvocation implements Runnable, ExecutionCallback {
 
     public static final long RETRY_WAIT_TIME_IN_SECONDS = 1;
@@ -56,12 +52,12 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
     private final EventHandler handler;
 
     private final ClientInvocationFuture clientInvocationFuture;
-    private final int heartBeatInterval;
+    private final long heartBeatIntervalMillis;
     private final Address address;
     private final int partitionId;
+    private final long retryTimeoutPointInMillis;
     private final Connection connection;
     private boolean urgent;
-    private long retryTimeoutPointInMillis;
     private volatile ClientConnection sendConnection;
 
     private ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
@@ -75,16 +71,9 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
         this.partitionId = partitionId;
         this.address = address;
         this.connection = connection;
-
-        ClientProperties clientProperties = client.getClientProperties();
-        long waitTime = clientProperties.getMillis(INVOCATION_TIMEOUT_SECONDS);
-        long waitTimeResolved = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
-        retryTimeoutPointInMillis = System.currentTimeMillis() + waitTimeResolved;
-
+        this.retryTimeoutPointInMillis = System.currentTimeMillis() + invocationService.getClientInvocationTimeoutMillis();
+        this.heartBeatIntervalMillis = invocationService.getHeartBeatIntervalMillis();
         this.clientInvocationFuture = new ClientInvocationFuture(this, client, request);
-
-        int interval = clientProperties.getInteger(HEARTBEAT_INTERVAL);
-        this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler, ClientRequest request) {
@@ -242,7 +231,7 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
     }
 
     boolean isConnectionHealthy(long elapsed) {
-        if (elapsed >= heartBeatInterval) {
+        if (elapsed >= heartBeatIntervalMillis) {
             if (sendConnection != null) {
                 return sendConnection.isHeartBeating();
             } else {
@@ -252,8 +241,8 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
         return true;
     }
 
-    public int getHeartBeatInterval() {
-        return heartBeatInterval;
+    public long getHeartBeatIntervalMillis() {
+        return heartBeatIntervalMillis;
     }
 
     public boolean isUrgent() {

@@ -150,7 +150,14 @@ public enum ClientProperty implements HazelcastProperty {
     }
 
     @Override
+    public boolean isDisablable() {
+        return false;
+    }
+
+    @Override
     public String toString() {
         return name;
     }
+
+
 }

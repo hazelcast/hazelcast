@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.logging.ILogger;
 
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +38,7 @@ import static java.lang.String.format;
 public abstract class HazelcastProperties {
 
     private final String[] properties = createProperties();
+    private ILogger logger;
 
     /**
      * Created the properties array.
@@ -75,6 +77,10 @@ public abstract class HazelcastProperties {
         }
     }
 
+    public void setLogger(ILogger logger) {
+        this.logger = logger;
+    }
+
     /**
      * Returns the configured value of a {@link HazelcastProperty} as String.
      *
@@ -103,7 +109,15 @@ public abstract class HazelcastProperties {
      * @throws NumberFormatException if the value cannot be parsed
      */
     public int getInteger(HazelcastProperty groupProperty) {
-        return Integer.parseInt(properties[groupProperty.getIndex()]);
+        int configuredValue = Integer.parseInt(properties[groupProperty.getIndex()]);
+        if (configuredValue == -1 && groupProperty.isDisablable()) {
+            return -1;
+        }
+        if (configuredValue < 0) {
+            logIllegalValueMessage(groupProperty, configuredValue);
+            return Integer.parseInt(groupProperty.getDefaultValue());
+        }
+        return configuredValue;
     }
 
     /**
@@ -114,7 +128,15 @@ public abstract class HazelcastProperties {
      * @throws NumberFormatException if the value cannot be parsed
      */
     public long getLong(HazelcastProperty groupProperty) {
-        return Long.parseLong(properties[groupProperty.getIndex()]);
+        long configuredValue = Long.parseLong(properties[groupProperty.getIndex()]);
+        if (configuredValue == -1 && groupProperty.isDisablable()) {
+            return -1;
+        }
+        if (configuredValue < 0) {
+            logIllegalValueMessage(groupProperty, configuredValue);
+            return Long.parseLong(groupProperty.getDefaultValue());
+        }
+        return configuredValue;
     }
 
     /**
@@ -125,43 +147,93 @@ public abstract class HazelcastProperties {
      * @throws NumberFormatException if the value cannot be parsed
      */
     public float getFloat(HazelcastProperty groupProperty) {
-        return Float.valueOf(properties[groupProperty.getIndex()]);
+        float configuredValue = Float.valueOf(properties[groupProperty.getIndex()]);
+        if (configuredValue == -1 && groupProperty.isDisablable()) {
+            return -1;
+        }
+        if (configuredValue < 0) {
+            logIllegalValueMessage(groupProperty, configuredValue);
+            return Float.valueOf(groupProperty.getDefaultValue());
+        }
+        return configuredValue;
     }
 
     /**
      * Returns the configured value of a {@link HazelcastProperty} converted to nanoseconds.
+     * If configured value is negative returns default value.
      *
      * @param groupProperty the {@link HazelcastProperty} to get the value from
      * @return the value in nanoseconds
      * @throws IllegalArgumentException if the {@link HazelcastProperty} has no {@link TimeUnit}
      */
     public long getNanos(HazelcastProperty groupProperty) {
-        TimeUnit timeUnit = groupProperty.getTimeUnit();
-        return timeUnit.toNanos(getLong(groupProperty));
+        return getTime(groupProperty, TimeUnit.NANOSECONDS);
     }
 
     /**
      * Returns the configured value of a {@link HazelcastProperty} converted to milliseconds.
+     * If configured value is negative returns default value.
      *
      * @param groupProperty the {@link HazelcastProperty} to get the value from
      * @return the value in milliseconds
      * @throws IllegalArgumentException if the {@link HazelcastProperty} has no {@link TimeUnit}
      */
     public long getMillis(HazelcastProperty groupProperty) {
-        TimeUnit timeUnit = groupProperty.getTimeUnit();
-        return timeUnit.toMillis(getLong(groupProperty));
+        return getTime(groupProperty, TimeUnit.MILLISECONDS);
     }
 
     /**
      * Returns the configured value of a {@link HazelcastProperty} converted to seconds.
+     * If configured value is negative returns default value.
      *
      * @param groupProperty the {@link HazelcastProperty} to get the value from
      * @return the value in seconds
      * @throws IllegalArgumentException if the {@link HazelcastProperty} has no {@link TimeUnit}
      */
     public int getSeconds(HazelcastProperty groupProperty) {
+        return (int) getTime(groupProperty, TimeUnit.SECONDS);
+    }
+
+
+    /**
+     * Returns the configured value of a {@link HazelcastProperty} converted to selected time unit..
+     * If configured value is negative returns default value.
+     *
+     * @param groupProperty    the {@link HazelcastProperty} to get the value from
+     * @param selectedTimeUnit time unit
+     * @return the value in selected time unit
+     * @throws IllegalArgumentException if the {@link HazelcastProperty} has no {@link TimeUnit}
+     */
+    private long getTime(HazelcastProperty groupProperty, TimeUnit selectedTimeUnit) {
         TimeUnit timeUnit = groupProperty.getTimeUnit();
-        return (int) timeUnit.toSeconds(getLong(groupProperty));
+        long configuredValue = Long.parseLong(properties[groupProperty.getIndex()]);
+        if (configuredValue == -1 && groupProperty.isDisablable()) {
+            return -1;
+        }
+        if (configuredValue < 0) {
+            logIllegalValueMessage(groupProperty, configuredValue);
+            return getDefaultValueAsTime(groupProperty, selectedTimeUnit);
+        }
+        return selectedTimeUnit.convert(configuredValue, timeUnit);
+    }
+
+    /**
+     * Returns the default value of a {@link HazelcastProperty} converted to selected time unit.
+     *
+     * @param groupProperty    the {@link HazelcastProperty} to get the value from
+     * @param selectedTimeUnit time unit
+     * @return the value in selected time unit
+     * @throws IllegalArgumentException if the {@link HazelcastProperty} has no {@link TimeUnit}
+     */
+    private long getDefaultValueAsTime(HazelcastProperty groupProperty, TimeUnit selectedTimeUnit) {
+        TimeUnit timeUnit = groupProperty.getTimeUnit();
+        long longValue = Long.parseLong(groupProperty.getDefaultValue());
+        return selectedTimeUnit.convert(longValue, timeUnit);
+    }
+
+    private <T> void logIllegalValueMessage(HazelcastProperty groupProperty, T configuredValue) {
+        logger.warning("Negative value " + configuredValue + " for " + groupProperty.getName()
+                + ", using default value.");
     }
 
     /**

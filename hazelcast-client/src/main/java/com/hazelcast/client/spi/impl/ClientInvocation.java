@@ -60,7 +60,7 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
     private final ClientInvocationService invocationService;
     private final ClientExecutionService executionService;
     private final ClientMessage clientMessage;
-    private final int heartBeatInterval;
+    private final long heartBeatInterval;
 
     private final Address address;
     private final int partitionId;
@@ -85,14 +85,9 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
 
         ClientProperties clientProperties = client.getClientProperties();
         long waitTime = clientProperties.getMillis(INVOCATION_TIMEOUT_SECONDS);
-        long waitTimeResolved = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
-        retryTimeoutPointInMillis = System.currentTimeMillis() + waitTimeResolved;
-
+        retryTimeoutPointInMillis = System.currentTimeMillis() + waitTime;
         clientInvocationFuture = new ClientInvocationFuture(this, client, clientMessage);
-
-
-        int interval = clientProperties.getInteger(HEARTBEAT_INTERVAL);
-        this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
+        heartBeatInterval = clientProperties.getMillis(HEARTBEAT_INTERVAL);
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage) {
@@ -248,7 +243,7 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
         this.handler = handler;
     }
 
-    public int getHeartBeatInterval() {
+    public long getHeartBeatInterval() {
         return heartBeatInterval;
     }
 

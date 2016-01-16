@@ -33,8 +33,6 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 
 public class LifecycleServiceImpl implements LifecycleService {
 
-    public static final int DEFAULT_GRACEFUL_SHUTDOWN_WAIT = 30;
-
     private final HazelcastInstanceImpl instance;
     private final ConcurrentMap<String, LifecycleListener> lifecycleListeners
             = new ConcurrentHashMap<String, LifecycleListener>();
@@ -97,8 +95,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     }
 
     private static int getShutdownTimeoutSeconds(Node node) {
-        int gracefulShutdownMaxWaitSeconds = node.groupProperties.getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
-        return Math.min(DEFAULT_GRACEFUL_SHUTDOWN_WAIT, gracefulShutdownMaxWaitSeconds);
+        return node.groupProperties.getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
     }
 
     @Override

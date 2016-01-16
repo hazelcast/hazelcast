@@ -80,4 +80,9 @@ public interface HazelcastProperty {
      * Clears the environmental value of the property.
      */
     String clearSystemProperty();
+
+    /**
+     * @return true if setting `-1` to property means feature is disabled
+     */
+    boolean isDisablable();
 }

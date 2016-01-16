@@ -80,7 +80,7 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
 
     @Override
     public ClientMessage get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        final int heartBeatInterval = invocation.getHeartBeatInterval();
+        long heartBeatInterval = invocation.getHeartBeatInterval();
         if (response == null) {
             long waitMillis = unit.toMillis(timeout);
             if (waitMillis > 0) {

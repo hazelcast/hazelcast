@@ -194,8 +194,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         memberGroupFactory = MemberGroupFactoryFactory.newMemberGroupFactory(node.getConfig().getPartitionGroupConfig());
         partitionStateGenerator = new PartitionStateGeneratorImpl();
 
-        long intervalMillis = node.groupProperties.getMillis(GroupProperty.PARTITION_MIGRATION_INTERVAL);
-        partitionMigrationInterval = (intervalMillis > 0 ? intervalMillis : 0);
+        partitionMigrationInterval = node.groupProperties.getMillis(GroupProperty.PARTITION_MIGRATION_INTERVAL);
 
         partitionMigrationTimeout = node.groupProperties.getMillis(GroupProperty.PARTITION_MIGRATION_TIMEOUT);
 
@@ -227,8 +226,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
         });
 
-        long definedBackupSyncCheckInterval = node.groupProperties.getSeconds(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL);
-        backupSyncCheckInterval = definedBackupSyncCheckInterval > 0 ? definedBackupSyncCheckInterval : 1;
+        backupSyncCheckInterval = node.groupProperties.getSeconds(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL);
         maxParallelReplications = node.groupProperties.getInteger(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS);
         replicaSyncProcessLock = new Semaphore(maxParallelReplications);
         nodeEngine.getMetricsRegistry().scanAndRegister(this, "partitions");
@@ -274,9 +272,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         migrationThread.start();
 
         int partitionTableSendInterval = node.groupProperties.getSeconds(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
-        if (partitionTableSendInterval <= 0) {
-            partitionTableSendInterval = 1;
-        }
         ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.scheduleAtFixedRate(new SendPartitionRuntimeStateTask(),
                 partitionTableSendInterval, partitionTableSendInterval, TimeUnit.SECONDS);

@@ -105,8 +105,7 @@ public class ClusterHeartbeatManager {
     }
 
     private static long getHeartBeatInterval(GroupProperties groupProperties) {
-        long heartbeatInterval = groupProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
-        return heartbeatInterval > 0 ? heartbeatInterval : TimeUnit.SECONDS.toMillis(1);
+        return groupProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
     }
 
     void init() {
@@ -119,7 +118,6 @@ public class ClusterHeartbeatManager {
         }, heartbeatIntervalMillis, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);
 
         long masterConfirmationInterval = node.groupProperties.getSeconds(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS);
-        masterConfirmationInterval = (masterConfirmationInterval > 0 ? masterConfirmationInterval : 1);
         executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
             public void run() {
                 sendMasterConfirmation();
@@ -127,7 +125,6 @@ public class ClusterHeartbeatManager {
         }, masterConfirmationInterval, masterConfirmationInterval, TimeUnit.SECONDS);
 
         long memberListPublishInterval = node.groupProperties.getSeconds(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS);
-        memberListPublishInterval = (memberListPublishInterval > 0 ? memberListPublishInterval : 1);
         executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
             public void run() {
                 sendMemberListToOthers();
