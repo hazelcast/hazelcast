@@ -16,16 +16,18 @@
 
 package com.hazelcast.client.protocol.generator;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import com.hazelcast.annotation.Codec;
+import com.hazelcast.annotation.EventResponse;
+import com.hazelcast.annotation.GenerateCodec;
+import com.hazelcast.annotation.Request;
+import com.hazelcast.annotation.Response;
+import freemarker.cache.ClassTemplateLoader;
+import freemarker.ext.beans.BeansWrapper;
+import freemarker.log.Logger;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateHashModel;
+import freemarker.template.TemplateModelException;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
@@ -47,20 +49,16 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
-
-import com.hazelcast.annotation.Codec;
-import com.hazelcast.annotation.EventResponse;
-import com.hazelcast.annotation.GenerateCodec;
-import com.hazelcast.annotation.Request;
-import com.hazelcast.annotation.Response;
-
-import freemarker.cache.ClassTemplateLoader;
-import freemarker.ext.beans.BeansWrapper;
-import freemarker.log.Logger;
-import freemarker.template.Configuration;
-import freemarker.template.Template;
-import freemarker.template.TemplateHashModel;
-import freemarker.template.TemplateModelException;
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 @SupportedAnnotationTypes({"com.hazelcast.annotation.GenerateCodec"})
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
@@ -143,7 +141,7 @@ public class CodecCodeGenerator
 
     @Override
     public boolean process(Set<? extends TypeElement> elements, RoundEnvironment env) {
-        messager.printMessage(Diagnostic.Kind.NOTE, "Processing code generator. round:" +(++round));
+        messager.printMessage(Diagnostic.Kind.NOTE, "Processing code generator. round:" + (++round));
         try {
             //PREPARE META DATA
             for (Element element : env.getElementsAnnotatedWith(Codec.class)) {
@@ -162,9 +160,9 @@ public class CodecCodeGenerator
                 register((TypeElement) element);
             }
             //END
-            if(CodecModel.CUSTOM_CODEC_MAP.size() != CODEC_COUNT) {
+            if (CodecModel.CUSTOM_CODEC_MAP.size() != CODEC_COUNT) {
                 messager.printMessage(Diagnostic.Kind.NOTE, "Codec count do not match found codec count:" +
-                    CodecModel.CUSTOM_CODEC_MAP.size());
+                        CodecModel.CUSTOM_CODEC_MAP.size());
                 return false;
             } else {
                 messager.printMessage(Diagnostic.Kind.NOTE, "Codec count is validated. round:" + round);
@@ -305,10 +303,18 @@ public class CodecCodeGenerator
         final String content = generateFromTemplate(codecTemplate, codecModel);
         if (codecModel.getLang() == Lang.JAVA) {
             saveClass(codecModel.getPackageName(), codecModel.getClassName(), content);
+        } else if (codecModel.getLang() == Lang.NODE) {
+            String fileName = codecModel.getClassName() + ".ts";
+            if (codecModel.getLang() == Lang.PY) {
+                fileName = fileName.replaceAll("(.)(\\p{Upper})", "$1_$2").toLowerCase();
+            }
+            saveFile(fileName, codecModel.getPackageName(), content);
         } else {
-            //TODO
-            saveFile(codecModel.getClassName() + "." + codecModel.getLang().name().toLowerCase(), codecModel.getPackageName(),
-                    content);
+            String fileName = codecModel.getClassName() + "." + codecModel.getLang().name().toLowerCase();
+            if (codecModel.getLang() == Lang.PY) {
+                fileName = fileName.replaceAll("(.)(\\p{Upper})", "$1_$2").toLowerCase();
+            }
+            saveFile(fileName, codecModel.getPackageName(), content);
         }
     }
 
@@ -353,10 +359,12 @@ public class CodecCodeGenerator
     private void saveContent(Model codecModel, String content) {
         if (codecModel.getLang() == Lang.JAVA) {
             saveClass(codecModel.getPackageName(), codecModel.getClassName(), content);
+        } else if (codecModel.getLang() == Lang.NODE) {
+            String fileName = codecModel.getClassName() + ".ts";
+            saveFile(fileName, codecModel.getPackageName(), content);
         } else {
-            //TODO
-            saveFile(codecModel.getClassName() + "." + codecModel.getLang().name().toLowerCase(), codecModel.getPackageName(),
-                    content);
+            String fileName = codecModel.getClassName() + "." + codecModel.getLang().name().toLowerCase();
+            saveFile(fileName, codecModel.getPackageName(), content);
         }
     }
 

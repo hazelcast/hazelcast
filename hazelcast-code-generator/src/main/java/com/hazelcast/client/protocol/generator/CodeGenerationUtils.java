@@ -29,6 +29,15 @@ public final class CodeGenerationUtils {
     public static final String CODEC_PACKAGE = "com.hazelcast.client.impl.protocol.codec.";
     public static final String DATA_FULL_NAME = "com.hazelcast.nio.serialization.Data";
 
+    private static final Map<String, String> JAVA_TO_NODE_TYPES = new HashMap<String, String>() {{
+        put(DATA_FULL_NAME, "Data");
+        put("java.lang.String", "str");
+        put("java.lang.Integer", "int");
+        put("boolean", "bool");
+        put("java.util.List", "list");
+        put("java.util.Set", "set");
+    }};
+
     private static final Map<String, String> JAVA_TO_CSHARP_TYPES = new HashMap<String, String>() {{
         put(DATA_FULL_NAME, "IData");
         put("java.lang.String", "string");
@@ -271,6 +280,10 @@ public final class CodeGenerationUtils {
         return paramList;
     }
 
+    public static String getNodeType(String type) {
+        return getLanguageType(Lang.NODE, type, JAVA_TO_NODE_TYPES);
+    }
+
     public static String getCSharpType(String type, Map<String, String> languageMapping) {
         return getLanguageType(Lang.CS, type, JAVA_TO_CSHARP_TYPES);
     }
@@ -322,4 +335,15 @@ public final class CodeGenerationUtils {
                 .equals("EnterpriseMap") || codecName.equals("XATransaction"));
     }
 
+    public static String convertToSnakeCase(String camelCase) {
+        return camelCase.replaceAll("(.)(\\p{Upper})", "$1_$2").toLowerCase();
+    }
+
+    public static String convertToNodeType(String name) {
+        name = convertToSnakeCase(name);
+        if (name.equals("function")) {
+            return "arr";
+        }
+        return name;
+    }
 }
