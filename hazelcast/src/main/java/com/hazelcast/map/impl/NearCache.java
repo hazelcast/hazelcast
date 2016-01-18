@@ -121,7 +121,7 @@ public class NearCache {
     private void updateSizeEstimatorWithRecords(NearCacheRecord previous, NearCacheRecord record) {
         updateSizeEstimator(calculateCost(record));
         if (previous != null) {
-            updateSizeEstimator(-calculateCost(record));
+            updateSizeEstimator(-calculateCost(previous));
         }
     }
 
