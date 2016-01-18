@@ -328,8 +328,6 @@ Header only event message, no message body exist.
             <#return "Member">
         <#case "javax.transaction.xa.Xid">
             <#return "Transaction Id">
-        <#case "com.hazelcast.cluster.client.MemberAttributeChange">
-            <#return "Member Attribute Change">
         <#case "com.hazelcast.map.impl.querycache.event.QueryCacheEventData">
             <#return "Query Cache Event Data">
         <#case "java.util.List<com.hazelcast.mapreduce.JobPartitionState>">
