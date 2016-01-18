@@ -34,15 +34,6 @@ public class RingbufferPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(RINGBUFFER_PORTABLE_FACTORY, RINGBUFFER_PORTABLE_FACTORY_ID);
 
-    public static final int ADD_ALL = 1;
-    public static final int ADD = 2;
-    public static final int CAPACITY = 3;
-    public static final int HEAD_SEQUENCE = 4;
-    public static final int READ_MANY = 5;
-    public static final int READ_ONE = 6;
-    public static final int REMAINING_CAPACITY = 7;
-    public static final int SIZE = 8;
-    public static final int TAIL_SEQUENCE = 9;
     public static final int READ_RESULT_SET = 10;
 
     @Override
@@ -56,24 +47,6 @@ public class RingbufferPortableHook implements PortableHook {
             @Override
             public Portable create(int classId) {
                 switch (classId) {
-                    case ADD_ALL:
-                        return new AddAllRequest();
-                    case ADD:
-                        return new AddRequest();
-                    case CAPACITY:
-                        return new CapacityRequest();
-                    case HEAD_SEQUENCE:
-                        return new HeadSequenceRequest();
-                    case READ_MANY:
-                        return new ReadManyRequest();
-                    case READ_ONE:
-                        return new ReadOneRequest();
-                    case REMAINING_CAPACITY:
-                        return new RemainingCapacityRequest();
-                    case SIZE:
-                        return new SizeRequest();
-                    case TAIL_SEQUENCE:
-                        return new TailSequenceRequest();
                     case READ_RESULT_SET:
                         return new PortableReadResultSet<Object>();
                     default:

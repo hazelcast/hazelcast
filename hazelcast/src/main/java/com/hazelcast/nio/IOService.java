@@ -52,8 +52,6 @@ public interface IOService {
 
     SSLConfig getSSLConfig();
 
-    void handleClientPacket(Packet p);
-
     void handleClientMessage(ClientMessage cm, Connection connection);
 
     TextCommandService getTextCommandService();

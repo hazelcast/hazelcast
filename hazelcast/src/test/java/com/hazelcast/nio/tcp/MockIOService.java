@@ -99,11 +99,6 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public void handleClientPacket(Packet p) {
-
-    }
-
-    @Override
     public void handleClientMessage(ClientMessage cm, Connection connection) {
 
     }

@@ -31,7 +31,6 @@
     <modules>
         <module>hazelcast</module>
         <module>hazelcast-client</module>
-        <module>hazelcast-client-legacy</module>
         <module>hazelcast-hibernate</module>
         <module>hazelcast-wm</module>
         <module>hazelcast-spring</module>
