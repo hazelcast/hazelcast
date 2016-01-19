@@ -16,15 +16,13 @@
 
 package com.hazelcast.cluster.impl;
 
-import com.hazelcast.cluster.client.ClientInitialMembershipEvent;
-import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.cluster.impl.operations.FinalizeJoinOperation;
 import com.hazelcast.cluster.impl.operations.HeartbeatOperation;
 import com.hazelcast.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public final class ClusterDataSerializerHook implements DataSerializerHook {
@@ -39,10 +37,6 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
 
     public static final int MEMBER_INFO_UPDATE = 6;
     public static final int FINALIZE_JOIN = 7;
-
-    // client
-    public static final int MEMBERSHIP_EVENT = 8;
-    public static final int INITIAL_MEMBERSHIP_EVENT = 9;
 
     private static final DataSerializableFactory FACTORY = new ClusterDataSerializerFactoryImpl();
 
@@ -71,10 +65,6 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
                     return new ConfigCheck();
                 case BIND_MESSAGE:
                     return new BindMessage();
-                case MEMBERSHIP_EVENT:
-                    return new ClientMembershipEvent();
-                case INITIAL_MEMBERSHIP_EVENT:
-                    return new ClientInitialMembershipEvent();
                 case MEMBER_INFO_UPDATE:
                     return new MemberInfoUpdateOperation();
                 case FINALIZE_JOIN:

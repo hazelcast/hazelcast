@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.cluster.client.ClientInitialMembershipEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
@@ -167,7 +166,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         if (connection != null) {
             connectionManager.destroyConnection(connection);
         }
-        MembershipEvent event = new MembershipEvent(client.getCluster(), member, ClientInitialMembershipEvent.MEMBER_REMOVED,
+        MembershipEvent event = new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED,
                 Collections.unmodifiableSet(new LinkedHashSet<Member>(members)));
         clusterService.handleMembershipEvent(event);
     }
@@ -212,7 +211,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         members.add(member);
         LOGGER.info(membersString());
         MembershipEvent event = new MembershipEvent(client.getCluster(), member,
-                ClientInitialMembershipEvent.MEMBER_ADDED,
+                MembershipEvent.MEMBER_ADDED,
                 Collections.unmodifiableSet(new LinkedHashSet<Member>(members)));
         clusterService.handleMembershipEvent(event);
     }
