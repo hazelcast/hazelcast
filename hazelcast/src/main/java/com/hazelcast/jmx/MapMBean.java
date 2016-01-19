@@ -20,8 +20,12 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.jmx.suppliers.LocalMapStatsSupplier;
+import com.hazelcast.jmx.suppliers.StatsSupplier;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +45,9 @@ public class MapMBean extends HazelcastMBean<IMap> {
     private final AtomicLong totalEvictedEntryCount = new AtomicLong();
     private final String listenerId;
 
-    protected MapMBean(IMap managedObject, ManagementService service) {
+    private final LocalStatsDelegate<LocalMapStats> localMapStatsDelegate;
+
+    protected MapMBean(final IMap managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = service.createObjectName("IMap", managedObject.getName());
         //todo: using the event system to register number of adds/remove is an very expensive price to pay.
@@ -74,6 +80,8 @@ public class MapMBean extends HazelcastMBean<IMap> {
             }
         };
         listenerId = managedObject.addEntryListener(entryListener, false);
+        StatsSupplier<LocalMapStats> localMapStatsSupplier = new LocalMapStatsSupplier(managedObject);
+        this.localMapStatsDelegate = new LocalStatsDelegate<LocalMapStats>(localMapStatsSupplier, updateIntervalSec);
     }
 
     public void preDeregister() throws Exception {
@@ -88,145 +96,145 @@ public class MapMBean extends HazelcastMBean<IMap> {
     @ManagedAnnotation("localOwnedEntryCount")
     @ManagedDescription("number of entries owned on this member")
     public long getLocalOwnedEntryCount() {
-        return managedObject.getLocalMapStats().getOwnedEntryCount();
+        return localMapStatsDelegate.getLocalStats().getOwnedEntryCount();
     }
 
     @ManagedAnnotation("localBackupEntryCount")
     @ManagedDescription("the number of backup entries hold on this member")
     public long getLocalBackupEntryCount() {
-        return managedObject.getLocalMapStats().getBackupEntryCount();
+        return localMapStatsDelegate.getLocalStats().getBackupEntryCount();
     }
 
     @ManagedAnnotation("localBackupCount")
     @ManagedDescription("the number of backups per entry on this member")
     public int getLocalBackupCount() {
-        return managedObject.getLocalMapStats().getBackupCount();
+        return localMapStatsDelegate.getLocalStats().getBackupCount();
     }
 
     @ManagedAnnotation("localOwnedEntryMemoryCost")
     @ManagedDescription("memory cost (number of bytes) of owned entries on this member")
     public long getLocalOwnedEntryMemoryCost() {
-        return managedObject.getLocalMapStats().getOwnedEntryMemoryCost();
+        return localMapStatsDelegate.getLocalStats().getOwnedEntryMemoryCost();
     }
 
     @ManagedAnnotation("localBackupEntryMemoryCost")
     @ManagedDescription("memory cost (number of bytes) of backup entries on this member.")
     public long getLocalBackupEntryMemoryCost() {
-        return managedObject.getLocalMapStats().getBackupEntryMemoryCost();
+        return localMapStatsDelegate.getLocalStats().getBackupEntryMemoryCost();
     }
 
     @ManagedAnnotation("localCreationTime")
     @ManagedDescription("the creation time of this map on this member.")
     public long getLocalCreationTime() {
-        return managedObject.getLocalMapStats().getCreationTime();
+        return localMapStatsDelegate.getLocalStats().getCreationTime();
     }
 
     @ManagedAnnotation("localLastAccessTime")
     @ManagedDescription("the last access (read) time of the locally owned entries.")
     public long getLocalLastAccessTime() {
-        return managedObject.getLocalMapStats().getLastAccessTime();
+        return localMapStatsDelegate.getLocalStats().getLastAccessTime();
     }
 
     @ManagedAnnotation("localLastUpdateTime")
     @ManagedDescription("the last update time of the locally owned entries.")
     public long getLocalLastUpdateTime() {
-        return managedObject.getLocalMapStats().getLastUpdateTime();
+        return localMapStatsDelegate.getLocalStats().getLastUpdateTime();
     }
 
     @ManagedAnnotation("localHits")
     @ManagedDescription("the number of hits (reads) of the locally owned entries.")
     public long getLocalHits() {
-        return managedObject.getLocalMapStats().getHits();
+        return localMapStatsDelegate.getLocalStats().getHits();
     }
 
     @ManagedAnnotation("localLockedEntryCount")
     @ManagedDescription("the number of currently locked locally owned keys.")
     public long getLocalLockedEntryCount() {
-        return managedObject.getLocalMapStats().getLockedEntryCount();
+        return localMapStatsDelegate.getLocalStats().getLockedEntryCount();
     }
 
     @ManagedAnnotation("localDirtyEntryCount")
     @ManagedDescription("the number of entries that the member owns and are dirty on this member")
     public long getLocalDirtyEntryCount() {
-        return managedObject.getLocalMapStats().getDirtyEntryCount();
+        return localMapStatsDelegate.getLocalStats().getDirtyEntryCount();
     }
 
     @ManagedAnnotation("localPutOperationCount")
     @ManagedDescription("the number of put operations on this member")
     public long getLocalPutOperationCount() {
-        return managedObject.getLocalMapStats().getPutOperationCount();
+        return localMapStatsDelegate.getLocalStats().getPutOperationCount();
     }
 
     @ManagedAnnotation("localGetOperationCount")
     @ManagedDescription("number of get operations on this member")
     public long getLocalGetOperationCount() {
-        return managedObject.getLocalMapStats().getGetOperationCount();
+        return localMapStatsDelegate.getLocalStats().getGetOperationCount();
     }
 
     @ManagedAnnotation("localRemoveOperationCount")
     @ManagedDescription("number of remove operations on this member")
     public long getLocalRemoveOperationCount() {
-        return managedObject.getLocalMapStats().getRemoveOperationCount();
+        return localMapStatsDelegate.getLocalStats().getRemoveOperationCount();
     }
 
     @ManagedAnnotation("localTotalPutLatency")
     @ManagedDescription("the total latency of put operations. To get the average latency, divide to number of puts")
     public long getLocalTotalPutLatency() {
-        return managedObject.getLocalMapStats().getTotalPutLatency();
+        return localMapStatsDelegate.getLocalStats().getTotalPutLatency();
     }
 
     @ManagedAnnotation("localTotalGetLatency")
     @ManagedDescription("the total latency of get operations. To get the average latency, divide to number of gets")
     public long getLocalTotalGetLatency() {
-        return managedObject.getLocalMapStats().getTotalGetLatency();
+        return localMapStatsDelegate.getLocalStats().getTotalGetLatency();
     }
 
     @ManagedAnnotation("localTotalRemoveLatency")
     @ManagedDescription("the total latency of remove operations. To get the average latency, divide to number of gets")
     public long getLocalTotalRemoveLatency() {
-        return managedObject.getLocalMapStats().getTotalRemoveLatency();
+        return localMapStatsDelegate.getLocalStats().getTotalRemoveLatency();
     }
 
     @ManagedAnnotation("localMaxPutLatency")
     @ManagedDescription("the maximum latency of put operations. To get the average latency, divide to number of puts")
     public long getLocalMaxPutLatency() {
-        return managedObject.getLocalMapStats().getMaxPutLatency();
+        return localMapStatsDelegate.getLocalStats().getMaxPutLatency();
     }
 
     @ManagedAnnotation("localMaxGetLatency")
     @ManagedDescription("the maximum latency of get operations. To get the average latency, divide to number of gets")
     public long getLocalMaxGetLatency() {
-        return managedObject.getLocalMapStats().getMaxGetLatency();
+        return localMapStatsDelegate.getLocalStats().getMaxGetLatency();
     }
 
     @ManagedAnnotation("localMaxRemoveLatency")
     @ManagedDescription("the maximum latency of remove operations. To get the average latency, divide to number of gets")
     public long getMaxRemoveLatency() {
-        return managedObject.getLocalMapStats().getMaxRemoveLatency();
+        return localMapStatsDelegate.getLocalStats().getMaxRemoveLatency();
     }
 
     @ManagedAnnotation("localEventOperationCount")
     @ManagedDescription("number of events received on this member")
     public long getLocalEventOperationCount() {
-        return managedObject.getLocalMapStats().getEventOperationCount();
+        return localMapStatsDelegate.getLocalStats().getEventOperationCount();
     }
 
     @ManagedAnnotation("localOtherOperationCount")
     @ManagedDescription("the total number of other operations on this member")
     public long getLocalOtherOperationCount() {
-        return managedObject.getLocalMapStats().getOtherOperationCount();
+        return localMapStatsDelegate.getLocalStats().getOtherOperationCount();
     }
 
     @ManagedAnnotation("localTotal")
     @ManagedDescription("the total number of operations on this member")
     public long localTotal() {
-        return managedObject.getLocalMapStats().total();
+        return localMapStatsDelegate.getLocalStats().total();
     }
 
     @ManagedAnnotation("localHeapCost")
     @ManagedDescription("the total heap cost of map, near cache and heap cost")
     public long localHeapCost() {
-        return managedObject.getLocalMapStats().getHeapCost();
+        return localMapStatsDelegate.getLocalStats().getHeapCost();
     }
 
 
