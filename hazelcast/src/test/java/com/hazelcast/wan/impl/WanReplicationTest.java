@@ -39,12 +39,13 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class WanReplicationTest extends HazelcastTestSupport {
 
+    private TestHazelcastInstanceFactory factory;
     private HazelcastInstance instance1;
     private HazelcastInstance instance2;
 
     @Before
     public void setup() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        factory = createHazelcastInstanceFactory(3);
         instance1 = factory.newHazelcastInstance(getConfig());
         instance2 = factory.newHazelcastInstance(getConfig());
     }
@@ -103,7 +104,16 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
         //10 more event should be published
         assertEquals(20, impl1.eventQueue.size() + impl2.eventQueue.size());
+    }
 
+    @Test
+    public void programmaticImplCreationTest() {
+        Config config = getConfig();
+        WanTargetClusterConfig targetClusterConfig = config.getWanReplicationConfig("dummyWan").getTargetClusterConfigs().get(0);
+        DummyWanReplication dummyWanReplication = new DummyWanReplication();
+        targetClusterConfig.setReplicationImplObject(dummyWanReplication);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        assertEquals(dummyWanReplication, getWanReplicationImpl(instance));
     }
 
     @Override

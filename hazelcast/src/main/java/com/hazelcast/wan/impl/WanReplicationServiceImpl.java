@@ -77,8 +77,12 @@ public class WanReplicationServiceImpl implements WanReplicationService {
             for (WanTargetClusterConfig targetClusterConfig : targets) {
                 WanReplicationEndpoint target;
                 try {
-                    target = ClassLoaderUtil
-                            .newInstance(node.getConfigClassLoader(), targetClusterConfig.getReplicationImpl());
+                    if (targetClusterConfig.getReplicationImplObject() != null) {
+                        target = (WanReplicationEndpoint) targetClusterConfig.getReplicationImplObject();
+                    } else {
+                        target = ClassLoaderUtil
+                                .newInstance(node.getConfigClassLoader(), targetClusterConfig.getReplicationImpl());
+                    }
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e);
                 }
