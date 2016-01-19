@@ -162,8 +162,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     public void handleClientMessage(ClientMessage clientMessage, Connection connection) {
-
-        //TODO: FIXME
         int partitionId = clientMessage.getPartitionId();
         final MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
         if (partitionId < 0) {
