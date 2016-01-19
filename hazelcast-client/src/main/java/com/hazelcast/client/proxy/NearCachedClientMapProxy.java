@@ -306,10 +306,11 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected void putAllInternal(Map<Integer, Map<Data, Data>> entryMap) {
-        for (Map<Data, Data> map : entryMap.values()) {
-            Set<Data> keySet = map.keySet();
-            invalidateNearCache(keySet);
+    protected void putAllInternal(Map<Integer, List<Map.Entry<Data, Data>>> entryMap) {
+        for (List<Entry<Data, Data>> entries : entryMap.values()) {
+            for (Entry<Data, Data> entry : entries) {
+                invalidateNearCache(entry.getKey());
+            }
         }
         super.putAllInternal(entryMap);
     }

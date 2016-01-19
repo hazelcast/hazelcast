@@ -20,13 +20,10 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Parameter Flyweight
@@ -189,21 +186,6 @@ public class MessageFlyweight {
         return result;
     }
 
-    public Set<Data> getDataSet() {
-        final int length = buffer.getInt(index + offset);
-        index += Bits.INT_SIZE_IN_BYTES;
-        final Set<Data> result = new HashSet<Data>();
-        for (int i = 0; i < length; i++) {
-            result.add(getData());
-        }
-        return result;
-    }
-
-    public Map.Entry<Data, Data> getMapEntry() {
-        Data key = getData();
-        Data value = getData();
-        return new AbstractMap.SimpleEntry<Data, Data>(key, value);
-    }
     //endregion GET Overloads
 
     protected int int32Get(int index) {
