@@ -63,7 +63,6 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
         try {
             submit(operation, key);
         } catch (Throwable t) {
-            ILogger logger = nodeEngine.getLogger(getClass());
             logger.warning(t);
         }
     }
@@ -77,6 +76,7 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
         OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
         operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
         operation.setOperationResponseHandler(unlockResponseHandler);
+        operation.setValidateTarget(false);
         operation.setAsyncBackup(true);
 
         operationService.executeOperation(operation);
