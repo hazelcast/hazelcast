@@ -1,0 +1,95 @@
+<!--
+  ~ Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <name>hazelcast-azure</name>
+    <artifactId>hazelcast-azure</artifactId>
+    <groupId>com.hazelcast.azure</groupId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>com.fizzed</groupId>
+          <artifactId>fizzed-watcher-maven-plugin</artifactId>
+          <version>1.0.4</version>
+          <configuration>
+              <files>
+                  <param>src/main/java</param>
+                  <param>src/main/resources</param>
+                  <param>src/test/java</param>
+              </files>
+              <goals>
+                  <param>clean</param>
+                  <param>compile</param>
+              </goals>
+              <profiles>
+                  <param>optional-profile-to-activate-while-running-goals</param>
+              </profiles>
+          </configuration>
+        </plugin>
+      </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>3.6</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <scope>test</scope>
+            <version>3.6</version>
+            <classifier>tests</classifier>
+        </dependency>
+        <dependency>
+          <groupId>com.microsoft.azure</groupId>
+          <artifactId>azure-mgmt-compute</artifactId>
+          <version>0.9.1</version>
+        </dependency>
+        <dependency>
+          <groupId>com.microsoft.azure</groupId>
+          <artifactId>azure-mgmt-resources</artifactId>
+          <version>0.9.1</version>
+        </dependency>
+        <dependency>
+          <groupId>com.microsoft.azure</groupId>
+          <artifactId>azure-mgmt-network</artifactId>
+          <version>0.9.1</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
+            <scope>test</scope>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+</project>
+
