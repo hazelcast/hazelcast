@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.nio.serialization.Data;
 
 /**
  * Evicts a {@link RecordStore}.
@@ -40,7 +41,7 @@ public interface Evictor {
      * @param removalSize supplied size to remove.
      * @param recordStore the recordStore
      */
-    void removeSize(int removalSize, RecordStore recordStore);
+    void removeSize(int removalSize, RecordStore recordStore, Data excludeKey);
 
     /**
      * Get eviction checker for this {@link Evictor}

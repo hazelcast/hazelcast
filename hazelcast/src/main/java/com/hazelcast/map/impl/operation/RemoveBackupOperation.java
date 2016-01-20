@@ -68,7 +68,7 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
 
     @Override
     public void afterRun() throws Exception {
-        evict();
+        evict(dataKey);
         if (!disableWanReplicationEvent
                 && mapContainer.isWanReplicationEnabled()) {
             mapService.getMapServiceContext()

@@ -39,7 +39,6 @@ import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
@@ -356,7 +355,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (value != null) {
             record = createRecord(value, DEFAULT_TTL, getNow());
             storage.put(key, record);
-            evictEntries(Clock.currentTimeMillis());
+            evictEntries(key);
             if (!backup) {
                 saveIndex(record, null);
             }

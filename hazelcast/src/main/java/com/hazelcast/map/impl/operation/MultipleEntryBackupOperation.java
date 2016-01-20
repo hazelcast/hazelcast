@@ -60,7 +60,7 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOpe
             }
             entryAddedOrUpdatedBackup(entry, dataKey);
 
-            evict();
+            evict(dataKey);
         }
     }
 
