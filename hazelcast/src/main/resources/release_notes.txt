@@ -75,10 +75,28 @@ a `SAXParse` exception is thrown. [5528]
 
 3. Fixes
 
+The following are the issues solved for Hazelcast 3.6 and 3.6.x releases.
+
+*3.6 Fixes*
+
+This section lists the fixed issues for 3.6 release.
+
+- In the manifest file, `org.jclouds.*` should be marked as optional dependencies. [7318]
+- Tests are needed for `WanReplicationPublisherDelegate`, `WanReplicationEvent`, `MapReplicationUpdate` and `AbstractMultipleEntryBackupOperation` in the Open Source WAN API. [7315]
+- Invocation of quorum listener requires at least an attempt to perform a map operation. But it should not require this; just the crash of nodes should be enough to use the quorum mechanism. [7300]
+- Owned entry count to be used as the expected near cache hit count should be calculated by checking the partition ownership in the `NearCacheTest::testGetAll`. [7285]
+- The parameter `minEvictionCheckMillis` controls the maximum frequency of evictions. It is 100ms by default. It means at most 1 eviction is executed in a 100ms interval. No other `put()` operation within this interval triggers an eviction. So, if the put rate is greater than 1 per 100ms, then the number of entries is growing regardless of the `max-size-policy`. This eventually triggers a forced eviction which will prevent `OutOfMemoryException`. Forced evictions are only hiding this issue. Another possible solution is to keep the default interval as it is and apply batching: When X eviction cycles are skipped due the `minEvictionCheckMillis` parameter, then during the next cycle X + 1 entries should be evicted instead of just 1. [7268]
+- Descriptions of some maximum size policies defined in the `com.hazelcast.config.EvictionConfig.MaxSizePolicy` and `com.hazelcast.config.MaxSizeConfig.MaxSizePolicy` are not clear and confusing. They shoule be clarified. [7267]
+- Tests under `TopicOverloadDistributedTest` are spuriously failing even on the local machine.
+They need to be reviewed. [7266]
+
+
 *3.6-RC1 Fixes*
 
 This section lists issues solved for Hazelcast 3.6-RC1 release.
 
+- Javadoc for `IMap.putAll()` does not mention the lack of atomicity in the invocation. [7256]
+- When a WAN Queue overrun occurs (with exception enabled), the source cluster logs an excessive amount of noise. This should to be logged. [7242]
 - On WAN Replication Queue overrun, a WANReplicationQueueFullException is expected, but instead, the client receives an UndefinedErrorCodeException.[7241]
 - When using Hazelcast as a JCache provider: As JSR-107 Javadoc states, an update should not reset expiry time for CreatedExpiryPolicy. However, when a cache entry is updated, it does not expire. [7236]
 - Default WAN acknowledge type should be ACK_ON_RECEIPT. [7160]
