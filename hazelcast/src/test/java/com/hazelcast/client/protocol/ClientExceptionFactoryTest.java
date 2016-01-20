@@ -195,13 +195,31 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
         ClientMessage responseMessage = ClientMessage.createForDecode(exceptionMessage.buffer(), 0);
         Throwable resurrectedThrowable = exceptionFactory.createException(responseMessage);
         assertEquals(throwable.getClass(), resurrectedThrowable.getClass());
-        assertArrayEquals(throwable.getStackTrace(), resurrectedThrowable.getStackTrace());
+
+        StackTraceElement[] stackTrace1 = throwable.getStackTrace();
+        StackTraceElement[] stackTrace2 = resurrectedThrowable.getStackTrace();
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("STACK TRACE EXPECTED \n");
+        for (StackTraceElement stackTraceElement : stackTrace1) {
+            stringBuilder.append(toString(stackTraceElement)).append("\n");
+        }
+        stringBuilder.append("STACK TRACE ACTUAL \n");
+        for (StackTraceElement stackTraceElement : stackTrace2) {
+            stringBuilder.append(toString(stackTraceElement)).append("\n");
+        }
+        stringBuilder.append("\n");
+        assertArrayEquals(stringBuilder.toString(), stackTrace1, stackTrace2);
         Throwable cause = throwable.getCause();
         if (cause == null) {
             assertNull(resurrectedThrowable.getCause());
         } else {
             assertEquals(cause.getClass(), resurrectedThrowable.getCause().getClass());
         }
+    }
+
+    public String toString(StackTraceElement element) {
+        return element.getClassName() + "." + element.getMethodName() +
+                "(" + element.getFileName() + ":" + element.getLineNumber() + ")";
     }
 
 }
