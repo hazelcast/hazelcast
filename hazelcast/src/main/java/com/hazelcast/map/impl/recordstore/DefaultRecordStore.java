@@ -356,10 +356,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (value != null) {
             record = createRecord(value, DEFAULT_TTL, getNow());
             storage.put(key, record);
-            evictEntries(Clock.currentTimeMillis());
             if (!backup) {
                 saveIndex(record, null);
             }
+            evictEntries(Clock.currentTimeMillis());
         }
         return record;
     }
