@@ -21,14 +21,14 @@ import static org.junit.Assert.assertEquals;
  */
 public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnection_AbstractTest {
 
-    // total running time
-    private static final long DURATION_SECONDS = TimeUnit.MINUTES.toSeconds(2);
+    // total running time for writer threads
+    private static final long WRITER_THREAD_RUNNING_TIME_IN_SECONDS = TimeUnit.MINUTES.toSeconds(2);
     // maximum number of pending packets
     private static final int maxPendingPacketCount = 10000;
     // we create the payloads up front and select randomly from them. This is the number of payloads we are creating
     private static final int payloadCount = 10000;
 
-    private final AtomicBoolean stop = new AtomicBoolean();
+    private final AtomicBoolean stop = new AtomicBoolean(false);
     private DummyPayload[] payloads;
 
     @Before
@@ -40,34 +40,38 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
     @Test
     public void testTinyPackets() throws Exception {
         makePayloads(10);
-        test();
+        testPackets();
     }
 
     @Test
     public void testSmallPackets() throws Exception {
         makePayloads(100);
-        test();
+        testPackets();
     }
 
     @Test
     public void testMediumPackets() throws Exception {
         makePayloads(1000);
-        test();
+        testPackets();
     }
 
-    @Test
+    @Test(timeout = 10 * 60 * 1000)
     public void testLargePackets() throws Exception {
         makePayloads(10000);
-        test();
+        testPackets((10 * 60 * 1000) - (WRITER_THREAD_RUNNING_TIME_IN_SECONDS * 1000));
     }
 
     @Test
     public void testSemiRealisticPackets() throws Exception {
         makeSemiRealisticPayloads();
-        test();
+        testPackets();
     }
 
-    public void test() throws Exception {
+    private void testPackets() throws Exception {
+        testPackets(ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    private void testPackets(long verifyTimeoutInMillis) throws Exception {
         TcpIpConnection c = connect(connManagerA, addressB);
 
         WriteThread thread1 = new WriteThread(1, c);
@@ -77,7 +81,7 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
         thread1.start();
         thread2.start();
 
-        sleepAndStop(stop, DURATION_SECONDS);
+        sleepAndStop(stop, WRITER_THREAD_RUNNING_TIME_IN_SECONDS);
 
         logger.info("Done");
 
@@ -91,14 +95,25 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
         logger.info("expected normal packets: " + expectedNormalPackets);
         logger.info("expected priority packets: " + expectedUrgentPackets);
 
-        final SocketReader XReadHandler = ((TcpIpConnection) connManagerB.getConnection(addressA)).getSocketReader();
+        final SocketWriter writer = c.getSocketWriter();
+        final SocketReader reader = ((TcpIpConnection) connManagerB.getConnection(addressA)).getSocketReader();
+        long start = System.currentTimeMillis();
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(expectedNormalPackets, XReadHandler.getNormalFramesReadCounter().get());
-                assertEquals(expectedUrgentPackets, XReadHandler.getPriorityFramesReadCounter().get());
+                logger.info("writer total frames pending   : " + writer.totalFramesPending());
+                logger.info("writer last write time millis : " + writer.getLastWriteTimeMillis());
+
+                logger.info("reader total frames handled   : " + reader.getNormalFramesReadCounter().get()
+                                                               + reader.getPriorityFramesReadCounter().get());
+                logger.info("reader last read time millis  : " + reader.getLastReadTimeMillis());
+
+                assertEquals(expectedNormalPackets, reader.getNormalFramesReadCounter().get());
+                assertEquals(expectedUrgentPackets, reader.getPriorityFramesReadCounter().get());
             }
-        });
+        }, verifyTimeoutInMillis);
+        logger.info("Waiting for pending packets to be sent and received finished in "
+                + (System.currentTimeMillis() - start) + " milliseconds");
     }
 
     private void makePayloads(int maxSize) {
