@@ -17,10 +17,18 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapLoader;
+import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -41,7 +49,11 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -50,6 +62,45 @@ import static org.junit.Assert.assertThat;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class IndexIntegrationTest extends HazelcastTestSupport {
+
+    @Test
+    public void loadFromStore_whenEvicted() {
+        // GIVEN
+        String name = randomString();
+        String attributeName = "currency";
+        String currency = "dollar";
+        long amount = 5L;
+
+        Config config = new Config();
+        MapConfig mapConfig = config.getMapConfig(name);
+        mapConfig.setEvictionPolicy(EvictionPolicy.LFU);
+        mapConfig.setMinEvictionCheckMillis(0);
+        // size=1 means each put/load will trigger eviction
+        MaxSizeConfig maxSizeConfig = new MaxSizeConfig(1, PER_PARTITION);
+        mapConfig.setMaxSizeConfig(maxSizeConfig);
+        // Dummy map loader which returns a Trade object with amount=5, currency=dollar
+        MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new DummyLoader(amount, currency));
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<String, Trade> map = instance.getMap(name);
+        map.addIndex(attributeName, false);
+
+        // WHEN
+        // This `get` will trigger load from map-loader but since eviction kicks in, entry will get removed
+        // We should be able to get the value loaded from store but index should be removed
+        Trade trade = map.get(randomString());
+
+        // THEN
+        assertEquals(0, map.size());
+        assertEquals(5L, (long) trade.amount);
+        assertEquals(currency, trade.currency);
+
+        Index index = getIndexOfAttributeForMap(instance, name, attributeName);
+        Set<QueryableEntry> dollars = index.getRecords(currency);
+        assertEquals(0, dollars.size());
+    }
 
     @Test
     public void putRemove_withIndex_whereAttributeIsNull() {
@@ -100,6 +151,41 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         Collection<Body> values = map.values(predicate);
 
         assertThat(values, hasSize(1));
+    }
+
+    @Test
+    public void foo_methodGetters() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+        IMap<Integer, SillySequence> map = hazelcastInstance.getMap(randomName());
+
+        SillySequence sillySequence = new SillySequence(0, 100);
+        map.put(0, sillySequence);
+
+        Predicate predicate = Predicates.equal("payload[any]", 3);
+        Collection<SillySequence> result = map.values(predicate);
+        assertThat(result, hasSize(1));
+    }
+
+    @Test
+    public void foo_fieldGetters() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+        IMap<Integer, SillySequence> map = hazelcastInstance.getMap(randomName());
+
+        SillySequence sillySequence = new SillySequence(0, 100);
+        map.put(0, sillySequence);
+
+        Predicate predicate = Predicates.equal("payloadField[any]", 3);
+        Collection<SillySequence> result = map.values(predicate);
+        assertThat(result, hasSize(1));
+    }
+
+    private static Index getIndexOfAttributeForMap(HazelcastInstance instance, String mapName, String attribute) {
+        Node node = getNode(instance);
+        MapService service = node.nodeEngine.getService(MapService.SERVICE_NAME);
+        MapServiceContext mapServiceContext = service.getMapServiceContext();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        Indexes indexes = mapContainer.getIndexes();
+        return indexes.getIndex(attribute);
     }
 
     static class Body implements Serializable {
@@ -162,32 +248,6 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
-    public void foo_methodGetters() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstance();
-        IMap<Integer, SillySequence> map = hazelcastInstance.getMap(randomName());
-
-        SillySequence sillySequence = new SillySequence(0, 100);
-        map.put(0, sillySequence);
-
-        Predicate predicate = Predicates.equal("payload[any]", 3);
-        Collection<SillySequence> result = map.values(predicate);
-        assertThat(result, hasSize(1));
-    }
-
-    @Test
-    public void foo_fieldGetters() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstance();
-        IMap<Integer, SillySequence> map = hazelcastInstance.getMap(randomName());
-
-        SillySequence sillySequence = new SillySequence(0, 100);
-        map.put(0, sillySequence);
-
-        Predicate predicate = Predicates.equal("payloadField[any]", 3);
-        Collection<SillySequence> result = map.values(predicate);
-        assertThat(result, hasSize(1));
-    }
-
     @SuppressWarnings("unused")
     static class SillySequence implements DataSerializable {
 
@@ -226,6 +286,40 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         public void readData(ObjectDataInput in) throws IOException {
             count = in.readInt();
             payloadField = in.readObject();
+        }
+    }
+
+    static class DummyLoader implements MapLoader<String, Trade> {
+
+        long amount;
+
+        String currency;
+
+        public DummyLoader(long amount, String currency) {
+            this.amount = amount;
+            this.currency = currency;
+        }
+
+        @Override
+        public Trade load(String key) {
+            Trade trade = new Trade();
+            trade.setAmount(amount);
+            trade.setCurrency(currency);
+            return trade;
+        }
+
+        @Override
+        public Map<String, Trade> loadAll(Collection<String> keys) {
+            Map<String, Trade> map = new HashMap<String, Trade>();
+            for (String key : keys) {
+                map.put(key, load(key));
+            }
+            return map;
+        }
+
+        @Override
+        public Iterable<String> loadAllKeys() {
+            return null;
         }
     }
 }
