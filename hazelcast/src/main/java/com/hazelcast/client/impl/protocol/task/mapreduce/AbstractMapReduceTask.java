@@ -48,7 +48,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.executeOperation;
@@ -177,11 +176,7 @@ public abstract class AbstractMapReduceTask<Parameters>
 
     @Override
     public void onFailure(Throwable t) {
-        Throwable throwable = t;
-        if (throwable instanceof ExecutionException) {
-            throwable = throwable.getCause();
-        }
-        sendClientMessage(throwable);
+        handleProcessingFailure(t);
     }
 
     @Override
