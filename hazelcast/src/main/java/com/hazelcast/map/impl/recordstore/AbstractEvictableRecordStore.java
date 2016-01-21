@@ -30,6 +30,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.Clock;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -170,37 +171,24 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     @Override
-    public void evictEntries(long now) {
-        if (isEvictionEnabled()) {
-            cleanUp(now);
-        }
-    }
-
-    /**
-     * Makes eviction clean-up logic.
-     *
-     * @param now now in millis.
-     */
-    private void cleanUp(long now) {
-        if (size() == 0) {
+    public void evictEntries(Data excludeKey) {
+        if (!isEvictionEnabled() || size() == 0) {
             return;
         }
-        if (shouldEvict(now)) {
-            evict();
-            lastEvictionTime = now;
+        long now = Clock.currentTimeMillis();
+        if (!shouldEvict(now)) {
+            return;
         }
-    }
-
-    protected boolean shouldEvict(long now) {
-        return isEvictionEnabled() && inEvictableTimeWindow(now) && checkEvictionPossible();
-    }
-
-    private void evict() {
         int removalSize = getRemovalSize();
         if (removalSize < 1) {
             return;
         }
-        evictor.removeSize(removalSize, this);
+        evictor.removeSize(removalSize, this, excludeKey);
+        lastEvictionTime = now;
+    }
+
+    protected boolean shouldEvict(long now) {
+        return isEvictionEnabled() && inEvictableTimeWindow(now) && checkEvictionPossible();
     }
 
     private int getRemovalSize() {

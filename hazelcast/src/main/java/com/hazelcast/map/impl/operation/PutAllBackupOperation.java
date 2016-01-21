@@ -65,15 +65,16 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
         for (int i = 0; i < entries.size(); i++) {
             final RecordInfo recordInfo = recordInfos.get(i);
             final Map.Entry<Data, Data> entry = entries.get(i);
-            final Record record = recordStore.putBackup(entry.getKey(), entry.getValue());
+            Data dataKey = entry.getKey();
+            final Record record = recordStore.putBackup(dataKey, entry.getValue());
             Records.applyRecordInfo(record, recordInfo);
             if (wanEnabled) {
                 final Data dataValueAsData = mapServiceContext.toData(entry.getValue());
-                final EntryView entryView = EntryViews.createSimpleEntryView(entry.getKey(), dataValueAsData, record);
+                final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, dataValueAsData, record);
                 eventPublisher.publishWanReplicationUpdateBackup(name, entryView);
             }
 
-            recordStore.evictEntries(now);
+            recordStore.evictEntries(dataKey);
         }
     }
 

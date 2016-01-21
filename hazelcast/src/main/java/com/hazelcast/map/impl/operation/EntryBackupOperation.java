@@ -101,7 +101,7 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
 
     @Override
     public void afterRun() throws Exception {
-        evict();
+        evict(dataKey);
     }
 
     private boolean entryRemovedBackup(Map.Entry entry) {

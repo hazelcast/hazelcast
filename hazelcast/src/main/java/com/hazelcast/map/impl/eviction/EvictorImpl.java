@@ -51,7 +51,7 @@ public class EvictorImpl implements Evictor {
     }
 
     @Override
-    public void removeSize(int removalSize, RecordStore recordStore) {
+    public void removeSize(int removalSize, RecordStore recordStore, Data excludeKey) {
         long now = Clock.currentTimeMillis();
         MapConfig mapConfig = recordStore.getMapContainer().getMapConfig();
 
@@ -73,6 +73,9 @@ public class EvictorImpl implements Evictor {
         while (iterator.hasNext()) {
             Record record = iterator.next();
             Data key = record.getKey();
+            if (key.equals(excludeKey)) {
+                continue;
+            }
             long value = getEvictionCriteriaValue(record, evictionPolicy);
             if (value <= criteriaValue) {
                 if (tryEvict(key, record, recordStore, backup, now)) {

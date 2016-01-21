@@ -30,7 +30,6 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -98,7 +97,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         backupEntries.add(entry);
         RecordInfo replicationInfo = buildRecordInfo(record);
         backupRecordInfos.add(replicationInfo);
-        evict();
+        recordStore.evictEntries(dataKey);
 
         addInvalidation(dataKey);
 
@@ -131,11 +130,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
 
     private boolean shouldWanReplicate() {
         return mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null;
-    }
-
-    protected void evict() {
-        final long now = Clock.currentTimeMillis();
-        recordStore.evictEntries(now);
     }
 
     @Override

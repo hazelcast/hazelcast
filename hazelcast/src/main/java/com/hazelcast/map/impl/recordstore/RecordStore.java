@@ -305,7 +305,7 @@ public interface RecordStore<R extends Record> {
      */
     R getRecordOrNull(Data key);
 
-    void evictEntries(long now);
+    void evictEntries(Data excludeKey);
 
     /**
      * Loads all keys and values

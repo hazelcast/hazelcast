@@ -78,6 +78,9 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
         return mapServiceContext.getRecordStore(getPartitionId(), name);
     }
 
+    protected void evict(Data excludeKey) {
+        recordStore.evictEntries(excludeKey);
+    }
 
     protected Map.Entry createMapEntry(Data key, Object value) {
         return new LazyMapEntry(key, value, getNodeEngine().getSerializationService());
@@ -268,11 +271,6 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
     protected boolean keyNotOwnedByThisPartition(Data key) {
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         return partitionService.getPartitionId(key) != getPartitionId();
-    }
-
-    protected void evict() {
-        final long now = Clock.currentTimeMillis();
-        recordStore.evictEntries(now);
     }
 
     public void setWanEventList(List<WanEventWrapper> wanEventList) {
