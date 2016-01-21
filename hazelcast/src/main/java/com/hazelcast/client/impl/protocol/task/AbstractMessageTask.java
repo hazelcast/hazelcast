@@ -99,7 +99,6 @@ public abstract class AbstractMessageTask<P>
             }
 
         } catch (Throwable e) {
-            logProcessingFailure(e);
             handleProcessingFailure(e);
         }
     }
@@ -108,7 +107,7 @@ public abstract class AbstractMessageTask<P>
         return false;
     }
 
-    private void initializeAndProcessMessage() {
+    private void initializeAndProcessMessage() throws Throwable {
         if (!node.joined()) {
             throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
         }
@@ -144,17 +143,17 @@ public abstract class AbstractMessageTask<P>
     }
 
     private void logProcessingFailure(Throwable throwable) {
-        Level level = nodeEngine.isRunning() ? Level.SEVERE : Level.FINEST;
-        if (logger.isLoggable(level)) {
+        if (logger.isLoggable(Level.FINEST)) {
             if (parameters == null) {
-                logger.log(level, throwable.getMessage(), throwable);
+                logger.log(Level.FINEST, throwable.getMessage(), throwable);
             } else {
-                logger.log(level, "While executing request: " + parameters + " -> " + throwable.getMessage(), throwable);
+                logger.log(Level.FINEST, "While executing request: " + parameters + " -> " + throwable.getMessage(), throwable);
             }
         }
     }
 
-    private void handleProcessingFailure(Throwable throwable) {
+    protected void handleProcessingFailure(Throwable throwable) {
+        logProcessingFailure(throwable);
         if (endpoint != null) {
             sendClientMessage(throwable);
         }
@@ -190,7 +189,7 @@ public abstract class AbstractMessageTask<P>
         }
     }
 
-    protected abstract void processMessage();
+    protected abstract void processMessage() throws Throwable;
 
     protected void sendResponse(Object response) {
         ClientMessage clientMessage = encodeResponse(response);

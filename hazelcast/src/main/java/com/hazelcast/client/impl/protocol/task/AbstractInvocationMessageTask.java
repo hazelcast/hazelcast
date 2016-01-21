@@ -53,6 +53,6 @@ public abstract class AbstractInvocationMessageTask<P> extends AbstractMessageTa
 
     @Override
     public void onFailure(Throwable t) {
-        sendClientMessage(t);
+        handleProcessingFailure(t);
     }
 }

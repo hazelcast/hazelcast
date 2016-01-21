@@ -77,7 +77,7 @@ public abstract class AbstractPartitionMessageTask<P>
     @Override
     public void onFailure(Throwable t) {
         beforeResponse();
-        sendClientMessage(t);
+        handleProcessingFailure(t);
         afterResponse();
     }
 
