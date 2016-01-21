@@ -50,7 +50,8 @@ import static com.hazelcast.client.config.ClientProperty.MAX_CONCURRENT_INVOCATI
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 
 
-abstract class ClientInvocationServiceSupport implements ClientInvocationService, ConnectionListener {
+abstract class ClientInvocationServiceSupport implements ClientInvocationService, ConnectionListener
+        , ConnectionHeartbeatListener {
 
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED = 10;
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD = 5000;
@@ -81,6 +82,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         executionService = client.getClientExecutionService();
         clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         connectionManager.addConnectionListener(this);
+        connectionManager.addConnectionHeartbeatListener(this);
         partitionService = client.getClientPartitionService();
         clientExceptionFactory = initClientExceptionFactory();
         responseThread = new ResponseThread(client.getThreadGroup(), client.getName() + ".response-",
@@ -183,6 +185,16 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
     @Override
     public void connectionRemoved(Connection connection) {
+        cleanConnectionResources((ClientConnection) connection);
+    }
+
+    @Override
+    public void heartBeatStarted(Connection connection) {
+
+    }
+
+    @Override
+    public void heartBeatStopped(Connection connection) {
         cleanConnectionResources((ClientConnection) connection);
     }
 
