@@ -92,7 +92,6 @@ import java.util.concurrent.TimeoutException;
 
 import static junit.framework.Assert.assertNull;
 import static junit.framework.TestCase.assertEquals;
-import static org.junit.Assert.assertArrayEquals;
 
 @RunParallel
 @RunWith(HazelcastTestRunner.class)
@@ -195,20 +194,7 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
         ClientMessage responseMessage = ClientMessage.createForDecode(exceptionMessage.buffer(), 0);
         Throwable resurrectedThrowable = exceptionFactory.createException(responseMessage);
         assertEquals(throwable.getClass(), resurrectedThrowable.getClass());
-
-        StackTraceElement[] stackTrace1 = throwable.getStackTrace();
-        StackTraceElement[] stackTrace2 = resurrectedThrowable.getStackTrace();
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("STACK TRACE EXPECTED \n");
-        for (StackTraceElement stackTraceElement : stackTrace1) {
-            stringBuilder.append(toString(stackTraceElement)).append("\n");
-        }
-        stringBuilder.append("STACK TRACE ACTUAL \n");
-        for (StackTraceElement stackTraceElement : stackTrace2) {
-            stringBuilder.append(toString(stackTraceElement)).append("\n");
-        }
-        stringBuilder.append("\n");
-        assertArrayEquals(stringBuilder.toString(), stackTrace1, stackTrace2);
+        assertStackTraceArrayEquals(throwable.getStackTrace(), resurrectedThrowable.getStackTrace());
         Throwable cause = throwable.getCause();
         if (cause == null) {
             assertNull(resurrectedThrowable.getCause());
@@ -217,9 +203,19 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
         }
     }
 
-    public String toString(StackTraceElement element) {
-        return element.getClassName() + "." + element.getMethodName() +
-                "(" + element.getFileName() + ":" + element.getLineNumber() + ")";
+    private void assertStackTraceArrayEquals(StackTraceElement[] stackTrace1, StackTraceElement[] stackTrace2) {
+        assertEquals(stackTrace1.length, stackTrace2.length);
+        for (int i = 0; i < stackTrace1.length; i++) {
+            StackTraceElement stackTraceElement1 = stackTrace1[i];
+            StackTraceElement stackTraceElement2 = stackTrace1[i];
+            //Not using stackTraceElement.equals
+            //because in IBM JDK stacktraceElements with null method name are not equal
+            assertEquals(stackTraceElement1.getClassName(), stackTraceElement2.getClassName());
+            assertEquals(stackTraceElement1.getMethodName(), stackTraceElement2.getMethodName());
+            assertEquals(stackTraceElement1.getFileName(), stackTraceElement2.getFileName());
+            assertEquals(stackTraceElement1.getLineNumber(), stackTraceElement2.getLineNumber());
+        }
+
     }
 
 }
