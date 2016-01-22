@@ -193,6 +193,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             addressProviders.add(new DiscoveryAddressProvider(discoveryService));
         }
 
+        if (clientProperties.getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED)) {
+            discoveryService.start();
+        }
+
         if (awsConfig != null && awsConfig.isEnabled()) {
             try {
                 addressProviders.add(new AwsAddressProvider(awsConfig));
@@ -587,6 +591,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         listenerService.shutdown();
         serializationService.destroy();
         nearCacheManager.destroyAllNearCaches();
+        if (discoveryService != null) {
+            discoveryService.destroy();
+        }
     }
 
 }
