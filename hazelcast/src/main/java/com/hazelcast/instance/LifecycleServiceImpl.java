@@ -89,7 +89,7 @@ public class LifecycleServiceImpl implements LifecycleService {
             if (node != null) {
                 final NodeShutdownLatch shutdownLatch = new NodeShutdownLatch(node);
                 node.shutdown(false);
-                HazelcastInstanceFactory.remove(instance);
+                HazelcastInstanceManager.remove(instance);
                 shutdownLatch.await(getShutdownTimeoutSeconds(node), TimeUnit.SECONDS);
             }
             fireLifecycleEvent(SHUTDOWN);
@@ -113,7 +113,7 @@ public class LifecycleServiceImpl implements LifecycleService {
             if (node != null) {
                 node.shutdown(true);
             }
-            HazelcastInstanceFactory.remove(instance);
+            HazelcastInstanceManager.remove(instance);
             fireLifecycleEvent(SHUTDOWN);
         }
     }

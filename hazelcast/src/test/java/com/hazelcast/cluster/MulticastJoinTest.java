@@ -10,7 +10,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -30,7 +30,7 @@ public class MulticastJoinTest extends AbstractJoinTest {
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceFactory.terminateAll();
+        HazelcastInstanceManager.terminateAll();
     }
 
     @Test

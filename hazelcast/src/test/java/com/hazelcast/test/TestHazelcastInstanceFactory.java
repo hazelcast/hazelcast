@@ -21,7 +21,7 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
@@ -109,9 +109,9 @@ public class TestHazelcastInstanceFactory {
         if (mockNetwork) {
             init(config);
             NodeContext nodeContext = registry.createNodeContext(pickAddress());
-            return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+            return HazelcastInstanceManager.newHazelcastInstance(config, instanceName, nodeContext);
         }
-        return HazelcastInstanceFactory.newHazelcastInstance(config);
+        return HazelcastInstanceManager.newHazelcastInstance(config);
     }
 
     /**
@@ -134,7 +134,7 @@ public class TestHazelcastInstanceFactory {
         if (mockNetwork) {
             init(config);
             NodeContext nodeContext = registry.createNodeContext(address);
-            return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+            return HazelcastInstanceManager.newHazelcastInstance(config, instanceName, nodeContext);
         }
         throw new UnsupportedOperationException("Explicit address is only available for mock network setup!");
     }
@@ -188,7 +188,7 @@ public class TestHazelcastInstanceFactory {
             return registry.getInstance(address);
         }
 
-        Set<HazelcastInstance> instances = HazelcastInstanceFactory.getAllHazelcastInstances();
+        Set<HazelcastInstance> instances = HazelcastInstanceManager.getAllHazelcastInstances();
         for (HazelcastInstance instance : instances) {
             if (address.equals(getAddress(instance))) {
                 return instance;
@@ -209,7 +209,7 @@ public class TestHazelcastInstanceFactory {
         if (mockNetwork) {
             registry.terminate();
         } else {
-            HazelcastInstanceFactory.terminateAll();
+            HazelcastInstanceManager.terminateAll();
         }
     }
 

@@ -46,7 +46,7 @@ final class NodeShutdownLatch {
         members.remove(localMember);
 
         if (!members.isEmpty()) {
-            for (HazelcastInstanceImpl instance : HazelcastInstanceFactory.getInstanceImpls(members)) {
+            for (HazelcastInstanceImpl instance : HazelcastInstanceManager.getInstanceImpls(members)) {
                 if (instance.node.isRunning()) {
                     try {
                         ClusterServiceImpl clusterService = instance.node.clusterService;

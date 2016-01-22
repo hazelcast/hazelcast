@@ -18,7 +18,7 @@ package com.hazelcast.util;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.instance.NodeExtension;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.doThrow;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
+public class HazelcastInstanceManagerTest extends HazelcastTestSupport {
 
     @Test
     public void testTestHazelcastInstanceFactory() {
@@ -115,7 +115,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
 
-        HazelcastInstanceFactory.newHazelcastInstance(config, randomString(), context);
+        HazelcastInstanceManager.newHazelcastInstance(config, randomString(), context);
     }
 
     @Test(expected = ExpectedRuntimeException.class)
@@ -132,7 +132,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
 
-        HazelcastInstanceFactory.newHazelcastInstance(config, randomString(), context);
+        HazelcastInstanceManager.newHazelcastInstance(config, randomString(), context);
     }
 
     @Test(expected = ExpectedRuntimeException.class)
@@ -149,7 +149,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
 
-        HazelcastInstanceFactory.newHazelcastInstance(config, randomString(), context);
+        HazelcastInstanceManager.newHazelcastInstance(config, randomString(), context);
     }
 
     @Test(expected = ExpectedRuntimeException.class)
@@ -175,7 +175,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
 
-        HazelcastInstance instance = HazelcastInstanceFactory.newHazelcastInstance(config, randomString(), context);
+        HazelcastInstance instance = HazelcastInstanceManager.newHazelcastInstance(config, randomString(), context);
         try {
             instance.getLifecycleService().terminate();
         } catch (ExpectedRuntimeException expected) {
@@ -199,7 +199,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
 
-        HazelcastInstanceFactory.newHazelcastInstance(config, randomString(), context);
+        HazelcastInstanceManager.newHazelcastInstance(config, randomString(), context);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -224,6 +224,6 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
 
-        HazelcastInstanceFactory.newHazelcastInstance(config, randomString(), context);
+        HazelcastInstanceManager.newHazelcastInstance(config, randomString(), context);
     }
 }

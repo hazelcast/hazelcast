@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.internal.ascii.HTTPCommunicator;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.test.AssertTask;
@@ -42,7 +42,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceFactory.terminateAll();
+        HazelcastInstanceManager.terminateAll();
     }
 
     @Test

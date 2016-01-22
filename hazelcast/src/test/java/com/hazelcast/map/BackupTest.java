@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.test.AssertTask;
@@ -56,7 +56,7 @@ public class BackupTest extends HazelcastTestSupport {
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceFactory.terminateAll();
+        HazelcastInstanceManager.terminateAll();
     }
 
     @Before

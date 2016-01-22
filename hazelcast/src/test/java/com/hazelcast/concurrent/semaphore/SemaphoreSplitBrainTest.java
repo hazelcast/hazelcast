@@ -10,7 +10,7 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -34,7 +34,7 @@ public class SemaphoreSplitBrainTest extends HazelcastTestSupport {
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceFactory.shutdownAll();
+        HazelcastInstanceManager.shutdownAll();
     }
 
     @Test

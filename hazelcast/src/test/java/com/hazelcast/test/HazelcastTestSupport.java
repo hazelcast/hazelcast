@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -538,7 +538,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static boolean isAllInSafeState() {
-        Set<HazelcastInstance> nodeSet = HazelcastInstanceFactory.getAllHazelcastInstances();
+        Set<HazelcastInstance> nodeSet = HazelcastInstanceManager.getAllHazelcastInstances();
         return isAllInSafeState(nodeSet);
     }
 
@@ -552,7 +552,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void waitAllForSafeState() {
-        waitAllForSafeState(HazelcastInstanceFactory.getAllHazelcastInstances());
+        waitAllForSafeState(HazelcastInstanceManager.getAllHazelcastInstances());
     }
 
     public static void waitAllForSafeState(Collection<HazelcastInstance> instances) {
