@@ -68,4 +68,9 @@ public class MultiMapAddEntryListenerToKeyMessageTask
     public Object[] getParameters() {
         return new Object[]{null, parameters.key, parameters.includeValue};
     }
+
+    @Override
+    public Data getKey() {
+        return parameters.key;
+    }
 }
