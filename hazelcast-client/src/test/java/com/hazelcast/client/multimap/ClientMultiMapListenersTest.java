@@ -22,6 +22,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,10 +32,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -179,6 +184,30 @@ public class ClientMultiMapListenersTest {
         }
 
         assertOpenEventually(listener.addLatch);
+    }
+
+    @Test
+    public void testListenerOnKey_whenOtherKeysAdded() throws InterruptedException {
+        final MultiMap mm = client.getMultiMap(randomString());
+
+        final List<EntryEvent> events = new ArrayList<EntryEvent>();
+        mm.addEntryListener(new EntryAdapter() {
+            @Override
+            public void entryAdded(EntryEvent event) {
+                events.add(event);
+            }
+        }, "key", true);
+
+        mm.put("key2", "value");
+        mm.put("key", "value");
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, events.size());
+                assertEquals("key", events.get(0).getKey());
+            }
+        });
     }
 
     @Test
