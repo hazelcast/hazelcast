@@ -46,14 +46,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 @SuppressWarnings("SynchronizationOnStaticField")
 @PrivateApi
-public final class HazelcastInstanceFactory {
+public final class HazelcastInstanceManager {
 
     private static final int ADDITIONAL_SLEEP_SECONDS_FOR_NON_FIRST_MEMBERS = 4;
 
     private static final ConcurrentMap<String, InstanceFuture> INSTANCE_MAP = new ConcurrentHashMap<String, InstanceFuture>(5);
     private static final AtomicInteger FACTORY_ID_GEN = new AtomicInteger();
 
-    private HazelcastInstanceFactory() {
+    private HazelcastInstanceManager() {
     }
 
     public static Set<HazelcastInstance> getAllHazelcastInstances() {
@@ -155,7 +155,7 @@ public final class HazelcastInstanceFactory {
         HazelcastInstanceProxy proxy;
         try {
             if (classLoader == null) {
-                Thread.currentThread().setContextClassLoader(HazelcastInstanceFactory.class.getClassLoader());
+                Thread.currentThread().setContextClassLoader(HazelcastInstanceManager.class.getClassLoader());
             }
             HazelcastInstanceImpl hazelcastInstance = new HazelcastInstanceImpl(instanceName, config, nodeContext);
             OutOfMemoryErrorDispatcher.registerServer(hazelcastInstance);
