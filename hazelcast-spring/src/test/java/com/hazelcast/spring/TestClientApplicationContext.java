@@ -91,6 +91,9 @@ public class TestClientApplicationContext {
     @Resource(name = "client6")
     private HazelcastClientProxy client6;
 
+    @Resource(name = "client7-empty-serialization-config")
+    private HazelcastClientProxy client7;
+
     @Resource(name = "instance")
     private HazelcastInstance instance;
 
@@ -271,6 +274,20 @@ public class TestClientApplicationContext {
         assertEquals("atomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
+    }
+
+    @Test
+    public void testDefaultSerializationConfig() {
+        ClientConfig config7 = client7.getClientConfig();
+        final SerializationConfig serConf = config7.getSerializationConfig();
+
+        assertEquals(ByteOrder.BIG_ENDIAN, serConf.getByteOrder());
+        assertEquals(false, serConf.isAllowUnsafe());
+        assertEquals(true, serConf.isCheckClassDefErrors());
+        assertEquals(false, serConf.isEnableCompression());
+        assertEquals(true, serConf.isEnableSharedObject());
+        assertEquals(false, serConf.isUseNativeByteOrder());
+        assertEquals(0, serConf.getPortableVersion());
     }
 
     @Test
