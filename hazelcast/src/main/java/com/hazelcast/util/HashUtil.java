@@ -27,7 +27,17 @@ import java.util.Arrays;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static java.lang.Math.abs;
 
-@SuppressFBWarnings({"SF_SWITCH_FALLTHROUGH", "SF_SWITCH_NO_DEFAULT"})
+/**
+ * Utility methods related to hashtables.
+ */
+@SuppressFBWarnings({ "SF_SWITCH_FALLTHROUGH", "SF_SWITCH_NO_DEFAULT" })
+@SuppressWarnings({
+        "checkstyle:magicnumber",
+        "checkstyle:methodname",
+        "checkstyle:fallthrough",
+        "checkstyle:cyclomaticcomplexity",
+        "checkstyle:booleanexpressioncomplexity",
+        "checkstyle:methodlength" })
 public final class HashUtil {
 
     private static final boolean LITTLE_ENDIAN = ByteOrder.LITTLE_ENDIAN == ByteOrder.nativeOrder();
@@ -37,6 +47,9 @@ public final class HashUtil {
         for (int i = 0; i < PERTURBATIONS.length; i++) {
             PERTURBATIONS[i] = MurmurHash3_fmix(primeDisplacement + i);
         }
+    }
+
+    private HashUtil() {
     }
 
     public static int MurmurHash3_x86_32(byte[] data, int offset, int len) {
@@ -52,17 +65,20 @@ public final class HashUtil {
         int c2 = 0x1b873593;
 
         int h1 = seed;
-        int roundedEnd = offset + (len & 0xfffffffc);  // round down to 4 byte block
+        // round down to 4 byte block
+        int roundedEnd = offset + (len & 0xfffffffc);
 
         for (int i = offset; i < roundedEnd; i += 4) {
             // little endian load order
             int k1 = (data[i] & 0xff) | ((data[i + 1] & 0xff) << 8) | ((data[i + 2] & 0xff) << 16) | (data[i + 3] << 24);
             k1 *= c1;
-            k1 = (k1 << 15) | (k1 >>> 17);  // ROTL32(k1,15);
+            // ROTL32(k1,15);
+            k1 = (k1 << 15) | (k1 >>> 17);
             k1 *= c2;
 
             h1 ^= k1;
-            h1 = (h1 << 13) | (h1 >>> 19);  // ROTL32(h1,13);
+            // ROTL32(h1,13);
+            h1 = (h1 << 13) | (h1 >>> 19);
             h1 = h1 * 5 + 0xe6546b64;
         }
 
@@ -79,9 +95,11 @@ public final class HashUtil {
             case 1:
                 k1 |= data[roundedEnd] & 0xff;
                 k1 *= c1;
-                k1 = (k1 << 15) | (k1 >>> 17);  // ROTL32(k1,15);
+                // ROTL32(k1,15);
+                k1 = (k1 << 15) | (k1 >>> 17);
                 k1 *= c2;
                 h1 ^= k1;
+            default:
         }
 
         // finalization
@@ -103,7 +121,8 @@ public final class HashUtil {
         int c2 = 0x1b873593;
 
         int h1 = seed;
-        int roundedEnd = offset + (len & 0xfffffffc);  // round down to 4 byte block
+        // round down to 4 byte block
+        int roundedEnd = offset + (len & 0xfffffffc);
 
         Unsafe unsafe = UnsafeHelper.UNSAFE;
         for (int i = offset; i < roundedEnd; i += 4) {
@@ -114,11 +133,13 @@ public final class HashUtil {
                     | ((unsafe.getByte(address + i + 1) & 0xff) << 16)
                     | (unsafe.getByte(address + i) << 24);
             k1 *= c1;
-            k1 = (k1 << 15) | (k1 >>> 17);  // ROTL32(k1,15);
+            // ROTL32(k1,15);
+            k1 = (k1 << 15) | (k1 >>> 17);
             k1 *= c2;
 
             h1 ^= k1;
-            h1 = (h1 << 13) | (h1 >>> 19);  // ROTL32(h1,13);
+            // ROTL32(h1,13);
+            h1 = (h1 << 13) | (h1 >>> 19);
             h1 = h1 * 5 + 0xe6546b64;
         }
 
@@ -135,9 +156,11 @@ public final class HashUtil {
             case 1:
                 k1 |= unsafe.getByte(address + roundedEnd) & 0xff;
                 k1 *= c1;
-                k1 = (k1 << 15) | (k1 >>> 17);  // ROTL32(k1,15);
+                // ROTL32(k1,15);
+                k1 = (k1 << 15) | (k1 >>> 17);
                 k1 *= c2;
                 h1 ^= k1;
+            default:
         }
 
         // finalization
@@ -244,6 +267,7 @@ public final class HashUtil {
 
 //                c1 = c1 * 5 + 0x7b7d159c;   // unused, used only for 128-bit version
 //                c2 = c2 * 5 + 0x6bce6396;   // unused, used only for 128-bit version
+            default:
         }
 
         h2 ^= len;
@@ -357,6 +381,7 @@ public final class HashUtil {
 
 //                c1 = c1 * 5 + 0x7b7d159c;   // unused, used only for 128-bit version
 //                c2 = c2 * 5 + 0x6bce6396;   // unused, used only for 128-bit version
+            default:
         }
 
         h2 ^= len;
@@ -478,8 +503,5 @@ public final class HashUtil {
      */
     public static int computePerturbationValue(int capacity) {
         return PERTURBATIONS[Integer.numberOfLeadingZeros(capacity)];
-    }
-
-    private HashUtil() {
     }
 }

@@ -38,7 +38,13 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
  * @author Sandy Gao
  * @version $Id$
  */
-@SuppressWarnings({ "SynchronizedMethod", "CallToNativeMethodWhileLocked" })
+@SuppressWarnings({
+        "checkstyle:magicnumber",
+        "checkstyle:npathcomplexity",
+        "checkstyle:cyclomaticcomplexity",
+        "checkstyle:methodlength",
+        "checkstyle:returncount",
+        "checkstyle:innerassignment" })
 public final class Base64 {
 
     private static final int BASELENGTH = 255;

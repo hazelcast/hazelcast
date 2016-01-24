@@ -490,8 +490,7 @@
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/tx/TransactionalMapProxySupport"/>
 
     <!-- Util -->
-    <suppress checks="" files="com/hazelcast/util/Base64"/>
-    <suppress checks="" files="com/hazelcast/util/HashUtil"/>
+    <suppress checks="Header|IllegalImport" files="com/hazelcast/util/HashUtil"/>
     <suppress checks="JavadocType|JavadocVariable" files="com/hazelcast/util/scheduler/ScheduleType"/>
 
     <suppress checks="MagicNumber" files="com/hazelcast/util/QuickMath"/>
