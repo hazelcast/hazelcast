@@ -31,6 +31,9 @@ import com.hazelcast.map.impl.MapKeyLoader;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
+import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.merge.MapMergePolicy;
@@ -163,15 +166,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void flush() {
-        final long now = getNow();
-        final Collection<Data> processedKeys = mapDataStore.flush();
-        for (Data key : processedKeys) {
-            final Record record = getRecordOrNull(key, now, false);
-            if (record != null) {
-                record.onStore();
-            }
-        }
+    public void softFlush() {
+        updateStoreStats();
+        mapDataStore.softFlush();
     }
 
     /**
@@ -939,5 +936,20 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
 
         record.onStore();
+    }
+
+    private void updateStoreStats() {
+        if (!(mapDataStore instanceof WriteBehindStore)
+                || !mapContainer.getMapConfig().isStatisticsEnabled()) {
+            return;
+        }
+
+        long now = Clock.currentTimeMillis();
+        WriteBehindQueue<DelayedEntry> writeBehindQueue = ((WriteBehindStore) mapDataStore).getWriteBehindQueue();
+        List<DelayedEntry> delayedEntries = writeBehindQueue.asList();
+        for (DelayedEntry delayedEntry : delayedEntries) {
+            Record record = getRecordOrNull(toData(delayedEntry.getKey()), now, false);
+            onStore(record);
+        }
     }
 }

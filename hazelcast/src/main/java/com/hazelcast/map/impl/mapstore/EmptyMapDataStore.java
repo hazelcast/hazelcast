@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.impl.mapstore;
 
-import com.hazelcast.nio.serialization.Data;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -73,8 +71,13 @@ class EmptyMapDataStore implements MapDataStore {
     }
 
     @Override
-    public Collection<Data> flush() {
-        return Collections.emptyList();
+    public void softFlush() {
+
+    }
+
+    @Override
+    public void hardFlush() {
+
     }
 
     @Override

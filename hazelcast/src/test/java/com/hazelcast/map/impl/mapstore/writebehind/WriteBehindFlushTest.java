@@ -17,9 +17,11 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapStore;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -99,6 +101,35 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
         map.flush();
 
         assertWriteBehindQueuesEmpty(mapName, asList(member1, member2, member3));
+    }
+
+    @Test
+    public void testFlush_shouldNotCause_concurrentStoreOperation() throws Exception {
+        int blockStoreOperationSeconds = 5;
+        TemporaryBlockerMapStore store = new TemporaryBlockerMapStore(blockStoreOperationSeconds);
+        Config config = newMapStoredConfig(store, 2);
+
+        HazelcastInstance node = createHazelcastInstance(config);
+
+        IMap<String, String> map = node.getMap("default");
+
+        map.put("key", "value");
+        map.flush();
+
+        assertEquals("Expecting only one store after flush", 1, store.getStoreOperationCount());
+    }
+
+    protected Config newMapStoredConfig(MapStore store, int writeDelaySeconds) {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setWriteDelaySeconds(writeDelaySeconds);
+        mapStoreConfig.setImplementation(store);
+
+        Config config = getConfig();
+        MapConfig mapConfig = config.getMapConfig("default");
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+
+        return config;
     }
 
     protected void assertWriteBehindQueuesEmpty(final String mapName, final List<HazelcastInstance> nodes) {

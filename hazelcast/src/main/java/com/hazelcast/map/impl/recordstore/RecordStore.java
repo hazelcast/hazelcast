@@ -229,7 +229,10 @@ public interface RecordStore<R extends Record> {
 
     MapContainer getMapContainer();
 
-    void flush();
+    /**
+     * @see MapDataStore#softFlush()
+     */
+    void softFlush();
 
     /**
      * Clears internal partition data.

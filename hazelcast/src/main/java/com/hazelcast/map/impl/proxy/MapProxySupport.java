@@ -49,6 +49,7 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
+import com.hazelcast.map.impl.operation.CheckIfPartitionFlushedOperationFactory;
 import com.hazelcast.map.impl.operation.ClearOperation;
 import com.hazelcast.map.impl.operation.EvictAllOperation;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
@@ -511,13 +512,25 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             OperationFactory opFactory = new PartitionCheckIfLoadedOperationFactory(name);
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, opFactory);
             // wait for all the data to be loaded on all partitions - wait forever
-            waitAllTrue(results);
+            waitAllTrue(results, opFactory);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
     }
 
-    private void waitAllTrue(Map<Integer, Object> results) throws InterruptedException {
+
+    public void waitUntilFlushed() {
+        try {
+            OperationFactory opFactory = new CheckIfPartitionFlushedOperationFactory(name);
+            Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, opFactory);
+            waitAllTrue(results, opFactory);
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    private void waitAllTrue(Map<Integer, Object> results,
+                             OperationFactory operationFactory) throws InterruptedException {
         Iterator<Entry<Integer, Object>> iterator = results.entrySet().iterator();
         boolean isFinished = false;
         Set<Integer> retrySet = new HashSet<Integer>();
@@ -531,7 +544,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 }
             }
             if (retrySet.size() > 0) {
-                results = retryPartitions(retrySet);
+                results = retryPartitions(retrySet, operationFactory);
                 iterator = results.entrySet().iterator();
                 TimeUnit.SECONDS.sleep(1);
                 retrySet.clear();
@@ -541,10 +554,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    private Map<Integer, Object> retryPartitions(Collection partitions) {
+    private Map<Integer, Object> retryPartitions(Collection partitions, OperationFactory operationFactory) {
         try {
             Map<Integer, Object> results = operationService.invokeOnPartitions(
-                    SERVICE_NAME, new PartitionCheckIfLoadedOperationFactory(name), partitions);
+                    SERVICE_NAME, operationFactory, partitions);
             return results;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -745,6 +758,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
+
+
+        waitUntilFlushed();
     }
 
     public void clearInternal() {
