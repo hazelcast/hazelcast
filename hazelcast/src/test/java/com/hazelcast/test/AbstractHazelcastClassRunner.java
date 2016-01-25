@@ -51,6 +51,8 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     protected static final int DEFAULT_TEST_TIMEOUT_IN_SECONDS = getInteger("hazelcast.test.defaultTestTimeoutInSeconds", 300);
 
     private static final ThreadLocal<String> TEST_NAME_THREAD_LOCAL = new InheritableThreadLocal<String>();
+    private static final boolean THREAD_CPU_TIME_INFO_AVAILABLE;
+    private static final boolean THREAD_CONTENTION_INFO_AVAILABLE;
 
     static {
         String logging = "hazelcast.logging.type";
@@ -72,6 +74,28 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         int g2 = rand.nextInt(255);
         int g3 = rand.nextInt(255);
         System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
+
+        ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+
+        boolean threadCPUTimeInfoAvailable = false;
+        if (threadMXBean.isThreadCpuTimeSupported()) {
+            try  {
+                threadMXBean.setThreadCpuTimeEnabled(true);
+                threadCPUTimeInfoAvailable = true;
+            } catch (Throwable t) {
+            }
+        }
+        THREAD_CPU_TIME_INFO_AVAILABLE = threadCPUTimeInfoAvailable;
+
+        boolean threadContentionInfoAvailable = false;
+        if (threadMXBean.isThreadContentionMonitoringSupported()) {
+            try  {
+                threadMXBean.setThreadContentionMonitoringEnabled(true);
+                threadContentionInfoAvailable = true;
+            } catch (Throwable t) {
+            }
+        }
+        THREAD_CONTENTION_INFO_AVAILABLE = threadContentionInfoAvailable;
     }
 
     /**
@@ -182,7 +206,8 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         ThreadInfo[] threadInfos = threadMXBean.dumpAllThreads(true, true);
         long currentThreadId = Thread.currentThread().getId();
         for (ThreadInfo threadInfo : threadInfos) {
-            if (threadInfo.getThreadId() == currentThreadId) {
+            long threadId = threadInfo.getThreadId();
+            if (threadId == currentThreadId) {
                 continue;
             }
             dump.append('"');
@@ -193,13 +218,20 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             dump.append("\n\tjava.lang.Thread.State: ");
             dump.append(state);
             if (threadInfo.getLockName() != null) {
-                dump.append(" on lock=").append(threadInfo.getLockName());
+                dump.append(", on lock=").append(threadInfo.getLockName());
             }
             if (threadInfo.getLockOwnerName() != null) {
-                dump.append(" owned by ").append(threadInfo.getLockOwnerName());
-                dump.append(" id=").append(threadInfo.getLockOwnerId());
+                dump.append(", owned by ").append(threadInfo.getLockOwnerName());
+                dump.append(", id=").append(threadInfo.getLockOwnerId());
             }
-
+            if (THREAD_CPU_TIME_INFO_AVAILABLE) {
+                dump.append(", cpu=").append(threadMXBean.getThreadCpuTime(threadId)).append(" nsecs");
+                dump.append(", usr=").append(threadMXBean.getThreadUserTime(threadId)).append(" nsecs");
+            }
+            if (THREAD_CONTENTION_INFO_AVAILABLE) {
+                dump.append(", blocked=").append(threadInfo.getBlockedTime()).append(" msecs");
+                dump.append(", waited=").append(threadInfo.getWaitedTime()).append(" msecs");
+            }
             StackTraceElement[] stackTraceElements = threadInfo.getStackTrace();
             for (StackTraceElement stackTraceElement : stackTraceElements) {
                 dump.append("\n\t\tat ");
