@@ -31,19 +31,29 @@ import com.hazelcast.spi.WaitSupport;
 public final class GetOperation extends KeyBasedMapOperation
         implements IdentifiedDataSerializable, WaitSupport, ReadonlyOperation {
 
-    private Data result;
+    private Object result;
+
+    private boolean defensiveCopy;
 
     public GetOperation() {
     }
 
     public GetOperation(String name, Data dataKey) {
+        this(name, dataKey, true);
+    }
+
+    public GetOperation(String name, Data dataKey, boolean defensiveCopy) {
         super(name, dataKey);
+        this.defensiveCopy = defensiveCopy;
     }
 
     @Override
     public void run() {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        result = mapServiceContext.toData(recordStore.get(dataKey, false));
+        result = recordStore.get(dataKey, false);
+        if (defensiveCopy) {
+            result = mapServiceContext.toData(result);
+        }
     }
 
     @Override

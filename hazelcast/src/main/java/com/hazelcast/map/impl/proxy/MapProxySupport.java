@@ -252,7 +252,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 return fromBackup;
             }
         }
-        MapOperation operation = operationProvider.createGetOperation(name, key);
+        MapOperation operation;
+
+        if (defensiveCopyObjectMemoryFormat) {
+            operation = operationProvider.createGetOperation(name, key);
+        } else {
+            operation = operationProvider.createGetOperationWithoutDefensiveCopy(name, key);
+        }
+
         operation.setThreadId(ThreadUtil.getThreadId());
         return invokeOperation(key, operation);
     }
@@ -349,14 +356,13 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 Future f = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                         .setResultDeserialized(false)
-                        .setDefensiveCopy(defensiveCopyObjectMemoryFormat)
                         .invoke();
                 result = f.get();
                 mapServiceContext.incrementOperationStats(time, localMapStats, name, operation);
             } else {
                 Future f = operationService.createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                         .setResultDeserialized(false)
-                        .setDefensiveCopy(defensiveCopyObjectMemoryFormat).invoke();
+                        .invoke();
                 result = f.get();
             }
             return result;

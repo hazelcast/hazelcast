@@ -67,7 +67,6 @@ public abstract class InvocationBuilder {
     protected int tryCount = DEFAULT_TRY_COUNT;
     protected long tryPauseMillis = DEFAULT_TRY_PAUSE_MILLIS;
     protected boolean resultDeserialized = DEFAULT_DESERIALIZE_RESULT;
-    private boolean defensiveCopy = true;
 
     /**
      * Creates an InvocationBuilder
@@ -272,11 +271,6 @@ public abstract class InvocationBuilder {
             targetCallback = new ExecutorCallbackAdapter(callback);
         }
         return targetCallback;
-    }
-
-    public InvocationBuilder setDefensiveCopy(boolean defensiveCopy) {
-        this.defensiveCopy = defensiveCopy;
-        return this;
     }
 
     static final class ExecutorCallbackAdapter<E> implements ExecutionCallback<E> {
