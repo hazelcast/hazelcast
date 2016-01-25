@@ -76,6 +76,10 @@ public class CacheStatisticsImpl
 
     protected final CacheEntryCountResolver cacheEntryCountResolver;
 
+    public CacheStatisticsImpl(long creationTime) {
+        this(creationTime, null);
+    }
+
     public CacheStatisticsImpl(long creationTime, CacheEntryCountResolver cacheEntryCountResolver) {
         this.creationTime = creationTime;
         this.cacheEntryCountResolver = cacheEntryCountResolver;
@@ -98,7 +102,11 @@ public class CacheStatisticsImpl
 
     @Override
     public long getOwnedEntryCount() {
-        return cacheEntryCountResolver.getEntryCount();
+        if (cacheEntryCountResolver != null) {
+            return cacheEntryCountResolver.getEntryCount();
+        } else {
+            return 0L;
+        }
     }
 
     @Override
