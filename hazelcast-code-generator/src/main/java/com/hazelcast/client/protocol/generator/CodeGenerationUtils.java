@@ -340,7 +340,7 @@ public final class CodeGenerationUtils {
     }
 
     public static String convertToNodeType(String name) {
-        name = convertToSnakeCase(name);
+//        name = convertToSnakeCase(name);
         if (name.equals("function")) {
             return "arr";
         }
