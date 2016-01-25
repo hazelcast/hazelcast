@@ -182,7 +182,7 @@ public class CodecModel implements Model {
             final Nullable nullable = param.getAnnotation(Nullable.class);
 
             ParameterModel pm = new ParameterModel();
-            pm.name = param.getSimpleName().toString();
+            pm.name = CodeGenerationUtils.escape(param.getSimpleName().toString(), lang);
             pm.type = param.asType().toString();
             pm.lang = lang;
             pm.nullable = nullable != null;
