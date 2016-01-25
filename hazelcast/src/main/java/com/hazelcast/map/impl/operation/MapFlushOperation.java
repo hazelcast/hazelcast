@@ -16,12 +16,17 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
-import com.hazelcast.spi.PartitionAwareOperation;
 
-public class MapFlushOperation extends AbstractMapOperation implements PartitionAwareOperation, MutatingOperation {
+/**
+ * Flushes dirty entries upon {@link IMap#flush()}
+ */
+public class MapFlushOperation extends MapOperation implements BackupAwareOperation, MutatingOperation {
 
     public MapFlushOperation() {
     }
@@ -32,7 +37,6 @@ public class MapFlushOperation extends AbstractMapOperation implements Partition
 
     @Override
     public void run() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         recordStore.flush();
     }
@@ -40,5 +44,28 @@ public class MapFlushOperation extends AbstractMapOperation implements Partition
     @Override
     public Object getResponse() {
         return true;
+    }
+
+    @Override
+    public boolean shouldBackup() {
+        MapStoreConfig mapStoreConfig = mapContainer.getMapConfig().getMapStoreConfig();
+        return mapStoreConfig != null
+                && mapStoreConfig.isEnabled()
+                && mapStoreConfig.getWriteDelaySeconds() > 0;
+    }
+
+    @Override
+    public int getAsyncBackupCount() {
+        return mapContainer.getAsyncBackupCount();
+    }
+
+    @Override
+    public int getSyncBackupCount() {
+        return mapContainer.getBackupCount();
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new MapFlushBackupOperation(name);
     }
 }

@@ -17,17 +17,19 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.core.Client;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.transaction.TransactionContext;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
+import java.util.concurrent.Callable;
 
 /**
  * Represents an endpoint to a client. So for each client connected to a member, a ClientEndpoint object is available.
  */
-public interface ClientEndpoint {
+public interface ClientEndpoint extends Client {
 
     /**
      * Checks if the endpoint is alive.
@@ -36,15 +38,32 @@ public interface ClientEndpoint {
      */
     boolean isAlive();
 
-    //TODO remove after requests removed
-    void sendResponse(Object response, int callId);
+    /**
+     * Adds a remove callable to be called when endpoint is destroyed to clean related listener
+     * Following line will be called when endpoint destroyed :
+     * eventService.deregisterListener(service, topic, id);
+     * Note: removeDestroyAction should be called when there is no need to destroy action anymore.
+     *
+     * @param service name of the related service of listener
+     * @param topic   topic name of listener(mostly distributed object name)
+     * @param id      registration id of remove action
+     */
+    void   addListenerDestroyAction(String service, String topic, String id);
 
-    //TODO remove after requests removed
-    void sendEvent(Object key, Object event, int callId);
+    /**
+     * Adds a remove callable to be called when endpoint is destroyed
+     * Note: removeDestroyAction should be called when there is no need to destroy action anymore.
+     *
+     * @param registrationId registration id of destroy action
+     * @param removeAction   callable that will be called when endpoint is destroyed
+     */
+    void addDestroyAction(String registrationId, Callable<Boolean> removeAction);
 
-    void setListenerRegistration(String service, String topic, String id);
-
-    String getUuid();
+    /**
+     * @param id registration id of destroy action
+     * @return true if remove is successful
+     */
+    boolean removeDestroyAction(String id);
 
     Credentials getCredentials();
 
@@ -67,8 +86,6 @@ public interface ClientEndpoint {
     void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection);
 
     void authenticated(ClientPrincipal principal);
-
-    void setDistributedObjectListener(String registrationId);
 
     ClientPrincipal getPrincipal();
 

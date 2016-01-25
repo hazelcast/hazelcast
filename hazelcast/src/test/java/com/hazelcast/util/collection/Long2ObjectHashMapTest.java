@@ -1,6 +1,6 @@
 /*
- * Original work Copyright 2014 Real Logic Ltd.
- * Modified work Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Original work Copyright 2015 Real Logic Ltd.
+ * Modified work Copyright (c) 2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@
 package com.hazelcast.util.collection;
 
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,8 +40,8 @@ import static org.hamcrest.number.OrderingComparison.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class Long2ObjectHashMapTest {
     private final Long2ObjectHashMap<String> longToObjectMap = new Long2ObjectHashMap<String>();
 
@@ -280,7 +282,7 @@ public class Long2ObjectHashMapTest {
             longToObjectMap.put(testEntry, String.valueOf(testEntry));
         }
 
-        final String mapAsAString = "{7=7, 12=12, 19=19, 3=3, 11=11, 1=1}";
+        final String mapAsAString = "{11=11, 7=7, 3=3, 12=12, 19=19, 1=1}";
         assertThat(longToObjectMap.toString(), equalTo(mapAsAString));
     }
 

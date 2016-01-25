@@ -44,14 +44,12 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
     }
 
     @Override
-    protected void processMessage() {
+    protected void processMessage() throws Throwable {
         ClientEndpoint endpoint = getEndpoint();
         OperationFactory operationFactory = createOperationFactory();
         Collection<Address> targets = getTargets();
 
-        if (returnResponseIfNoTargetLeft(targets, EMPTY_MAP)) {
-            return;
-        }
+        returnResponseIfNoTargetLeft(targets, EMPTY_MAP);
 
         final InternalOperationService operationService = nodeEngine.getOperationService();
 
@@ -67,16 +65,10 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
         }
     }
 
-    private boolean returnResponseIfNoTargetLeft(Collection<Address> targets, Map<Address, Object> results) {
+    private void returnResponseIfNoTargetLeft(Collection<Address> targets, Map<Address, Object> results) throws Throwable {
         if (targets.isEmpty()) {
-            try {
-                sendResponse(reduce(results));
-            } catch (Throwable throwable) {
-                sendClientMessage(throwable);
-            }
-            return true;
+            sendResponse(reduce(results));
         }
-        return false;
     }
 
     protected abstract OperationFactory createOperationFactory();
@@ -104,7 +96,11 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
                 }
                 throw new IllegalArgumentException("Unknown target! -> " + target);
             }
-            returnResponseIfNoTargetLeft(targets, results);
+            try {
+                returnResponseIfNoTargetLeft(targets, results);
+            } catch (Throwable throwable) {
+                handleProcessingFailure(throwable);
+            }
         }
     }
 

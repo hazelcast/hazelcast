@@ -34,6 +34,12 @@ public interface ObjectDataInput extends DataInput {
     byte[] readByteArray() throws IOException;
 
     /**
+     * @return the boolean array read
+     * @throws IOException if it reaches end of file before finish reading
+     */
+    boolean[] readBooleanArray() throws IOException;
+
+    /**
      * @return the char array read
      * @throws IOException if it reaches end of file before finish reading
      */
@@ -68,6 +74,12 @@ public interface ObjectDataInput extends DataInput {
      * @throws IOException if it reaches end of file before finish reading
      */
     short[] readShortArray() throws IOException;
+
+    /**
+     * @return String array read
+     * @throws IOException if it reaches end of file before finish reading
+     */
+    String[] readUTFArray() throws IOException;
 
     /**
      * @param <T> type of the object in array to be read

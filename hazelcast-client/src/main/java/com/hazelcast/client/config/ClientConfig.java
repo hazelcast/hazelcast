@@ -27,6 +27,7 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.instance.HazelcastProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.security.Credentials;
@@ -116,7 +117,7 @@ public class ClientConfig {
     }
 
     /**
-     * Gets a property already set or from system properties if not exists.
+     * Gets a named property already set or from system properties if not exists.
      *
      * @param name property name
      * @return value of the property
@@ -127,7 +128,7 @@ public class ClientConfig {
     }
 
     /**
-     * Sets the value of a named property
+     * Sets the value of a named property.
      *
      * @param name  property name
      * @param value value of the property
@@ -137,6 +138,28 @@ public class ClientConfig {
     public ClientConfig setProperty(String name, String value) {
         properties.put(name, value);
         return this;
+    }
+
+    /**
+     * Gets a {@link HazelcastProperty} already set or from system properties if not exists.
+     *
+     * @param property {@link HazelcastProperty} to get
+     * @return value of the property
+     */
+    public String getProperty(HazelcastProperty property) {
+        return getProperty(property.getName());
+    }
+
+    /**
+     * Sets the value of a {@link HazelcastProperty}.
+     *
+     * @param property {@link HazelcastProperty} to set
+     * @param value    value of the property
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     * @see {@link com.hazelcast.client.config.ClientProperties} for properties that is used to configure client
+     */
+    public ClientConfig setProperty(HazelcastProperty property, String value) {
+        return setProperty(property.getName(), value);
     }
 
     /**
@@ -203,18 +226,30 @@ public class ClientConfig {
         return this;
     }
 
+    /**
+     * Adds a ClientReliableTopicConfig.
+     *
+     * @param reliableTopicConfig the ClientReliableTopicConfig to add
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     */
     public ClientConfig addReliableTopicConfig(ClientReliableTopicConfig reliableTopicConfig) {
         reliableTopicConfigMap.put(reliableTopicConfig.getName(), reliableTopicConfig);
         return this;
     }
 
+    /**
+     * Gets the ClientReliableTopicConfig for a given reliable topic name.
+     *
+     * @param name the name of the reliable topic
+     * @return the found config. If none is found, a default configured one is returned.
+     */
     public ClientReliableTopicConfig getReliableTopicConfig(String name) {
-        ClientReliableTopicConfig nearCacheConfig = lookupByPattern(reliableTopicConfigMap, name);
-        if (nearCacheConfig == null) {
-            nearCacheConfig = new ClientReliableTopicConfig(name);
-            addReliableTopicConfig(nearCacheConfig);
+        ClientReliableTopicConfig reliableTopicConfig = lookupByPattern(reliableTopicConfigMap, name);
+        if (reliableTopicConfig == null) {
+            reliableTopicConfig = new ClientReliableTopicConfig(name);
+            addReliableTopicConfig(reliableTopicConfig);
         }
-        return nearCacheConfig;
+        return reliableTopicConfig;
     }
 
     /**

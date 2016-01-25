@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.impl.protocol.util;
 
-import com.hazelcast.util.collection.Int2ObjectHashMap;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.util.collection.Long2ObjectHashMap;
 
 import java.nio.ByteBuffer;
 
@@ -30,7 +30,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.END_FLAG;
  */
 public class ClientMessageBuilder {
 
-    private final Int2ObjectHashMap<BufferBuilder> builderBySessionIdMap = new Int2ObjectHashMap<BufferBuilder>();
+    private final Long2ObjectHashMap<BufferBuilder> builderBySessionIdMap = new Long2ObjectHashMap<BufferBuilder>();
 
     private final MessageHandler delegate;
     private ClientMessage message = ClientMessage.create();

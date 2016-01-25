@@ -51,7 +51,7 @@ public class NodeMulticastListener implements MulticastListener {
         }
 
         JoinMessage joinMessage = (JoinMessage) msg;
-        if (node.isActive() && node.joined()) {
+        if (node.isRunning() && node.joined()) {
             handleActiveAndJoined(joinMessage);
         } else {
             handleNotActiveOrNotJoined(joinMessage);
@@ -72,7 +72,7 @@ public class NodeMulticastListener implements MulticastListener {
 
         if (node.isMaster()) {
             JoinMessage response = new JoinMessage(Packet.VERSION, node.getBuildInfo().getBuildNumber(),
-                    node.getThisAddress(), node.localMember.getUuid(), node.createConfigCheck());
+                    node.getThisAddress(), node.localMember.getUuid(), node.isLiteMember(), node.createConfigCheck());
             node.multicastService.send(response);
         } else if (isMasterNode(joinMessage.getAddress()) && !checkMasterUuid(joinMessage.getUuid())) {
             logger.warning("New join request has been received from current master. "

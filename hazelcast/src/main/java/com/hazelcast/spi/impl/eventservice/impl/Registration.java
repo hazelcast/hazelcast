@@ -143,14 +143,12 @@ public class Registration implements EventRegistration {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("Registration");
-        sb.append("{filter=").append(filter);
-        sb.append(", id='").append(id).append('\'');
-        sb.append(", serviceName='").append(serviceName).append('\'');
-        sb.append(", subscriber=").append(subscriber);
-        sb.append(", listener=").append(listener);
-        sb.append('}');
-        return sb.toString();
+        return "Registration{"
+                + "filter=" + filter
+                + ", id='" + id + '\''
+                + ", serviceName='" + serviceName + '\''
+                + ", subscriber=" + subscriber
+                + ", listener=" + listener
+                + '}';
     }
 }

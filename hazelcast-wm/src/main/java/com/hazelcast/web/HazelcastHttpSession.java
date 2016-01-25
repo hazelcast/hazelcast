@@ -33,6 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class HazelcastHttpSession implements HttpSession {
 
+    volatile String invalidatedOriginalSessionId;
+
     private WebFilter webFilter;
     private volatile boolean valid = true;
     private final String id;
@@ -116,7 +118,9 @@ public class HazelcastHttpSession implements HttpSession {
                 cacheEntry.setReload(false);
                 localCache.put(name, cacheEntry);
             } catch (Exception e) {
-                WebFilter.LOGGER.warning("session could not be load so you might be dealing with stale data", e);
+                if (WebFilter.LOGGER.isFinestEnabled()) {
+                    WebFilter.LOGGER.finest("session could not be load so you might be dealing with stale data", e);
+                }
                 if (cacheEntry == null) {
                     return null;
                 }
@@ -175,6 +179,7 @@ public class HazelcastHttpSession implements HttpSession {
         // invalidation as our SessionListener will be triggered.
         webFilter.destroySession(this, true);
         originalSession.invalidate();
+        invalidatedOriginalSessionId = originalSession.getId();
     }
 
     public boolean isNew() {

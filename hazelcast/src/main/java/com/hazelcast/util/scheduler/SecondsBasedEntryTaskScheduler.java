@@ -21,15 +21,15 @@ import com.hazelcast.util.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Schedule execution of an entry for seconds later.
@@ -55,27 +55,27 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
 
     private static final long INITIAL_TIME_MILLIS = Clock.currentTimeMillis();
 
-
     private static final Comparator<ScheduledEntry> SCHEDULED_ENTRIES_COMPARATOR = new Comparator<ScheduledEntry>() {
         @Override
         public int compare(ScheduledEntry o1, ScheduledEntry o2) {
-            if (o1.getScheduleStartTimeInNanos() > o2.getScheduleStartTimeInNanos()) {
+            if (o1.getScheduleId() > o2.getScheduleId()) {
                 return 1;
-            } else if (o1.getScheduleStartTimeInNanos() < o2.getScheduleStartTimeInNanos()) {
+            } else if (o1.getScheduleId() < o2.getScheduleId()) {
                 return -1;
             }
             return 0;
         }
     };
 
-    private final ConcurrentMap<Object, Integer> secondsOfKeys = new ConcurrentHashMap<Object, Integer>(1000);
-    private final ConcurrentMap<Integer, ConcurrentMap<Object, ScheduledEntry<K, V>>> scheduledEntries
-            = new ConcurrentHashMap<Integer, ConcurrentMap<Object, ScheduledEntry<K, V>>>(1000);
+    private final Map<Object, Integer> secondsOfKeys = new HashMap<Object, Integer>(1000);
+    private final Map<Integer, Map<Object, ScheduledEntry<K, V>>> scheduledEntries
+            = new HashMap<Integer, Map<Object, ScheduledEntry<K, V>>>(1000);
     private final ScheduledExecutorService scheduledExecutorService;
     private final ScheduledEntryProcessor<K, V> entryProcessor;
     private final ScheduleType scheduleType;
-    private final ConcurrentMap<Integer, ScheduledFuture> scheduledTaskMap
-            = new ConcurrentHashMap<Integer, ScheduledFuture>(1000);
+    private final Map<Integer, ScheduledFuture> scheduledTaskMap = new HashMap<Integer, ScheduledFuture>(1000);
+    private final AtomicLong uniqueIdGenerator = new AtomicLong();
+    private final Object mutex = new Object();
 
     SecondsBasedEntryTaskScheduler(ScheduledExecutorService scheduledExecutorService,
                                    ScheduledEntryProcessor<K, V> entryProcessor, ScheduleType scheduleType) {
@@ -88,8 +88,6 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     public boolean schedule(long delayMillis, K key, V value) {
         if (scheduleType.equals(ScheduleType.POSTPONE)) {
             return schedulePostponeEntry(delayMillis, key, value);
-        } else if (scheduleType.equals(ScheduleType.SCHEDULE_IF_NEW)) {
-            return scheduleIfNew(delayMillis, key, value);
         } else if (scheduleType.equals(ScheduleType.FOR_EACH)) {
             return scheduleEntry(delayMillis, key, value);
         } else {
@@ -97,226 +95,47 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         }
     }
 
-    @Override
-    public Set<K> flush(Set<K> keys) {
-        if (scheduleType.equals(ScheduleType.FOR_EACH)) {
-            return flushByTimeKeys(keys);
-        }
-        Set<ScheduledEntry<K, V>> res = new HashSet<ScheduledEntry<K, V>>(keys.size());
-        Set<K> processedKeys = new HashSet<K>();
-        for (K key : keys) {
-            final Integer second = secondsOfKeys.remove(key);
-            if (second != null) {
-                final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
-                if (entries != null) {
-                    processedKeys.add(key);
-                    res.add(entries.remove(key));
-                }
-            }
-        }
-        entryProcessor.process(this, sortForEntryProcessing(res));
-        return processedKeys;
-    }
-
-    private Set flushByTimeKeys(Set keys) {
-        Set<ScheduledEntry<K, V>> res = new HashSet<ScheduledEntry<K, V>>(keys.size());
-        Set<TimeKey> candidateKeys = new HashSet<TimeKey>();
-        Set processedKeys = new HashSet();
-        for (Object key : keys) {
-            for (Object skey : secondsOfKeys.keySet()) {
-                TimeKey timeKey = (TimeKey) skey;
-                if (key.equals(timeKey.getKey())) {
-                    candidateKeys.add(timeKey);
-                }
-            }
-        }
-        for (TimeKey timeKey : candidateKeys) {
-            final Integer second = secondsOfKeys.remove(timeKey);
-            if (second != null) {
-                final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
-                if (entries != null) {
-                    res.add(entries.remove(timeKey));
-                    processedKeys.add(timeKey.getKey());
-                }
-            }
-
-        }
-        entryProcessor.process(this, sortForEntryProcessing(res));
-        return processedKeys;
-    }
-
-    @Override
-    public ScheduledEntry<K, V> cancel(K key) {
-        if (scheduleType.equals(ScheduleType.FOR_EACH)) {
-            return cancelByTimeKey(key);
-        }
-        final Integer second = secondsOfKeys.remove(key);
-        if (second == null) {
-            return null;
-        }
-        final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
-        if (entries == null) {
-            return null;
-        }
-        return cancelAndCleanUpIfEmpty(second, entries, key);
-    }
-
-    @Override
-    public int cancelIfExists(K key, V value) {
-        final ScheduledEntry<K, V> scheduledEntry = new ScheduledEntry<K, V>(key, value, 0, 0);
-
-        if (scheduleType.equals(ScheduleType.FOR_EACH)) {
-            return cancelByTimeKey(key, scheduledEntry);
-        }
-
-        final Integer second = secondsOfKeys.remove(key);
-        if (second == null) {
-            return 0;
-        }
-        final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
-        if (entries == null) {
-            return 0;
-        }
-
-        return cancelAndCleanUpIfEmpty(second, entries, key, scheduledEntry) ? 1 : 0;
-    }
-
-    @Override
-    public ScheduledEntry<K, V> get(K key) {
-        if (scheduleType.equals(ScheduleType.FOR_EACH)) {
-            return getByTimeKey(key);
-        }
-        final Integer second = secondsOfKeys.get(key);
-        if (second != null) {
-            final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
-            if (entries != null) {
-                return entries.get(key);
-            }
-        }
-        return null;
-    }
-
-    private ScheduledEntry<K, V> cancelByTimeKey(K key) {
-        Set<TimeKey> candidateKeys = getTimeKeys(key);
-
-        ScheduledEntry<K, V> result = null;
-        for (TimeKey timeKey : candidateKeys) {
-            final Integer second = secondsOfKeys.remove(timeKey);
-            if (second == null) {
-                continue;
-            }
-            final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
-            if (entries == null) {
-                continue;
-            }
-            result = cancelAndCleanUpIfEmpty(second, entries, timeKey);
-        }
-        return result;
-    }
-
-    private int cancelByTimeKey(K key, final ScheduledEntry<K, V> entryToRemove) {
-        int cancelled = 0;
-        for (TimeKey timeKey : getTimeKeys(key)) {
-            final Integer second = secondsOfKeys.remove(timeKey);
-            if (second == null) {
-                continue;
-            }
-            final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
-            if (entries == null) {
-                continue;
-            }
-
-            if (cancelAndCleanUpIfEmpty(second, entries, timeKey, entryToRemove)) {
-                cancelled++;
-            }
-        }
-        return cancelled;
-    }
-
-    private Set<TimeKey> getTimeKeys(K key) {
-        final Set<TimeKey> candidateKeys = new HashSet<TimeKey>();
-        for (Object timeKeyObj : secondsOfKeys.keySet()) {
-            TimeKey timeKey = (TimeKey) timeKeyObj;
-            if (timeKey.getKey().equals(key)) {
-                candidateKeys.add(timeKey);
-            }
-        }
-        return candidateKeys;
-    }
-
-    public ScheduledEntry<K, V> getByTimeKey(K key) {
-        final Set<TimeKey> candidateKeys = getTimeKeys(key);
-        ScheduledEntry<K, V> result = null;
-        for (TimeKey timeKey : candidateKeys) {
-            final Integer second = secondsOfKeys.get(timeKey);
-            if (second != null) {
-                final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
-                if (entries != null) {
-                    result = entries.get(timeKey);
-                }
-            }
-        }
-        return result;
-    }
-
     private boolean schedulePostponeEntry(long delayMillis, K key, V value) {
-        final int delaySeconds = ceilToSecond(delayMillis);
-        final Integer newSecond = findRelativeSecond(delayMillis);
-        final Integer existingSecond = secondsOfKeys.put(key, newSecond);
-        if (existingSecond != null) {
-            if (existingSecond.equals(newSecond)) {
-                return false;
+        int delaySeconds = ceilToSecond(delayMillis);
+        Integer newSecond = findRelativeSecond(delayMillis);
+        synchronized (mutex) {
+            Integer existingSecond = secondsOfKeys.put(key, newSecond);
+            if (existingSecond != null) {
+                if (existingSecond.equals(newSecond)) {
+                    return false;
+                }
+                removeKeyFromSecond(key, existingSecond);
             }
-            removeKeyFromSecond(key, existingSecond);
+            long id = uniqueIdGenerator.incrementAndGet();
+            ScheduledEntry<K, V> scheduledEntry = new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds, id);
+            doSchedule(key, scheduledEntry, newSecond);
         }
-        doSchedule(key, new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds), newSecond);
         return true;
     }
 
     private boolean scheduleEntry(long delayMillis, K key, V value) {
-        final int delaySeconds = ceilToSecond(delayMillis);
-        final Integer newSecond = findRelativeSecond(delayMillis);
-        long time = System.nanoTime();
-        TimeKey timeKey = new TimeKey(key, time);
-        secondsOfKeys.put(timeKey, newSecond);
-        doSchedule(timeKey, new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds, time), newSecond);
-        return true;
-    }
-
-    private boolean scheduleIfNew(long delayMillis, K key, V value) {
-        final int delaySeconds = ceilToSecond(delayMillis);
-        final Integer newSecond = findRelativeSecond(delayMillis);
-        if (secondsOfKeys.putIfAbsent(key, newSecond) != null) {
-            return false;
+        int delaySeconds = ceilToSecond(delayMillis);
+        Integer newSecond = findRelativeSecond(delayMillis);
+        synchronized (mutex) {
+            long id = uniqueIdGenerator.incrementAndGet();
+            Object compositeKey = new CompositeKey(key, id);
+            secondsOfKeys.put(compositeKey, newSecond);
+            ScheduledEntry<K, V> scheduledEntry = new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds, id);
+            doSchedule(compositeKey, scheduledEntry, newSecond);
         }
-        doSchedule(key, new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds), newSecond);
         return true;
-    }
-
-    private int findRelativeSecond(long delayMillis) {
-        long now = Clock.currentTimeMillis();
-        long d = (now + delayMillis - INITIAL_TIME_MILLIS);
-        return ceilToSecond(d);
-    }
-
-    private int ceilToSecond(long delayMillis) {
-        return (int) Math.ceil(delayMillis / FACTOR);
     }
 
     private void doSchedule(Object mapKey, ScheduledEntry<K, V> entry, Integer second) {
-        ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
+        Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
         boolean shouldSchedule = false;
         if (entries == null) {
-            entries = new ConcurrentHashMap<Object, ScheduledEntry<K, V>>(INITIAL_CAPACITY);
-            ConcurrentMap<Object, ScheduledEntry<K, V>> existingScheduleKeys
-                    = scheduledEntries.putIfAbsent(second, entries);
-            if (existingScheduleKeys != null) {
-                entries = existingScheduleKeys;
-            } else {
-                // we created the second
-                // so we will schedule its execution
-                shouldSchedule = true;
-            }
+            entries = new HashMap<Object, ScheduledEntry<K, V>>(INITIAL_CAPACITY);
+            scheduledEntries.put(second, entries);
+
+            // we created the second
+            // so we will schedule its execution
+            shouldSchedule = true;
         }
         entries.put(mapKey, entry);
         if (shouldSchedule) {
@@ -324,68 +143,190 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         }
     }
 
+    @Override
+    public ScheduledEntry<K, V> cancel(K key) {
+        synchronized (mutex) {
+            if (scheduleType.equals(ScheduleType.FOR_EACH)) {
+                return cancelByCompositeKey(key);
+            }
+            Integer second = secondsOfKeys.remove(key);
+            if (second == null) {
+                return null;
+            }
+            Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
+            if (entries == null) {
+                return null;
+            }
+            return cancelAndCleanUpIfEmpty(second, entries, key);
+        }
+    }
+
+    @Override
+    public int cancelIfExists(K key, V value) {
+        synchronized (mutex) {
+            ScheduledEntry<K, V> scheduledEntry = new ScheduledEntry<K, V>(key, value, 0, 0, 0);
+
+            if (scheduleType.equals(ScheduleType.FOR_EACH)) {
+                return cancelByCompositeKey(key, scheduledEntry);
+            }
+
+            Integer second = secondsOfKeys.remove(key);
+            if (second == null) {
+                return 0;
+            }
+            Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
+            if (entries == null) {
+                return 0;
+            }
+
+            return cancelAndCleanUpIfEmpty(second, entries, key, scheduledEntry) ? 1 : 0;
+        }
+    }
+
+    @Override
+    public ScheduledEntry<K, V> get(K key) {
+        synchronized (mutex) {
+            if (scheduleType.equals(ScheduleType.FOR_EACH)) {
+                return getByCompositeKey(key);
+            }
+            Integer second = secondsOfKeys.get(key);
+            if (second != null) {
+                Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
+                if (entries != null) {
+                    return entries.get(key);
+                }
+            }
+            return null;
+        }
+    }
+
+    private ScheduledEntry<K, V> cancelByCompositeKey(K key) {
+        Set<CompositeKey> candidateKeys = getCompositeKeys(key);
+
+        ScheduledEntry<K, V> result = null;
+        for (CompositeKey compositeKey : candidateKeys) {
+            Integer second = secondsOfKeys.remove(compositeKey);
+            if (second == null) {
+                continue;
+            }
+            Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
+            if (entries == null) {
+                continue;
+            }
+            result = cancelAndCleanUpIfEmpty(second, entries, compositeKey);
+        }
+        return result;
+    }
+
+    private int cancelByCompositeKey(K key, ScheduledEntry<K, V> entryToRemove) {
+        int cancelled = 0;
+        for (CompositeKey compositeKey : getCompositeKeys(key)) {
+            Integer second = secondsOfKeys.remove(compositeKey);
+            if (second == null) {
+                continue;
+            }
+            Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
+            if (entries == null) {
+                continue;
+            }
+
+            if (cancelAndCleanUpIfEmpty(second, entries, compositeKey, entryToRemove)) {
+                cancelled++;
+            }
+        }
+        return cancelled;
+    }
+
+    private Set<CompositeKey> getCompositeKeys(K key) {
+        Set<CompositeKey> candidateKeys = new HashSet<CompositeKey>();
+        for (Object keyObj : secondsOfKeys.keySet()) {
+            CompositeKey compositeKey = (CompositeKey) keyObj;
+            if (compositeKey.getKey().equals(key)) {
+                candidateKeys.add(compositeKey);
+            }
+        }
+        return candidateKeys;
+    }
+
+    public ScheduledEntry<K, V> getByCompositeKey(K key) {
+        Set<CompositeKey> candidateKeys = getCompositeKeys(key);
+        ScheduledEntry<K, V> result = null;
+        for (CompositeKey compositeKey : candidateKeys) {
+            Integer second = secondsOfKeys.get(compositeKey);
+            if (second != null) {
+                Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
+                if (entries != null) {
+                    result = entries.get(compositeKey);
+                }
+            }
+        }
+        return result;
+    }
+
     private void removeKeyFromSecond(Object key, Integer existingSecond) {
-        ConcurrentMap<Object, ScheduledEntry<K, V>> scheduledKeys = scheduledEntries.get(existingSecond);
+        Map<Object, ScheduledEntry<K, V>> scheduledKeys = scheduledEntries.get(existingSecond);
         if (scheduledKeys != null) {
             cancelAndCleanUpIfEmpty(existingSecond, scheduledKeys, key);
         }
     }
 
-
     /**
      * Removes the entry from being scheduled to be evicted.
-     *
+     * <p/>
      * Cleans up parent container (second -> entries map) if it doesn't hold anymore items this second.
-     *
+     * <p/>
      * Cancels associated scheduler (second -> scheduler map ) if there are no more items to remove for this second.
-     *
+     * <p/>
      * Returns associated scheduled entry.
      *
-     * @param second second at which this entry was scheduled to be evicted
+     * @param second  second at which this entry was scheduled to be evicted
      * @param entries entries which were already scheduled to be evicted for this second
-     * @param key entry key
+     * @param key     entry key
      * @return associated scheduled entry
      */
-    private ScheduledEntry<K, V> cancelAndCleanUpIfEmpty(Integer second, ConcurrentMap<Object, ScheduledEntry<K, V>> entries,
-                                                         Object key) {
-        final ScheduledEntry<K, V> result = entries.remove(key);
+    private ScheduledEntry<K, V> cancelAndCleanUpIfEmpty(Integer second, Map<Object, ScheduledEntry<K, V>> entries, Object key) {
+        ScheduledEntry<K, V> result = entries.remove(key);
         cleanUpScheduledFuturesIfEmpty(second, entries);
         return result;
     }
 
     /**
      * Removes the entry if it exists from being scheduled to be evicted.
-     *
+     * <p/>
      * Cleans up parent container (second -> entries map) if it doesn't hold anymore items this second.
-     *
+     * <p/>
      * Cancels associated scheduler (second -> scheduler map ) if there are no more items to remove for this second.
-     *
+     * <p/>
      * Returns associated scheduled entry.
      *
-     * @param second second at which this entry was scheduled to be evicted
-     * @param entries entries which were already scheduled to be evicted for this second
-     * @param key entry key
+     * @param second        second at which this entry was scheduled to be evicted
+     * @param entries       entries which were already scheduled to be evicted for this second
+     * @param key           entry key
      * @param entryToRemove entry value that is expected to exist in the map
      * @return true if entryToRemove exists in the map and removed
      */
-    private boolean cancelAndCleanUpIfEmpty(Integer second, ConcurrentMap<Object, ScheduledEntry<K, V>> entries, Object key,
+    private boolean cancelAndCleanUpIfEmpty(Integer second, Map<Object, ScheduledEntry<K, V>> entries, Object key,
                                             ScheduledEntry<K, V> entryToRemove) {
-        final boolean removed = entries.remove(key, entryToRemove);
+        ScheduledEntry<K, V> entry = entries.get(key);
+        if (entry == null || !entry.equals(entryToRemove)) {
+            return false;
+        }
+        entries.remove(key);
         cleanUpScheduledFuturesIfEmpty(second, entries);
-        return removed;
+        return true;
     }
 
     /**
      * Cancels the scheduled future and removes the entries map for the given second If no entries are left
-     *
+     * <p/>
      * Cleans up parent container (second -> entries map) if it doesn't hold anymore items this second.
-     *
+     * <p/>
      * Cancels associated scheduler (second -> scheduler map ) if there are no more items to remove for this second.
      *
-     * @param second second at which this entry was scheduled to be evicted
+     * @param second  second at which this entry was scheduled to be evicted
      * @param entries entries which were already scheduled to be evicted for this second
      */
-    private void cleanUpScheduledFuturesIfEmpty(Integer second, ConcurrentMap<Object, ScheduledEntry<K, V>> entries) {
+    private void cleanUpScheduledFuturesIfEmpty(Integer second, Map<Object, ScheduledEntry<K, V>> entries) {
         if (entries.isEmpty()) {
             scheduledEntries.remove(second);
 
@@ -396,62 +337,32 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         }
     }
 
-    private void schedule(final Integer second, final int delaySeconds) {
+    private void schedule(Integer second, int delaySeconds) {
         EntryProcessorExecutor command = new EntryProcessorExecutor(second);
         ScheduledFuture scheduledFuture = scheduledExecutorService.schedule(command, delaySeconds, TimeUnit.SECONDS);
         scheduledTaskMap.put(second, scheduledFuture);
     }
 
-    private final class EntryProcessorExecutor implements Runnable {
-        private final Integer second;
-
-        private EntryProcessorExecutor(Integer second) {
-            this.second = second;
-        }
-
-        @Override
-        public void run() {
-            scheduledTaskMap.remove(second);
-            final Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.remove(second);
-            if (entries == null || entries.isEmpty()) {
-                return;
-            }
-            Set<ScheduledEntry<K, V>> values = new HashSet<ScheduledEntry<K, V>>(entries.size());
-            for (Map.Entry<Object, ScheduledEntry<K, V>> entry : entries.entrySet()) {
-                Integer removed = secondsOfKeys.remove(entry.getKey());
-                if (removed != null) {
-                    values.add(entry.getValue());
-                }
-            }
-            //sort entries asc by schedule times and send to processor.
-            entryProcessor.process(SecondsBasedEntryTaskScheduler.this, sortForEntryProcessing(values));
-        }
-    }
-
-    private List<ScheduledEntry<K, V>> sortForEntryProcessing(Set<ScheduledEntry<K, V>> coll) {
-        if (coll == null || coll.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        final List<ScheduledEntry<K, V>> sortedEntries = new ArrayList<ScheduledEntry<K, V>>(coll);
-        Collections.sort(sortedEntries, SCHEDULED_ENTRIES_COMPARATOR);
-
-        return sortedEntries;
-    }
-
-
-    @Override
+    /**
+     * used only for testing
+     *
+     * @return
+     */
     public int size() {
-        return secondsOfKeys.size();
+        synchronized (mutex) {
+            return secondsOfKeys.size();
+        }
     }
 
     public void cancelAll() {
-        secondsOfKeys.clear();
-        scheduledEntries.clear();
-        for (ScheduledFuture task : scheduledTaskMap.values()) {
-            task.cancel(false);
+        synchronized (mutex) {
+            secondsOfKeys.clear();
+            scheduledEntries.clear();
+            for (ScheduledFuture task : scheduledTaskMap.values()) {
+                task.cancel(false);
+            }
+            scheduledTaskMap.clear();
         }
-        scheduledTaskMap.clear();
     }
 
     @Override
@@ -464,5 +375,53 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
                 + "] ="
                 + scheduledEntries.keySet()
                 + '}';
+    }
+
+    private static <K, V> List<ScheduledEntry<K, V>> sortForEntryProcessing(List<ScheduledEntry<K, V>> coll) {
+        if (coll == null || coll.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Collections.sort(coll, SCHEDULED_ENTRIES_COMPARATOR);
+        return coll;
+    }
+
+    private static int findRelativeSecond(long delayMillis) {
+        long now = Clock.currentTimeMillis();
+        long d = (now + delayMillis - INITIAL_TIME_MILLIS);
+        return ceilToSecond(d);
+    }
+
+    private static int ceilToSecond(long delayMillis) {
+        return (int) Math.ceil(delayMillis / FACTOR);
+    }
+
+    private final class EntryProcessorExecutor implements Runnable {
+        private final Integer second;
+
+        private EntryProcessorExecutor(Integer second) {
+            this.second = second;
+        }
+
+        @Override
+        public void run() {
+            List<ScheduledEntry<K, V>> values;
+            synchronized (mutex) {
+                scheduledTaskMap.remove(second);
+                Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.remove(second);
+                if (entries == null || entries.isEmpty()) {
+                    return;
+                }
+                values = new ArrayList<ScheduledEntry<K, V>>(entries.size());
+                for (Map.Entry<Object, ScheduledEntry<K, V>> entry : entries.entrySet()) {
+                    Integer removed = secondsOfKeys.remove(entry.getKey());
+                    if (removed != null) {
+                        values.add(entry.getValue());
+                    }
+                }
+            }
+            //sort entries asc by schedule times and send to processor.
+            entryProcessor.process(SecondsBasedEntryTaskScheduler.this, sortForEntryProcessing(values));
+        }
     }
 }

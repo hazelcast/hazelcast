@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.IsStillRunningService;
@@ -29,12 +30,13 @@ import java.io.IOException;
 /**
  * An operation that checks if another operation is still running.
  */
-public class IsStillExecutingOperation extends AbstractOperation implements UrgentSystemOperation {
+public class IsStillExecutingOperation extends AbstractOperation
+        implements UrgentSystemOperation, ReadonlyOperation {
 
     private long operationCallId;
     private int operationPartitionId;
 
-    IsStillExecutingOperation() {
+    public IsStillExecutingOperation() {
     }
 
     public IsStillExecutingOperation(long operationCallId, int operationPartitionId) {

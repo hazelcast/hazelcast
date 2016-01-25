@@ -22,9 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Collection of convenience methods not suitable for production usage due performance characteristics,
- * but handy for tests.
- *
+ * Collection of convenience methods not suitable for production usage due performance characteristics, but handy for tests.
  */
 public class TestCollectionUtils {
 

@@ -16,7 +16,11 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.EntryView;
+import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.Records;
@@ -37,7 +41,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     private boolean unlockKey;
     private RecordInfo recordInfo;
     private boolean putTransient;
-
+    private boolean disableWanReplicationEvent;
 
     public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo) {
         this(name, dataKey, dataValue, recordInfo, false, false);
@@ -49,10 +53,17 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
 
     public PutBackupOperation(String name, Data dataKey, Data dataValue,
                               RecordInfo recordInfo, boolean unlockKey, boolean putTransient) {
+        this(name, dataKey, dataValue, recordInfo, unlockKey, putTransient, false);
+    }
+
+    public PutBackupOperation(String name, Data dataKey, Data dataValue,
+                              RecordInfo recordInfo, boolean unlockKey, boolean putTransient,
+                              boolean disableWanReplicationEvent) {
         super(name, dataKey, dataValue);
         this.unlockKey = unlockKey;
         this.recordInfo = recordInfo;
         this.putTransient = putTransient;
+        this.disableWanReplicationEvent = disableWanReplicationEvent;
     }
 
     public PutBackupOperation() {
@@ -73,9 +84,31 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     @Override
     public void afterRun() throws Exception {
         if (recordInfo != null) {
-            evict(true);
+            evict();
         }
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        if (!disableWanReplicationEvent) {
+            publishWANReplicationEventBackup(mapServiceContext, mapEventPublisher);
+        }
+
     }
+
+    private void publishWANReplicationEventBackup(MapServiceContext mapServiceContext, MapEventPublisher mapEventPublisher) {
+        if (!mapContainer.isWanReplicationEnabled()) {
+            return;
+        }
+
+        Record record = recordStore.getRecord(dataKey);
+        if (record == null) {
+            return;
+        }
+
+        final Data valueConvertedData = mapServiceContext.toData(dataValue);
+        final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, valueConvertedData, record);
+        mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
+    }
+
 
     @Override
     public Object getResponse() {
@@ -103,6 +136,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
             out.writeBoolean(false);
         }
         out.writeBoolean(putTransient);
+        out.writeBoolean(disableWanReplicationEvent);
     }
 
     @Override
@@ -115,10 +149,6 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
             recordInfo.readData(in);
         }
         putTransient = in.readBoolean();
-    }
-
-    @Override
-    public String toString() {
-        return "PutBackupOperation{" + name + "}";
+        disableWanReplicationEvent = in.readBoolean();
     }
 }

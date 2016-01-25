@@ -24,8 +24,9 @@ import com.hazelcast.nio.Address;
  */
 public class CallerNotMemberException extends RetryableHazelcastException {
 
-    public CallerNotMemberException(Address target, int partitionId, String operationName, String serviceName) {
-        super("Not Member! caller:" + target + ", partitionId: " + partitionId
+    public CallerNotMemberException(Address thisAddress, Address caller, int partitionId,
+            String operationName, String serviceName) {
+        super("Not Member! this: " + thisAddress + ", caller: " + caller + ", partitionId: " + partitionId
                 + ", operation: " + operationName + ", service: " + serviceName);
     }
 

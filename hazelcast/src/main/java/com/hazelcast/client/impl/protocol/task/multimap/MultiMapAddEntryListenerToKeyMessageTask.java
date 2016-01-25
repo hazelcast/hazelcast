@@ -39,6 +39,11 @@ public class MultiMapAddEntryListenerToKeyMessageTask
     }
 
     @Override
+    protected boolean isLocalOnly() {
+        return parameters.localOnly;
+    }
+
+    @Override
     protected ClientMessage encodeEvent(Data key, Data value, Data oldValue, int type, String uuid, int numberOfEntriesAffected) {
         return MultiMapAddEntryListenerToKeyCodec.encodeEntryEvent(key, value, oldValue,
                 null, type, uuid, numberOfEntriesAffected);
@@ -62,5 +67,10 @@ public class MultiMapAddEntryListenerToKeyMessageTask
     @Override
     public Object[] getParameters() {
         return new Object[]{null, parameters.key, parameters.includeValue};
+    }
+
+    @Override
+    public Data getKey() {
+        return parameters.key;
     }
 }

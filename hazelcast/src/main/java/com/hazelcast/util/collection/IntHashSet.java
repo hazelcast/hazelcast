@@ -1,6 +1,6 @@
 /*
- * Original work Copyright 2014 Real Logic Ltd.
- * Modified work Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Original work Copyright 2015 Real Logic Ltd.
+ * Modified work Copyright (c) 2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 
 package com.hazelcast.util.collection;
 
-import com.hazelcast.util.QuickMath;
 import com.hazelcast.util.function.Predicate;
 
 import java.lang.reflect.Array;
@@ -26,24 +25,33 @@ import java.util.Collection;
 import java.util.Set;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.util.QuickMath.nextPowerOfTwo;
+import static com.hazelcast.util.collection.Hashing.intHash;
 
 /**
- * Simple fixed-size int hashset for validating tags.
+ * Simple fixed-size int hashset.
  */
 public final class IntHashSet implements Set<Integer> {
+    /** Maximum supported capacity */
+    @SuppressWarnings("checkstyle:magicnumber")
+    public static final int MAX_CAPACITY = 1 << 29;
     private final int[] values;
     private final IntIterator iterator;
+    private final int capacity;
     private final int mask;
     private final int missingValue;
 
     private int size;
 
-    public IntHashSet(final int proposedCapacity, final int missingValue) {
+    public IntHashSet(final int capacity, final int missingValue) {
+        checkTrue(capacity <= MAX_CAPACITY, "Maximum capacity is 2^29");
+        this.capacity = capacity;
         size = 0;
         this.missingValue = missingValue;
-        final int capacity = QuickMath.nextPowerOfTwo(proposedCapacity);
-        mask = capacity - 1;
-        values = new int[capacity];
+        final int arraySize = nextPowerOfTwo(2 * capacity);
+        mask = arraySize - 1;
+        values = new int[arraySize];
         Arrays.fill(values, missingValue);
 
         // NB: references values in the constructor, so must be assigned after values
@@ -64,7 +72,10 @@ public final class IntHashSet implements Set<Integer> {
      * @return true if the collection has changed, false otherwise
      */
     public boolean add(final int value) {
-        int index = Hashing.intHash(value, mask);
+        if (size == capacity) {
+            throw new IllegalStateException("This IntHashSet of capacity " + capacity + " is full");
+        }
+        int index = intHash(value, mask);
 
         while (values[index] != missingValue) {
             if (values[index] == value) {
@@ -94,7 +105,7 @@ public final class IntHashSet implements Set<Integer> {
      * @return true if the value was present, false otherwise
      */
     public boolean remove(final int value) {
-        int index = Hashing.intHash(value, mask);
+        int index = intHash(value, mask);
 
         while (values[index] != missingValue) {
             if (values[index] == value) {
@@ -114,19 +125,22 @@ public final class IntHashSet implements Set<Integer> {
         return index;
     }
 
-    private void compactChain(final int deleteIndex) {
+    private void compactChain(int deleteIndex) {
         final int[] values = this.values;
-
         int index = deleteIndex;
         while (true) {
-            final int previousIndex = index;
             index = next(index);
             if (values[index] == missingValue) {
                 return;
             }
-
-            values[previousIndex] = values[index];
-            values[index] = missingValue;
+            final int hash = intHash(values[index], mask);
+            if ((index < hash && (hash <= deleteIndex || deleteIndex <= index))
+                    || (hash <= deleteIndex && deleteIndex <= index)
+            ) {
+                values[deleteIndex] = values[index];
+                values[index] = missingValue;
+                deleteIndex = index;
+            }
         }
     }
 
@@ -141,7 +155,7 @@ public final class IntHashSet implements Set<Integer> {
      * {@inheritDoc}
      */
     public boolean contains(final int value) {
-        int index = Hashing.intHash(value, mask);
+        int index = intHash(value, mask);
 
         while (values[index] != missingValue) {
             if (values[index] == value) {
@@ -328,14 +342,14 @@ public final class IntHashSet implements Set<Integer> {
      */
     public Object[] toArray() {
         final int[] values = this.values;
-        final Object[] ret = new Object[size];
-        for (int from = 0, to = 0; from < values.length; from++) {
-            final int val = values[from];
-            if (val != missingValue) {
-                ret[to++] = val;
+        final Object[] array = new Object[this.size];
+        int i = 0;
+        for (int value : values) {
+            if (value != missingValue) {
+                array[i++] = value;
             }
         }
-        return ret;
+        return array;
     }
 
     /**
@@ -350,13 +364,13 @@ public final class IntHashSet implements Set<Integer> {
         }
         final int[] values = this.values;
         final Object[] ret = into.length >= this.size ? into : (T[]) Array.newInstance(aryType, this.size);
-        for (int from = 0, to = 0; from < values.length; from++) {
-            final int val = values[from];
-            if (val != missingValue) {
-                ret[to++] = val;
+        int i = 0;
+        for (int value : values) {
+            if (value != missingValue) {
+                ret[i++] = value;
             }
         }
-        if (ret.length > values.length) {
+        if (ret.length > this.size) {
             ret[values.length] = null;
         }
         return (T[]) ret;

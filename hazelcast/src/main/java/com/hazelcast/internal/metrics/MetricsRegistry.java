@@ -113,10 +113,11 @@ public interface MetricsRegistry {
      * If a probe for the given name exists, it will be overwritten.
      *
      * @param name  the name of the probe.
+     * @param level the ProbeLevel
      * @param probe the probe
-     * @throws NullPointerException if source, name or probe is null.
+     * @throws NullPointerException if source, name, level or probe is null.
      */
-    <S> void register(S source, String name, LongProbeFunction<S> probe);
+    <S> void register(S source, String name, ProbeLevel level, LongProbeFunction<S> probe);
 
     /**
      * Registers a probe
@@ -124,10 +125,11 @@ public interface MetricsRegistry {
      * If a probe for the given name exists, it will be overwritten.
      *
      * @param name  the name of the probe
+     * @param level the ProbeLevel
      * @param probe the probe
-     * @throws NullPointerException if name or probe is null.
+     * @throws NullPointerException if source, name, level or probe is null.
      */
-    <S> void register(S source, String name, DoubleProbeFunction<S> probe);
+    <S> void register(S source, String name, ProbeLevel level, DoubleProbeFunction<S> probe);
 
     /**
      * Deregisters all probes for a given source object.

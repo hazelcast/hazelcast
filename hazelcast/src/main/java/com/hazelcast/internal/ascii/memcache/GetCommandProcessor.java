@@ -27,17 +27,18 @@ import java.net.URLDecoder;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class GetCommandProcessor extends MemcacheCommandProcessor<GetCommand> {
-    final boolean single;
+    private final boolean single;
     private final ILogger logger;
 
     public GetCommandProcessor(TextCommandService textCommandService, boolean single) {
         super(textCommandService);
         this.single = single;
-        logger = textCommandService.getNode().getLogger(this.getClass().getName());
+        logger = textCommandService.getNode().getLogger(getClass());
     }
 
+    @Deprecated
     public void handle(GetCommand getCommand) {
-        String key = null;
+        String key;
         try {
             key = URLDecoder.decode(getCommand.getKey(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -75,6 +76,7 @@ public class GetCommandProcessor extends MemcacheCommandProcessor<GetCommand> {
         textCommandService.sendResponse(getCommand);
     }
 
+    @Override
     public void handleRejection(GetCommand getCommand) {
         getCommand.setValue(null, single);
         textCommandService.sendResponse(getCommand);

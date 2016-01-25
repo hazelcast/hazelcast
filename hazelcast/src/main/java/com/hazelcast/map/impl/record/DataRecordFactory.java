@@ -16,17 +16,17 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 
 public class DataRecordFactory implements RecordFactory<Data> {
 
     private final SerializationService serializationService;
     private final PartitioningStrategy partitionStrategy;
-    private final boolean optimizeQuery;
+    private final CacheDeserializedValues cacheDeserializedValues;
     private final boolean statisticsEnabled;
 
     public DataRecordFactory(MapConfig config, SerializationService serializationService,
@@ -34,26 +34,26 @@ public class DataRecordFactory implements RecordFactory<Data> {
         this.serializationService = serializationService;
         this.partitionStrategy = partitionStrategy;
         this.statisticsEnabled = config.isStatisticsEnabled();
-        this.optimizeQuery = config.isOptimizeQueries();
+        this.cacheDeserializedValues = config.getCacheDeserializedValues();
     }
 
     @Override
-    public InMemoryFormat getStorageFormat() {
-        return InMemoryFormat.BINARY;
-    }
+    public Record<Data> newRecord(Object value) {
+        assert value != null : "value can not be null";
 
-    @Override
-    public Record<Data> newRecord(Data key, Object value) {
         final Data data = serializationService.toData(value, partitionStrategy);
-        if (optimizeQuery) {
-            return statisticsEnabled ? new CachedDataRecordWithStats(key, data)
-                    : new CachedDataRecord(key, data);
+        switch (cacheDeserializedValues) {
+            case NEVER:
+                return statisticsEnabled ? new DataRecordWithStats(data) : new DataRecord(data);
+            default:
+                return statisticsEnabled ? new CachedDataRecordWithStats(data) : new CachedDataRecord(data);
         }
-        return statisticsEnabled ? new DataRecordWithStats(key, data) : new DataRecord(key, data);
     }
 
     @Override
     public void setValue(Record<Data> record, Object value) {
+        assert value != null : "value can not be null";
+
         final Data v;
         if (value instanceof Data) {
             v = (Data) value;
@@ -65,6 +65,16 @@ public class DataRecordFactory implements RecordFactory<Data> {
 
     @Override
     public boolean isEquals(Object value1, Object value2) {
+        if (value1 == null && value2 == null) {
+            return true;
+        }
+        if (value1 == null) {
+            return false;
+        }
+        if (value2 == null) {
+            return false;
+        }
+
         return serializationService.toData(value1).equals(serializationService.toData(value2));
     }
 }

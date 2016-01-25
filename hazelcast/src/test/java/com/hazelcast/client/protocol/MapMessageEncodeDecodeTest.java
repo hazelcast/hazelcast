@@ -41,7 +41,8 @@ public class MapMessageEncodeDecodeTest {
     public void shouldEncodeDecodeCorrectly_PUT() {
         final int calculatedSize = MapPutCodec.RequestParameters.calculateDataSize(NAME, DATA, DATA, THE_LONG, THE_LONG);
         ClientMessage cmEncode = MapPutCodec.encodeRequest(NAME, DATA, DATA, THE_LONG, THE_LONG);
-        cmEncode.setVersion((short) 3).addFlag(ClientMessage.BEGIN_AND_END_FLAGS).setCorrelationId(66).setPartitionId(77);
+        cmEncode.setVersion((short) 3).addFlag(ClientMessage.BEGIN_AND_END_FLAGS)
+                .setCorrelationId(Long.MAX_VALUE).setPartitionId(77);
 
         assertTrue(calculatedSize > cmEncode.getFrameLength());
         byteBuffer = cmEncode.buffer();
@@ -52,7 +53,7 @@ public class MapMessageEncodeDecodeTest {
         assertEquals(MapPutCodec.REQUEST_TYPE.id(), cmDecode.getMessageType());
         assertEquals(3, cmDecode.getVersion());
         assertEquals(ClientMessage.BEGIN_AND_END_FLAGS, cmDecode.getFlags());
-        assertEquals(66, cmDecode.getCorrelationId());
+        assertEquals(Long.MAX_VALUE, cmDecode.getCorrelationId());
         assertEquals(77, cmDecode.getPartitionId());
 
         assertEquals(NAME, decodeParams.name);

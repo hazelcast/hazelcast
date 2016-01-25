@@ -18,28 +18,32 @@ package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveEntryListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
 import java.security.Permission;
 
 public class ReplicatedMapRemoveEntryListenerMessageTask
-        extends AbstractCallableMessageTask<ReplicatedMapRemoveEntryListenerCodec.RequestParameters> {
+        extends AbstractRemoveListenerMessageTask<ReplicatedMapRemoveEntryListenerCodec.RequestParameters> {
 
     public ReplicatedMapRemoveEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
-        ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        return recordStore.removeEntryListenerInternal(parameters.registrationId);
+    protected boolean deRegisterListener() {
+        ReplicatedMapService service = getService(ReplicatedMapService.SERVICE_NAME);
+        ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
+        return eventPublishingService.removeEventListener(parameters.name, parameters.registrationId);
+    }
+
+    @Override
+    protected String getRegistrationId() {
+        return parameters.registrationId;
     }
 
     @Override
@@ -72,8 +76,4 @@ public class ReplicatedMapRemoveEntryListenerMessageTask
         return new ReplicatedMapPermission(parameters.name, ActionConstants.ACTION_LISTEN);
     }
 
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{parameters.registrationId};
-    }
 }

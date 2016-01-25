@@ -24,13 +24,14 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import javax.xml.namespace.NamespaceContext;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
 
@@ -52,12 +53,19 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
     }
 
     private static final ILogger LOGGER = Logger.getLogger(AbstractConfigBuilder.class);
-    private Set<String> currentlyImportedFiles = new HashSet<String>();
-    private XPathFactory xpathFactory = XPathFactory.newInstance();
-    private XPath xpath = xpathFactory.newXPath();
+    private final Set<String> currentlyImportedFiles = new HashSet<String>();
+    private final XPath xpath;
 
     public AbstractConfigBuilder() {
-
+        final XPathFactory fac = XPathFactory.newInstance();
+        this.xpath = fac.newXPath();
+        xpath.setNamespaceContext(new NamespaceContext() {
+            @Override public String getNamespaceURI(String prefix) {
+                return "hz".equals(prefix) ? xmlns : null;
+            }
+            @Override public String getPrefix(String namespaceURI) { return null; }
+            @Override public Iterator getPrefixes(String namespaceURI) { return null; }
+        });
     }
 
     protected void process(Node root) throws Exception {
@@ -67,17 +75,16 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
 
     private void replaceImportElementsWithActualFileContents(Node root) throws Exception {
         Document document = root.getOwnerDocument();
-        NodeList misplacedImports = (NodeList) xpath.evaluate("//" + IMPORT.name
-                        + "/parent::*[not(name()=\"" + this.getXmlType().name + "\")]", document,
-                XPathConstants.NODESET
-        );
+        NodeList misplacedImports = (NodeList) xpath.evaluate(
+                String.format("//hz:%s/parent::*[not(self::hz:%s)]", IMPORT.name, getXmlType().name),
+                document, XPathConstants.NODESET);
         if (misplacedImports.getLength() > 0) {
-            throw new InvalidConfigurationException("<import> element can appear only in the top level of the XML");
+            throw new InvalidConfigurationException(
+                    "<import> element can appear only in the top level of the XML");
         }
-        NodeList importTags = (NodeList) xpath.evaluate("/*[name()='"
-                + this.getXmlType().name + "']/*[name()='"
-                + IMPORT.name + "']", document, XPathConstants.NODESET);
-        for (Node node : new AbstractXmlConfigHelper.IterableNodeList(importTags)) {
+        NodeList importTags = (NodeList) xpath.evaluate(
+                String.format("/hz:%s/hz:%s", this.getXmlType().name, IMPORT.name), document, XPathConstants.NODESET);
+        for (Node node : asElementIterable(importTags)) {
             loadAndReplaceImportElement(root, node);
         }
     }
@@ -88,7 +95,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
         String resource = resourceAtrribute.getTextContent();
         URL url = ConfigLoader.locateConfig(resource);
         if (url == null) {
-            throw new InvalidConfigurationException("Failed to load resource : " + resource);
+            throw new InvalidConfigurationException("Failed to load resource: " + resource);
         }
         if (!currentlyImportedFiles.add(url.getPath())) {
             throw new InvalidConfigurationException("Cyclic loading of resource " + url.getPath() + " is detected !");
@@ -97,7 +104,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
         Element importedRoot = doc.getDocumentElement();
         traverseChildsAndReplaceVariables(importedRoot);
         replaceImportElementsWithActualFileContents(importedRoot);
-        for (Node fromImportedDoc : new AbstractXmlConfigHelper.IterableNodeList(importedRoot.getChildNodes())) {
+        for (Node fromImportedDoc : childElements(importedRoot)) {
             Node importedNode = root.getOwnerDocument().importNode(fromImportedDoc, true);
             root.insertBefore(importedNode, node);
         }
@@ -123,12 +130,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
      */
     protected abstract ConfigType getXmlType();
 
-    private void traverseChildsAndReplaceVariables(Node root) throws XPathExpressionException {
-        NodeList misplacedHazelcastTag = (NodeList) xpath.evaluate("//" + this.getXmlType().name, root.getOwnerDocument(),
-                XPathConstants.NODESET);
-        if (misplacedHazelcastTag.getLength() > 1) {
-            throw new InvalidConfigurationException("<" + this.getXmlType().name + "> element can appear only once in the XML");
-        }
+    private void traverseChildsAndReplaceVariables(Node root) {
         NamedNodeMap attributes = root.getAttributes();
         if (attributes != null) {
             for (int k = 0; k < attributes.getLength(); k++) {

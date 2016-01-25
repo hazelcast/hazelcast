@@ -16,16 +16,15 @@
 
 package com.hazelcast.client.quorum;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.nio.Address;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.quorum.PartitionedCluster;
 import com.hazelcast.test.HazelcastTestRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.RunParallel;
@@ -43,15 +42,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import static com.hazelcast.test.HazelcastTestSupport.getNode;
-import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
-import static com.hazelcast.transaction.TransactionOptions.TransactionType.LOCAL;
+import static com.hazelcast.client.quorum.QuorumTestUtil.getClientConfig;
+import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 
 @RunParallel
 @RunWith(HazelcastTestRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientTransactionalMapQuorumTest {
+public class ClientTransactionalMapQuorumTest extends HazelcastTestSupport {
 
     static PartitionedCluster cluster;
     private static final String MAP_NAME_PREFIX = "quorum";
@@ -72,7 +70,7 @@ public class ClientTransactionalMapQuorumTest {
     public static Collection<Object[]> parameters() {
 
         TransactionOptions localOption = TransactionOptions.getDefault();
-        localOption.setTransactionType(LOCAL);
+        localOption.setTransactionType(ONE_PHASE);
 
         TransactionOptions twoPhaseOption = TransactionOptions.getDefault();
         twoPhaseOption.setTransactionType(TWO_PHASE);
@@ -95,6 +93,15 @@ public class ClientTransactionalMapQuorumTest {
         factory = new TestHazelcastFactory();
         cluster = new PartitionedCluster(factory).partitionFiveMembersThreeAndTwo(mapConfig, quorumConfig);
         initializeClients();
+        verifyClients();
+    }
+
+    private static void verifyClients() {
+        assertClusterSizeEventually(3, c1);
+        assertClusterSizeEventually(3, c2);
+        assertClusterSizeEventually(3, c3);
+        assertClusterSizeEventually(2, c4);
+        assertClusterSizeEventually(2, c5);
     }
 
     private static void initializeClients() {
@@ -103,14 +110,6 @@ public class ClientTransactionalMapQuorumTest {
         c3 = factory.newHazelcastClient(getClientConfig(cluster.h3));
         c4 = factory.newHazelcastClient(getClientConfig(cluster.h4));
         c5 = factory.newHazelcastClient(getClientConfig(cluster.h5));
-    }
-
-    private static ClientConfig getClientConfig(HazelcastInstance instance) {
-        ClientConfig clientConfig = new ClientConfig();
-        Address address = getNode(instance).address;
-        clientConfig.getNetworkConfig().addAddress(address.getHost() + ":" + address.getPort());
-        clientConfig.getGroupConfig().setName(instance.getConfig().getGroupConfig().getName());
-        return clientConfig;
     }
 
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.ascii;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
@@ -25,7 +26,10 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Assert;
@@ -34,18 +38,16 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.SocketException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * User: sancar
@@ -54,23 +56,26 @@ import static org.junit.Assert.*;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class RestTest {
+public class RestTest extends HazelcastTestSupport{
 
     final static Config config = new XmlConfigBuilder().build();
 
     @Before
-    @After
-    public void killAllHazelcastInstances() throws IOException {
-        Hazelcast.shutdownAll();
+    public void setup() throws IOException {
+        config.setProperty(GroupProperty.REST_ENABLED.getName(),"true");
     }
 
+    @After
+    public void tearDown() throws IOException {
+        Hazelcast.shutdownAll();
+    }
+    
     @Test
     public void testTtl_issue1783() throws IOException, InterruptedException {
-        final Config conf = new Config();
         String name = "map";
 
         final CountDownLatch latch = new CountDownLatch(1);
-        final MapConfig mapConfig = conf.getMapConfig(name);
+        final MapConfig mapConfig = config.getMapConfig(name);
         mapConfig.setTimeToLiveSeconds(3);
         mapConfig.addEntryListenerConfig(new EntryListenerConfig()
                 .setImplementation(new EntryAdapter() {
@@ -80,7 +85,7 @@ public class RestTest {
                     }
                 }));
 
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(conf);
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         final HTTPCommunicator communicator = new HTTPCommunicator(instance);
 
         communicator.put(name, "key", "value");
@@ -166,124 +171,72 @@ public class RestTest {
         Assert.assertEquals(queue.size(), communicator.size(name));
     }
 
-    private class HTTPCommunicator {
+    @Test
+    public void testDisabledRest() throws IOException {
+        Config config = new XmlConfigBuilder().build(); //REST should be disabled by default
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        String mapName = "testMap";
 
-        final HazelcastInstance instance;
-        final String address;
-
-        HTTPCommunicator(HazelcastInstance instance) {
-            this.instance = instance;
-            this.address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
+        try {
+            communicator.put("testMap", "1", "1");
+        } catch (SocketException ignore) {
         }
 
-        public String poll(String queueName, long timeout) {
-            String url = address + "queues/" + queueName + "/" + String.valueOf(timeout);
-            String result = doGet(url);
-            return result;
-        }
+        assertEquals(0, instance.getMap(mapName).size());
+    }
 
-        public int size(String queueName) {
-            String url = address + "queues/" + queueName + "/size";
-            Integer result = Integer.parseInt(doGet(url));
-            return result;
-        }
+    @Test
+    public void testClusterShutdown() throws IOException {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance1);
 
-        public int offer(String queueName, String data) throws IOException {
-            String url = address + "queues/" + queueName;
-            /** set up the http connection parameters */
-            HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
-            urlConnection.setRequestMethod("POST");
-            urlConnection.setDoOutput(true);
-            urlConnection.setDoInput(true);
-            urlConnection.setUseCaches(false);
-            urlConnection.setAllowUserInteraction(false);
-            urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
-
-            /** post the data */
-            OutputStream out = null;
-            out = urlConnection.getOutputStream();
-            Writer writer = new OutputStreamWriter(out, "UTF-8");
-            writer.write(data);
-            writer.close();
-            out.close();
-
-
-            return urlConnection.getResponseCode();
-        }
-
-        public String get(String mapName, String key) {
-            String url = address + "maps/" + mapName + "/" + key;
-            String result = doGet(url);
-            return result;
-        }
-
-        public int put(String mapName, String key, String value) throws IOException {
-
-            String url = address + "maps/" + mapName + "/" + key;
-            /** set up the http connection parameters */
-            HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
-            urlConnection.setRequestMethod("POST");
-            urlConnection.setDoOutput(true);
-            urlConnection.setDoInput(true);
-            urlConnection.setUseCaches(false);
-            urlConnection.setAllowUserInteraction(false);
-            urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
-
-            /** post the data */
-            OutputStream out = urlConnection.getOutputStream();
-            Writer writer = new OutputStreamWriter(out, "UTF-8");
-            writer.write(value);
-            writer.close();
-            out.close();
-
-            return urlConnection.getResponseCode();
-        }
-
-        public int deleteAll(String mapName) throws IOException {
-
-            String url = address + "maps/" + mapName;
-            /** set up the http connection parameters */
-            HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
-            urlConnection.setRequestMethod("DELETE");
-            urlConnection.setDoOutput(true);
-            urlConnection.setDoInput(true);
-            urlConnection.setUseCaches(false);
-            urlConnection.setAllowUserInteraction(false);
-            urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
-
-            return urlConnection.getResponseCode();
-        }
-
-        public int delete(String mapName, String key) throws IOException {
-
-            String url = address + "maps/" + mapName + "/" + key;
-            /** set up the http connection parameters */
-            HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
-            urlConnection.setRequestMethod("DELETE");
-            urlConnection.setDoOutput(true);
-            urlConnection.setDoInput(true);
-            urlConnection.setUseCaches(false);
-            urlConnection.setAllowUserInteraction(false);
-            urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
-
-            return urlConnection.getResponseCode();
-        }
-
-        private String doGet(final String url) {
-            String result = null;
-            try {
-                HttpURLConnection httpUrlConnection = (HttpURLConnection) (new URL(url)).openConnection();
-                BufferedReader rd = new BufferedReader(new InputStreamReader(httpUrlConnection.getInputStream()));
-                StringBuilder data = new StringBuilder(150);
-                String line;
-                while ((line = rd.readLine()) != null) data.append(line);
-                rd.close();
-                result = data.toString();
-                httpUrlConnection.disconnect();
-            } catch (Exception e) {
-                e.printStackTrace();
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.shutdownCluster("dev", "dev-pass"));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertFalse(instance1.getLifecycleService().isRunning());
+                assertFalse(instance2.getLifecycleService().isRunning());
+                assertFalse(instance3.getLifecycleService().isRunning());
             }
-            return result;
-        }
+        });
+    }
+
+    @Test
+    public void testGetClusterState() throws IOException {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+
+        HTTPCommunicator communicator1 = new HTTPCommunicator(instance1);
+        HTTPCommunicator communicator2 = new HTTPCommunicator(instance2);
+
+        instance1.getCluster().changeClusterState(ClusterState.FROZEN);
+        assertEquals("{\"status\":\"success\",\"state\":\"frozen\"}",
+                communicator1.getClusterState("dev", "dev-pass"));
+
+        instance1.getCluster().changeClusterState(ClusterState.PASSIVE);
+        assertEquals("{\"status\":\"success\",\"state\":\"passive\"}",
+                communicator2.getClusterState("dev", "dev-pass"));
+
+    }
+
+    @Test
+    public void testChangeClusterState() throws IOException {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance1);
+
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.changeClusterState("dev", "dev-pass", "frozen"));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+            assertEquals(ClusterState.FROZEN, instance1.getCluster().getClusterState());
+            assertEquals(ClusterState.FROZEN, instance2.getCluster().getClusterState());
+            }
+        });
     }
 }

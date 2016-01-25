@@ -16,15 +16,19 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
@@ -35,6 +39,7 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
@@ -49,6 +54,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
@@ -110,7 +116,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     final InvocationFuture invocationFuture;
     final OperationServiceImpl operationService;
 
-    // writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
+    // writes to that are normally handled through the INVOKE_COUNT to ensure atomic increments / decrements
     volatile int invokeCount;
 
     Invocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
@@ -269,13 +275,17 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private boolean engineActive() {
-        if (nodeEngine.isActive()) {
+        if (nodeEngine.isRunning()) {
             return true;
         }
 
-        remote = false;
-        notify(new HazelcastInstanceNotActiveException());
-        return false;
+        final NodeState state = nodeEngine.getNode().getState();
+        boolean allowed = state == NodeState.PASSIVE && (op instanceof AllowedDuringPassiveState);
+        if (!allowed) {
+            notify(new HazelcastInstanceNotActiveException("State: " + state + " Operation: " + op.getClass()));
+            remote = false;
+        }
+        return allowed;
     }
 
     /**
@@ -288,18 +298,14 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
 
         invTarget = getTarget();
 
+        final ClusterService clusterService = nodeEngine.getClusterService();
         if (invTarget == null) {
             remote = false;
-            if (nodeEngine.isActive()) {
-                notify(new WrongTargetException(thisAddress, null, partitionId
-                        , replicaIndex, op.getClass().getName(), serviceName));
-            } else {
-                notify(new HazelcastInstanceNotActiveException());
-            }
+            notifyWithExceptionWhenTargetIsNull();
             return false;
         }
 
-        targetMember = nodeEngine.getClusterService().getMember(invTarget);
+        targetMember = clusterService.getMember(invTarget);
         if (targetMember == null && !(isJoinOperation(op) || isWanReplicationOperation(op))) {
             notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
             return false;
@@ -319,6 +325,33 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
 
         remote = !thisAddress.equals(invTarget);
         return true;
+    }
+
+    private void notifyWithExceptionWhenTargetIsNull() {
+        Address thisAddress = nodeEngine.getThisAddress();
+        ClusterService clusterService = nodeEngine.getClusterService();
+
+        if (!nodeEngine.isRunning()) {
+            notify(new HazelcastInstanceNotActiveException());
+            return;
+        }
+
+        ClusterState clusterState = clusterService.getClusterState();
+        if (clusterState == ClusterState.FROZEN || clusterState == ClusterState.PASSIVE) {
+            notify(new IllegalStateException("Partitions can't be assigned since cluster-state: "
+                    + clusterState));
+            return;
+        }
+
+        if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
+            final NoDataMemberInClusterException exception = new NoDataMemberInClusterException(
+                    "Partitions can't be assigned since all nodes in the cluster are lite members");
+            notify(exception);
+            return;
+        }
+
+        notify(new WrongTargetException(thisAddress, null, partitionId,
+                replicaIndex, op.getClass().getName(), serviceName));
     }
 
     @Override
@@ -471,13 +504,14 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         long maxCallTimeout = invocationFuture.getMaxCallTimeout();
         long expirationTime = op.getInvocationTime() + maxCallTimeout;
 
+        boolean done = invocationFuture.isDone();
         boolean hasResponse = pendingResponse != null;
         boolean hasWaitingThreads = invocationFuture.getWaitingThreadsCount() > 0;
         boolean notExpired = maxCallTimeout == Long.MAX_VALUE
                 || expirationTime < 0
                 || expirationTime >= Clock.currentTimeMillis();
 
-        if (hasResponse || hasWaitingThreads || notExpired) {
+        if (hasResponse || hasWaitingThreads || notExpired || done) {
             return false;
         }
 
@@ -598,21 +632,19 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
             connectionStr = connection == null ? null : connection.toString();
         }
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("Invocation");
-        sb.append("{ serviceName='").append(serviceName).append('\'');
-        sb.append(", op=").append(op);
-        sb.append(", partitionId=").append(partitionId);
-        sb.append(", replicaIndex=").append(replicaIndex);
-        sb.append(", tryCount=").append(tryCount);
-        sb.append(", tryPauseMillis=").append(tryPauseMillis);
-        sb.append(", invokeCount=").append(invokeCount);
-        sb.append(", callTimeout=").append(callTimeout);
-        sb.append(", target=").append(invTarget);
-        sb.append(", backupsExpected=").append(backupsExpected);
-        sb.append(", backupsCompleted=").append(backupsCompleted);
-        sb.append(", connection=").append(connectionStr);
-        sb.append('}');
-        return sb.toString();
+        return "Invocation{"
+                + "serviceName='" + serviceName + '\''
+                + ", op=" + op
+                + ", partitionId=" + partitionId
+                + ", replicaIndex=" + replicaIndex
+                + ", tryCount=" + tryCount
+                + ", tryPauseMillis=" + tryPauseMillis
+                + ", invokeCount=" + invokeCount
+                + ", callTimeout=" + callTimeout
+                + ", target=" + invTarget
+                + ", backupsExpected=" + backupsExpected
+                + ", backupsCompleted=" + backupsCompleted
+                + ", connection=" + connectionStr
+                + '}';
     }
 }

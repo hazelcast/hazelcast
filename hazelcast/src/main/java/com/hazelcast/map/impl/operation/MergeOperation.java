@@ -18,8 +18,8 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.Records;
@@ -28,6 +28,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 
 public class MergeOperation extends BasePutOperation {
@@ -36,11 +37,19 @@ public class MergeOperation extends BasePutOperation {
     private EntryView<Data, Data> mergingEntry;
     private boolean merged;
     private Data mergingValue;
+    private boolean disableWanReplicationEvent;
 
-    public MergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView, MapMergePolicy policy) {
+    public MergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
+                          MapMergePolicy policy) {
+        this(name, dataKey, entryView, policy, false);
+    }
+
+    public MergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
+                          MapMergePolicy policy, boolean disableWanReplicationEvent) {
         super(name, dataKey, null);
-        mergingEntry = entryView;
-        mergePolicy = policy;
+        this.mergingEntry = entryView;
+        this.mergePolicy = policy;
+        this.disableWanReplicationEvent = disableWanReplicationEvent;
     }
 
     public MergeOperation() {
@@ -70,8 +79,7 @@ public class MergeOperation extends BasePutOperation {
 
     @Override
     public boolean shouldBackup() {
-        final Record record = recordStore.getRecord(dataKey);
-        return merged && record != null;
+        return merged;
     }
 
     @Override
@@ -80,21 +88,21 @@ public class MergeOperation extends BasePutOperation {
             final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
             final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
             mapServiceContext.interceptAfterPut(name, dataValue);
-            mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.MERGED, false, dataKey, dataOldValue,
+            mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.MERGED, dataKey, dataOldValue,
                     dataValue, mergingValue);
-            invalidateNearCaches();
-            evict(false);
+            invalidateNearCache(dataKey);
+            evict();
         }
     }
 
     @Override
     public Operation getBackupOperation() {
         if (dataValue == null) {
-            return new RemoveBackupOperation(name, dataKey);
+            return new RemoveBackupOperation(name, dataKey, false, disableWanReplicationEvent);
         } else {
             final Record record = recordStore.getRecord(dataKey);
-            final RecordInfo replicationInfo = record != null ? Records.buildRecordInfo(record) : null;
-            return new PutBackupOperation(name, dataKey, dataValue, replicationInfo);
+            final RecordInfo replicationInfo = Records.buildRecordInfo(record);
+            return new PutBackupOperation(name, dataKey, dataValue, replicationInfo, false, false, disableWanReplicationEvent);
         }
     }
 
@@ -111,10 +119,4 @@ public class MergeOperation extends BasePutOperation {
         mergingEntry = in.readObject();
         mergePolicy = in.readObject();
     }
-
-    @Override
-    public String toString() {
-        return "MergeOperation{" + name + "}";
-    }
-
 }

@@ -65,7 +65,7 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
 
-        if (!partitionService.isMigrationActive()) {
+        if (!partitionService.isReplicaSyncAllowed()) {
             ILogger logger = getLogger();
             if (logger.isFinestEnabled()) {
                 logger.finest("Migration is paused! Cannot run replica sync -> " + toString());
@@ -224,10 +224,5 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + '}';
     }
 }

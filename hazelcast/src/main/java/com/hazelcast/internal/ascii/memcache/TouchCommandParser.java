@@ -17,30 +17,26 @@
 package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.internal.ascii.TextCommand;
-import com.hazelcast.internal.ascii.TextCommandConstants;
+import com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType;
 import com.hazelcast.internal.ascii.TypeAwareCommandParser;
-import com.hazelcast.nio.ascii.SocketTextReader;
+import com.hazelcast.nio.ascii.TextReadHandler;
 
 import java.util.StringTokenizer;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 
-/**
- * User: sancar
- * Date: 3/8/13
- * Time: 1:52 PM
- */
 public class TouchCommandParser extends TypeAwareCommandParser {
 
-    public TouchCommandParser(TextCommandConstants.TextCommandType type) {
+    public TouchCommandParser(TextCommandType type) {
         super(type);
     }
 
-    public TextCommand parser(SocketTextReader socketTextReader, String cmd, int space) {
+    @Override
+    public TextCommand parser(TextReadHandler readHandler, String cmd, int space) {
         StringTokenizer st = new StringTokenizer(cmd);
         st.nextToken();
-        String key = null;
-        int expiration = 0;
+        String key;
+        int expiration;
         boolean noReply = false;
         if (st.hasMoreTokens()) {
             key = st.nextToken();

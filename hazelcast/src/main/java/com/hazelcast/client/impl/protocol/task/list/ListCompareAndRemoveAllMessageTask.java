@@ -29,6 +29,7 @@ import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -44,7 +45,8 @@ public class ListCompareAndRemoveAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionCompareAndRemoveOperation(parameters.name, false, (Set<Data>) parameters.valueSet);
+        Set<Data> values = new HashSet<Data>(parameters.values);
+        return new CollectionCompareAndRemoveOperation(parameters.name, false, values);
     }
 
     @Override
@@ -64,7 +66,7 @@ public class ListCompareAndRemoveAllMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.valueSet};
+        return new Object[]{parameters.values};
     }
 
     @Override

@@ -17,6 +17,7 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -39,7 +40,19 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     private static final ILogger LOGGER = Logger.getLogger(ClientExecutionService.class);
     private static final long TERMINATE_TIMEOUT_SECONDS = 30;
-    private final ExecutorService executor;
+    private static final ExecutionCallback FAILURE_LOGGING_EXECUTION_CALLBACK = new ExecutionCallback() {
+        @Override
+        public void onResponse(Object response) {
+
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            LOGGER.warning("Rejected internal execution on scheduledExecutor", t);
+        }
+    };
+
+    private final ExecutorService userExecutor;
     private final ExecutorService internalExecutor;
     private final ScheduledExecutorService scheduledExecutor;
 
@@ -59,9 +72,9 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                         throw new RejectedExecutionException(message);
                     }
                 });
-        executor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS,
+        userExecutor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(),
-                new PoolExecutorThreadFactory(threadGroup, name + ".cached-", classLoader),
+                new PoolExecutorThreadFactory(threadGroup, name + ".user-", classLoader),
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                         String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
@@ -75,40 +88,59 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     }
 
-    public <T> ICompletableFuture<T> submitInternal(Runnable runnable) {
-        CompletableFutureTask futureTask = new CompletableFutureTask(runnable, null, getAsyncExecutor());
-        executor.submit(futureTask);
-        return futureTask;
-    }
-
     public void executeInternal(Runnable runnable) {
         internalExecutor.execute(runnable);
     }
 
+    public <T> ICompletableFuture<T> submitInternal(Runnable runnable) {
+        CompletableFutureTask futureTask = new CompletableFutureTask(runnable, null, internalExecutor);
+        internalExecutor.submit(futureTask);
+        return futureTask;
+    }
+
     @Override
     public void execute(Runnable command) {
-        executor.execute(command);
+        userExecutor.execute(command);
     }
 
     @Override
     public ICompletableFuture<?> submit(Runnable task) {
         CompletableFutureTask futureTask = new CompletableFutureTask(task, null, getAsyncExecutor());
-        executor.submit(futureTask);
+        userExecutor.submit(futureTask);
         return futureTask;
     }
 
     @Override
     public <T> ICompletableFuture<T> submit(Callable<T> task) {
         CompletableFutureTask<T> futureTask = new CompletableFutureTask<T>(task, getAsyncExecutor());
-        executor.submit(futureTask);
+        userExecutor.submit(futureTask);
         return futureTask;
+    }
+
+    /**
+     * Utilized when given command needs to make a remote call. Response of remote call is not handled in runnable itself
+     * but rather in  execution callback so that executor is not blocked because of a remote operation
+     *
+     * @param command
+     * @param delay
+     * @param unit
+     * @param executionCallback
+     * @return scheduledFuture
+     */
+    public ScheduledFuture<?> schedule(final Runnable command, long delay, TimeUnit unit,
+                                       final ExecutionCallback executionCallback) {
+        return scheduledExecutor.schedule(new Runnable() {
+            public void run() {
+                executeInternalSafely(command, executionCallback);
+            }
+        }, delay, unit);
     }
 
     @Override
     public ScheduledFuture<?> schedule(final Runnable command, long delay, TimeUnit unit) {
         return scheduledExecutor.schedule(new Runnable() {
             public void run() {
-                execute(command);
+                executeInternalSafely(command, FAILURE_LOGGING_EXECUTION_CALLBACK);
             }
         }, delay, unit);
     }
@@ -117,7 +149,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
         return scheduledExecutor.scheduleAtFixedRate(new Runnable() {
             public void run() {
-                execute(command);
+                executeInternalSafely(command, FAILURE_LOGGING_EXECUTION_CALLBACK);
             }
         }, initialDelay, period, unit);
     }
@@ -126,36 +158,44 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
         return scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
             public void run() {
-                executeInternal(command);
+                executeInternalSafely(command, FAILURE_LOGGING_EXECUTION_CALLBACK);
             }
         }, initialDelay, period, unit);
     }
 
     @Override
     public ExecutorService getAsyncExecutor() {
-        return executor;
+        return userExecutor;
     }
 
     public void shutdown() {
-        internalExecutor.shutdown();
+        shutdownExecutor("scheduled", scheduledExecutor);
+        shutdownExecutor("user", userExecutor);
+        shutdownExecutor("internal", internalExecutor);
+    }
+
+    private void executeInternalSafely(Runnable command, ExecutionCallback executionCallback) {
         try {
-            boolean success = internalExecutor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            if (!success) {
-                LOGGER.warning("InternalExecutor awaitTermination could not completed in "
-                        + TERMINATE_TIMEOUT_SECONDS + " seconds");
-            }
-        } catch (InterruptedException e) {
-            LOGGER.warning("Internal Executor await termination is interrupted", e);
+            submitInternal(command).andThen(executionCallback);
+        } catch (RejectedExecutionException e) {
+            executionCallback.onFailure(e);
         }
-        scheduledExecutor.shutdownNow();
+    }
+
+    private void shutdownExecutor(String name, ExecutorService executor) {
         executor.shutdown();
         try {
             boolean success = executor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!success) {
-                LOGGER.warning("Executor awaitTermination could not completed in " + TERMINATE_TIMEOUT_SECONDS + " seconds");
+                LOGGER.warning(name + " executor awaitTermination could not completed in "
+                        + TERMINATE_TIMEOUT_SECONDS + " seconds");
             }
         } catch (InterruptedException e) {
-            LOGGER.warning("Executor await termination is interrupted", e);
+            LOGGER.warning(name + " executor await termination is interrupted", e);
         }
+    }
+
+    public ExecutorService getInternalExecutor() {
+        return internalExecutor;
     }
 }

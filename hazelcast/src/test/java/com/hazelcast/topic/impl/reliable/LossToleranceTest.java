@@ -10,6 +10,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.log4j.Level;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -22,20 +23,27 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class LossToleranceTest extends HazelcastTestSupport {
 
-    private HazelcastInstance hz;
     private ReliableTopicProxy<String> topic;
     private Ringbuffer<ReliableTopicMessage> ringbuffer;
 
     @Before
     public void setup() {
+        setLoggingLog4j();
+        setLogLevel(Level.TRACE);
+
         Config config = new Config();
         config.addRingBufferConfig(new RingbufferConfig("foo")
                 .setCapacity(100)
                 .setTimeToLiveSeconds(0));
-        hz = createHazelcastInstance(config);
+        HazelcastInstance hz = createHazelcastInstance(config);
 
-        topic = (ReliableTopicProxy) hz.getReliableTopic("foo");
+        topic = (ReliableTopicProxy<String>) hz.<String>getReliableTopic("foo");
         ringbuffer = topic.ringbuffer;
+    }
+
+    @After
+    public void tearDown() {
+        resetLogLevel();
     }
 
     @Test
@@ -46,15 +54,12 @@ public class LossToleranceTest extends HazelcastTestSupport {
 
         topic.publish("foo");
 
-
-        int k = 0;
         // we add so many items that the items the listener wants to listen to, doesn't exist anymore
         for (; ; ) {
             topic.publish("item");
             if (ringbuffer.headSequence() > listener.initialSequence) {
                 break;
             }
-            k++;
         }
         topic.addMessageListener(listener);
 
@@ -81,12 +86,12 @@ public class LossToleranceTest extends HazelcastTestSupport {
         }
 
         topic.addMessageListener(listener);
-        topic.publish("newitem");
+        topic.publish("newItem");
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertTrue(listener.objects.contains("newitem"));
+                assertTrue(listener.objects.contains("newItem"));
                 assertFalse(topic.runnersMap.isEmpty());
             }
         });

@@ -16,15 +16,21 @@
 
 package com.hazelcast.cluster.impl.operations;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.Node;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.PartitionRuntimeState;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -37,29 +43,31 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     public static final int FINALIZE_JOIN_MAX_TIMEOUT = 60;
 
     private PostJoinOperation postJoinOp;
+    private PartitionRuntimeState partitionRuntimeState;
     private String clusterId;
     private long clusterStartTime;
+    private ClusterState clusterState;
 
     public FinalizeJoinOperation() {
     }
 
-    public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime) {
-        super(members, masterTime, true);
-        this.postJoinOp = postJoinOp;
-    }
-
-    public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp,
-                                 long masterTime, String clusterId, long clusterStartTime) {
+    public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime,
+            String clusterId, long clusterStartTime, ClusterState clusterState,
+            PartitionRuntimeState partitionRuntimeState) {
         super(members, masterTime, true);
         this.postJoinOp = postJoinOp;
         this.clusterId = clusterId;
-        this.clusterStartTime  = clusterStartTime;
+        this.clusterStartTime = clusterStartTime;
+        this.clusterState = clusterState;
+        this.partitionRuntimeState = partitionRuntimeState;
     }
 
-    public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp,
-                                 long masterTime, boolean sendResponse) {
+    public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime,
+            ClusterState clusterState, PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
         super(members, masterTime, sendResponse);
         this.postJoinOp = postJoinOp;
+        this.clusterState = clusterState;
+        this.partitionRuntimeState = partitionRuntimeState;
     }
 
     @Override
@@ -68,18 +76,69 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
             return;
         }
 
+        final ClusterServiceImpl clusterService = getService();
+        final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
+
+        if (nodeEngine.getNode().joined()) {
+            ILogger logger = getLogger();
+            if (logger.isFinestEnabled()) {
+                logger.finest("Node is already joined... No need to finalize join...");
+            }
+            return;
+        }
+
+        initClusterStates(clusterService);
+
         processMemberUpdate();
+
+        processPartitionState();
+
+        sendPostJoinOperations();
+
+        runPostJoinOp();
+    }
+
+    private void initClusterStates(ClusterServiceImpl clusterService) {
+        clusterService.initialClusterState(clusterState);
+        clusterService.setClusterId(clusterId);
+        clusterService.getClusterClock().setClusterStartTime(clusterStartTime);
+    }
+
+    private void processPartitionState() {
+        if (partitionRuntimeState == null) {
+            return;
+        }
+
+        partitionRuntimeState.setEndpoint(getCallerAddress());
+        ClusterServiceImpl clusterService = getService();
+        Node node = clusterService.getNodeEngine().getNode();
+        node.partitionService.processPartitionRuntimeState(partitionRuntimeState);
+    }
+
+    private void runPostJoinOp() {
+        if (postJoinOp == null) {
+            return;
+        }
+
+        ClusterServiceImpl clusterService = getService();
+        NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
+        InternalOperationService operationService = nodeEngine.getOperationService();
+
+        postJoinOp.setNodeEngine(nodeEngine);
+        OperationAccessor.setCallerAddress(postJoinOp, getCallerAddress());
+        OperationAccessor.setConnection(postJoinOp, getConnection());
+        postJoinOp.setOperationResponseHandler(createEmptyResponseHandler());
+        operationService.runOperationOnCallingThread(postJoinOp);
+    }
+
+    private void sendPostJoinOperations() {
+        final ClusterServiceImpl clusterService = getService();
+        final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
 
         // Post join operations must be lock free; means no locks at all;
         // no partition locks, no key-based locks, no service level locks!
-
-        final ClusterServiceImpl clusterService = getService();
-        final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
         final Operation[] postJoinOperations = nodeEngine.getPostJoinOperations();
         final OperationService operationService = nodeEngine.getOperationService();
-
-        clusterService.setClusterId(clusterId);
-        clusterService.getClusterClock().setClusterStartTime(clusterStartTime);
 
         if (postJoinOperations != null && postJoinOperations.length > 0) {
             final Collection<Member> members = clusterService.getMembers();
@@ -90,14 +149,6 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
                             operation, member.getAddress()).setTryCount(100).invoke();
                 }
             }
-        }
-
-        if (postJoinOp != null) {
-            postJoinOp.setNodeEngine(nodeEngine);
-            OperationAccessor.setCallerAddress(postJoinOp, getCallerAddress());
-            OperationAccessor.setConnection(postJoinOp, getConnection());
-            postJoinOp.setOperationResponseHandler(createEmptyResponseHandler());
-            operationService.runOperationOnCallingThread(postJoinOp);
         }
     }
 
@@ -111,6 +162,8 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         }
         out.writeUTF(clusterId);
         out.writeLong(clusterStartTime);
+        out.writeUTF(clusterState.toString());
+        out.writeObject(partitionRuntimeState);
     }
 
     @Override
@@ -123,14 +176,21 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         }
         clusterId = in.readUTF();
         clusterStartTime = in.readLong();
+        String stateName = in.readUTF();
+        clusterState = ClusterState.valueOf(stateName);
+        partitionRuntimeState = in.readObject();
     }
 
     @Override
-    public String toString() {
-        return "FinalizeJoinOperation{"
-                + "postJoinOp=" + postJoinOp
-                + "} "
-                + super.toString();
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", postJoinOp=").append(postJoinOp);
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.FINALIZE_JOIN;
     }
 }
 

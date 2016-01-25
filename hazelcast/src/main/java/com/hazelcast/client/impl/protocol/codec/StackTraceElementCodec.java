@@ -28,9 +28,9 @@ public final class StackTraceElementCodec {
     public static StackTraceElement decode(ClientMessage clientMessage) {
         String declaringClass = clientMessage.getStringUtf8();
         String methodName = clientMessage.getStringUtf8();
-        boolean fileName_notNull = clientMessage.getBoolean();
+        boolean fileName_Null = clientMessage.getBoolean();
         String fileName = null;
-        if (fileName_notNull) {
+        if (!fileName_Null) {
             fileName = clientMessage.getStringUtf8();
         }
         int lineNumber = clientMessage.getInt();
@@ -42,9 +42,9 @@ public final class StackTraceElementCodec {
         clientMessage.set(stackTraceElement.getMethodName());
 
         String fileName = stackTraceElement.getFileName();
-        boolean fileName_NotNull = fileName != null;
-        clientMessage.set(fileName_NotNull);
-        if (fileName_NotNull) {
+        boolean fileName_Null = (fileName == null);
+        clientMessage.set(fileName_Null);
+        if (!fileName_Null) {
             clientMessage.set(fileName);
         }
         clientMessage.set(stackTraceElement.getLineNumber());

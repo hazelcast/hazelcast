@@ -9,7 +9,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class IdGeneratorBasicLocalTest extends IdGeneratorBasicTest {
+public class IdGeneratorBasicLocalTest extends IdGeneratorAbstractTest {
 
     @Override
     protected HazelcastInstance[] newInstances() {

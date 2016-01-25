@@ -16,14 +16,15 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,9 +32,17 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
-import static org.junit.Assert.*;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -43,7 +52,8 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     private static final int BACKUP_COUNT = 0;
     private static final int ASYNC_BACKUP_COUNT = 0;
 
-    private InternalLockService mockLockServiceImpl;
+    private LockService mockLockServiceImpl;
+    private EntryTaskScheduler mockScheduler;
     private LockStoreImpl lockStore;
 
     private Data key = new HeapData();
@@ -54,9 +64,10 @@ public class LockStoreImplTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        mockLockServiceImpl = mock(InternalLockService.class);
+        mockLockServiceImpl = mock(LockService.class);
         when(mockLockServiceImpl.getMaxLeaseTimeInMillis()).thenReturn(Long.MAX_VALUE);
-        lockStore = new LockStoreImpl(mockLockServiceImpl, OBJECT_NAME_SPACE, BACKUP_COUNT, ASYNC_BACKUP_COUNT);
+        mockScheduler = mock(EntryTaskScheduler.class);
+        lockStore = new LockStoreImpl(mockLockServiceImpl, OBJECT_NAME_SPACE, mockScheduler, BACKUP_COUNT, ASYNC_BACKUP_COUNT);
     }
 
     @Test
@@ -385,6 +396,43 @@ public class LockStoreImplTest extends HazelcastTestSupport {
         assertFalse(locked);
     }
 
+    @Test
+    public void testIsTransactionallyLocked_whenLockDoesNotExist_thenReturnFalse() {
+        boolean locked = lockStore.isTransactionallyLocked(key);
+        assertFalse(locked);
+    }
+
+    @Test
+    public void testIsTransactionallyLocked_whenNonTxnLocked_thenReturnFalse() {
+        lock();
+        boolean locked = lockStore.isTransactionallyLocked(key);
+        assertFalse(locked);
+    }
+
+    @Test
+    public void testIsTransactionallyLocked_whenTxnLocked_thenReturnTrue() {
+        txnLock();
+        boolean locked = lockStore.isTransactionallyLocked(key);
+        assertTrue(locked);
+    }
+
+    @Test
+    public void testIsTransactionallyLocked_whenTxnLockedAndUnlocked_thenReturnFalse() {
+        txnLockAndIncreaseReferenceId();
+        unlock();
+        boolean locked = lockStore.isTransactionallyLocked(key);
+        assertFalse(locked);
+    }
+
+    @Test
+    public void testIsTransactionallyLocked_whenTxnLockedAndAttemptedToLockFromAnotherThread_thenReturnTrue() {
+        txnLockAndIncreaseReferenceId();
+        threadId++;
+        lockAndIncreaseReferenceId();
+        boolean locked = lockStore.isTransactionallyLocked(key);
+        assertTrue(locked);
+    }
+
 
     private boolean lock() {
         return lockStore.lock(key, callerId, threadId, referenceId, leaseTime);
@@ -415,4 +463,5 @@ public class LockStoreImplTest extends HazelcastTestSupport {
         referenceId++;
         return isUnlocked;
     }
+
 }

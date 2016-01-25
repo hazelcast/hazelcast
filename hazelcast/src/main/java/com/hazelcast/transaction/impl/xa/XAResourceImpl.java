@@ -301,8 +301,6 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("HazelcastXaResource {").append(groupName).append('}');
-        return sb.toString();
+        return "HazelcastXaResource {" + groupName + '}';
     }
 }

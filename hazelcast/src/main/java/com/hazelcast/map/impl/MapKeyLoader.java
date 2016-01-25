@@ -19,11 +19,16 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.MapLoader;
+import com.hazelcast.core.Member;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
-import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadStatusOperation;
+import com.hazelcast.map.impl.operation.LoadStatusOperationFactory;
+import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -48,6 +53,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.logging.Logger.getLogger;
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.assignRole;
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.toBatches;
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.toPartition;
@@ -71,23 +77,33 @@ public class MapKeyLoader {
     private InternalPartitionService partitionService;
     private IFunction<Object, Data> toData;
     private ExecutionService execService;
-    private CoalescingDelayedTrigger deleayedTrigger;
+    private CoalescingDelayedTrigger delayedTrigger;
 
     private int maxSizePerNode;
     private int maxBatch;
     private int mapNamePartition;
+    private int partitionId;
     private boolean hasBackup;
 
     private LoadFinishedFuture loadFinished = new LoadFinishedFuture(true);
+    private MapOperationProvider operationProvider;
 
-    /** Role of this MapKeyLoader **/
+    /**
+     * Role of this MapKeyLoader
+     **/
     enum Role {
         NONE,
-        /** Sends out keys to all other partitions **/
+        /**
+         * Sends out keys to all other partitions
+         **/
         SENDER,
-        /** Receives keys from sender **/
+        /**
+         * Receives keys from sender
+         **/
         RECEIVER,
-        /** Restarts sending if SENDER fails **/
+        /**
+         * Restarts sending if SENDER fails
+         **/
         SENDER_BACKUP
     }
 
@@ -107,7 +123,7 @@ public class MapKeyLoader {
             .withTransition(State.LOADED, State.LOADING);
 
     public MapKeyLoader(String mapName, OperationService opService, InternalPartitionService ps,
-            ExecutionService execService, IFunction<Object, Data> serialize) {
+                        ExecutionService execService, IFunction<Object, Data> serialize) {
         this.mapName = mapName;
         this.opService = opService;
         this.partitionService = ps;
@@ -117,13 +133,14 @@ public class MapKeyLoader {
 
     public Future startInitialLoad(MapStoreContext mapStoreContext, int partitionId) {
 
+        this.partitionId = partitionId;
         this.mapNamePartition = partitionService.getPartitionId(toData.apply(mapName));
-        Role newRole = assignRole(partitionService, mapNamePartition, partitionId);
+        Role newRole = calculateRole();
 
         role.nextOrStay(newRole);
         state.next(State.LOADING);
 
-        switch(newRole) {
+        switch (newRole) {
             case SENDER:
                 return sendKeys(mapStoreContext, false);
             case SENDER_BACKUP:
@@ -132,6 +149,21 @@ public class MapKeyLoader {
             default:
                 return loadFinished;
         }
+    }
+
+    private Role calculateRole() {
+        boolean isPartitionOwner = partitionService.isPartitionOwner(partitionId);
+        boolean isMapNamePartition = partitionId == mapNamePartition;
+        boolean isMapNamePartitionFirstReplica = false;
+        if (hasBackup && isMapNamePartition) {
+            InternalPartition partition = partitionService.getPartition(partitionId);
+            Address firstReplicaAddress = partition.getReplicaAddress(1);
+            Member member = partitionService.getMember(firstReplicaAddress);
+            if (member != null) {
+                isMapNamePartitionFirstReplica = member.localMember();
+            }
+        }
+        return assignRole(isPartitionOwner, isMapNamePartition, isMapNamePartitionFirstReplica);
     }
 
     /**
@@ -171,7 +203,7 @@ public class MapKeyLoader {
                 public void run() {
                     Operation op = new PartitionCheckIfLoadedOperation(mapName, true);
                     opService.<Boolean>invokeOnPartition(SERVICE_NAME, op, mapNamePartition)
-                        .andThen(ifLoadedCallback());
+                            .andThen(ifLoadedCallback());
                 }
             });
         }
@@ -204,9 +236,11 @@ public class MapKeyLoader {
         }
     }
 
-    /** Triggers key loading on SENDER if it hadn't started. Delays triggering if invoked multiple times. **/
+    /**
+     * Triggers key loading on SENDER if it hadn't started. Delays triggering if invoked multiple times.
+     **/
     public void triggerLoadingWithDelay() {
-        if (deleayedTrigger == null) {
+        if (delayedTrigger == null) {
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
@@ -214,10 +248,10 @@ public class MapKeyLoader {
                     opService.invokeOnPartition(SERVICE_NAME, op, mapNamePartition);
                 }
             };
-            deleayedTrigger = new CoalescingDelayedTrigger(execService, LOADING_TRIGGER_DELAY, LOADING_TRIGGER_DELAY, runnable);
+            delayedTrigger = new CoalescingDelayedTrigger(execService, LOADING_TRIGGER_DELAY, LOADING_TRIGGER_DELAY, runnable);
         }
 
-        deleayedTrigger.executeWithDelay();
+        delayedTrigger.executeWithDelay();
     }
 
     public boolean shouldDoInitialLoad() {
@@ -236,7 +270,7 @@ public class MapKeyLoader {
         return state.is(State.NOT_LOADED);
     }
 
-    private void sendKeysInBatches(MapStoreContext mapStoreContext, boolean replaceExistingValues) {
+    private void sendKeysInBatches(MapStoreContext mapStoreContext, boolean replaceExistingValues) throws Exception {
 
         int clusterSize = partitionService.getMemberPartitionsMap().size();
         Iterator<Object> keys = null;
@@ -267,10 +301,11 @@ public class MapKeyLoader {
             // for all LoadAllOperation(s) to be ACKed by receivers and only then we send them the LoadStatusOperation
             // See https://github.com/hazelcast/hazelcast/issues/4024 for additional details
             FutureUtil.waitWithDeadline(futures, KEY_DISTRIBUTION_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+
         } catch (Exception caught) {
             loadError = caught;
         } finally {
-            sendLoadCompleted(clusterSize, partitionService.getPartitionCount(), replaceExistingValues, loadError);
+            sendLoadCompleted(clusterSize, loadError);
 
             if (keys instanceof Closeable) {
                 closeResource((Closeable) keys);
@@ -284,26 +319,37 @@ public class MapKeyLoader {
         for (Entry<Integer, List<Data>> e : entries) {
             int partitionId = e.getKey();
             List<Data> keys = e.getValue();
-            LoadAllOperation op = new LoadAllOperation(mapName, keys, replaceExistingValues);
+
+            MapOperation op = operationProvider.createLoadAllOperation(mapName, keys, replaceExistingValues);
+
             InternalCompletableFuture<Object> future = opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
             futures.add(future);
         }
         return futures;
     }
 
-    private void sendLoadCompleted(int clusterSize, int partitions,
-            boolean replaceExistingValues, Throwable exception) {
-        for (int partitionId = 0; partitionId < partitions; partitionId++) {
-            Operation op = new LoadStatusOperation(mapName, exception);
-            opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
-        }
+    private void sendLoadCompleted(int clusterSize, Throwable exception) throws Exception {
+
+        // notify all partitions about loading status: finished or exception encountered
+        opService.invokeOnAllPartitions(SERVICE_NAME, new LoadStatusOperationFactory(mapName, exception));
 
         // notify SENDER_BACKUP
         if (hasBackup && clusterSize > 1) {
             Operation op = new LoadStatusOperation(mapName, exception);
             opService.createInvocationBuilder(SERVICE_NAME, op, mapNamePartition).setReplicaIndex(1).invoke();
         }
+    }
 
+    private void sendLoadCompleted(Throwable t) {
+        Operation op = new LoadStatusOperation(mapName, t);
+        // This updates the local record store on the partition thread.
+        // If invoked by the SENDER_BACKUP however it's the replica index has to be set to 1, otherwise
+        // it will be a remote call to the SENDER who is the owner of the given partitionId.
+        if (hasBackup && role.is(Role.SENDER_BACKUP)) {
+            opService.createInvocationBuilder(SERVICE_NAME, op, partitionId).setReplicaIndex(1).invoke();
+        } else {
+            opService.createInvocationBuilder(SERVICE_NAME, op, partitionId).invoke();
+        }
     }
 
     public void setMaxBatch(int maxBatch) {
@@ -318,19 +364,22 @@ public class MapKeyLoader {
         this.hasBackup = hasBackup;
     }
 
+    public void setMapOperationProvider(MapOperationProvider operationProvider) {
+        this.operationProvider = operationProvider;
+    }
+
     private ExecutionCallback<Boolean> ifLoadedCallback() {
         return new ExecutionCallback<Boolean>() {
             @Override
-            public void onResponse(Boolean loaded) {
-                if (loaded) {
-                    state.nextOrStay(State.LOADED);
-                    loadFinished.setResult(true);
+            public void onResponse(Boolean response) {
+                if (response) {
+                    sendLoadCompleted(null);
                 }
             }
 
             @Override
             public void onFailure(Throwable t) {
-                loadFinished.setResult(t);
+                sendLoadCompleted(t);
             }
         };
     }
@@ -344,7 +393,7 @@ public class MapKeyLoader {
         }
 
         private LoadFinishedFuture() {
-            super((Executor) null, null);
+            super((Executor) null, getLogger(LoadFinishedFuture.class));
         }
 
         @Override
@@ -369,18 +418,22 @@ public class MapKeyLoader {
         }
 
         @Override
-        public boolean isCancelled() {
+        protected boolean shouldCancel(boolean mayInterruptIfRunning) {
             return false;
         }
 
         @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            return false;
+        protected void setResult(Object result) {
+            super.setResult(result);
         }
 
         @Override
         public String toString() {
             return getClass().getSimpleName() + "{done=" + isDone() + "}";
         }
+    }
+
+    public void onKeyLoad(ExecutionCallback<Boolean> callback) {
+        loadFinished.andThen(callback, execService.getExecutor(MAP_LOAD_ALL_KEYS_EXECUTOR));
     }
 }

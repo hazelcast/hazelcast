@@ -39,10 +39,6 @@
             <param-value>/WEB-INF/hazelcast.xml</param-value>
         </init-param>
         <init-param>
-            <param-name>instance-name</param-name>
-            <param-value>node-2</param-value>
-        </init-param>
-        <init-param>
             <param-name>shutdown-on-destroy</param-name>
             <param-value>true</param-value>
         </init-param>
@@ -53,6 +49,10 @@
         <init-param>
             <param-name>deferred-write</param-name>
             <param-value>false</param-value>
+        </init-param>
+        <init-param>
+            <param-name>session-ttl-seconds</param-name>
+            <param-value>20</param-value>
         </init-param>
         <init-param>
             <param-name>client-config-location</param-name>

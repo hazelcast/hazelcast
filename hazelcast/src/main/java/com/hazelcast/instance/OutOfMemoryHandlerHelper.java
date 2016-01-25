@@ -62,14 +62,6 @@ public final class OutOfMemoryHandlerHelper {
         }
     }
 
-    public static void inactivate(HazelcastInstance hazelcastInstance) {
-        if (hazelcastInstance == null) {
-            return;
-        }
-        final HazelcastInstanceImpl factory = (HazelcastInstanceImpl) hazelcastInstance;
-        factory.node.inactivate();
-    }
-
     public static void tryStopThreads(HazelcastInstance hazelcastInstance) {
         if (hazelcastInstance == null) {
             return;

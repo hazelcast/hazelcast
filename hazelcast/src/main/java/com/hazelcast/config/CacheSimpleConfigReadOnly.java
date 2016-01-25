@@ -50,17 +50,6 @@ public class CacheSimpleConfigReadOnly
         return Collections.unmodifiableList(readOnlyListenerConfigs);
     }
 
-    /**
-     * Gets the name of the quorum associated with this configuration
-     *
-     * @return name of the associated quorum
-     *         null if no quorum is set
-     */
-    @Override
-    public String getQuorumName() {
-        return super.getQuorumName();
-    }
-
     @Override
     public CacheSimpleConfig setAsyncBackupCount(int asyncBackupCount) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
@@ -154,4 +143,21 @@ public class CacheSimpleConfigReadOnly
     public CacheSimpleConfig setQuorumName(String quorumName) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
+
+    @Override
+    public void setMergePolicy(String mergePolicy) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheSimpleConfig addCachePartitionLostListenerConfig(CachePartitionLostListenerConfig listenerConfig) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheSimpleConfig setPartitionLostListenerConfigs(
+            List<CachePartitionLostListenerConfig> partitionLostListenerConfigs) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
 }

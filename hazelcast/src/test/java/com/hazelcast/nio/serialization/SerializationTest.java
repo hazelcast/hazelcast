@@ -26,12 +26,13 @@ import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.SimpleMemberImpl;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.serialization.impl.JavaDefaultSerializers;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -56,9 +57,11 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -72,15 +75,32 @@ public class SerializationTest
         extends HazelcastTestSupport {
 
     @Test
-    public void testGlobalSerializer() {
+    public void testGlobalSerializer_withOverrideJavaSerializable() {
+        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
+        globalSerializerConfig.setOverrideJavaSerialization(true);
+        final AtomicInteger writeCounter = new AtomicInteger();
+        final AtomicInteger readCounter = new AtomicInteger();
+        final JavaDefaultSerializers.JavaSerializer javaSerializer = new JavaDefaultSerializers.JavaSerializer(true,false);
         SerializationConfig serializationConfig = new SerializationConfig().setGlobalSerializerConfig(
-                new GlobalSerializerConfig().setImplementation(new StreamSerializer<DummyValue>() {
-                    public void write(ObjectDataOutput out, DummyValue v) throws IOException {
-                        out.writeUTF(v.s);
-                        out.writeInt(v.k);
+                globalSerializerConfig.setImplementation(new StreamSerializer<Object>() {
+                    public void write(ObjectDataOutput out, Object v) throws IOException {
+                        writeCounter.incrementAndGet();
+                        if(v instanceof Serializable){
+                            out.writeBoolean(true);
+                            javaSerializer.write(out, v);
+                        } else if(v instanceof DummyValue){
+                            out.writeBoolean(false);
+                            out.writeUTF(((DummyValue)v).s);
+                            out.writeInt(((DummyValue)v).k);
+                        }
                     }
 
-                    public DummyValue read(ObjectDataInput in) throws IOException {
+                    public Object read(ObjectDataInput in) throws IOException {
+                        readCounter.incrementAndGet();
+                        boolean java = in.readBoolean();
+                        if(java) {
+                            return javaSerializer.read(in);
+                        }
                         return new DummyValue(in.readUTF(), in.readInt());
                     }
 
@@ -94,19 +114,68 @@ public class SerializationTest
 
         SerializationService ss1 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
         DummyValue value = new DummyValue("test", 111);
-        Data data = ss1.toData(value);
-        Assert.assertNotNull(data);
+        Data data1 = ss1.toData(value);
+        Data data2 = ss1.toData(new Foo());
+        Assert.assertNotNull(data1);
+        Assert.assertNotNull(data2);
+        assertEquals(2, writeCounter.get());
 
         SerializationService ss2 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
-        Object o = ss2.toObject(data);
-        Assert.assertEquals(value, o);
+        Object o1 = ss2.toObject(data1);
+        Object o2 = ss2.toObject(data2);
+        Assert.assertEquals(value, o1);
+        Assert.assertNotNull(o2);
+        assertEquals(2, readCounter.get());
+    }
+
+    @Test
+    public void testGlobalSerializer_withoutOverrideJavaSerializable() {
+        GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
+        globalSerializerConfig.setOverrideJavaSerialization(false);
+        final AtomicInteger writeCounter = new AtomicInteger();
+        final AtomicInteger readCounter = new AtomicInteger();
+        SerializationConfig serializationConfig = new SerializationConfig().setGlobalSerializerConfig(
+                globalSerializerConfig.setImplementation(new StreamSerializer<Object>() {
+                    public void write(ObjectDataOutput out, Object v) throws IOException {
+                        writeCounter.incrementAndGet();
+                        out.writeUTF(((DummyValue) v).s);
+                        out.writeInt(((DummyValue) v).k);
+                    }
+
+                    public Object read(ObjectDataInput in) throws IOException {
+                        readCounter.incrementAndGet();
+                        return new DummyValue(in.readUTF(), in.readInt());
+                    }
+
+                    public int getTypeId() {
+                        return 123;
+                    }
+
+                    public void destroy() {
+                    }
+                }));
+
+        SerializationService ss1 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
+        DummyValue value = new DummyValue("test", 111);
+        Data data1 = ss1.toData(value);
+        Data data2 = ss1.toData(new Foo());
+        Assert.assertNotNull(data1);
+        Assert.assertNotNull(data2);
+        assertEquals(1, writeCounter.get());
+
+        SerializationService ss2 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
+        Object o1 = ss2.toObject(data1);
+        Object o2 = ss2.toObject(data2);
+        Assert.assertEquals(value, o1);
+        Assert.assertNotNull(o2);
+        assertEquals(1, readCounter.get());
     }
 
     @Test
     public void test_callid_on_correct_stream_position() throws Exception {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        CancellationOperation operation = new CancellationOperation(UuidUtil.buildRandomUuidString(), true);
-        operation.setCallerUuid(UuidUtil.buildRandomUuidString());
+        CancellationOperation operation = new CancellationOperation(UuidUtil.newUnsecureUuidString(), true);
+        operation.setCallerUuid(UuidUtil.newUnsecureUuidString());
         OperationAccessor.setCallId(operation, 12345);
 
         Data data = serializationService.toData(operation);
@@ -243,10 +312,14 @@ public class SerializationTest
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
 
         String obj = String.valueOf(System.nanoTime());
-        Data data = ss.toData(obj, partitionStrategy);
+        Data dataWithPartitionHash = ss.toData(obj, partitionStrategy);
+        Data dataWithOutPartitionHash = ss.toData(obj);
 
-        assertTrue(data.hasPartitionHash());
-        assertNotEquals(data.hashCode(), data.getPartitionHash());
+        assertTrue(dataWithPartitionHash.hasPartitionHash());
+        assertNotEquals(dataWithPartitionHash.hashCode(), dataWithPartitionHash.getPartitionHash());
+
+        assertFalse(dataWithOutPartitionHash.hasPartitionHash());
+        assertEquals(dataWithOutPartitionHash.hashCode(), dataWithOutPartitionHash.getPartitionHash());
     }
 
     /**
@@ -337,7 +410,7 @@ public class SerializationTest
     
     @Test
     public void testMemberLeftException_usingMemberImpl() throws IOException, ClassNotFoundException {
-        String uuid = UuidUtil.buildRandomUuidString();
+        String uuid = UuidUtil.newUnsecureUuidString();
         String host = "127.0.0.1";
         int port = 5000;
 
@@ -348,11 +421,32 @@ public class SerializationTest
 
     @Test
     public void testMemberLeftException_usingSimpleMember() throws IOException, ClassNotFoundException {
-        String uuid = UuidUtil.buildRandomUuidString();
+        String uuid = UuidUtil.newUnsecureUuidString();
         String host = "127.0.0.1";
         int port = 5000;
 
         Member member = new SimpleMemberImpl(uuid, new InetSocketAddress(host, port));
+        testMemberLeftException(uuid, host, port, member);
+    }
+
+    @Test
+    public void testMemberLeftException_withLiteMemberImpl() throws IOException, ClassNotFoundException {
+        String uuid = UuidUtil.newUnsecureUuidString();
+        String host = "127.0.0.1";
+        int port = 5000;
+
+        Member member = new MemberImpl(new Address(host, port), false, uuid, null, null, true);
+
+        testMemberLeftException(uuid, host, port, member);
+    }
+
+    @Test
+    public void testMemberLeftException_withLiteSimpleMemberImpl() throws IOException, ClassNotFoundException {
+        String uuid = UuidUtil.newUnsecureUuidString();
+        String host = "127.0.0.1";
+        int port = 5000;
+
+        Member member = new SimpleMemberImpl(uuid, new InetSocketAddress(host, port), true);
         testMemberLeftException(uuid, host, port, member);
     }
 
@@ -373,5 +467,36 @@ public class SerializationTest
         assertEquals(uuid, member2.getUuid());
         assertEquals(host, member2.getAddress().getHost());
         assertEquals(port, member2.getAddress().getPort());
+        assertEquals(member.isLiteMember(), member2.isLiteMember());
     }
+
+    @Test
+    public void testInternallySupportedClassExtended() throws Exception {
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        TheClassThatExtendArrayList obj = new TheClassThatExtendArrayList();
+        Data data = ss.toData(obj);
+        Object obj2 = ss.toObject(data);
+
+        assertEquals(obj2.getClass(), TheClassThatExtendArrayList.class);
+
+    }
+
+    static class TheClassThatExtendArrayList extends ArrayList implements DataSerializable {
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(size());
+            for (Object item : this) {
+                out.writeObject(item);
+            }
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            int size = in.readInt();
+            for (int k = 0; k < size; k++) {
+                add(in.readObject());
+            }
+        }
+    }
+
 }

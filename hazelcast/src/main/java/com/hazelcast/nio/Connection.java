@@ -33,18 +33,18 @@ public interface Connection {
     boolean isAlive();
 
     /**
-     * Returns the clock time of the most recent read using this connection.
+     * Returns the clock time in milliseconds of the most recent read using this connection.
      *
      * @return the clock time of the most recent read
      */
-    long lastReadTime();
+    long lastReadTimeMillis();
 
     /**
-     * Returns the clock time of the most recent write using this connection.
+     * Returns the clock time in milliseconds of the most recent write using this connection.
      *
      * @return the clock time of the most recent write.
      */
-    long lastWriteTime();
+    long lastWriteTimeMillis();
 
     /**
      * Returns the {@link ConnectionType} of this Connection.
@@ -105,17 +105,17 @@ public interface Connection {
     int getPort();
 
     /**
-     * Writes a SocketWritable packet to the other side of the connection. No guarantees are made that the
-     * packet is going to be received on the other side.
+     * Writes a outbound frame so it can be received by the other side of the connection. No guarantees are
+     * made that the frame is going to be received on the other side.
      * <p>
-     * The packet could be stored in an internal queue before it actually is written, so this call
+     * The frame could be stored in an internal queue before it actually is written, so this call
      * does not need to be a synchronous call.
      *
-     * @param packet the packet to write.
-     * @return false if the packet was not accepted to be written, e.g. because the Connection was not alive.
-     * @throws NullPointerException if packet is null.
+     * @param frame the frame to write.
+     * @return false if the frame was not accepted to be written, e.g. because the Connection was not alive.
+     * @throws NullPointerException if frame is null.
      */
-    boolean write(SocketWritable packet);
+    boolean write(OutboundFrame frame);
 
     /**
      * Closes this connection.

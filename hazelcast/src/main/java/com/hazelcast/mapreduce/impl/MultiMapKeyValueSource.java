@@ -21,7 +21,7 @@ import com.hazelcast.mapreduce.PartitionIdAware;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.MultiMapWrapper;
+import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -108,7 +108,7 @@ public class MultiMapKeyValueSource<K, V>
         if (keyIterator != null && keyIterator.hasNext()) {
             Data dataKey = keyIterator.next();
             key = (K) ss.toObject(dataKey);
-            MultiMapWrapper wrapper = multiMapContainer.getMultiMapWrapperOrNull(dataKey);
+            MultiMapValue wrapper = multiMapContainer.getMultiMapValueOrNull(dataKey);
             valueIterator = wrapper.getCollection(true).iterator();
             return hasNext();
         }

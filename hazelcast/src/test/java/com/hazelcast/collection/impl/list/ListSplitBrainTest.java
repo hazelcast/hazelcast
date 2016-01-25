@@ -11,8 +11,8 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -36,7 +36,7 @@ public class ListSplitBrainTest extends HazelcastTestSupport {
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceFactory.shutdownAll();
+        HazelcastInstanceManager.shutdownAll();
     }
 
     @Test
@@ -106,8 +106,8 @@ public class ListSplitBrainTest extends HazelcastTestSupport {
 
     private Config getConfig(boolean multicast) {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "30");
-        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "30");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
 
         NetworkConfig networkConfig = config.getNetworkConfig();
         JoinConfig join = networkConfig.getJoin();

@@ -36,7 +36,11 @@ public final class ClientNonBlockingOutputThread extends NonBlockingIOThread {
         if (sk.isValid() && sk.isWritable()) {
             sk.interestOps(sk.interestOps() & ~SelectionKey.OP_WRITE);
             SelectionHandler handler = (SelectionHandler) sk.attachment();
-            handler.handle();
+            try {
+                handler.handle();
+            } catch (Throwable t) {
+                handler.onFailure(t);
+            }
         }
     }
 }

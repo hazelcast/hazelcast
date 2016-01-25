@@ -16,6 +16,8 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.core.TypeConverter;
+
 /**
  * Type of Attribute
  */
@@ -83,15 +85,15 @@ public enum AttributeType {
     /**
      * UUID
      */
-    UUID(UUIDConverter.INSTANCE);
+    UUID(TypeConverters.UUID_CONVERTER);
 
-    private final TypeConverters.TypeConverter converter;
+    private final TypeConverter converter;
 
-    private AttributeType(TypeConverters.TypeConverter converter) {
+    AttributeType(TypeConverter converter) {
         this.converter = converter;
     }
 
-    public TypeConverters.TypeConverter getConverter() {
+    public TypeConverter getConverter() {
         return converter;
     }
 

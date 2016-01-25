@@ -60,6 +60,7 @@ public interface InternalPartitionService extends CoreService {
      * @param partitionId  the partitionId
      * @return owner of partition
      * @throws InterruptedException
+     * @throws NoDataMemberInClusterException if all nodes are lite members and partitions can't be assigned
      */
     Address getPartitionOwnerOrWait(int partitionId);
 
@@ -111,13 +112,6 @@ public interface InternalPartitionService extends CoreService {
      */
     int getPartitionCount();
 
-    /**
-     * Checks if there currently are any migrations.
-     *
-     * @return true if there are migrations, false otherwise.
-     */
-    boolean hasOnGoingMigration();
-
     List<Integer> getMemberPartitions(Address target);
 
     /**
@@ -135,6 +129,8 @@ public interface InternalPartitionService extends CoreService {
     boolean removeMigrationListener(String registrationId);
 
     String addPartitionLostListener(PartitionLostListener partitionLostListener);
+
+    String addLocalPartitionLostListener(PartitionLostListener partitionLostListener);
 
     boolean removePartitionLostListener(String registrationId);
 
@@ -180,6 +176,18 @@ public interface InternalPartitionService extends CoreService {
 
     int getPartitionStateVersion();
 
+    /**
+     * Checks if there are any cluster-wide migrations.
+     *
+     * @return true if there are migrations, false otherwise.
+     */
+    boolean hasOnGoingMigration();
+
+    /**
+     * Checks if there are any local migrations.
+     *
+     * @return true if there are migrations, false otherwise.
+     */
     boolean hasOnGoingMigrationLocal();
 
     /**

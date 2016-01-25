@@ -16,9 +16,6 @@
 
 package com.hazelcast.test;
 
-/**
- * @author mdogan 5/29/13
- */
 public final class TestEnvironment {
 
     public static final String HAZELCAST_TEST_USE_NETWORK = "hazelcast.test.use.network";
@@ -29,5 +26,4 @@ public final class TestEnvironment {
     public static boolean isMockNetwork() {
         return !Boolean.getBoolean(HAZELCAST_TEST_USE_NETWORK);
     }
-
 }

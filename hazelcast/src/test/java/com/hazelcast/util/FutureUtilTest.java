@@ -24,9 +24,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.executor.CompletedFuture;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,9 +43,15 @@ import java.util.logging.Level;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static java.util.Arrays.asList;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -200,6 +203,15 @@ public class FutureUtilTest extends HazelcastTestSupport {
         FutureUtil.checkAllDone(futures);
     }
 
+    @Test
+    public void testGetAllDone_whenSomeFuturesAreCompleted() {
+        Future completedFuture = new CompletedFuture(null, null, null);
+        Collection<Future> futures = asList(new UncancellableFuture(), completedFuture, new UncancellableFuture());
+
+        assertEquals(1, FutureUtil.getAllDone(futures).size());
+        assertEquals(completedFuture, FutureUtil.getAllDone(futures).get(0));
+    }
+
     private static final class ExceptionCollector implements ExceptionHandler {
 
         private final List<Throwable> throwables = new ArrayList<Throwable>();
@@ -315,7 +327,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
+        protected boolean shouldCancel(boolean mayInterruptIfRunning) {
             return false;
         }
 
@@ -323,11 +335,6 @@ public class FutureUtilTest extends HazelcastTestSupport {
         public V get(long timeout, TimeUnit unit) throws InterruptedException,
                 ExecutionException, TimeoutException {
             return null;
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return false;
         }
 
     }

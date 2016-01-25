@@ -20,7 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import org.junit.Ignore;
 
 import java.util.Random;
@@ -28,15 +28,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
-@Ignore("not a JUnit test")
+@Ignore("Not a JUnit test")
 public class SimpleMapTestFromClient {
 
     static {
-        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        GroupProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("0");
         System.setProperty("java.net.preferIPv4Stack", "true");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
-        System.setProperty("hazelcast.version.check.enabled", "false");
-        System.setProperty("hazelcast.socket.bind.any", "false");
+        GroupProperty.PHONE_HOME_ENABLED.setSystemProperty("false");
+        GroupProperty.SOCKET_BIND_ANY.setSystemProperty("false");
 
         Random rand = new Random();
         int g1 = rand.nextInt(255);

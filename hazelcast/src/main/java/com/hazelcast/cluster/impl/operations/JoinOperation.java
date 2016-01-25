@@ -17,10 +17,11 @@
 package com.hazelcast.cluster.impl.operations;
 
 import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 /**
  * Marker interface for join and post-join operations.
  */
-public interface JoinOperation extends UrgentSystemOperation {
+public interface JoinOperation extends UrgentSystemOperation, AllowedDuringPassiveState {
 
 }

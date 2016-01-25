@@ -35,9 +35,7 @@ import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 import static com.hazelcast.cluster.MemberAttributeOperationType.REMOVE;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
-public final class MemberImpl
-        extends AbstractMember
-        implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
+public final class MemberImpl extends AbstractMember implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
 
     private boolean localMember;
     private volatile HazelcastInstanceImpl instance;
@@ -50,13 +48,17 @@ public final class MemberImpl
         this(address, localMember, null, null);
     }
 
+    public MemberImpl(Address address, boolean localMember, boolean liteMember) {
+        this(address, localMember, null, null, null, liteMember);
+    }
+
     public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstanceImpl instance) {
-        this(address, localMember, uuid, instance, null);
+        this(address, localMember, uuid, instance, null, false);
     }
 
     public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstanceImpl instance,
-                      Map<String, Object> attributes) {
-        super(address, uuid, attributes);
+                      Map<String, Object> attributes, boolean liteMember) {
+        super(address, uuid, attributes, liteMember);
         this.localMember = localMember;
         this.instance = instance;
     }
@@ -229,5 +231,4 @@ public final class MemberImpl
     public int getId() {
         return ClusterDataSerializerHook.MEMBER;
     }
-
 }

@@ -30,11 +30,12 @@ import java.io.Serializable;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MBeanTest extends HazelcastTestSupport {
-    private JmxTestDataHolder holder;
+
+    private MBeanDataHolder holder;
 
     @Before
     public void setUp() throws Exception {
-        holder = new JmxTestDataHolder(createHazelcastInstanceFactory(1));
+        holder = new MBeanDataHolder(createHazelcastInstanceFactory(1));
     }
 
     @Test
@@ -135,10 +136,9 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     private static class DummyRunnable implements Runnable, Serializable {
+
         @Override
         public void run() {
-
         }
     }
-
 }

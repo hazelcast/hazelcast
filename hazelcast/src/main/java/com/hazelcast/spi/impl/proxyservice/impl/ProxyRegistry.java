@@ -26,7 +26,6 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,20 +48,7 @@ public final class ProxyRegistry {
     ProxyRegistry(ProxyServiceImpl proxyService, String serviceName) {
         this.proxyService = proxyService;
         this.serviceName = serviceName;
-        this.service = getService(proxyService, serviceName);
-    }
-
-    private RemoteService getService(ProxyServiceImpl proxyService, String serviceName) {
-        RemoteService service = proxyService.nodeEngine.getService(serviceName);
-        if (service != null) {
-            return service;
-        }
-
-        if (proxyService.nodeEngine.isActive()) {
-            throw new IllegalArgumentException("Unknown service: " + serviceName);
-        } else {
-            throw new HazelcastInstanceNotActiveException();
-        }
+        this.service = proxyService.nodeEngine.getService(serviceName);
     }
 
     /**
@@ -146,7 +132,7 @@ public final class ProxyRegistry {
     DistributedObject getOrCreateProxy(String name, boolean publishEvent, boolean initialize) {
         DistributedObjectFuture proxyFuture = proxies.get(name);
         if (proxyFuture == null) {
-            if (!proxyService.nodeEngine.isActive()) {
+            if (!proxyService.nodeEngine.isRunning()) {
                 throw new HazelcastInstanceNotActiveException();
             }
             proxyFuture = createProxy(name, publishEvent, initialize);
@@ -171,7 +157,7 @@ public final class ProxyRegistry {
             return null;
         }
 
-        if (!proxyService.nodeEngine.isActive()) {
+        if (!proxyService.nodeEngine.isRunning()) {
             throw new HazelcastInstanceNotActiveException();
         }
 
@@ -205,7 +191,8 @@ public final class ProxyRegistry {
         }
 
         InternalEventService eventService = proxyService.nodeEngine.getEventService();
-        ProxyEventProcessor callback = new ProxyEventProcessor(proxyService.listeners.values(), CREATED, serviceName, proxy);
+        ProxyEventProcessor callback = new ProxyEventProcessor(proxyService.listeners.values(), CREATED, serviceName,
+                name, proxy);
         eventService.executeEventCallback(callback);
         if (publishEvent) {
             publish(new DistributedObjectEventPacket(CREATED, serviceName, name));
@@ -235,7 +222,8 @@ public final class ProxyRegistry {
             return;
         }
         InternalEventService eventService = proxyService.nodeEngine.getEventService();
-        ProxyEventProcessor callback = new ProxyEventProcessor(proxyService.listeners.values(), DESTROYED, serviceName, proxy);
+        ProxyEventProcessor callback = new ProxyEventProcessor(proxyService.listeners.values(), DESTROYED, serviceName,
+                name, proxy);
         eventService.executeEventCallback(callback);
         if (publishEvent) {
             publish(new DistributedObjectEventPacket(DESTROYED, serviceName, name));

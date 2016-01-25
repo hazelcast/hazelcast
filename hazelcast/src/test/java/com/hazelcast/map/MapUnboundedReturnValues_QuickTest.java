@@ -11,12 +11,14 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelTest.class})
 public class MapUnboundedReturnValues_QuickTest extends MapUnboundedReturnValuesTestSupport {
 
-    @Test
+    private final int MINUTES = 60 * 1000;
+
+    @Test(timeout = 10 * MINUTES)
     public void testMapKeySet_SmallLimit_NoPreCheck() {
         runMapQuickTest(PARTITION_COUNT, 1, SMALL_LIMIT, PRE_CHECK_TRIGGER_LIMIT_INACTIVE, KeyType.INTEGER);
     }
 
-    @Test
+    @Test(timeout = 10 * MINUTES)
     public void testMapKeySet_SmallLimit_PreCheck() {
         runMapQuickTest(PARTITION_COUNT, 1, SMALL_LIMIT, PRE_CHECK_TRIGGER_LIMIT_ACTIVE, KeyType.INTEGER);
     }

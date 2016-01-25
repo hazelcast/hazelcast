@@ -18,111 +18,19 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.AbstractSet;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- *  Multiple result set for Predicates.
+ * TODO:
+ *
  */
-public class MultiResultSet extends AbstractSet<QueryableEntry> {
+public interface MultiResultSet extends Set<QueryableEntry> {
 
-    private Set<Object> index;
-    private final List<ConcurrentMap<Data, QueryableEntry>> resultSets
-            = new ArrayList<ConcurrentMap<Data, QueryableEntry>>();
-
-    public MultiResultSet() {
-    }
-
-    public void addResultSet(ConcurrentMap<Data, QueryableEntry> resultSet) {
-        resultSets.add(resultSet);
-    }
-
-    @Override
-    public boolean contains(Object o) {
-        QueryableEntry entry = (QueryableEntry) o;
-        if (index != null) {
-            return checkFromIndex(entry);
-        } else {
-            //todo: what is the point of this condition? Is it some kind of optimization?
-            if (resultSets.size() > 3) {
-                index = new HashSet<Object>();
-                for (ConcurrentMap<Data, QueryableEntry> result : resultSets) {
-                    for (QueryableEntry queryableEntry : result.values()) {
-                        index.add(queryableEntry.getIndexKey());
-                    }
-                }
-                return checkFromIndex(entry);
-            } else {
-                for (ConcurrentMap<Data, QueryableEntry> resultSet : resultSets) {
-                    if (resultSet.containsKey(entry.getIndexKey())) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-        }
-    }
-
-    private boolean checkFromIndex(QueryableEntry entry) {
-        return index.contains(entry.getIndexKey());
-    }
-
-    @Override
-    public Iterator<QueryableEntry> iterator() {
-        return new It();
-    }
-
-    class It implements Iterator<QueryableEntry> {
-        int currentIndex;
-        Iterator<QueryableEntry> currentIterator;
-
-        @Override
-        public boolean hasNext() {
-            if (resultSets.size() == 0) {
-                return false;
-            }
-            if (currentIterator != null && currentIterator.hasNext()) {
-                return true;
-            }
-            while (currentIndex < resultSets.size()) {
-                currentIterator = resultSets.get(currentIndex++).values().iterator();
-                if (currentIterator.hasNext()) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        @Override
-        public QueryableEntry next() {
-            if (resultSets.size() == 0) {
-                return null;
-            }
-            return currentIterator.next();
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    @Override
-    public boolean add(QueryableEntry obj) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int size() {
-        int size = 0;
-        for (ConcurrentMap<Data, QueryableEntry> resultSet : resultSets) {
-            size += resultSet.size();
-        }
-        return size;
-    }
+    /**
+     * TODO
+     *
+     * @param resultSet
+     */
+    void addResultSet(ConcurrentMap<Data, QueryableEntry> resultSet);
 }

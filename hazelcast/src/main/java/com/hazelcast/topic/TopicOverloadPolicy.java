@@ -28,9 +28,9 @@ import com.hazelcast.spi.annotation.Beta;
  * it also gives the ability to the reader to reread the same message multiple times in case of error.
  *
  * Because a ringbuffer has a capacity and to prevent that a fast producer overwrites the messages needed by a slow consumer, a
- * retention time can be set on the ringbuffer. See {@link com.hazelcast.config.RingbufferConfig#setRetentionSeconds(int)}. This
- * {@link TopicOverloadPolicy} controls how the publisher is going to deal with the situation that a ringbuffer is full and the
- * oldest item in the ringbuffer is not old enough to get overwritten.
+ * time to live time can be set on the ringbuffer. See {@link com.hazelcast.config.RingbufferConfig#setTimeToLiveSeconds(int)}.
+ * This {@link TopicOverloadPolicy} controls how the publisher is going to deal with the situation that a ringbuffer is full
+ *  and the oldest item in the ringbuffer is not old enough to get overwritten.
  *
  * So keep in mind that a this retention period keep the messages in memory, even though it might by that all readers already
  * have completed reading.

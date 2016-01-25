@@ -17,6 +17,7 @@
 package com.hazelcast.internal.ascii;
 
 public abstract class AbstractTextCommandProcessor<T> implements TextCommandProcessor<T> {
+
     protected final TextCommandService textCommandService;
 
     protected AbstractTextCommandProcessor(TextCommandService textCommandService) {

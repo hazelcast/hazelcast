@@ -16,10 +16,9 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
@@ -32,13 +31,17 @@ import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
 import javax.cache.expiry.ExpiryPolicy;
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
@@ -61,7 +64,6 @@ abstract class AbstractCacheProxy<K, V>
         super(cacheConfig, nodeEngine, cacheService);
     }
 
-    //region ICACHE: JCACHE EXTENSION
     @Override
     public InternalCompletableFuture<V> getAsync(K key) {
         return getAsync(key, null);
@@ -180,9 +182,8 @@ abstract class AbstractCacheProxy<K, V>
             OperationService operationService = getNodeEngine().getOperationService();
             Map<Integer, Object> responses = operationService.invokeOnPartitions(getServiceName(), factory, partitions);
             for (Object response : responses.values()) {
-                final Object responseObject = serializationService.toObject(response);
-                final Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) responseObject).getEntrySet();
-                for (Map.Entry<Data, Data> entry : entries) {
+                MapEntries mapEntries = serializationService.toObject(response);
+                for (Map.Entry<Data, Data> entry : mapEntries) {
                     final V value = serializationService.toObject(entry.getValue());
                     final K key = serializationService.toObject(entry.getKey());
                     result.put(key, value);
@@ -218,9 +219,86 @@ abstract class AbstractCacheProxy<K, V>
     public void putAll(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy) {
         ensureOpen();
         validateNotNull(map);
-        //TODO implement putAllOperationFactory
+
+        int partitionCount = partitionService.getPartitionCount();
+
+        try {
+            // First we fill entry set per partition
+            List<Map.Entry<Data, Data>>[] entriesPerPartition = groupDataToPartitions(map, partitionCount);
+
+            // Then we invoke the operations and sync on completion of these operations
+            putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    private List<Map.Entry<Data, Data>>[] groupDataToPartitions(Map<? extends K, ? extends V> map,
+                                                                int partitionCount) {
+        List<Map.Entry<Data, Data>>[] entriesPerPartition = new List[partitionCount];
+
         for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
-            put(entry.getKey(), entry.getValue(), expiryPolicy);
+            K key = entry.getKey();
+            V value = entry.getValue();
+            validateNotNull(key, value);
+
+            Data keyData = serializationService.toData(key);
+            Data valueData = serializationService.toData(value);
+
+            int partitionId = partitionService.getPartitionId(keyData);
+            List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
+            if (entries == null) {
+                entries = new ArrayList<Map.Entry<Data, Data>>();
+                entriesPerPartition[partitionId] = entries;
+            }
+
+            entries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, valueData));
+        }
+
+        return entriesPerPartition;
+    }
+
+    private void putToAllPartitionsAndWaitForCompletion(List<Map.Entry<Data, Data>>[] entriesPerPartition,
+                                                        ExpiryPolicy expiryPolicy)
+            throws ExecutionException, InterruptedException {
+        List<Future> futures = new ArrayList<Future>(entriesPerPartition.length);
+        for (int partitionId = 0; partitionId < entriesPerPartition.length; partitionId++) {
+            List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
+            if (entries != null) {
+                // TODO If there is a single entry, we could make use of a put operation since that is a bit cheaper
+                Operation operation = operationProvider.createPutAllOperation(entries, expiryPolicy, partitionId);
+                Future f = invoke(operation, partitionId, true);
+                futures.add(f);
+            }
+        }
+
+        Throwable error = null;
+        for (Future future : futures) {
+            try {
+                future.get();
+            } catch (Throwable t) {
+                logger.finest("Error occurred while putting entries as batch!", t);
+                if (error == null) {
+                    error = t;
+                }
+            }
+        }
+        if (error != null) {
+            /*
+             * There maybe multiple exceptions but we throw only the first one.
+             * There are some ideas to throw all exceptions to caller but all of them have drawbacks:
+             *      - `Thread::addSuppressed` can be used to add other exceptions to the first one
+             *        but it is available since JDK 7.
+             *      - `Thread::initCause` can be used but this is wrong as semantic
+             *        since the other exceptions are not cause of the first one.
+             *      - We may wrap all exceptions in our custom exception (such as `MultipleCacheException`)
+             *        but in this case caller may wait different exception type and this idea causes problem.
+             *        For example see this TCK test:
+             *              `org.jsr107.tck.integration.CacheWriterTest::shouldWriteThoughUsingPutAll_partialSuccess`
+             *        In this test exception is thrown at `CacheWriter` and caller side expects this exception.
+             * So as a result, we only throw the first exception and others are suppressed by only logging.
+             */
+            ExceptionUtil.rethrow(error);
         }
     }
 
@@ -281,14 +359,6 @@ abstract class AbstractCacheProxy<K, V>
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
         }
     }
-
-    @Override
-    public CacheStatistics getLocalCacheStatistics() {
-        final ICacheService service = getService();
-        return service.createCacheStatIfAbsent(cacheConfig.getNameWithPrefix());
-    }
-
-    //endregion
 
     private Set<Integer> getPartitionsForKeys(Set<Data> keys) {
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();

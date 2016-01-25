@@ -16,13 +16,17 @@
 
 package com.hazelcast.client.impl.protocol.task.cache;
 
+import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheIterateCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+
+import java.util.Collections;
 
 /**
  * This client request  specifically calls {@link CacheKeyIteratorOperation} on the server side.
@@ -49,11 +53,25 @@ public class CacheIterateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheIterateCodec.encodeResponse(serializationService.toData(response));
+        if (response == null) {
+            return CacheIterateCodec.encodeResponse(0, Collections.<Data>emptyList());
+        }
+        CacheKeyIteratorResult keyIteratorResult = (CacheKeyIteratorResult) response;
+        return CacheIterateCodec.encodeResponse(keyIteratorResult.getTableIndex(), keyIteratorResult.getKeys());
     }
 
     @Override
     public String getDistributedObjectName() {
         return parameters.name;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "iterator";
     }
 }

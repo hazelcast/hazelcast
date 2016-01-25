@@ -16,6 +16,8 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
+import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
@@ -37,8 +39,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
-
 import com.hazelcast.util.executor.ManagedExecutorService;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -53,6 +55,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.createJobProcessInformation;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
@@ -317,34 +320,7 @@ public class JobSupervisor {
             }
 
             final JobSupervisor jobSupervisor = this;
-            Runnable runnable = new Runnable() {
-                public void run() {
-                    Object finalResult = null;
-                    try {
-                        List<Map> results = MapReduceUtil.executeOperation(operationFactory,
-                                mapReduceService, nodeEngine, true);
-                        boolean reducedResult = configuration.getReducerFactory() != null;
-
-                        if (results != null) {
-                            Map<Object, Object> mergedResults = new HashMap<Object, Object>();
-                            for (Map<?, ?> map : results) {
-                                for (Map.Entry entry : map.entrySet()) {
-                                    collectResults(reducedResult, mergedResults, entry);
-                                }
-                            }
-
-                            finalResult = mergedResults;
-                        }
-                    } catch (Exception e) {
-                        finalResult = e;
-                    } finally {
-                        jobTracker.unregisterMapCombineTask(jobId);
-                        jobTracker.unregisterReducerTask(jobId);
-                        mapReduceService.destroyJobSupervisor(jobSupervisor);
-                        future.setResult(finalResult);
-                    }
-                }
-            };
+            Runnable runnable = new GetResultsRunnable(nodeEngine, operationFactory, jobId, jobSupervisor, future);
             ExecutionService executionService = nodeEngine.getExecutionService();
             ManagedExecutorService executor = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR);
             executor.submit(runnable);
@@ -494,4 +470,49 @@ public class JobSupervisor {
         return false;
     }
 
+    private class GetResultsRunnable
+            implements Runnable {
+        private final NodeEngine nodeEngine;
+        private final GetResultOperationFactory operationFactory;
+        private final String jobId;
+        private final JobSupervisor jobSupervisor;
+        private final TrackableJobFuture future;
+
+        public GetResultsRunnable(NodeEngine nodeEngine, GetResultOperationFactory operationFactory, String jobId,
+                                  JobSupervisor jobSupervisor, TrackableJobFuture future) {
+            this.nodeEngine = nodeEngine;
+            this.operationFactory = operationFactory;
+            this.jobId = jobId;
+            this.jobSupervisor = jobSupervisor;
+            this.future = future;
+        }
+
+        public void run() {
+            Object finalResult = null;
+            try {
+                ClusterService clusterService = nodeEngine.getClusterService();
+                final Collection<Member> members = clusterService.getMembers(DATA_MEMBER_SELECTOR);
+                List<Map> results = MapReduceUtil.executeOperation(members, operationFactory, mapReduceService, nodeEngine);
+                boolean reducedResult = configuration.getReducerFactory() != null;
+
+                if (results != null) {
+                    Map<Object, Object> mergedResults = new HashMap<Object, Object>();
+                    for (Map<?, ?> map : results) {
+                        for (Map.Entry entry : map.entrySet()) {
+                            collectResults(reducedResult, mergedResults, entry);
+                        }
+                    }
+
+                    finalResult = mergedResults;
+                }
+            } catch (Exception e) {
+                finalResult = e;
+            } finally {
+                jobTracker.unregisterMapCombineTask(jobId);
+                jobTracker.unregisterReducerTask(jobId);
+                mapReduceService.destroyJobSupervisor(jobSupervisor);
+                future.setResult(finalResult);
+            }
+        }
+    }
 }

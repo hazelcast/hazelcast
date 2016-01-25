@@ -27,11 +27,11 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Member;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
@@ -39,7 +39,9 @@ import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.impl.LocalCacheStatsImpl;
 import com.hazelcast.monitor.impl.LocalMemoryStatsImpl;
@@ -50,9 +52,12 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.topic.impl.TopicService;
-
+import com.hazelcast.wan.WanReplicationService;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -72,16 +77,20 @@ public class TimedMemberStateFactory {
     private final HazelcastInstanceImpl instance;
     private final int maxVisibleInstanceCount;
     private final boolean cacheServiceEnabled;
-    private final ILogger logger;
 
     private volatile boolean memberStateSafe = true;
 
     public TimedMemberStateFactory(HazelcastInstanceImpl instance) {
         this.instance = instance;
         Node node = instance.node;
-        maxVisibleInstanceCount = node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
-        cacheServiceEnabled = node.nodeEngine.getService(CacheService.SERVICE_NAME) != null;
-        logger = node.getLogger(TimedMemberStateFactory.class);
+        maxVisibleInstanceCount = node.groupProperties.getInteger(GroupProperty.MC_MAX_VISIBLE_INSTANCE_COUNT);
+        cacheServiceEnabled = isCacheServiceEnabled();
+    }
+
+    private boolean isCacheServiceEnabled() {
+        NodeEngineImpl nodeEngine = instance.node.nodeEngine;
+        Collection<ServiceInfo> serviceInfos = nodeEngine.getServiceInfos(CacheService.class);
+        return !serviceInfos.isEmpty();
     }
 
     public void init() {
@@ -175,8 +184,17 @@ public class TimedMemberStateFactory {
                 } else if (service instanceof DistributedExecutorService) {
                     count = handleExecutorService(memberState, count, config,
                             ((DistributedExecutorService) service).getStats(), longInstanceNames);
+                } else if (service instanceof ReplicatedMapService) {
+                    count = handleReplicatedMap(memberState, count, config, ((ReplicatedMapService) service).getStats(),
+                            longInstanceNames);
                 }
             }
+        }
+
+        WanReplicationService wanReplicationService = instance.node.nodeEngine.getWanReplicationService();
+        Map<String, LocalWanStats> wanStats = wanReplicationService.getStats();
+        if (wanStats != null) {
+            count = handleWan(memberState, count, wanStats, longInstanceNames);
         }
 
         if (cacheServiceEnabled) {
@@ -219,6 +237,22 @@ public class TimedMemberStateFactory {
                 LocalMultiMapStats stats = entry.getValue();
                 memberState.putLocalMultiMapStats(name, stats);
                 longInstanceNames.add("m:" + name);
+                ++count;
+            }
+        }
+        return count;
+    }
+
+    private int handleReplicatedMap(MemberStateImpl memberState, int count, Config
+            config, Map<String, LocalReplicatedMapStats> replicatedMaps, Set<String> longInstanceNames) {
+        for (Map.Entry<String, LocalReplicatedMapStats> entry : replicatedMaps.entrySet()) {
+            String name = entry.getKey();
+            if (count >= maxVisibleInstanceCount) {
+                break;
+            } else if (config.findReplicatedMapConfig(name).isStatisticsEnabled()) {
+                LocalReplicatedMapStats stats = entry.getValue();
+                memberState.putLocalReplicatedMapStats(name, stats);
+                longInstanceNames.add("r:" + name);
                 ++count;
             }
         }
@@ -273,12 +307,25 @@ public class TimedMemberStateFactory {
         return count;
     }
 
+    private int handleWan(MemberStateImpl memberState, int count, Map<String, LocalWanStats> wans,
+                          Set<String> longInstanceNames) {
+        for (Map.Entry<String, LocalWanStats> entry : wans.entrySet()) {
+            String schemeName = entry.getKey();
+            LocalWanStats stats = entry.getValue();
+            memberState.putLocalWanStats(schemeName, stats);
+            longInstanceNames.add("w:" + schemeName);
+            count++;
+        }
+        return count;
+    }
+
     private int handleCache(MemberStateImpl memberState, int count, CacheConfig config, CacheStatistics cacheStatistics,
                             Set<String> longInstanceNames) {
         memberState.putLocalCacheStats(config.getNameWithPrefix(), new LocalCacheStatsImpl(cacheStatistics));
         longInstanceNames.add("j:" + config.getNameWithPrefix());
         return ++count;
     }
+
 
     private ICacheService getCacheService() {
         CacheDistributedObject setupRef = instance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");

@@ -23,16 +23,15 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes;
-import com.hazelcast.client.impl.protocol.parameters.ErrorCodec;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.security.Permission;
 import java.util.logging.Level;
@@ -43,7 +42,6 @@ import java.util.logging.Level;
 public abstract class AbstractMessageTask<P>
         implements MessageTask, SecureRequest {
 
-    protected final P parameters;
     protected final ClientMessage clientMessage;
 
     protected final Connection connection;
@@ -53,6 +51,7 @@ public abstract class AbstractMessageTask<P>
     protected final ILogger logger;
     protected final ClientEndpointManager endpointManager;
     protected final ClientEngineImpl clientEngine;
+    protected P parameters;
 
     private final Node node;
 
@@ -63,7 +62,6 @@ public abstract class AbstractMessageTask<P>
         this.nodeEngine = node.nodeEngine;
         this.serializationService = node.getSerializationService();
         this.connection = connection;
-        this.parameters = decodeClientMessage(clientMessage);
         this.clientEngine = node.clientEngine;
         this.endpointManager = clientEngine.getEndpointManager();
         this.endpoint = getEndpoint();
@@ -101,7 +99,6 @@ public abstract class AbstractMessageTask<P>
             }
 
         } catch (Throwable e) {
-            logProcessingFailure(e);
             handleProcessingFailure(e);
         }
     }
@@ -110,19 +107,21 @@ public abstract class AbstractMessageTask<P>
         return false;
     }
 
-    private void initializeAndProcessMessage() {
+    private void initializeAndProcessMessage() throws Throwable {
         if (!node.joined()) {
             throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
         }
+        parameters = decodeClientMessage(clientMessage);
         Credentials credentials = endpoint.getCredentials();
         interceptBefore(credentials);
         checkPermissions(endpoint);
         processMessage();
+        interceptAfter(credentials);
     }
 
     private void handleAuthenticationFailure() {
         Exception exception;
-        if (nodeEngine.isActive()) {
+        if (nodeEngine.isRunning()) {
             String message = "Client " + endpoint + " must authenticate before any operation.";
             logger.severe(message);
             exception = new AuthenticationException(message);
@@ -144,18 +143,18 @@ public abstract class AbstractMessageTask<P>
     }
 
     private void logProcessingFailure(Throwable throwable) {
-        Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
-        if (logger.isLoggable(level)) {
+        if (logger.isLoggable(Level.FINEST)) {
             if (parameters == null) {
-                logger.log(level, throwable.getMessage(), throwable);
+                logger.log(Level.FINEST, throwable.getMessage(), throwable);
             } else {
-                logger.log(level, "While executing request: " + parameters + " -> " + throwable.getMessage(), throwable);
+                logger.log(Level.FINEST, "While executing request: " + parameters + " -> " + throwable.getMessage(), throwable);
             }
         }
     }
 
-    private void handleProcessingFailure(Throwable throwable) {
-        if (parameters != null && endpoint != null) {
+    protected void handleProcessingFailure(Throwable throwable) {
+        logProcessingFailure(throwable);
+        if (endpoint != null) {
             sendClientMessage(throwable);
         }
     }
@@ -190,27 +189,7 @@ public abstract class AbstractMessageTask<P>
         }
     }
 
-    private ClientMessage createExceptionMessage(Throwable throwable) {
-        ClientExceptionFactory clientExceptionFactory = clientEngine.getClientExceptionFactory();
-        int errorCode = clientExceptionFactory.getErrorCode(throwable);
-        String message = throwable.getMessage();
-        StackTraceElement[] stackTrace = throwable.getStackTrace();
-        Throwable cause = throwable.getCause();
-        boolean hasCause = cause != null;
-        String className = throwable.getClass().getName();
-        if (hasCause) {
-            int causeErrorCode = clientExceptionFactory.getErrorCode(cause);
-            String causeClassName = cause.getClass().getName();
-            return ErrorCodec.encode(errorCode, className, message, stackTrace,
-                    causeErrorCode, causeClassName);
-        } else {
-            return ErrorCodec.encode(errorCode, className, message, stackTrace,
-                    ClientProtocolErrorCodes.UNDEFINED, null);
-        }
-
-    }
-
-    protected abstract void processMessage();
+    protected abstract void processMessage() throws Throwable;
 
     protected void sendResponse(Object response) {
         ClientMessage clientMessage = encodeResponse(response);
@@ -233,7 +212,8 @@ public abstract class AbstractMessageTask<P>
     }
 
     protected void sendClientMessage(Throwable throwable) {
-        ClientMessage exception = createExceptionMessage(throwable);
+        ClientExceptionFactory exceptionFactory = clientEngine.getClientExceptionFactory();
+        ClientMessage exception = exceptionFactory.createExceptionMessage(ExceptionUtil.peel(throwable));
         sendClientMessage(exception);
     }
 

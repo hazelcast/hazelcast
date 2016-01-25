@@ -18,7 +18,9 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
+import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Connection;
@@ -54,7 +56,7 @@ public class ClientHeartbeatMonitor implements Runnable {
     }
 
     private long getHeartBeatTimeout(GroupProperties groupProperties) {
-        long configuredTimeout = groupProperties.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getInteger();
+        long configuredTimeout = groupProperties.getSeconds(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS);
         if (configuredTimeout > 0) {
             return configuredTimeout;
         }
@@ -77,12 +79,12 @@ public class ClientHeartbeatMonitor implements Runnable {
     }
 
     private void monitor(String memberUuid, ClientEndpointImpl clientEndpoint) {
-        if (clientEndpoint.isFirstConnection()) {
+        if (clientEndpoint.isFirstConnection() && ClientType.CPP.equals(clientEndpoint.getClientType())) {
             return;
         }
 
         final Connection connection = clientEndpoint.getConnection();
-        final long lastTimePackageReceived = connection.lastReadTime();
+        final long lastTimePackageReceived = connection.lastReadTimeMillis();
         final long timeoutInMillis = TimeUnit.SECONDS.toMillis(heartbeatTimeoutSeconds);
         final long currentTimeInMillis = Clock.currentTimeMillis();
         if (lastTimePackageReceived + timeoutInMillis < currentTimeInMillis) {

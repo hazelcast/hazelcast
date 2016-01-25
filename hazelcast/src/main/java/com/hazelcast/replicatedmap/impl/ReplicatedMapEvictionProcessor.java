@@ -16,43 +16,34 @@
 
 package com.hazelcast.replicatedmap.impl;
 
+import com.hazelcast.replicatedmap.impl.operation.EvictionOperation;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
-
 import java.util.Collection;
+
+import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 
 /**
  * Actual eviction processor implementation to remove values to evict values from the replicated map
  */
-public class ReplicatedMapEvictionProcessor
-        implements ScheduledEntryProcessor<Object, Object> {
+public class ReplicatedMapEvictionProcessor implements ScheduledEntryProcessor<Object, Object> {
 
-    final NodeEngine nodeEngine;
-    final ReplicatedMapService replicatedMapService;
-    final String mapName;
+    private ReplicatedRecordStore store;
+    private NodeEngine nodeEngine;
+    private int partitionId;
 
-    public ReplicatedMapEvictionProcessor(NodeEngine nodeEngine, ReplicatedMapService replicatedMapService, String mapName) {
+    public ReplicatedMapEvictionProcessor(ReplicatedRecordStore store, NodeEngine nodeEngine, int partitionId) {
+        this.store = store;
         this.nodeEngine = nodeEngine;
-        this.replicatedMapService = replicatedMapService;
-        this.mapName = mapName;
+        this.partitionId = partitionId;
     }
 
     public void process(EntryTaskScheduler<Object, Object> scheduler, Collection<ScheduledEntry<Object, Object>> entries) {
-        final ReplicatedRecordStore replicatedRecordStore = replicatedMapService.getReplicatedRecordStore(mapName, false);
-
-        if (replicatedRecordStore != null) {
-            for (ScheduledEntry<Object, Object> entry : entries) {
-                Object key = entry.getKey();
-                if (entry.getValue() == null) {
-                    replicatedRecordStore.removeTombstone(key);
-                } else {
-                    replicatedRecordStore.evict(key);
-                }
-            }
-        }
+        EvictionOperation evictionOperation = new EvictionOperation(store, entries);
+        evictionOperation.setPartitionId(partitionId);
+        nodeEngine.getOperationService().invokeOnTarget(SERVICE_NAME, evictionOperation, nodeEngine.getThisAddress());
     }
-
 }

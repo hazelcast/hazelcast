@@ -102,8 +102,17 @@
                     <hz:timed-expiry-policy-factory expiry-policy-type="ETERNAL"/>
                 </hz:expiry-policy-factory>
             </hz:cache>
+            <hz:cache name="cacheWithPartitionLostListener">
+              <hz:partition-lost-listeners>
+                  <hz:partition-lost-listener class-name="DummyCachePartitionLostListenerImpl"/>
+              </hz:partition-lost-listeners>
+            </hz:cache>
             <hz:cache name="cacheWithQuorumRef">
                 <hz:quorum-ref>cacheQuorumRefString</hz:quorum-ref>
+            </hz:cache>
+            <hz:cache name="cacheWithDefaultMergePolicy"/>
+            <hz:cache name="cacheWithCustomMergePolicy">
+                <hz:merge-policy>MyDummyMergePolicy</hz:merge-policy>
             </hz:cache>
         </hz:config>
     </hz:hazelcast>

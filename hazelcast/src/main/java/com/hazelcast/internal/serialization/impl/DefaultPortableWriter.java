@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -29,6 +28,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 
 public class DefaultPortableWriter implements PortableWriter {
 
@@ -55,7 +57,7 @@ public class DefaultPortableWriter implements PortableWriter {
 
         this.offset = out.position();
         // one additional for raw data
-        int fieldIndexesLength = (cd.getFieldCount() + 1) * Bits.INT_SIZE_IN_BYTES;
+        int fieldIndexesLength = (cd.getFieldCount() + 1) * INT_SIZE_IN_BYTES;
         out.writeZeroBytes(fieldIndexesLength);
     }
 
@@ -159,6 +161,13 @@ public class DefaultPortableWriter implements PortableWriter {
     }
 
     @Override
+    public void writeBooleanArray(String fieldName, boolean[] booleans)
+            throws IOException {
+        setPosition(fieldName, FieldType.BOOLEAN_ARRAY);
+        out.writeBooleanArray(booleans);
+    }
+
+    @Override
     public void writeCharArray(String fieldName, char[] values) throws IOException {
         setPosition(fieldName, FieldType.CHAR_ARRAY);
         out.writeCharArray(values);
@@ -195,9 +204,16 @@ public class DefaultPortableWriter implements PortableWriter {
     }
 
     @Override
+    public void writeUTFArray(String fieldName, String[] values)
+            throws IOException {
+        setPosition(fieldName, FieldType.UTF_ARRAY);
+        out.writeUTFArray(values);
+    }
+
+    @Override
     public void writePortableArray(String fieldName, Portable[] portables) throws IOException {
         FieldDefinition fd = setPosition(fieldName, FieldType.PORTABLE_ARRAY);
-        final int len = portables == null ? 0 : portables.length;
+        final int len = portables == null ? NULL_ARRAY_LENGTH : portables.length;
         out.writeInt(len);
 
         out.writeInt(fd.getFactoryId());
@@ -210,7 +226,7 @@ public class DefaultPortableWriter implements PortableWriter {
                 Portable portable = portables[i];
                 checkPortableAttributes(fd, portable);
                 int position = out.position();
-                out.writeInt(offset + i * Bits.INT_SIZE_IN_BYTES, position);
+                out.writeInt(offset + i * INT_SIZE_IN_BYTES, position);
                 serializer.writeInternal(out, portable);
             }
         }
@@ -228,7 +244,7 @@ public class DefaultPortableWriter implements PortableWriter {
         if (writtenFields.add(fieldName)) {
             int pos = out.position();
             int index = fd.getIndex();
-            out.writeInt(offset + index * Bits.INT_SIZE_IN_BYTES, pos);
+            out.writeInt(offset + index * INT_SIZE_IN_BYTES, pos);
             out.writeShort(fieldName.length());
             out.writeBytes(fieldName);
             out.writeByte(fieldType.getId());
@@ -244,7 +260,7 @@ public class DefaultPortableWriter implements PortableWriter {
             int pos = out.position();
             // last index
             int index = cd.getFieldCount();
-            out.writeInt(offset + index * Bits.INT_SIZE_IN_BYTES, pos);
+            out.writeInt(offset + index * INT_SIZE_IN_BYTES, pos);
         }
         raw = true;
         return out;

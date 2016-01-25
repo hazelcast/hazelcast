@@ -31,6 +31,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CountDownLatch;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -39,6 +41,45 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class TransactionListTest extends HazelcastTestSupport {
+
+    @Test
+    public void testOrder_WhenMultipleConcurrentTransactionRollback() throws InterruptedException {
+        final HazelcastInstance instance = createHazelcastInstance();
+        final String name = randomString();
+        IList<Integer> list = instance.getList(name);
+        list.add(1);
+        list.add(2);
+        list.add(3);
+
+        TransactionContext firstContext = instance.newTransactionContext();
+        firstContext.beginTransaction();
+        firstContext.getList(name).remove(1);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        Thread thread = new Thread() {
+            @Override
+            public void run() {
+                TransactionContext secondContext = instance.newTransactionContext();
+                secondContext.beginTransaction();
+                secondContext.getList(name).remove(2);
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                secondContext.rollbackTransaction();
+            }
+        };
+        thread.start();
+        firstContext.rollbackTransaction();
+        latch.countDown();
+        thread.join();
+
+        assertEquals(1, list.get(0).intValue());
+        assertEquals(2, list.get(1).intValue());
+        assertEquals(3, list.get(2).intValue());
+
+    }
 
     @Test
     public void testAdd(){

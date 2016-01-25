@@ -17,13 +17,18 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.map.impl.eviction.EvictionOperator;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
+import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.MergePolicyProvider;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 
 import java.util.Collection;
 import java.util.Map;
@@ -52,8 +57,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     Data toData(Object object);
 
-    boolean compare(String mapName, Object value1, Object value2);
-
     MapContainer getMapContainer(String mapName);
 
     Map<String, MapContainer> getMapContainers();
@@ -66,7 +69,13 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     MapService getService();
 
-    void clearPartitions();
+    /**
+     * Clears all partition based data allocated by MapService.
+     *
+     * @param onShutdown true if {@code clearPartitions} is called during MapService shutdown,
+     *                   false otherwise.
+     */
+    void clearPartitions(boolean onShutdown);
 
     void destroyMapStores();
 
@@ -76,7 +85,15 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     void reset();
 
+    /**
+     * Releases internal resources solely managed by Hazelcast. This method is
+     * called when MapService is shutting down.
+     */
+    void shutdown();
+
     NearCacheProvider getNearCacheProvider();
+
+    RecordStore createRecordStore(MapContainer mapContainer, int partitionId, MapKeyLoader keyLoader);
 
     RecordStore getRecordStore(int partitionId, String mapName);
 
@@ -90,8 +107,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     ExpirationManager getExpirationManager();
 
-    EvictionOperator getEvictionOperator();
-
     void setService(MapService mapService);
 
     NodeEngine getNodeEngine();
@@ -100,15 +115,13 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     MapEventPublisher getMapEventPublisher();
 
-    MapContextQuerySupport getMapContextQuerySupport();
+    MapQueryEngine getMapQueryEngine(String name);
 
     LocalMapStatsProvider getLocalMapStatsProvider();
 
-    /**
-     * Sets an {@link EvictionOperator} to this {@link MapServiceContext}.
-     * Used for testing purposes.
-     *
-     * @param evictionOperator {@link EvictionOperator} to be set.
-     */
-    void setEvictionOperator(EvictionOperator evictionOperator);
+    MapOperationProvider getMapOperationProvider(String name);
+
+    Extractors getExtractors(String mapName);
+
+    void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation);
 }

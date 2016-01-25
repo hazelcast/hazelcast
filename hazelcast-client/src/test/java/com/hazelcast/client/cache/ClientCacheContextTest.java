@@ -32,7 +32,6 @@ import javax.cache.spi.CachingProvider;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientCacheContextTest extends CacheContextTest {
-
     private TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Override

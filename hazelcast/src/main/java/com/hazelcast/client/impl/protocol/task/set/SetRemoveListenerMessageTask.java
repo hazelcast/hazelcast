@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SetRemoveListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -32,16 +32,21 @@ import java.security.Permission;
  * SetRemoveListenerMessageTask
  */
 public class SetRemoveListenerMessageTask
-        extends AbstractCallableMessageTask<SetRemoveListenerCodec.RequestParameters> {
+        extends AbstractRemoveListenerMessageTask<SetRemoveListenerCodec.RequestParameters> {
 
     public SetRemoveListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() {
+    protected boolean deRegisterListener() {
         final EventService eventService = clientEngine.getEventService();
         return eventService.deregisterListener(getServiceName(), parameters.name, parameters.registrationId);
+    }
+
+    @Override
+    protected String getRegistrationId() {
+        return parameters.registrationId;
     }
 
     @Override
@@ -57,11 +62,6 @@ public class SetRemoveListenerMessageTask
     @Override
     public String getServiceName() {
         return SetService.SERVICE_NAME;
-    }
-
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{parameters.registrationId};
     }
 
     @Override

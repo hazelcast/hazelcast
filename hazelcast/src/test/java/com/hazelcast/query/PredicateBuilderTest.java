@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,16 +35,14 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class PredicateBuilderTest extends HazelcastTestSupport {
 
-
     @Test
     public void get_keyAttribute() {
         HazelcastInstance hz = createHazelcastInstance();
 
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        Predicate predicate = entryObject.key().get("id").equal("10").and(entryObject.get("name").equal("value1"));
 
-        Predicate predicate = e.key().get("id").equal("10").and(e.get("name").equal("value1"));
-
-        IMap<Id, Value> hazelcastLookupMap = hz.getMap("somemap");
+        IMap<Id, Value> hazelcastLookupMap = hz.getMap("someMap");
 
         hazelcastLookupMap.put(new Id("10"), new Value("value1"));
         hazelcastLookupMap.put(new Id("20"), new Value("value2"));
@@ -58,13 +55,12 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void get_key() {
-         HazelcastInstance hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
 
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        Predicate predicate = entryObject.key().equal(10L);
 
-        Predicate predicate = e.key().equal(10L);
-
-        IMap<Integer, Integer> hazelcastLookupMap = hz.getMap("somemap");
+        IMap<Integer, Integer> hazelcastLookupMap = hz.getMap("someMap");
 
         hazelcastLookupMap.put(10, 1);
         hazelcastLookupMap.put(30, 2);
@@ -76,13 +72,12 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void get_this() {
-         HazelcastInstance hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
 
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        Predicate predicate = entryObject.get("this").equal(1L);
 
-        Predicate predicate = e.get("this").equal(1L);
-
-        IMap<Integer, Integer> hazelcastLookupMap = hz.getMap("somemap");
+        IMap<Integer, Integer> hazelcastLookupMap = hz.getMap("someMap");
 
         hazelcastLookupMap.put(10, 1);
         hazelcastLookupMap.put(30, 2);
@@ -94,17 +89,16 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void get_attribute() {
-       HazelcastInstance hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
 
-        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject entryObject = new PredicateBuilder().getEntryObject();
+        Predicate predicate = entryObject.get("id").equal("10");
 
-        Predicate predicate = e.get("id").equal("10");
+        IMap<Integer, Id> hazelcastLookupMap = hz.getMap("someMap");
 
-        IMap<Integer, Id> hazelcastLookupMap = hz.getMap("somemap");
-
-        hazelcastLookupMap.put(1,new Id("10"));
-        hazelcastLookupMap.put(2,new Id("20"));
-        hazelcastLookupMap.put(3,new Id("30"));
+        hazelcastLookupMap.put(1, new Id("10"));
+        hazelcastLookupMap.put(2, new Id("20"));
+        hazelcastLookupMap.put(3, new Id("30"));
 
         Collection<Id> result = hazelcastLookupMap.values(predicate);
         assertEquals(1, result.size());
@@ -112,6 +106,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
     }
 
     private static class Id implements Serializable {
+
         private String id;
 
         public Id(String id) {
@@ -124,12 +119,17 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             Id id1 = (Id) o;
-
-            if (id != null ? !id.equals(id1.id) : id1.id != null) return false;
+            if (id != null ? !id.equals(id1.id) : id1.id != null) {
+                return false;
+            }
 
             return true;
         }
@@ -141,6 +141,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
     }
 
     private static class Value implements Serializable {
+
         private String name;
 
         private Value(String name) {
@@ -153,12 +154,18 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             Value value = (Value) o;
 
-            if (name != null ? !name.equals(value.name) : value.name != null) return false;
+            if (name != null ? !name.equals(value.name) : value.name != null) {
+                return false;
+            }
 
             return true;
         }

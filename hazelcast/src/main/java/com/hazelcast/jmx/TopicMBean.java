@@ -19,11 +19,6 @@ package com.hazelcast.jmx;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.ITopic;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * Management bean for {@link com.hazelcast.core.ITopic}
@@ -31,20 +26,9 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 @ManagedDescription("ITopic")
 public class TopicMBean extends HazelcastMBean<ITopic> {
 
-    private final AtomicLong totalMessageCount = new AtomicLong();
-    private final String registrationId;
-
     protected TopicMBean(ITopic managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = service.createObjectName("ITopic", managedObject.getName());
-
-        //can't we rely on the statics functionality of the topic instead of relying on the event system?
-        MessageListener messageListener = new MessageListener() {
-            public void onMessage(Message message) {
-                totalMessageCount.incrementAndGet();
-            }
-        };
-        registrationId = managedObject.addMessageListener(messageListener);
     }
 
     @ManagedAnnotation("localCreationTime")
@@ -71,25 +55,10 @@ public class TopicMBean extends HazelcastMBean<ITopic> {
         return managedObject.getName();
     }
 
-    @ManagedAnnotation("totalMessageCount")
-    public long getTotalMessageCount() {
-        return totalMessageCount.get();
-    }
-
     @ManagedAnnotation("config")
     public String getConfig() {
         Config config = service.instance.getConfig();
         TopicConfig topicConfig = config.findTopicConfig(managedObject.getName());
         return topicConfig.toString();
-    }
-
-    @Override
-    public void preDeregister() throws Exception {
-        super.preDeregister();
-        try {
-            managedObject.removeMessageListener(registrationId);
-        } catch (Exception ignored) {
-            ignore(ignored);
-        }
     }
 }

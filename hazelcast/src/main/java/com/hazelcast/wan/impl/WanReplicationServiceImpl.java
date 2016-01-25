@@ -22,6 +22,7 @@ import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ReplicationSupportingService;
@@ -75,15 +76,15 @@ public class WanReplicationServiceImpl implements WanReplicationService {
             int count = 0;
             for (WanTargetClusterConfig targetClusterConfig : targets) {
                 WanReplicationEndpoint target;
-                if (targetClusterConfig.getReplicationImpl() != null) {
-                    try {
+                try {
+                    if (targetClusterConfig.getReplicationImplObject() != null) {
+                        target = (WanReplicationEndpoint) targetClusterConfig.getReplicationImplObject();
+                    } else {
                         target = ClassLoaderUtil
                                 .newInstance(node.getConfigClassLoader(), targetClusterConfig.getReplicationImpl());
-                    } catch (Exception e) {
-                        throw ExceptionUtil.rethrow(e);
                     }
-                } else {
-                    target = new WanNoDelayReplication();
+                } catch (Exception e) {
+                    throw ExceptionUtil.rethrow(e);
                 }
                 String groupName = targetClusterConfig.getGroupName();
                 String password = targetClusterConfig.getGroupPassword();
@@ -160,7 +161,27 @@ public class WanReplicationServiceImpl implements WanReplicationService {
         }
     }
 
+    @Override
+    public void pause(String name, String targetGroupName) {
+        throw new UnsupportedOperationException("Pausing wan replication is not supported.");
+    }
+
+    @Override
+    public void resume(String name, String targetGroupName) {
+        throw new UnsupportedOperationException("Resuming wan replication is not supported");
+    }
+
+    @Override
+    public void checkWanReplicationQueues(String name) {
+        //NOP
+    }
+
     private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWanReplicationPublisherMapping() {
         return new ConcurrentHashMap<String, WanReplicationPublisherDelegate>(2);
+    }
+
+    @Override
+    public Map<String, LocalWanStats> getStats() {
+        return null;
     }
 }

@@ -157,7 +157,7 @@ public class SocketAcceptorThread extends Thread {
         try {
             connectionManager.initSocket(socketChannel.socket());
             connectionManager.interceptSocket(socketChannel.socket(), true);
-            socketChannel.configureBlocking(connectionManager.getThreadingModel().isBlocking());
+            socketChannel.configureBlocking(connectionManager.getIoThreadingModel().isBlocking());
             connectionManager.newConnection(socketChannel, null);
         } catch (Exception e) {
             logger.warning(e.getClass().getName() + ": " + e.getMessage(), e);

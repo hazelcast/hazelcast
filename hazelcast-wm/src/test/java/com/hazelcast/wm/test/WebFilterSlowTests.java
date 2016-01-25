@@ -1,7 +1,5 @@
 package com.hazelcast.wm.test;
 
-import com.hazelcast.config.FileSystemXmlConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.web.SessionState;
@@ -9,9 +7,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.junit.Test;
-import org.junit.Ignore;
-
-import java.io.File;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -125,65 +120,6 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
         assertEquals("value-updated", executeRequest("read", serverPort1, cookieStore));
     }
 
-    @Test
-    public void whenClusterIsDown_enabledDeferredWrite() throws Exception {
-        if (!testName.contains("deferred")) return;
-        if (!testName.contains("client")) return;
-        CookieStore cookieStore = new BasicCookieStore();
-        assertEquals("true", executeRequest("write", serverPort1, cookieStore));
-        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
-        hz.shutdown();
-        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
-        assertEquals("true", executeRequest("remove", serverPort1, cookieStore));
-        assertEquals("null", executeRequest("read", serverPort1, cookieStore));
-        hz = Hazelcast.newHazelcastInstance(
-                new FileSystemXmlConfig(new File(sourceDir + "/WEB-INF/", "hazelcast.xml")));
-        Thread.sleep(8000);
-        assertEquals("true", executeRequest("write", serverPort1, cookieStore));
-        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
-    }
-
-    @Test
-    public void whenClusterIsDownAtBeginning_enabledDeferredWrite() throws Exception {
-        if (!testName.contains("deferred")) return;
-        if (!testName.contains("client")) return;
-        hz.shutdown();
-        CookieStore cookieStore = new BasicCookieStore();
-        assertEquals("true", executeRequest("write", serverPort1, cookieStore));
-        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
-
-        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
-        assertEquals("true", executeRequest("remove", serverPort1, cookieStore));
-        assertEquals("null", executeRequest("read", serverPort1, cookieStore));
-
-        assertEquals("true", executeRequest("write", serverPort1, cookieStore));
-        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
-        hz = Hazelcast.newHazelcastInstance(
-                new FileSystemXmlConfig(new File(sourceDir + "/WEB-INF/", "hazelcast.xml")));
-        Thread.sleep(8000);
-        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
-        assertEquals("true", executeRequest("remove", serverPort1, cookieStore));
-        assertEquals("null", executeRequest("read", serverPort1, cookieStore));
-    }
-
-    @Test
-    @Ignore
-    public void whenClusterIsDownAtBeginning_MapSizeAfterClusterIsUp() throws Exception {
-        if (!testName.contains("deferred")) return;
-        if (!testName.contains("client")) return;
-        Hazelcast.shutdownAll();
-        CookieStore cookieStore = new BasicCookieStore();
-        assertEquals("true", executeRequest("write", serverPort1, cookieStore));
-        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
-
-        hz = Hazelcast.newHazelcastInstance(
-                new FileSystemXmlConfig(new File(sourceDir + "/WEB-INF/", "hazelcast.xml")));
-        Thread.sleep(8000);
-        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
-        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
-        assertEquals(1, map.size());
-    }
-
     @Test(timeout = 60000)
     public void testAttributeInvalidate() throws Exception {
         IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
@@ -239,6 +175,4 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
         assertEquals("false", executeRequest("isNew", serverPort1, cookieStore));
         assertEquals("false", executeRequest("isNew", serverPort2, cookieStore));
     }
-
-
 }

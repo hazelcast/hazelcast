@@ -63,7 +63,7 @@ final class PortableExtractor {
     private PortableExtractor() {
     }
 
-    static Comparable extractValue(SerializationService serializationService, Data data, String fieldName)
+    public static Comparable extractValue(SerializationService serializationService, Data data, String fieldName)
             throws IOException {
         PortableContext context = serializationService.getPortableContext();
         PortableFieldExtractor fieldExtractor = getFieldExtractor(context, data, fieldName);
@@ -94,7 +94,7 @@ final class PortableExtractor {
         }
     }
 
-    static AttributeType getAttributeType(PortableContext portableContext, Data data, String fieldName) {
+    public static AttributeType getAttributeType(PortableContext portableContext, Data data, String fieldName) {
         PortableFieldExtractor fieldExtractor;
         try {
             fieldExtractor = getFieldExtractor(portableContext, data, fieldName);

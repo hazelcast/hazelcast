@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.nio.ObjectDataInput;
@@ -49,18 +49,18 @@ public class CacheGetConfigOperation
     @Override
     public void run()
             throws Exception {
-        final CacheService service = getService();
-        final CacheConfig cacheConfig = service.getCacheConfig(name);
+        final ICacheService service = getService();
+        CacheConfig cacheConfig = service.getCacheConfig(name);
         if (cacheConfig == null) {
             CacheSimpleConfig simpleConfig = service.findCacheConfig(simpleName);
             if (simpleConfig != null) {
                 try {
-                    CacheConfig cacheConfigFromSimpleConfig = new CacheConfig(simpleConfig);
-                    cacheConfigFromSimpleConfig.setName(simpleName);
-                    cacheConfigFromSimpleConfig.setManagerPrefix(name.substring(0, name.lastIndexOf(simpleName)));
-                    if (service.putCacheConfigIfAbsent(cacheConfigFromSimpleConfig) == null) {
-                        response = cacheConfigFromSimpleConfig;
-                        return;
+                    cacheConfig = new CacheConfig(simpleConfig);
+                    cacheConfig.setName(simpleName);
+                    cacheConfig.setManagerPrefix(name.substring(0, name.lastIndexOf(simpleName)));
+                    CacheConfig existingCacheConfig = service.putCacheConfigIfAbsent(cacheConfig);
+                    if (existingCacheConfig != null) {
+                        cacheConfig = existingCacheConfig;
                     }
                 } catch (Exception e) {
                     //Cannot create the actual config from the declarative one

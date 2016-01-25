@@ -19,31 +19,34 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.EntryViews;
-import com.hazelcast.map.impl.MapEventPublisher;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
-import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static com.hazelcast.util.Preconditions.checkFalse;
+
 /**
  * Puts records to map which are loaded from map store by {@link com.hazelcast.core.IMap#loadAll}
  */
-public class PutFromLoadAllOperation extends AbstractMapOperation implements PartitionAwareOperation, MutatingOperation,
+public class PutFromLoadAllOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation,
         BackupAwareOperation {
 
     private List<Data> keyValueSequence;
+    private List<Data> invalidationKeys;
 
     public PutFromLoadAllOperation() {
         keyValueSequence = Collections.emptyList();
@@ -51,37 +54,48 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
 
     public PutFromLoadAllOperation(String name, List<Data> keyValueSequence) {
         super(name);
+        checkFalse(isEmpty(keyValueSequence), "key-value sequence cannot be empty or null");
         this.keyValueSequence = keyValueSequence;
     }
 
     @Override
     public void run() throws Exception {
-        final List<Data> keyValueSequence = this.keyValueSequence;
-        if (keyValueSequence == null || keyValueSequence.isEmpty()) {
-            return;
-        }
-        final int partitionId = getPartitionId();
-        final MapService mapService = this.mapService;
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, name);
-        for (int i = 0; i < keyValueSequence.size(); i += 2) {
-            final Data key = keyValueSequence.get(i);
-            final Data dataValue = keyValueSequence.get(i + 1);
-            // here object conversion is for interceptors.
-            final Object objectValue = mapServiceContext.toObject(dataValue);
-            final Object previousValue = recordStore.putFromLoad(key, objectValue);
+        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
+        boolean hasInterceptor = mapServiceContext.hasInterceptor(name);
 
-            callAfterPutInterceptors(objectValue);
-            publishEntryEvent(key, mapServiceContext.toData(previousValue), dataValue);
+        List<Data> keyValueSequence = this.keyValueSequence;
+        for (int i = 0; i < keyValueSequence.size(); i += 2) {
+            Data key = keyValueSequence.get(i);
+            Data dataValue = keyValueSequence.get(i + 1);
+            // here object conversion is for interceptors.
+            Object value = hasInterceptor ? mapServiceContext.toObject(dataValue) : dataValue;
+            Object previousValue = recordStore.putFromLoad(key, value);
+
+            callAfterPutInterceptors(value);
+            publishEntryEvent(key, previousValue, dataValue);
             publishWanReplicationEvent(key, dataValue, recordStore.getRecord(key));
+            addInvalidation(key);
         }
     }
+
+    private void addInvalidation(Data key) {
+        if (!mapContainer.isNearCacheEnabled()) {
+            return;
+        }
+
+        if (invalidationKeys == null) {
+            invalidationKeys = new ArrayList<Data>(keyValueSequence.size() / 2);
+        }
+
+        invalidationKeys.add(key);
+    }
+
 
     private void callAfterPutInterceptors(Object value) {
         mapService.getMapServiceContext().interceptAfterPut(name, value);
     }
 
-    private void publishEntryEvent(Data key, Data previousValue, Data newValue) {
+    private void publishEntryEvent(Data key, Object previousValue, Data newValue) {
         final EntryEventType eventType = previousValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
@@ -93,7 +107,7 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
             return;
         }
 
-        if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
+        if (mapContainer.isWanReplicationEnabled()) {
             final EntryView entryView = EntryViews.createSimpleEntryView(key, value, record);
             MapServiceContext mapServiceContext = mapService.getMapServiceContext();
             MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
@@ -103,18 +117,9 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
 
     @Override
     public void afterRun() throws Exception {
-        final List<Data> keyValueSequence = this.keyValueSequence;
-        if (keyValueSequence == null || keyValueSequence.isEmpty()) {
-            return;
-        }
-        final int size = keyValueSequence.size();
-        final List<Data> dataKeys = new ArrayList<Data>(size / 2);
-        for (int i = 0; i < size; i += 2) {
-            final Data key = keyValueSequence.get(i);
-            dataKeys.add(key);
-        }
-        NearCacheProvider nearCacheProvider = mapService.getMapServiceContext().getNearCacheProvider();
-        nearCacheProvider.invalidateNearCache(name, dataKeys);
+        invalidateNearCache(invalidationKeys);
+
+        super.afterRun();
     }
 
     @Override
@@ -140,11 +145,6 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
     @Override
     public Operation getBackupOperation() {
         return new PutFromLoadAllBackupOperation(name, keyValueSequence);
-    }
-
-    @Override
-    public String toString() {
-        return "PutFromLoadAllOperation{}";
     }
 
     @Override

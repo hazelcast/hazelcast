@@ -108,11 +108,10 @@ public class SerializableXID implements Xid, DataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("SerializableXid{");
-        sb.append("formatId=").append(formatId);
-        sb.append(", globalTransactionId=").append(Arrays.toString(globalTransactionId));
-        sb.append(", branchQualifier=").append(Arrays.toString(branchQualifier));
-        sb.append('}');
-        return sb.toString();
+        return "SerializableXid{"
+                + "formatId=" + formatId
+                + ", globalTransactionId=" + Arrays.toString(globalTransactionId)
+                + ", branchQualifier=" + Arrays.toString(branchQualifier)
+                + '}';
     }
 }

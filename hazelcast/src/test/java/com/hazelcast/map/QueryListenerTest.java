@@ -46,11 +46,11 @@ public class QueryListenerTest extends HazelcastTestSupport {
 
     @Test
     public void testMapQueryListener() throws InterruptedException {
+        Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        Config cfg = new Config();
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(config);
 
         final IMap<Object, Object> map = instance1.getMap("testMapQueryListener");
         final Object[] addedKey = new Object[1];
@@ -108,28 +108,10 @@ public class QueryListenerTest extends HazelcastTestSupport {
         assertEquals(removedValue[0], "abc");
     }
 
-    static class StartsWithPredicate implements Predicate<Object, Object>, Serializable {
-        String pref;
-
-        StartsWithPredicate(String pref) {
-            this.pref = pref;
-        }
-
-        public boolean apply(Map.Entry<Object, Object> mapEntry) {
-            String val = (String) mapEntry.getValue();
-            if (val == null)
-                return false;
-            if (val.startsWith(pref))
-                return true;
-            return false;
-        }
-    }
-
     @Test
     public void testMapQueryListener2() throws InterruptedException {
-
+        Config cfg = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        Config cfg = new Config();
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
@@ -155,6 +137,22 @@ public class QueryListenerTest extends HazelcastTestSupport {
         assertEquals(50, addCount.get());
     }
 
+    static class StartsWithPredicate implements Predicate<Object, Object>, Serializable {
+        String pref;
+
+        StartsWithPredicate(String pref) {
+            this.pref = pref;
+        }
+
+        public boolean apply(Map.Entry<Object, Object> mapEntry) {
+            String val = (String) mapEntry.getValue();
+            if (val == null)
+                return false;
+            if (val.startsWith(pref))
+                return true;
+            return false;
+        }
+    }
 
     static class Person implements Serializable {
         String name;

@@ -18,6 +18,7 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.wan.ReplicationEventObject;
 import com.hazelcast.wan.WanReplicationEndpoint;
+import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WanReplicationPublisher;
 
 /**
@@ -45,6 +46,23 @@ final class WanReplicationPublisherDelegate
     public void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject) {
         for (WanReplicationEndpoint endpoint : endpoints) {
             endpoint.publishReplicationEvent(serviceName, eventObject);
+        }
+    }
+
+    @Override
+    public void publishReplicationEventBackup(String serviceName, ReplicationEventObject eventObject) {
+        //NOP
+    }
+
+    @Override
+    public void publishReplicationEvent(WanReplicationEvent wanReplicationEvent) {
+        //NOP
+    }
+
+    @Override
+    public void checkWanReplicationQueues() {
+        for (WanReplicationEndpoint endpoint : endpoints) {
+            endpoint.checkWanReplicationQueues();
         }
     }
 }

@@ -22,9 +22,10 @@ import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
-import com.hazelcast.quorum.Quorum;
-import com.hazelcast.quorum.QuorumException;
-import com.hazelcast.quorum.QuorumFunction;
+import com.hazelcast.quorum.impl.QuorumServiceImpl;
+import com.hazelcast.spi.MemberAttributeServiceEvent;
+import com.hazelcast.spi.MembershipAwareService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -38,11 +39,28 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class QuorumTest extends HazelcastTestSupport {
 
+    @Test
+    public void testQuorumIgnoresMemberAttributeEvents() throws Exception {
+        Config config = new Config();
+        QuorumConfig quorumConfig = new QuorumConfig().setName(randomString()).setEnabled(true);
+        RecordingQuorumFunction function = new RecordingQuorumFunction();
+        quorumConfig.setQuorumFunctionImplementation(function);
+        config.addQuorumConfig(quorumConfig);
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hazelcastInstance);
+        MembershipAwareService service = nodeEngine.getService(QuorumServiceImpl.SERVICE_NAME);
+
+        MemberAttributeServiceEvent event = mock(MemberAttributeServiceEvent.class);
+        service.memberAttributeChanged(event);
+
+        assertFalse(function.wasCalled);
+    }
 
     @Test(expected = QuorumException.class)
     public void testCustomQuorumFunctionFails() throws Exception {
@@ -206,6 +224,17 @@ public class QuorumTest extends HazelcastTestSupport {
             fail();
         } catch (Exception e) {
         }
+    }
+
+    private static class RecordingQuorumFunction implements QuorumFunction {
+        private volatile boolean wasCalled;
+
+        @Override
+        public boolean apply(Collection<Member> members) {
+            wasCalled = true;
+            return false;
+        }
+
     }
 
 }

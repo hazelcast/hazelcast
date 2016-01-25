@@ -52,7 +52,7 @@ public class PacketTransportTest extends HazelcastTestSupport {
         List<Packet> originalPackets = new LinkedList<Packet>();
         Random random = new Random();
         for (int k = 0; k < 1000; k++) {
-            byte[] bytes = generateRandomString(random.nextInt(1000) + 5).getBytes();
+            byte[] bytes = generateRandomString(random.nextInt(1000) + 8).getBytes();
             Packet originalPacket = new Packet(bytes);
             originalPackets.add(originalPacket);
         }
@@ -79,7 +79,7 @@ public class PacketTransportTest extends HazelcastTestSupport {
     // same Packet (content).
     @Test
     public void cloningOfPacket() {
-        Packet originalPacket = new Packet("foobar".getBytes());
+        Packet originalPacket = new Packet("foobarbaz".getBytes());
 
         ByteBuffer bb = ByteBuffer.allocate(100);
         boolean written = originalPacket.writeTo(bb);

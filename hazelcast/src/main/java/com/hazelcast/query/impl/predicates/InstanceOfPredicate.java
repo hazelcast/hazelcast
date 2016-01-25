@@ -18,22 +18,28 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
 import java.util.Map;
 
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
+
 /**
  * Predicate version of `instaceof` operator from Java.
  *
  */
-public class InstanceOfPredicate implements Predicate, DataSerializable {
+public class InstanceOfPredicate
+        implements Predicate, IdentifiedDataSerializable {
     private Class klass;
 
     public InstanceOfPredicate(Class klass) {
         this.klass = klass;
+    }
+
+    public InstanceOfPredicate() {
     }
 
     @Override
@@ -63,5 +69,15 @@ public class InstanceOfPredicate implements Predicate, DataSerializable {
     @Override
     public String toString() {
         return " instanceOf (" + klass.getName() + ")";
+    }
+
+    @Override
+    public int getFactoryId() {
+        return PREDICATE_DS_FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.INSTANCEOF_PREDICATE;
     }
 }

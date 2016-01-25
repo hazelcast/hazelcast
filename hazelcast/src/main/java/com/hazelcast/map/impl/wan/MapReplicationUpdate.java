@@ -20,11 +20,13 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.impl.WanDataSerializerHook;
+
 import java.io.IOException;
 
-public class MapReplicationUpdate implements ReplicationEventObject, DataSerializable {
+public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedDataSerializable {
 
     String mapName;
     MapMergePolicy mergePolicy;
@@ -75,5 +77,15 @@ public class MapReplicationUpdate implements ReplicationEventObject, DataSeriali
         mapName = in.readUTF();
         mergePolicy = in.readObject();
         entryView = in.readObject();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return WanDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return WanDataSerializerHook.MAP_REPLICATION_UPDATE;
     }
 }

@@ -16,8 +16,8 @@
 
 package com.hazelcast.cache.impl.nearcache;
 
-import com.hazelcast.cache.impl.eviction.Evictable;
-import com.hazelcast.cache.impl.eviction.Expirable;
+import com.hazelcast.internal.eviction.Evictable;
+import com.hazelcast.internal.eviction.Expirable;
 
 /**
  * <p>
@@ -25,8 +25,8 @@ import com.hazelcast.cache.impl.eviction.Expirable;
  * </p>
  * Record of {@link com.hazelcast.cache.impl.nearcache.NearCacheRecordStore}.
  *
- * @see com.hazelcast.cache.impl.eviction.Expirable
- * @see com.hazelcast.cache.impl.eviction.Evictable
+ * @see com.hazelcast.internal.eviction.Expirable
+ * @see com.hazelcast.internal.eviction.Evictable
  *
  * @param <V> the type of the value stored by this {@link NearCacheRecord}
  */

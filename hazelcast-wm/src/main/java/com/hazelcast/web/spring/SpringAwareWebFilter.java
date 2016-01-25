@@ -24,6 +24,8 @@ import org.springframework.security.web.session.HttpSessionCreatedEvent;
 import org.springframework.security.web.session.HttpSessionDestroyedEvent;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
+import java.util.Properties;
+
 /**
  * Provides Spring aware Hazelcast based session replication by extending from
  * {@link com.hazelcast.web.WebFilter WebFilter}
@@ -31,6 +33,13 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 public class SpringAwareWebFilter extends WebFilter {
 
     protected volatile SessionRegistry sessionRegistry;
+
+    public SpringAwareWebFilter() {
+    }
+
+    public SpringAwareWebFilter(Properties properties) {
+        super(properties);
+    }
 
     protected void ensureSessionRegistryInitialized(ApplicationContext appContext) {
         if (sessionRegistry == null) {

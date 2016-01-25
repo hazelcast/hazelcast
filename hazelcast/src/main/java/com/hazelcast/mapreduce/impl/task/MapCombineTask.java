@@ -24,6 +24,8 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
+import com.hazelcast.mapreduce.impl.operation.KeysAssignmentOperation;
+import com.hazelcast.mapreduce.impl.operation.KeysAssignmentResult;
 import com.hazelcast.mapreduce.impl.operation.PostPonePartitionProcessing;
 import com.hazelcast.mapreduce.impl.operation.RequestMemberIdAssignment;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionMapping;
@@ -37,6 +39,8 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -44,7 +48,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
-import static com.hazelcast.mapreduce.impl.MapReduceUtil.mapResultToMember;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.notifyRemoteException;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.CHECK_STATE_FAILED;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_MORE_PARTITIONS;
@@ -112,9 +115,9 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
     public void process() {
         ExecutorService es = mapReduceService.getExecutorService(name);
         if (keyValueSource instanceof PartitionIdAware) {
-            es.submit(new PartitionProcessor());
+            es.submit(new PartitionBasedProcessor());
         } else {
-            es.submit(new SingleExecutionProcessor());
+            es.submit(new NonPartitionBasedProcessor());
         }
     }
 
@@ -133,10 +136,6 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         }
         if (mapper instanceof LifecycleMapper) {
             ((LifecycleMapper) mapper).finalized(context);
-        }
-
-        if (cancelled.get()) {
-            return;
         }
     }
 
@@ -160,6 +159,60 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
             }
         }
     }
+
+    public static <K, V> Map<Address, Map<K, V>> mapResultToMember(JobSupervisor supervisor, Map<K, V> result) {
+
+        Set<Object> unassignedKeys = new HashSet<Object>();
+        for (Map.Entry<K, V> entry : result.entrySet()) {
+            Address address = supervisor.getReducerAddressByKey(entry.getKey());
+            if (address == null) {
+                unassignedKeys.add(entry.getKey());
+            }
+        }
+
+        if (unassignedKeys.size() > 0) {
+            requestAssignment(unassignedKeys, supervisor);
+        }
+
+        // Now assign all keys
+        Map<Address, Map<K, V>> mapping = new HashMap<Address, Map<K, V>>();
+        for (Map.Entry<K, V> entry : result.entrySet()) {
+            Address address = supervisor.getReducerAddressByKey(entry.getKey());
+            if (address != null) {
+                Map<K, V> data = mapping.get(address);
+                if (data == null) {
+                    data = new HashMap<K, V>();
+                    mapping.put(address, data);
+                }
+                data.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return mapping;
+    }
+
+    private static void requestAssignment(Set<Object> keys, JobSupervisor supervisor) {
+        try {
+            MapReduceService mapReduceService = supervisor.getMapReduceService();
+            String name = supervisor.getConfiguration().getName();
+            String jobId = supervisor.getConfiguration().getJobId();
+            KeysAssignmentResult assignmentResult = mapReduceService
+                    .processRequest(supervisor.getJobOwner(), new KeysAssignmentOperation(name, jobId, keys));
+
+            if (assignmentResult.getResultState() == SUCCESSFUL) {
+                Map<Object, Address> assignment = assignmentResult.getAssignment();
+                for (Map.Entry<Object, Address> entry : assignment.entrySet()) {
+                    // Cache the keys for later mappings
+                    if (!supervisor.assignKeyReducerAddress(entry.getKey(), entry.getValue())) {
+                        throw new IllegalStateException("Key reducer assignment in illegal state");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Just announce it to higher levels
+            throw new RuntimeException(e);
+        }
+    }
+
 
     private void finalizeMapping(int partitionId, DefaultContext<KeyOut, ValueOut> context)
             throws Exception {
@@ -260,7 +313,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
     /**
      * This class implements the partitionId based mapping phase
      */
-    private class PartitionProcessor
+    private class PartitionBasedProcessor
             implements Runnable {
 
         @Override
@@ -332,7 +385,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
     /**
      * This class implements the non partitionId based mapping phase
      */
-    private class SingleExecutionProcessor
+    private class NonPartitionBasedProcessor
             implements Runnable {
 
         @Override

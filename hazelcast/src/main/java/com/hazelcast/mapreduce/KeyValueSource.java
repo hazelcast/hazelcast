@@ -162,7 +162,7 @@ public abstract class KeyValueSource<K, V>
      * @param <V> value type of the map
      * @return KeyValueSource implementation based on the specified map
      */
-    public static <K, V> KeyValueSource<K, V> fromMap(IMap<K, V> map) {
+    public static <K, V> KeyValueSource<K, V> fromMap(IMap<? super K, ? extends V> map) {
         return new MapKeyValueSource<K, V>(map.getName());
     }
 
@@ -174,7 +174,7 @@ public abstract class KeyValueSource<K, V>
      * @param <V>      value type of the multiMap
      * @return KeyValueSource implementation based on the specified multiMap
      */
-    public static <K, V> KeyValueSource<K, V> fromMultiMap(MultiMap<K, V> multiMap) {
+    public static <K, V> KeyValueSource<K, V> fromMultiMap(MultiMap<? super K, ? extends V> multiMap) {
         return new MultiMapKeyValueSource<K, V>(multiMap.getName());
     }
 
@@ -188,7 +188,7 @@ public abstract class KeyValueSource<K, V>
      * @param <V>  value type of the list
      * @return KeyValueSource implementation based on the specified list
      */
-    public static <V> KeyValueSource<String, V> fromList(IList<V> list) {
+    public static <V> KeyValueSource<String, V> fromList(IList<? extends V> list) {
         return new ListKeyValueSource<V>(list.getName());
     }
 
@@ -202,7 +202,7 @@ public abstract class KeyValueSource<K, V>
      * @param <V> value type of the set
      * @return KeyValueSource implementation based on the specified set
      */
-    public static <V> KeyValueSource<String, V> fromSet(ISet<V> set) {
+    public static <V> KeyValueSource<String, V> fromSet(ISet<? extends V> set) {
         return new SetKeyValueSource<V>(set.getName());
     }
 

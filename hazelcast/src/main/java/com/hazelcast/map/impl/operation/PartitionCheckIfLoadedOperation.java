@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
@@ -25,30 +26,42 @@ import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
-public class PartitionCheckIfLoadedOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
+public class PartitionCheckIfLoadedOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private boolean isFinished;
     private boolean doLoad;
+    private boolean waitForKeyLoad;
 
     public PartitionCheckIfLoadedOperation() {
     }
 
     public PartitionCheckIfLoadedOperation(String name) {
-        super(name);
+        this(name, false);
     }
 
     public PartitionCheckIfLoadedOperation(String name, boolean doLoad) {
+        this(name, doLoad, false);
+    }
+
+    public PartitionCheckIfLoadedOperation(String name, boolean doLoad, boolean waitForKeyLoad) {
         super(name);
         this.doLoad = doLoad;
+        this.waitForKeyLoad = waitForKeyLoad;
     }
 
     @Override
     public void run() {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
+
         isFinished = recordStore.isLoaded();
+
         if (doLoad) {
             recordStore.maybeDoInitialLoad();
+        }
+
+        if (waitForKeyLoad) {
+            recordStore.onKeyLoad(new CallbackResponseSender());
         }
     }
 
@@ -58,14 +71,43 @@ public class PartitionCheckIfLoadedOperation extends AbstractMapOperation implem
     }
 
     @Override
+    public boolean returnsResponse() {
+        return !waitForKeyLoad;
+    }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        if (!returnsResponse()) {
+            // In case of execution failure the CallbackResponseSender will be never invoked
+            // and the operation will be never retried. That is the reason why we need to propagate the
+            // exception to the caller manually.
+            sendResponse(e);
+        }
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(doLoad);
+        out.writeBoolean(waitForKeyLoad);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         doLoad = in.readBoolean();
+        waitForKeyLoad = in.readBoolean();
+    }
+
+    private class CallbackResponseSender implements ExecutionCallback<Boolean> {
+        @Override
+        public void onResponse(Boolean response) {
+            sendResponse(response);
+        }
+
+        @Override
+        public void onFailure(Throwable error) {
+            sendResponse(error);
+        }
     }
 }

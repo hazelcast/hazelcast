@@ -17,7 +17,6 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.replicatedmap.impl.record.LazySet.IteratorFactory;
-
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -79,7 +78,7 @@ class ValuesIteratorFactory<K, V>
                 throw new NoSuchElementException();
             }
 
-            value = recordStore.unmarshallValue(value);
+            value = recordStore.unmarshall(value);
             return (V) value;
         }
 

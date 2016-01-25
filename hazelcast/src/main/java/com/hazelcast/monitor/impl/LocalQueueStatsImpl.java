@@ -24,21 +24,22 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getLong;
+import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 public class LocalQueueStatsImpl implements LocalQueueStats {
 
-    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_OFFERS_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalQueueStatsImpl.class, "numberOfOffers");
-    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_REJECTED_OFFERS_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalQueueStatsImpl.class, "numberOfRejectedOffers");
-    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_POLLS_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalQueueStatsImpl.class, "numberOfPolls");
-    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_EMPTY_POLLS_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalQueueStatsImpl.class, "numberOfEmptyPolls");
-    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_OTHER_OPERATIONS_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalQueueStatsImpl.class, "numberOfOtherOperations");
-    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_EVENTS_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(LocalQueueStatsImpl.class, "numberOfEvents");
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_OFFERS =
+            newUpdater(LocalQueueStatsImpl.class, "numberOfOffers");
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_REJECTED_OFFERS =
+            newUpdater(LocalQueueStatsImpl.class, "numberOfRejectedOffers");
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_POLLS =
+            newUpdater(LocalQueueStatsImpl.class, "numberOfPolls");
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_EMPTY_POLLS =
+            newUpdater(LocalQueueStatsImpl.class, "numberOfEmptyPolls");
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_OTHER_OPERATIONS =
+            newUpdater(LocalQueueStatsImpl.class, "numberOfOtherOperations");
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_EVENTS =
+            newUpdater(LocalQueueStatsImpl.class, "numberOfEvents");
 
     private int ownedItemCount;
     private int backupItemCount;
@@ -139,27 +140,27 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
     }
 
     public void incrementOtherOperations() {
-        NUMBER_OF_OTHER_OPERATIONS_UPDATER.incrementAndGet(this);
+        NUMBER_OF_OTHER_OPERATIONS.incrementAndGet(this);
     }
 
     public void incrementOffers() {
-        NUMBER_OF_OFFERS_UPDATER.incrementAndGet(this);
+        NUMBER_OF_OFFERS.incrementAndGet(this);
     }
 
     public void incrementRejectedOffers() {
-        NUMBER_OF_REJECTED_OFFERS_UPDATER.incrementAndGet(this);
+        NUMBER_OF_REJECTED_OFFERS.incrementAndGet(this);
     }
 
     public void incrementPolls() {
-        NUMBER_OF_POLLS_UPDATER.incrementAndGet(this);
+        NUMBER_OF_POLLS.incrementAndGet(this);
     }
 
     public void incrementEmptyPolls() {
-        NUMBER_OF_EMPTY_POLLS_UPDATER.incrementAndGet(this);
+        NUMBER_OF_EMPTY_POLLS.incrementAndGet(this);
     }
 
     public void incrementReceivedEvents() {
-        NUMBER_OF_EVENTS_UPDATER.incrementAndGet(this);
+        NUMBER_OF_EVENTS.incrementAndGet(this);
     }
 
     @Override
@@ -193,12 +194,12 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         maxAge = getLong(json, "maxAge", -1L);
         aveAge = getLong(json, "aveAge", -1L);
         creationTime = getLong(json, "creationTime", -1L);
-        NUMBER_OF_OFFERS_UPDATER.set(this, getLong(json, "numberOfOffers", -1L));
-        NUMBER_OF_POLLS_UPDATER.set(this, getLong(json, "numberOfPolls", -1L));
-        NUMBER_OF_REJECTED_OFFERS_UPDATER.set(this, getLong(json, "numberOfRejectedOffers", -1L));
-        NUMBER_OF_EMPTY_POLLS_UPDATER.set(this, getLong(json, "numberOfEmptyPolls", -1L));
-        NUMBER_OF_OTHER_OPERATIONS_UPDATER.set(this, getLong(json, "numberOfOtherOperations", -1L));
-        NUMBER_OF_EVENTS_UPDATER.set(this, getLong(json, "numberOfEvents", -1L));
+        NUMBER_OF_OFFERS.set(this, getLong(json, "numberOfOffers", -1L));
+        NUMBER_OF_POLLS.set(this, getLong(json, "numberOfPolls", -1L));
+        NUMBER_OF_REJECTED_OFFERS.set(this, getLong(json, "numberOfRejectedOffers", -1L));
+        NUMBER_OF_EMPTY_POLLS.set(this, getLong(json, "numberOfEmptyPolls", -1L));
+        NUMBER_OF_OTHER_OPERATIONS.set(this, getLong(json, "numberOfOtherOperations", -1L));
+        NUMBER_OF_EVENTS.set(this, getLong(json, "numberOfEvents", -1L));
     }
 
     @Override

@@ -23,24 +23,66 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.EXECUTOR_TEMPLATE_ID,
-        name = "ExecutorService", ns = "Hazelcast.Client.Protocol.ExecutorService")
+        name = "ExecutorService", ns = "Hazelcast.Client.Protocol.Codec")
 public interface ExecutorServiceCodecTemplate {
 
+    /**
+     * Initiates an orderly shutdown in which previously submitted tasks are executed, but no new tasks will be accepted.
+     * Invocation has no additional effect if already shut down.
+     *
+     * @param name Name of the executor.
+     */
     @Request(id = 1, retryable = false, response = ResponseMessageConst.VOID)
     void shutdown(String name);
 
+    /**
+     * Returns true if this executor has been shut down.
+     *
+     * @param name Name of the executor.
+     * @return true if this executor has been shut down
+     */
     @Request(id = 2, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void isShutdown(String name);
+    Object isShutdown(String name);
 
-    @Request(id = 3, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void cancelOnPartition(String uuid, int partitionId, boolean interrupt);
+    /**
+     *
+     * @param uuid Unique id for the execution.
+     * @param partitionId The id of the partition to execute this cancellation request.
+     * @param interrupt If true, then the thread interrupt call can be used to cancel the thread, otherwise interrupt can not be used.
+     * @return True if cancelled successfully, false otherwise.
+     */
+    @Request(id = 3, retryable = false, response = ResponseMessageConst.BOOLEAN, partitionIdentifier = "partitionId")
+    Object cancelOnPartition(String uuid, int partitionId, boolean interrupt);
 
+    /**
+     *
+     * @param uuid Unique id for the execution.
+     * @param address Address of the host to execute the request on.
+     * @param interrupt If true, then the thread interrupt call can be used to cancel the thread, otherwise interrupt can not be used.
+     * @return True if cancelled successfully, false otherwise.
+     */
     @Request(id = 4, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void cancelOnAddress(String uuid, Address address, boolean interrupt);
+    Object cancelOnAddress(String uuid, Address address, boolean interrupt);
 
-    @Request(id = 5, retryable = false, response = ResponseMessageConst.DATA)
-    void submitToPartition(String name, String uuid, Data callable, int partitionId);
+    /**
+     *
+     * @param name Name of the executor.
+     * @param uuid Unique id for the execution.
+     * @param callable The callable object to be executed.
+     * @param partitionId The id of the partition to execute this cancellation request.
+     * @return The result of the callable execution.
+     */
+    @Request(id = 5, retryable = false, response = ResponseMessageConst.DATA, partitionIdentifier = "partitionId")
+    Object submitToPartition(String name, String uuid, Data callable, int partitionId);
 
+    /**
+     *
+     * @param name Name of the executor.
+     * @param uuid Unique id for the execution.
+     * @param callable The callable object to be executed.
+     * @param address The member host on which the callable shall be executed on.
+     * @return The result of the callable execution.
+     */
     @Request(id = 6, retryable = false, response = ResponseMessageConst.DATA)
-    void submitToAddress(String name, String uuid, Data callable, Address address);
+    Object submitToAddress(String name, String uuid, Data callable, Address address);
 }

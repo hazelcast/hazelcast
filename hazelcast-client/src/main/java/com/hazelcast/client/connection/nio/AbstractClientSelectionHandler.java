@@ -45,17 +45,14 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
     protected void shutdown() {
     }
 
-    final void handleSocketException(Throwable e) {
+    @Override
+    public final void onFailure(Throwable e) {
         if (sk != null) {
             sk.cancel();
         }
         connectionManager.destroyConnection(connection);
-        StringBuilder sb = new StringBuilder();
-        sb.append(Thread.currentThread().getName());
-        sb.append(" Closing socket to endpoint ");
-        sb.append(connection.getEndPoint());
-        sb.append(", Cause:").append(e);
-        logger.warning(sb.toString());
+        logger.warning(Thread.currentThread().getName() + " Closing socket to endpoint "
+                + connection.getEndPoint() + ", Cause:" + e);
     }
 
     final void registerOp(final int operation) {
@@ -75,7 +72,7 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
                 }
             }
         } catch (Throwable e) {
-            handleSocketException(e);
+            onFailure(e);
         }
     }
 

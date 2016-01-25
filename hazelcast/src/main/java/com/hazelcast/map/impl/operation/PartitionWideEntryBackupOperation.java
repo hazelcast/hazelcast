@@ -21,16 +21,15 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
-public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOperation implements BackupOperation {
+public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBackupOperation implements BackupOperation {
 
     public PartitionWideEntryBackupOperation() {
     }
@@ -41,19 +40,19 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
 
     @Override
     public void run() {
-        final long now = getNow();
+        long now = getNow();
 
-        final Iterator<Record> iterator = recordStore.iterator(now, true);
+        Iterator<Record> iterator = recordStore.iterator(now, true);
         while (iterator.hasNext()) {
-            final Record record = iterator.next();
-            final Data dataKey = record.getKey();
-            final Object oldValue = record.getValue();
+            Record record = iterator.next();
+            Data dataKey = record.getKey();
+            Object oldValue = record.getValue();
 
-            if (!applyPredicate(dataKey, dataKey, oldValue)) {
+            if (!applyPredicate(dataKey, oldValue)) {
                 continue;
             }
-            final Map.Entry entry = createMapEntry(dataKey, oldValue);
 
+            Map.Entry entry = createMapEntry(dataKey, oldValue);
             processBackup(entry);
 
             if (noOp(entry, oldValue)) {
@@ -64,8 +63,10 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
             }
             entryAddedOrUpdatedBackup(entry, dataKey);
 
-            evict(true);
+            evict();
         }
+
+        publishWanReplicationEventBackups();
     }
 
     protected Predicate getPredicate() {
@@ -77,18 +78,12 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
         return true;
     }
 
-    private boolean applyPredicate(Data dataKey, Object key, Object value) {
+    private boolean applyPredicate(Data key, Object value) {
         if (getPredicate() == null) {
             return true;
         }
-        final SerializationService ss = getNodeEngine().getSerializationService();
-        QueryEntry queryEntry = new QueryEntry(ss, dataKey, key, value);
+        QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
         return getPredicate().apply(queryEntry);
-    }
-
-    @Override
-    public String toString() {
-        return "PartitionWideEntryBackupOperation{}";
     }
 
     @Override

@@ -16,10 +16,9 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 
 public class ObjectRecordFactory implements RecordFactory<Object> {
 
@@ -32,18 +31,17 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
     }
 
     @Override
-    public InMemoryFormat getStorageFormat() {
-        return InMemoryFormat.OBJECT;
-    }
+    public Record<Object> newRecord(Object value) {
+        assert value != null : "value can not be null";
 
-    @Override
-    public Record<Object> newRecord(Data key, Object value) {
         Object objectValue = serializationService.toObject(value);
-        return statisticsEnabled ? new ObjectRecordWithStats(key, objectValue) : new ObjectRecord(key, objectValue);
+        return statisticsEnabled ? new ObjectRecordWithStats(objectValue) : new ObjectRecord(objectValue);
     }
 
     @Override
     public void setValue(Record<Object> record, Object value) {
+        assert value != null : "value can not be null";
+
         Object v = value;
         if (value instanceof Data) {
             v = serializationService.toObject(value);

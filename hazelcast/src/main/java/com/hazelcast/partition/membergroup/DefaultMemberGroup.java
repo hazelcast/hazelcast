@@ -93,10 +93,6 @@ public class DefaultMemberGroup implements MemberGroup {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("DefaultMemberGroup");
-        sb.append("{members=").append(members);
-        sb.append('}');
-        return sb.toString();
+        return "DefaultMemberGroup{members=" + members + '}';
     }
 }

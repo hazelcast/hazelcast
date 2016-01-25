@@ -16,10 +16,13 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.client.impl.protocol.task.MessageTask;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
@@ -37,8 +40,11 @@ import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
+import com.hazelcast.spi.exception.ResponseNotSentException;
 import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
@@ -50,6 +56,7 @@ import com.hazelcast.util.counters.Counter;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.nio.IOUtil.extractOperationCallId;
 import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
@@ -76,7 +83,7 @@ class OperationRunnerImpl extends OperationRunner {
     private final NodeEngineImpl nodeEngine;
     private final AtomicLong executedOperationsCount;
 
-    @Probe
+    @Probe(level = DEBUG)
     private final Counter count;
 
     // This field doesn't need additional synchronization, since a partition-specific OperationRunner
@@ -125,7 +132,8 @@ class OperationRunnerImpl extends OperationRunner {
     }
 
     private boolean publishCurrentTask() {
-        return (getPartitionId() != AD_HOC_PARTITION_ID && currentTask == null);
+        boolean isClientRunnable = currentTask instanceof MessageTask;
+        return (getPartitionId() != AD_HOC_PARTITION_ID && (currentTask == null || isClientRunnable));
     }
 
     @Override
@@ -143,6 +151,8 @@ class OperationRunnerImpl extends OperationRunner {
         }
 
         try {
+            checkNodeState(op);
+
             if (timeout(op)) {
                 return;
             }
@@ -167,6 +177,36 @@ class OperationRunnerImpl extends OperationRunner {
                 currentTask = null;
             }
         }
+    }
+
+    private void checkNodeState(Operation op) {
+        if (node.getState() == NodeState.ACTIVE) {
+            return;
+        }
+
+        final NodeState state = node.getState();
+        if (state == NodeState.SHUT_DOWN) {
+            throw new HazelcastInstanceNotActiveException("This node is shut down! Operation: " + op);
+        }
+
+        if (op instanceof AllowedDuringPassiveState) {
+            return;
+        }
+
+        // Cluster is in passive state. There is no need to retry.
+        if (nodeEngine.getClusterService().getClusterState() == ClusterState.PASSIVE) {
+            throw new IllegalStateException("Cluster is in " + ClusterState.PASSIVE + " state! Operation: " + op);
+        }
+
+        // Operation has no partition id. So it is sent to this node in purpose.
+        // Operation will fail since node is shutting down or cluster is passive.
+        if (op.getPartitionId() < 0) {
+            throw new HazelcastInstanceNotActiveException("This node is currently passive! Operation: " + op);
+        }
+
+        // Custer is not passive but this node is shutting down.
+        // Since operation has a partition id, it must be retried on another node.
+        throw new RetryableHazelcastException("This node is currently shutting down! Operation: " + op);
     }
 
     private void ensureQuorumPresent(Operation op) {
@@ -299,17 +339,19 @@ class OperationRunnerImpl extends OperationRunner {
 
         operation.logError(e);
 
+        if (e instanceof ResponseNotSentException || !operation.returnsResponse()) {
+            return;
+        }
+
         OperationResponseHandler responseHandler = operation.getOperationResponseHandler();
-        if (operation.returnsResponse() && responseHandler != null) {
-            try {
-                if (node.isActive()) {
-                    responseHandler.sendResponse(operation, e);
-                } else if (responseHandler.isLocal()) {
-                    responseHandler.sendResponse(operation, new HazelcastInstanceNotActiveException());
-                }
-            } catch (Throwable t) {
-                logger.warning("While sending op error... op: " + operation + ", error: " + e, t);
+        try {
+            if (nodeEngine.isRunning()) {
+                responseHandler.sendResponse(operation, e);
+            } else if (responseHandler.isLocal()) {
+                responseHandler.sendResponse(operation, new HazelcastInstanceNotActiveException());
             }
+        } catch (Throwable t) {
+            logger.warning("While sending op error... op: " + operation + ", error: " + e, t);
         }
     }
 
@@ -379,7 +421,7 @@ class OperationRunnerImpl extends OperationRunner {
             return true;
         }
 
-        Exception error = new CallerNotMemberException(
+        Exception error = new CallerNotMemberException(node.getThisAddress(),
                 op.getCallerAddress(), op.getPartitionId(),
                 op.getClass().getName(), op.getServiceName());
         handleOperationError(op, error);
@@ -412,7 +454,7 @@ class OperationRunnerImpl extends OperationRunner {
                 logger.log(SEVERE, ignored.getMessage(), t);
             }
         } else {
-            final Level level = operationService.nodeEngine.isActive() ? SEVERE : FINEST;
+            final Level level = nodeEngine.isRunning() ? SEVERE : FINEST;
             if (logger.isLoggable(level)) {
                 logger.log(level, t.getMessage(), t);
             }

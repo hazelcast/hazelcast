@@ -89,8 +89,17 @@ public final class FactoryIdHelper {
     public static final String RINGBUFFER_DS_FACTORY = "hazelcast.serialization.ds.ringbuffer";
     public static final int RINGBUFFER_DS_FACTORY_ID = -29;
 
+    public static final String ENTERPRISE_MAP_DS_FACTORY = "hazelcast.serialization.ds.enterprise.map";
+    public static final int ENTERPRISE_MAP_DS_FACTORY_ID = -30;
+
     public static final String HIBERNATE_DS_FACTORY = "hazelcast.serialization.ds.hibernate";
     public static final String WEB_DS_FACTORY = "hazelcast.serialization.ds.web";
+
+    public static final String WAN_REPLICATION_DS_FACTORY = "hazelcast.serialization.ds.wan_replication";
+    public static final int WAN_REPLICATION_DS_FACTORY_ID = -31;
+
+    public static final String PREDICATE_DS_FACTORY = "hazelcast.serialization.ds.predicate";
+    public static final int PREDICATE_DS_FACTORY_ID = -32;
 
     // =========================== portables =============================================
 
@@ -105,8 +114,6 @@ public final class FactoryIdHelper {
 
     public static final String MAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.map";
     public static final int MAP_PORTABLE_FACTORY_ID = -10;
-
-    public static final String ENTERPRISE_MAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.enterprise.map";
 
     public static final String QUEUE_PORTABLE_FACTORY = "hazelcast.serialization.portable.queue";
     public static final int QUEUE_PORTABLE_FACTORY_ID = -11;
@@ -152,6 +159,9 @@ public final class FactoryIdHelper {
 
     public static final String RINGBUFFER_PORTABLE_FACTORY = "hazelcast.serialization.portable.ringbuffer";
     public static final int RINGBUFFER_PORTABLE_FACTORY_ID = -29;
+
+    public static final String ENTERPRISE_MAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.enterprise.map";
+    public static final int ENTERPRISE_MAP_PORTABLE_FACTORY_ID = -30;
 
     // factory id 0 is reserved for Cluster objects (Data, Address, Member etc)...
 

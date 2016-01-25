@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,10 +36,8 @@ import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.expiry.TouchedExpiryPolicy;
 import java.io.IOException;
-
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
@@ -46,10 +47,10 @@ import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * Contains all the configuration for the {@link com.hazelcast.cache.ICache}
+ * Contains all the configuration for the {@link com.hazelcast.cache.ICache}.
  *
- * @param <K> the key type
- * @param <V> the value type
+ * @param <K> the key type.
+ * @param <V> the value type.
  */
 public class CacheConfig<K, V>
         extends AbstractCacheConfig<K, V> {
@@ -68,8 +69,9 @@ public class CacheConfig<K, V>
     private CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
 
     private WanReplicationRef wanReplicationRef;
-
+    private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
     private String quorumName;
+    private String mergePolicy = CacheSimpleConfig.DEFAULT_CACHE_MERGE_POLICY;
 
     public CacheConfig() {
     }
@@ -88,6 +90,7 @@ public class CacheConfig<K, V>
             this.asyncBackupCount = config.asyncBackupCount;
             this.backupCount = config.backupCount;
             this.inMemoryFormat = config.inMemoryFormat;
+            this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
             // Eviction config cannot be null
             if (config.evictionConfig != null) {
                 this.evictionConfig = new CacheEvictionConfig(config.evictionConfig);
@@ -95,7 +98,12 @@ public class CacheConfig<K, V>
             if (config.wanReplicationRef != null) {
                 this.wanReplicationRef = new WanReplicationRef(config.wanReplicationRef);
             }
+            if (config.partitionLostListenerConfigs != null) {
+                this.partitionLostListenerConfigs = new ArrayList<CachePartitionLostListenerConfig>(
+                        config.partitionLostListenerConfigs);
+            }
             this.quorumName = config.quorumName;
+            this.mergePolicy = config.mergePolicy;
         }
     }
 
@@ -144,8 +152,12 @@ public class CacheConfig<K, V>
                     listenerFactory, filterFactory, isOldValueRequired, synchronous);
             addCacheEntryListenerConfiguration(listenerConfiguration);
         }
-
+        for (CachePartitionLostListenerConfig listenerConfig : simpleConfig.getPartitionLostListenerConfigs()) {
+            getPartitionLostListenerConfigs().add(listenerConfig);
+        }
         this.quorumName = simpleConfig.getQuorumName();
+        this.mergePolicy = simpleConfig.getMergePolicy();
+        this.hotRestartConfig = new HotRestartConfig(simpleConfig.getHotRestartConfig());
     }
 
     private void initExpiryPolicyFactoryConfig(CacheSimpleConfig simpleConfig) throws Exception {
@@ -198,9 +210,9 @@ public class CacheConfig<K, V>
     }
 
     /**
-     * Gets immutable version of this cache config.
+     * Gets immutable version of this cache configuration.
      *
-     * @return Immutable version of this cache config.
+     * @return Immutable version of this cache configuration.
      */
     public CacheConfigReadOnly<K, V> getAsReadOnly() {
         return new CacheConfigReadOnly<K, V>(this);
@@ -295,7 +307,7 @@ public class CacheConfig<K, V>
      * @return The current cache config instance.
      * @throws IllegalArgumentException if backupCount smaller than 0,
      *                                  or larger than the maximum number of backup,
-     *                                  or the sum of the synchronous and asynchonous backups is larger than
+     *                                  or the sum of the synchronous and asynchronous backups is larger than
      *                                  the maximum number of backups.
      * @see #setAsyncBackupCount(int)
      */
@@ -317,7 +329,7 @@ public class CacheConfig<K, V>
     /**
      * Sets the number of asynchronous backups for this {@link com.hazelcast.cache.ICache}.
      *
-     * @param asyncBackupCount The number of asynchronous synchronous backups to set
+     * @param asyncBackupCount The number of asynchronous backups to set
      *                         for this {@link com.hazelcast.cache.ICache}.
      * @return the updated CacheConfig
      * @throws new IllegalArgumentException if asyncBackupCount is smaller than 0,
@@ -381,22 +393,44 @@ public class CacheConfig<K, V>
     }
 
     /**
-     * Gets the data type that will be used for storing records.
+     * Gets the partition lost listener references added to cache configuration.
      *
-     * @return the data storage type of the cache config
+     * @return List of CachePartitionLostListenerConfig.
+     */
+    public List<CachePartitionLostListenerConfig> getPartitionLostListenerConfigs() {
+        if (partitionLostListenerConfigs == null) {
+            partitionLostListenerConfigs = new ArrayList<CachePartitionLostListenerConfig>();
+        }
+        return partitionLostListenerConfigs;
+    }
+
+    /**
+     * Sets the WAN target replication reference.
+     *
+     * @param partitionLostListenerConfigs CachePartitionLostListenerConfig list.
+     */
+    public CacheConfig setPartitionLostListenerConfigs(List<CachePartitionLostListenerConfig> partitionLostListenerConfigs) {
+        this.partitionLostListenerConfigs = partitionLostListenerConfigs;
+        return this;
+    }
+
+    /**
+     * Gets the data type that will be used to store records.
+     *
+     * @return the data storage type of the cache config.
      */
     public InMemoryFormat getInMemoryFormat() {
         return inMemoryFormat;
     }
 
     /**
-     * Data type that will be used for storing records in this {@link com.hazelcast.cache.ICache}.
+     * Data type that will be used to store records in this {@link com.hazelcast.cache.ICache}.
      * Possible values:
-     * BINARY (default): keys and values will be stored as binary data
-     * OBJECT : values will be stored in their object forms
+     * BINARY (default): keys and values will be stored as binary data.
+     * OBJECT: values will be stored in their object forms.
      *
-     * @param inMemoryFormat the record type to set
-     * @return current cache config instance
+     * @param inMemoryFormat the record type to set.
+     * @return current cache config instance.
      * @throws IllegalArgumentException if inMemoryFormat is null.
      */
     public CacheConfig<K, V> setInMemoryFormat(InMemoryFormat inMemoryFormat) {
@@ -405,24 +439,46 @@ public class CacheConfig<K, V>
     }
 
     /**
-     * Gets name of the associated quorum if any
+     * Gets the name of the associated quorum if any.
      *
-     * @return
+     * @return the name of the associated quorum if any
      */
     public String getQuorumName() {
         return quorumName;
     }
 
     /**
-     * Associates this cache configuration to a quorum
+     * Associates this cache configuration to a quorum.
      *
-     * @param quorumName name of the desired quorum
+     * @param quorumName name of the desired quorum.
      *
      * @return the updated CacheConfig.
      */
     public CacheConfig setQuorumName(String quorumName) {
         this.quorumName = quorumName;
         return this;
+    }
+
+    /**
+     * Gets the class name of {@link com.hazelcast.cache.CacheMergePolicy}
+     * implementation of this cache config.
+     *
+     * @return the class name of {@link com.hazelcast.cache.CacheMergePolicy}
+     *         implementation of this cache config
+     */
+    public String getMergePolicy() {
+        return mergePolicy;
+    }
+
+    /**
+     * Sets the class name of {@link com.hazelcast.cache.CacheMergePolicy}
+     * implementation to this cache config.
+     *
+     * @param mergePolicy the class name of {@link com.hazelcast.cache.CacheMergePolicy}
+     *                    implementation to be set to this cache config
+     */
+    public void setMergePolicy(String mergePolicy) {
+        this.mergePolicy = mergePolicy;
     }
 
     @Override
@@ -450,6 +506,8 @@ public class CacheConfig<K, V>
         out.writeBoolean(isStoreByValue);
         out.writeBoolean(isManagementEnabled);
         out.writeBoolean(isStatisticsEnabled);
+        out.writeBoolean(hotRestartConfig.isEnabled());
+        out.writeBoolean(hotRestartConfig.isFsync());
 
         out.writeUTF(quorumName);
 
@@ -461,6 +519,8 @@ public class CacheConfig<K, V>
                 out.writeObject(cc);
             }
         }
+
+        out.writeUTF(mergePolicy);
     }
 
     @Override
@@ -490,6 +550,8 @@ public class CacheConfig<K, V>
         isStoreByValue = in.readBoolean();
         isManagementEnabled = in.readBoolean();
         isStatisticsEnabled = in.readBoolean();
+        hotRestartConfig.setEnabled(in.readBoolean());
+        hotRestartConfig.setFsync(in.readBoolean());
 
         quorumName = in.readUTF();
 
@@ -501,6 +563,8 @@ public class CacheConfig<K, V>
                 listenerConfigurations.add((CacheEntryListenerConfiguration<K, V>) in.readObject());
             }
         }
+
+        mergePolicy = in.readUTF();
     }
 
     @Override
@@ -509,7 +573,6 @@ public class CacheConfig<K, V>
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (managerPrefix != null ? managerPrefix.hashCode() : 0);
         result = 31 * result + (uriString != null ? uriString.hashCode() : 0);
-        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
         return result;
     }
 
@@ -534,9 +597,6 @@ public class CacheConfig<K, V>
         if (uriString != null ? !uriString.equals(that.uriString) : that.uriString != null) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
-            return false;
-        }
 
         return super.equals(o);
     }
@@ -548,6 +608,7 @@ public class CacheConfig<K, V>
                 + ", managerPrefix='" + managerPrefix + '\''
                 + ", inMemoryFormat=" + inMemoryFormat
                 + ", backupCount=" + backupCount
+                + ", hotRestart=" + hotRestartConfig
                 + '}';
     }
 }

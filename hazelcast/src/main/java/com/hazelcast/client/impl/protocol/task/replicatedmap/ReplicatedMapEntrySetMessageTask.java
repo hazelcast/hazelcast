@@ -18,42 +18,28 @@ package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapEntrySetCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
+import com.hazelcast.replicatedmap.impl.operation.EntrySetOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
+import com.hazelcast.spi.Operation;
 import java.security.Permission;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 public class ReplicatedMapEntrySetMessageTask
-        extends AbstractCallableMessageTask<ReplicatedMapEntrySetCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<ReplicatedMapEntrySetCodec.RequestParameters> {
 
     public ReplicatedMapEntrySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        ReplicatedMapService replicatedMapService = getService(getServiceName());
-        final ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-
-        final Set<Map.Entry> entrySet = recordStore.entrySet();
-        HashMap<Data, Data> dataMap = new HashMap<Data, Data>();
-
-        for (Map.Entry entry : entrySet) {
-            dataMap.put(serializationService.toData(entry.getKey()), serializationService.toData(entry.getValue()));
-        }
-
-        return dataMap.entrySet();
+    protected Operation prepareOperation() {
+        return new EntrySetOperation(parameters.name);
     }
-
 
     @Override
     protected ReplicatedMapEntrySetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
@@ -62,7 +48,8 @@ public class ReplicatedMapEntrySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ReplicatedMapEntrySetCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
+        ReplicatedMapEntries entries = (ReplicatedMapEntries) response;
+        return ReplicatedMapEntrySetCodec.encodeResponse(entries.getEntries());
     }
 
     @Override

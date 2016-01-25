@@ -21,16 +21,18 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.tcp.PacketReader;
-import com.hazelcast.nio.tcp.PacketWriter;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
+import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
@@ -56,7 +58,7 @@ public class NodeIOService implements IOService {
 
     @Override
     public boolean isActive() {
-        return node.isActive();
+        return node.getState() != NodeState.SHUT_DOWN;
     }
 
     @Override
@@ -100,11 +102,6 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public void handleClientPacket(Packet p) {
-        node.clientEngine.handlePacket(p);
-    }
-
-    @Override
     public void handleClientMessage(ClientMessage cm, Connection connection) {
         node.clientEngine.handleClientMessage(cm, connection);
     }
@@ -116,12 +113,12 @@ public class NodeIOService implements IOService {
 
     @Override
     public boolean isMemcacheEnabled() {
-        return node.groupProperties.MEMCACHE_ENABLED.getBoolean();
+        return node.groupProperties.getBoolean(GroupProperty.MEMCACHE_ENABLED);
     }
 
     @Override
     public boolean isRestEnabled() {
-        return node.groupProperties.REST_ENABLED.getBoolean();
+        return node.groupProperties.getBoolean(GroupProperty.REST_ENABLED);
     }
 
     @Override
@@ -169,64 +166,64 @@ public class NodeIOService implements IOService {
 
     @Override
     public boolean isSocketBind() {
-        return node.groupProperties.SOCKET_CLIENT_BIND.getBoolean();
+        return node.groupProperties.getBoolean(GroupProperty.SOCKET_CLIENT_BIND);
     }
 
     @Override
     public boolean isSocketBindAny() {
-        return node.groupProperties.SOCKET_CLIENT_BIND_ANY.getBoolean();
+        return node.groupProperties.getBoolean(GroupProperty.SOCKET_CLIENT_BIND_ANY);
     }
 
     @Override
     public int getSocketReceiveBufferSize() {
-        return this.node.getGroupProperties().SOCKET_RECEIVE_BUFFER_SIZE.getInteger();
+        return node.getGroupProperties().getInteger(GroupProperty.SOCKET_RECEIVE_BUFFER_SIZE);
     }
 
     @Override
     public int getSocketSendBufferSize() {
-        return this.node.getGroupProperties().SOCKET_SEND_BUFFER_SIZE.getInteger();
+        return node.getGroupProperties().getInteger(GroupProperty.SOCKET_SEND_BUFFER_SIZE);
     }
 
     @Override
     public int getSocketClientReceiveBufferSize() {
-        int clientSendBuffer = this.node.getGroupProperties().SOCKET_CLIENT_RECEIVE_BUFFER_SIZE.getInteger();
+        int clientSendBuffer = node.getGroupProperties().getInteger(GroupProperty.SOCKET_CLIENT_RECEIVE_BUFFER_SIZE);
         return clientSendBuffer != -1 ? clientSendBuffer : getSocketReceiveBufferSize();
     }
 
     @Override
     public int getSocketClientSendBufferSize() {
-        int clientReceiveBuffer = this.node.getGroupProperties().SOCKET_CLIENT_SEND_BUFFER_SIZE.getInteger();
+        int clientReceiveBuffer = node.getGroupProperties().getInteger(GroupProperty.SOCKET_CLIENT_SEND_BUFFER_SIZE);
         return clientReceiveBuffer != -1 ? clientReceiveBuffer : getSocketReceiveBufferSize();
     }
 
     @Override
     public int getSocketLingerSeconds() {
-        return this.node.getGroupProperties().SOCKET_LINGER_SECONDS.getInteger();
+        return node.getGroupProperties().getSeconds(GroupProperty.SOCKET_LINGER_SECONDS);
     }
 
     @Override
     public int getSocketConnectTimeoutSeconds() {
-        return this.node.getGroupProperties().SOCKET_CONNECT_TIMEOUT_SECONDS.getInteger();
+        return node.getGroupProperties().getSeconds(GroupProperty.SOCKET_CONNECT_TIMEOUT_SECONDS);
     }
 
     @Override
     public boolean getSocketKeepAlive() {
-        return this.node.getGroupProperties().SOCKET_KEEP_ALIVE.getBoolean();
+        return node.getGroupProperties().getBoolean(GroupProperty.SOCKET_KEEP_ALIVE);
     }
 
     @Override
     public boolean getSocketNoDelay() {
-        return this.node.getGroupProperties().SOCKET_NO_DELAY.getBoolean();
+        return node.getGroupProperties().getBoolean(GroupProperty.SOCKET_NO_DELAY);
     }
 
     @Override
     public int getInputSelectorThreadCount() {
-        return node.groupProperties.IO_INPUT_THREAD_COUNT.getInteger();
+        return node.groupProperties.getInteger(GroupProperty.IO_INPUT_THREAD_COUNT);
     }
 
     @Override
     public int getOutputSelectorThreadCount() {
-        return node.groupProperties.IO_OUTPUT_THREAD_COUNT.getInteger();
+        return node.groupProperties.getInteger(GroupProperty.IO_OUTPUT_THREAD_COUNT);
     }
 
     @Override
@@ -240,17 +237,17 @@ public class NodeIOService implements IOService {
 
     @Override
     public long getConnectionMonitorInterval() {
-        return node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong();
+        return node.groupProperties.getMillis(GroupProperty.CONNECTION_MONITOR_INTERVAL);
     }
 
     @Override
     public int getConnectionMonitorMaxFaults() {
-        return node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger();
+        return node.groupProperties.getInteger(GroupProperty.CONNECTION_MONITOR_MAX_FAULTS);
     }
 
     @Override
     public int getBalancerIntervalSeconds() {
-        return node.groupProperties.IO_BALANCER_INTERVAL_SECONDS.getInteger();
+        return node.groupProperties.getSeconds(GroupProperty.IO_BALANCER_INTERVAL_SECONDS);
     }
 
     @Override
@@ -289,13 +286,13 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public PacketReader createPacketReader(TcpIpConnection connection) {
-        return node.getNodeExtension().createPacketReader(connection, this);
+    public ReadHandler createReadHandler(TcpIpConnection connection) {
+        return node.getNodeExtension().createReadHandler(connection, this);
     }
 
     @Override
-    public PacketWriter createPacketWriter(TcpIpConnection connection) {
-        return node.getNodeExtension().createPacketWriter(connection, this);
+    public WriteHandler createWriteHandler(TcpIpConnection connection) {
+        return node.getNodeExtension().createWriteHandler(connection, this);
     }
 
     @Override

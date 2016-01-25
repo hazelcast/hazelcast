@@ -23,20 +23,15 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-
-import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Wrapper class which holds session attributes and jvmIds
+ * Wrapper class which holds session attributes
  */
 
 public class SessionState implements IdentifiedDataSerializable {
 
     private final Map<String, Data> attributes = new HashMap<String, Data>(1);
-    private final Set<String> jvmIds = new HashSet<String>(1);
 
     @Override
     public int getFactoryId() {
@@ -56,26 +51,8 @@ public class SessionState implements IdentifiedDataSerializable {
         attributes.put(key, value);
     }
 
-    public boolean addJvmId(String jvmId) {
-        checkNotNull(jvmId, "JVM Id cannot be null.");
-        return jvmIds.add(jvmId);
-    }
-
-    public boolean removeJvmId(String jvmId) {
-        checkNotNull(jvmId, "JVM Id cannot be null.");
-        return jvmIds.remove(jvmId);
-    }
-
-    public Set<String> getJvmIds() {
-        return jvmIds;
-    }
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(jvmIds.size());
-        for (String jvmId : jvmIds) {
-            out.writeUTF(jvmId);
-        }
         out.writeInt(attributes.size());
         for (Map.Entry<String, Data> entry : attributes.entrySet()) {
             out.writeUTF(entry.getKey());
@@ -85,10 +62,6 @@ public class SessionState implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        int jvmCount = in.readInt();
-        for (int i = 0; i < jvmCount; i++) {
-            jvmIds.add(in.readUTF());
-        }
         int attCount = in.readInt();
         for (int i = 0; i < attCount; i++) {
             attributes.put(in.readUTF(), in.readData());
@@ -102,7 +75,6 @@ public class SessionState implements IdentifiedDataSerializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("SessionState {");
-        sb.append("referenceCount=" + jvmIds.size());
         sb.append(", attributes=" + ((attributes == null) ? 0 : attributes.size()));
         if (attributes != null) {
             for (Map.Entry<String, Data> entry : attributes.entrySet()) {

@@ -22,27 +22,60 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 
 import javax.transaction.xa.Xid;
 
-@GenerateCodec(id = TemplateConstants.XA_TRANSACTION_TEMPLATE_ID, name = "XATransaction", ns = "XATransaction")
+@GenerateCodec(id = TemplateConstants.XA_TRANSACTION_TEMPLATE_ID, name = "XATransaction",
+        ns = "Hazelcast.Client.Protocol.Codec")
 public interface XATransactionalCodecTemplate {
 
-    @Request(id = 1, retryable = false, response = ResponseMessageConst.VOID)
+    /**
+     *
+     * @param xid Java XA transaction id as defined in interface javax.transaction.xa.Xid.
+     */
+    @Request(id = 1, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "xid")
     void clearRemote(Xid xid);
 
-    @Request(id = 2, retryable = false, response = ResponseMessageConst.SET_DATA)
-    void collectTransactions();
+    /**
+     *
+     * @return Array of Xids.
+     */
+    @Request(id = 2, retryable = false, response = ResponseMessageConst.LIST_DATA)
+    Object collectTransactions();
 
-    @Request(id = 3, retryable = false, response = ResponseMessageConst.VOID)
+    /**
+     *
+     * @param xid Java XA transaction id as defined in interface javax.transaction.xa.Xid.
+     * @param isCommit If true, the transaction is committed else transaction is rolled back.
+     */
+    @Request(id = 3, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "xid")
     void finalize(Xid xid, boolean isCommit);
 
+    /**
+     *
+     * @param transactionId The internal Hazelcast transaction id.
+     * @param onePhase If true, the prepare is also done.
+     */
     @Request(id = 4, retryable = false, response = ResponseMessageConst.VOID)
     void commit(String transactionId, boolean onePhase);
 
+    /**
+     *
+     * @param xid Java XA transaction id as defined in interface javax.transaction.xa.Xid.
+     * @param timeout The timeout in seconds for XA operations such as prepare, commit, rollback.
+     * @return The transaction unique identifier.
+     */
     @Request(id = 5, retryable = false, response = ResponseMessageConst.STRING)
-    void create(Xid xid, long timeout);
+    Object create(Xid xid, long timeout);
 
+    /**
+     *
+     * @param transactionId The id of the transaction to prepare.
+     */
     @Request(id = 6, retryable = false, response = ResponseMessageConst.VOID)
     void prepare(String transactionId);
 
+    /**
+     *
+     * @param transactionId The id of the transaction to rollback.
+     */
     @Request(id = 7, retryable = false, response = ResponseMessageConst.VOID)
     void rollback(String transactionId);
 }

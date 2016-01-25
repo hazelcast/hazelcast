@@ -17,8 +17,8 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -55,16 +55,16 @@ public class CachePutAllBackupOperation
     @Override
     public void beforeRun()
             throws Exception {
-        CacheService service = getService();
+        ICacheService service = getService();
         cache = service.getOrCreateRecordStore(name, getPartitionId());
     }
 
     @Override
-    public void run()
-            throws Exception {
+    public void run() throws Exception {
         if (cacheRecords != null) {
             for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
-                cache.putRecord(entry.getKey(), entry.getValue());
+                CacheRecord record = entry.getValue();
+                cache.putRecord(entry.getKey(), record);
             }
         }
     }

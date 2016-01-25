@@ -19,7 +19,7 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.internal.ascii.CommandParser;
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.ascii.memcache.ErrorCommand;
-import com.hazelcast.nio.ascii.SocketTextReader;
+import com.hazelcast.nio.ascii.TextReadHandler;
 
 import java.util.StringTokenizer;
 
@@ -27,15 +27,16 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 
 public class HttpPostCommandParser implements CommandParser {
 
-    public TextCommand parser(SocketTextReader socketTextReader, String cmd, int space) {
+    @Override
+    public TextCommand parser(TextReadHandler readHandler, String cmd, int space) {
         StringTokenizer st = new StringTokenizer(cmd);
         st.nextToken();
-        String uri = null;
+        String uri;
         if (st.hasMoreTokens()) {
             uri = st.nextToken();
         } else {
             return new ErrorCommand(ERROR_CLIENT);
         }
-        return new HttpPostCommand(socketTextReader, uri);
+        return new HttpPostCommand(readHandler, uri);
     }
 }

@@ -23,25 +23,45 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_CHAR;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_SHORT;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_FLOAT;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DOUBLE;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_INTEGER;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_BOOLEAN;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_BOOLEAN_ARRAY;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_BYTE;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_LONG;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_STRING;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_BYTE_ARRAY;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_CHAR;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_CHAR_ARRAY;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_SHORT_ARRAY;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_LONG_ARRAY;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_INTEGER_ARRAY;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_FLOAT_ARRAY;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DOUBLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DOUBLE_ARRAY;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_FLOAT;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_FLOAT_ARRAY;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_INTEGER;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_INTEGER_ARRAY;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_LONG;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_LONG_ARRAY;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_NULL;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_SHORT;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_SHORT_ARRAY;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_STRING;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_STRING_ARRAY;
 
 
 public final class ConstantSerializers {
+
+    public static final class NullSerializer extends SingletonSerializer<Object> {
+
+        @Override
+        public int getTypeId() {
+            return CONSTANT_TYPE_NULL;
+        }
+
+        @Override
+        public Object read(final ObjectDataInput in) throws IOException {
+            return null;
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final Object obj) throws IOException {
+        }
+    }
 
     public static final class ByteSerializer extends SingletonSerializer<Byte> {
 
@@ -227,6 +247,24 @@ public final class ConstantSerializers {
         }
     }
 
+    public static final class BooleanArraySerializer extends SingletonSerializer<boolean[]> {
+
+        @Override
+        public int getTypeId() {
+            return CONSTANT_TYPE_BOOLEAN_ARRAY;
+        }
+
+        @Override
+        public boolean[] read(final ObjectDataInput in) throws IOException {
+            return in.readBooleanArray();
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final boolean[] obj) throws IOException {
+            out.writeBooleanArray(obj);
+        }
+    }
+
     public static final class CharArraySerializer extends SingletonSerializer<char[]> {
 
         @Override
@@ -332,6 +370,24 @@ public final class ConstantSerializers {
         @Override
         public void write(final ObjectDataOutput out, final double[] obj) throws IOException {
             out.writeDoubleArray(obj);
+        }
+    }
+
+    public static final class StringArraySerializer extends SingletonSerializer<String[]> {
+
+        @Override
+        public int getTypeId() {
+            return CONSTANT_TYPE_STRING_ARRAY;
+        }
+
+        @Override
+        public String[] read(final ObjectDataInput in) throws IOException {
+            return in.readUTFArray();
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final String[] obj) throws IOException {
+            out.writeUTFArray(obj);
         }
     }
 

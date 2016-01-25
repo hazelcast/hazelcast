@@ -72,10 +72,9 @@ public class PartitioningStrategyConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("PartitioningStrategyConfig{");
-        sb.append("partitioningStrategyClass='").append(partitioningStrategyClass).append('\'');
-        sb.append(", partitionStrategy=").append(partitionStrategy);
-        sb.append('}');
-        return sb.toString();
+        return "PartitioningStrategyConfig{"
+                + "partitioningStrategyClass='" + partitioningStrategyClass + '\''
+                + ", partitionStrategy=" + partitionStrategy
+                + '}';
     }
 }

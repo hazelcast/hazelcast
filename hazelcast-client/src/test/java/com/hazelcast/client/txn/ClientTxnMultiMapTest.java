@@ -42,6 +42,7 @@ import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -81,7 +82,7 @@ public class ClientTxnMultiMapTest {
 
         tx.commitTransaction();
 
-        assertEquals(Collections.EMPTY_SET, client.getMultiMap(mapName).get(key));
+        assertTrue(client.getMultiMap(mapName).get(key).isEmpty());
     }
 
     @Test
@@ -101,7 +102,7 @@ public class ClientTxnMultiMapTest {
         txnMultiMap.remove(key);
         tx.commitTransaction();
 
-        assertEquals(Collections.EMPTY_SET, multiMap.get(key));
+        assertTrue(multiMap.get(key).isEmpty());
     }
 
     @Test
@@ -161,7 +162,7 @@ public class ClientTxnMultiMapTest {
         mulitMapTxn.put(key, value);
         tx.rollbackTransaction();
 
-        assertEquals(Collections.EMPTY_SET, multiMap.get(key));
+        assertEquals(0, multiMap.get(key).size());
     }
 
     @Test

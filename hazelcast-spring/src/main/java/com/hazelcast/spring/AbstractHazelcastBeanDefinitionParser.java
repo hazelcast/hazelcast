@@ -125,7 +125,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             Collection<String> epn = excludeNames != null && excludeNames.length > 0
                     ? new HashSet<String>(Arrays.asList(excludeNames)) : null;
             fillAttributeValues(node, builder, epn);
-            for (Node n : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+            for (Node n : childElements(node)) {
                 String name = xmlToJavaName(cleanNodeName(n));
                 if (epn != null && epn.contains(name)) {
                     continue;
@@ -159,7 +159,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         protected ManagedList parseListeners(Node node, Class listenerConfigClass) {
             ManagedList listeners = new ManagedList();
             final String implementationAttr = "implementation";
-            for (Node listenerNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+            for (Node listenerNode : childElements(node)) {
                 final BeanDefinitionBuilder listenerConfBuilder = createBeanBuilder(listenerConfigClass);
                 fillAttributeValues(listenerNode, listenerConfBuilder, implementationAttr);
                 Node implementationNode = listenerNode.getAttributes().getNamedItem(implementationAttr);
@@ -173,7 +173,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         protected ManagedList parseProxyFactories(Node node, Class proxyFactoryConfigClass) {
             ManagedList list = new ManagedList();
-            for (Node instanceNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+            for (Node instanceNode : childElements(node)) {
                 final BeanDefinitionBuilder confBuilder = createBeanBuilder(proxyFactoryConfigClass);
                 fillAttributeValues(instanceNode, confBuilder);
                 list.add(confBuilder.getBeanDefinition());
@@ -185,7 +185,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         protected void handleDataSerializableFactories(final Node node, final BeanDefinitionBuilder serializationConfigBuilder) {
             ManagedMap factories = new ManagedMap();
             ManagedMap<Integer, String> classNames = new ManagedMap<Integer, String>();
-            for (Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+            for (Node child : childElements(node)) {
                 final String name = cleanNodeName(child);
                 if ("data-serializable-factory".equals(name)) {
                     final NamedNodeMap attrs = child.getAttributes();
@@ -210,13 +210,14 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             String implementation = "implementation";
             String className = "class-name";
             String typeClassName = "type-class";
+            String overrideJavaSerializationName = "override-java-serialization";
 
             ManagedList serializers = new ManagedList();
-            for (Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+            for (Node child : childElements(node)) {
                 final String name = cleanNodeName(child);
                 if ("global-serializer".equals(name)) {
-                    globalSerializerConfigBuilder =
-                            createGSConfigBuilder(GlobalSerializerConfig.class, child, implementation, className);
+                    globalSerializerConfigBuilder = createGSConfigBuilder(GlobalSerializerConfig.class, child, implementation,
+                            className, overrideJavaSerializationName);
                 }
                 if ("serializer".equals(name)) {
                     BeanDefinitionBuilder serializerConfigBuilder = createBeanBuilder(SerializerConfig.class);
@@ -247,28 +248,31 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             serializationConfigBuilder.addPropertyValue("serializerConfigs", serializers);
         }
 
-        private BeanDefinitionBuilder createGSConfigBuilder(Class<GlobalSerializerConfig> globalSerializerConfigClass,
-                                                            Node child, String implementation, String className) {
+        private BeanDefinitionBuilder createGSConfigBuilder(Class<GlobalSerializerConfig> globalSerializerConfigClass, Node child,
+                                                            String implementation, String className,
+                                                            String overrideJavaSerializationName) {
             BeanDefinitionBuilder globalSerializerConfigBuilder = createBeanBuilder(globalSerializerConfigClass);
             final NamedNodeMap attrs = child.getAttributes();
             final Node implRef = attrs.getNamedItem(implementation);
             final Node classNode = attrs.getNamedItem(className);
+            final Node overrideJavaSerializationNode = attrs.getNamedItem(overrideJavaSerializationName);
             if (implRef != null) {
-                globalSerializerConfigBuilder.addPropertyReference(xmlToJavaName(implementation)
-                        , getTextContent(implRef));
+                globalSerializerConfigBuilder.addPropertyReference(xmlToJavaName(implementation), getTextContent(implRef));
             }
             if (classNode != null) {
                 globalSerializerConfigBuilder.addPropertyValue(xmlToJavaName(className), getTextContent(classNode));
             }
-
+            if (overrideJavaSerializationNode != null) {
+                boolean value = getBooleanValue(getTextContent(overrideJavaSerializationNode));
+                globalSerializerConfigBuilder.addPropertyValue(xmlToJavaName(overrideJavaSerializationName), value);
+            }
             return globalSerializerConfigBuilder;
-
         }
 
         protected void handlePortableFactories(final Node node, final BeanDefinitionBuilder serializationConfigBuilder) {
             ManagedMap factories = new ManagedMap();
             ManagedMap<Integer, String> classNames = new ManagedMap<Integer, String>();
-            for (Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+            for (Node child : childElements(node)) {
                 final String name = cleanNodeName(child);
                 if ("portable-factory".equals(name)) {
                     final NamedNodeMap attrs = child.getAttributes();
@@ -292,8 +296,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             final BeanDefinitionBuilder serializationConfigBuilder = createBeanBuilder(SerializationConfig.class);
             final AbstractBeanDefinition beanDefinition = serializationConfigBuilder.getBeanDefinition();
             fillAttributeValues(node, serializationConfigBuilder);
-            for (Node child : new IterableNodeList(node.getChildNodes())) {
-                final String nodeName = cleanNodeName(child.getNodeName());
+            for (Node child : childElements(node)) {
+                final String nodeName = cleanNodeName(child);
                 if ("data-serializable-factories".equals(nodeName)) {
                     handleDataSerializableFactories(child, serializationConfigBuilder);
                 } else if ("portable-factories".equals(nodeName)) {
@@ -314,7 +318,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             if (implementation != null) {
                 socketInterceptorConfigBuilder.addPropertyReference(xmlToJavaName(implAttribute), implementation);
             }
-            for (Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+            for (Node child : childElements(node)) {
                 final String name = cleanNodeName(child);
                 if ("properties".equals(name)) {
                     handleProperties(child, socketInterceptorConfigBuilder);
@@ -326,8 +330,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         protected void handleProperties(final Node node, BeanDefinitionBuilder beanDefinitionBuilder) {
             ManagedMap properties = new ManagedMap();
-            for (Node n : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
-                final String name = cleanNodeName(n.getNodeName());
+            for (Node n : childElements(node)) {
+                final String name = cleanNodeName(n);
                 final String propertyName;
                 if (!"property".equals(name)) {
                     continue;

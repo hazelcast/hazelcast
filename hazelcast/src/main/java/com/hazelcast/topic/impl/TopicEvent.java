@@ -36,9 +36,9 @@ public class TopicEvent implements IdentifiedDataSerializable {
     }
 
     public TopicEvent(String name, Data data, Address publisherAddress) {
-        publishTime = Clock.currentTimeMillis();
-        this.publisherAddress = publisherAddress;
         this.name = name;
+        this.publishTime = Clock.currentTimeMillis();
+        this.publisherAddress = publisherAddress;
         this.data = data;
     }
 

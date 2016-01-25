@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -40,10 +40,10 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
 
     private void setup(String logRetentionSeconds) {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "1000");
-        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS, logRetentionSeconds);
-        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS, "1");
-        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED, "true");
+        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "1000");
+        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS, logRetentionSeconds);
+        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS, "1");
+        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED, "true");
 
         instance = createHazelcastInstance(config);
         map = getMapWithSingleElement(instance);
@@ -70,8 +70,7 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         // shutdown to stop purging, so the last one or two entry processor invocations will survive
         shutdownOperationService(instance);
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, 4);
@@ -100,7 +99,6 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         sleepSeconds(3);
         shutdownOperationService(instance);
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 0);
+        getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 0);
     }
 }

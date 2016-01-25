@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 
+import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -129,9 +130,9 @@ public class DeferredFailoverClusterTest extends AbstractWebFilterTest {
         assertEquals(2, sessionState.getAttributes().size());
         assertEquals("value", executeRequest("read", serverPort2, cookieStore));
         server2.stop();
-        assertEquals(0, map.size());
+        assertEquals(1, map.size());
         sessionState = (SessionState) map.get(hazelcastSessionId);
-        assertNull(sessionState);
+        assertNotNull(sessionState);
         server1.start();
         assertEquals("true", executeRequest("write", serverPort1, cookieStore));
         server2.start();

@@ -22,19 +22,20 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.serialization.InputOutputFactory;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.UnsafeHelper;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
-import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
-
 
 import java.nio.ByteOrder;
 import java.util.HashMap;
@@ -42,7 +43,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class DefaultSerializationServiceBuilder implements SerializationServiceBuilder {
+public class DefaultSerializationServiceBuilder
+        implements SerializationServiceBuilder {
 
     private static final int DEFAULT_OUT_BUFFER_SIZE = 4 * 1024;
 
@@ -50,7 +52,9 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
 
     protected SerializationConfig config;
 
-    protected int version = -1;
+    protected byte version = -1;
+
+    protected int portableVersion = -1;
 
     protected final Map<Integer, DataSerializableFactory> dataSerializableFactories =
             new HashMap<Integer, DataSerializableFactory>();
@@ -80,11 +84,22 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     protected HazelcastInstance hazelcastInstance;
 
     @Override
-    public SerializationServiceBuilder setVersion(int version) {
-        if (version < 0) {
-            throw new IllegalArgumentException("Version cannot be negative!");
+    public SerializationServiceBuilder setVersion(byte version) {
+        byte maxVersion = BuildInfoProvider.getBuildInfo().getSerializationVersion();
+        if (version > maxVersion) {
+            throw new IllegalArgumentException(
+                    "Configured serialization version is higher than the max supported version :" + maxVersion);
         }
         this.version = version;
+        return this;
+    }
+
+    @Override
+    public SerializationServiceBuilder setPortableVersion(int portableVersion) {
+        if (portableVersion < 0) {
+            throw new IllegalArgumentException("Portable Version cannot be negative!");
+        }
+        this.portableVersion = portableVersion;
         return this;
     }
 
@@ -97,8 +112,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     @Override
     public SerializationServiceBuilder setConfig(SerializationConfig config) {
         this.config = config;
-        if (version < 0) {
-            version = config.getPortableVersion();
+        if (portableVersion < 0) {
+            portableVersion = config.getPortableVersion();
         }
         checkClassDefErrors = config.isCheckClassDefErrors();
         useNativeByteOrder = config.isUseNativeByteOrder();
@@ -192,9 +207,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
 
     @Override
     public SerializationService build() {
-        if (version < 0) {
-            version = 0;
-        }
+        initVersions();
         if (config != null) {
             addConfigDataSerializableFactories(dataSerializableFactories, config, classLoader);
             addConfigPortableFactories(portableFactories, config, classLoader);
@@ -202,7 +215,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         }
 
         InputOutputFactory inputOutputFactory = createInputOutputFactory();
-        SerializationServiceImpl ss = createSerializationService(inputOutputFactory);
+        SerializationService ss = createSerializationService(inputOutputFactory);
 
         registerSerializerHooks(ss);
 
@@ -222,20 +235,47 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                     ((HazelcastInstanceAware) serializer).setHazelcastInstance(hazelcastInstance);
                 }
 
-                ss.registerGlobal(serializer);
+                ((AbstractSerializationService) ss)
+                        .registerGlobal(serializer, globalSerializerConfig.isOverrideJavaSerialization());
             }
         }
         return ss;
     }
 
-    protected SerializationServiceImpl createSerializationService(InputOutputFactory inputOutputFactory) {
-        return new SerializationServiceImpl(inputOutputFactory, version,
-                    classLoader, dataSerializableFactories,
-                    portableFactories, classDefinitions, checkClassDefErrors, managedContext, partitioningStrategy,
-                    initialOutputBufferSize, enableCompression, enableSharedObject, new BufferPoolFactoryImpl());
+    private void initVersions() {
+        if (version < 0) {
+            String defaultVal = GroupProperty.SERIALIZATION_VERSION.getDefaultValue();
+            byte versionCandidate = Byte.parseByte(System.getProperty(GroupProperty.SERIALIZATION_VERSION.getName(), defaultVal));
+            byte maxVersion = Byte.parseByte(defaultVal);
+            if (versionCandidate > maxVersion) {
+                throw new IllegalArgumentException(
+                        "Configured serialization version is higher than the max supported version :" + maxVersion);
+            }
+            version = versionCandidate;
+        }
+        if (portableVersion < 0) {
+            portableVersion = 0;
+        }
     }
 
-    private void registerSerializerHooks(SerializationServiceImpl ss) {
+    protected SerializationService createSerializationService(InputOutputFactory inputOutputFactory) {
+        switch (version) {
+            case 1:
+                SerializationServiceV1 serializationServiceV1 = new SerializationServiceV1(inputOutputFactory, version,
+                        portableVersion, classLoader, dataSerializableFactories, portableFactories, managedContext,
+                        partitioningStrategy, initialOutputBufferSize, new BufferPoolFactoryImpl(), enableCompression,
+                        enableSharedObject);
+                serializationServiceV1.registerClassDefinitions(classDefinitions, checkClassDefErrors);
+                return serializationServiceV1;
+
+            //Future version note: add new versions here
+            //adding case's for each version and instantiate it properly
+            default:
+                throw new IllegalArgumentException("Serialization version is not supported!");
+        }
+    }
+
+    private void registerSerializerHooks(SerializationService ss) {
         SerializerHookLoader serializerHookLoader = new SerializerHookLoader(config, classLoader);
         Map<Class, Object> serializers = serializerHookLoader.getSerializers();
         for (Map.Entry<Class, Object> entry : serializers.entrySet()) {
@@ -251,9 +291,9 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                 ((HazelcastInstanceAware) value).setHazelcastInstance(hazelcastInstance);
             }
             if (ClassLoaderUtil.isInternalType(value.getClass())) {
-                ss.safeRegister(serializationType, serializer);
+                ((AbstractSerializationService) ss).safeRegister(serializationType, serializer);
             } else {
-                ss.register(serializationType, serializer);
+                ((AbstractSerializationService) ss).register(serializationType, serializer);
             }
         }
     }
@@ -293,8 +333,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                 throw new IllegalArgumentException("DataSerializableFactory factoryId must be positive! -> " + factory);
             }
             if (dataSerializableFactories.containsKey(factoryId)) {
-                throw new IllegalArgumentException("DataSerializableFactory with factoryId '"
-                        + factoryId + "' is already registered!");
+                throw new IllegalArgumentException(
+                        "DataSerializableFactory with factoryId '" + factoryId + "' is already registered!");
             }
             dataSerializableFactories.put(factoryId, factory);
         }
@@ -307,12 +347,11 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
             int factoryId = entry.getKey();
             String factoryClassName = entry.getValue();
             if (factoryId <= 0) {
-                throw new IllegalArgumentException("DataSerializableFactory factoryId must be positive! -> "
-                        + factoryClassName);
+                throw new IllegalArgumentException("DataSerializableFactory factoryId must be positive! -> " + factoryClassName);
             }
             if (dataSerializableFactories.containsKey(factoryId)) {
-                throw new IllegalArgumentException("DataSerializableFactory with factoryId '"
-                        + factoryId + "' is already registered!");
+                throw new IllegalArgumentException(
+                        "DataSerializableFactory with factoryId '" + factoryId + "' is already registered!");
             }
             DataSerializableFactory factory;
             try {
@@ -325,8 +364,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         }
     }
 
-    private void addConfigPortableFactories(final Map<Integer, PortableFactory> portableFactories,
-                                            SerializationConfig config, ClassLoader cl) {
+    private void addConfigPortableFactories(final Map<Integer, PortableFactory> portableFactories, SerializationConfig config,
+                                            ClassLoader cl) {
 
         registerPortableFactories(portableFactories, config);
         buildPortableFactories(portableFactories, config, cl);

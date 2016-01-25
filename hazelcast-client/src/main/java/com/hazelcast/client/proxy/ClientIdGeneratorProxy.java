@@ -17,73 +17,34 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.ClientProxy;
+import com.hazelcast.concurrent.idgen.IdGeneratorImpl;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IdGenerator;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
 public class ClientIdGeneratorProxy extends ClientProxy implements IdGenerator {
 
+    private final IdGeneratorImpl idGeneratorImpl;
 
-    private static final int BLOCK_SIZE = 10000;
 
-    final String name;
-
-    final IAtomicLong atomicLong;
-
-    AtomicInteger residue;
-
-    AtomicLong local;
-
-    public ClientIdGeneratorProxy(String serviceName, String objectId, IAtomicLong atomicLong) {
+    public ClientIdGeneratorProxy(String serviceName, String objectId, IAtomicLong blockGenerator) {
         super(serviceName, objectId);
-        this.atomicLong = atomicLong;
-        this.name = objectId;
-        residue = new AtomicInteger(BLOCK_SIZE);
-        local = new AtomicLong(-1);
+        this.idGeneratorImpl = new IdGeneratorImpl(blockGenerator);
     }
 
     public boolean init(long id) {
-        if (id < 0) {
-            return false;
-        }
-        long step = (id / BLOCK_SIZE);
-
-        synchronized (this) {
-            boolean init = atomicLong.compareAndSet(0, step + 1);
-            if (init) {
-                local.set(step);
-                residue.set((int) (id % BLOCK_SIZE) + 1);
-            }
-            return init;
-        }
-
+        return idGeneratorImpl.init(id);
     }
 
     public long newId() {
-        int value = residue.getAndIncrement();
-        if (value >= BLOCK_SIZE) {
-            synchronized (this) {
-                value = residue.get();
-                if (value >= BLOCK_SIZE) {
-                    local.set(atomicLong.getAndIncrement());
-                    residue.set(0);
-                }
-                return newId();
-            }
-        }
-        return local.get() * BLOCK_SIZE + value;
+        return idGeneratorImpl.newId();
     }
 
     protected void onDestroy() {
-        atomicLong.destroy();
-        residue = null;
-        local = null;
+        idGeneratorImpl.destroy();
     }
 
     @Override
     public String toString() {
-        return "IdGenerator{" + "name='" + getName() + '\'' + '}';
+        return "IdGenerator{" + "name='" + name + '\'' + '}';
     }
 }

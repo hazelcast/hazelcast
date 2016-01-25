@@ -16,8 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.StringUtil;
+
 import java.util.Collection;
 import java.util.HashSet;
+
 /**
  * Contains configuration for Network.
  */
@@ -55,7 +58,7 @@ public class NetworkConfig {
     private SSLConfig sslConfig;
 
     public NetworkConfig() {
-        String os = System.getProperty("os.name").toLowerCase();
+        String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
         reuseAddress = (!os.contains("win"));
     }
 
@@ -234,6 +237,13 @@ public class NetworkConfig {
         return publicAddress;
     }
 
+    /**
+     * Overrides the public address of a member.
+     * Behind a NAT, two endpoints may not be able to see/access each other.
+     * If both nodes set their public addresses to their defined addresses on NAT, then that way
+     * they can communicate with each other.
+     * It should be set in the format “host IP address:port number”.
+     */
     public NetworkConfig setPublicAddress(String publicAddress) {
         this.publicAddress = publicAddress;
         return this;
@@ -308,18 +318,16 @@ public class NetworkConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("NetworkConfig {");
-        sb.append("publicAddress='").append(publicAddress).append('\'');
-        sb.append(", port=").append(port);
-        sb.append(", portCount=").append(portCount);
-        sb.append(", portAutoIncrement=").append(portAutoIncrement);
-        sb.append(", join=").append(join);
-        sb.append(", interfaces=").append(interfaces);
-        sb.append(", sslConfig=").append(sslConfig);
-        sb.append(", socketInterceptorConfig=").append(socketInterceptorConfig);
-        sb.append(", symmetricEncryptionConfig=").append(symmetricEncryptionConfig);
-        sb.append('}');
-        return sb.toString();
+        return "NetworkConfig{"
+                + "publicAddress='" + publicAddress + '\''
+                + ", port=" + port
+                + ", portCount=" + portCount
+                + ", portAutoIncrement=" + portAutoIncrement
+                + ", join=" + join
+                + ", interfaces=" + interfaces
+                + ", sslConfig=" + sslConfig
+                + ", socketInterceptorConfig=" + socketInterceptorConfig
+                + ", symmetricEncryptionConfig=" + symmetricEncryptionConfig
+                + '}';
     }
 }

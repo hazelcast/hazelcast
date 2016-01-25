@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.cache.BuiltInCacheMergePolicies;
+import com.hazelcast.cache.merge.PassThroughCacheMergePolicy;
 import com.hazelcast.partition.InternalPartition;
 
 import java.util.ArrayList;
@@ -27,7 +29,7 @@ import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * Simple configuration to hold parsed xml configuration.
+ * Simple configuration to hold parsed XML configuration.
  * CacheConfig depends on the JCache API. If the JCache API is not in the classpath,
  * you can use CacheSimpleConfig as a communicator between the code and CacheConfig.
  */
@@ -58,6 +60,11 @@ public class CacheSimpleConfig {
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionConfig.DEFAULT_EVICTION_POLICY;
 
+    /**
+     * Default policy for merging
+     */
+    public static final String DEFAULT_CACHE_MERGE_POLICY = PassThroughCacheMergePolicy.class.getName();
+
     private String name;
 
     private String keyType;
@@ -78,9 +85,9 @@ public class CacheSimpleConfig {
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
-    // Default value of eviction config is
-    //      * ENTRY_COUNT with 10.000 max entry count
-    //      * LRU as eviction policy
+    // Default values of the eviction configuration are:
+    //      * ENTRY_COUNT with 10.000 as the max-size policy.
+    //      * LRU as the eviction-policy.
     private EvictionConfig evictionConfig = new EvictionConfig();
     private WanReplicationRef wanReplicationRef;
 
@@ -88,6 +95,13 @@ public class CacheSimpleConfig {
 
     private String quorumName;
 
+    private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
+
+    private String mergePolicy = BuiltInCacheMergePolicies.getDefault().getImplementationClassName();
+
+    private HotRestartConfig hotRestartConfig = new HotRestartConfig();
+
+    @SuppressWarnings("checkstyle:executablestatementcount")
     public CacheSimpleConfig(CacheSimpleConfig cacheSimpleConfig) {
         this.name = cacheSimpleConfig.name;
         this.keyType = cacheSimpleConfig.keyType;
@@ -108,7 +122,11 @@ public class CacheSimpleConfig {
             this.evictionConfig = cacheSimpleConfig.evictionConfig;
         }
         this.wanReplicationRef = cacheSimpleConfig.wanReplicationRef;
+        this.partitionLostListenerConfigs =
+                new ArrayList<CachePartitionLostListenerConfig>(cacheSimpleConfig.getPartitionLostListenerConfigs());
         this.quorumName = cacheSimpleConfig.quorumName;
+        this.mergePolicy = cacheSimpleConfig.mergePolicy;
+        this.hotRestartConfig = new HotRestartConfig(cacheSimpleConfig.hotRestartConfig);
     }
 
     public CacheSimpleConfig() {
@@ -147,7 +165,7 @@ public class CacheSimpleConfig {
     }
 
     /**
-     * Get the key type for this {@link com.hazelcast.cache.ICache}.
+     * Gets the key type for this {@link com.hazelcast.cache.ICache}.
      *
      * @return The key type.
      */
@@ -167,7 +185,7 @@ public class CacheSimpleConfig {
     }
 
     /**
-     * Get the value type for this {@link com.hazelcast.cache.ICache}.
+     * Gets the value type for this {@link com.hazelcast.cache.ICache}.
      *
      * @return The value type for this {@link com.hazelcast.cache.ICache}.
      */
@@ -465,41 +483,114 @@ public class CacheSimpleConfig {
     }
 
     /**
-     * Gets the Wan target replication reference.
+     * Gets the WAN target replication reference.
      *
-     * @return The Wan target replication reference.
+     * @return The WAN target replication reference.
      */
     public WanReplicationRef getWanReplicationRef() {
         return wanReplicationRef;
     }
 
     /**
-     * Sets the Wan target replication reference.
+     * Sets the WAN target replication reference.
      *
-     * @param wanReplicationRef the Wan target replication reference.
+     * @param wanReplicationRef the WAN target replication reference.
      */
     public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
     }
 
     /**
-     * Gets name of the associated quorum if any
+     * Gets the partition lost listener references added to cache configuration.
      *
-     * @return
+     * @return List of CachePartitionLostListenerConfig.
+     */
+    public List<CachePartitionLostListenerConfig> getPartitionLostListenerConfigs() {
+        if (partitionLostListenerConfigs == null) {
+            partitionLostListenerConfigs = new ArrayList<CachePartitionLostListenerConfig>();
+        }
+        return partitionLostListenerConfigs;
+    }
+
+    /**
+     * Sets the PartitionLostListenerConfigs.
+     *
+     * @param partitionLostListenerConfigs CachePartitionLostListenerConfig list.
+     */
+    public CacheSimpleConfig setPartitionLostListenerConfigs(
+            List<CachePartitionLostListenerConfig> partitionLostListenerConfigs) {
+        this.partitionLostListenerConfigs = partitionLostListenerConfigs;
+        return this;
+    }
+
+    /**
+     * Adds the CachePartitionLostListenerConfig to partitionLostListenerConfigs.
+     *
+     * @param listenerConfig CachePartitionLostListenerConfig to be added.
+     */
+    public CacheSimpleConfig addCachePartitionLostListenerConfig(CachePartitionLostListenerConfig listenerConfig) {
+        getPartitionLostListenerConfigs().add(listenerConfig);
+        return this;
+    }
+
+    /**
+     * Gets the name of the associated quorum if any.
+     *
+     * @return the name of the associated quorum if any
      */
     public String getQuorumName() {
         return quorumName;
     }
 
     /**
-     * Associates this cache configuration to a quorum
+     * Associates this cache configuration to a quorum.
      *
-     * @param quorumName name of the desired quorum
+     * @param quorumName name of the desired quorum.
      *
      * @return the updated CacheSimpleConfig.
      */
     public CacheSimpleConfig setQuorumName(String quorumName) {
         this.quorumName = quorumName;
+        return this;
+    }
+
+    /**
+     * Gets the class name of {@link com.hazelcast.cache.CacheMergePolicy}
+     * implementation of this cache config.
+     *
+     * @return the class name of {@link com.hazelcast.cache.CacheMergePolicy}
+     *         implementation of this cache config
+     */
+    public String getMergePolicy() {
+        return mergePolicy;
+    }
+
+    /**
+     * Sets the class name of {@link com.hazelcast.cache.CacheMergePolicy}
+     * implementation to this cache config.
+     *
+     * @param mergePolicy the class name of {@link com.hazelcast.cache.CacheMergePolicy}
+     *                    implementation to be set to this cache config
+     */
+    public void setMergePolicy(String mergePolicy) {
+        this.mergePolicy = mergePolicy;
+    }
+
+    /**
+     * Gets the {@code HotRestartConfig} for this {@code CacheSimpleConfig}
+     * @return hot restart config
+     */
+    public HotRestartConfig getHotRestartConfig() {
+        return hotRestartConfig;
+    }
+
+    /**
+     * Sets the {@code HotRestartConfig} for this {@code CacheSimpleConfig}
+     * @param hotRestartConfig hot restart config
+     * @return this {@code CacheSimpleConfig} instance
+     */
+    public CacheSimpleConfig setHotRestartConfig(HotRestartConfig hotRestartConfig) {
+        this.hotRestartConfig = hotRestartConfig;
         return this;
     }
 

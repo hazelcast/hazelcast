@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
@@ -55,8 +56,16 @@ public class MapAddPartitionLostListenerMessageTask
             }
         };
 
-        String registrationId = mapService.getMapServiceContext().addPartitionLostListener(listener, parameters.name);
-        endpoint.setListenerRegistration(MapService.SERVICE_NAME, parameters.name, registrationId);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+
+        String registrationId;
+        if (parameters.localOnly) {
+            registrationId = mapServiceContext.addLocalPartitionLostListener(listener, parameters.name);
+        } else {
+            registrationId = mapServiceContext.addPartitionLostListener(listener, parameters.name);
+        }
+
+        endpoint.addListenerDestroyAction(MapService.SERVICE_NAME, parameters.name, registrationId);
         return registrationId;
     }
 
@@ -83,7 +92,7 @@ public class MapAddPartitionLostListenerMessageTask
 
     @Override
     public Object[] getParameters() {
-        return null;
+        return new Object[]{null};
     }
 
     @Override

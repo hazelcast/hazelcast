@@ -4,3 +4,6 @@ com.hazelcast.client.impl.protocol.util.UnsafeBuffer
 com.hazelcast.client.impl.protocol.util.BufferBuilder
 contain code originating from the Agrona project
 (https://github.com/real-logic/Agrona).
+
+The class com.hazelcast.util.HashUtil contains code originating
+from the Koloboke project (https://github.com/OpenHFT/Koloboke).

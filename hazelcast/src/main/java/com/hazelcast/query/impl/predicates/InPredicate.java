@@ -30,8 +30,9 @@ import java.util.Set;
 /**
  * In Predicate
  */
-public class InPredicate extends AbstractPredicate {
-    private Comparable[] values;
+public class InPredicate extends AbstractIndexAwarePredicate {
+
+    Comparable[] values;
     private volatile Set<Comparable> convertedInValues;
 
     public InPredicate() {
@@ -47,20 +48,19 @@ public class InPredicate extends AbstractPredicate {
     }
 
     @Override
-    public boolean apply(Map.Entry entry) {
-        Comparable entryValue = readAttribute(entry);
-        if (entryValue == null) {
+    protected boolean applyForSingleAttributeValue(Map.Entry entry, Comparable attributeValue) {
+        if (attributeValue == null) {
             return false;
         }
         Set<Comparable> set = convertedInValues;
         if (set == null) {
             set = new HashSet<Comparable>(values.length);
             for (Comparable value : values) {
-                set.add(convert(entry, entryValue, value));
+                set.add(convert(entry, attributeValue, value));
             }
             convertedInValues = set;
         }
-        return set.contains(entryValue);
+        return set.contains(attributeValue);
     }
 
     @Override
@@ -95,7 +95,7 @@ public class InPredicate extends AbstractPredicate {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append(attribute);
+        sb.append(attributeName);
         sb.append(" IN (");
         for (int i = 0; i < values.length; i++) {
             if (i > 0) {
@@ -105,5 +105,10 @@ public class InPredicate extends AbstractPredicate {
         }
         sb.append(")");
         return sb.toString();
+    }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.IN_PREDICATE;
     }
 }

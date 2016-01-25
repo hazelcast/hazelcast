@@ -26,7 +26,7 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -86,7 +86,7 @@ public class ClientCacheConfigTest {
     @After
     public void tearDown() {
         HazelcastClient.shutdownAll();
-        HazelcastInstanceFactory.terminateAll();
+        HazelcastInstanceManager.terminateAll();
     }
 
     @Test
@@ -137,15 +137,14 @@ public class ClientCacheConfigTest {
     public void cacheManagerByInstanceNameTest()
             throws URISyntaxException {
         assertEquals(0, HazelcastClient.getAllHazelcastClients().size());
+        String instanceName = "ClientInstanceTest";
+
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getGroupConfig().setName("cluster1");
         clientConfig.getGroupConfig().setPassword("cluster1pass");
-
-        String instanceName = "ClientInstanceTest";
         clientConfig.setInstanceName(instanceName);
-        
+
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        
         assertEquals(instanceName, client.getName());
         
         URI uri1 = new URI("MY-SCOPE");

@@ -24,10 +24,11 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.concurrent.ConcurrentMap;
 
@@ -57,6 +58,7 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
         for (final RecordStore recordStore : recordStores.values()) {
             if (recordStore.size() > 0 && recordStore.isExpirable()) {
                 recordStore.evictExpiredEntries(expirationPercentage, backup);
+                recordStore.disposeDeferredBlocks();
             }
         }
     }
@@ -92,7 +94,9 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
     }
 
     @Override
-    public String toString() {
-        return "ClearExpiredOperation{}";
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", expirationPercentage=").append(expirationPercentage);
     }
 }

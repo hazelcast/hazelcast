@@ -49,7 +49,7 @@ public class GetEntryViewOperation extends KeyBasedMapOperation implements Reado
         Record record = recordStore.getRecordOrNull(dataKey);
         if (record != null) {
             Data value = mapServiceContext.toData(record.getValue());
-            result = EntryViews.createSimpleEntryView(record.getKey(), value, record);
+            result = EntryViews.createSimpleEntryView(dataKey, value, record);
         }
     }
 
@@ -71,10 +71,5 @@ public class GetEntryViewOperation extends KeyBasedMapOperation implements Reado
     @Override
     public Object getResponse() {
         return result;
-    }
-
-    @Override
-    public String toString() {
-        return "GetEntryViewOperation{}";
     }
 }

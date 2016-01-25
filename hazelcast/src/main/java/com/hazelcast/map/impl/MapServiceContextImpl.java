@@ -19,59 +19,72 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.map.impl.eviction.EvictionOperator;
+import com.hazelcast.map.impl.event.MapEventPublisher;
+import com.hazelcast.map.impl.event.MapEventPublisherImpl;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
-import com.hazelcast.map.impl.operation.MapPartitionDestroyOperation;
+import com.hazelcast.map.impl.operation.BasePutOperation;
+import com.hazelcast.map.impl.operation.BaseRemoveOperation;
+import com.hazelcast.map.impl.operation.GetOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
+import com.hazelcast.map.impl.operation.MapOperationProviders;
+import com.hazelcast.map.impl.operation.MapPartitionDestroyTask;
+import com.hazelcast.map.impl.query.MapQueryEngine;
+import com.hazelcast.map.impl.query.MapQueryEngineImpl;
+import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.map.merge.MergePolicyProvider;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.spi.Operation;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.Collections;
-import java.util.LinkedHashSet;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
+import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.query.impl.predicates.QueryOptimizerFactory.newOptimizer;
 
 /**
  * Default implementation of map service context.
  */
 class MapServiceContextImpl implements MapServiceContext {
-    private static final long DESTROY_TIMEOUT_SECONDS = 30;
+    protected static final long DESTROY_TIMEOUT_SECONDS = 30;
 
-    private final NodeEngine nodeEngine;
-    private final PartitionContainer[] partitionContainers;
-    private final ConcurrentMap<String, MapContainer> mapContainers;
-    private final AtomicReference<Collection<Integer>> ownedPartitions;
-    private final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
+    protected final NodeEngine nodeEngine;
+    protected final PartitionContainer[] partitionContainers;
+    protected final ConcurrentMap<String, MapContainer> mapContainers;
+    protected final AtomicReference<Collection<Integer>> ownedPartitions;
+    protected final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
         public MapContainer createNew(String mapName) {
             final MapServiceContext mapServiceContext = getService().getMapServiceContext();
             final Config config = nodeEngine.getConfig();
             final MapConfig mapConfig = config.findMapConfig(mapName);
-            final MapContainer mapContainer = new MapContainer(mapName, mapConfig, mapServiceContext);
-            return mapContainer;
+            return new MapContainer(mapName, mapConfig, mapServiceContext);
         }
     };
     /**
@@ -80,31 +93,57 @@ class MapServiceContextImpl implements MapServiceContext {
      * This is used by owner and backups together so it should be defined
      * getting this into account.
      */
-    private final AtomicInteger writeBehindQueueItemCounter = new AtomicInteger(0);
-    private final ExpirationManager expirationManager;
-    private final NearCacheProvider nearCacheProvider;
-    private final LocalMapStatsProvider localMapStatsProvider;
-    private final MergePolicyProvider mergePolicyProvider;
-    private final MapContextQuerySupport mapContextQuerySupport;
-    private MapEventPublisher mapEventPublisher;
-    private EvictionOperator evictionOperator;
-    private MapService mapService;
+    protected final AtomicInteger writeBehindQueueItemCounter = new AtomicInteger(0);
+    protected final ExpirationManager expirationManager;
+    protected final NearCacheProvider nearCacheProvider;
+    protected final LocalMapStatsProvider localMapStatsProvider;
+    protected final MergePolicyProvider mergePolicyProvider;
+    protected final MapQueryEngine mapQueryEngine;
+    protected MapEventPublisher mapEventPublisher;
+    protected MapService mapService;
+    protected EventService eventService;
+    protected MapOperationProviders operationProviders;
 
-    public MapServiceContextImpl(NodeEngine nodeEngine) {
+    MapServiceContextImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        this.partitionContainers = new PartitionContainer[partitionCount];
+        this.partitionContainers = createPartitionContainers();
         this.mapContainers = new ConcurrentHashMap<String, MapContainer>();
         this.ownedPartitions = new AtomicReference<Collection<Integer>>();
         this.expirationManager = new ExpirationManager(this, nodeEngine);
-        this.evictionOperator = EvictionOperator.create(this);
-        this.nearCacheProvider = new NearCacheProvider(this, nodeEngine);
-        this.localMapStatsProvider = new LocalMapStatsProvider(this, nodeEngine);
+        this.nearCacheProvider = createNearCacheProvider();
+        this.localMapStatsProvider = createLocalMapStatsProvider();
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
         this.mapEventPublisher = createMapEventPublisherSupport();
-        this.mapContextQuerySupport = new BasicMapContextQuerySupport(this);
+        this.mapQueryEngine = createMapQueryEngine();
+        this.eventService = nodeEngine.getEventService();
+        this.operationProviders = createOperationProviders();
     }
 
+    MapOperationProviders createOperationProviders() {
+        return new MapOperationProviders(this);
+    }
+
+    // this method is overridden in another context.
+    LocalMapStatsProvider createLocalMapStatsProvider() {
+        return new LocalMapStatsProvider(this);
+    }
+
+    // this method is overridden in another context.
+    MapQueryEngineImpl createMapQueryEngine() {
+        return new MapQueryEngineImpl(this, newOptimizer(nodeEngine.getGroupProperties()));
+    }
+
+    // this method is overridden in another context.
+    NearCacheProvider createNearCacheProvider() {
+        return new NearCacheProvider(this);
+    }
+
+    PartitionContainer[] createPartitionContainers() {
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        return new PartitionContainer[partitionCount];
+    }
+
+    // this method is overridden.
     MapEventPublisherImpl createMapEventPublisherSupport() {
         return new MapEventPublisherImpl(this);
     }
@@ -113,6 +152,7 @@ class MapServiceContextImpl implements MapServiceContext {
     public MapContainer getMapContainer(String mapName) {
         return ConcurrencyUtil.getOrPutSynchronized(mapContainers, mapName, mapContainers, mapConstructor);
     }
+
 
     @Override
     public Map<String, MapContainer> getMapContainers() {
@@ -127,7 +167,6 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public void initPartitionsContainers() {
         final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        final PartitionContainer[] partitionContainers = this.partitionContainers;
         for (int i = 0; i < partitionCount; i++) {
             partitionContainers[i] = new PartitionContainer(getService(), i);
         }
@@ -138,7 +177,7 @@ class MapServiceContextImpl implements MapServiceContext {
         final PartitionContainer container = partitionContainers[partitionId];
         if (container != null) {
             for (RecordStore mapPartition : container.getMaps().values()) {
-                mapPartition.clearPartition();
+                mapPartition.clearPartition(false);
             }
             container.getMaps().clear();
         }
@@ -150,11 +189,16 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public void clearPartitions() {
+    public void setService(MapService mapService) {
+        this.mapService = mapService;
+    }
+
+    @Override
+    public void clearPartitions(boolean onShutdown) {
         final PartitionContainer[] containers = partitionContainers;
         for (PartitionContainer container : containers) {
             if (container != null) {
-                container.clear();
+                container.clear(onShutdown);
             }
         }
     }
@@ -173,36 +217,27 @@ class MapServiceContextImpl implements MapServiceContext {
     public void flushMaps() {
         for (PartitionContainer partitionContainer : partitionContainers) {
             for (String mapName : mapContainers.keySet()) {
-                RecordStore recordStore = partitionContainer.getRecordStore(mapName);
-                recordStore.flush();
+                RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
+                if (recordStore != null) {
+                    recordStore.flush();
+                }
             }
         }
     }
 
     @Override
-    public void destroyMap(String mapName) {
+    public void destroyMap(final String mapName) {
+        localMapStatsProvider.destroyLocalMapStatsImpl(mapName);
         final PartitionContainer[] containers = partitionContainers;
-        final List<Future> futures = new ArrayList<Future>(containers.length);
-        for (PartitionContainer container : containers) {
-            if (container != null) {
-                int partitionId = container.getPartitionId();
-                InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
-
-                if (partition.isLocal()) {
-                    OperationService operationService = nodeEngine.getOperationService();
-                    Operation operation = new MapPartitionDestroyOperation(container, mapName);
-
-                    Future f = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
-                    futures.add(f);
-                }
-            }
+        final Semaphore semaphore = new Semaphore(0);
+        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        for (final PartitionContainer container : containers) {
+            MapPartitionDestroyTask partitionDestroyTask = new MapPartitionDestroyTask(container, mapName, semaphore);
+            operationService.execute(partitionDestroyTask);
         }
 
         try {
-            for (Future f : futures) {
-                f.get(DESTROY_TIMEOUT_SECONDS,
-                        TimeUnit.SECONDS);
-            }
+            semaphore.tryAcquire(containers.length, DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -210,8 +245,15 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void reset() {
-        clearPartitions();
-        getNearCacheProvider().clear();
+        clearPartitions(false);
+        getNearCacheProvider().reset();
+    }
+
+    @Override
+    public void shutdown() {
+        clearPartitions(true);
+        nearCacheProvider.shutdown();
+        mapContainers.clear();
     }
 
     @Override
@@ -260,16 +302,6 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public EvictionOperator getEvictionOperator() {
-        return evictionOperator;
-    }
-
-    @Override
-    public void setService(MapService mapService) {
-        this.mapService = mapService;
-    }
-
-    @Override
     public NodeEngine getNodeEngine() {
         return nodeEngine;
     }
@@ -285,8 +317,8 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public MapContextQuerySupport getMapContextQuerySupport() {
-        return mapContextQuerySupport;
+    public MapQueryEngine getMapQueryEngine(String mapName) {
+        return mapQueryEngine;
     }
 
     @Override
@@ -294,63 +326,19 @@ class MapServiceContextImpl implements MapServiceContext {
         return localMapStatsProvider;
     }
 
-    /**
-     * Used for testing purposes.
-     */
-    @Override
-    public void setEvictionOperator(EvictionOperator evictionOperator) {
-        this.evictionOperator = evictionOperator;
-    }
-
     @Override
     public Object toObject(Object data) {
-        if (data == null) {
-            return null;
-        }
-        if (data instanceof Data) {
-            return nodeEngine.toObject(data);
-        } else {
-            return data;
-        }
+        return nodeEngine.toObject(data);
     }
 
     @Override
     public Data toData(Object object, PartitioningStrategy partitionStrategy) {
-        if (object == null) {
-            return null;
-        }
-        if (object instanceof Data) {
-            return (Data) object;
-        } else {
-            return nodeEngine.getSerializationService().toData(object, partitionStrategy);
-        }
+        return nodeEngine.getSerializationService().toData(object, partitionStrategy);
     }
 
     @Override
     public Data toData(Object object) {
-        if (object == null) {
-            return null;
-        }
-        if (object instanceof Data) {
-            return (Data) object;
-        } else {
-            return nodeEngine.getSerializationService().toData(object);
-        }
-    }
-
-    @Override
-    public boolean compare(String mapName, Object value1, Object value2) {
-        if (value1 == null && value2 == null) {
-            return true;
-        }
-        if (value1 == null) {
-            return false;
-        }
-        if (value2 == null) {
-            return false;
-        }
-        final MapContainer mapContainer = getMapContainer(mapName);
-        return mapContainer.getRecordFactory().isEquals(value1, value2);
+        return nodeEngine.toData(object);
     }
 
     @Override
@@ -461,44 +449,87 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public String addLocalEventListener(Object listener, String mapName) {
-        ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        EventRegistration registration = nodeEngine.getEventService().
-                registerLocalListener(SERVICE_NAME, mapName, listenerAdaptor);
+        EventRegistration registration = addListenerInternal(listener, TrueEventFilter.INSTANCE, mapName, true);
         return registration.getId();
     }
 
     @Override
     public String addLocalEventListener(Object listener, EventFilter eventFilter, String mapName) {
-        ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        EventRegistration registration = nodeEngine.getEventService().
-                registerLocalListener(SERVICE_NAME, mapName, eventFilter, listenerAdaptor);
+        EventRegistration registration = addListenerInternal(listener, eventFilter, mapName, true);
+        return registration.getId();
+    }
+
+    @Override
+    public String addLocalPartitionLostListener(MapPartitionLostListener listener, String mapName) {
+        ListenerAdapter listenerAdapter = new InternalMapPartitionLostListenerAdapter(listener);
+        EventFilter filter = new MapPartitionLostEventFilter();
+        EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, mapName, filter, listenerAdapter);
         return registration.getId();
     }
 
     @Override
     public String addEventListener(Object listener, EventFilter eventFilter, String mapName) {
-        ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        EventRegistration registration = nodeEngine.getEventService().
-                registerListener(SERVICE_NAME, mapName, eventFilter, listenerAdaptor);
+        EventRegistration registration = addListenerInternal(listener, eventFilter, mapName, false);
         return registration.getId();
     }
 
     @Override
     public String addPartitionLostListener(MapPartitionLostListener listener, String mapName) {
-        final ListenerAdapter listenerAdapter = new InternalMapPartitionLostListenerAdapter(listener);
-        final EventFilter filter = new MapPartitionLostEventFilter();
-        final EventRegistration registration = nodeEngine.getEventService().registerListener(SERVICE_NAME, mapName, filter,
-                listenerAdapter);
+        ListenerAdapter listenerAdapter = new InternalMapPartitionLostListenerAdapter(listener);
+        EventFilter filter = new MapPartitionLostEventFilter();
+        EventRegistration registration = eventService.registerListener(SERVICE_NAME, mapName, filter, listenerAdapter);
         return registration.getId();
+    }
+
+    private EventRegistration addListenerInternal(Object listener, EventFilter filter, String mapName, boolean local) {
+        ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
+        if (!(filter instanceof EventListenerFilter)) {
+            int enabledListeners = setAndGetListenerFlags(listenerAdaptor);
+            filter = new EventListenerFilter(enabledListeners, filter);
+        }
+
+        if (local) {
+            return eventService.registerLocalListener(SERVICE_NAME, mapName, filter, listenerAdaptor);
+        } else {
+            return eventService.registerListener(SERVICE_NAME, mapName, filter, listenerAdaptor);
+        }
     }
 
     @Override
     public boolean removeEventListener(String mapName, String registrationId) {
-        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
+        return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
     @Override
     public boolean removePartitionLostListener(String mapName, String registrationId) {
-        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
+        return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
+    }
+
+    @Override
+    public MapOperationProvider getMapOperationProvider(String name) {
+        return operationProviders.getOperationProvider(name);
+    }
+
+    @Override
+    public Extractors getExtractors(String mapName) {
+        MapContainer mapContainer = getMapContainer(mapName);
+        return mapContainer.getExtractors();
+    }
+
+    @Override
+    public void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation) {
+        final long duration = System.currentTimeMillis() - startTime;
+        if (operation instanceof BasePutOperation) {
+            localMapStats.incrementPuts(duration);
+        } else if (operation instanceof BaseRemoveOperation) {
+            localMapStats.incrementRemoves(duration);
+        } else if (operation instanceof GetOperation) {
+            localMapStats.incrementGets(duration);
+        }
+    }
+
+    public RecordStore createRecordStore(MapContainer mapContainer, int partitionId, MapKeyLoader keyLoader) {
+        ILogger logger = nodeEngine.getLogger(DefaultRecordStore.class);
+        return new DefaultRecordStore(mapContainer, partitionId, keyLoader, logger);
     }
 }

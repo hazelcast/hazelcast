@@ -1,6 +1,5 @@
 package com.hazelcast.concurrent.countdownlatch;
 
-
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -10,8 +9,8 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -30,11 +29,10 @@ import static org.junit.Assert.assertEquals;
 @Category(SlowTest.class)
 public class CountDownLatchSplitBrainTest extends HazelcastTestSupport {
 
-
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceFactory.shutdownAll();
+        HazelcastInstanceManager.shutdownAll();
     }
 
     @Test
@@ -79,8 +77,8 @@ public class CountDownLatchSplitBrainTest extends HazelcastTestSupport {
 
     private Config newConfig() {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "30");
-        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "30");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
         return config;
     }
 

@@ -61,9 +61,14 @@ public enum CacheEventType {
     COMPLETED(7),
 
     /**
-     * An event type indicationg that the expiration time of cache record has been updated
+     * An event type indicating that the expiration time of cache record has been updated
      */
-    EXPIRATION_TIME_UPDATED(8);
+    EXPIRATION_TIME_UPDATED(8),
+
+    /**
+     * An event type indicating that partition lost is detected in given cache with name
+     */
+    PARTITION_LOST(9);
 
     private int type;
 

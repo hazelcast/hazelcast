@@ -123,13 +123,4 @@ public class LocalCacheEntry {
     public Object getValue() {
         return value;
     }
-
-    /**
-     * Is transient entry.
-     *
-     * @return the boolean
-     */
-    public boolean isTransientEntry() {
-        return transientEntry;
-    }
 }

@@ -28,11 +28,9 @@ import java.util.Set;
 
 public class ExportPackageViewer {
 
-    public static void main(String[] args)
-            throws Exception {
-
-        String sourcefile = args[0];
-        File file = new File(sourcefile);
+    public static void main(String[] args) throws Exception {
+        String sourceFile = args[0];
+        File file = new File(sourceFile);
         FileReader fileReader = new FileReader(file);
 
         BufferedReader reader = new LineNumberReader(fileReader);
@@ -45,7 +43,6 @@ public class ExportPackageViewer {
             if (usesIndex != -1) {
                 entry = entry.substring(0, usesIndex);
             }
-
             packages.add(entry);
         }
 
@@ -56,5 +53,4 @@ public class ExportPackageViewer {
             System.out.println(p);
         }
     }
-
 }

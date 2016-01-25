@@ -16,18 +16,20 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
+import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.partition.client.AddPartitionLostListenerRequest;
-import com.hazelcast.partition.client.RemovePartitionLostListenerRequest;
-import com.hazelcast.spi.impl.PortablePartitionLostEvent;
 
 import java.util.LinkedHashSet;
 import java.util.Random;
@@ -82,15 +84,37 @@ public final class PartitionServiceProxy implements PartitionService {
 
     @Override
     public String addPartitionLostListener(PartitionLostListener partitionLostListener) {
-        final AddPartitionLostListenerRequest request = new AddPartitionLostListenerRequest();
-        final EventHandler<PortablePartitionLostEvent> handler = new ClientPartitionLostEventHandler(partitionLostListener);
-        return listenerService.startListening(request, null, handler);
+        EventHandler<ClientMessage> handler = new ClientPartitionLostEventHandler(partitionLostListener);
+        return listenerService.registerListener(createPartitionLostListenerCodec(), handler);
+    }
+
+    private ListenerMessageCodec createPartitionLostListenerCodec() {
+        return new ListenerMessageCodec() {
+            @Override
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return ClientAddPartitionLostListenerCodec.encodeRequest(localOnly);
+            }
+
+            @Override
+            public String decodeAddResponse(ClientMessage clientMessage) {
+                return ClientAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+                return ClientRemovePartitionLostListenerCodec.encodeRequest(realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+                return ClientRemovePartitionLostListenerCodec.decodeResponse(clientMessage).response;
+            }
+        };
     }
 
     @Override
     public boolean removePartitionLostListener(String registrationId) {
-        final RemovePartitionLostListenerRequest request = new RemovePartitionLostListenerRequest(registrationId);
-        return listenerService.stopListening(request, registrationId);
+        return listenerService.deregisterListener(registrationId);
     }
 
     @Override
@@ -113,7 +137,8 @@ public final class PartitionServiceProxy implements PartitionService {
         throw new UnsupportedOperationException();
     }
 
-    private static class ClientPartitionLostEventHandler implements EventHandler<PortablePartitionLostEvent> {
+    private static class ClientPartitionLostEventHandler extends ClientAddPartitionLostListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
 
         private PartitionLostListener listener;
 
@@ -122,8 +147,8 @@ public final class PartitionServiceProxy implements PartitionService {
         }
 
         @Override
-        public void handle(PortablePartitionLostEvent event) {
-            listener.partitionLost(new PartitionLostEvent(event.getPartitionId(), event.getLostBackupCount(), event.getSource()));
+        public void handle(int partitionId, int lostBackupCount, Address source) {
+            listener.partitionLost(new PartitionLostEvent(partitionId, lostBackupCount, source));
         }
 
         @Override

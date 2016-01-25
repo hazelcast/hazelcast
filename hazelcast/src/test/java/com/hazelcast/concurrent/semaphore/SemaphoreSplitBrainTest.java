@@ -1,6 +1,5 @@
 package com.hazelcast.concurrent.semaphore;
 
-
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -10,8 +9,8 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -35,7 +34,7 @@ public class SemaphoreSplitBrainTest extends HazelcastTestSupport {
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceFactory.shutdownAll();
+        HazelcastInstanceManager.shutdownAll();
     }
 
     @Test
@@ -93,8 +92,8 @@ public class SemaphoreSplitBrainTest extends HazelcastTestSupport {
 
     private Config newConfig() {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "3");
-        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "1");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "3");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "1");
         return config;
     }
 

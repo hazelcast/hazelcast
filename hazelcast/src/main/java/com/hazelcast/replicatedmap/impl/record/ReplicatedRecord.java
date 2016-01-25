@@ -16,16 +16,9 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.core.Member;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook;
 import com.hazelcast.util.Clock;
 
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * A ReplicatedRecord is the actual data holding entity. It also collects statistic metadata.
@@ -33,34 +26,26 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  * @param <K> key type
  * @param <V> value type
  */
-public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
+public class ReplicatedRecord<K, V> {
 
-    private static final AtomicLongFieldUpdater<ReplicatedRecord> HITS_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(ReplicatedRecord.class, "hits");
-    private static final AtomicReferenceFieldUpdater<ReplicatedRecord, VectorClockTimestamp> VECTOR_CLOCK_UPDATER =
-            AtomicReferenceFieldUpdater.newUpdater(ReplicatedRecord.class, VectorClockTimestamp.class, "vectorClockTimestamp");
+    private static final AtomicLongFieldUpdater<ReplicatedRecord> HITS
+            = AtomicLongFieldUpdater.newUpdater(ReplicatedRecord.class, "hits");
 
     // These fields are only accessed through the updaters
     @SuppressWarnings("unused")
     private volatile long hits;
     @SuppressWarnings("unused")
-    private volatile long lastAccessTime;
+    private volatile long lastAccessTime = Clock.currentTimeMillis();
 
     private K key;
     private V value;
-    private volatile VectorClockTimestamp vectorClockTimestamp;
-    private int latestUpdateHash;
     private long ttlMillis;
     private volatile long updateTime = Clock.currentTimeMillis();
+    private volatile long creationTime = Clock.currentTimeMillis();
 
-    public ReplicatedRecord() {
-    }
-
-    public ReplicatedRecord(K key, V value, VectorClockTimestamp vectorClockTimestamp, int hash, long ttlMillis) {
+    public ReplicatedRecord(K key, V value, long ttlMillis) {
         this.key = key;
         this.value = value;
-        this.vectorClockTimestamp = vectorClockTimestamp;
-        this.latestUpdateHash = hash;
         this.ttlMillis = ttlMillis;
     }
 
@@ -86,57 +71,18 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         return value == null;
     }
 
-    public VectorClockTimestamp getVectorClockTimestamp() {
-        return vectorClockTimestamp;
-    }
-
-    public VectorClockTimestamp applyAndIncrementVectorClock(VectorClockTimestamp otherVectorClockTimestamp, Member member) {
-        for (;;) {
-            VectorClockTimestamp vectorClockTimestamp = this.vectorClockTimestamp;
-            VectorClockTimestamp vectorClockTimestampCopy = VectorClockTimestamp.copyVector(vectorClockTimestamp);
-            vectorClockTimestampCopy = vectorClockTimestampCopy.applyVector(otherVectorClockTimestamp);
-            vectorClockTimestampCopy = vectorClockTimestampCopy.incrementClock(member);
-            if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
-                return vectorClockTimestampCopy;
-            }
-        }
-    }
-
-    public VectorClockTimestamp applyVectorClock(VectorClockTimestamp otherVectorClockTimestamp) {
-        for (;;) {
-            VectorClockTimestamp vectorClockTimestamp = this.vectorClockTimestamp;
-            VectorClockTimestamp vectorClockTimestampCopy = VectorClockTimestamp.copyVector(vectorClockTimestamp);
-            vectorClockTimestampCopy = vectorClockTimestampCopy.applyVector(otherVectorClockTimestamp);
-            if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
-                return vectorClockTimestampCopy;
-            }
-        }
-    }
-
-    public VectorClockTimestamp incrementVectorClock(Member member) {
-        for (;;) {
-            VectorClockTimestamp vectorClockTimestamp = this.vectorClockTimestamp;
-            VectorClockTimestamp vectorClockTimestampCopy = VectorClockTimestamp.copyVector(vectorClockTimestamp);
-            vectorClockTimestampCopy = vectorClockTimestampCopy.incrementClock(member);
-            if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
-                return vectorClockTimestampCopy;
-            }
-        }
-    }
-
     public long getTtlMillis() {
         return ttlMillis;
     }
 
-    public V setValue(V value, int hash, long ttlMillis) {
+    public V setValue(V value, long ttlMillis) {
         access();
-        return setValueInternal(value, hash, ttlMillis);
+        return setValueInternal(value, ttlMillis);
     }
 
-    public V setValueInternal(V value, int hash, long ttlMillis) {
+    public V setValueInternal(V value, long ttlMillis) {
         V oldValue = this.value;
         this.value = value;
-        this.latestUpdateHash = hash;
         this.updateTime = Clock.currentTimeMillis();
         this.ttlMillis = ttlMillis;
         return oldValue;
@@ -146,56 +92,41 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         return updateTime;
     }
 
-    public int getLatestUpdateHash() {
-        return latestUpdateHash;
+    public void setUpdateTime(long updateTime) {
+        this.updateTime = updateTime;
     }
 
     public long getHits() {
         return hits;
     }
 
+    public void setHits(long hits) {
+        this.hits = hits;
+    }
+
     public long getLastAccessTime() {
         return lastAccessTime;
     }
 
+    public void setLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
+    }
+
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    public void setCreationTime(long creationTime) {
+        this.creationTime = creationTime;
+    }
+
     private void access() {
-        HITS_UPDATER.incrementAndGet(this);
+        HITS.incrementAndGet(this);
         lastAccessTime = Clock.currentTimeMillis();
     }
 
-    @Override
-    public int getFactoryId() {
-        return ReplicatedMapDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return ReplicatedMapDataSerializerHook.RECORD;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
-        out.writeObject(key);
-        out.writeObject(value);
-        vectorClockTimestamp.writeData(out);
-        out.writeInt(latestUpdateHash);
-        out.writeLong(ttlMillis);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
-        key = in.readObject();
-        value = in.readObject();
-        vectorClockTimestamp = new VectorClockTimestamp();
-        vectorClockTimestamp.readData(in);
-        latestUpdateHash = in.readInt();
-        ttlMillis = in.readLong();
-    }
-
+    // CheckStyle is deactivated due to complexity of the equals method
     //CHECKSTYLE:OFF
-    // Deactivated due to complexity of the equals method
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -207,9 +138,6 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
 
         ReplicatedRecord that = (ReplicatedRecord) o;
 
-        if (latestUpdateHash != that.latestUpdateHash) {
-            return false;
-        }
         if (ttlMillis != that.ttlMillis) {
             return false;
         }
@@ -228,22 +156,20 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
     public int hashCode() {
         int result = key != null ? key.hashCode() : 0;
         result = 31 * result + (value != null ? value.hashCode() : 0);
-        result = 31 * result + latestUpdateHash;
         result = 31 * result + (int) (ttlMillis ^ (ttlMillis >>> 32));
         return result;
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ReplicatedRecord{");
-        sb.append("key=").append(key);
-        sb.append(", value=").append(value);
-        sb.append(", vector=").append(vectorClockTimestamp);
-        sb.append(", latestUpdateHash=").append(latestUpdateHash);
-        sb.append(", ttlMillis=").append(ttlMillis);
-        sb.append('}');
-        return sb.toString();
+        return "ReplicatedRecord{"
+                + "key=" + key
+                + ", value=" + value
+                + ", ttlMillis=" + ttlMillis
+                + ", hits=" + HITS.get(this)
+                + ", creationTime=" + creationTime
+                + ", lastAccessTime=" + lastAccessTime
+                + ", updateTime=" + updateTime
+                + '}';
     }
 }
-
-

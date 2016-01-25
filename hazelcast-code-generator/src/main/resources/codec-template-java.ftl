@@ -3,8 +3,10 @@ package ${model.packageName};
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.Bits;
+import javax.annotation.Generated;
 
-@edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+@Generated("Hazelcast.code.generator")
+@edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public final class ${model.className} {
 
     public static final ${model.parentName}MessageType REQUEST_TYPE = ${model.parentName}MessageType.${model.parentName?upper_case}_${model.name?upper_case};
@@ -19,7 +21,7 @@ public final class ${model.className} {
         public ${param.type} ${param.name};
 </#list>
 
-        public static int calculateDataSize(<#list model.requestParams as param>${param.type} ${param.name}<#if param_has_next>, </#if></#list>) {
+        public static int calculateDataSize(<#list model.requestParams as param><@methodParam type=param.type/> ${param.name}<#if param_has_next>, </#if></#list>) {
             int dataSize = ClientMessage.HEADER_SIZE;
 <#list model.requestParams as p>
     <@sizeText varName=p.name type=p.type isNullable=p.nullable/>
@@ -28,7 +30,7 @@ public final class ${model.className} {
         }
     }
 
-    public static ClientMessage encodeRequest(<#list model.requestParams as param>${param.type} ${param.name}<#if param_has_next>, </#if></#list>) {
+    public static ClientMessage encodeRequest(<#list model.requestParams as param><@methodParam type=param.type/> ${param.name}<#if param_has_next>, </#if></#list>) {
         final int requiredDataSize = RequestParameters.calculateDataSize(<#list model.requestParams as param>${param.name}<#if param_has_next>, </#if></#list>);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(REQUEST_TYPE.id());
@@ -55,7 +57,7 @@ public final class ${model.className} {
         public ${param.type} ${param.name};
 </#list>
 
-        public static int calculateDataSize(<#list model.responseParams as param>${param.type} ${param.name}<#if param_has_next>, </#if></#list>) {
+        public static int calculateDataSize(<#list model.responseParams as param><@methodParam type=param.type/> ${param.name}<#if param_has_next>, </#if></#list>) {
             int dataSize = ClientMessage.HEADER_SIZE;
 <#list model.responseParams as p>
     <@sizeText varName=p.name type=p.type isNullable=p.nullable/>
@@ -64,7 +66,7 @@ public final class ${model.className} {
         }
     }
 
-    public static ClientMessage encodeResponse(<#list model.responseParams as param>${param.type} ${param.name}<#if param_has_next>, </#if></#list>) {
+    public static ClientMessage encodeResponse(<#list model.responseParams as param><@methodParam type=param.type/> ${param.name}<#if param_has_next>, </#if></#list>) {
         final int requiredDataSize = ResponseParameters.calculateDataSize(<#list model.responseParams as param>${param.name}<#if param_has_next>, </#if></#list>);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(RESPONSE_TYPE);
@@ -89,7 +91,7 @@ public final class ${model.className} {
     //************************ EVENTS *************************//
 
 <#list model.events as event>
-    public static ClientMessage encode${event.name}Event(<#list event.eventParams as param>${param.type} ${param.name}<#if param_has_next>, </#if></#list>){
+    public static ClientMessage encode${event.name}Event(<#list event.eventParams as param><@methodParam type=param.type/> ${param.name}<#if param_has_next>, </#if></#list>){
         int dataSize = ClientMessage.HEADER_SIZE;
     <#list event.eventParams as p>
         <@sizeText varName=p.name type=p.type isNullable=p.nullable/>
@@ -126,7 +128,7 @@ public final class ${model.className} {
         }
 
     <#list model.events as event>
-        public abstract void handle(<#list event.eventParams as param>${param.type} ${param.name}<#if param_has_next>, </#if></#list>);
+        public abstract void handle(<#list event.eventParams as param><@methodParam type=param.type/> ${param.name}<#if param_has_next>, </#if></#list>);
 
     </#list>
    }
@@ -144,6 +146,15 @@ public final class ${model.className} {
 <#if isNullable>
             }
 </#if>
+</#macro>
+
+
+<#--METHOD PARAM MACRO -->
+<#macro methodParam type><#local cat= util.getTypeCategory(type)>
+<#switch cat>
+<#case "COLLECTION"><#local genericType= util.getGenericType(type)>java.util.Collection<${genericType}><#break>
+<#default>${type}
+</#switch>
 </#macro>
 
 <#--SIZE MACRO -->
@@ -290,7 +301,7 @@ public final class ${model.className} {
             ${varName} = ${util.getTypeCodec(varType)}.decode(clientMessage);
         <#break >
     <#case "COLLECTION">
-    <#local collectionType><#if varType?starts_with("java.util.List")>java.util.ArrayList<#else>java.util.HashSet</#if></#local>
+    <#local collectionType>java.util.ArrayList</#local>
     <#local itemVariableType= util.getGenericType(varType)>
     <#local itemVariableName= "${varName}_item">
     <#local sizeVariableName= "${varName}_size">

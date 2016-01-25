@@ -17,39 +17,49 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
-import com.hazelcast.internal.storage.DataRef;
-import com.hazelcast.internal.storage.Storage;
+import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.tcp.PacketReader;
-import com.hazelcast.nio.tcp.PacketWriter;
+import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.security.SecurityContext;
+
+import java.util.Map;
 
 /**
  * NodeExtension is a <tt>Node</tt> extension mechanism to be able to plug different implementations of
  * some modules, like; <tt>SerializationService</tt>, <tt>SocketChannelWrapperFactory</tt> etc.
- *
  */
 public interface NodeExtension {
 
     /**
      * Called before node is started
      */
-    void beforeStart(Node node);
+    void beforeStart();
 
     /**
      * Called to print node information during startup
      */
-    void printNodeInfo(Node node);
+    void printNodeInfo();
+
+    /**
+     * Called before node attempts to join to the cluster
+     */
+    void beforeJoin();
 
     /**
      * Called after node is started
      */
-    void afterStart(Node node);
+    void afterStart();
+
+    /**
+     * Returns true if the instance has started
+     */
+    boolean isStartCompleted();
 
     /**
      * Creates a <tt>SerializationService</tt> instance to be used by this <tt>Node</tt>.
@@ -66,18 +76,23 @@ public interface NodeExtension {
     SecurityContext getSecurityContext();
 
     /**
-     * @deprecated
-     */
-    @Deprecated
-    Storage<DataRef> getNativeDataStorage();
-
-    /**
      * Creates a service which is an implementation of given type parameter.
+     *
      * @param type type of service
      * @return service implementation
      * @throws java.lang.IllegalArgumentException if type is not known
      */
     <T> T createService(Class<T> type);
+
+    /**
+     * Creates additional extension services, which will be registered by
+     * service manager during start-up.
+     *
+     * By default returned map will be empty.
+     *
+     * @return extension services
+     */
+    Map<String, Object> createExtensionServices();
 
     /**
      * Returns <tt>MemberSocketInterceptor</tt> for this <tt>Node</tt> if available,
@@ -95,31 +110,27 @@ public interface NodeExtension {
     SocketChannelWrapperFactory getSocketChannelWrapperFactory();
 
     /**
-     * Creates a <tt>PacketReader</tt> for given <tt>Connection</tt> instance.
+     * Creates a <tt>ReadHandler</tt> for given <tt>Connection</tt> instance.
      *
      * @param connection tcp-ip connection
-     * @param ioService IOService
-     *
-     * @return packet reader
+     * @param ioService  IOService
+     * @return the created ReadHandler.
      */
-    PacketReader createPacketReader(TcpIpConnection connection, IOService ioService);
+    ReadHandler createReadHandler(TcpIpConnection connection, IOService ioService);
 
     /**
-     * Creates a <tt>PacketWriter</tt> for given <tt>Connection</tt> instance.
+     * Creates a <tt>WriteHandler</tt> for given <tt>Connection</tt> instance.
      *
      * @param connection tcp-ip connection
-     * @param ioService IOService
-     *
-     * @return packet writer
+     * @param ioService  IOService
+     * @return the created WriteHandler
      */
-    PacketWriter createPacketWriter(TcpIpConnection connection, IOService ioService);
+    WriteHandler createWriteHandler(TcpIpConnection connection, IOService ioService);
 
-    /***
+    /**
      * Creates factory method that creates server side client message handlers
-     *
-     * @param node node
      */
-    MessageTaskFactory createMessageTaskFactory(Node node);
+    MessageTaskFactory createMessageTaskFactory();
 
     /**
      * Called on thread start to inject/intercept extension specific logic,
@@ -145,17 +156,47 @@ public interface NodeExtension {
     MemoryStats getMemoryStats();
 
     /**
-     * Destroys <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>
+     * Called before <tt>Node.shutdown()</tt>
      */
-    void destroy();
+    void beforeShutdown();
+
+    /**
+     * Shutdowns <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>
+     */
+    void shutdown();
 
     /**
      * Called before a new node is joining to cluster,
      * executed if node is the master node before join event.
-     * {@link com.hazelcast.cluster.impl.ClusterServiceImpl} calls this method,
+     * {@link com.hazelcast.cluster.impl.ClusterJoinManager} calls this method,
      * when handleJoinRequest method is called. By this way, we can check the logic we want
      * by implementing this method. Implementation should throw required exception, with a valid
      * message which explains rejection reason.
      */
-    void beforeJoin();
+    void validateJoinRequest();
+
+    /**
+     * Called when cluster state is changed
+     *
+     * @param newState new state
+     * @param persistentChange status of the change. A cluster state change may be non-persistent if it has been done temporarily
+     *                         during system operations such cluster start etc.
+     */
+    void onClusterStateChange(ClusterState newState, boolean persistentChange);
+
+    /**
+     * Registers given register if it's a known type.
+     * @param listener listener instance
+     * @return true if listener is registered, false otherwise
+     */
+    boolean registerListener(Object listener);
+
+    /**
+     * Forces node to start by skipping hot-restart completely and removing all hot-restart data
+     * even if node is still on validation phase or loading hot-restart data.
+     *
+     * @return true if hot restart is enabled and this node knows the master
+     *
+     */
+    boolean triggerForceStart();
 }

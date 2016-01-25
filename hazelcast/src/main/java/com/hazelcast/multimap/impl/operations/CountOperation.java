@@ -21,7 +21,7 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.MultiMapWrapper;
+import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -40,8 +40,8 @@ public class CountOperation extends MultiMapKeyBasedOperation implements WaitSup
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
-        MultiMapWrapper wrapper = container.getMultiMapWrapperOrNull(dataKey);
-        response = wrapper == null ? 0 : wrapper.getCollection(false).size();
+        MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
+        response = multiMapValue == null ? 0 : multiMapValue.getCollection(false).size();
     }
 
     @Override

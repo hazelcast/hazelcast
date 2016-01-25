@@ -21,12 +21,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class MultipleEntryBackupOperation extends AbstractMultipleEntryOperation implements BackupOperation {
+public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOperation implements BackupOperation {
 
     private Set<Data> keys;
 
@@ -40,14 +41,12 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryOperation
 
     @Override
     public void run() throws Exception {
-        final long now = getNow();
-
         final Set<Data> keys = this.keys;
         for (Data dataKey : keys) {
             if (keyNotOwnedByThisPartition(dataKey)) {
                 continue;
             }
-            final Object oldValue = getValueFor(dataKey, now);
+            final Object oldValue = recordStore.get(dataKey, true);
 
             final Map.Entry entry = createMapEntry(dataKey, oldValue);
 
@@ -61,7 +60,7 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryOperation
             }
             entryAddedOrUpdatedBackup(entry, dataKey);
 
-            evict(true);
+            evict();
         }
     }
 
@@ -70,7 +69,7 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryOperation
         super.readInternal(in);
         backupProcessor = in.readObject();
         int size = in.readInt();
-        keys = new HashSet<Data>(size);
+        keys = new LinkedHashSet<Data>(size);
         for (int i = 0; i < size; i++) {
             Data key = in.readData();
             keys.add(key);
@@ -90,10 +89,5 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryOperation
     @Override
     public Object getResponse() {
         return true;
-    }
-
-    @Override
-    public String toString() {
-        return "MultipleEntryBackupOperation{}";
     }
 }

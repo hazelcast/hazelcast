@@ -16,8 +16,9 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
@@ -37,15 +38,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Health monitor periodically prints logs about related internal metrics using the {@link MetricsRegistry} to provides some clues
  * about the internal Hazelcast state.
  * <p/>
- * Health monitor can be configured with system properties
+ * Health monitor can be configured with system properties.
  * <p/>
- * "hazelcast.health.monitoring.level"
- * This property can be one of the following
- * NOISY           => does not check threshold , always prints.
- * SILENT(default) => prints only if metrics are above threshold.
- * OFF             => Does not print anything.
+ * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_LEVEL}
+ * This property can be one of the following:
+ * {@link HealthMonitorLevel#NOISY}  => does not check threshold, always prints.
+ * {@link HealthMonitorLevel#SILENT} => prints only if metrics are above threshold (default).
+ * {@link HealthMonitorLevel#OFF}    => does not print anything.
  * <p/>
- * "hazelcast.health.monitoring.delay.seconds"
+ * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_DELAY_SECONDS}
  * Time between printing two logs of health monitor. Default values is 30 seconds.
  */
 public class HealthMonitor {
@@ -53,6 +54,7 @@ public class HealthMonitor {
     private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
     private static final double PERCENTAGE_MULTIPLIER = 100d;
     private static final double THRESHOLD_PERCENTAGE = 70;
+    private static final double THRESHOLD_INVOCATIONS = 1000;
 
     final HealthMetrics healthMetrics;
 
@@ -76,7 +78,7 @@ public class HealthMonitor {
             return null;
         }
 
-        int delaySeconds = node.getGroupProperties().HEALTH_MONITORING_DELAY_SECONDS.getInteger();
+        int delaySeconds = node.getGroupProperties().getSeconds(GroupProperty.HEALTH_MONITORING_DELAY_SECONDS);
         return new HealthMonitorThread(delaySeconds);
     }
 
@@ -92,9 +94,8 @@ public class HealthMonitor {
     }
 
     private HealthMonitorLevel getHealthMonitorLevel() {
-        GroupProperties properties = node.getGroupProperties();
-        String healthMonitorLevelString = properties.HEALTH_MONITORING_LEVEL.getString();
-        return valueOf(healthMonitorLevelString);
+        String healthMonitorLevel = node.getGroupProperties().getString(GroupProperty.HEALTH_MONITORING_LEVEL);
+        return valueOf(healthMonitorLevel);
     }
 
     private final class HealthMonitorThread extends Thread {
@@ -106,13 +107,13 @@ public class HealthMonitor {
                     node.getHazelcastThreadGroup().getThreadNamePrefix("HealthMonitor"));
             setDaemon(true);
             this.delaySeconds = delaySeconds;
-            this.performanceLogHint = node.getGroupProperties().PERFORMANCE_MONITOR_ENABLED.getBoolean();
+            this.performanceLogHint = node.getGroupProperties().getBoolean(GroupProperty.PERFORMANCE_MONITOR_ENABLED);
         }
 
         @Override
         public void run() {
             try {
-                while (node.isActive()) {
+                while (node.getState() == NodeState.ACTIVE) {
                     switch (monitorLevel) {
                         case NOISY:
                             if (healthMetrics.exceedsThreshold()) {
@@ -151,11 +152,9 @@ public class HealthMonitor {
             // we only log the hint once.
             performanceLogHint = false;
 
-            logger.info(
-                    "The HealthMonitor has detected a high load on the system. For more detailed information, "
-                            + getLineSeperator()
-                            + "enable the PerformanceMonitor by adding -D" + GroupProperties.PROP_PERFORMANCE_MONITOR_ENABLED
-                            + "=true");
+            logger.info(String.format("The HealthMonitor has detected a high load on the system. For more detailed information,%s"
+                            + "enable the PerformanceMonitor by adding the property -D%s=true",
+                    getLineSeperator(), GroupProperty.PERFORMANCE_MONITOR_ENABLED));
         }
     }
 
@@ -281,6 +280,10 @@ public class HealthMonitor {
             }
 
             if (operationServicePendingInvocationsPercentage.read() > THRESHOLD_PERCENTAGE) {
+                return true;
+            }
+
+            if (operationServicePendingInvocationsCount.read() > THRESHOLD_INVOCATIONS) {
                 return true;
             }
 
@@ -452,14 +455,6 @@ public class HealthMonitor {
             sb.append("executor.q.cluster.size=")
                     .append(executorClusterQueueSize.read()).append(", ");
         }
-
-
-        /*
-
-            sb.append("operations.remote.size=").append(remoteOperationsCount).append(", ");
- sb.append("operations.running.size=").append(runningOperationsCount).append(", ");
-
-         */
 
         private void renderOperationService() {
             sb.append("executor.q.response.size=")

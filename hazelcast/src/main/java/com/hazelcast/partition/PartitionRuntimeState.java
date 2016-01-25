@@ -22,6 +22,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,10 +33,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class PartitionRuntimeState implements DataSerializable {
+public final class PartitionRuntimeState implements IdentifiedDataSerializable {
 
-    protected final ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
-
+    private final List<MemberInfo> members = new ArrayList<MemberInfo>(100);
     private final Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
     private ILogger logger;
     private int version;
@@ -62,12 +62,12 @@ public class PartitionRuntimeState implements DataSerializable {
         completedMigrations = migrationInfos != null ? migrationInfos : new ArrayList<MigrationInfo>(0);
     }
 
-    protected void addMemberInfo(MemberInfo memberInfo, Map<Address, Integer> addressIndexes, int memberIndex) {
+    private void addMemberInfo(MemberInfo memberInfo, Map<Address, Integer> addressIndexes, int memberIndex) {
         members.add(memberIndex, memberInfo);
         addressIndexes.put(memberInfo.getAddress(), memberIndex);
     }
 
-    protected void setPartitions(InternalPartition[] partitions, Map<Address, Integer> addressIndexes) {
+    private void setPartitions(InternalPartition[] partitions, Map<Address, Integer> addressIndexes) {
         List<String> unmatchAddresses = new LinkedList<String>();
         for (InternalPartition partition : partitions) {
             ShortPartitionInfo partitionInfo = new ShortPartitionInfo(partition.getPartitionId());
@@ -243,5 +243,15 @@ public class PartitionRuntimeState implements DataSerializable {
                 addressIndexes[i] = in.readInt();
             }
         }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return PartitionDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return PartitionDataSerializerHook.PARTITION_STATE;
     }
 }

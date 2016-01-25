@@ -47,8 +47,8 @@ import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPar
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
-public class SemaphoreService implements ManagedService, MigrationAwareService, MembershipAwareService,
-        RemoteService, ClientAwareService {
+public class SemaphoreService implements ManagedService, MigrationAwareService, MembershipAwareService, RemoteService,
+        ClientAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:semaphoreService";
 
@@ -74,7 +74,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         return getOrPutIfAbsent(containers, name, containerConstructor);
     }
 
-    // need for testing..
+    // just for testing
     public boolean containsSemaphore(String name) {
         return containers.containsKey(name);
     }

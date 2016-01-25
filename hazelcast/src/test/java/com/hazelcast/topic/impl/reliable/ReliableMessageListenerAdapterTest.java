@@ -8,21 +8,21 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.log4j.Level;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,14 +35,25 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelTest.class})
 public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
 
+    @Before
+    public void setUp() {
+        setLoggingLog4j();
+        setLogLevel(Level.TRACE);
+    }
+
+    @After
+    public void tearDown() {
+        resetLogLevel();
+    }
+
     @Test
     public void testRegistration() {
         HazelcastInstance hz = createHazelcastInstance();
-        ReliableTopicProxy topic = (ReliableTopicProxy) hz.getReliableTopic("topic");
-        final MessageListenerMock listener = new MessageListenerMock();
+        ReliableTopicProxy<String> topic = (ReliableTopicProxy<String>) hz.<String>getReliableTopic("topic");
+        MessageListenerMock listener = new MessageListenerMock();
         String id = topic.addMessageListener(listener);
 
-        ReliableMessageListenerRunner runner = (ReliableMessageListenerRunner) topic.runnersMap.get(id);
+        ReliableMessageListenerRunner runner = topic.runnersMap.get(id);
         assertNotNull(runner);
         ReliableMessageListenerAdapter adapter = assertInstanceOf(ReliableMessageListenerAdapter.class, runner.listener);
         assertSame(listener, adapter.messageListener);
@@ -52,7 +63,7 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
     @Test
     public void integrationTest() {
         HazelcastInstance hz = createHazelcastInstance();
-        ReliableTopicProxy topic = (ReliableTopicProxy) hz.getReliableTopic("topic");
+        ReliableTopicProxy<String> topic = (ReliableTopicProxy<String>) hz.<String>getReliableTopic("topic");
         final MessageListenerMock listener = new MessageListenerMock();
         topic.addMessageListener(listener);
 
@@ -60,12 +71,13 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(Arrays.asList("item"), listener.messages);
+                assertEquals(singletonList("item"), listener.messages);
             }
         });
     }
 
     class MessageListenerMock implements MessageListener<String> {
+
         private final List<String> messages = new CopyOnWriteArrayList<String>();
 
         @Override
@@ -76,16 +88,16 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
 
     @Test
     public void retrieveInitialSequence() {
-        MessageListener listener = mock(MessageListener.class);
-        ReliableMessageListenerAdapter adapter = new ReliableMessageListenerAdapter(listener);
+        MessageListener<String> listener = createMessageListenerMock();
+        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<String>(listener);
 
         assertEquals(-1, adapter.retrieveInitialSequence());
     }
 
     @Test
     public void isTerminal() {
-        MessageListener listener = mock(MessageListener.class);
-        ReliableMessageListenerAdapter adapter = new ReliableMessageListenerAdapter(listener);
+        MessageListener<String> listener = createMessageListenerMock();
+        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<String>(listener);
 
         assertFalse(adapter.isTerminal(new RuntimeException()));
         assertFalse(adapter.isTerminal(new Exception()));
@@ -93,18 +105,18 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
 
     @Test
     public void isLossTolerant() {
-        MessageListener listener = mock(MessageListener.class);
-        ReliableMessageListenerAdapter adapter = new ReliableMessageListenerAdapter(listener);
+        MessageListener<String> listener = createMessageListenerMock();
+        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<String>(listener);
 
         assertFalse(adapter.isLossTolerant());
     }
 
     @Test
     public void onMessage() {
-        MessageListener listener = mock(MessageListener.class);
-        ReliableMessageListenerAdapter adapter = new ReliableMessageListenerAdapter(listener);
+        MessageListener<String> listener = createMessageListenerMock();
+        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<String>(listener);
 
-        Message message = new Message("foo", "foo", System.currentTimeMillis(), null);
+        Message<String> message = new Message<String>("foo", "foo", System.currentTimeMillis(), null);
         adapter.onMessage(message);
 
         verify(listener).onMessage(message);
@@ -112,17 +124,22 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
 
     @Test
     public void test_toString() {
-        MessageListener listener = mock(MessageListener.class);
+        MessageListener<String> listener = createMessageListenerMock();
         when(listener.toString()).thenReturn("foobar");
-        ReliableMessageListenerAdapter adapter = new ReliableMessageListenerAdapter(listener);
+        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<String>(listener);
 
         assertEquals("foobar", adapter.toString());
     }
 
     @Test
     public void storeSequence() {
-        MessageListener listener = mock(MessageListener.class);
-        ReliableMessageListenerAdapter adapter = new ReliableMessageListenerAdapter(listener);
+        MessageListener<String> listener = createMessageListenerMock();
+        ReliableMessageListenerAdapter<String> adapter = new ReliableMessageListenerAdapter<String>(listener);
         adapter.storeSequence(10);
+    }
+
+    @SuppressWarnings("unchecked")
+    private MessageListener<String> createMessageListenerMock() {
+        return mock(MessageListener.class);
     }
 }

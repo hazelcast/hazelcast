@@ -30,7 +30,8 @@ import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -52,18 +53,18 @@ public class MultiMapEntrySetMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        Set<Map.Entry<Data, Data>> reduced = new HashSet<Map.Entry<Data, Data>>();
+        List<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>();
         for (Object obj : map.values()) {
             if (obj == null) {
                 continue;
             }
             EntrySetResponse response = (EntrySetResponse) obj;
-            Set<Map.Entry<Data, Data>> entries = response.getDataEntrySet();
-            for (Map.Entry<Data, Data> entry : entries) {
-                reduced.add(entry);
+            Set<Map.Entry<Data, Data>> entrySet = response.getDataEntrySet();
+            for (Map.Entry<Data, Data> entry : entrySet) {
+                entries.add(entry);
             }
         }
-        return reduced;
+        return entries;
     }
 
     @Override
@@ -73,7 +74,7 @@ public class MultiMapEntrySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MultiMapEntrySetCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
+        return MultiMapEntrySetCodec.encodeResponse((List<Map.Entry<Data, Data>>) response);
     }
 
     @Override

@@ -36,10 +36,6 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.util.UuidUtil;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -51,8 +47,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -104,12 +107,15 @@ public class TopicTest extends HazelcastTestSupport {
                     topic.addMessageListener(new MessageListener<Long>() {
                         public void onMessage(Message<Long> message) {
                             Member publishingMember = message.getPublishingMember();
-                            if (publishingMember.equals(instance.getCluster().getLocalMember()))
+                            if (publishingMember.equals(instance.getCluster().getLocalMember())) {
                                 count1.incrementAndGet();
-                            if (publishingMember.equals(message.getMessageObject()))
+                            }
+                            if (publishingMember.equals(message.getMessageObject())) {
                                 count2.incrementAndGet();
-                            if (publishingMember.localMember())
+                            }
+                            if (publishingMember.localMember()) {
                                 count3.incrementAndGet();
+                            }
                         }
                     });
                     mainLatch.countDown();
@@ -184,7 +190,7 @@ public class TopicTest extends HazelcastTestSupport {
 
                     Member localMember = hz.getCluster().getLocalMember();
                     for (int j = 0; j < count; j++) {
-                        topic.publish(new TestMessage(localMember, UuidUtil.buildRandomUuidString()));
+                        topic.publish(new TestMessage(localMember, UuidUtil.newUnsecureUuidString()));
                         publishLatch.countDown();
                     }
                 }
@@ -313,13 +319,21 @@ public class TopicTest extends HazelcastTestSupport {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             TestMessage that = (TestMessage) o;
 
-            if (data != null ? !data.equals(that.data) : that.data != null) return false;
-            if (publisher != null ? !publisher.equals(that.publisher) : that.publisher != null) return false;
+            if (data != null ? !data.equals(that.data) : that.data != null) {
+                return false;
+            }
+            if (publisher != null ? !publisher.equals(that.publisher) : that.publisher != null) {
+                return false;
+            }
 
             return true;
         }
@@ -333,11 +347,7 @@ public class TopicTest extends HazelcastTestSupport {
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("TestMessage{");
-            sb.append("publisher=").append(publisher);
-            sb.append(", data='").append(data).append('\'');
-            sb.append('}');
-            return sb.toString();
+            return "TestMessage{" + "publisher=" + publisher + ", data='" + data + "'}";
         }
     }
 
@@ -579,11 +589,11 @@ public class TopicTest extends HazelcastTestSupport {
         });
 
         topic1.publish(message);
-        assertTrue(latch1.await(5, TimeUnit.SECONDS));
+        assertOpenEventually(latch1);
 
         instance1.shutdown();
         topic2.publish(message);
-        assertTrue(latch2.await(5, TimeUnit.SECONDS));
+        assertOpenEventually(latch2);
     }
 
     @Test

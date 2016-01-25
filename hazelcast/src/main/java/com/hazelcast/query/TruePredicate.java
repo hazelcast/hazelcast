@@ -18,15 +18,22 @@ package com.hazelcast.query;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 
 import java.io.IOException;
 import java.util.Map;
 
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
+
 /**
  * A {@link com.hazelcast.query.Predicate} which always returns true.
  */
-public class TruePredicate implements DataSerializable, Predicate {
+public class TruePredicate implements IdentifiedDataSerializable, Predicate {
+
+    //reminder:
+    //when TruePredicate is going to implement IdentifiedDataSerializable, make sure no new instance
+    // is created, but the INSTANCE is returned. No need to create new objects.
 
     /**
      * An instance of the TruePredicate.
@@ -49,5 +56,15 @@ public class TruePredicate implements DataSerializable, Predicate {
     @Override
     public String toString() {
         return "TruePredicate{}";
+    }
+
+    @Override
+    public int getFactoryId() {
+        return PREDICATE_DS_FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.TRUE_PREDICATE;
     }
 }

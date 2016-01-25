@@ -284,7 +284,7 @@ public class QueryCacheConfig {
      */
     public QueryCacheConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
         checkNotNull(inMemoryFormat, "inMemoryFormat cannot be null");
-        checkFalse(inMemoryFormat == InMemoryFormat.NATIVE, "InMemoryFormat." + inMemoryFormat + " is not supported");
+        checkFalse(inMemoryFormat == InMemoryFormat.NATIVE, "InMemoryFormat." + inMemoryFormat + " is not supported.");
 
         this.inMemoryFormat = inMemoryFormat;
         return this;

@@ -19,6 +19,8 @@ package com.hazelcast.client.impl.protocol;
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.UndefinedErrorCodeException;
+import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
+import com.hazelcast.client.impl.protocol.parameters.ErrorCodec;
 import com.hazelcast.cluster.impl.ConfigMismatchException;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -32,9 +34,12 @@ import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.mapreduce.RemoteMapReduceException;
 import com.hazelcast.mapreduce.TopologyChangedException;
+import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.quorum.QuorumException;
+import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
@@ -50,6 +55,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.util.AddressUtil;
+import com.hazelcast.wan.WANReplicationQueueFullException;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CacheLoaderException;
@@ -238,6 +244,18 @@ public class ClientExceptionFactory {
             @Override
             public Throwable createException(String message, Throwable cause) {
                 return new IllegalArgumentException(message, cause);
+            }
+        });
+        register(ClientProtocolErrorCodes.ILLEGAL_ACCESS_EXCEPTION, IllegalAccessException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new IllegalAccessException(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.ILLEGAL_ACCESS_ERROR, IllegalAccessError.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new IllegalAccessError(message);
             }
         });
         register(ClientProtocolErrorCodes.ILLEGAL_MONITOR_STATE, IllegalMonitorStateException.class, new ExceptionFactory() {
@@ -454,7 +472,7 @@ public class ClientExceptionFactory {
         register(ClientProtocolErrorCodes.URI_SYNTAX, URISyntaxException.class, new ExceptionFactory() {
             @Override
             public Throwable createException(String message, Throwable cause) {
-                return new URISyntaxException(null, message, -1);
+                return new URISyntaxException("not available", message);
             }
         });
         register(ClientProtocolErrorCodes.UTF_DATA_FORMAT, UTFDataFormatException.class, new ExceptionFactory() {
@@ -499,8 +517,55 @@ public class ClientExceptionFactory {
                 return new UnsupportedCallbackException(null, message);
             }
         });
+        register(ClientProtocolErrorCodes.NO_DATA_MEMBER, NoDataMemberInClusterException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new NoDataMemberInClusterException(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.REPLICATED_MAP_CANT_BE_CREATED, ReplicatedMapCantBeCreatedOnLiteMemberException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new ReplicatedMapCantBeCreatedOnLiteMemberException(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.MAX_MESSAGE_SIZE_EXCEEDED, MaxMessageSizeExceeded.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new MaxMessageSizeExceeded();
+            }
+        });
+        register(ClientProtocolErrorCodes.WAN_REPLICATION_QUEUE_FULL, WANReplicationQueueFullException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new WANReplicationQueueFullException(message);
+            }
+        });
 
-
+        register(ClientProtocolErrorCodes.ASSERTION_ERROR, AssertionError.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new AssertionError(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.OUT_OF_MEMORY_ERROR, OutOfMemoryError.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new OutOfMemoryError(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.STACK_OVERFLOW_ERROR, StackOverflowError.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new StackOverflowError(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.NATIVE_OUT_OF_MEMORY_ERROR, NativeOutOfMemoryError.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new NativeOutOfMemoryError(message, cause);
+            }
+        });
     }
 
     interface ExceptionFactory {
@@ -508,16 +573,35 @@ public class ClientExceptionFactory {
 
     }
 
-    public Throwable createException(int errorCode, String className, String message, StackTraceElement[] stackTrace
-            , int causeErrorCode, String causeClassName) {
+    public Throwable createException(ClientMessage clientMessage) {
+        ErrorCodec parameters = ErrorCodec.decode(clientMessage);
         Throwable cause = null;
-        if (causeClassName != null) {
-            cause = createException(causeErrorCode, causeClassName, null, null);
+        if (parameters.causeClassName != null) {
+            cause = createException(parameters.causeErrorCode, parameters.causeClassName, null, null);
         }
 
-        Throwable throwable = createException(errorCode, className, message, cause);
-        throwable.setStackTrace(stackTrace);
+        Throwable throwable = createException(parameters.errorCode, parameters.className, parameters.message, cause);
+        throwable.setStackTrace(parameters.stackTrace);
         return throwable;
+    }
+
+    public ClientMessage createExceptionMessage(Throwable throwable) {
+        int errorCode = getErrorCode(throwable);
+        String message = throwable.getMessage();
+        StackTraceElement[] stackTrace = throwable.getStackTrace();
+        Throwable cause = throwable.getCause();
+        boolean hasCause = cause != null;
+        String className = throwable.getClass().getName();
+        if (hasCause) {
+            int causeErrorCode = getErrorCode(cause);
+            String causeClassName = cause.getClass().getName();
+            return ErrorCodec.encode(errorCode, className, message, stackTrace,
+                    causeErrorCode, causeClassName);
+        } else {
+            return ErrorCodec.encode(errorCode, className, message, stackTrace,
+                    ClientProtocolErrorCodes.UNDEFINED, null);
+        }
+
     }
 
     private Throwable createException(int errorCode, String className, String message, Throwable cause) {
@@ -537,7 +621,7 @@ public class ClientExceptionFactory {
     }
 
 
-    public int getErrorCode(Throwable e) {
+    private int getErrorCode(Throwable e) {
         Integer errorCode = classToInt.get(e.getClass());
         if (errorCode == null) {
             return ClientProtocolErrorCodes.UNDEFINED;

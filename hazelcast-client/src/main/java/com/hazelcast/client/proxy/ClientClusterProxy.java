@@ -17,11 +17,13 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.transaction.TransactionOptions;
+
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -49,7 +51,7 @@ public class ClientClusterProxy implements Cluster {
     @Override
     public Set<Member> getMembers() {
         final Collection<Member> members = clusterService.getMemberList();
-        return members != null ? new LinkedHashSet<Member>(members) : Collections.<Member>emptySet();
+        return new LinkedHashSet<Member>(members);
     }
 
     @Override
@@ -62,4 +64,28 @@ public class ClientClusterProxy implements Cluster {
         return clusterService.getClusterTime();
     }
 
+    @Override
+    public ClusterState getClusterState() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void changeClusterState(ClusterState newState) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void changeClusterState(ClusterState newState, TransactionOptions transactionOptions) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void shutdown() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void shutdown(TransactionOptions transactionOptions) {
+        throw new UnsupportedOperationException();
+    }
 }

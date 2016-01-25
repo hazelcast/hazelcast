@@ -48,6 +48,16 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     }
 
     @Test
+    public void putIfAbsentToCacheAndThenGetFromClientNearCacheWithBinaryInMemoryFormat() {
+        putIfAbsentToCacheAndThenGetFromClientNearCache(InMemoryFormat.BINARY);
+    }
+
+    @Test
+    public void putIfAbsentToCacheAndThenGetFromClientNearCacheWithObjectInMemoryFormat() {
+        putIfAbsentToCacheAndThenGetFromClientNearCache(InMemoryFormat.OBJECT);
+    }
+
+    @Test
     public void putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCacheWithBinaryInMemoryFormat() {
         putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache(InMemoryFormat.BINARY);
     }
@@ -55,6 +65,16 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     @Test
     public void putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCacheWithObjectInMemoryFormat() {
         putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache(InMemoryFormat.OBJECT);
+    }
+
+    @Test
+    public void putToCacheAndGetInvalidationEventWhenNodeShutdownWithBinaryInMemoryFormat() {
+        putToCacheAndGetInvalidationEventWhenNodeShutdown(InMemoryFormat.BINARY);
+    }
+
+    @Test
+    public void putToCacheAndGetInvalidationEventWhenNodeShutdownWithObjectInMemoryFormat() {
+        putToCacheAndGetInvalidationEventWhenNodeShutdown(InMemoryFormat.OBJECT);
     }
 
     @Test
@@ -75,6 +95,11 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     @Test
     public void putToCacheAndClearOrDestroyThenCantGetAnyRecordFromClientNearCacheWithObjectInMemoryFormat() {
         putToCacheAndClearOrDestroyThenCantGetAnyRecordFromClientNearCache(InMemoryFormat.OBJECT);
+    }
+
+    @Test
+    public void testGetAllReturnsFromNearCache() {
+        doTestGetAllReturnsFromNearCache();
     }
 
 }

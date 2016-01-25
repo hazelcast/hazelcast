@@ -41,7 +41,7 @@ public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
 
     private final AtomicBoolean cancelled = new AtomicBoolean();
 
-    private final KeyPredicate<KeyIn> predicate;
+    private final KeyPredicate<? super KeyIn> predicate;
     private final Object[] keys;
 
     // Precalculate key set (partition based)
@@ -50,7 +50,7 @@ public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
     // Cache of selected keys based on partition
     private Object[] partitionKeys;
 
-    public MappingPhase(Collection<KeyIn> keys, KeyPredicate<KeyIn> predicate) {
+    public MappingPhase(Collection<? extends KeyIn> keys, KeyPredicate<? super KeyIn> predicate) {
         this.predicate = predicate;
         this.keys = keys != null ? keys.toArray(new Object[keys.size()]) : null;
     }

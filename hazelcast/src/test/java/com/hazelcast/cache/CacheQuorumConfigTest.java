@@ -1,27 +1,19 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.config.CacheSimpleConfig;
-import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.QuorumConfig;
-import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.cache.Caching;
 import java.io.IOException;
 import java.net.URL;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

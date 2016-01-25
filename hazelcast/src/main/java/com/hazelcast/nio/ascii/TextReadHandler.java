@@ -1,0 +1,214 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.nio.ascii;
+
+import com.hazelcast.internal.ascii.CommandParser;
+import com.hazelcast.internal.ascii.TextCommand;
+import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.ascii.memcache.DeleteCommandParser;
+import com.hazelcast.internal.ascii.memcache.ErrorCommand;
+import com.hazelcast.internal.ascii.memcache.GetCommandParser;
+import com.hazelcast.internal.ascii.memcache.IncrementCommandParser;
+import com.hazelcast.internal.ascii.memcache.SetCommandParser;
+import com.hazelcast.internal.ascii.memcache.SimpleCommandParser;
+import com.hazelcast.internal.ascii.memcache.TouchCommandParser;
+import com.hazelcast.internal.ascii.rest.HttpCommand;
+import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
+import com.hazelcast.internal.ascii.rest.HttpDeleteCommandParser;
+import com.hazelcast.internal.ascii.rest.HttpGetCommandParser;
+import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.util.StringUtil;
+
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ADD;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.APPEND;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.DECREMENT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.INCREMENT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.PREPEND;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.QUIT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.REPLACE;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.SET;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.STATS;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.TOUCH;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
+
+public class TextReadHandler implements ReadHandler {
+
+    private static final Map<String, CommandParser> MAP_COMMAND_PARSERS = new HashMap<String, CommandParser>();
+
+    private static final int CAPACITY = 500;
+
+    static {
+        MAP_COMMAND_PARSERS.put("get", new GetCommandParser());
+        MAP_COMMAND_PARSERS.put("gets", new GetCommandParser());
+        MAP_COMMAND_PARSERS.put("set", new SetCommandParser(SET));
+        MAP_COMMAND_PARSERS.put("add", new SetCommandParser(ADD));
+        MAP_COMMAND_PARSERS.put("replace", new SetCommandParser(REPLACE));
+        MAP_COMMAND_PARSERS.put("append", new SetCommandParser(APPEND));
+        MAP_COMMAND_PARSERS.put("prepend", new SetCommandParser(PREPEND));
+        MAP_COMMAND_PARSERS.put("touch", new TouchCommandParser(TOUCH));
+        MAP_COMMAND_PARSERS.put("incr", new IncrementCommandParser(INCREMENT));
+        MAP_COMMAND_PARSERS.put("decr", new IncrementCommandParser(DECREMENT));
+        MAP_COMMAND_PARSERS.put("delete", new DeleteCommandParser());
+        MAP_COMMAND_PARSERS.put("quit", new SimpleCommandParser(QUIT));
+        MAP_COMMAND_PARSERS.put("stats", new SimpleCommandParser(STATS));
+        MAP_COMMAND_PARSERS.put("version", new SimpleCommandParser(VERSION));
+        MAP_COMMAND_PARSERS.put("GET", new HttpGetCommandParser());
+        MAP_COMMAND_PARSERS.put("POST", new HttpPostCommandParser());
+        MAP_COMMAND_PARSERS.put("PUT", new HttpPostCommandParser());
+        MAP_COMMAND_PARSERS.put("DELETE", new HttpDeleteCommandParser());
+    }
+
+    private ByteBuffer commandLine = ByteBuffer.allocate(CAPACITY);
+    private boolean commandLineRead;
+    private TextCommand command;
+    private final TextCommandService textCommandService;
+    private final TextWriteHandler textWriteHandler;
+    private final TcpIpConnection connection;
+    private final boolean restEnabled;
+    private final boolean memcacheEnabled;
+    private boolean connectionTypeSet;
+    private long requestIdGen;
+    private final ILogger logger;
+
+    public TextReadHandler(TcpIpConnection connection) {
+        IOService ioService = connection.getConnectionManager().getIoService();
+        this.textCommandService = ioService.getTextCommandService();
+        this.textWriteHandler = (TextWriteHandler) connection.getSocketWriter().getWriteHandler();
+        this.connection = connection;
+        this.memcacheEnabled = ioService.isMemcacheEnabled();
+        this.restEnabled = ioService.isRestEnabled();
+        this.logger = ioService.getLogger(this.getClass().getName());
+    }
+
+    public void sendResponse(TextCommand command) {
+        textWriteHandler.enqueue(command);
+    }
+
+    @Override
+    public void onRead(ByteBuffer src) {
+        while (src.hasRemaining()) {
+            doRead(src);
+        }
+    }
+
+    private void doRead(ByteBuffer bb) {
+        while (!commandLineRead && bb.hasRemaining()) {
+            byte b = bb.get();
+            char c = (char) b;
+            if (c == '\n') {
+                commandLineRead = true;
+            } else if (c != '\r') {
+                commandLine.put(b);
+            }
+        }
+        if (commandLineRead) {
+            if (command == null) {
+                processCmd(toStringAndClear(commandLine));
+            }
+            if (command != null) {
+                boolean complete = command.readFrom(bb);
+                if (complete) {
+                    publishRequest(command);
+                    reset();
+                }
+            } else {
+                reset();
+            }
+        }
+    }
+
+    void reset() {
+        command = null;
+        commandLine.clear();
+        commandLineRead = false;
+    }
+
+    public static String toStringAndClear(ByteBuffer bb) {
+        if (bb == null) {
+            return "";
+        }
+        String result;
+        if (bb.position() == 0) {
+            result = "";
+        } else {
+            result = StringUtil.bytesToString(bb.array(), 0, bb.position());
+        }
+        bb.clear();
+        return result;
+    }
+
+    public void publishRequest(TextCommand command) {
+        if (!connectionTypeSet) {
+            if (command instanceof HttpCommand) {
+                boolean isMancenterRequest = ((HttpCommand) command).getURI().
+                        startsWith(HttpCommandProcessor.URI_MANCENTER_CHANGE_URL);
+                boolean isClusterManagementRequest = ((HttpCommand) command).getURI().
+                        startsWith(HttpCommandProcessor.URI_CLUSTER_MANAGEMENT_BASE_URL);
+                if (!restEnabled && (!isMancenterRequest && !isClusterManagementRequest)) {
+                    connection.close();
+                    return;
+                }
+                connection.setType(ConnectionType.REST_CLIENT);
+            } else {
+                if (!memcacheEnabled) {
+                    connection.close();
+                    return;
+                }
+                connection.setType(ConnectionType.MEMCACHE_CLIENT);
+            }
+            connectionTypeSet = true;
+        }
+        long requestId = (command.shouldReply()) ? requestIdGen++ : -1;
+        command.init(this, requestId);
+        textCommandService.processRequest(command);
+    }
+
+    void processCmd(String cmd) {
+        try {
+            int space = cmd.indexOf(' ');
+            String operation = (space == -1) ? cmd : cmd.substring(0, space);
+            CommandParser commandParser = MAP_COMMAND_PARSERS.get(operation);
+            if (commandParser != null) {
+                command = commandParser.parser(this, cmd, space);
+            } else {
+                command = new ErrorCommand(UNKNOWN);
+            }
+        } catch (Throwable t) {
+            logger.finest(t);
+            command = new ErrorCommand(ERROR_CLIENT, "Invalid command : " + cmd);
+        }
+    }
+
+    public TextWriteHandler getTextWriteHandler() {
+        return textWriteHandler;
+    }
+
+    public void closeConnection() {
+        connection.close();
+    }
+}

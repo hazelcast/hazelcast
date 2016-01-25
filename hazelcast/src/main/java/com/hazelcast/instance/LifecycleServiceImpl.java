@@ -50,7 +50,7 @@ public class LifecycleServiceImpl implements LifecycleService {
 
     @Override
     public String addLifecycleListener(LifecycleListener lifecycleListener) {
-        final String id = UuidUtil.buildRandomUuidString();
+        final String id = UuidUtil.newUnsecureUuidString();
         lifecycleListeners.put(id, lifecycleListener);
         return id;
     }
@@ -73,8 +73,8 @@ public class LifecycleServiceImpl implements LifecycleService {
 
     @Override
     public boolean isRunning() {
-        //no synchronization needed since isActive is threadsafe.
-        return instance.node.isActive();
+        //no synchronization needed since getState() is atomic.
+        return instance.node.isRunning();
     }
 
     @Override
@@ -89,7 +89,7 @@ public class LifecycleServiceImpl implements LifecycleService {
             if (node != null) {
                 final NodeShutdownLatch shutdownLatch = new NodeShutdownLatch(node);
                 node.shutdown(false);
-                HazelcastInstanceFactory.remove(instance);
+                HazelcastInstanceManager.remove(instance);
                 shutdownLatch.await(getShutdownTimeoutSeconds(node), TimeUnit.SECONDS);
             }
             fireLifecycleEvent(SHUTDOWN);
@@ -97,7 +97,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     }
 
     private static int getShutdownTimeoutSeconds(Node node) {
-        int gracefulShutdownMaxWaitSeconds = node.groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
+        int gracefulShutdownMaxWaitSeconds = node.groupProperties.getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
         return Math.min(DEFAULT_GRACEFUL_SHUTDOWN_WAIT, gracefulShutdownMaxWaitSeconds);
     }
 
@@ -113,7 +113,7 @@ public class LifecycleServiceImpl implements LifecycleService {
             if (node != null) {
                 node.shutdown(true);
             }
-            HazelcastInstanceFactory.remove(instance);
+            HazelcastInstanceManager.remove(instance);
             fireLifecycleEvent(SHUTDOWN);
         }
     }

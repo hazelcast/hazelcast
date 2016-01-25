@@ -20,6 +20,7 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -28,6 +29,7 @@ import java.util.EventListener;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -38,33 +40,21 @@ import static org.mockito.Mockito.mock;
 @Category({QuickTest.class, ParallelTest.class})
 public class MapConfigTest {
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#getName()}.
-     */
     @Test
     public void testGetName() {
         assertNull(new MapConfig().getName());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#setName(java.lang.String)}.
-     */
     @Test
     public void testSetName() {
         assertEquals("map-test-name", new MapConfig().setName("map-test-name").getName());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#getBackupCount()}.
-     */
     @Test
     public void testGetBackupCount() {
         assertEquals(MapConfig.DEFAULT_BACKUP_COUNT, new MapConfig().getBackupCount());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#setBackupCount(int)}.
-     */
     @Test
     public void testSetBackupCount() {
         assertEquals(0, new MapConfig().setBackupCount(0).getBackupCount());
@@ -73,81 +63,51 @@ public class MapConfigTest {
         assertEquals(3, new MapConfig().setBackupCount(3).getBackupCount());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#setBackupCount(int)}.
-     */
     @Test(expected = IllegalArgumentException.class)
     public void testSetBackupCountLowerLimit() {
         new MapConfig().setBackupCount(MapConfig.MIN_BACKUP_COUNT - 1);
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#getEvictionPercentage()}.
-     */
     @Test
     public void testGetEvictionPercentage() {
         assertEquals(MapConfig.DEFAULT_EVICTION_PERCENTAGE, new MapConfig().getEvictionPercentage());
     }
 
-    /**
-     * Test method for {@link MapConfig#getMinEvictionCheckMillis()}.
-     */
     @Test
     public void testMinEvictionCheckMillis() throws Exception {
         assertEquals(MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS, new MapConfig().getMinEvictionCheckMillis());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#setEvictionPercentage(int)}.
-     */
     @Test
     public void testSetEvictionPercentage() {
         assertEquals(50, new MapConfig().setEvictionPercentage(50).getEvictionPercentage());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#setEvictionPercentage(int)}.
-     */
     @Test(expected = IllegalArgumentException.class)
     public void testSetEvictionPercentageLowerLimit() {
         new MapConfig().setEvictionPercentage(MapConfig.MIN_EVICTION_PERCENTAGE - 1);
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#setEvictionPercentage(int)}.
-     */
     @Test(expected = IllegalArgumentException.class)
     public void testSetEvictionPercentageUpperLimit() {
         new MapConfig().setEvictionPercentage(MapConfig.MAX_EVICTION_PERCENTAGE + 1);
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#getTimeToLiveSeconds()}.
-     */
     @Test
     public void testGetTimeToLiveSeconds() {
         assertEquals(MapConfig.DEFAULT_TTL_SECONDS, new MapConfig().getTimeToLiveSeconds());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#setTimeToLiveSeconds(int)}.
-     */
     @Test
     public void testSetTimeToLiveSeconds() {
         assertEquals(1234, new MapConfig().setTimeToLiveSeconds(1234).getTimeToLiveSeconds());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#getMaxIdleSeconds()}.
-     */
     @Test
     public void testGetMaxIdleSeconds() {
         assertEquals(MapConfig.DEFAULT_MAX_IDLE_SECONDS, new MapConfig().getMaxIdleSeconds());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#setMaxIdleSeconds(int)}.
-     */
     @Test
     public void testSetMaxIdleSeconds() {
         assertEquals(1234, new MapConfig().setMaxIdleSeconds(1234).getMaxIdleSeconds());
@@ -178,9 +138,6 @@ public class MapConfigTest {
         assertTrue(new MapConfig().getMaxSizeConfig().setSize(-1).getSize() > 0);
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#getEvictionPolicy()}.
-     */
     @Test
     public void testGetEvictionPolicy() {
         assertEquals(MapConfig.DEFAULT_EVICTION_POLICY, new MapConfig().getEvictionPolicy());
@@ -191,34 +148,25 @@ public class MapConfigTest {
         assertEquals(EvictionPolicy.LRU, new MapConfig().setEvictionPolicy(EvictionPolicy.LRU).getEvictionPolicy());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#getMapStoreConfig()}.
-     */
     @Test
     public void testGetMapStoreConfig() {
-        assertNull(new MapConfig().getMapStoreConfig());
+        MapStoreConfig mapStoreConfig = new MapConfig().getMapStoreConfig();
+
+        assertNotNull(mapStoreConfig);
+        assertFalse(mapStoreConfig.isEnabled());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#setMapStoreConfig(com.hazelcast.config.MapStoreConfig)}.
-     */
     @Test
     public void testSetMapStoreConfig() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         assertEquals(mapStoreConfig, new MapConfig().setMapStoreConfig(mapStoreConfig).getMapStoreConfig());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#getNearCacheConfig()}.
-     */
     @Test
     public void testGetNearCacheConfig() {
         assertNull(new MapConfig().getNearCacheConfig());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#setNearCacheConfig(com.hazelcast.config.NearCacheConfig)}.
-     */
     @Test
     public void testSetNearCacheConfig() {
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
@@ -238,52 +186,46 @@ public class MapConfigTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void setAsyncBackupCount_whenItsNegative(){
+    public void setAsyncBackupCount_whenItsNegative() {
         MapConfig config = new MapConfig();
         config.setAsyncBackupCount(-1);
     }
 
     @Test
-    public void setAsyncBackupCount_whenItsZero(){
+    public void setAsyncBackupCount_whenItsZero() {
         MapConfig config = new MapConfig();
         config.setAsyncBackupCount(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void setAsyncBackupCount_whenTooLarge(){
+    public void setAsyncBackupCount_whenTooLarge() {
         MapConfig config = new MapConfig();
         config.setAsyncBackupCount(200); //max allowed is 6..
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void setBackupCount_whenItsNegative(){
+    public void setBackupCount_whenItsNegative() {
         MapConfig config = new MapConfig();
         config.setBackupCount(-1);
     }
 
     @Test
-    public void setBackupCount_whenItsZero(){
+    public void setBackupCount_whenItsZero() {
         MapConfig config = new MapConfig();
         config.setBackupCount(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void setBackupCount_tooLarge(){
+    public void setBackupCount_tooLarge() {
         MapConfig config = new MapConfig();
         config.setBackupCount(200); //max allowed is 6..
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapStoreConfig#setWriteBatchSize(int)}.
-     */
     @Test(expected = java.lang.UnsupportedOperationException.class)
     public void testReadOnlyMapStoreConfigSetWriteBatchSize() {
         new MapStoreConfigReadOnly(new MapStoreConfig()).setWriteBatchSize(1);
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapStoreConfig#setInitialLoadMode(com.hazelcast.config.MapStoreConfig.InitialLoadMode)}
-     */
     @Test(expected = java.lang.UnsupportedOperationException.class)
     public void testReadOnlyMapStoreConfigSetInitialLoadMode() {
         new MapStoreConfigReadOnly(new MapStoreConfig()).setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
@@ -357,5 +299,121 @@ public class MapConfigTest {
         assertNotEquals(config1, config3);
         assertNotEquals(config2, config3);
     }
+
+    @Test(expected = ConfigurationException.class)
+    public void givenCacheDeserializedValuesSetToALWAYS_whenSetOptimizeQueriesToFalse_thenThrowConfigurationException() {
+        //given
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.ALWAYS);
+
+        //when
+        mapConfig.setOptimizeQueries(false);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void givenCacheDeserializedValuesSetToNEVER_whenSetOptimizeQueriesToTrue_thenThrowConfigurationException() {
+        //given
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.NEVER);
+
+        //when
+        mapConfig.setOptimizeQueries(true);
+    }
+
+    @Test
+    public void givenCacheDeserializedValuesIsDefault_whenSetOptimizeQueriesToTrue_thenSetCacheDeserializedValuesToALWAYS() {
+        //given
+        MapConfig mapConfig = new MapConfig();
+
+        //when
+        mapConfig.setOptimizeQueries(true);
+
+        //then
+        CacheDeserializedValues cacheDeserializedValues = mapConfig.getCacheDeserializedValues();
+        assertEquals(CacheDeserializedValues.ALWAYS, cacheDeserializedValues);
+    }
+
+    @Test
+    public void givenCacheDeserializedValuesIsDefault_thenIsOptimizeQueriesReturnFalse() {
+        //given
+        MapConfig mapConfig = new MapConfig();
+
+        //then
+        boolean optimizeQueries = mapConfig.isOptimizeQueries();
+        assertFalse(optimizeQueries);
+    }
+
+    @Test
+    public void givenCacheDeserializedValuesIsDefault_whenSetCacheDeserializedValuesToALWAYS_thenIsOptimizeQueriesReturnTrue() {
+        //given
+        MapConfig mapConfig = new MapConfig();
+
+        //when
+        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.ALWAYS);
+
+        //then
+        boolean optimizeQueries = mapConfig.isOptimizeQueries();
+        assertTrue(optimizeQueries);
+    }
+
+    @Test
+    public void givenCacheDeserializedValuesIsDefault_whenSetCacheDeserializedValuesToNEVER_thenIsOptimizeQueriesReturnFalse() {
+        //given
+        MapConfig mapConfig = new MapConfig();
+
+        //when
+        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.NEVER);
+
+        //then
+        boolean optimizeQueries = mapConfig.isOptimizeQueries();
+        assertFalse(optimizeQueries);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void givenSetOptimizeQueryIsTrue_whenSetCacheDeserializedValuesToNEVER_thenThrowConfigurationException() {
+        //given
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setOptimizeQueries(true);
+
+        //when
+        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.NEVER);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void givenSetOptimizeQueryIsFalse_whenSetCacheDeserializedValuesToALWAYS_thenThrowConfigurationException() {
+        //given
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setOptimizeQueries(false);
+
+        //when
+        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.ALWAYS);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void givenSetOptimizeQueryIsTrue_whenSetCacheDeserializedValuesToINDEX_ONLY_thenThrowConfigurationException() {
+        //given
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setOptimizeQueries(true);
+
+        //when
+        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.INDEX_ONLY);
+    }
+
+    @Test
+    @Ignore //this MapStoreConfig does not override equals/hashcode -> this cannot pass right now
+    public void givenSetCacheDeserializedValuesIsINDEX_ONLY_whenComparedWithOtherConfigWhereCacheIsINDEX_ONLY_thenReturnTrue() {
+        //given
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setCacheDeserializedValues(CacheDeserializedValues.INDEX_ONLY);
+
+        //when
+        MapConfig otherMapConfig = new MapConfig();
+        otherMapConfig.setCacheDeserializedValues(CacheDeserializedValues.INDEX_ONLY);
+
+        //then
+        assertEquals(mapConfig, otherMapConfig);
+    }
+
+
 
 }

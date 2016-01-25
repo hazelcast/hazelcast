@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,6 +116,7 @@ public class DisconnectedHazelcastTest extends AbstractWebFilterTest {
         assertEquals("value", executeRequest("readIfExist", serverPort1, cookieStore));
         assertEquals("null", executeRequest("read", serverPort2, cookieStore));
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+        assertClusterSizeEventually(1, hz);
         Thread.sleep(9000);
         executeRequest("write", serverPort1, cookieStore);
         assertEquals("value", executeRequest("read", serverPort1, cookieStore));

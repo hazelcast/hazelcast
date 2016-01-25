@@ -25,12 +25,13 @@ import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
-import com.hazelcast.cluster.client.ClientPingRequest;
+import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
@@ -38,19 +39,19 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketInterceptor;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadOutOfMemoryHandler;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingInputThread;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadOutOfMemoryHandler;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
+import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -58,8 +59,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
-import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_TIMEOUT_DEFAULT;
+import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_INTERVAL;
+import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 
@@ -75,8 +76,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     };
 
     private final int connectionTimeout;
-    private final int heartBeatInterval;
-    private final int heartBeatTimeout;
+    private final long heartBeatInterval;
+    private final long heartBeatTimeout;
 
     private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
 
@@ -85,13 +86,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final SocketInterceptor socketInterceptor;
     private final SocketOptions socketOptions;
     private NonBlockingIOThread inputThread;
-    private NonBlockingIOThread outSelector;
+    private NonBlockingIOThread outputThread;
 
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
     private final ClientExecutionServiceImpl executionService;
     private final AddressTranslator addressTranslator;
     private final ConcurrentMap<Address, ClientConnection> connections
             = new ConcurrentHashMap<Address, ClientConnection>();
+    private final Set<Address> connectionsInProgress =
+            Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
     private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
     private final Set<ConnectionHeartbeatListener> heartbeatListeners =
@@ -99,8 +102,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     protected volatile boolean alive;
 
-    public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client,
-                                       AddressTranslator addressTranslator) {
+    public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator) {
         this.client = client;
         this.addressTranslator = addressTranslator;
         final ClientConfig config = client.getClientConfig();
@@ -109,12 +111,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         final int connTimeout = networkConfig.getConnectionTimeout();
         connectionTimeout = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
 
-        final ClientProperties clientProperties = client.getClientProperties();
-        int timeout = clientProperties.getHeartbeatTimeout().getInteger();
-        this.heartBeatTimeout = timeout > 0 ? timeout : Integer.parseInt(PROP_HEARTBEAT_TIMEOUT_DEFAULT);
+        ClientProperties clientProperties = client.getClientProperties();
+        long timeout = clientProperties.getMillis(HEARTBEAT_TIMEOUT);
+        this.heartBeatTimeout = timeout > 0 ? timeout : Integer.parseInt(HEARTBEAT_TIMEOUT.getDefaultValue());
 
-        int interval = clientProperties.getHeartbeatInterval().getInteger();
-        heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
+        long interval = clientProperties.getMillis(HEARTBEAT_INTERVAL);
+        heartBeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
 
         executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
 
@@ -127,18 +129,17 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     protected void initializeSelectors(HazelcastClientInstanceImpl client) {
-        inputThread = new NonBlockingInputThread(
+        inputThread = new NonBlockingIOThread(
                 client.getThreadGroup(),
                 client.getName() + ".ClientInSelector",
-                Logger.getLogger(NonBlockingInputThread.class),
+                Logger.getLogger(NonBlockingIOThread.class),
                 OUT_OF_MEMORY_HANDLER);
-        outSelector = new ClientNonBlockingOutputThread(
+        outputThread = new ClientNonBlockingOutputThread(
                 client.getThreadGroup(),
                 client.getName() + ".ClientOutSelector",
                 Logger.getLogger(ClientNonBlockingOutputThread.class),
                 OUT_OF_MEMORY_HANDLER);
     }
-
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {
         if (sic != null && sic.isEnabled()) {
@@ -166,7 +167,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     protected void startSelectors() {
         inputThread.start();
-        outSelector.start();
+        outputThread.start();
     }
 
     @Override
@@ -186,7 +187,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     protected void shutdownSelectors() {
         inputThread.shutdown();
-        outSelector.shutdown();
+        outputThread.shutdown();
     }
 
     public ClientConnection getConnection(Address target) {
@@ -194,26 +195,53 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     public ClientConnection getOrConnect(Address target, Authenticator authenticator) throws IOException {
-        Address address = addressTranslator.translate(target);
+        Address remoteAddress = addressTranslator.translate(target);
 
-        if (address == null) {
+        if (remoteAddress == null) {
             throw new IOException("Address is required!");
         }
 
         ClientConnection connection = connections.get(target);
+        Object lock = getLock(target);
+
         if (connection == null) {
-            final Object lock = getLock(target);
             synchronized (lock) {
                 connection = connections.get(target);
                 if (connection == null) {
-                    connection = createSocketConnection(address);
-                    authenticate(authenticator, connection);
-                    connections.put(connection.getRemoteEndpoint(), connection);
-                    fireConnectionAddedEvent(connection);
+                    connection = initializeConnection(remoteAddress, authenticator);
                 }
             }
         }
         return connection;
+    }
+
+    private ClientConnection initializeConnection(Address address, Authenticator authenticator) throws IOException {
+        ClientConnection connection = createSocketConnection(address);
+        authenticate(authenticator, connection);
+        connections.put(connection.getRemoteEndpoint(), connection);
+        fireConnectionAddedEvent(connection);
+        return connection;
+    }
+
+    public ClientConnection getOrTriggerConnect(Address target, Authenticator authenticator) throws IOException {
+        Address remoteAddress = addressTranslator.translate(target);
+
+        if (remoteAddress == null) {
+            throw new IOException("Address is required!");
+        }
+
+        ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
+        ClientConnection connection = connections.get(target);
+
+        if (connection != null) {
+            return connection;
+        }
+
+        if (connectionsInProgress.add(target)) {
+            executionService.executeInternal(new InitConnectionTask(target, remoteAddress, authenticator));
+        }
+
+        throw new IOException("No available connection to address " + target);
     }
 
     private void authenticate(Authenticator authenticator, ClientConnection connection) throws IOException {
@@ -251,11 +279,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
             socket.setSendBufferSize(bufferSize);
             socket.setReceiveBufferSize(bufferSize);
-            socketChannel.socket().connect(address.getInetSocketAddress(), connectionTimeout);
+            InetSocketAddress inetSocketAddress = address.getInetSocketAddress();
+            socketChannel.socket().connect(inetSocketAddress, connectionTimeout);
             SocketChannelWrapper socketChannelWrapper =
                     socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
             final ClientConnection clientConnection = new ClientConnection(client, inputThread,
-                    outSelector, connectionIdGen.incrementAndGet(), socketChannelWrapper);
+                    outputThread, connectionIdGen.incrementAndGet(), socketChannelWrapper);
             socketChannel.configureBlocking(true);
             if (socketInterceptor != null) {
                 socketInterceptor.onConnect(socket);
@@ -263,6 +292,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             socketChannel.configureBlocking(false);
             socket.setSoTimeout(0);
             clientConnection.getReadHandler().register();
+            clientConnection.init();
             return clientConnection;
         } catch (Exception e) {
             if (socketChannel != null) {
@@ -292,15 +322,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     @Override
-    public void handlePacket(Packet packet) {
-        final ClientConnection conn = (ClientConnection) packet.getConn();
-        conn.incrementPacketCount();
-        if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
-            final ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
-            listenerService.handleEventPacket(packet);
+    public void handleClientMessage(ClientMessage message, Connection connection) {
+        ClientConnection conn = (ClientConnection) connection;
+        ClientInvocationService invocationService = client.getInvocationService();
+        conn.incrementPendingPacketCount();
+        if (message.isFlagSet(ClientMessage.LISTENER_EVENT_FLAG)) {
+            ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
+            listenerService.handleClientMessage(message, connection);
         } else {
-            ClientInvocationService invocationService = client.getInvocationService();
-            invocationService.handlePacket(packet);
+            invocationService.handleClientMessage(message, connection);
         }
     }
 
@@ -325,17 +355,21 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
             final long now = Clock.currentTimeMillis();
             for (ClientConnection connection : connections.values()) {
-                if (now - connection.lastReadTime() > heartBeatTimeout) {
+                if (now - connection.lastReadTimeMillis() > heartBeatTimeout) {
                     if (connection.isHeartBeating()) {
+                        LOGGER.warning("Heartbeat failed to connection : " + connection);
                         connection.heartBeatingFailed();
                         fireHeartBeatStopped(connection);
                     }
                 }
-                if (now - connection.lastReadTime() > heartBeatInterval) {
-                    final ClientPingRequest request = new ClientPingRequest();
-                    new ClientInvocation(client, request, connection).invoke();
+                if (now - connection.lastReadTimeMillis() > heartBeatInterval) {
+                    ClientMessage request = ClientPingCodec.encodeRequest();
+                    ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
+                    clientInvocation.setBypassHeartbeatCheck(true);
+                    clientInvocation.invokeUrgent();
                 } else {
                     if (!connection.isHeartBeating()) {
+                        LOGGER.warning("Heartbeat is back to healthy for connection : " + connection);
                         connection.heartBeatingSucceed();
                         fireHeartBeatStarted(connection);
                     }
@@ -365,5 +399,37 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     @Override
     public void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener) {
         heartbeatListeners.add(connectionHeartbeatListener);
+    }
+
+    private class InitConnectionTask implements Runnable {
+
+        private final Address target;
+        private final Address remoteAddress;
+        private final Authenticator authenticator;
+
+        InitConnectionTask(Address target, Address remoteAddress, Authenticator authenticator) {
+            this.target = target;
+            this.remoteAddress = remoteAddress;
+            this.authenticator = authenticator;
+        }
+
+        @Override
+        public void run() {
+            final Object lock = getLock(target);
+            synchronized (lock) {
+                ClientConnection connection = connections.get(target);
+                if (connection != null) {
+                    return;
+                }
+                try {
+                    initializeConnection(remoteAddress, authenticator);
+                } catch (IOException e) {
+                    LOGGER.finest(e);
+                } finally {
+                    connectionsInProgress.remove(target);
+                }
+
+            }
+        }
     }
 }

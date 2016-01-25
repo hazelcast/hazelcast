@@ -16,11 +16,9 @@
 
 package com.hazelcast.cache.impl.client;
 
-import com.hazelcast.cache.impl.CachePortableHook;
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -60,14 +58,13 @@ public class CacheBatchInvalidationMessage extends CacheInvalidationMessage {
     }
 
     @Override
-    public int getClassId() {
-        return CachePortableHook.BATCH_INVALIDATION_MESSAGE;
+    public int getId() {
+        return CacheDataSerializerHook.BATCH_INVALIDATION_MESSAGE;
     }
 
     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
-        ObjectDataOutput out = writer.getRawDataOutput();
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
         boolean hasInvalidationMessages = invalidationMessages != null;
         out.writeBoolean(hasInvalidationMessages);
         if (hasInvalidationMessages) {
@@ -79,9 +76,8 @@ public class CacheBatchInvalidationMessage extends CacheInvalidationMessage {
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
-        ObjectDataInput in = reader.getRawDataInput();
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
         if (in.readBoolean()) {
             int size = in.readInt();
             invalidationMessages = new ArrayList<CacheSingleInvalidationMessage>(size);
@@ -93,11 +89,10 @@ public class CacheBatchInvalidationMessage extends CacheInvalidationMessage {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("CacheBatchInvalidationMessage{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", invalidationMessages=").append(invalidationMessages);
-        sb.append('}');
-        return sb.toString();
+        return "CacheBatchInvalidationMessage{"
+                + "name='" + name + '\''
+                + ", invalidationMessages=" + invalidationMessages
+                + '}';
     }
 
 }

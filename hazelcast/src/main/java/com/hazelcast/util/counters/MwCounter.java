@@ -44,13 +44,13 @@ public final class MwCounter implements Counter {
     }
 
     @Override
-    public void inc() {
-        COUNTER.incrementAndGet(this);
+    public long inc() {
+        return COUNTER.incrementAndGet(this);
     }
 
     @Override
-    public void inc(long amount) {
-        COUNTER.addAndGet(this, amount);
+    public long inc(long amount) {
+        return COUNTER.addAndGet(this, amount);
     }
 
     @Override

@@ -16,8 +16,12 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.EntryView;
+import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.event.MapEventPublisher;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -35,7 +39,7 @@ import java.util.List;
  *
  * @see PutFromLoadAllOperation
  */
-public class PutFromLoadAllBackupOperation extends AbstractMapOperation implements BackupOperation, MutatingOperation,
+public class PutFromLoadAllBackupOperation extends MapOperation implements BackupOperation, MutatingOperation,
         DataSerializable {
 
     private List<Data> keyValueSequence;
@@ -63,13 +67,22 @@ public class PutFromLoadAllBackupOperation extends AbstractMapOperation implemen
             final Data key = keyValueSequence.get(i);
             final Data value = keyValueSequence.get(i + 1);
             final Object object = mapServiceContext.toObject(value);
-            recordStore.putFromLoad(key, object);
+            recordStore.putFromLoadBackup(key, object);
+            publishWanReplicationEvent(key, value, recordStore.getRecord(key));
         }
     }
 
-    @Override
-    public String toString() {
-        return "PutFromLoadAllBackupOperation{}";
+    private void publishWanReplicationEvent(Data key, Data value, Record record) {
+        if (record == null) {
+            return;
+        }
+
+        if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
+            final EntryView entryView = EntryViews.createSimpleEntryView(key, value, record);
+            MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+            MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+            mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
+        }
     }
 
     @Override

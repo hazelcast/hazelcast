@@ -24,9 +24,9 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.tcp.PacketReader;
-import com.hazelcast.nio.tcp.PacketWriter;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
+import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
 
@@ -51,8 +51,6 @@ public interface IOService {
     SymmetricEncryptionConfig getSymmetricEncryptionConfig();
 
     SSLConfig getSSLConfig();
-
-    void handleClientPacket(Packet p);
 
     void handleClientMessage(ClientMessage cm, Connection connection);
 
@@ -137,7 +135,7 @@ public interface IOService {
 
     MemberSocketInterceptor getMemberSocketInterceptor();
 
-    PacketReader createPacketReader(TcpIpConnection connection);
+    ReadHandler createReadHandler(TcpIpConnection connection);
 
-    PacketWriter createPacketWriter(TcpIpConnection connection);
+    WriteHandler createWriteHandler(TcpIpConnection connection);
 }

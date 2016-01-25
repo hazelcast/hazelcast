@@ -17,7 +17,12 @@
 package com.hazelcast.config;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
+import javax.cache.configuration.Factory;
+import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CacheWriter;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -116,6 +121,11 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
+    public CacheConfiguration<K, V> setStatisticsEnabled(boolean enabled) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
     public CacheConfig<K, V> setTypes(final Class<K> keyType, final Class<V> valueType) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
@@ -132,6 +142,48 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
 
     @Override
     public CacheConfig setQuorumName(String quorumName) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfiguration<K, V> setHotRestartConfig(HotRestartConfig hotRestartConfig) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfig setPartitionLostListenerConfigs(
+            List<CachePartitionLostListenerConfig> partitionLostListenerConfigs) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public void setMergePolicy(String mergePolicy) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfiguration<K, V> setExpiryPolicyFactory(Factory<? extends ExpiryPolicy> expiryPolicyFactory) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfiguration<K, V> setCacheLoaderFactory(Factory<? extends CacheLoader<K, V>> cacheLoaderFactory) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfiguration<K, V> setCacheWriterFactory(
+            Factory<? extends CacheWriter<? super K, ? super V>> cacheWriterFactory) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfiguration<K, V> setWriteThrough(boolean isWriteThrough) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfiguration<K, V> setReadThrough(boolean isReadThrough) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 

@@ -18,39 +18,38 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
 /**
  * CachedDataRecord.
  */
 class CachedDataRecord extends DataRecord {
+    private static final AtomicReferenceFieldUpdater<CachedDataRecord, Object> CACHED_VALUE =
+            AtomicReferenceFieldUpdater.newUpdater(CachedDataRecord.class, Object.class, "cachedValue");
+
 
     private transient volatile Object cachedValue;
 
     CachedDataRecord() {
     }
 
-    CachedDataRecord(Data keyData, Data value) {
-        super(keyData, value);
+    CachedDataRecord(Data value) {
+        super(value);
     }
 
     @Override
     public void setValue(Data o) {
-        cachedValue = null;
         super.setValue(o);
+        cachedValue = null;
     }
 
     @Override
-    public Object getCachedValue() {
+    public Object getCachedValueUnsafe() {
         return cachedValue;
     }
 
     @Override
-    public void setCachedValue(Object cachedValue) {
-        this.cachedValue = cachedValue;
-    }
-
-    @Override
-    public void invalidate() {
-        super.invalidate();
-        cachedValue = null;
+    public boolean casCachedValue(Object expectedValue, Object newValue) {
+        return CACHED_VALUE.compareAndSet(this, expectedValue, newValue);
     }
 }

@@ -90,6 +90,18 @@ class InternalPartitionImpl implements InternalPartition {
         return false;
     }
 
+    // Not doing a defensive copy of given Address[]
+    // This method is called under InternalPartitionServiceImpl.lock,
+    // so there's no need to guard `addresses` field or to use a CAS.
+    void setInitialReplicaAddresses(Address[] newAddresses) {
+        Address[] oldAddresses = addresses;
+        for (int replicaIndex = 0; replicaIndex < MAX_REPLICA_COUNT; replicaIndex++) {
+            if (oldAddresses[replicaIndex] != null) {
+                throw new IllegalStateException("Partition is already initialized!");
+            }
+        }
+        addresses = newAddresses;
+    }
 
     // Not doing a defensive copy of given Address[]
     // This method is called under InternalPartitionServiceImpl.lock,

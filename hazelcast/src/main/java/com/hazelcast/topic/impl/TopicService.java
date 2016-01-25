@@ -35,7 +35,6 @@ import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.MapUtil;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
@@ -43,13 +42,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public class TopicService implements ManagedService, RemoteService, EventPublishingService, StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
+
     public static final int ORDERING_LOCKS_LENGTH = 1000;
 
     private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
@@ -123,10 +122,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         ClusterService clusterService = nodeEngine.getClusterService();
         MemberImpl member = clusterService.getMember(topicEvent.publisherAddress);
         if (member == null) {
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info("Dropping message from unknown address:" + topicEvent.publisherAddress);
-            }
-            return;
+            member = new MemberImpl(topicEvent.publisherAddress, false);
         }
         Message message = new DataAwareMessage(topicEvent.name, topicEvent.data, topicEvent.publishTime, member
                 , nodeEngine.getSerializationService());
@@ -152,8 +148,14 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         eventService.publishEvent(TopicService.SERVICE_NAME, registrations, event, name.hashCode());
     }
 
-    public String addMessageListener(String name, MessageListener listener) {
-        EventRegistration eventRegistration = eventService.registerListener(TopicService.SERVICE_NAME, name, listener);
+    public String addMessageListener(String name, MessageListener listener, boolean localOnly) {
+        EventRegistration eventRegistration;
+        if (localOnly) {
+            eventRegistration = eventService.registerLocalListener(TopicService.SERVICE_NAME, name, listener);
+        } else {
+            eventRegistration = eventService.registerListener(TopicService.SERVICE_NAME, name, listener);
+
+        }
         return eventRegistration.getId();
     }
 

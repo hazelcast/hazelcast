@@ -33,12 +33,12 @@ import java.util.concurrent.TimeUnit;
  * This class provides a custom implementation of an {@link javax.cache.expiry.ExpiryPolicy} to
  * react on all three types of policies:
  * <ul>
- *     <li>Create</li>
- *     <li>Access</li>
- *     <li>Update</li>
+ * <li>Create</li>
+ * <li>Access</li>
+ * <li>Update</li>
  * </ul>
  * <p>
- *     Sample usage:
+ * Sample usage:
  * <pre>
  *   ICache&lt;Key, Value&gt; unwrappedCache =  cache.unwrap( ICache.class );
  *   HazelcastExpiryPolicy customExpiry = new HazelcastExpiryPolicy(20, 30, 40, TimeUnit.SECONDS);
@@ -80,7 +80,7 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
      * @param createDurationAmount expiry time after creation
      * @param accessDurationAmount expiry time after last access
      * @param updateDurationAmount expiry time after last update
-     * @param timeUnit time unit of the previous value parameters
+     * @param timeUnit             time unit of the previous value parameters
      */
     public HazelcastExpiryPolicy(long createDurationAmount, long accessDurationAmount, long updateDurationAmount,
                                  TimeUnit timeUnit) {
@@ -174,4 +174,37 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
         }
         return null;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        HazelcastExpiryPolicy that = (HazelcastExpiryPolicy) o;
+
+        if (create != null ? !create.equals(that.create) : that.create != null) {
+            return false;
+        }
+        if (access != null ? !access.equals(that.access) : that.access != null) {
+            return false;
+        }
+        if (update != null ? !update.equals(that.update) : that.update != null) {
+            return false;
+        }
+        return true;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = create != null ? create.hashCode() : 0;
+        result = 31 * result + (access != null ? access.hashCode() : 0);
+        result = 31 * result + (update != null ? update.hashCode() : 0);
+        return result;
+    }
+
 }

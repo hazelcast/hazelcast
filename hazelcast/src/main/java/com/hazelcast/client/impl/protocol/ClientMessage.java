@@ -16,13 +16,13 @@
 
 package com.hazelcast.client.impl.protocol;
 
+import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
 import com.hazelcast.client.impl.protocol.util.MessageFlyweight;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.client.impl.protocol.util.UnsafeBuffer;
 import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.SocketReadable;
-import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.util.QuickMath;
 
 import java.nio.ByteBuffer;
@@ -45,7 +45,9 @@ import java.util.Arrays;
  * +-------------+---------------+---------------------------------+
  * |  Version    |B|E|  Flags    |               Type              |
  * +-------------+---------------+---------------------------------+
- * |                       CorrelationId                           |
+ * |                                                               |
+ * +                       CorrelationId                           +
+ * |                                                               |
  * +---------------------------------------------------------------+
  * |                        PartitionId                            |
  * +-----------------------------+---------------------------------+
@@ -58,7 +60,7 @@ import java.util.Arrays;
  */
 public class ClientMessage
         extends MessageFlyweight
-        implements SocketWritable, SocketReadable {
+        implements OutboundFrame {
 
 
     /**
@@ -101,7 +103,7 @@ public class ClientMessage
     private static final int FLAGS_FIELD_OFFSET = VERSION_FIELD_OFFSET + Bits.BYTE_SIZE_IN_BYTES;
     private static final int TYPE_FIELD_OFFSET = FLAGS_FIELD_OFFSET + Bits.BYTE_SIZE_IN_BYTES;
     private static final int CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + Bits.SHORT_SIZE_IN_BYTES;
-    private static final int PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
+    private static final int PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.LONG_SIZE_IN_BYTES;
     private static final int DATA_OFFSET_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
 
 
@@ -129,12 +131,23 @@ public class ClientMessage
     }
 
     public static ClientMessage createForEncode(int initialCapacity) {
-        initialCapacity = QuickMath.nextPowerOfTwo(initialCapacity);
+        initialCapacity = findSuitableMessageSize(initialCapacity);
         if (USE_UNSAFE) {
             return createForEncode(new UnsafeBuffer(new byte[initialCapacity]), 0);
         } else {
             return createForEncode(new SafeBuffer(new byte[initialCapacity]), 0);
         }
+    }
+
+    public static int findSuitableMessageSize(int desiredMessageSize) {
+        if (desiredMessageSize < 0) {
+            throw new MaxMessageSizeExceeded();
+        }
+        desiredMessageSize = QuickMath.nextPowerOfTwo(desiredMessageSize);
+        if (desiredMessageSize < 0) {
+            desiredMessageSize = Integer.MAX_VALUE;
+        }
+        return desiredMessageSize;
     }
 
     public static ClientMessage createForEncode(ClientProtocolBuffer buffer, int offset) {
@@ -266,8 +279,8 @@ public class ClientMessage
      *
      * @return The correlation id field.
      */
-    public int getCorrelationId() {
-        return int32Get(CORRELATION_ID_FIELD_OFFSET);
+    public long getCorrelationId() {
+        return int64Get(CORRELATION_ID_FIELD_OFFSET);
     }
 
     /**
@@ -276,8 +289,8 @@ public class ClientMessage
      * @param correlationId The value to set in the correlation id field.
      * @return The ClientMessage with the new correlation id field value.
      */
-    public ClientMessage setCorrelationId(final int correlationId) {
-        int32Set(CORRELATION_ID_FIELD_OFFSET, correlationId);
+    public ClientMessage setCorrelationId(final long correlationId) {
+        int64Set(CORRELATION_ID_FIELD_OFFSET, correlationId);
         return this;
     }
 
@@ -326,13 +339,12 @@ public class ClientMessage
         return this;
     }
 
-    @Override
-    public boolean writeTo(ByteBuffer destination) {
+    public boolean writeTo(ByteBuffer dst) {
         byte[] byteArray = buffer.byteArray();
         int size = getFrameLength();
 
         // the number of bytes that can be written to the bb.
-        int bytesWritable = destination.remaining();
+        int bytesWritable = dst.remaining();
 
         // the number of bytes that need to be written.
         int bytesNeeded = size - writeOffset;
@@ -349,7 +361,7 @@ public class ClientMessage
             done = false;
         }
 
-        destination.put(byteArray, writeOffset, bytesWrite);
+        dst.put(byteArray, writeOffset, bytesWrite);
         writeOffset += bytesWrite;
 
         if (done) {
@@ -359,12 +371,12 @@ public class ClientMessage
         return done;
     }
 
-    public boolean readFrom(ByteBuffer source) {
+    public boolean readFrom(ByteBuffer src) {
         if (index() == 0) {
-            initFrameSize(source);
+            initFrameSize(src);
         }
-        while (index() >= Bits.INT_SIZE_IN_BYTES && source.hasRemaining() && !isComplete()) {
-            accumulate(source, getFrameLength() - index());
+        while (index() >= Bits.INT_SIZE_IN_BYTES && src.hasRemaining() && !isComplete()) {
+            accumulate(src, getFrameLength() - index());
         }
         return isComplete();
     }
@@ -433,7 +445,7 @@ public class ClientMessage
     private void ensureCapacity(int requiredCapacity) {
         int capacity = buffer.capacity() > 0 ? buffer.capacity() : 1;
         if (requiredCapacity > capacity) {
-            int newCapacity = QuickMath.nextPowerOfTwo(requiredCapacity);
+            int newCapacity = findSuitableMessageSize(requiredCapacity);
             byte[] newBuffer = Arrays.copyOf(buffer.byteArray(), newCapacity);
             buffer.wrap(newBuffer);
         }

@@ -22,6 +22,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MembershipAdapter;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.nio.Address;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -31,6 +36,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
@@ -69,4 +75,67 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         assertEquals("test", m.get("test"));
     }
 
+    @Test
+    public void testReconnectToNewInstanceAtSameAddress() throws InterruptedException {
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        Address localAddress = instance.getCluster().getLocalMember().getAddress();
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+
+        final CountDownLatch memberRemovedLatch = new CountDownLatch(1);
+        client.getCluster().addMembershipListener(new MembershipAdapter() {
+            @Override
+            public void memberRemoved(MembershipEvent membershipEvent) {
+                memberRemovedLatch.countDown();
+            }
+        });
+
+        instance.shutdown();
+        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance(localAddress);
+
+        assertOpenEventually(memberRemovedLatch);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, client.getCluster().getMembers().size());
+                Iterator<Member> iterator = client.getCluster().getMembers().iterator();
+                Member member = iterator.next();
+                assertEquals(instance2.getCluster().getLocalMember(), member);
+            }
+        });
+    }
+
+    @Test
+    public void testClientShutdownIfReconnectionNotPossible() {
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        final CountDownLatch shutdownLatch = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleEvent.LifecycleState.SHUTDOWN) {
+                    shutdownLatch.countDown();
+                }
+            }
+        });
+        server.shutdown();
+
+        assertOpenEventually(shutdownLatch, 10);
+    }
+
+    @Test(expected = HazelcastClientNotActiveException.class, timeout = 30000)
+    public void testRequestShouldFailOnShutdown() {
+        final HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        IMap<Object, Object> test = client.getMap("test");
+        test.put("key", "value");
+        server.shutdown();
+        test.get("key");
+    }
 }

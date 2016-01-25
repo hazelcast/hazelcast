@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
@@ -31,23 +30,33 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
-import static com.hazelcast.map.impl.eviction.MaxSizeChecker.getApproximateMaxSize;
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
+
 
 public final class MapKeyLoaderUtil {
 
     private MapKeyLoaderUtil() {
     }
 
-    static MapKeyLoader.Role assignRole(InternalPartitionService partitionService, int mapNamePartition, int partitionId) {
-
-        boolean isPartitionOwner = partitionService.isPartitionOwner(partitionId);
-        boolean isMapPartition = (mapNamePartition == partitionId);
-
-        if (isMapPartition) {
-            return isPartitionOwner ? MapKeyLoader.Role.SENDER : MapKeyLoader.Role.SENDER_BACKUP;
+    static MapKeyLoader.Role assignRole(boolean isPartitionOwner, boolean isMapNamePartition,
+                                        boolean isMapNamePartitionFirstReplica) {
+        if (isMapNamePartition) {
+            if (isPartitionOwner) {
+                // map-name partition owner is the SENDER
+                return MapKeyLoader.Role.SENDER;
+            } else {
+                if (isMapNamePartitionFirstReplica) {
+                    // first replica of the map-name partition is the SENDER_BACKUP
+                    return MapKeyLoader.Role.SENDER_BACKUP;
+                } else {
+                    // other replicas of the map-name partition do not have a role
+                    return MapKeyLoader.Role.NONE;
+                }
+            }
+        } else {
+            // ordinary partition owners are RECEIVERs, otherwise no role
+            return isPartitionOwner ? MapKeyLoader.Role.RECEIVER : MapKeyLoader.Role.NONE;
         }
-
-        return isPartitionOwner ? MapKeyLoader.Role.RECEIVER : MapKeyLoader.Role.NONE;
     }
 
     static Iterator<Map<Integer, List<Data>>> toBatches(final Iterator<Entry<Integer, Data>> entries,
@@ -86,7 +95,8 @@ public final class MapKeyLoaderUtil {
     }
 
     public static int getMaxSizePerNode(MaxSizeConfig maxSizeConfig) {
-        double maxSizePerNode = getApproximateMaxSize(maxSizeConfig, MaxSizePolicy.PER_NODE);
+        // max size or -1 if policy is different or not set
+        double maxSizePerNode = maxSizeConfig.getMaxSizePolicy() == PER_NODE ? maxSizeConfig.getSize() : -1D;
 
         if (maxSizePerNode == MaxSizeConfig.DEFAULT_MAX_SIZE) {
             // unlimited

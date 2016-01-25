@@ -133,4 +133,11 @@ public abstract class MultiMapOperation extends Operation
     public int getFactoryId() {
         return MultiMapDataSerializerHook.F_ID;
     }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", name=").append(name);
+    }
 }

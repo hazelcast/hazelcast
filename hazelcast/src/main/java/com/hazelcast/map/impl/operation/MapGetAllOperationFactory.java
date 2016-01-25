@@ -21,19 +21,20 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
+
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MapGetAllOperationFactory implements OperationFactory {
 
     private String name;
-    private Set<Data> keys = new HashSet<Data>();
+    private List<Data> keys = new ArrayList<Data>();
 
     public MapGetAllOperationFactory() {
     }
 
-    public MapGetAllOperationFactory(String name, Set<Data> keys) {
+    public MapGetAllOperationFactory(String name, List<Data> keys) {
         this.name = name;
         this.keys = keys;
     }

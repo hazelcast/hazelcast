@@ -17,12 +17,17 @@
 package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.CacheOperationProvider;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheContainsKeyCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.Operation;
+
+import java.security.Permission;
 
 /**
  * This client request  specifically calls {@link CacheContainsKeyOperation} on the server side.
@@ -53,7 +58,27 @@ public class CacheContainsKeyMessageTask
     }
 
     @Override
+    public Permission getRequiredPermission() {
+        return new CachePermission(parameters.name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public String getServiceName() {
+        return CacheService.SERVICE_NAME;
+    }
+
+    @Override
     public String getDistributedObjectName() {
         return parameters.name;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{parameters.key};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "containsKey";
     }
 }

@@ -76,11 +76,6 @@ public final class GetOperation extends KeyBasedMapOperation
     }
 
     @Override
-    public String toString() {
-        return "GetOperation{" + name + "}";
-    }
-
-    @Override
     public int getFactoryId() {
         return MapDataSerializerHook.F_ID;
     }

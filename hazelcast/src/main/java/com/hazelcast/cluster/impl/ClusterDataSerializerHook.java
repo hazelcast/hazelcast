@@ -16,13 +16,13 @@
 
 package com.hazelcast.cluster.impl;
 
-import com.hazelcast.cluster.client.ClientInitialMembershipEvent;
-import com.hazelcast.cluster.client.ClientMembershipEvent;
+import com.hazelcast.cluster.impl.operations.FinalizeJoinOperation;
 import com.hazelcast.cluster.impl.operations.HeartbeatOperation;
+import com.hazelcast.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public final class ClusterDataSerializerHook implements DataSerializerHook {
@@ -35,9 +35,10 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int CONFIG_CHECK = 4;
     public static final int BIND_MESSAGE = 5;
 
-    // client
-    public static final int MEMBERSHIP_EVENT = 8;
-    public static final int INITIAL_MEMBERSHIP_EVENT = 9;
+    public static final int MEMBER_INFO_UPDATE = 6;
+    public static final int FINALIZE_JOIN = 7;
+
+    private static final DataSerializableFactory FACTORY = new ClusterDataSerializerFactoryImpl();
 
     @Override
     public int getFactoryId() {
@@ -46,28 +47,31 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case ADDRESS:
-                        return new Address();
-                    case MEMBER:
-                        return new MemberImpl();
-                    case HEARTBEAT:
-                        return new HeartbeatOperation();
-                    case CONFIG_CHECK:
-                        return new ConfigCheck();
-                    case BIND_MESSAGE:
-                        return new BindMessage();
-                    case MEMBERSHIP_EVENT:
-                        return new ClientMembershipEvent();
-                    case INITIAL_MEMBERSHIP_EVENT:
-                        return new ClientInitialMembershipEvent();
-                    default:
-                        return null;
-                }
+        return FACTORY;
+    }
+
+    public static class ClusterDataSerializerFactoryImpl implements DataSerializableFactory {
+
+        @Override
+        public IdentifiedDataSerializable create(int typeId) {
+            switch (typeId) {
+                case ADDRESS:
+                    return new Address();
+                case MEMBER:
+                    return new MemberImpl();
+                case HEARTBEAT:
+                    return new HeartbeatOperation();
+                case CONFIG_CHECK:
+                    return new ConfigCheck();
+                case BIND_MESSAGE:
+                    return new BindMessage();
+                case MEMBER_INFO_UPDATE:
+                    return new MemberInfoUpdateOperation();
+                case FINALIZE_JOIN:
+                    return new FinalizeJoinOperation();
+                default:
+                    return null;
             }
-        };
+        }
     }
 }

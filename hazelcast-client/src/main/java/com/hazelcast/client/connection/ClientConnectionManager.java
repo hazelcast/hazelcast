@@ -16,11 +16,11 @@
 
 package com.hazelcast.client.connection;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.Packet;
 
 import java.io.IOException;
 
@@ -62,6 +62,14 @@ public interface ClientConnectionManager {
     Connection getOrConnect(Address address, Authenticator authenticator) throws IOException;
 
     /**
+     * @param address       to be connected
+     * @param authenticator Authenticator implementation to send appropriate Authentication Request after connection
+     * @return associated connection if available, triggers new connection creation otherwise
+     * @throws IOException if connection is not available at the time of call
+     */
+    Connection getOrTriggerConnect(Address address, Authenticator authenticator) throws IOException;
+
+    /**
      * Destroys the connection
      * Clears related resources of given connection.
      * ConnectionListener.connectionRemoved is called on registered listeners.
@@ -75,9 +83,10 @@ public interface ClientConnectionManager {
     /**
      * Handles incoming network package
      *
-     * @param packet to be processed
+     * @param message to be processed
+     * @param connection that client message come from
      */
-    void handlePacket(Packet packet);
+    void handleClientMessage(ClientMessage message, Connection connection);
 
     void addConnectionListener(ConnectionListener connectionListener);
 

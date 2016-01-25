@@ -17,29 +17,48 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+
+import java.io.IOException;
 
 /**
  * An operation to unlock key on the backup owner.
  */
 public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
+    private String ownerUuid;
+
 
     public TxnUnlockBackupOperation() {
     }
 
-    public TxnUnlockBackupOperation(String name, Data dataKey) {
+    public TxnUnlockBackupOperation(String name, Data dataKey, String ownerUuid) {
         super(name, dataKey, -1);
+        this.ownerUuid = ownerUuid;
     }
 
     @Override
     public void run() {
-        recordStore.unlock(dataKey, getCallerUuid(), getThreadId(), getCallId());
+        recordStore.unlock(dataKey, ownerUuid, getThreadId(), getCallId());
     }
 
     @Override
     public Object getResponse() {
         return Boolean.TRUE;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeUTF(ownerUuid);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        ownerUuid = in.readUTF();
     }
 }

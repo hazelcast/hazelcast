@@ -12,6 +12,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
@@ -19,12 +20,12 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
 
-    private MetricsRegistryImpl blackbox;
+    private MetricsRegistryImpl metricsRegistry;
     private GarbageCollectionMetricSet.GcStats gcStats;
 
     @Before
     public void setup() {
-        blackbox = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
         gcStats = new GarbageCollectionMetricSet.GcStats();
     }
 
@@ -35,7 +36,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void minorCount() {
-        final LongGauge gauge = blackbox.newLongGauge("gc.minorCount");
+        final LongGauge gauge = metricsRegistry.newLongGauge("gc.minorCount");
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -47,7 +48,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void minorTime() throws InterruptedException {
-        final LongGauge gauge = blackbox.newLongGauge("gc.minorTime");
+        final LongGauge gauge = metricsRegistry.newLongGauge("gc.minorTime");
          assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -59,7 +60,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void majorCount() {
-        final LongGauge gauge = blackbox.newLongGauge("gc.majorCount");
+        final LongGauge gauge = metricsRegistry.newLongGauge("gc.majorCount");
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -71,7 +72,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void majorTime() {
-        final LongGauge gauge = blackbox.newLongGauge("gc.majorTime");
+        final LongGauge gauge = metricsRegistry.newLongGauge("gc.majorTime");
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -84,7 +85,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void unknownCount() {
-        final LongGauge gauge = blackbox.newLongGauge("gc.unknownCount");
+        final LongGauge gauge = metricsRegistry.newLongGauge("gc.unknownCount");
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -96,7 +97,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void unknownTime() {
-        final LongGauge gauge = blackbox.newLongGauge("gc.unknownTime");
+        final LongGauge gauge = metricsRegistry.newLongGauge("gc.unknownTime");
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {

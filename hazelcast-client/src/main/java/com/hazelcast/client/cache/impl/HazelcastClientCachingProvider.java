@@ -52,43 +52,33 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
     }
 
     @Override
-    protected HazelcastClientCacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties properties) {
+    protected HazelcastClientCacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader,
+                                                                      Properties properties) {
+        final boolean isDefaultURI = (uri == null || uri.equals(getDefaultURI()));
         final HazelcastInstance instance;
-        //uri is null or default or a non hazelcast one, then we use the internal shared instance
-        if (uri == null || uri.equals(getDefaultURI())) {
-            if (hazelcastInstance == null) {
-                try {
-                    hazelcastInstance = instanceFromProperties(classLoader, properties, true);
-                } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
-                }
+        try {
+            instance = getOrCreateInstance(classLoader, properties, isDefaultURI);
+            if (instance == null) {
+                throw new IllegalArgumentException(INVALID_HZ_INSTANCE_SPECIFICATION_MESSAGE);
             }
-            instance = hazelcastInstance;
-        } else {
-            try {
-                instance = instanceFromProperties(classLoader, properties, false);
-                if (instance == null) {
-                    throw new IllegalArgumentException(INVALID_HZ_INSTANCE_SPECIFICATION_MESSAGE);
-                }
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
-            }
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
         }
         return new HazelcastClientCacheManager(this, instance, uri, classLoader, properties);
     }
 
-    private HazelcastInstance instanceFromProperties(ClassLoader classLoader, Properties properties, boolean isDefault)
+    private HazelcastInstance getOrCreateInstance(ClassLoader classLoader, Properties properties, boolean isDefaultURI)
             throws URISyntaxException, IOException {
-        ClassLoader theClassLoader = classLoader == null ? getDefaultClassLoader() : classLoader;
-        HazelcastInstance instance = null;
         String location = properties.getProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION);
+        // If config location is specified, get instance through it.
         if (location != null) {
             URI uri = new URI(location);
             String scheme = uri.getScheme();
             if (scheme == null) {
-                //it is a place holder
+                // It is a place holder
                 uri = new URI(System.getProperty(uri.getRawSchemeSpecificPart()));
             }
+            ClassLoader theClassLoader = classLoader == null ? getDefaultClassLoader() : classLoader;
             final URL configURL;
             if ("classpath".equals(scheme)) {
                 configURL = theClassLoader.getResource(uri.getRawSchemeSpecificPart());
@@ -100,26 +90,37 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
             try {
                 final ClientConfig config = new XmlClientConfigBuilder(configURL).build();
                 config.setClassLoader(theClassLoader);
-                instance = HazelcastClient.newHazelcastClient(config);
+                return HazelcastClient.newHazelcastClient(config);
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }
         }
+
+        // If config location is specified, get instance with its name.
         String instanceName = properties.getProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME);
         if (instanceName != null) {
-            instance = HazelcastClient.getHazelcastClientByName(instanceName);
+            return HazelcastClient.getHazelcastClientByName(instanceName);
         }
-        if (isDefault) {
-            instance = HazelcastClient.newHazelcastClient();
+
+        HazelcastInstance instance = null;
+        // No instance specified with name of config location,
+        // so we are going on with the default one if the URI is the default.
+        if (isDefaultURI) {
+            if (hazelcastInstance == null) {
+                // If there is no default instance in use (not created yet and not specified), create a new one.
+                instance = HazelcastClient.newHazelcastClient();
+                // Since there is no default instance in use, set new instance as default one.
+                hazelcastInstance = instance;
+            } else {
+                // Use the existing default instance.
+                instance = hazelcastInstance;
+            }
         }
         return instance;
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("HazelcastClientCachingProvider{");
-        sb.append("hazelcastInstance=").append(hazelcastInstance);
-        sb.append('}');
-        return sb.toString();
+        return "HazelcastClientCachingProvider{hazelcastInstance=" + hazelcastInstance + '}';
     }
 }

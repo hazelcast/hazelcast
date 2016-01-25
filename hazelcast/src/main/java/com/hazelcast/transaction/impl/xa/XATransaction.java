@@ -85,7 +85,7 @@ public final class XATransaction implements Transaction {
         this.transactionLog = new TransactionLog();
         this.nodeEngine = nodeEngine;
         this.timeoutMillis = SECONDS.toMillis(timeout);
-        this.txnId = UuidUtil.buildRandomUuidString();
+        this.txnId = UuidUtil.newUnsecureUuidString();
         this.xid = new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());
         this.txOwnerUuid = txOwnerUuid == null ? nodeEngine.getLocalMember().getUuid() : txOwnerUuid;
 

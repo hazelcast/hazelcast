@@ -3,12 +3,12 @@ package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -79,7 +79,7 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
 
     public void test(InMemoryFormat inMemoryFormat, int ttlSeconds) {
         RingbufferConfig config = new RingbufferConfig("foobar")
-                .setCapacity(5)
+                .setCapacity(3)
                 .setAsyncBackupCount(2)
                 .setBackupCount(2)
                 .setInMemoryFormat(inMemoryFormat)
@@ -130,10 +130,10 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
             long originalExpiration = original.ringExpirationMs[index];
             long actualExpiration = clone.ringExpirationMs[index];
             double difference = actualExpiration - originalExpiration;
-            assertTrue(difference > 0.75 * CLOCK_DIFFERENCE_MS);
-            assertTrue(difference < 1.25 * CLOCK_DIFFERENCE_MS);
+            assertTrue("difference was:" + difference, difference > 0.50 * CLOCK_DIFFERENCE_MS);
+            assertTrue("difference was:" + difference, difference < 1.50 * CLOCK_DIFFERENCE_MS);
         }
-   }
+    }
 
     private RingbufferContainer clone(RingbufferContainer original) {
         BufferObjectDataOutput out = serializationService.createObjectDataOutput(100000);

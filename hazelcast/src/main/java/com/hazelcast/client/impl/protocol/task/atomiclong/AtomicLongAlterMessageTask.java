@@ -50,7 +50,7 @@ public class AtomicLongAlterMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return AtomicLongAlterCodec.encodeResponse((Long) response);
+        return AtomicLongAlterCodec.encodeResponse();
     }
 
     @Override

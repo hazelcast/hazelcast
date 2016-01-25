@@ -127,7 +127,7 @@ public final class Address implements IdentifiedDataSerializable {
 
     public String getScopedHost() {
         return (isIPv4() || hostSet || scopeId == null) ? getHost()
-                : getHost() + "%" + scopeId;
+                : getHost() + '%' + scopeId;
     }
 
     @Override

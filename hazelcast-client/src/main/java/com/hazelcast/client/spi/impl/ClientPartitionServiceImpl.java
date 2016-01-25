@@ -17,10 +17,12 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientPartitionService;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.logging.ILogger;
@@ -28,27 +30,30 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.client.GetPartitionsRequest;
-import com.hazelcast.partition.client.PartitionsResponse;
+import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.HashUtil;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.util.HashUtil.hashToIndex;
-
 /**
  * The {@link ClientPartitionService} implementation.
  */
-public final class ClientPartitionServiceImpl implements ClientPartitionService {
+public final class ClientPartitionServiceImpl
+        implements ClientPartitionService {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientPartitionService.class);
     private static final long PERIOD = 10;
     private static final long INITIAL_DELAY = 10;
     private static final int PARTITION_WAIT_TIME = 1000;
+    private final ExecutionCallback<ClientMessage> refreshTaskCallback = new RefreshTaskCallback();
 
     private final HazelcastClientInstanceImpl client;
 
@@ -63,14 +68,18 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     public void start() {
-        ClientExecutionService clientExecutionService = client.getClientExecutionService();
-        clientExecutionService.scheduleWithFixedDelay(new RefreshTask(), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
+        ClientExecutionServiceImpl clientExecutionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
+        // Use internal execution service for all partition refresh process (Do not use the user executor thread)
+        ExecutorService internalExecutor = clientExecutionService.getInternalExecutor();
+        clientExecutionService.scheduleWithFixedDelay(new RefreshTask(internalExecutor), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
     }
 
     public void refreshPartitions() {
         ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         try {
-            executionService.executeInternal(new RefreshTask());
+            // Use internal execution service for all partition refresh process (Do not use the user executor thread)
+            ExecutorService internalExecutor = executionService.getInternalExecutor();
+            executionService.submitInternal(new RefreshTask(internalExecutor));
         } catch (RejectedExecutionException ignored) {
             EmptyStatement.ignore(ignored);
         }
@@ -78,6 +87,11 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     private void getPartitionsBlocking() {
         while (!getPartitions() && client.getConnectionManager().isAlive()) {
+            if (isClusterFormedByOnlyLiteMembers()) {
+                throw new NoDataMemberInClusterException(
+                        "Partitions can't be assigned since all nodes in the cluster are lite members");
+            }
+
             try {
                 Thread.sleep(PARTITION_WAIT_TIME);
             } catch (InterruptedException e) {
@@ -86,49 +100,61 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
     }
 
-    private boolean getPartitions() {
+    private boolean isClusterFormedByOnlyLiteMembers() {
+        final ClientClusterService clusterService = client.getClientClusterService();
+        return clusterService.getMembers(MemberSelectors.DATA_MEMBER_SELECTOR).isEmpty();
+    }
+
+    private Connection getOwnerConnection() {
         ClientClusterService clusterService = client.getClientClusterService();
         Address ownerAddress = clusterService.getOwnerConnectionAddress();
         if (ownerAddress == null) {
-            return false;
+            return null;
         }
         Connection connection = client.getConnectionManager().getConnection(ownerAddress);
-        PartitionsResponse response = getPartitionsFrom(connection);
-        if (response != null) {
-            processPartitionResponse(response);
-            return true;
+        if (connection == null) {
+            return null;
+        }
+        return connection;
+    }
+
+    private boolean getPartitions() {
+        Connection connection = getOwnerConnection();
+        if (connection == null) {
+            return false;
+        }
+        try {
+            Future<ClientMessage> future = getPartitionsFrom(connection);
+            ClientMessage responseMessage = future.get();
+            ClientGetPartitionsCodec.ResponseParameters response = ClientGetPartitionsCodec.decodeResponse(responseMessage);
+            if (response == null) {
+                return false;
+            }
+            return processPartitionResponse(response);
+        } catch (Exception e) {
+            if (client.getLifecycleService().isRunning()) {
+                LOGGER.warning("Error while fetching cluster partition table!", e);
+            }
         }
         return false;
     }
 
-    private PartitionsResponse getPartitionsFrom(Connection connection) {
-        if (connection == null) {
-            return null;
-        }
-        try {
-            final GetPartitionsRequest request = new GetPartitionsRequest();
-            Future<PartitionsResponse> future = new ClientInvocation(client, request, connection).invoke();
-            return client.getSerializationService().toObject(future.get());
-        } catch (Exception e) {
-            if (client.getLifecycleService().isRunning()) {
-                LOGGER.severe("Error while fetching cluster partition table!", e);
-            }
-        }
-        return null;
+    private ClientInvocationFuture getPartitionsFrom(Connection connection) {
+        ClientMessage requestMessage = ClientGetPartitionsCodec.encodeRequest();
+        return new ClientInvocation(client, requestMessage, connection).invokeUrgent();
     }
 
-    private void processPartitionResponse(PartitionsResponse response) {
-        Address[] members = response.getMembers();
-        int[] ownerIndexes = response.getOwnerIndexes();
-        if (partitionCount == 0) {
-            partitionCount = ownerIndexes.length;
-        }
-        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            final int ownerIndex = ownerIndexes[partitionId];
-            if (ownerIndex > -1) {
-                partitions.put(partitionId, members[ownerIndex]);
+    private boolean processPartitionResponse(ClientGetPartitionsCodec.ResponseParameters response) {
+        LOGGER.finest("Processing partition response.");
+        Map<Address, List<Integer>> partitionResponse = response.partitions;
+        for (Map.Entry<Address, List<Integer>> entry : partitionResponse.entrySet()) {
+            Address address = entry.getKey();
+            for (Integer partition : entry.getValue()) {
+                this.partitions.put(partition, address);
             }
         }
+        partitionCount = partitions.size();
+        return partitionResponse.size() > 0;
     }
 
     public void stop() {
@@ -151,7 +177,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
             return 0;
         }
         int hash = key.getPartitionHash();
-        return hashToIndex(hash, pc);
+        return HashUtil.hashToIndex(hash, pc);
     }
 
     @Override
@@ -173,7 +199,8 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         return new PartitionImpl(partitionId);
     }
 
-    private final class PartitionImpl implements Partition {
+    private final class PartitionImpl
+            implements Partition {
 
         private final int partitionId;
 
@@ -195,14 +222,16 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("PartitionImpl{");
-            sb.append("partitionId=").append(partitionId);
-            sb.append('}');
-            return sb.toString();
+            return "PartitionImpl{partitionId=" + partitionId + '}';
         }
     }
 
     private class RefreshTask implements Runnable {
+        private ExecutorService executionService;
+
+        public RefreshTask(ExecutorService service) {
+            this.executionService = service;
+        }
 
         @Override
         public void run() {
@@ -210,13 +239,45 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
                 return;
             }
 
+            Connection connection = getOwnerConnection();
+            if (connection == null) {
+                updating.set(false);
+                return;
+            }
+
             try {
-                getPartitions();
-            } catch (HazelcastInstanceNotActiveException ignored) {
-                EmptyStatement.ignore(ignored);
+                ClientInvocationFuture clientInvocationFuture = getPartitionsFrom(connection);
+                clientInvocationFuture.andThen(refreshTaskCallback, executionService);
+            } catch (Exception e) {
+                if (client.getLifecycleService().isRunning()) {
+                    LOGGER.warning("Error while fetching cluster partition table!", e);
+                }
             } finally {
                 updating.set(false);
             }
+        }
+    }
+    private class RefreshTaskCallback
+            implements ExecutionCallback<ClientMessage> {
+        @Override
+        public void onResponse(ClientMessage responseMessage) {
+            try {
+                if (responseMessage == null) {
+                    return;
+                }
+                ClientGetPartitionsCodec.ResponseParameters response = ClientGetPartitionsCodec.decodeResponse(responseMessage);
+                processPartitionResponse(response);
+            } finally {
+                updating.set(false);
+            }
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            if (client.getLifecycleService().isRunning()) {
+                LOGGER.warning("Error while fetching cluster partition table!", t);
+            }
+            updating.set(false);
         }
     }
 }

@@ -16,10 +16,11 @@
 
 package com.hazelcast.cache.impl.record;
 
+import com.hazelcast.cache.impl.CacheContext;
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
-import com.hazelcast.cache.impl.eviction.Evictable;
-import com.hazelcast.cache.impl.eviction.EvictionCandidate;
-import com.hazelcast.cache.impl.eviction.EvictionListener;
+import com.hazelcast.internal.eviction.Evictable;
+import com.hazelcast.internal.eviction.EvictionCandidate;
+import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.SampleableConcurrentHashMap;
@@ -32,15 +33,68 @@ public class CacheRecordHashMap
         extends SampleableConcurrentHashMap<Data, CacheRecord>
         implements SampleableCacheRecordMap<Data, CacheRecord> {
 
-    public CacheRecordHashMap(int initialCapacity) {
+    private static final long serialVersionUID = 1L;
+
+    private final transient CacheContext cacheContext;
+
+    public CacheRecordHashMap(int initialCapacity, CacheContext cacheContext) {
         super(initialCapacity);
+        this.cacheContext = cacheContext;
     }
 
     public CacheRecordHashMap(int initialCapacity, float loadFactor, int concurrencyLevel,
             ConcurrentReferenceHashMap.ReferenceType keyType,
             ConcurrentReferenceHashMap.ReferenceType valueType,
-            EnumSet<Option> options) {
+            EnumSet<Option> options, CacheContext cacheContext) {
         super(initialCapacity, loadFactor, concurrencyLevel, keyType, valueType, options);
+        this.cacheContext = cacheContext;
+    }
+
+    @Override
+    public CacheRecord put(Data key, CacheRecord value) {
+        CacheRecord oldRecord = super.put(key, value);
+        if (oldRecord == null) {
+            // New put
+            cacheContext.increaseEntryCount();
+        }
+        return oldRecord;
+    }
+
+    @Override
+    public CacheRecord putIfAbsent(Data key, CacheRecord value) {
+        CacheRecord oldRecord = super.putIfAbsent(key, value);
+        if (oldRecord == null) {
+            // New put
+            cacheContext.increaseEntryCount();
+        }
+        return oldRecord;
+    }
+
+    @Override
+    public CacheRecord remove(Object key) {
+        CacheRecord removedRecord = super.remove(key);
+        if (removedRecord != null) {
+            // Removed
+            cacheContext.decreaseEntryCount();
+        }
+        return removedRecord;
+    }
+
+    @Override
+    public boolean remove(Object key, Object value) {
+        boolean removed = super.remove(key, value);
+        if (removed) {
+            // Removed
+            cacheContext.decreaseEntryCount();
+        }
+        return removed;
+    }
+
+    @Override
+    public void clear() {
+        final int sizeBeforeClear = size();
+        super.clear();
+        cacheContext.decreaseEntryCount(sizeBeforeClear);
     }
 
     public class EvictableSamplingEntry extends SamplingEntry implements EvictionCandidate {
@@ -95,5 +149,4 @@ public class CacheRecordHashMap
     public Iterable<EvictableSamplingEntry> sample(int sampleCount) {
         return super.getRandomSamples(sampleCount);
     }
-
 }

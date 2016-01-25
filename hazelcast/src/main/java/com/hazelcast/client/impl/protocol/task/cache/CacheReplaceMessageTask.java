@@ -61,4 +61,23 @@ public class CacheReplaceMessageTask
     public String getDistributedObjectName() {
         return parameters.name;
     }
+
+    @Override
+    public Object[] getParameters() {
+        if (parameters.expiryPolicy == null && parameters.oldValue != null) {
+            return new Object[]{parameters.key, parameters.oldValue, parameters.newValue};
+        }
+        if (parameters.oldValue == null && parameters.expiryPolicy == null) {
+            return new Object[]{parameters.key, parameters.newValue};
+        }
+        if (parameters.oldValue == null && parameters.expiryPolicy != null) {
+            return new Object[]{parameters.key, parameters.newValue, parameters.expiryPolicy};
+        }
+        return new Object[]{parameters.key, parameters.oldValue, parameters.newValue, parameters.expiryPolicy};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "replace";
+    }
 }

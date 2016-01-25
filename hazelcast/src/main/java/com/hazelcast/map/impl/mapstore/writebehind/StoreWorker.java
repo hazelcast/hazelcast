@@ -17,11 +17,13 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
@@ -33,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.CollectionUtil.isEmpty;
@@ -77,7 +78,7 @@ public class StoreWorker implements Runnable {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         int partitionCount = partitionService.getPartitionCount();
-        List<DelayedEntry> entries = new ArrayList<DelayedEntry>();
+        List<DelayedEntry> entries = new ArrayList<DelayedEntry>(partitionCount);
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             InternalPartition partition = partitionService.getPartition(partitionId, false);
@@ -115,7 +116,9 @@ public class StoreWorker implements Runnable {
         int flushCount = getNumberOfFlushedEntries(recordStore);
         WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
 
-        List<DelayedEntry> entries = new ArrayList<DelayedEntry>();
+        final int defaultCapacity = 16;
+        int initialCapacity = Math.max(flushCount, defaultCapacity);
+        List<DelayedEntry> entries = new ArrayList<DelayedEntry>(initialCapacity);
         filterWriteBehindQueue(now, flushCount, entries, queue);
 
         return entries;
@@ -192,8 +195,8 @@ public class StoreWorker implements Runnable {
     }
 
     private long getReplicaWaitTime() {
-        return TimeUnit.SECONDS.toMillis(mapServiceContext.getNodeEngine().getGroupProperties()
-                .MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS.getInteger());
+        GroupProperties groupProperties = mapServiceContext.getNodeEngine().getGroupProperties();
+        return groupProperties.getMillis(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS);
     }
 
     private RecordStore getRecordStoreOrNull(String mapName, int partitionId) {

@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.instance.HazelcastProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -36,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.text.MessageFormat.format;
 
 /**
@@ -45,6 +47,7 @@ import static java.text.MessageFormat.format;
  * Config instances can be shared between threads, but should not be modified after they are used to
  * create HazelcastInstances.
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class Config {
 
     private static final ILogger LOGGER = Logger.getLogger(Config.class);
@@ -115,7 +118,11 @@ public class Config {
 
     private NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig();
 
+    private HotRestartPersistenceConfig hotRestartPersistenceConfig = new HotRestartPersistenceConfig();
+
     private String licenseKey;
+
+    private boolean liteMember;
 
     public Config() {
     }
@@ -164,14 +171,49 @@ public class Config {
         this.configPatternMatcher = configPatternMatcher;
     }
 
+    /**
+     * Gets a named property already set or from system properties if not exists.
+     *
+     * @param name property name
+     * @return value of the property
+     */
     public String getProperty(String name) {
         String value = properties.getProperty(name);
         return value != null ? value : System.getProperty(name);
     }
 
+    /**
+     * Sets the value of a named property.
+     *
+     * @param name  property name
+     * @param value value of the property
+     * @return configured {@link Config} for chaining
+     */
     public Config setProperty(String name, String value) {
         properties.put(name, value);
         return this;
+    }
+
+    /**
+     * Gets a {@link HazelcastProperty} already set or from system properties if not exists.
+     *
+     * @param property {@link HazelcastProperty} to get
+     * @return value of the property
+     */
+    public String getProperty(HazelcastProperty property) {
+        return getProperty(property.getName());
+    }
+
+    /**
+     * Sets the value of a {@link HazelcastProperty}.
+     *
+     * @param property {@link HazelcastProperty} to set
+     * @param value    value of the property
+     * @return configured {@link Config} for chaining
+     * @see {@link HazelcastProperty} for properties that is used to configure client
+     */
+    public Config setProperty(HazelcastProperty property, String value) {
+        return setProperty(property.getName(), value);
     }
 
     public MemberAttributeConfig getMemberAttributeConfig() {
@@ -955,6 +997,27 @@ public class Config {
         return this;
     }
 
+    /**
+     * Returns hot restart configuration for this member
+     *
+     * @return hot restart configuration
+     */
+    public HotRestartPersistenceConfig getHotRestartPersistenceConfig() {
+        return hotRestartPersistenceConfig;
+    }
+
+    /**
+     * Sets hot restart configuration.
+     *
+     * @param hrConfig hot restart configuration
+     * @return Config
+     */
+    public Config setHotRestartPersistenceConfig(HotRestartPersistenceConfig hrConfig) {
+        checkNotNull(hrConfig, "Hot restart config cannot be null!");
+        this.hotRestartPersistenceConfig = hrConfig;
+        return this;
+    }
+
     public ManagedContext getManagedContext() {
         return managedContext;
     }
@@ -1024,6 +1087,21 @@ public class Config {
         return this;
     }
 
+    /**
+     * @return indicates if the node is a lite member or not. Lite members do not own any partition.
+     */
+    public boolean isLiteMember() {
+        return liteMember;
+    }
+
+    /**
+     * @param liteMember sets if the node will be a lite member or not. Lite members do not own any partition.
+     */
+    public Config setLiteMember(boolean liteMember) {
+        this.liteMember = liteMember;
+        return this;
+    }
+
     private <T> T lookupByPattern(Map<String, T> configPatterns, String itemName) {
         T candidate = configPatterns.get(itemName);
         if (candidate != null) {
@@ -1078,25 +1156,24 @@ public class Config {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("Config");
-        sb.append("{groupConfig=").append(groupConfig);
-        sb.append(", properties=").append(properties);
-        sb.append(", networkConfig=").append(networkConfig);
-        sb.append(", mapConfigs=").append(mapConfigs);
-        sb.append(", topicConfigs=").append(topicConfigs);
-        sb.append(", reliableTopicConfigs=").append(reliableTopicConfigs);
-        sb.append(", queueConfigs=").append(queueConfigs);
-        sb.append(", multiMapConfigs=").append(multiMapConfigs);
-        sb.append(", executorConfigs=").append(executorConfigs);
-        sb.append(", semaphoreConfigs=").append(semaphoreConfigs);
-        sb.append(", ringbufferConfigs=").append(ringbufferConfigs);
-        sb.append(", wanReplicationConfigs=").append(wanReplicationConfigs);
-        sb.append(", listenerConfigs=").append(listenerConfigs);
-        sb.append(", partitionGroupConfig=").append(partitionGroupConfig);
-        sb.append(", managementCenterConfig=").append(managementCenterConfig);
-        sb.append(", securityConfig=").append(securityConfig);
-        sb.append('}');
-        return sb.toString();
+        return "Config{"
+                + "groupConfig=" + groupConfig
+                + ", properties=" + properties
+                + ", networkConfig=" + networkConfig
+                + ", mapConfigs=" + mapConfigs
+                + ", topicConfigs=" + topicConfigs
+                + ", reliableTopicConfigs=" + reliableTopicConfigs
+                + ", queueConfigs=" + queueConfigs
+                + ", multiMapConfigs=" + multiMapConfigs
+                + ", executorConfigs=" + executorConfigs
+                + ", semaphoreConfigs=" + semaphoreConfigs
+                + ", ringbufferConfigs=" + ringbufferConfigs
+                + ", wanReplicationConfigs=" + wanReplicationConfigs
+                + ", listenerConfigs=" + listenerConfigs
+                + ", partitionGroupConfig=" + partitionGroupConfig
+                + ", managementCenterConfig=" + managementCenterConfig
+                + ", securityConfig=" + securityConfig
+                + ", liteMember=" + liteMember
+                + '}';
     }
 }

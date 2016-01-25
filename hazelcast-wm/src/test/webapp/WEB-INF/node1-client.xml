@@ -28,7 +28,7 @@
         </init-param>
         <init-param>
             <param-name>sticky-session</param-name>
-            <param-value>false</param-value>
+            <param-value>true</param-value>
         </init-param>
         <init-param>
             <param-name>debug</param-name>

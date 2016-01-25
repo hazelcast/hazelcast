@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.UnsafeHelper;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.UnsafeHelper;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -27,6 +27,7 @@ import static com.hazelcast.nio.Bits.DOUBLE_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.FLOAT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
@@ -41,12 +42,13 @@ class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
 
     @Override
     public int read() throws IOException {
-        return (pos < size) ? UnsafeHelper.UNSAFE.getByte(data, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos++) : -1;
+        return (pos < size) ? UnsafeHelper.UNSAFE.getByte(data, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos++) & 0xFF : -1;
     }
 
     @Override
     public int read(int position) throws IOException {
-        return (position < size) ? UnsafeHelper.UNSAFE.getByte(data, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position) : -1;
+        return (position < size) ? UnsafeHelper.UNSAFE
+                .getByte(data, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position) : NULL_ARRAY_LENGTH;
     }
 
     @Override
@@ -129,6 +131,9 @@ class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
     @Override
     public char[] readCharArray() throws IOException {
         int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
         if (len > 0) {
             char[] values = new char[len];
             memCopy(values, UnsafeHelper.CHAR_ARRAY_BASE_OFFSET, len, UnsafeHelper.CHAR_ARRAY_INDEX_SCALE);
@@ -138,8 +143,39 @@ class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
     }
 
     @Override
+    public boolean[] readBooleanArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            boolean[] values = new boolean[len];
+            memCopy(values, UnsafeHelper.BOOLEAN_ARRAY_BASE_OFFSET, len, UnsafeHelper.BOOLEAN_ARRAY_INDEX_SCALE);
+            return values;
+        }
+        return new boolean[0];
+    }
+
+    @Override
+    public byte[] readByteArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            byte[] values = new byte[len];
+            memCopy(values, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET, len, UnsafeHelper.BYTE_ARRAY_INDEX_SCALE);
+            return values;
+        }
+        return new byte[0];
+    }
+
+    @Override
     public int[] readIntArray() throws IOException {
         int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
         if (len > 0) {
             int[] values = new int[len];
             memCopy(values, UnsafeHelper.INT_ARRAY_BASE_OFFSET, len, UnsafeHelper.INT_ARRAY_INDEX_SCALE);
@@ -151,6 +187,9 @@ class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
     @Override
     public long[] readLongArray() throws IOException {
         int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
         if (len > 0) {
             long[] values = new long[len];
             memCopy(values, UnsafeHelper.LONG_ARRAY_BASE_OFFSET, len, UnsafeHelper.LONG_ARRAY_INDEX_SCALE);
@@ -162,6 +201,9 @@ class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
     @Override
     public double[] readDoubleArray() throws IOException {
         int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
         if (len > 0) {
             double[] values = new double[len];
             memCopy(values, UnsafeHelper.DOUBLE_ARRAY_BASE_OFFSET, len, UnsafeHelper.DOUBLE_ARRAY_INDEX_SCALE);
@@ -173,6 +215,9 @@ class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
     @Override
     public float[] readFloatArray() throws IOException {
         int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
         if (len > 0) {
             float[] values = new float[len];
             memCopy(values, UnsafeHelper.FLOAT_ARRAY_BASE_OFFSET, len, UnsafeHelper.FLOAT_ARRAY_INDEX_SCALE);
@@ -184,6 +229,9 @@ class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
     @Override
     public short[] readShortArray() throws IOException {
         int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
         if (len > 0) {
             short[] values = new short[len];
             memCopy(values, UnsafeHelper.SHORT_ARRAY_BASE_OFFSET, len, UnsafeHelper.SHORT_ARRAY_INDEX_SCALE);
@@ -217,13 +265,11 @@ class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("UnsafeObjectDataInput");
-        sb.append("{size=").append(size);
-        sb.append(", pos=").append(pos);
-        sb.append(", mark=").append(mark);
-        sb.append(", byteOrder=").append(getByteOrder());
-        sb.append('}');
-        return sb.toString();
+        return "UnsafeObjectDataInput{"
+                + "size=" + size
+                + ", pos=" + pos
+                + ", mark=" + mark
+                + ", byteOrder=" + getByteOrder()
+                + '}';
     }
 }

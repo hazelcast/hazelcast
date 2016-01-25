@@ -18,9 +18,11 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.VisitablePredicate;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.OrResultSet;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -31,12 +33,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
+
 /**
  * Or Predicate
  */
-public class OrPredicate implements IndexAwarePredicate, DataSerializable {
+public final class OrPredicate
+        implements IndexAwarePredicate, VisitablePredicate, NegatablePredicate, IdentifiedDataSerializable {
 
-    private Predicate[] predicates;
+    protected Predicate[] predicates;
 
     public OrPredicate() {
     }
@@ -120,5 +125,42 @@ public class OrPredicate implements IndexAwarePredicate, DataSerializable {
         }
         sb.append(")");
         return sb.toString();
+    }
+
+    @Override
+    public Predicate accept(Visitor visitor, Indexes indexes) {
+        Predicate[] result = VisitorUtils.acceptVisitor(predicates, visitor, indexes);
+        if (result != predicates) {
+            return visitor.visit(new OrPredicate(result), indexes);
+        }
+        return visitor.visit(this, indexes);
+    }
+
+    @Override
+    public Predicate negate() {
+        int size = predicates.length;
+        Predicate[] inners = new Predicate[size];
+        for (int i = 0; i < size; i++) {
+            Predicate original = predicates[i];
+            Predicate negated;
+            if (original instanceof NegatablePredicate) {
+                negated = ((NegatablePredicate) original).negate();
+            } else {
+                negated = new NotPredicate(original);
+            }
+            inners[i] = negated;
+        }
+        AndPredicate andPredicate = new AndPredicate(inners);
+        return andPredicate;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return PREDICATE_DS_FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.OR_PREDICATE;
     }
 }

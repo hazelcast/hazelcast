@@ -53,7 +53,7 @@ public class CacheManagementConfigMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheManagementConfigCodec.encodeResponse(serializationService.toData(response));
+        return CacheManagementConfigCodec.encodeResponse();
     }
 
     @Override

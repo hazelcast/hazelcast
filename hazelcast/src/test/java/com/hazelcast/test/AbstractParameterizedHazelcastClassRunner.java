@@ -16,9 +16,6 @@
 
 package com.hazelcast.test;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.util.List;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.Parameterized;
@@ -26,6 +23,10 @@ import org.junit.runners.model.FrameworkField;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.util.List;
 
 /**
  * A base test runner which has an ability to run parameterized tests.
@@ -37,18 +38,17 @@ public abstract class AbstractParameterizedHazelcastClassRunner extends BlockJUn
     protected String fName;
 
     /**
-     * Creates a BlockJUnit4ClassRunner to run {@code klass}
+     * Creates a BlockJUnit4ClassRunner to run {@code clazz}
      *
-     * @param klass
      * @throws org.junit.runners.model.InitializationError if the test class is malformed.
      */
-    public AbstractParameterizedHazelcastClassRunner(Class<?> klass) throws InitializationError {
-        super(klass);
+    public AbstractParameterizedHazelcastClassRunner(Class<?> clazz) throws InitializationError {
+        super(clazz);
     }
 
-    public AbstractParameterizedHazelcastClassRunner(Class<?> klass, Object[] parameters,
-                                                     String name) throws InitializationError {
-        super(klass);
+    public AbstractParameterizedHazelcastClassRunner(Class<?> clazz, Object[] parameters, String name)
+            throws InitializationError {
+        super(clazz);
         fParameters = parameters;
         fName = name;
     }
@@ -94,8 +94,9 @@ public abstract class AbstractParameterizedHazelcastClassRunner extends BlockJUn
     private Object createTestUsingFieldInjection() throws Exception {
         List<FrameworkField> annotatedFieldsByParameter = getAnnotatedFieldsByParameter();
         if (annotatedFieldsByParameter.size() != fParameters.length) {
-            throw new Exception("Wrong number of parameters and @Parameter fields." +
-                    " @Parameter fields counted: " + annotatedFieldsByParameter.size() + ", available parameters: " + fParameters.length + ".");
+            throw new Exception("Wrong number of parameters and @Parameter fields."
+                    + " @Parameter fields counted: " + annotatedFieldsByParameter.size()
+                    + ", available parameters: " + fParameters.length + ".");
         }
         Object testClassInstance = getTestClass().getJavaClass().newInstance();
         for (FrameworkField each : annotatedFieldsByParameter) {
@@ -105,10 +106,10 @@ public abstract class AbstractParameterizedHazelcastClassRunner extends BlockJUn
             try {
                 field.set(testClassInstance, fParameters[index]);
             } catch (IllegalArgumentException iare) {
-                throw new Exception(getTestClass().getName() + ": Trying to set " + field.getName() +
-                        " with the value " + fParameters[index] +
-                        " that is not the right type (" + fParameters[index].getClass().getSimpleName() + " instead of " +
-                        field.getType().getSimpleName() + ").", iare);
+                throw new Exception(getTestClass().getName() + ": Trying to set " + field.getName()
+                        + " with the value " + fParameters[index]
+                        + " that is not the right type (" + fParameters[index].getClass().getSimpleName() + " instead of "
+                        + field.getType().getSimpleName() + ").", iare);
             }
         }
         return testClassInstance;
@@ -135,5 +136,4 @@ public abstract class AbstractParameterizedHazelcastClassRunner extends BlockJUn
     protected Annotation[] getRunnerAnnotations() {
         return new Annotation[0];
     }
-
 }

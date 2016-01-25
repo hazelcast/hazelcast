@@ -44,7 +44,7 @@ import static com.hazelcast.util.ConcurrentReferenceHashMap.ReferenceType.STRONG
 public class DefaultContext<KeyIn, ValueIn>
         implements Context<KeyIn, ValueIn> {
 
-    private static final AtomicIntegerFieldUpdater<DefaultContext> COLLECTED_UPDATER = AtomicIntegerFieldUpdater
+    private static final AtomicIntegerFieldUpdater<DefaultContext> COLLECTED = AtomicIntegerFieldUpdater
             .newUpdater(DefaultContext.class, "collected");
     private final IConcurrentMap<KeyIn, Combiner<ValueIn, ?>> combiners =
             new ConcurrentReferenceHashMap<KeyIn, Combiner<ValueIn, ?>>(STRONG, STRONG);
@@ -79,7 +79,7 @@ public class DefaultContext<KeyIn, ValueIn>
     public void emit(KeyIn key, ValueIn value) {
         Combiner<ValueIn, ?> combiner = getOrCreateCombiner(key);
         combiner.combine(value);
-        COLLECTED_UPDATER.incrementAndGet(this);
+        COLLECTED.incrementAndGet(this);
         mapCombineTask.onEmit(this, partitionId);
     }
 
@@ -95,7 +95,7 @@ public class DefaultContext<KeyIn, ValueIn>
                 chunkMap.put(entry.getKey(), chunk);
             }
         }
-        COLLECTED_UPDATER.set(this, 0);
+        COLLECTED.set(this, 0);
         return chunkMap;
     }
 

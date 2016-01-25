@@ -16,12 +16,16 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 
 import java.util.Map;
 
+import static com.hazelcast.map.impl.MapConfigValidator.checkInMemoryFormat;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 /**
@@ -31,34 +35,38 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
  */
 class MapRemoteService implements RemoteService {
 
-    private final MapServiceContext mapServiceContext;
-    private final NodeEngine nodeEngine;
+    protected final MapServiceContext mapServiceContext;
+    protected final NodeEngine nodeEngine;
 
-    public MapRemoteService(MapServiceContext mapServiceContext) {
+    MapRemoteService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
     }
 
     @Override
-    public MapProxyImpl createDistributedObject(String name) {
-        return new MapProxyImpl(name, mapServiceContext.getService(), nodeEngine);
+    public DistributedObject createDistributedObject(String name) {
+        MapConfig mapConfig = nodeEngine.getConfig().findMapConfig(name);
+        checkInMemoryFormat(mapConfig.getInMemoryFormat());
+
+        if (mapConfig.isNearCacheEnabled()) {
+            checkInMemoryFormat(mapConfig.getNearCacheConfig().getInMemoryFormat());
+
+            return new NearCachedMapProxyImpl(name, mapServiceContext.getService(), nodeEngine);
+        } else {
+            return new MapProxyImpl(name, mapServiceContext.getService(), nodeEngine);
+        }
     }
 
     @Override
     public void destroyDistributedObject(String name) {
-        final Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
-        MapContainer mapContainer = mapContainers.remove(name);
-        if (mapContainer != null) {
-            if (mapContainer.isNearCacheEnabled()) {
-                mapServiceContext.getNearCacheProvider().remove(name);
-            }
-            mapContainer.getMapStoreContext().stop();
-        }
         mapServiceContext.destroyMap(name);
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
+        Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
+        MapContainer mapContainer = mapContainers.remove(name);
+        if (mapContainer != null) {
+            mapServiceContext.getNearCacheProvider().destroyNearCache(name);
+            mapContainer.getMapStoreContext().stop();
+        }
     }
 
-    MapServiceContext getMapServiceContext() {
-        return mapServiceContext;
-    }
 }

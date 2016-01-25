@@ -32,8 +32,8 @@ public class GenericOperation extends AbstractRingBufferOperation {
     public static final byte OPERATION_REMAINING_CAPACITY = 3;
     public static final byte OPERATION_CAPACITY = 4;
 
-    private byte operation;
-    private long result;
+    byte operation;
+    private transient long result;
 
     public GenericOperation() {
     }

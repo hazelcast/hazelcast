@@ -29,7 +29,7 @@ public class TargetNotMemberException extends RetryableHazelcastException {
     }
 
     public TargetNotMemberException(Address target, int partitionId, String operationName, String serviceName) {
-        super("Not Member! target:" + target + ", partitionId: " + partitionId
+        super("Not Member! target: " + target + ", partitionId: " + partitionId
                 + ", operation: " + operationName + ", service: " + serviceName);
     }
 }

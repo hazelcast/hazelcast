@@ -25,10 +25,12 @@ public class ErrorCommandProcessor extends AbstractTextCommandProcessor<ErrorCom
         super(textCommandService);
     }
 
+    @Override
     public void handle(ErrorCommand command) {
         textCommandService.sendResponse(command);
     }
 
+    @Override
     public void handleRejection(ErrorCommand command) {
         handle(command);
     }

@@ -17,8 +17,8 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -53,7 +53,7 @@ public class CacheRemoveAllBackupOperation
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override
@@ -69,7 +69,7 @@ public class CacheRemoveAllBackupOperation
     @Override
     public void beforeRun()
             throws Exception {
-        CacheService service = getService();
+        ICacheService service = getService();
         cache = service.getOrCreateRecordStore(name, getPartitionId());
     }
 

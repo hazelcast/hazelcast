@@ -16,8 +16,8 @@
 
 package com.hazelcast.cache.impl.record;
 
-import com.hazelcast.cache.impl.eviction.Evictable;
-import com.hazelcast.cache.impl.eviction.Expirable;
+import com.hazelcast.internal.eviction.Evictable;
+import com.hazelcast.internal.eviction.Expirable;
 
 /**
  * <p>
@@ -29,9 +29,10 @@ import com.hazelcast.cache.impl.eviction.Expirable;
  */
 public interface CacheRecord<V> extends Expirable, Evictable {
 
-    int EXPIRATION_TIME_NOT_AVAILABLE = -1;
-
-    int ACCESS_HIT_NOT_AVAILABLE = -1;
+    /**
+     * Represents invalid (not set) time for creation time, expiration time, access time, etc ...
+     */
+    long TIME_NOT_AVAILABLE = -1;
 
     /**
      * Gets the value of this {@link CacheRecord}.

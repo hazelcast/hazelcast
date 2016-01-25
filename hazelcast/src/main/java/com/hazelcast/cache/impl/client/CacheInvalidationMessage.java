@@ -16,20 +16,19 @@
 
 package com.hazelcast.cache.impl.client;
 
-import com.hazelcast.cache.impl.CachePortableHook;
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public abstract class CacheInvalidationMessage implements Portable {
+public abstract class CacheInvalidationMessage implements IdentifiedDataSerializable {
 
     protected String name;
 
     public CacheInvalidationMessage() {
-
     }
 
     public CacheInvalidationMessage(String name) {
@@ -50,17 +49,17 @@ public abstract class CacheInvalidationMessage implements Portable {
 
     @Override
     public int getFactoryId() {
-        return CachePortableHook.F_ID;
+        return CacheDataSerializerHook.F_ID;
     }
 
     @Override
-    public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
     }
 
     @Override
-    public void readPortable(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
     }
 
 }

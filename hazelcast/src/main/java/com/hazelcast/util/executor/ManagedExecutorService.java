@@ -20,6 +20,8 @@ import com.hazelcast.internal.metrics.Probe;
 
 import java.util.concurrent.ExecutorService;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+
 public interface ManagedExecutorService extends ExecutorService {
 
     String getName();
@@ -33,7 +35,7 @@ public interface ManagedExecutorService extends ExecutorService {
     @Probe(name = "poolSize")
     int getPoolSize();
 
-    @Probe(name = "queueSize")
+    @Probe(name = "queueSize", level = MANDATORY)
     int getQueueSize();
 
     @Probe(name = "remainingQueueCapacity")

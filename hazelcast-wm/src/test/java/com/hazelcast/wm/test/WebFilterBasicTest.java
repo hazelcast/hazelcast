@@ -23,7 +23,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.web.SessionState;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -139,15 +138,21 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
         assertEquals("false", executeRequest("isNew", serverPort1, cookieStore));
     }
 
-    //TODO : Ignored for now this case is not handled.
-    @Test(timeout = 20000)
-    @Ignore
+    @Test(timeout = 40000)
     public void test_sessionTimeout() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
         IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
         executeRequest("write", serverPort1, cookieStore);
         executeRequest("timeout", serverPort1, cookieStore);
         assertSizeEventually(0, map);
+    }
+
+    @Test(timeout = 20000)
+    public void testServerRestart() throws Exception {
+        CookieStore cookieStore = new BasicCookieStore();
+        executeRequest("write", serverPort1, cookieStore);
+        server1.restart();
+        assertEquals("value", executeRequest("read", serverPort2, cookieStore));
     }
 
     @Override

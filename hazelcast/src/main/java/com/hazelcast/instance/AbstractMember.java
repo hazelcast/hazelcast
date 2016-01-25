@@ -33,12 +33,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public abstract class AbstractMember
-        implements Member {
+public abstract class AbstractMember implements Member {
 
     protected final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
     protected Address address;
     protected String uuid;
+    protected boolean liteMember;
 
     protected AbstractMember() {
     }
@@ -52,17 +52,23 @@ public abstract class AbstractMember
     }
 
     protected AbstractMember(Address address, String uuid, Map<String, Object> attributes) {
+        this(address, uuid, attributes, false);
+    }
+
+    protected AbstractMember(Address address, String uuid, Map<String, Object> attributes, boolean liteMember) {
         this.address = address;
         this.uuid = uuid;
         if (attributes != null) {
             this.attributes.putAll(attributes);
         }
+        this.liteMember = liteMember;
     }
 
     protected AbstractMember(AbstractMember member) {
         this.address = member.address;
         this.uuid = member.uuid;
         this.attributes.putAll(member.attributes);
+        this.liteMember = member.liteMember;
     }
 
     public Address getAddress() {
@@ -113,6 +119,11 @@ public abstract class AbstractMember
     }
 
     @Override
+    public boolean isLiteMember() {
+        return liteMember;
+    }
+
+    @Override
     public Map<String, Object> getAttributes() {
         return Collections.unmodifiableMap(attributes);
     }
@@ -135,11 +146,11 @@ public abstract class AbstractMember
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
         uuid = in.readUTF();
+        liteMember = in.readBoolean();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
@@ -149,10 +160,10 @@ public abstract class AbstractMember
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
         out.writeUTF(uuid);
+        out.writeBoolean(liteMember);
         Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
         out.writeInt(attributes.size());
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
@@ -170,6 +181,9 @@ public abstract class AbstractMember
         sb.append(address.getPort());
         if (localMember()) {
             sb.append(" this");
+        }
+        if (isLiteMember()) {
+            sb.append(" lite");
         }
         return sb.toString();
     }
@@ -203,5 +217,4 @@ public abstract class AbstractMember
         }
         return true;
     }
-
 }

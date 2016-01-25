@@ -25,25 +25,29 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 
-/**
- * @author mdogan 25/08/14
- */
 public class SimpleMemberImpl implements Member {
 
     private String uuid;
     private InetSocketAddress address;
+    private boolean liteMember;
 
+    @SuppressWarnings("unused")
     public SimpleMemberImpl() {
     }
 
     public SimpleMemberImpl(String uuid, InetSocketAddress address) {
+        this(uuid, address, false);
+    }
+
+    public SimpleMemberImpl(String uuid, InetSocketAddress address, boolean liteMember) {
         this.uuid = uuid;
         this.address = address;
+        this.liteMember = liteMember;
     }
 
     @Override
     public Address getAddress() {
-        throw new UnsupportedOperationException();
+        return new Address(address);
     }
 
     @Override
@@ -67,6 +71,11 @@ public class SimpleMemberImpl implements Member {
     }
 
     @Override
+    public boolean isLiteMember() {
+        return liteMember;
+    }
+
+    @Override
     public Map<String, Object> getAttributes() {
         return null;
     }
@@ -78,7 +87,6 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void setStringAttribute(String key, String value) {
-
     }
 
     @Override
@@ -88,7 +96,6 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void setBooleanAttribute(String key, boolean value) {
-
     }
 
     @Override
@@ -98,7 +105,6 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void setByteAttribute(String key, byte value) {
-
     }
 
     @Override
@@ -108,7 +114,6 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void setShortAttribute(String key, short value) {
-
     }
 
     @Override
@@ -118,7 +123,6 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void setIntAttribute(String key, int value) {
-
     }
 
     @Override
@@ -128,7 +132,6 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void setLongAttribute(String key, long value) {
-
     }
 
     @Override
@@ -138,7 +141,6 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void setFloatAttribute(String key, float value) {
-
     }
 
     @Override
@@ -148,23 +150,23 @@ public class SimpleMemberImpl implements Member {
 
     @Override
     public void setDoubleAttribute(String key, double value) {
-
     }
 
     @Override
     public void removeAttribute(String key) {
-
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(uuid);
         out.writeObject(address);
+        out.writeBoolean(liteMember);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         uuid = in.readUTF();
         address = in.readObject();
+        liteMember = in.readBoolean();
     }
 }

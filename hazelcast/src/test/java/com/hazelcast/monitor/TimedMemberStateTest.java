@@ -3,6 +3,8 @@ package com.hazelcast.monitor;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -25,13 +27,14 @@ import static org.junit.Assert.assertTrue;
 public class TimedMemberStateTest extends HazelcastTestSupport {
 
     private TimedMemberState timedMemberState;
+    HazelcastInstance hz;
 
     @Before
     public void setUp() {
         Set<String> instanceNames = new HashSet<String>();
         instanceNames.add("topicStats");
 
-        HazelcastInstance hz = createHazelcastInstance();
+        hz = createHazelcastInstance();
         TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
 
         timedMemberState = timedMemberStateFactory.createTimedMemberState();
@@ -68,5 +71,13 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertTrue(deserialized.getInstanceNames().contains("topicStats"));
         assertNotNull(deserialized.getMemberState());
         assertNotNull(deserialized.toString());
+    }
+
+    @Test
+    public void testReplicatedMapGetStats() {
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        hz.getReplicatedMap("replicatedMap");
+        ReplicatedMapService replicatedMapService = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
+        assertNotNull(replicatedMapService.getStats().get("replicatedMap"));
     }
 }

@@ -24,7 +24,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.EventData;
+import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.multimap.impl.operations.MultiMapMigrationOperation;
@@ -66,6 +66,7 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         EventPublishingService<EventData, EntryListener>, TransactionalService, StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:multiMapService";
+
     private static final int STATS_MAP_INITIAL_CAPACITY = 1000;
     private static final int REPLICA_ADDRESS_TRY_COUNT = 3;
     private static final int REPLICA_ADDRESS_SLEEP_WAIT_MILLIS = 1000;
@@ -235,7 +236,7 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
             if (container.getConfig().getTotalBackupCount() < replicaIndex) {
                 continue;
             }
-            map.put(name, container.getMultiMapWrappers());
+            map.put(name, container.getMultiMapValues());
         }
         if (map.isEmpty()) {
             return null;
@@ -247,21 +248,22 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         for (Map.Entry<String, Map> entry : map.entrySet()) {
             String name = entry.getKey();
             MultiMapContainer container = getOrCreateCollectionContainer(partitionId, name);
-            Map<Data, MultiMapWrapper> collections = entry.getValue();
+            Map<Data, MultiMapValue> collections = entry.getValue();
             long maxRecordId = -1;
-            for (Map.Entry<Data, MultiMapWrapper> wrapperEntry : collections.entrySet()) {
-                MultiMapWrapper wrapper = wrapperEntry.getValue();
-                container.getMultiMapWrappers().put(wrapperEntry.getKey(), wrapper);
-                long wrapperMaxRecordId = getMaxRecordId(wrapper);
-                maxRecordId = Math.max(maxRecordId, wrapperMaxRecordId);
+
+            for (Map.Entry<Data, MultiMapValue> multiMapValueEntry : collections.entrySet()) {
+                MultiMapValue multiMapValue = multiMapValueEntry.getValue();
+                container.getMultiMapValues().put(multiMapValueEntry.getKey(), multiMapValue);
+                long recordId = getMaxRecordId(multiMapValue);
+                maxRecordId = Math.max(maxRecordId, recordId);
             }
             container.setId(maxRecordId);
         }
     }
 
-    private long getMaxRecordId(MultiMapWrapper wrapper) {
+    private long getMaxRecordId(MultiMapValue multiMapValue) {
         long maxRecordId = -1;
-        for (MultiMapRecord record : wrapper.getCollection(false)) {
+        for (MultiMapRecord record : multiMapValue.getCollection(false)) {
             maxRecordId = Math.max(maxRecordId, record.getRecordId());
         }
         return maxRecordId;
@@ -313,9 +315,9 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
             if (owner != null) {
                 if (owner.equals(thisAddress)) {
                     lockedEntryCount += multiMapContainer.getLockedCount();
-                    for (MultiMapWrapper wrapper : multiMapContainer.getMultiMapWrappers().values()) {
-                        hits += wrapper.getHits();
-                        ownedEntryCount += wrapper.getCollection(false).size();
+                    for (MultiMapValue multiMapValue : multiMapContainer.getMultiMapValues().values()) {
+                        hits += multiMapValue.getHits();
+                        ownedEntryCount += multiMapValue.getCollection(false).size();
                     }
                 } else {
                     int backupCount = multiMapContainer.getConfig().getTotalBackupCount();
@@ -335,8 +337,8 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
                         }
 
                         if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
-                            for (MultiMapWrapper wrapper : multiMapContainer.getMultiMapWrappers().values()) {
-                                backupEntryCount += wrapper.getCollection(false).size();
+                            for (MultiMapValue multiMapValue : multiMapContainer.getMultiMapValues().values()) {
+                                backupEntryCount += multiMapValue.getCollection(false).size();
                             }
                         }
                     }

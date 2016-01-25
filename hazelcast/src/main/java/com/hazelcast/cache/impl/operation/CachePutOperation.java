@@ -16,7 +16,10 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheEntryViews;
+import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,10 +30,10 @@ import java.io.IOException;
 
 /**
  * Operation implementation for
- * {@link com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, String)} and
- * {@link com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, String)}.
- * @see com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, String)
- * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, String)
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, String, int)} and
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, String, int)}.
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, String, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, String, int)
  */
 public class CachePutOperation
         extends AbstractMutatingCacheOperation {
@@ -55,16 +58,28 @@ public class CachePutOperation
             throws Exception {
         if (get) {
             response = cache.getAndPut(key, value, expiryPolicy, getCallerUuid(), completionId);
+            backupRecord = cache.getRecord(key);
         } else {
-            cache.put(key, value, expiryPolicy, getCallerUuid(), completionId);
-            response = null;
+            backupRecord = cache.put(key, value, expiryPolicy, getCallerUuid(), completionId);
         }
-        backupRecord = cache.getRecord(key);
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (cache.isWanReplicationEnabled()) {
+            CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key, value, backupRecord);
+            CacheWanEventPublisher publisher = cacheService.getCacheWanEventPublisher();
+            publisher.publishWanReplicationUpdate(name, entryView);
+        }
     }
 
     @Override
     public boolean shouldBackup() {
-        return true;
+        // Backup record may be null since record store might be cleared by destroy operation at the same time
+        // because destroy operation is not called from partition thread pool.
+        // In this case, we simply ignore backup operation
+        // because record store on backup will be cleared also by destroy operation.
+        return backupRecord != null;
     }
 
     @Override

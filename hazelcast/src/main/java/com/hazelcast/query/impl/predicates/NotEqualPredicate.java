@@ -16,8 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.query.impl.ComparisonType;
-import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -27,7 +26,7 @@ import java.util.Set;
 /**
  * Not Equal Predicate
  */
-public class NotEqualPredicate extends EqualPredicate {
+public final class NotEqualPredicate extends EqualPredicate {
     public NotEqualPredicate() {
     }
 
@@ -37,11 +36,6 @@ public class NotEqualPredicate extends EqualPredicate {
 
     @Override
     public boolean apply(Map.Entry entry) {
-        Comparable entryValue = readAttribute(entry);
-        if (entryValue == null) {
-            return false;
-        }
-
         return !super.apply(entry);
     }
 
@@ -52,16 +46,21 @@ public class NotEqualPredicate extends EqualPredicate {
 
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Index index = getIndex(queryContext);
-        if (index != null) {
-            return index.getSubRecords(ComparisonType.NOT_EQUAL, value);
-        } else {
-            return null;
-        }
+        return null;
     }
 
     @Override
     public String toString() {
-        return attribute + " != " + value;
+        return attributeName + " != " + value;
+    }
+
+    @Override
+    public Predicate negate() {
+        return new EqualPredicate(attributeName, value);
+    }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.NOTEQUAL_PREDICATE;
     }
 }

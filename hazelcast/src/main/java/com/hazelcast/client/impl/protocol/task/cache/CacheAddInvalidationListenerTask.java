@@ -48,10 +48,10 @@ public class CacheAddInvalidationListenerTask
         final ClientEndpoint endpoint = getEndpoint();
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
         CacheContext cacheContext = cacheService.getOrCreateCacheContext(parameters.name);
+        CacheInvalidationEventListener listener = new CacheInvalidationEventListener(endpoint, cacheContext);
         String registrationId =
-                cacheService.addInvalidationListener(parameters.name,
-                                                     new CacheInvalidationEventListener(endpoint, cacheContext));
-        endpoint.setListenerRegistration(CacheService.SERVICE_NAME, parameters.name, registrationId);
+                cacheService.addInvalidationListener(parameters.name, listener, parameters.localOnly);
+        endpoint.addListenerDestroyAction(CacheService.SERVICE_NAME, parameters.name, registrationId);
         return registrationId;
     }
 

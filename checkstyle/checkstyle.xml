@@ -46,6 +46,9 @@
     <!-- Enable suppression of file contents using //CHECKSTYLE:[ON|OFF] comments -->
     <module name="SuppressionCommentFilter"/>
 
+    <!-- Enable the suppression annotation @SuppressWarnings("checkstyle:lowercasecheckname"} -->
+    <module name="SuppressWarningsFilter" />
+
     <!-- Checks that a package-info.java file exists for each package.     -->
     <!-- See http://checkstyle.sf.net/config_javadoc.html#JavadocPackage -->
     <module name="JavadocPackage"/>
@@ -88,6 +91,9 @@
 
         <!-- Activate comment suppression filters -->
         <module name="FileContentsHolder"/>
+
+        <!-- Needed for SuppressWarningsFilter to work -->
+        <module name="SuppressWarningsHolder" />
 
         <!-- Checks for Javadoc comments.                     -->
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
@@ -224,7 +230,7 @@
         </module>
         <module name="InnerAssignment"/>
         <module name="ReturnCount">
-            <property name="max" value="5"/>
+            <property name="max" value="8"/>
         </module>
         <module name="NestedIfDepth">
             <property name="max" value="2"/>
@@ -280,6 +286,13 @@
         <!-- See http://checkstyle.sf.net/config_misc.html -->
         <module name="ArrayTypeStyle"/>
         <module name="UpperEll"/>
+
+        <!-- Check for usage of UuidUtil instead of UUID -->
+        <module name="RegexpSinglelineJava">
+            <property name="format" value="(import static java\.util\.UUID\.randomUUID|UUID\.randomUUID\(\))"/>
+            <property name="ignoreComments" value="true"/>
+            <property name="message" value="Please use UuidUtil.buildRandomUUID() instead of UUID.randomUUID()!"/>
+        </module>
 
     </module>
 

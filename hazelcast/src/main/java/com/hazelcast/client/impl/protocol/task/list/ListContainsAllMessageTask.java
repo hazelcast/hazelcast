@@ -29,6 +29,7 @@ import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -44,7 +45,8 @@ public class ListContainsAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionContainsOperation(parameters.name, (Set<Data>) parameters.valueSet);
+        Set<Data> values = new HashSet<Data>(parameters.values);
+        return new CollectionContainsOperation(parameters.name, values);
     }
 
     @Override
@@ -64,7 +66,7 @@ public class ListContainsAllMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.valueSet};
+        return new Object[]{parameters.values};
     }
 
     @Override

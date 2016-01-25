@@ -18,6 +18,7 @@ package com.hazelcast.wan;
 
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.CoreService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.PacketHandler;
 
 /**
@@ -27,10 +28,10 @@ import com.hazelcast.spi.impl.PacketHandler;
  * delays, slow uploads and higher latencies.
  */
 public interface WanReplicationService
-        extends CoreService, PacketHandler {
+        extends CoreService, PacketHandler, StatisticsAwareService {
 
     /**
-     * The service identifier
+     * Service name.
      */
     String SERVICE_NAME = "hz:core:wanReplicationService";
 
@@ -56,4 +57,22 @@ public interface WanReplicationService
      * Starts the shutdown process of the WAN replication service.
      */
     void shutdown();
+
+    /**
+     * Pauses wan replication to target group for the called node
+     *
+     * @param name name of WAN replication configuration
+     * @param targetGroupName name of wan target cluster config
+     */
+    void pause(String name, String targetGroupName);
+
+    /**
+     * Resumes wan replication to target group for the called node.
+     *
+     * @param name name of WAN replication configuration
+     * @param targetGroupName name of wan target cluster config
+     */
+    void resume(String name, String targetGroupName);
+
+    void checkWanReplicationQueues(String name);
 }

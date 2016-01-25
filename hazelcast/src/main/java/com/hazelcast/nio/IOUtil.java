@@ -16,14 +16,14 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
-import java.io.DataInput;
-import java.io.DataOutput;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -50,7 +50,7 @@ public final class IOUtil {
 
     /**
      * This method has a direct dependency on how objects are serialized in
-     * {@link com.hazelcast.nio.serialization.DataSerializer}! If the stream
+     * {@link com.hazelcast.internal.serialization.impl.DataSerializer}! If the stream
      * format is ever changed this extraction method needs to be changed too!
      */
     public static long extractOperationCallId(Data data, SerializationService serializationService) throws IOException {
@@ -99,6 +99,7 @@ public final class IOUtil {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T readObject(ObjectDataInput in) throws IOException {
         boolean isBinary = in.readBoolean();
         if (isBinary) {
@@ -107,99 +108,71 @@ public final class IOUtil {
         return in.readObject();
     }
 
-    public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, final InputStream in) throws IOException {
+    public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, InputStream in) throws IOException {
         return new ObjectInputStream(in) {
-            protected Class<?> resolveClass(final ObjectStreamClass desc) throws ClassNotFoundException {
+            protected Class<?> resolveClass(ObjectStreamClass desc) throws ClassNotFoundException {
                 return ClassLoaderUtil.loadClass(classLoader, desc.getName());
             }
         };
     }
 
-    public static OutputStream newOutputStream(final ByteBuffer buf) {
+    public static OutputStream newOutputStream(final ByteBuffer dst) {
         return new OutputStream() {
             public void write(int b) throws IOException {
-                buf.put((byte) b);
+                dst.put((byte) b);
             }
 
             public void write(byte[] bytes, int off, int len) throws IOException {
-                buf.put(bytes, off, len);
+                dst.put(bytes, off, len);
             }
         };
     }
 
-    public static InputStream newInputStream(final ByteBuffer buf) {
+    public static InputStream newInputStream(final ByteBuffer src) {
         return new InputStream() {
             public int read() throws IOException {
-                if (!buf.hasRemaining()) {
+                if (!src.hasRemaining()) {
                     return -1;
                 }
-                return buf.get() & 0xff;
+                return src.get() & 0xff;
             }
 
             public int read(byte[] bytes, int off, int len) throws IOException {
-                if (!buf.hasRemaining()) {
+                if (!src.hasRemaining()) {
                     return -1;
                 }
-                len = Math.min(len, buf.remaining());
-                buf.get(bytes, off, len);
+                len = Math.min(len, src.remaining());
+                src.get(bytes, off, len);
                 return len;
             }
         };
     }
 
-    public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dest) {
+    public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dst) {
         if (src == null) {
             return 0;
         }
-        int n = Math.min(src.remaining(), dest.remaining());
+        int n = Math.min(src.remaining(), dst.remaining());
         if (n > 0) {
             if (n < 16) {
                 for (int i = 0; i < n; i++) {
-                    dest.put(src.get());
+                    dst.put(src.get());
                 }
             } else {
                 int srcPosition = src.position();
-                int destPosition = dest.position();
-                System.arraycopy(src.array(), srcPosition, dest.array(), destPosition, n);
+                int destPosition = dst.position();
+                System.arraycopy(src.array(), srcPosition, dst.array(), destPosition, n);
                 src.position(srcPosition + n);
-                dest.position(destPosition + n);
+                dst.position(destPosition + n);
             }
         }
         return n;
     }
 
-    public static int copyToDirectBuffer(ByteBuffer src, ByteBuffer dest) {
-        int n = Math.min(src.remaining(), dest.remaining());
-        if (n > 0) {
-            dest.put(src.array(), src.position(), n);
-            src.position(src.position() + n);
-        }
-        return n;
-    }
-
-    public static void writeLongString(DataOutput dos, String str) throws IOException {
-        int chunk = 1000;
-        int count = str.length() / chunk;
-        int remaining = str.length() - (count * chunk);
-        dos.writeInt(count + ((remaining > 0) ? 1 : 0));
-        for (int i = 0; i < count; i++) {
-            dos.writeUTF(str.substring(i * chunk, (i + 1) * chunk));
-        }
-        if (remaining > 0) {
-            dos.writeUTF(str.substring(count * chunk));
-        }
-    }
-
-    public static String readLongString(DataInput in) throws IOException {
-        int count = in.readInt();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            sb.append(in.readUTF());
-        }
-        return sb.toString();
-    }
-
     public static byte[] compress(byte[] input) throws IOException {
+        if (input.length == 0) {
+            return new byte[0];
+        }
         Deflater compressor = new Deflater();
         compressor.setLevel(Deflater.BEST_SPEED);
         compressor.setInput(input);
@@ -235,7 +208,6 @@ public final class IOUtil {
         inflater.end();
         return bos.toByteArray();
     }
-
 
     public static void writeAttributeValue(Object value, ObjectDataOutput out) throws IOException {
         Class<?> type = value.getClass();
@@ -290,7 +262,6 @@ public final class IOUtil {
             default:
                 throw new IllegalStateException("Illegal attribute type id found");
         }
-
     }
 
     /**
@@ -298,7 +269,7 @@ public final class IOUtil {
      *
      * @param closeable the Closeable to close.
      */
-    public static void closeResource(final Closeable closeable) {
+    public static void closeResource(Closeable closeable) {
         if (closeable != null) {
             try {
                 closeable.close();
@@ -306,5 +277,30 @@ public final class IOUtil {
                 Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
             }
         }
+    }
+
+    /**
+     * Ensures that the file described by the supplied parameter does not exist
+     * after the method returns. If the file didn't exist, returns silently.
+     * If the file could not be deleted, fails with an exception.
+     * If the file is a directory, its children are recursively deleted.
+     */
+    public static void delete(File f) {
+        if (!f.exists()) {
+            return;
+        }
+        File[] subFiles = f.listFiles();
+        if (subFiles != null) {
+            for (File sf : subFiles) {
+                delete(sf);
+            }
+        }
+        if (!f.delete()) {
+            throw new HazelcastException("Failed to delete " + f);
+        }
+    }
+
+    public static String toFileName(String name) {
+        return name.replaceAll("[:\\\\/*\"?|<>',]", "_");
     }
 }

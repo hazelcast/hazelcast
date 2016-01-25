@@ -24,8 +24,12 @@ import java.util.Locale;
  */
 public final class StringUtil {
 
+    /**
+     * UTF-8 Charset
+     */
+    public static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
+
     private static final Locale LOCALE_INTERNAL = Locale.ENGLISH;
-    private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
     private StringUtil() {
     }
@@ -75,6 +79,20 @@ public final class StringUtil {
             return true;
         }
         return s.isEmpty();
+    }
+
+    /**
+     * Checks if a string is empty or not after trim operation
+     *
+     * @param s the string to check.
+     * @return true if the string is null or empty, false otherwise
+     */
+
+    public static boolean isNullOrEmptyAfterTrim(String s) {
+        if (s == null) {
+            return true;
+        }
+        return s.trim().isEmpty();
     }
 
     /**

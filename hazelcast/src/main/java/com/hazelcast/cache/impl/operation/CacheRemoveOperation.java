@@ -54,6 +54,15 @@ public class CacheRemoveOperation
     }
 
     @Override
+    public void afterRun() throws Exception {
+        if (Boolean.TRUE.equals(response)) {
+            if (cache.isWanReplicationEnabled()) {
+                wanEventPublisher.publishWanReplicationRemove(name, key);
+            }
+        }
+    }
+
+    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }

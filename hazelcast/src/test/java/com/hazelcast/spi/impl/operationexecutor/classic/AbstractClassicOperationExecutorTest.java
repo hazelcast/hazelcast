@@ -4,7 +4,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.DefaultNodeExtension;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.Logger;
@@ -26,11 +28,13 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -58,22 +62,22 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
 
     @Before
     public void setup() throws Exception {
-        loggingService = new LoggingServiceImpl("foo", "jdk", new BuildInfo("1", "1", "1", 1, false));
+        loggingService = new LoggingServiceImpl("foo", "jdk", new BuildInfo("1", "1", "1", 1, false, (byte)1));
 
         serializationService = new DefaultSerializationServiceBuilder().build();
         config = new Config();
-        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "10");
-        config.setProperty(GroupProperties.PROP_PARTITION_OPERATION_THREAD_COUNT, "10");
-        config.setProperty(GroupProperties.PROP_GENERIC_OPERATION_THREAD_COUNT, "10");
+        config.setProperty(GroupProperty.PARTITION_COUNT, "10");
+        config.setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT, "10");
+        config.setProperty(GroupProperty.GENERIC_OPERATION_THREAD_COUNT, "10");
         thisAddress = new Address("localhost", 5701);
         threadGroup = new HazelcastThreadGroup(
                 "foo",
                 loggingService.getLogger(HazelcastThreadGroup.class),
                 Thread.currentThread().getContextClassLoader());
-        nodeExtension = new DefaultNodeExtension();
+        nodeExtension = new DefaultNodeExtension(Mockito.mock(Node.class));
         handlerFactory = new DummyOperationRunnerFactory();
 
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistry.class));
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistry.class), INFO);
         responsePacketHandler = new DummyResponsePacketHandler();
     }
 
@@ -82,6 +86,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
         executor = new ClassicOperationExecutor(
                 groupProperties, loggingService, thisAddress, handlerFactory,
                 threadGroup, nodeExtension, metricsRegistry);
+        executor.start();
         return executor;
     }
 

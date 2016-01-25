@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.cache.impl.operation.PostJoinCacheOperation;
 import com.hazelcast.config.CacheConfig;
@@ -25,6 +26,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartitionLostEvent;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
@@ -32,9 +34,12 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.QuorumAwareService;
+import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -44,6 +49,7 @@ import javax.cache.event.CacheEntryListener;
 import java.io.Closeable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -51,7 +57,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public abstract class AbstractCacheService
-        implements ICacheService, PostJoinAwareService, QuorumAwareService {
+        implements  ICacheService,
+                    PostJoinAwareService,
+                    PartitionAwareService,
+                    QuorumAwareService,
+                    SplitBrainHandlerService {
 
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
     protected final ConcurrentMap<String, CacheContext> cacheContexts = new ConcurrentHashMap<String, CacheContext>();
@@ -71,27 +81,66 @@ public abstract class AbstractCacheService
             new ConstructorFunction<String, CacheStatisticsImpl>() {
                 @Override
                 public CacheStatisticsImpl createNew(String name) {
-                    return new CacheStatisticsImpl();
+                    return new CacheStatisticsImpl(
+                            Clock.currentTimeMillis(),
+                            CacheEntryCountResolver.createEntryCountResolver(getOrCreateCacheContext(name)));
                 }
             };
 
     protected NodeEngine nodeEngine;
     protected CachePartitionSegment[] segments;
+    protected CacheEventHandler cacheEventHandler;
+    protected CacheSplitBrainHandler cacheSplitBrainHandler;
 
     @Override
     public final void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        segments = new CachePartitionSegment[partitionCount];
+        this.segments = new CachePartitionSegment[partitionCount];
         for (int i = 0; i < partitionCount; i++) {
-            segments[i] = new CachePartitionSegment(this, i);
+            segments[i] = newPartitionSegment(i);
         }
+        this.cacheEventHandler = new CacheEventHandler(nodeEngine);
+        this.cacheSplitBrainHandler = new CacheSplitBrainHandler(nodeEngine, configs, segments);
         postInit(nodeEngine, properties);
     }
 
-    protected void postInit(NodeEngine nodeEngine, Properties properties) { };
+    protected void postInit(NodeEngine nodeEngine, Properties properties) {
+    }
+
+    protected abstract CachePartitionSegment newPartitionSegment(int partitionId);
 
     protected abstract ICacheRecordStore createNewRecordStore(String name, int partitionId);
+
+    @Override
+    public void reset() {
+        reset(false);
+    }
+
+    private void reset(boolean onShutdown) {
+        for (String objectName : configs.keySet()) {
+            deleteCache(objectName, true, null, false);
+        }
+        final CachePartitionSegment[] partitionSegments = segments;
+        for (CachePartitionSegment partitionSegment : partitionSegments) {
+            if (partitionSegment != null) {
+                if (onShutdown) {
+                    partitionSegment.shutdown();
+                } else {
+                    partitionSegment.clear();
+                    partitionSegment.init();
+                }
+            }
+        }
+    }
+
+    @Override
+    public void shutdown(boolean terminate) {
+        if (!terminate) {
+            cacheEventHandler.shutdown();
+            reset(true);
+        }
+    }
 
     @Override
     public DistributedObject createDistributedObject(String objectName) {
@@ -111,6 +160,7 @@ public abstract class AbstractCacheService
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             clearPartitionReplica(event.getPartitionId());
         }
+        initPartitionReplica(event.getPartitionId());
     }
 
     @Override
@@ -118,6 +168,11 @@ public abstract class AbstractCacheService
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             clearPartitionReplica(event.getPartitionId());
         }
+        initPartitionReplica(event.getPartitionId());
+    }
+
+    private void initPartitionReplica(int partitionId) {
+        segments[partitionId].init();
     }
 
     @Override
@@ -142,15 +197,24 @@ public abstract class AbstractCacheService
 
     protected void destroySegments(String name) {
         for (CachePartitionSegment segment : segments) {
-            segment.deleteRecordStore(name);
+            segment.deleteRecordStore(name, true);
+        }
+    }
+
+    protected void closeSegments(String name) {
+        for (CachePartitionSegment segment : segments) {
+            segment.deleteRecordStore(name, false);
         }
     }
 
     @Override
-    public void destroyCache(String name, boolean isLocal, String callerUuid) {
+    public void deleteCache(String name, boolean isLocal, String callerUuid, boolean destroy) {
         CacheConfig config = deleteCacheConfig(name);
-        destroySegments(name);
-
+        if (destroy) {
+            destroySegments(name);
+        } else {
+            closeSegments(name);
+        }
         if (!isLocal) {
             deregisterAllListener(name);
             cacheContexts.remove(name);
@@ -205,6 +269,7 @@ public abstract class AbstractCacheService
         return cacheContexts.get(name);
     }
 
+    @Override
     public CacheContext getOrCreateCacheContext(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(cacheContexts, name, cacheContexesConstructorFunction);
     }
@@ -288,59 +353,12 @@ public abstract class AbstractCacheService
 
     @Override
     public void publishEvent(CacheEventContext cacheEventContext) {
-        final EventService eventService = getNodeEngine().getEventService();
-        final String cacheName = cacheEventContext.getCacheName();
-        final Collection<EventRegistration> candidates = eventService.getRegistrations(SERVICE_NAME, cacheName);
-
-        if (candidates.isEmpty()) {
-            return;
-        }
-        final Object eventData;
-        final CacheEventType eventType = cacheEventContext.getEventType();
-        switch (eventType) {
-            case CREATED:
-            case UPDATED:
-            case REMOVED:
-            case EXPIRED:
-                final CacheEventData cacheEventData =
-                        new CacheEventDataImpl(cacheName, eventType, cacheEventContext.getDataKey(),
-                                               cacheEventContext.getDataValue(), cacheEventContext.getDataOldValue(),
-                                               cacheEventContext.isOldValueAvailable());
-                CacheEventSet eventSet = new CacheEventSet(eventType, cacheEventContext.getCompletionId());
-                eventSet.addEventData(cacheEventData);
-                eventData = eventSet;
-                break;
-            case EVICTED:
-                eventData = new CacheEventDataImpl(cacheName, CacheEventType.EVICTED,
-                                                   cacheEventContext.getDataKey(), null, null, false);
-                break;
-            case INVALIDATED:
-                eventData = new CacheEventDataImpl(cacheName, CacheEventType.INVALIDATED,
-                                                   cacheEventContext.getDataKey(), null, null, false);
-                break;
-            case COMPLETED:
-                CacheEventData completedEventData =
-                        new CacheEventDataImpl(cacheName, CacheEventType.COMPLETED, cacheEventContext.getDataKey(),
-                                               cacheEventContext.getDataValue(), null, false);
-                eventSet = new CacheEventSet(eventType, cacheEventContext.getCompletionId());
-                eventSet.addEventData(completedEventData);
-                eventData = eventSet;
-                break;
-            default:
-                throw new IllegalArgumentException(
-                        "Event Type not defined to create an eventData during publish : " + eventType.name());
-        }
-        nodeEngine.getEventService().publishEvent(SERVICE_NAME, candidates, eventData, cacheEventContext.getOrderKey());
+        cacheEventHandler.publishEvent(cacheEventContext);
     }
 
     @Override
     public void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey) {
-        final EventService eventService = getNodeEngine().getEventService();
-        final Collection<EventRegistration> candidates = eventService.getRegistrations(SERVICE_NAME, cacheName);
-        if (candidates.isEmpty()) {
-            return;
-        }
-        nodeEngine.getEventService().publishEvent(SERVICE_NAME, candidates, eventSet, orderKey);
+        cacheEventHandler.publishEvent(cacheName, eventSet, orderKey);
     }
 
     @Override
@@ -354,24 +372,34 @@ public abstract class AbstractCacheService
     }
 
     @Override
-    public String registerListener(String name, CacheEventListener listener) {
-        return registerListenerInternal(name, listener, null);
+    public String registerListener(String name, CacheEventListener listener, boolean isLocal) {
+        return registerListenerInternal(name, listener, null, isLocal);
     }
 
     @Override
-    public String registerListener(String name, CacheEventListener listener, EventFilter eventFilter) {
-        return registerListenerInternal(name, listener, eventFilter);
+    public String registerListener(String name, CacheEventListener listener, EventFilter eventFilter, boolean isLocal) {
+        return registerListenerInternal(name, listener, eventFilter, isLocal);
     }
 
-    protected String registerListenerInternal(String name, CacheEventListener listener, EventFilter eventFilter) {
-        final EventService eventService = getNodeEngine().getEventService();
-        final EventRegistration registration;
-        if (eventFilter == null) {
-            registration = eventService.registerListener(AbstractCacheService.SERVICE_NAME, name, listener);
+    protected String registerListenerInternal(String name, CacheEventListener listener,
+                                              EventFilter eventFilter, boolean isLocal) {
+        EventService eventService = getNodeEngine().getEventService();
+        EventRegistration reg;
+        if (isLocal) {
+            if (eventFilter == null) {
+                reg = eventService.registerLocalListener(AbstractCacheService.SERVICE_NAME, name, listener);
+            } else {
+                reg = eventService.registerLocalListener(AbstractCacheService.SERVICE_NAME, name, eventFilter, listener);
+            }
         } else {
-            registration = eventService.registerListener(AbstractCacheService.SERVICE_NAME, name, eventFilter, listener);
+            if (eventFilter == null) {
+                reg = eventService.registerListener(AbstractCacheService.SERVICE_NAME, name, listener);
+            } else {
+                reg = eventService.registerListener(AbstractCacheService.SERVICE_NAME, name, eventFilter, listener);
+            }
         }
-        final String id = registration.getId();
+
+        final String id = reg.getId();
         if (listener instanceof Closeable) {
             closeableListeners.put(id, (Closeable) listener);
         } else if (listener instanceof CacheEntryListenerProvider) {
@@ -422,16 +450,19 @@ public abstract class AbstractCacheService
     @Override
     public CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, InMemoryFormat inMemoryFormat) {
         if (InMemoryFormat.NATIVE.equals(inMemoryFormat)) {
-            throw new IllegalArgumentException("Native memory is available only in Enterprise!");
+            throw new IllegalArgumentException("Native memory is available only in Hazelcast Enterprise."
+                    + "Make sure you have Hazelcast Enterprise JARs on your classpath!");
         }
         CacheOperationProvider cacheOperationProvider = operationProviderCache.get(nameWithPrefix);
         if (cacheOperationProvider != null) {
             return cacheOperationProvider;
         }
-        cacheOperationProvider = new DefaultOperationProvider(nameWithPrefix);
+        cacheOperationProvider = createOperationProvider(nameWithPrefix, inMemoryFormat);
         CacheOperationProvider current = operationProviderCache.putIfAbsent(nameWithPrefix, cacheOperationProvider);
         return current == null ? cacheOperationProvider : current;
     }
+
+    protected abstract CacheOperationProvider createOperationProvider(String nameWithPrefix, InMemoryFormat inMemoryFormat);
 
     @SuppressFBWarnings(value = "JLM_JSR166_UTILCONCURRENT_MONITORENTER", justification =
             "several ops performed on concurrent map, need synchronization for atomicity")
@@ -472,6 +503,41 @@ public abstract class AbstractCacheService
         return postJoinCacheOperation;
     }
 
+    protected void publishCachePartitionLostEvent(String cacheName, int partitionId) {
+        final Collection<EventRegistration> registrations = new LinkedList<EventRegistration>();
+        for (EventRegistration registration : getRegistrations(cacheName)) {
+            if (registration.getFilter() instanceof CachePartitionLostEventFilter) {
+                registrations.add(registration);
+            }
+        }
+
+        if (registrations.isEmpty()) {
+            return;
+        }
+        final Member member = nodeEngine.getLocalMember();
+        final CacheEventData eventData = new CachePartitionEventData(cacheName, partitionId, member);
+        final EventService eventService = nodeEngine.getEventService();
+
+        eventService.publishEvent(SERVICE_NAME, registrations, eventData, partitionId);
+
+    }
+
+    Collection<EventRegistration> getRegistrations(String cacheName) {
+        final EventService eventService = nodeEngine.getEventService();
+        return eventService.getRegistrations(SERVICE_NAME, cacheName);
+    }
+
+    @Override
+    public void onPartitionLost(InternalPartitionLostEvent partitionLostEvent) {
+        final int partitionId = partitionLostEvent.getPartitionId();
+        for (CacheConfig config : getCacheConfigs()) {
+            final String cacheName = config.getName();
+            if (config.getBackupCount() <= partitionLostEvent.getLostReplicaIndex()) {
+                publishCachePartitionLostEvent(cacheName, partitionId);
+            }
+        }
+    }
+
     public void cacheEntryListenerRegistered(String name,
                                              CacheEntryListenerConfiguration cacheEntryListenerConfiguration) {
         CacheConfig cacheConfig = getCacheConfig(name);
@@ -495,7 +561,7 @@ public abstract class AbstractCacheService
      *
      * @param cacheName name of the cache
      * @return name of the associated quorum
-     *         null if there is no associated quorum
+     * null if there is no associated quorum
      */
     @Override
     public String getQuorumName(String cacheName) {
@@ -503,6 +569,45 @@ public abstract class AbstractCacheService
             return null;
         }
         return configs.get(cacheName).getQuorumName();
+    }
+
+    /**
+     * Registers and {@link com.hazelcast.cache.impl.client.CacheInvalidationListener} for specified <code>cacheName</code>.
+     *
+     * @param name      the name of the cache that {@link com.hazelcast.cache.impl.CacheEventListener} will be registered for
+     * @param listener  the {@link com.hazelcast.cache.impl.CacheEventListener} to be registered for specified <code>cache</code>
+     * @param localOnly true if only events originated from this member wants be listened, false if all invalidation events in the
+     *                  cluster wants to be listened
+     * @return the id which is unique for current registration
+     */
+    @Override
+    public String addInvalidationListener(String name, CacheEventListener listener, boolean localOnly) {
+        EventService eventService = nodeEngine.getEventService();
+        EventRegistration registration;
+        if (localOnly) {
+            registration = eventService.registerLocalListener(SERVICE_NAME, name, listener);
+        } else {
+            registration = eventService.registerListener(SERVICE_NAME, name, listener);
+        }
+        return registration.getId();
+    }
+
+    /**
+     * Sends an invalidation event for given <code>cacheName</code> with specified <code>key</code>
+     * from mentioned source with <code>sourceUuid</code>.
+     *
+     * @param name       the name of the cache that invalidation event is sent for
+     * @param key        the {@link com.hazelcast.nio.serialization.Data} represents the invalidation event
+     * @param sourceUuid an id that represents the source for invalidation event
+     */
+    @Override
+    public void sendInvalidationEvent(String name, Data key, String sourceUuid) {
+        cacheEventHandler.sendInvalidationEvent(name, key, sourceUuid);
+    }
+
+    @Override
+    public Runnable prepareMergeRunnable() {
+        return cacheSplitBrainHandler.prepareMergeRunnable();
     }
 
 }

@@ -17,7 +17,6 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.replicatedmap.impl.record.LazySet.IteratorFactory;
-
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;

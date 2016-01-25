@@ -25,6 +25,7 @@ public class WanReplicationConfig {
 
     String name;
     List<WanTargetClusterConfig> targetClusterConfigs;
+
     /**
      * This property is only valid when used with WAN Batch replication, Enterprise Only
      * When enabled, only the latest {@link com.hazelcast.wan.WanReplicationEvent} of a key is sent to target
@@ -67,12 +68,10 @@ public class WanReplicationConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("WanReplicationConfig");
-        sb.append("{name='").append(name).append('\'');
-        sb.append(", snapshotEnabled=").append(snapshotEnabled);
-        sb.append(", targetClusterConfigs=").append(targetClusterConfigs);
-        sb.append('}');
-        return sb.toString();
+        return "WanReplicationConfig"
+                + "{name='" + name + '\''
+                + ", snapshotEnabled=" + snapshotEnabled
+                + ", targetClusterConfigs=" + targetClusterConfigs
+                + '}';
     }
 }

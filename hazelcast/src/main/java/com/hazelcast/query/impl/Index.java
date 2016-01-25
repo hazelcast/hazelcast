@@ -16,20 +16,36 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.core.TypeConverter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.QueryException;
 
 import java.util.Set;
+
 /**
  * This interface contains the methods related to index of Query.
  */
 public interface Index {
 
-    void saveEntryIndex(QueryableEntry e) throws QueryException;
-
     void clear();
 
-    void removeEntryIndex(Data indexKey);
+    /**
+     * Add entry to this index.
+     * @param e entry
+     * @param oldValue or null if there is no old value
+     * @throws QueryException
+     */
+    void saveEntryIndex(QueryableEntry e, Object oldValue) throws QueryException;
+
+    /**
+     * Return converter associated with this Index.
+     * It can return <code>null</code> if no entry has been saved yet.
+     *
+     * @return
+     */
+    TypeConverter getConverter();
+
+    void removeEntryIndex(Data key, Object value);
 
     Set<QueryableEntry> getRecords(Comparable[] values);
 

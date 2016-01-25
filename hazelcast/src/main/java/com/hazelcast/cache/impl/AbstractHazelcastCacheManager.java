@@ -370,16 +370,17 @@ public abstract class AbstractHazelcastCacheManager
     protected String cacheNamePrefix() {
         StringBuilder sb = new StringBuilder("/hz");
         if (!isDefaultURI) {
-            sb.append("/").append(uri.toASCIIString());
+            sb.append('/').append(uri.toASCIIString());
         }
         ClassLoader classLoader = getClassLoader();
         if (!isDefaultClassLoader && classLoader != null) {
-            sb.append("/").append(classLoader.toString());
+            sb.append('/').append(classLoader.toString());
         }
-        sb.append("/");
+        sb.append('/');
         return sb.toString();
     }
 
+    @Override
     public String getCacheNameWithPrefix(String name) {
         return cacheNamePrefix + name;
     }
@@ -414,11 +415,7 @@ public abstract class AbstractHazelcastCacheManager
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("HazelcastCacheManager{");
-        sb.append("hazelcastInstance=").append(hazelcastInstance);
-        sb.append(", cachingProvider=").append(cachingProvider);
-        sb.append('}');
-        return sb.toString();
+        return "HazelcastCacheManager{hazelcastInstance=" + hazelcastInstance + ", cachingProvider=" + cachingProvider + '}';
     }
 
     protected abstract <K, V> void addCacheConfigIfAbsent(CacheConfig<K, V> cacheConfig);

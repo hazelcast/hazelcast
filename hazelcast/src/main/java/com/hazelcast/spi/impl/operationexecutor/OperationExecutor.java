@@ -116,6 +116,19 @@ public interface OperationExecutor {
     void runOnCallingThreadIfPossible(Operation op);
 
     /**
+     * Executes the task on all partition operation threads.
+     *
+     * @param task the task the execute.
+     * @throws java.lang.NullPointerException if task is null.
+     */
+    void runOnAllPartitionThreads(Runnable task);
+
+    /**
+     * Interrupts all partition threads.
+     */
+    void interruptAllPartitionThreads();
+
+    /**
      * Checks if the operation is allowed to run on the current thread.
      *
      * @param op the Operation to check

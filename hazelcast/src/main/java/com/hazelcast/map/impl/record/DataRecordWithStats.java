@@ -20,14 +20,15 @@ import com.hazelcast.nio.serialization.Data;
 
 class DataRecordWithStats extends AbstractRecordWithStats<Data> {
 
-    protected Data value;
-
-    DataRecordWithStats(Data keyData, Data value) {
-        super(keyData);
-        this.value = value;
-    }
+    protected volatile Data value;
 
     DataRecordWithStats() {
+        super();
+    }
+
+    DataRecordWithStats(Data value) {
+        super();
+        this.value = value;
     }
 
     /**
@@ -50,10 +51,5 @@ class DataRecordWithStats extends AbstractRecordWithStats<Data> {
     @Override
     public void setValue(Data o) {
         value = o;
-    }
-
-    @Override
-    public void invalidate() {
-        value = null;
     }
 }

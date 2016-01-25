@@ -18,8 +18,8 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -70,11 +70,12 @@ public class CacheLoadAllOperation
     @Override
     public void run()
             throws Exception {
-        final int partitionId = getPartitionId();
-        final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+        int partitionId = getPartitionId();
+        InternalPartitionService partitionService = getNodeEngine().getPartitionService();
 
-        Set<Data> filteredKeys = new HashSet<Data>();
+        Set<Data> filteredKeys = null;
         if (keys != null) {
+            filteredKeys = new HashSet<Data>();
             for (Data k : keys) {
                 if (partitionService.getPartitionId(k) == partitionId) {
                     filteredKeys.add(k);
@@ -82,20 +83,26 @@ public class CacheLoadAllOperation
             }
         }
 
-        if (filteredKeys.isEmpty()) {
+        if (filteredKeys == null || filteredKeys.isEmpty()) {
             return;
         }
 
         try {
-            final CacheService service = getService();
+            ICacheService service = getService();
             cache = service.getOrCreateRecordStore(name, partitionId);
-            final Set<Data> keysLoaded = cache.loadAll(filteredKeys, replaceExistingValues);
-            shouldBackup = !keysLoaded.isEmpty();
-            if (shouldBackup) {
-                backupRecords = new HashMap<Data, CacheRecord>();
+            Set<Data> keysLoaded = cache.loadAll(filteredKeys, replaceExistingValues);
+            int loadedKeyCount = keysLoaded.size();
+            if (loadedKeyCount > 0) {
+                backupRecords = new HashMap<Data, CacheRecord>(loadedKeyCount);
                 for (Data key : keysLoaded) {
-                    backupRecords.put(key, cache.getRecord(key));
+                    CacheRecord record = cache.getRecord(key);
+                    // Loaded keys may have been evicted, then record will be null.
+                    // So if the loaded key is evicted, don't send it to backup.
+                    if (record != null) {
+                        backupRecords.put(key, record);
+                    }
                 }
+                shouldBackup = !backupRecords.isEmpty();
             }
         } catch (CacheException e) {
             response = new CacheClearResponse(e);
@@ -129,12 +136,12 @@ public class CacheLoadAllOperation
 
     @Override
     public final int getSyncBackupCount() {
-        return cache != null ? cache.getConfig().getBackupCount() : 0;
+        return cache.getConfig().getBackupCount();
     }
 
     @Override
     public final int getAsyncBackupCount() {
-        return cache != null ? cache.getConfig().getAsyncBackupCount() : 0;
+        return cache.getConfig().getAsyncBackupCount();
     }
 
     @Override
@@ -154,13 +161,11 @@ public class CacheLoadAllOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         replaceExistingValues = in.readBoolean();
-        boolean isKeysNotNull = in.readBoolean();
-        if (isKeysNotNull) {
+        if (in.readBoolean()) {
             int size = in.readInt();
             keys = new HashSet<Data>(size);
             for (int i = 0; i < size; i++) {
-                Data key = in.readData();
-                keys.add(key);
+                keys.add(in.readData());
             }
         }
     }

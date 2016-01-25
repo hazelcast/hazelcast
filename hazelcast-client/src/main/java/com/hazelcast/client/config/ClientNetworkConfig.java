@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 
@@ -40,7 +41,28 @@ public class ClientNetworkConfig {
     private SocketOptions socketOptions = new SocketOptions();
     private SSLConfig sslConfig;
     private ClientAwsConfig clientAwsConfig;
+    private DiscoveryConfig discoveryConfig;
 
+    /**
+     * Returns the configuration of the Hazelcast Discovery SPI and configured discovery providers
+     *
+     * @return Discovery Provider SPI configuration
+     */
+    public DiscoveryConfig getDiscoveryConfig() {
+        if (discoveryConfig == null) {
+            discoveryConfig = new DiscoveryConfig();
+        }
+        return discoveryConfig;
+    }
+
+    /**
+     * Defines the Discovery Provider SPI configuration
+     *
+     * @param discoveryConfig the Discovery Provider SPI configuration
+     */
+    public void setDiscoveryConfig(DiscoveryConfig discoveryConfig) {
+        this.discoveryConfig = discoveryConfig;
+    }
 
     /**
      * @return true if client is smart

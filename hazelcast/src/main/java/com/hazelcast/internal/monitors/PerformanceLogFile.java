@@ -30,6 +30,7 @@ import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -46,6 +47,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 
+import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT;
+import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static java.lang.Math.round;
 import static java.lang.String.format;
@@ -54,10 +57,14 @@ import static java.lang.System.getProperties;
 import static java.lang.System.getProperty;
 import static java.util.Collections.sort;
 
+/**
+ * Represents the PerformanceLogFile.
+ *
+ * Should only be called from the {@link PerformanceMonitor}.
+ */
 final class PerformanceLogFile {
 
     private static final int ONE_MB = 1024 * 1024;
-    private static final CharsetEncoder UTF8 = Charset.forName("UTF-8").newEncoder();
 
     volatile File logFile;
 
@@ -85,10 +92,10 @@ final class PerformanceLogFile {
         this.operationService = node.nodeEngine.getOperationService();
         this.pathname = getPathName();
         GroupProperties props = node.getGroupProperties();
-        this.maxRollingFileCount = props.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT.getInteger();
+        this.maxRollingFileCount = props.getInteger(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT);
 
         // we accept a float so it becomes easier to testing to create a small file.
-        this.maxRollingFileSizeBytes = round(ONE_MB * props.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE.getFloat());
+        this.maxRollingFileSizeBytes = round(ONE_MB * props.getFloat(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB));
 
         if (logger.isFinestEnabled()) {
             logger.finest("max rolling file size: " + maxRollingFileSizeBytes);
@@ -112,7 +119,8 @@ final class PerformanceLogFile {
 
             if (writer == null) {
                 FileOutputStream fos = new FileOutputStream(logFile, true);
-                writer = new BufferedWriter(new OutputStreamWriter(fos, UTF8));
+                CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+                writer = new BufferedWriter(new OutputStreamWriter(fos, encoder));
             }
 
             if (renderHead) {
@@ -125,37 +133,37 @@ final class PerformanceLogFile {
             lastModified = logFile.lastModified();
 
             if (logFile.length() > maxRollingFileSizeBytes) {
-                closeResource(writer);
-                writer = null;
-                logFile = null;
-                index++;
-                deleteOld();
+                rollover();
             }
         } catch (IOException e) {
-            logIOError(e);
+            log(e);
             logFile = null;
             closeResource(writer);
             writer = null;
+        } catch (RuntimeException e) {
+            logger.severe("Failed to write PerformanceLogFile: " + logFile, e);
         }
     }
 
-    private void logIOError(IOException e) {
+    @SuppressFBWarnings({ "RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" })
+    private void rollover() {
+        closeResource(writer);
+        writer = null;
+        logFile = null;
+        index++;
+
+        File file = new File(format(pathname, index - maxRollingFileCount));
+        // we don't care if the file was deleted or not.
+        file.delete();
+    }
+
+    private void log(IOException e) {
         if (logger.isFinestEnabled()) {
             logger.finest("PerformanceMonitor failed to output to file:"
                     + logFile.getAbsolutePath() + " cause:" + e.getMessage(), e);
         } else {
             logger.warning("PerformanceMonitor failed to output to file:"
                     + logFile.getAbsolutePath() + " cause:" + e.getMessage());
-        }
-    }
-
-    private void deleteOld() {
-        File file = new File(format(pathname, index - maxRollingFileCount));
-        boolean exist = file.exists();
-        if (exist) {
-            if (!file.delete()) {
-                logger.warning("Could not delete file:" + file.getAbsolutePath());
-            }
         }
     }
 

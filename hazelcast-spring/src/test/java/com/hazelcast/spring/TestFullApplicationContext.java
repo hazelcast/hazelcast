@@ -17,6 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
@@ -25,12 +26,15 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ManagementCenterConfig;
+import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -51,6 +55,8 @@ import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WANQueueFullBehavior;
+import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
@@ -74,7 +80,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -96,6 +101,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.nio.ByteOrder;
 import java.util.Collection;
@@ -106,6 +112,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
+import static com.hazelcast.instance.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
+import static com.hazelcast.instance.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -209,17 +217,21 @@ public class TestFullApplicationContext {
         assertEquals(1, config.getCacheConfigs().size());
         CacheSimpleConfig cacheConfig = config.getCacheConfig("testCache");
         assertEquals("testCache", cacheConfig.getName());
+        assertTrue(cacheConfig.getHotRestartConfig().isEnabled());
+        assertTrue(cacheConfig.getHotRestartConfig().isFsync());
 
         WanReplicationRef wanRef = cacheConfig.getWanReplicationRef();
         assertEquals("testWan", wanRef.getName());
         assertEquals("PUT_IF_ABSENT", wanRef.getMergePolicy());
+        assertEquals(1,wanRef.getFilters().size());
+        assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
         assertFalse(wanRef.isRepublishingEnabled());
     }
 
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(10, config.getMapConfigs().size());
+        assertEquals(14, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -229,6 +241,8 @@ public class TestFullApplicationContext {
         assertEquals(Integer.MAX_VALUE, testMapConfig.getMaxSizeConfig().getSize());
         assertEquals(30, testMapConfig.getEvictionPercentage());
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
+        assertTrue(testMapConfig.getHotRestartConfig().isEnabled());
+        assertTrue(testMapConfig.getHotRestartConfig().isFsync());
         assertEquals(1000, testMapConfig.getMinEvictionCheckMillis());
         assertEquals("PUT_IF_ABSENT", testMapConfig.getMergePolicy());
         assertTrue(testMapConfig.isReadBackupData());
@@ -240,6 +254,16 @@ public class TestFullApplicationContext {
                 assertTrue(index.isOrdered());
             } else {
                 fail("unknown index!");
+            }
+        }
+        assertEquals(2, testMapConfig.getMapAttributeConfigs().size());
+        for (MapAttributeConfig attribute : testMapConfig.getMapAttributeConfigs()) {
+            if ("power".equals(attribute.getName())) {
+                assertEquals("com.car.PowerExtractor", attribute.getExtractor());
+            } else if ("weight".equals(attribute.getName())) {
+                assertEquals("com.car.WeightExtractor", attribute.getExtractor());
+            } else {
+                fail("unknown attribute!");
             }
         }
         assertEquals("my-quorum", testMapConfig.getQuorumName());
@@ -301,8 +325,6 @@ public class TestFullApplicationContext {
         assertEquals(50, simpleMapConfig.getEvictionPercentage());
         assertEquals(1, simpleMapConfig.getTimeToLiveSeconds());
         assertEquals("LATEST_UPDATE", simpleMapConfig.getMergePolicy());
-        // Test that the simpleMapConfig does NOT have a mapStoreConfig
-        assertNull(simpleMapConfig.getMapStoreConfig());
         // Test that the simpleMapConfig does NOT have a nearCacheConfig
         assertNull(simpleMapConfig.getNearCacheConfig());
 
@@ -315,13 +337,24 @@ public class TestFullApplicationContext {
         assertEquals(dummyMapStoreFactory, testMapConfig4.getMapStoreConfig().getFactoryImplementation());
 
         MapConfig mapWithOptimizedQueriesConfig = config.getMapConfig("mapWithOptimizedQueries");
-        assertTrue(mapWithOptimizedQueriesConfig.isOptimizeQueries());
+        assertEquals(CacheDeserializedValues.ALWAYS, mapWithOptimizedQueriesConfig.getCacheDeserializedValues());
+
+        MapConfig mapWithValueCachingSetToNever = config.getMapConfig("mapWithValueCachingSetToNever");
+        assertEquals(CacheDeserializedValues.NEVER, mapWithValueCachingSetToNever.getCacheDeserializedValues());
+
+        MapConfig mapWithValueCachingSetToAlways = config.getMapConfig("mapWithValueCachingSetToAlways");
+        assertEquals(CacheDeserializedValues.ALWAYS, mapWithValueCachingSetToAlways.getCacheDeserializedValues());
 
         MapConfig mapWithNotOptimizedQueriesConfig = config.getMapConfig("mapWithNotOptimizedQueries");
-        assertFalse(mapWithNotOptimizedQueriesConfig.isOptimizeQueries());
+        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapWithNotOptimizedQueriesConfig.getCacheDeserializedValues());
 
         MapConfig mapWithDefaultOptimizedQueriesConfig = config.getMapConfig("mapWithDefaultOptimizedQueries");
-        assertFalse(mapWithDefaultOptimizedQueriesConfig.isOptimizeQueries());
+        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapWithDefaultOptimizedQueriesConfig.getCacheDeserializedValues());
+
+        MapConfig testMapWithPartitionLostListenerConfig = config.getMapConfig("mapWithPartitionLostListener");
+        List<MapPartitionLostListenerConfig> partitionLostListenerConfigs = testMapWithPartitionLostListenerConfig.getPartitionLostListenerConfigs();
+        assertEquals(1, partitionLostListenerConfigs.size());
+        assertEquals("DummyMapPartitionLostListenerImpl", partitionLostListenerConfigs.get(0).getClassName());
     }
 
     @Test
@@ -455,15 +488,16 @@ public class TestFullApplicationContext {
 
     @Test
     public void testProperties() {
-        final Properties properties = config.getProperties();
+        Properties properties = config.getProperties();
         assertNotNull(properties);
-        assertEquals("5", properties.get(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS));
-        assertEquals("5", properties.get(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS));
-        final Config config2 = instance.getConfig();
-        final Properties properties2 = config2.getProperties();
+        assertEquals("5", properties.get(MERGE_FIRST_RUN_DELAY_SECONDS.getName()));
+        assertEquals("5", properties.get(MERGE_NEXT_RUN_DELAY_SECONDS.getName()));
+
+        Config config2 = instance.getConfig();
+        Properties properties2 = config2.getProperties();
         assertNotNull(properties2);
-        assertEquals("5", properties2.get(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS));
-        assertEquals("5", properties2.get(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS));
+        assertEquals("5", properties2.get(MERGE_FIRST_RUN_DELAY_SECONDS.getName()));
+        assertEquals("5", properties2.get(MERGE_NEXT_RUN_DELAY_SECONDS.getName()));
     }
 
     @Test
@@ -525,6 +559,15 @@ public class TestFullApplicationContext {
         assertEquals("10.2.1.1:5701", targetCfg.getEndpoints().get(0));
         assertEquals("10.2.1.2:5701", targetCfg.getEndpoints().get(1));
         assertEquals(wanReplication, wcfg.getTargetClusterConfigs().get(1).getReplicationImplObject());
+        WanTargetClusterConfig targetClusterConfig0 = wcfg.getTargetClusterConfigs().get(0);
+        WanTargetClusterConfig targetClusterConfig1 = wcfg.getTargetClusterConfigs().get(1);
+        assertEquals(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE, targetClusterConfig0.getAcknowledgeType());
+        assertEquals(WanAcknowledgeType.ACK_ON_RECEIPT, targetClusterConfig1.getAcknowledgeType());
+        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, targetClusterConfig0.getQueueFullBehavior());
+        assertEquals(7, targetClusterConfig0.getBatchSize());
+        assertEquals(14, targetClusterConfig0.getBatchMaxDelayMillis());
+        assertEquals(21, targetClusterConfig0.getQueueCapacity());
+        assertEquals(28, targetClusterConfig0.getResponseTimeoutMillis());
     }
 
     @Test
@@ -721,4 +764,23 @@ public class TestFullApplicationContext {
             assertFalse(mapIndexConfig.isOrdered());
         }
     }
+
+    @Test
+    public void testMapNativeMaxSizePolicy() {
+        MapConfig mapConfig = config.getMapConfig("map-with-native-max-size-policy");
+        MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
+
+        assertEquals(MaxSizeConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE, maxSizeConfig.getMaxSizePolicy());
+    }
+
+    @Test
+    public void testHotRestart() {
+        File dir = new File("/mnt/hot-restart/");
+        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
+        assertTrue(hotRestartPersistenceConfig.isEnabled());
+        assertEquals(dir.getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
+        assertEquals(1111, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
+        assertEquals(2222, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
+    }
+
 }

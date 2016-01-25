@@ -59,7 +59,7 @@ public class MessageTypeEnumModel
                 ParameterModel pm = new ParameterModel();
                 pm.name = methodElement.getSimpleName().toString();
                 if (annotation1 != null) {
-                    pm.id = CodeGenerationUtils.mergeIds(masterId, annotation1.id());
+                    pm.id = CodeGenerationUtils.addHexPrefix(CodeGenerationUtils.mergeIds(masterId, annotation1.id()));
                     params.add(pm);
                 }
             }
@@ -108,5 +108,23 @@ public class MessageTypeEnumModel
             return id;
         }
 
+        @Override
+        public String toString() {
+            return "ParameterModel{" +
+                    "name='" + name + '\'' +
+                    ", id='" + id + '\'' +
+                    "}\n";
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "MessageTypeEnumModel{" +
+                "lang=" + lang +
+                ", name='" + name + '\'' +
+                ", className='" + className + '\'' +
+                ", packageName='" + packageName + '\'' +
+                ", params=" + params +
+                '}';
     }
 }

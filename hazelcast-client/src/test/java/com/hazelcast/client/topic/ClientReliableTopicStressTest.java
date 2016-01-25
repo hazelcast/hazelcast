@@ -1,6 +1,5 @@
 package com.hazelcast.client.topic;
 
-
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
@@ -26,6 +25,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
@@ -62,6 +62,8 @@ public class ClientReliableTopicStressTest extends HazelcastTestSupport {
 
     @After
     public void teardown() {
+        resetLogLevel();
+
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }

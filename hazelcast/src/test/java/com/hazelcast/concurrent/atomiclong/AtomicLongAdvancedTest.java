@@ -42,7 +42,7 @@ public class AtomicLongAdvancedTest extends HazelcastTestSupport {
                 }
             }.start();
         }
-        assertOpenEventually(countDownLatch, 50);
+        assertOpenEventually(countDownLatch, 300);
         assertEquals(0, atomicLong.get());
     }
 

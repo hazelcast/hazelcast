@@ -94,6 +94,8 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
      */
     protected boolean isManagementEnabled;
 
+    protected HotRestartConfig hotRestartConfig = new HotRestartConfig();
+
     public AbstractCacheConfig() {
         this.keyType = (Class<K>) Object.class;
         this.valueType = (Class<V>) Object.class;
@@ -124,11 +126,8 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
 
         this.isReadThrough = configuration.isReadThrough();
         this.isWriteThrough = configuration.isWriteThrough();
-
         this.isStatisticsEnabled = configuration.isStatisticsEnabled();
-
         this.isStoreByValue = configuration.isStoreByValue();
-
         this.isManagementEnabled = configuration.isManagementEnabled();
     }
 
@@ -197,7 +196,7 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
     }
 
     /**
-     * Sets whether or not statistics gathering is enabled on a cache.
+     * Sets whether or not statistics gathering is enabled on this cache.
      * <p/>
      * Statistics may be enabled or disabled at runtime via
      * {@link javax.cache.CacheManager#enableStatistics(String, boolean)}.
@@ -216,7 +215,7 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
     }
 
     /**
-     * Sets whether or not management is enabled on a cache.
+     * Sets whether or not management is enabled on this cache.
      * <p/>
      * Management may be enabled or disabled at runtime via
      * {@link javax.cache.CacheManager#enableManagement(String, boolean)}.
@@ -226,6 +225,24 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
      */
     public CacheConfiguration<K, V> setManagementEnabled(boolean enabled) {
         this.isManagementEnabled = enabled;
+        return this;
+    }
+
+    /**
+     * Gets the {@code HotRestartConfig} for this {@code CacheConfiguration}
+     * @return hot restart config
+     */
+    public HotRestartConfig getHotRestartConfig() {
+        return hotRestartConfig;
+    }
+
+    /**
+     * Sets the {@code HotRestartConfig} for this {@code CacheConfiguration}
+     * @param hotRestartConfig hot restart config
+     * @return this {@code CacheConfiguration} instance
+     */
+    public CacheConfiguration<K, V> setHotRestartConfig(HotRestartConfig hotRestartConfig) {
+        this.hotRestartConfig = hotRestartConfig;
         return this;
     }
 

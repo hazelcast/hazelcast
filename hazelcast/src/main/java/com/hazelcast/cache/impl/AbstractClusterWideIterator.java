@@ -44,7 +44,7 @@ import java.util.NoSuchElementException;
  *     <li>when fetched keys are all used by calling {@link #next()}, more keys are fetched from the cluster.</li>
  * </ul>
  * This implementation iterates over partitions and for each partition it iterates over the internal map using the
- *     internal table index of the map {@link com.hazelcast.util.CacheConcurrentHashMap}.
+ *     internal table index of the map {@link com.hazelcast.util.SampleableConcurrentHashMap}.
  * </p>
  * <p>
  * <h2>Fetching data from cluster:</h2>
@@ -109,15 +109,18 @@ public abstract class AbstractClusterWideIterator<K, V>
 
     @Override
     public Cache.Entry<K, V> next() {
-        if (!hasNext()) {
-            throw new NoSuchElementException();
+        while (hasNext()) {
+            currentIndex = index;
+            index++;
+            final Data keyData = result.getKey(currentIndex);
+            final K key = toObject(keyData);
+            final V value = cache.get(key);
+            // Value might be removed or evicted
+            if (value != null) {
+                return new CacheEntry<K, V>(key, value);
+            }
         }
-        currentIndex = index;
-        index++;
-        final Data keyData = result.getKey(currentIndex);
-        final K key = toObject(keyData);
-        final V value = cache.get(key);
-        return new CacheEntry<K, V>(key, value);
+        throw new NoSuchElementException();
     }
 
     @Override

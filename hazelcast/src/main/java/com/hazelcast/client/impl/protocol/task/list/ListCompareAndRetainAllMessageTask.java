@@ -29,7 +29,7 @@ import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
-import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Client Protocol Task for handling messages with type id:
@@ -44,7 +44,8 @@ public class ListCompareAndRetainAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionCompareAndRemoveOperation(parameters.name, true, (Set<Data>) parameters.valueSet);
+        HashSet<Data> values = new HashSet<Data>(parameters.values);
+        return new CollectionCompareAndRemoveOperation(parameters.name, true, values);
     }
 
     @Override
@@ -64,7 +65,7 @@ public class ListCompareAndRetainAllMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.valueSet};
+        return new Object[]{parameters.values};
     }
 
     @Override

@@ -11,8 +11,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +25,7 @@ public class MapPartitionLostListenerStressTest
     public static class EventCollectingMapPartitionLostListener
             implements MapPartitionLostListener {
 
-        private final List<MapPartitionLostEvent> events = Collections.synchronizedList(new LinkedList<MapPartitionLostEvent>());
+        private final List<MapPartitionLostEvent> events = new ArrayList<MapPartitionLostEvent>();
 
         private final int backupCount;
 
@@ -36,14 +34,12 @@ public class MapPartitionLostListenerStressTest
         }
 
         @Override
-        public void partitionLost(MapPartitionLostEvent event) {
+        public synchronized void partitionLost(MapPartitionLostEvent event) {
             this.events.add(event);
         }
 
-        public List<MapPartitionLostEvent> getEvents() {
-            synchronized (events) {
-                return new ArrayList<MapPartitionLostEvent>(events);
-            }
+        public synchronized List<MapPartitionLostEvent> getEvents() {
+            return new ArrayList<MapPartitionLostEvent>(events);
         }
 
         public int getBackupCount() {
@@ -107,34 +103,34 @@ public class MapPartitionLostListenerStressTest
         testMapPartitionLostListener(4, true);
     }
 
-    private void testMapPartitionLostListener(final int numberOfNodesToCrash, final boolean withData)
+    private void testMapPartitionLostListener(int numberOfNodesToCrash, boolean withData)
             throws InterruptedException {
-        final List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
+        List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
 
         List<HazelcastInstance> survivingInstances = new ArrayList<HazelcastInstance>(instances);
-        final List<HazelcastInstance> terminatingInstances = survivingInstances.subList(0, numberOfNodesToCrash);
+        List<HazelcastInstance> terminatingInstances = survivingInstances.subList(0, numberOfNodesToCrash);
         survivingInstances = survivingInstances.subList(numberOfNodesToCrash, instances.size());
 
-        final List<EventCollectingMapPartitionLostListener> listeners = registerListeners(survivingInstances.get(0));
+        List<EventCollectingMapPartitionLostListener> listeners = registerListeners(survivingInstances.get(0));
 
         if (withData) {
             populateMaps(survivingInstances.get(0));
         }
 
-        final String log = "Surviving: " + survivingInstances + " Terminating: " + terminatingInstances;
-        final Map<Integer, Integer> survivingPartitions = getMinReplicaIndicesByPartitionId(survivingInstances);
+        String log = "Surviving: " + survivingInstances + " Terminating: " + terminatingInstances;
+        Map<Integer, Integer> survivingPartitions = getMinReplicaIndicesByPartitionId(survivingInstances);
 
         terminateInstances(terminatingInstances);
         waitAllForSafeStateAndDumpPartitionServiceOnFailure(survivingInstances, 300);
 
         for (int i = 0; i < getNodeCount(); i++) {
-            assertListenerInvocationsEventually(numberOfNodesToCrash, log, survivingPartitions, listeners.get(i), i);
+            assertListenerInvocationsEventually(log, i, numberOfNodesToCrash, listeners.get(i), survivingPartitions);
         }
     }
 
-    private void assertListenerInvocationsEventually(final int numberOfNodesToCrash, final String log,
-                                                     final Map<Integer, Integer> survivingPartitions,
-                                                     final EventCollectingMapPartitionLostListener listener, final int index) {
+    private void assertListenerInvocationsEventually(final String log, final int index, final int numberOfNodesToCrash,
+                                                     final EventCollectingMapPartitionLostListener listener,
+                                                     final Map<Integer, Integer> survivingPartitions) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
@@ -142,40 +138,36 @@ public class MapPartitionLostListenerStressTest
                 if (index < numberOfNodesToCrash) {
                     assertLostPartitions(log, listener, survivingPartitions);
                 } else {
-                    final String message = log + " listener-" + index + " should not be invoked!";
+                    String message = log + " listener-" + index + " should not be invoked!";
                     assertTrue(message, listener.getEvents().isEmpty());
                 }
             }
         });
     }
 
-    private void assertLostPartitions(final String log, final EventCollectingMapPartitionLostListener listener,
-                                      final Map<Integer, Integer> survivingPartitions) {
-        final List<MapPartitionLostEvent> events = listener.getEvents();
+    private List<EventCollectingMapPartitionLostListener> registerListeners(HazelcastInstance instance) {
+        List<EventCollectingMapPartitionLostListener> listeners = new ArrayList<EventCollectingMapPartitionLostListener>();
+        for (int i = 0; i < getNodeCount(); i++) {
+            EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(i);
+            instance.getMap(getIthMapName(i)).addPartitionLostListener(listener);
+            listeners.add(listener);
+        }
+        return listeners;
+    }
 
+    private void assertLostPartitions(String log, EventCollectingMapPartitionLostListener listener,
+                                      Map<Integer, Integer> survivingPartitions) {
+        List<MapPartitionLostEvent> events = listener.getEvents();
         assertFalse(survivingPartitions.isEmpty());
 
         for (MapPartitionLostEvent event : events) {
-            final int failedPartitionId = event.getPartitionId();
-            final Integer survivingReplicaIndex = survivingPartitions.get(failedPartitionId);
+            int failedPartitionId = event.getPartitionId();
+            Integer survivingReplicaIndex = survivingPartitions.get(failedPartitionId);
             if (survivingReplicaIndex != null) {
-                final String message =
-                        log + ", PartitionId: " + failedPartitionId + " SurvivingReplicaIndex: " + survivingReplicaIndex
-                                + " Map Name: " + event.getName();
+                String message = log + ", PartitionId: " + failedPartitionId + " SurvivingReplicaIndex: " + survivingReplicaIndex
+                        + " Event: " + event.toString();
                 assertTrue(message, survivingReplicaIndex > listener.getBackupCount());
             }
         }
     }
-
-    private List<EventCollectingMapPartitionLostListener> registerListeners(final HazelcastInstance instance) {
-        final List<EventCollectingMapPartitionLostListener> listeners = new ArrayList<EventCollectingMapPartitionLostListener>();
-        for (int i = 0; i < getNodeCount(); i++) {
-            final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(i);
-            instance.getMap(getIthMapName(i)).addPartitionLostListener(listener);
-            listeners.add(listener);
-        }
-
-        return listeners;
-    }
-
 }

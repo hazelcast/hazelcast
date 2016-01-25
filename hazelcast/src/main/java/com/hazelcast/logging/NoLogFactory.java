@@ -27,70 +27,60 @@ public class NoLogFactory implements LoggerFactory {
     }
 
     static class NoLogger implements ILogger {
-        @Override
-        public void finest(String message) {
+        @Override public void finest(String message) {
         }
 
-        @Override
-        public void finest(String message, Throwable thrown) {
+        @Override public void finest(String message, Throwable thrown) {
         }
 
-        @Override
-        public void finest(Throwable thrown) {
+        @Override public void finest(Throwable thrown) {
         }
 
-        @Override
-        public boolean isFinestEnabled() {
+        @Override public boolean isFinestEnabled() {
             return false;
         }
 
-        @Override
-        public void info(String message) {
+        @Override public void fine(String message) {
         }
 
-        @Override
-        public void severe(String message) {
+        @Override public boolean isFineEnabled() {
+            return false;
         }
 
-        @Override
-        public void severe(Throwable thrown) {
+        @Override public void info(String message) {
         }
 
-        @Override
-        public void severe(String message, Throwable thrown) {
+        @Override public void severe(String message) {
         }
 
-        @Override
-        public void warning(String message) {
+        @Override public void severe(Throwable thrown) {
         }
 
-        @Override
-        public void warning(Throwable thrown) {
+        @Override public void severe(String message, Throwable thrown) {
         }
 
-        @Override
-        public void warning(String message, Throwable thrown) {
+        @Override public void warning(String message) {
         }
 
-        @Override
-        public void log(Level level, String message) {
+        @Override public void warning(Throwable thrown) {
         }
 
-        @Override
-        public void log(Level level, String message, Throwable thrown) {
+        @Override public void warning(String message, Throwable thrown) {
         }
 
-        @Override
-        public void log(LogEvent logEvent) {
+        @Override public void log(Level level, String message) {
         }
 
-        @Override
-        public Level getLevel() {
+        @Override public void log(Level level, String message, Throwable thrown) {
+        }
+
+        @Override public void log(LogEvent logEvent) {
+        }
+
+        @Override public Level getLevel() {
             return Level.OFF;
         }
-
-        @Override
-        public boolean isLoggable(Level level) {
+        @Override public boolean isLoggable(Level level) {
             return false;
         }
     }

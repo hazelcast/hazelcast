@@ -74,14 +74,6 @@ public interface NearCache<K, V> {
     boolean remove(K key);
 
     /**
-     * Invalidates the value associated with the given <code>key</code>.
-     *
-     * @param key the key of the value will be removed
-     */
-    void invalidate(K key);
-
-    /**
-     *
      * @return
      */
     boolean isInvalidateOnChange();
@@ -116,7 +108,7 @@ public interface NearCache<K, V> {
      * @param candidates the candidates from which the best candidate object will be selected.
      * @return the best candidate object to store, selected from the given <code>candidates</code>.
      */
-    Object selectToSave(Object ... candidates);
+    Object selectToSave(Object... candidates);
 
     /**
      * Gets the count of stored records.

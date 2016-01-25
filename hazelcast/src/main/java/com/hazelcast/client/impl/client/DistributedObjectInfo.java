@@ -16,13 +16,7 @@
 
 package com.hazelcast.client.impl.client;
 
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
-
-import java.io.IOException;
-
-public class DistributedObjectInfo implements Portable {
+public class DistributedObjectInfo {
 
     private String serviceName;
     private String name;
@@ -35,16 +29,6 @@ public class DistributedObjectInfo implements Portable {
         this.name = name;
     }
 
-    @Override
-    public int getFactoryId() {
-        return ClientPortableHook.ID;
-    }
-
-    @Override
-    public int getClassId() {
-        return ClientPortableHook.DISTRIBUTED_OBJECT_INFO;
-    }
-
     public String getServiceName() {
         return serviceName;
     }
@@ -53,17 +37,6 @@ public class DistributedObjectInfo implements Portable {
         return name;
     }
 
-    @Override
-    public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("sn", serviceName);
-        writer.writeUTF("n", name);
-    }
-
-    @Override
-    public void readPortable(PortableReader reader) throws IOException {
-        serviceName = reader.readUTF("sn");
-        name = reader.readUTF("n");
-    }
 
     @Override
     public boolean equals(Object o) {

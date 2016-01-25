@@ -29,13 +29,17 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
+import com.hazelcast.internal.management.request.AsyncConsoleRequest;
+import com.hazelcast.internal.management.request.ChangeClusterStateRequest;
+import com.hazelcast.internal.management.request.ChangeWanStateRequest;
 import com.hazelcast.internal.management.request.ClusterPropsRequest;
 import com.hazelcast.internal.management.request.ConsoleCommandRequest;
 import com.hazelcast.internal.management.request.ConsoleRequest;
 import com.hazelcast.internal.management.request.ExecuteScriptRequest;
+import com.hazelcast.internal.management.request.ForceStartNodeRequest;
+import com.hazelcast.internal.management.request.GetClusterStateRequest;
 import com.hazelcast.internal.management.request.GetLogsRequest;
 import com.hazelcast.internal.management.request.GetMapEntryRequest;
 import com.hazelcast.internal.management.request.GetMemberSystemPropertiesRequest;
@@ -43,6 +47,7 @@ import com.hazelcast.internal.management.request.GetSystemWarningsRequest;
 import com.hazelcast.internal.management.request.MapConfigRequest;
 import com.hazelcast.internal.management.request.MemberConfigRequest;
 import com.hazelcast.internal.management.request.RunGcRequest;
+import com.hazelcast.internal.management.request.ShutdownClusterRequest;
 import com.hazelcast.internal.management.request.ShutdownMemberRequest;
 import com.hazelcast.internal.management.request.ThreadDumpRequest;
 import com.hazelcast.logging.ILogger;
@@ -50,17 +55,17 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -75,6 +80,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getObject;
@@ -111,15 +117,16 @@ public class ManagementCenterService {
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
         this.threadGroup = instance.node.getHazelcastThreadGroup();
-        logger = instance.node.getLogger(ManagementCenterService.class);
-        managementCenterConfig = getManagementCenterConfig();
-        managementCenterUrl = getManagementCenterUrl();
-        commandHandler = new ConsoleCommandHandler(instance);
-        taskPollThread = new TaskPollThread();
-        stateSendThread = new StateSendThread();
-        prepareStateThread = new PrepareStateThread();
-        timedMemberStateFactory = new TimedMemberStateFactory(instance);
-        identifier = newManagementCenterIdentifier();
+        this.logger = instance.node.getLogger(ManagementCenterService.class);
+        this.managementCenterConfig = getManagementCenterConfig();
+        this.managementCenterUrl = getManagementCenterUrl();
+        this.commandHandler = new ConsoleCommandHandler(instance);
+        this.taskPollThread = new TaskPollThread();
+        this.stateSendThread = new StateSendThread();
+        this.prepareStateThread = new PrepareStateThread();
+        this.timedMemberStateFactory = new TimedMemberStateFactory(instance);
+        this.identifier = newManagementCenterIdentifier();
+
         registerListeners();
     }
 
@@ -150,7 +157,7 @@ public class ManagementCenterService {
         return new ManagementCenterIdentifier(version, groupName, address.getHost() + ":" + address.getPort());
     }
 
-    private static String cleanupUrl(String url) {
+    static String cleanupUrl(String url) {
         if (url == null) {
             return null;
         }
@@ -164,7 +171,7 @@ public class ManagementCenterService {
         }
 
         if (!isRunning.compareAndSet(false, true)) {
-            //it is already started
+            // it is already started
             return;
         }
 
@@ -225,26 +232,24 @@ public class ManagementCenterService {
         }
 
         urlChanged = true;
-        logger.info("Management Center URL has changed. "
-                + "Hazelcast will connect to Management Center on address:\n" + managementCenterUrl);
+        logger.info("Management Center URL has changed. Hazelcast will connect to Management Center on address:\n"
+                + managementCenterUrl);
     }
 
-    private void interruptThread(Thread t) {
-        if (t != null) {
-            t.interrupt();
+    private void interruptThread(Thread thread) {
+        if (thread != null) {
+            thread.interrupt();
         }
     }
 
     public Object callOnAddress(Address address, Operation operation) {
-        //todo: why are we always executing on the mapservice??
+        // TODO: why are we always executing on the MapService?
         OperationService operationService = instance.node.nodeEngine.getOperationService();
         Future future = operationService.invokeOnTarget(MapService.SERVICE_NAME, operation, address);
         try {
             return future.get();
         } catch (Throwable t) {
-            StringWriter s = new StringWriter();
-            t.printStackTrace(new PrintWriter(s));
-            return s.toString();
+            return ExceptionUtil.toString(t);
         }
     }
 
@@ -253,7 +258,7 @@ public class ManagementCenterService {
     }
 
     public Object callOnMember(Member member, Operation operation) {
-        Address address = ((MemberImpl) member).getAddress();
+        Address address = member.getAddress();
         return callOnAddress(address, operation);
     }
 
@@ -283,6 +288,7 @@ public class ManagementCenterService {
     }
 
     private final class PrepareStateThread extends Thread {
+
         private final long updateIntervalMs;
 
         private PrepareStateThread() {
@@ -292,7 +298,7 @@ public class ManagementCenterService {
 
         private long calcUpdateInterval() {
             long updateInterval = managementCenterConfig.getUpdateInterval();
-            return updateInterval > 0 ? TimeUnit.SECONDS.toMillis(updateInterval) : DEFAULT_UPDATE_INTERVAL;
+            return (updateInterval > 0) ? TimeUnit.SECONDS.toMillis(updateInterval) : DEFAULT_UPDATE_INTERVAL;
         }
 
         @Override
@@ -320,6 +326,7 @@ public class ManagementCenterService {
      * Thread for sending cluster state to the Management Center.
      */
     private final class StateSendThread extends Thread {
+
         private final long updateIntervalMs;
 
         private StateSendThread() {
@@ -329,7 +336,7 @@ public class ManagementCenterService {
 
         private long calcUpdateInterval() {
             long updateInterval = managementCenterConfig.getUpdateInterval();
-            return updateInterval > 0 ? TimeUnit.SECONDS.toMillis(updateInterval) : DEFAULT_UPDATE_INTERVAL;
+            return (updateInterval > 0) ? TimeUnit.SECONDS.toMillis(updateInterval) : DEFAULT_UPDATE_INTERVAL;
         }
 
         @Override
@@ -344,8 +351,7 @@ public class ManagementCenterService {
             } catch (Throwable throwable) {
                 inspectOutputMemoryError(throwable);
                 if (!(throwable instanceof InterruptedException)) {
-                    logger.warning("Hazelcast Management Center Service will be shutdown due to exception.", throwable);
-                    shutdown();
+                    logger.warning("Exception occurred while calculating stats", throwable);
                 }
             }
         }
@@ -419,8 +425,11 @@ public class ManagementCenterService {
      * Thread for polling tasks/requests from Management Center.
      */
     private final class TaskPollThread extends Thread {
+
         private final Map<Integer, Class<? extends ConsoleRequest>> consoleRequests
                 = new HashMap<Integer, Class<? extends ConsoleRequest>>();
+
+        private final ExecutionService executionService = instance.node.getNodeEngine().getExecutionService();
 
         TaskPollThread() {
             super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("MC.Task.Poller"));
@@ -428,6 +437,7 @@ public class ManagementCenterService {
             register(new ExecuteScriptRequest());
             register(new ConsoleCommandRequest());
             register(new MapConfigRequest());
+            register(new ChangeWanStateRequest());
             register(new MemberConfigRequest());
             register(new ClusterPropsRequest());
             register(new GetLogsRequest());
@@ -435,7 +445,11 @@ public class ManagementCenterService {
             register(new GetMemberSystemPropertiesRequest());
             register(new GetMapEntryRequest());
             register(new ShutdownMemberRequest());
+            register(new GetClusterStateRequest());
+            register(new ChangeClusterStateRequest());
+            register(new ShutdownClusterRequest());
             register(new GetSystemWarningsRequest());
+            register(new ForceStartNodeRequest());
         }
 
         public void register(ConsoleRequest consoleRequest) {
@@ -496,9 +510,15 @@ public class ManagementCenterService {
                     }
                     ConsoleRequest task = requestClass.newInstance();
                     task.fromJson(getObject(innerRequest, "request"));
-                    boolean success = processTaskAndSendResponse(taskId, task);
+                    boolean success;
+                    if (task instanceof AsyncConsoleRequest) {
+                        executionService.execute(ASYNC_EXECUTOR, new AsyncConsoleRequestTask(taskId, task));
+                        success = true;
+                    } else {
+                        success = processTaskAndSendResponse(taskId, task);
+                    }
                     if (taskPollFailed && success) {
-                        logger.info("Management center task polling successfull.");
+                        logger.info("Management center task polling successful.");
                         taskPollFailed = false;
                     }
                 }
@@ -551,11 +571,30 @@ public class ManagementCenterService {
         private URL newGetTaskUrl() throws MalformedURLException {
             GroupConfig groupConfig = instance.getConfig().getGroupConfig();
 
-            Address localAddress = ((MemberImpl) instance.node.getClusterService().getLocalMember()).getAddress();
+            Address localAddress = instance.node.getClusterService().getLocalMember().getAddress();
 
             String urlString = cleanupUrl(managementCenterUrl) + "getTask.do?member=" + localAddress.getHost()
                     + ":" + localAddress.getPort() + "&cluster=" + groupConfig.getName();
             return new URL(urlString);
+        }
+
+        private class AsyncConsoleRequestTask implements Runnable {
+            private final int taskId;
+            private final ConsoleRequest task;
+
+            public AsyncConsoleRequestTask(int taskId, ConsoleRequest task) {
+                this.taskId = taskId;
+                this.task = task;
+            }
+
+            @Override
+            public void run() {
+                try {
+                    processTaskAndSendResponse(taskId, task);
+                } catch (Exception e) {
+                    logger.warning("Problem while handling task: " + task, e);
+                }
+            }
         }
     }
 

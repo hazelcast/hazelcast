@@ -48,23 +48,39 @@ public final class ExceptionUtil {
         return sw.toString();
     }
 
+    public static RuntimeException peel(final Throwable t) {
+        return (RuntimeException) peel(t, null);
+    }
+
+    public static <T extends Throwable> Throwable peel(final Throwable t, Class<T> allowedType) {
+        if (t instanceof RuntimeException) {
+            return t;
+        }
+
+        if (t instanceof ExecutionException) {
+            final Throwable cause = t.getCause();
+            if (cause != null) {
+                return peel(cause, allowedType);
+            } else {
+                return new HazelcastException(t);
+            }
+        }
+
+        if (allowedType != null && allowedType.isAssignableFrom(t.getClass())) {
+            return t;
+        }
+
+        return new HazelcastException(t);
+    }
+
     public static RuntimeException rethrow(final Throwable t) {
         if (t instanceof Error) {
             if (t instanceof OutOfMemoryError) {
                 OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);
             }
             throw (Error) t;
-        } else if (t instanceof RuntimeException) {
-            throw (RuntimeException) t;
-        } else if (t instanceof ExecutionException) {
-            final Throwable cause = t.getCause();
-            if (cause != null) {
-                throw rethrow(cause);
-            } else {
-                throw new HazelcastException(t);
-            }
         } else {
-            throw new HazelcastException(t);
+            throw peel(t);
         }
     }
 
@@ -74,19 +90,8 @@ public final class ExceptionUtil {
                 OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);
             }
             throw (Error) t;
-        } else if (t instanceof RuntimeException) {
-            throw (RuntimeException) t;
-        } else if (t instanceof ExecutionException) {
-            final Throwable cause = t.getCause();
-            if (cause != null) {
-                throw rethrow(cause, allowedType);
-            } else {
-                throw new HazelcastException(t);
-            }
-        } else if (allowedType.isAssignableFrom(t.getClass())) {
-            throw (T) t;
         } else {
-            throw new HazelcastException(t);
+            throw (T) peel(t, allowedType);
         }
     }
 
@@ -102,17 +107,8 @@ public final class ExceptionUtil {
             throw (Error) t;
         } else if (allowedType.isAssignableFrom(t.getClass())) {
             throw (T) t;
-        } else if (t instanceof RuntimeException) {
-            throw (RuntimeException) t;
-        } else if (t instanceof ExecutionException) {
-            final Throwable cause = t.getCause();
-            if (cause != null) {
-                throw rethrowAllowedTypeFirst(cause, allowedType);
-            } else {
-                throw new HazelcastException(t);
-            }
         } else {
-            throw new HazelcastException(t);
+            throw peel(t);
         }
     }
 

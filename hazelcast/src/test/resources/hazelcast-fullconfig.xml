@@ -33,7 +33,7 @@
     4. If a configuration cannot be found, Hazelcast will use the default hazelcast configuration
        ’hazelcast-default.xml’, which is included in the the Hazelcast jar
 -->
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.5.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.6.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
@@ -56,6 +56,12 @@
                 <address>10.3.5.1:5701</address>
                 <address>10.3.5.2:5701</address>
             </end-points>
+            <acknowledge-type>ACK_ON_RECEIPT</acknowledge-type>
+            <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
+            <batch-size>7</batch-size>
+            <batch-max-delay-millis>14</batch-max-delay-millis>
+            <queue-capacity>21</queue-capacity>
+            <response-timeout-millis>28</response-timeout-millis>
         </target-cluster>
     </wan-replication>
     <network>
@@ -218,12 +224,20 @@
             the map will be evicted. Any integer between 0 and 100.
             If 25 is set for example, 25% of the entries will
             get evicted.
+
+            Beware that eviction mechanism is different for NATIVE in-memory format.
+            (It uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
+            For this in-memory format, `eviction-percentage` has no effect
         -->
         <eviction-percentage>25</eviction-percentage>
         <!--
             Minimum time in milliseconds which should pass before checking
             if a partition of this map is evictable or not.
             Default value is 100 millis.
+
+            Beware that eviction mechanism is different for NATIVE in-memory format.
+            (It uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
+            For this in-memory format, `minEvictionCheckMillis` has no effect
         -->
         <min-eviction-check-millis>100</min-eviction-check-millis>
 
@@ -241,6 +255,8 @@
             com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
             com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
             com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
+
+            Beware that `merge-policy` is not supported for NATIVE in-memory format.
         -->
         <merge-policy>com.hazelcast.map.merge.PutIfAbsentMapMergePolicy</merge-policy>
 
@@ -262,6 +278,11 @@
             </properties>
         </map-store>
 
+        <!--
+            Beware that near-cache eviction configuration is different for NATIVE in-memory format.
+            Proper eviction configuration example for NATIVE in-memory format :
+               `<eviction max-size-policy="USED_NATIVE_MEMORY_SIZE" eviction-policy="LFU" size="60"/>`
+        -->
         <near-cache>
             <max-size>10000</max-size>
             <time-to-live-seconds>0</time-to-live-seconds>
@@ -273,12 +294,21 @@
 
         <wan-replication-ref name="my-wan-cluster">
             <merge-policy>hz.PASS_THROUGH</merge-policy>
+            <filters>
+                <filter-impl>com.example.WanTestFilter1</filter-impl>
+                <filter-impl>com.example.WanTestFilter2</filter-impl>
+            </filters>
         </wan-replication-ref>
 
         <indexes>
             <index ordered="false">name</index>
             <index ordered="true">age</index>
         </indexes>
+
+        <attributes>
+            <attribute extractor="com.example.CurrencyExtractor">currency</attribute>
+            <attribute extractor="com.example.AgeExtractor">age</attribute>
+        </attributes>
 
         <entry-listeners>
             <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>

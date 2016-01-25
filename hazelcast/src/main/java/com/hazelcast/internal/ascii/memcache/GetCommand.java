@@ -18,14 +18,17 @@ package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.internal.ascii.AbstractTextCommand;
 import com.hazelcast.internal.ascii.TextCommandConstants;
-import com.hazelcast.nio.IOUtil;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.GET;
+import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
+
 public class GetCommand extends AbstractTextCommand {
-    final String key;
-    ByteBuffer value;
-    ByteBuffer lastOne;
+
+    protected final String key;
+    private ByteBuffer value;
+    private ByteBuffer lastOne;
 
     public GetCommand(TextCommandConstants.TextCommandType type, String key) {
         super(type);
@@ -33,14 +36,15 @@ public class GetCommand extends AbstractTextCommand {
     }
 
     public GetCommand(String key) {
-        this(TextCommandConstants.TextCommandType.GET, key);
+        this(GET, key);
     }
 
     public String getKey() {
         return key;
     }
 
-    public boolean readFrom(ByteBuffer cb) {
+    @Override
+    public boolean readFrom(ByteBuffer src) {
         return true;
     }
 
@@ -51,12 +55,13 @@ public class GetCommand extends AbstractTextCommand {
         lastOne = (singleGet) ? ByteBuffer.wrap(TextCommandConstants.END) : null;
     }
 
-    public boolean writeTo(ByteBuffer bb) {
+    @Override
+    public boolean writeTo(ByteBuffer dst) {
         if (value != null) {
-            IOUtil.copyToHeapBuffer(value, bb);
+            copyToHeapBuffer(value, dst);
         }
         if (lastOne != null) {
-            IOUtil.copyToHeapBuffer(lastOne, bb);
+            copyToHeapBuffer(lastOne, dst);
         }
         return !((value != null && value.hasRemaining())
                 || (lastOne != null && lastOne.hasRemaining()));

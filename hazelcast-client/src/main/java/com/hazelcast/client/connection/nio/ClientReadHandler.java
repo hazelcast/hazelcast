@@ -16,27 +16,33 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.nio.Packet;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.util.ClientMessageBuilder;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.Clock;
 
 import java.io.EOFException;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
-public class ClientReadHandler extends AbstractClientSelectionHandler {
+public class ClientReadHandler
+        extends AbstractClientSelectionHandler {
 
     private final ByteBuffer buffer;
+    private final ClientMessageBuilder builder;
 
     private volatile long lastHandle;
 
-    private Packet packet;
-
-    public ClientReadHandler(ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize) {
+    public ClientReadHandler(final ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize) {
         super(connection, ioThread);
         buffer = ByteBuffer.allocate(bufferSize);
         lastHandle = Clock.currentTimeMillis();
+        builder = new ClientMessageBuilder(new ClientMessageBuilder.MessageHandler() {
+            @Override
+            public void handleMessage(ClientMessage message) {
+                connectionManager.handleClientMessage(message, connection);
+            }
+        });
     }
 
     @Override
@@ -45,56 +51,31 @@ public class ClientReadHandler extends AbstractClientSelectionHandler {
     }
 
     @Override
-    public void handle() {
+    public void handle() throws Exception {
         lastHandle = Clock.currentTimeMillis();
         if (!connection.isAlive()) {
             if (logger.isFinestEnabled()) {
-                String message = "We are being asked to read, but connection is not live so we won't";
-                logger.finest(message);
+                logger.finest("We are being asked to read, but connection is not live so we won't");
             }
             return;
         }
-        try {
-            int readBytes = socketChannel.read(buffer);
+
+        int readBytes = socketChannel.read(buffer);
+        if (readBytes <= 0) {
             if (readBytes == -1) {
                 throw new EOFException("Remote socket closed!");
             }
-        } catch (IOException e) {
-            handleSocketException(e);
             return;
         }
-        try {
-            if (buffer.position() == 0) {
-                return;
-            }
-            buffer.flip();
 
-            readPacket();
+        buffer.flip();
 
-            if (buffer.hasRemaining()) {
-                buffer.compact();
-            } else {
-                buffer.clear();
-            }
-        } catch (Throwable t) {
-            handleSocketException(t);
-        }
+        builder.onData(buffer);
 
-    }
-
-    private void readPacket() {
-        while (buffer.hasRemaining()) {
-            if (packet == null) {
-                packet = new Packet();
-            }
-            boolean complete = packet.readFrom(buffer);
-            if (complete) {
-                packet.setConn(connection);
-                connectionManager.handlePacket(packet);
-                packet = null;
-            } else {
-                break;
-            }
+        if (buffer.hasRemaining()) {
+            buffer.compact();
+        } else {
+            buffer.clear();
         }
     }
 

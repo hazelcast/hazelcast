@@ -25,15 +25,15 @@ import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 
-public class DataAwareMessage extends Message {
+public class DataAwareMessage extends Message<Object> {
 
     private static final long serialVersionUID = 1;
 
     private final transient Data messageData;
     private final transient SerializationService serializationService;
 
-    public DataAwareMessage(String topicName, Data messageData, long publishTime,
-            Member publishingMember, SerializationService serializationService) {
+    public DataAwareMessage(String topicName, Data messageData, long publishTime, Member publishingMember,
+                            SerializationService serializationService) {
         super(topicName, null, publishTime, publishingMember);
         this.serializationService = serializationService;
         this.messageData = messageData;

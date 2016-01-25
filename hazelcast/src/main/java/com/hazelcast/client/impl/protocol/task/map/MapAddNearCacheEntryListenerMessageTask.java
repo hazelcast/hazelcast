@@ -19,11 +19,23 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.EntryEventFilter;
-import com.hazelcast.map.impl.SyntheticEventFilter;
+import com.hazelcast.map.impl.EventListenerFilter;
+import com.hazelcast.map.impl.nearcache.BatchNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.CleaningNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.Invalidation;
+import com.hazelcast.map.impl.nearcache.InvalidationListener;
+import com.hazelcast.map.impl.nearcache.SingleNearCacheInvalidation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
+
+import java.util.List;
+
+import static com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.encodeIMapBatchInvalidationEvent;
+import static com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.encodeIMapInvalidationEvent;
+import static com.hazelcast.map.impl.nearcache.BatchInvalidator.getKeysExcludingSource;
+import static com.hazelcast.util.CollectionUtil.isEmpty;
 
 public class MapAddNearCacheEntryListenerMessageTask
         extends AbstractMapAddEntryListenerMessageTask<MapAddNearCacheEntryListenerCodec.RequestParameters> {
@@ -33,19 +45,15 @@ public class MapAddNearCacheEntryListenerMessageTask
     }
 
     @Override
-    protected EventFilter getEventFilter() {
-        EntryEventFilter eventFilter = new EntryEventFilter(parameters.includeValue, null);
-        return new SyntheticEventFilter(eventFilter);
+    protected boolean isLocalOnly() {
+        return parameters.localOnly;
     }
-
 
     @Override
     protected ClientMessage encodeEvent(Data keyData, Data newValueData, Data oldValueData,
                                         Data meringValueData, int type, String uuid, int numberOfAffectedEntries) {
-        return MapAddNearCacheEntryListenerCodec.encodeEntryEvent(keyData, newValueData,
-                oldValueData, meringValueData, type, uuid, numberOfAffectedEntries);
+        throw new UnsupportedOperationException();
     }
-
 
     @Override
     public String getDistributedObjectName() {
@@ -54,7 +62,7 @@ public class MapAddNearCacheEntryListenerMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.includeValue};
+        return null;
     }
 
     @Override
@@ -67,4 +75,44 @@ public class MapAddNearCacheEntryListenerMessageTask
         return MapAddNearCacheEntryListenerCodec.encodeResponse((String) response);
     }
 
+    @Override
+    protected Object newMapListener() {
+        return new ClientNearCacheInvalidationListenerImpl();
+    }
+
+    @Override
+    protected EventFilter getEventFilter() {
+        return new EventListenerFilter(parameters.listenerFlags, TrueEventFilter.INSTANCE);
+    }
+
+    private final class ClientNearCacheInvalidationListenerImpl implements InvalidationListener {
+
+        ClientNearCacheInvalidationListenerImpl() {
+        }
+
+        @Override
+        public void onInvalidate(Invalidation event) {
+            if (!endpoint.isAlive()) {
+                return;
+            }
+
+            sendEvent(event);
+        }
+
+        private void sendEvent(Invalidation event) {
+            if (event instanceof BatchNearCacheInvalidation) {
+                List<Data> keys = getKeysExcludingSource(((BatchNearCacheInvalidation) event), endpoint.getUuid());
+                if (!isEmpty(keys)) {
+                    sendClientMessage(parameters.name, encodeIMapBatchInvalidationEvent(keys));
+                }
+            } else if (!endpoint.getUuid().equals(event.getSourceUuid())) {
+                if (event instanceof SingleNearCacheInvalidation) {
+                    Data key = ((SingleNearCacheInvalidation) event).getKey();
+                    sendClientMessage(key, encodeIMapInvalidationEvent(key));
+                } else if (event instanceof CleaningNearCacheInvalidation) {
+                    sendClientMessage(parameters.name, encodeIMapInvalidationEvent(null));
+                }
+            }
+        }
+    }
 }

@@ -43,7 +43,7 @@ public abstract class AbstractCacheMessageTask<P>
         ICacheService service = getService(CacheService.SERVICE_NAME);
         final CacheConfig cacheConfig = service.getCacheConfig(name);
         if (cacheConfig == null) {
-            throw new CacheNotExistsException("Cache is already destroyed or not created yet, on "
+            throw new CacheNotExistsException("Cache " + name + " is already destroyed or not created yet, on "
                     + nodeEngine.getLocalMember());
         }
         final InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();

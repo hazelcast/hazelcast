@@ -17,21 +17,23 @@
 package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.internal.ascii.TextCommand;
-import com.hazelcast.internal.ascii.TextCommandConstants;
+import com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType;
 import com.hazelcast.internal.ascii.TypeAwareCommandParser;
-import com.hazelcast.nio.ascii.SocketTextReader;
+import com.hazelcast.nio.ascii.TextReadHandler;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.QUIT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.STATS;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
 
 public class SimpleCommandParser extends TypeAwareCommandParser {
-    public SimpleCommandParser(TextCommandConstants.TextCommandType type) {
+
+    public SimpleCommandParser(TextCommandType type) {
         super(type);
     }
 
-    public TextCommand parser(SocketTextReader socketTextReader, String cmd, int space) {
+    @Override
+    public TextCommand parser(TextReadHandler readHandler, String cmd, int space) {
         if (type == QUIT) {
             return new SimpleCommand(type);
         } else if (type == STATS) {

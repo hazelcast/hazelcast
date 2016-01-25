@@ -16,8 +16,9 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.multimap.impl.MultiMapWrapper;
+import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -52,12 +53,13 @@ public abstract class MultiMapKeyBasedOperation extends MultiMapOperation implem
         this.threadId = threadId;
     }
 
-    public final MultiMapWrapper getOrCreateCollectionWrapper() {
-        return getOrCreateContainer().getOrCreateMultiMapWrapper(dataKey);
+    public final MultiMapValue getOrCreateMultiMapValue() {
+        return getOrCreateContainer().getOrCreateMultiMapValue(dataKey);
     }
 
-    public final MultiMapWrapper getCollectionWrapper() {
-        return getOrCreateContainer().getMultiMapWrapperOrNull(dataKey);
+    public final MultiMapValue getMultiMapValueOrNull() {
+        MultiMapContainer container = getOrCreateContainer();
+        return container.getMultiMapValueOrNull(dataKey);
     }
 
     public final Collection<MultiMapRecord> remove(boolean copyOf) {

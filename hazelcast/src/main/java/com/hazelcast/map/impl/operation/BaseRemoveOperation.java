@@ -17,20 +17,31 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
 
 public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation, MutatingOperation {
 
     protected transient Data dataOldValue;
 
-    public BaseRemoveOperation(String name, Data dataKey) {
+    /**
+     * Used by wan-replication-service to disable wan-replication event publishing
+     * otherwise in active-active scenarios infinite loop of event forwarding can be seen.
+     */
+    protected transient boolean disableWanReplicationEvent;
+
+    public BaseRemoveOperation(String name, Data dataKey, boolean disableWanReplicationEvent) {
         super(name, dataKey);
+        this.disableWanReplicationEvent = disableWanReplicationEvent;
+    }
+
+    public BaseRemoveOperation(String name, Data dataKey) {
+        this(name, dataKey, false);
     }
 
     public BaseRemoveOperation() {
@@ -42,12 +53,12 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         mapServiceContext.interceptAfterRemove(name, dataValue);
         final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.REMOVED, dataKey, dataOldValue, null);
-        invalidateNearCaches();
-        if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
+        invalidateNearCache(dataKey);
+        if (mapContainer.isWanReplicationEnabled() && !disableWanReplicationEvent) {
             // todo should evict operation replicated??
             mapEventPublisher.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
         }
-        evict(false);
+        evict();
     }
 
     @Override
@@ -57,7 +68,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
 
     @Override
     public Operation getBackupOperation() {
-        return new RemoveBackupOperation(name, dataKey);
+        return new RemoveBackupOperation(name, dataKey, false, disableWanReplicationEvent);
     }
 
     @Override
@@ -78,10 +89,5 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     @Override
     public void onWaitExpire() {
         sendResponse(null);
-    }
-
-    @Override
-    public String toString() {
-        return "BaseRemoveOperation{" + name + "}";
     }
 }

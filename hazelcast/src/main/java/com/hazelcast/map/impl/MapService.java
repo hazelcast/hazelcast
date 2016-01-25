@@ -17,13 +17,17 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.partition.InternalPartitionLostEvent;
 import com.hazelcast.spi.ClientAwareService;
+import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.NotifiableEventListener;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
@@ -38,8 +42,11 @@ import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.wan.WanReplicationEvent;
+
 import java.util.Map;
 import java.util.Properties;
+
+import static com.hazelcast.core.EntryEventType.INVALIDATION;
 
 /**
  * Defines map service behavior.
@@ -59,14 +66,10 @@ import java.util.Properties;
  * @see MapServiceContext
  */
 public class MapService implements ManagedService, MigrationAwareService,
-        TransactionalService, RemoteService, EventPublishingService<EventData, ListenerAdapter>,
+        TransactionalService, RemoteService, EventPublishingService<Object, ListenerAdapter>,
         PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService,
-        PartitionAwareService, ClientAwareService, QuorumAwareService {
+        PartitionAwareService, ClientAwareService, QuorumAwareService, NotifiableEventListener {
 
-    /**
-     * Service name of map service used
-     * to register {@link com.hazelcast.spi.impl.ServiceManager#registerService}
-     */
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
     protected ManagedService managedService;
@@ -87,7 +90,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     @Override
-    public void dispatchEvent(EventData event, ListenerAdapter listener) {
+    public void dispatchEvent(Object event, ListenerAdapter listener) {
         eventPublishingService.dispatchEvent(event, listener);
     }
 
@@ -188,5 +191,27 @@ public class MapService implements ManagedService, MigrationAwareService,
     @Override
     public void clientDisconnected(String clientUuid) {
         clientAwareService.clientDisconnected(clientUuid);
+    }
+
+    @Override
+    public void onRegister(Object service, String serviceName, String topic, EventRegistration registration) {
+        EventFilter filter = registration.getFilter();
+        if (!(filter instanceof EventListenerFilter) || !filter.eval(INVALIDATION.getType())) {
+            return;
+        }
+
+        MapContainer mapContainer = mapServiceContext.getMapContainer(topic);
+        mapContainer.increaseInvalidationListenerCount();
+    }
+
+    @Override
+    public void onDeregister(Object service, String serviceName, String topic, EventRegistration registration) {
+        EventFilter filter = registration.getFilter();
+        if (!(filter instanceof EventListenerFilter) || !filter.eval(INVALIDATION.getType())) {
+            return;
+        }
+
+        MapContainer mapContainer = mapServiceContext.getMapContainer(topic);
+        mapContainer.decreaseInvalidationListenerCount();
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster.impl.operations;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.cluster.impl.JoinMessage;
 import com.hazelcast.instance.Node;
@@ -59,7 +60,7 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
         if (request != null) {
             ILogger logger = getLogger();
             try {
-                if (service.validateJoinMessage(request)) {
+                if (service.getClusterJoinManager().validateJoinMessage(request)) {
                     response = node.createSplitBrainJoinMessage();
                 }
                 if (logger.isFinestEnabled()) {
@@ -87,7 +88,7 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
             return true;
         } else {
             // ping master to check if it's still valid
-            service.sendMasterConfirmation();
+            service.getClusterHeartbeatManager().sendMasterConfirmation();
             logger.info("Ignoring join check from " + caller
                     + ", because this node is not master...");
             return false;
@@ -111,10 +112,18 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
             return false;
         }
 
-        if (!node.isActive()) {
+        if (!node.isRunning()) {
             logger.info("Ignoring join check from " + getCallerAddress() + ", because this node is not active...");
             return false;
         }
+
+        final ClusterState clusterState = node.clusterService.getClusterState();
+        if (clusterState != ClusterState.ACTIVE) {
+            logger.info("Ignoring join check from " + getCallerAddress() + ", because cluster is in "
+                    + clusterState +  " state ...");
+            return false;
+        }
+
         return true;
     }
 

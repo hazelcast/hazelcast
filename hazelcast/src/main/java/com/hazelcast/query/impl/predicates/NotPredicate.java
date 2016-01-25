@@ -18,17 +18,22 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.VisitablePredicate;
+import com.hazelcast.query.impl.Indexes;
 
 import java.io.IOException;
 import java.util.Map;
 
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
+
 /**
  * Not Predicate
  */
-public class NotPredicate implements Predicate, DataSerializable {
-    private Predicate predicate;
+public final class NotPredicate
+        implements Predicate, VisitablePredicate, NegatablePredicate, IdentifiedDataSerializable {
+    protected Predicate predicate;
 
     public NotPredicate(Predicate predicate) {
         this.predicate = predicate;
@@ -55,5 +60,37 @@ public class NotPredicate implements Predicate, DataSerializable {
     @Override
     public String toString() {
         return "NOT(" + predicate + ")";
+    }
+
+    @Override
+    public Predicate accept(Visitor visitor, Indexes indexes) {
+        Predicate target = predicate;
+        if (predicate instanceof VisitablePredicate) {
+            target = ((VisitablePredicate) predicate).accept(visitor, indexes);
+        }
+        if (target == predicate) {
+            // visitor didn't change the inner predicate
+            return visitor.visit(this, indexes);
+        }
+
+        // visitor returned a different copy of the inner predicate.
+        // We have to create our copy with the new inner predicate to maintained immutability
+        NotPredicate copy = new NotPredicate(target);
+        return visitor.visit(copy, indexes);
+    }
+
+    @Override
+    public Predicate negate() {
+        return predicate;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return PREDICATE_DS_FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.NOT_PREDICATE;
     }
 }

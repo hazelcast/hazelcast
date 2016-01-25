@@ -92,6 +92,12 @@ final class ClassDefinitionWriter implements PortableWriter {
     }
 
     @Override
+    public void writeBooleanArray(String fieldName, boolean[] booleans)
+            throws IOException {
+        builder.addBooleanArrayField(fieldName);
+    }
+
+    @Override
     public void writeCharArray(String fieldName, char[] chars) throws IOException {
         builder.addCharArrayField(fieldName);
     }
@@ -122,12 +128,18 @@ final class ClassDefinitionWriter implements PortableWriter {
     }
 
     @Override
+    public void writeUTFArray(String fieldName, String[] values)
+            throws IOException {
+        builder.addUTFArrayField(fieldName);
+    }
+
+    @Override
     public void writePortable(String fieldName, Portable portable) throws IOException {
         if (portable == null) {
             throw new HazelcastSerializationException("Cannot write null portable without explicitly "
                     + "registering class definition!");
         }
-        int version = PortableVersionHelper.getVersion(portable, context.getVersion());
+        int version = SerializationUtil.getPortableVersion(portable, context.getVersion());
         ClassDefinition nestedClassDef = createNestedClassDef(portable,
                 new ClassDefinitionBuilder(portable.getFactoryId(), portable.getClassId(), version));
         builder.addPortableField(fieldName, nestedClassDef);
@@ -156,7 +168,7 @@ final class ClassDefinitionWriter implements PortableWriter {
                 throw new IllegalArgumentException("Detected different class-ids in portable array!");
             }
         }
-        int version = PortableVersionHelper.getVersion(p, context.getVersion());
+        int version = SerializationUtil.getPortableVersion(p, context.getVersion());
         ClassDefinition nestedClassDef = createNestedClassDef(p,
                 new ClassDefinitionBuilder(p.getFactoryId(), classId, version));
         builder.addPortableArrayField(fieldName, nestedClassDef);

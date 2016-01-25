@@ -16,17 +16,16 @@
 
 package com.hazelcast.client.quorum;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.nio.Address;
 import com.hazelcast.quorum.PartitionedCluster;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import java.io.IOException;
@@ -42,14 +41,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.client.quorum.QuorumTestUtil.getClientConfig;
 import static com.hazelcast.map.InterceptorTest.SimpleInterceptor;
 import static com.hazelcast.map.TempData.LoggingEntryProcessor;
-import static com.hazelcast.test.HazelcastTestSupport.getNode;
-import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientMapWriteQuorumTest {
+public class ClientMapWriteQuorumTest extends HazelcastTestSupport {
 
     static PartitionedCluster cluster;
     static IMap<Object, Object> map1;
@@ -80,6 +78,15 @@ public class ClientMapWriteQuorumTest {
         factory = new TestHazelcastFactory();
         cluster = new PartitionedCluster(factory).partitionFiveMembersThreeAndTwo(mapConfig, quorumConfig);
         initializeClients();
+        verifyClients();
+    }
+
+    private static void verifyClients() {
+        assertClusterSizeEventually(3, c1);
+        assertClusterSizeEventually(3, c2);
+        assertClusterSizeEventually(3, c3);
+        assertClusterSizeEventually(2, c4);
+        assertClusterSizeEventually(2, c5);
     }
 
     private static void initializeClients() {
@@ -88,14 +95,6 @@ public class ClientMapWriteQuorumTest {
         c3 = factory.newHazelcastClient(getClientConfig(cluster.h3));
         c4 = factory.newHazelcastClient(getClientConfig(cluster.h4));
         c5 = factory.newHazelcastClient(getClientConfig(cluster.h5));
-    }
-
-    private static ClientConfig getClientConfig(HazelcastInstance instance) {
-        ClientConfig clientConfig = new ClientConfig();
-        Address address = getNode(instance).address;
-        clientConfig.getNetworkConfig().addAddress(address.getHost() + ":" + address.getPort());
-        clientConfig.getGroupConfig().setName(instance.getConfig().getGroupConfig().getName());
-        return clientConfig;
     }
 
     @Before
@@ -112,6 +111,7 @@ public class ClientMapWriteQuorumTest {
     public static void killAllHazelcastInstances() throws IOException {
         factory.terminateAll();
     }
+
     @Test
     public void testPutOperationSuccessfulWhenQuorumSizeMet() throws Exception {
         map1.put("foo", "bar");

@@ -68,7 +68,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
 
     @Override
     public String addLifecycleListener(LifecycleListener lifecycleListener) {
-        final String id = UuidUtil.buildRandomUuidString();
+        final String id = UuidUtil.newUnsecureUuidString();
         lifecycleListeners.put(id, lifecycleListener);
         return id;
     }

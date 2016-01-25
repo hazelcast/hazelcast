@@ -1,6 +1,6 @@
 /*
- * Original work Copyright 2014 Real Logic Ltd.
- * Modified work Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Original work Copyright 2015 Real Logic Ltd.
+ * Modified work Copyright (c) 2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 
 package com.hazelcast.util.collection;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.util.collection.BiInt2ObjectMap.EntryConsumer;
 import com.hazelcast.util.function.Consumer;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -36,8 +38,8 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class BiInt2ObjectMapTest {
     private final BiInt2ObjectMap<String> map = new BiInt2ObjectMap<String>();
 

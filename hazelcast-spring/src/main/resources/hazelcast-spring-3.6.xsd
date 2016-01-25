@@ -209,6 +209,23 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
+                                    <xs:element name="attributes" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                This configuration lets you define extractors for custom attributes.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element name="attribute" minOccurs="0" maxOccurs="unbounded">
+                                                    <xs:complexType>
+                                                        <xs:attribute name="name" type="xs:string" use="required"/>
+                                                        <xs:attribute name="extractor" type="xs:string" use="required"/>
+                                                    </xs:complexType>
+                                                </xs:element>
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
                                     <xs:element name="entry-listeners" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
@@ -224,6 +241,19 @@
                                         </xs:complexType>
                                     </xs:element>
                                     <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
+                                    <xs:element name="partition-lost-listeners" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>List of partition lost listeners</xs:documentation>
+                                        </xs:annotation>
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element name="partition-lost-listener" type="listener"
+                                                            minOccurs="0"
+                                                            maxOccurs="unbounded"/>
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
+                                    <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1" />
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="in-memory-format" use="optional" type="xs:string" default="BINARY">
@@ -246,13 +276,30 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="optimize-queries" use="optional" type="parameterized-boolean"
-                                              default="false">
+                                <xs:attribute name="optimize-queries" use="optional" type="parameterized-boolean">
                                     <xs:annotation>
                                         <xs:documentation>
+                                            This parameter is deprecated as of Hazelcast 3.6
+                                            Use cache-deserialized-values attribute instead.
+
+                                            When both optimize-query and cache-deserialized-values are used at the same time
+                                            Hazelcast will do its best to detect possible conflicts. Conflict detection
+                                            is done on best-effort basis and you should not rely on it. 
+
                                             This parameter is used to increase the speed of query processes in the map.
                                             It only works when `in-memory-format` is set as `BINARY` and performs
                                             a pre-caching on the entries queried.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="cache-deserialized-values" use="optional" type="cache-deserialized">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Control caching of de-serialized values. Caching makes query evaluation faster, but it cost memory.
+                                            Possible Values:
+                                            NEVER: Never cache de-serialized object
+                                            INDEX-ONLY: Cache values only when they are inserted into an index.
+                                            ALWAYS: Always cache de-serialized values.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -294,15 +341,36 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+                                <!--max-size-policy attribute didn't converted into enumeration to support case-insensitivity-->
                                 <xs:attribute name="max-size-policy" use="optional" type="xs:string">
                                     <xs:annotation>
                                         <xs:documentation>
-                                            When maximum size is reached, map is evicted based on the eviction policy
-                                            defined. It has four attributes: PER_NODE (Maximum number of map entries in
-                                            each JVM), PER_PARTITION (Maximum number of map entries within each
-                                            partition),
-                                            USED_HEAP_SIZE (Maximum used heap size in megabytes for each JVM) and
-                                            USED_HEAP_PERCENTAGE (Maximum used heap size percentage for each JVM).
+                                            Valid values are:
+                                            PER_NODE: Maximum number of map entries in each Hazelcast instance.
+                                            This is the default policy.
+                                            PER_PARTITION: Maximum number of map entries within each partition. Storage size
+                                            depends on the partition count in a Hazelcast instance.
+                                            This attribute should not be used often.
+                                            Avoid using this attribute with a small cluster: if the cluster is small it will
+                                            be hosting more partitions, and therefore map entries, than that of a larger
+                                            cluster. Thus, for a small cluster, eviction of the entries will decrease
+                                            performance (the number of entries is large).
+                                            USED_HEAP_SIZE: Maximum used heap size in megabytes per map for each Hazelcast instance.
+                                            USED_HEAP_PERCENTAGE: Maximum used heap size percentage per map for each Hazelcast instance.
+                                            If, for example, JVM is configured to have 1000 MB and this value is 10, then the map
+                                            entries will be evicted when used heap size exceeds 100 MB.
+                                            FREE_HEAP_SIZE: Minimum free heap size in megabytes for each JVM.
+                                            FREE_HEAP_PERCENTAGE: Minimum free heap size percentage for each JVM.
+                                            For example, if JVM is configured to have 1000 MB and this value is 10,
+                                            then the map entries will be evicted when free heap size is below 100 MB.
+                                            USED_NATIVE_MEMORY_SIZE: Maximum used native memory size in megabytes per map
+                                            for each Hazelcast instance.
+                                            USED_NATIVE_MEMORY_PERCENTAGE: Maximum used native memory size percentage per map
+                                            for each Hazelcast instance.
+                                            FREE_NATIVE_MEMORY_SIZE: Minimum free native memory size in megabytes
+                                            for each Hazelcast instance.
+                                            FREE_NATIVE_MEMORY_PERCENTAGE: Minimum free native memory size percentage
+                                            for each Hazelcast instance.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -323,6 +391,9 @@
                                             When max. size is reached, specified percentage of the map will be evicted.
                                             Any integer between 0 and 100. If 25 is set for example, 25% of the
                                             entries will get evicted.
+                                            Beware that eviction mechanism is different for NATIVE in-memory format.
+                                            (It uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
+                                            For this in-memory format, `minEvictionCheckMillis` has no effect
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -331,6 +402,9 @@
                                         <xs:documentation>
                                             Minimum time in milliseconds which should pass before checking if a
                                             partition of this map is evictable or not. Default value is 100 millis.
+                                            Beware that eviction mechanism is different for NATIVE in-memory format.
+                                            (It uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
+                                            For this in-memory format, `minEvictionCheckMillis` has no effect
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -382,7 +456,6 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="cache" minOccurs="0" maxOccurs="unbounded">
@@ -391,25 +464,22 @@
                                     <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                When maximum size is reached, cache is evicted based on the eviction
-                                                policy
+                                                When maximum size is reached, cache is evicted based on the eviction policy.
 
                                                 size:
-                                                Size can be any integer between 0 and Integer.MAX_VALUE.
+                                                maximum size can be any integer between 0 and Integer.MAX_VALUE.
 
                                                 Default value is 0.
 
                                                 max-size-policy:
-                                                Max-Size policy has these valid values:
+                                                max-size-policy has these valid values:
                                                 ENTRY_COUNT (Maximum number of cache entries in the cache),
-                                                USED_NATIVE_MEMORY_SIZE (Maximum used native memory size in megabytes
-                                                for each JVM),
-                                                USED_NATIVE_MEMORY_PERCENTAGE (Maximum used native memory size
-                                                percentage for each JVM),
-                                                FREE_NATIVE_MEMORY_SIZE (Maximum free native memory size in megabytes
-                                                for each JVM),
-                                                FREE_NATIVE_MEMORY_PERCENTAGE (Maximum free native memory size
-                                                percentage for each JVM).
+                                                USED_NATIVE_MEMORY_SIZE (Maximum used native memory size in megabytes per cache
+                                                for each Hazelcast instance),
+                                                USED_NATIVE_MEMORY_PERCENTAGE (Maximum used native memory size percentage per cache
+                                                for each Hazelcast instance),
+                                                FREE_NATIVE_MEMORY_SIZE (Minimum free native memory size in megabytes for each Hazelcast instance),
+                                                FREE_NATIVE_MEMORY_PERCENTAGE (Minimum free native memory size percentage for each Hazelcast instance).
 
                                                 Default value is "ENTRY_COUNT".
 
@@ -429,6 +499,18 @@
                                         <xs:complexType>
                                             <xs:sequence>
                                                 <xs:element name="cache-entry-listener" type="cache-entry-listener"
+                                                            minOccurs="0"
+                                                            maxOccurs="unbounded"/>
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
+                                    <xs:element name="partition-lost-listeners" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>List of partition lost listeners</xs:documentation>
+                                        </xs:annotation>
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element name="partition-lost-listener" type="listener"
                                                             minOccurs="0"
                                                             maxOccurs="unbounded"/>
                                             </xs:sequence>
@@ -463,6 +545,30 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1" />
+                                    <xs:element name="merge-policy" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                While recovering from split-brain (network partitioning), cache entries in the small cluster
+                                                merge into the bigger cluster based on the policy set here.
+                                                When an entry merges into the cluster, an entry with the same key might already exist in the cluster.
+                                                The values of these entries might be different for that same key. Which value should be set for the
+                                                key? The conflict is resolved by the policy set here.
+                                                <p>
+                                                    <br/>There are built-in merge policies, such as:
+                                                    <br/>`com.hazelcast.cache.merge.PassThroughCacheMergePolicy` or `PASS_THROUGH`:
+                                                    The entry will be added directly even though there is an existing entry for the key.
+                                                    <br/>`com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy` or `PUT_IF_ABSENT`:
+                                                    The entry will be added if there is no existing entry for the key.
+                                                    <br/>`com.hazelcast.cache.merge.HigherHitsCacheMergePolicy` or `HIGHER_HITS`:
+                                                    The entry with the higher number of hits wins.
+                                                    <br/>`com.hazelcast.cache.merge.LatestAccessCacheMergePolicy` or `LATEST_ACCESS`:
+                                                    The entry which has been accessed more recently wins.
+                                                    <br/>Default policy is 'com.hazelcast.cache.merge.PassThroughCacheMergePolicy'
+                                                </p>
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                    <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1" />
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" use="required">
                                     <xs:annotation>
@@ -557,6 +663,14 @@
                                             then all entries of the cache are copied to one other instance as asynchronous for fail-safety.
                                             `backup-count` + `async-backup-count` cannot be bigger than maximum backup count which is `6`.
                                             Valid numbers are 0 (no backup), 1, 2 ... 6.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="hot-restart-enabled" use="optional" type="parameterized-boolean">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            This boolean parameter enables hot-restart feature when set as true.
+                                            Only available on Hazelcast Enterprise.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -800,12 +914,11 @@
                         <xs:element name="replicatedmap" minOccurs="0" maxOccurs="unbounded">
                             <xs:annotation>
                                 <xs:documentation>
-                                    A replicated map is a fully vector clock based, eventually consistent implementation
+                                    A replicated map is a implementation
                                     of the map
-                                    interface. In difference to all other Hazelcast data structures this implementation
-                                    is not
+                                    interface which is not
                                     partitioned but fully replicates all data to all members.
-                                    Due to the nature of eventually consistency there is a chance of reading staled data
+                                    Due to the nature of weak consistency there is a chance of reading staled data
                                     and no
                                     guarantee is given to retrieve the same value on multiple get calls.
                                     ReplicatedMap was added in Hazelcast 3.2.
@@ -845,8 +958,7 @@
                                             replicated
                                             to other nodes. In this time multiple puts can be operated and are cached up
                                             to be send
-                                            at once. This highers the latency for eventually consistency but lowers IO
-                                            operations.
+                                            at once.
                                             Default value is 100ms before a replication is operated, if set to 0 no
                                             delay is used and
                                             all values are replicated one by one.
@@ -892,7 +1004,18 @@
                         </xs:element>
                         <xs:element name="services" type="services" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="quorum" type="quorum" minOccurs="0" maxOccurs="1"/>
-
+                        <xs:element name="lite-member" minOccurs="0" maxOccurs="1">
+                            <xs:complexType>
+                                <xs:attribute name="enabled" type="parameterized-boolean">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            True to set the node as a lite member, false otherwise.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0" maxOccurs="1" />
                     </xs:sequence>
                 </xs:extension>
             </xs:complexContent>
@@ -958,6 +1081,7 @@
     <xs:complexType name="global-serializer">
         <xs:attribute name="class-name" type="xs:string" use="optional"/>
         <xs:attribute name="implementation" type="xs:string" use="optional"/>
+        <xs:attribute name="override-java-serialization" type="parameterized-boolean" default="false" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="serializer">
@@ -1033,6 +1157,43 @@
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
+    </xs:element>
+
+    <xs:element name="cache-manager">
+        <xs:annotation>
+            <xs:documentation>
+                Retrieve a JCache cache manager from specified Hazelcast instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="javax.cache.CacheManager"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="hazelcast-bean">
+                    <xs:sequence>
+                        <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+                    </xs:sequence>
+                    <xs:attribute name="instance-ref" type="xs:string" use="optional">
+                        <xs:annotation>
+                            <xs:documentation>
+                                <![CDATA[The name of the HazelcastInstance that this bean depends on.]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="name" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                <![CDATA[The name of this bean in Hazelcast context (HazelcastInstance.getMap(name)).]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="uri" type="xs:string" use="optional"/>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
     </xs:element>
     <xs:element name="multiMap" type="hazelcast-type">
         <xs:annotation>
@@ -1352,6 +1513,14 @@
         <xs:restriction base="xs:string"/>
     </xs:simpleType>
 
+    <xs:simpleType name="cache-deserialized">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="NEVER"/>
+            <xs:enumeration value="ALWAYS"/>
+            <xs:enumeration value="INDEX-ONLY"/>
+        </xs:restriction>
+    </xs:simpleType>
+
     <xs:simpleType name="member">
         <xs:restriction base="xs:string"/>
     </xs:simpleType>
@@ -1410,7 +1579,7 @@
             <xs:enumeration value="hazelcast.mc.queue.excludes"/>
             <xs:enumeration value="hazelcast.mc.semaphore.excludes"/>
             <xs:enumeration value="hazelcast.mc.topic.excludes"/>
-            <xs:enumeration value="hazelcast.version.check.enabled"/>
+            <xs:enumeration value="hazelcast.phone.home.enabled"/>
             <xs:enumeration value="hazelcast.map.max.backup.count"/>
             <xs:enumeration value="hazelcast.max.wait.seconds.before.join"/>
             <xs:enumeration value="hazelcast.mc.max.visible.instance.count"/>
@@ -1542,6 +1711,12 @@
                                 </xs:sequence>
                             </xs:complexType>
                         </xs:element>
+                        <xs:element name="acknowledge-type" type="wan-ack-type" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="queue-full-behavior" type="wan-queue-full-behavior" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="batch-size" type="xs:integer" default="500" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="batch-max-delay-millis" type="xs:long" default="1000" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="queue-capacity" type="xs:integer" default="10000" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="response-timeout-millis" type="xs:long" default="60000" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
                     <xs:attribute name="group-name" use="required">
                         <xs:simpleType>
@@ -1870,7 +2045,7 @@
 
     <xs:simpleType name="parameterizedValueType">
         <xs:restriction base="xs:string">
-            <xs:pattern value="(\$|\#)\{([^=^:]+)\}"/>
+            <xs:pattern value="[$#]\{([^=^:]+)\}"/>
         </xs:restriction>
     </xs:simpleType>
 
@@ -2194,6 +2369,9 @@
     </xs:complexType>
 
     <xs:complexType name="wan-replication-ref">
+        <xs:all>
+            <xs:element name="filters" type="wan-replication-ref-filters" minOccurs="0" maxOccurs="1"></xs:element>
+        </xs:all>
         <xs:attribute name="name" use="required" type="xs:string"/>
         <xs:attribute name="merge-policy" use="required" type="xs:string"/>
         <xs:attribute name="republishing-enabled" use="optional" type="parameterized-boolean" default="true"/>
@@ -2239,9 +2417,9 @@
 
     <xs:complexType name="quorum">
         <xs:all>
-            <xs:element name="quorum-size" type="quorum-size" maxOccurs="1"/>
-            <xs:element name="quorum-type" type="quorum-type" maxOccurs="1"/>
-            <xs:element name="quorum-function-class-name" type="xs:string" maxOccurs="1"/>
+            <xs:element name="quorum-size" type="quorum-size" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-type" type="quorum-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-function-class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="quorum-listeners" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
@@ -2268,7 +2446,7 @@
 
     <xs:simpleType name="quorum-size">
         <xs:restriction base="xs:int">
-            <xs:minInclusive value="0"/>
+            <xs:minInclusive value="2"/>
         </xs:restriction>
     </xs:simpleType>
 
@@ -2277,5 +2455,86 @@
             <xs:extension base="listener">
             </xs:extension>
         </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="wan-replication-ref-filters">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="filter-impl" type="xs:string"></xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="wan-ack-type-format-enum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ACK_ON_RECEIPT"/>
+            <xs:enumeration value="ACK_ON_OPERATION_COMPLETE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="wan-queue-full-behavior-format-enum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="DISCARD_AFTER_MUTATION"/>
+            <xs:enumeration value="THROW_EXCEPTION"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="wan-ack-type">
+        <xs:union memberTypes="wan-ack-type-format-enum non-space-string"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="wan-queue-full-behavior">
+        <xs:union memberTypes="wan-queue-full-behavior-format-enum non-space-string"/>
+    </xs:simpleType>
+
+    <xs:complexType name="hot-restart-persistence">
+        <xs:sequence>
+            <xs:element name="base-dir" type="xs:string" minOccurs="0" maxOccurs="1" default="hot-restart">
+                <xs:annotation>
+                    <xs:documentation>
+                        Base directory for all hot-restart data
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="parameterized-boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    True to enable hot-restart, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="validation-timeout-seconds" type="parameterized-unsigned-int">
+            <xs:annotation>
+                <xs:documentation>
+                    Validation timeout for hot-restart process, includes validating
+                    cluster members expected to join and partition table on all cluster.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="data-load-timeout-seconds" type="parameterized-unsigned-int">
+            <xs:annotation>
+                <xs:documentation>
+                    Data load timeout for hot-restart process,
+                    all members in the cluster should complete restoring their local data
+                    before this timeout.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="hot-restart">
+        <xs:attribute name="fsync" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    True if disk write should be followed by an fsync() system call,
+                    false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="enabled" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    True if hot-restart is enabled, false otherwise
+                    Only available on Hazelcast Enterprise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 </xs:schema>

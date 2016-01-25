@@ -16,7 +16,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -72,8 +71,15 @@ import java.util.concurrent.TimeUnit;
  * @param <V> value
  * @see java.util.concurrent.ConcurrentMap
  */
-public interface IMap<K, V>
-        extends ConcurrentMap<K, V>, BaseMap<K, V> {
+public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
+
+    /**
+     * {@inheritDoc}
+     *
+     * No atomicity guarantees are given. It could be that in case of failure some of the key/value-pairs get written, while
+     * others are not.
+     */
+    void putAll(Map<? extends K, ? extends V> m);
 
     /**
      * {@inheritDoc}
@@ -730,11 +736,11 @@ public interface IMap<K, V>
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in the <tt>key</tt>'s class.
      *
-     * @param key      key to lock in this map.
-     * @param time     maximum time to wait for the lock.
-     * @param timeunit time unit of the <tt>time</tt> argument.
-     * @param leaseTime time to wait before releasing the lock.
-     * @param leaseTimeunit  unit of time to specify lease time.
+     * @param key           key to lock in this map.
+     * @param time          maximum time to wait for the lock.
+     * @param timeunit      time unit of the <tt>time</tt> argument.
+     * @param leaseTime     time to wait before releasing the lock.
+     * @param leaseTimeunit unit of time to specify lease time.
      * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
      * if the waiting time elapsed before the lock was acquired.
      * @throws NullPointerException if the specified key is null.
@@ -793,6 +799,9 @@ public interface IMap<K, V>
      *
      * @param listener {@link MapListener} for this map.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws UnsupportedOperationException if this operation isn't supported. For example
+     *                                       on the client side it isn't possible to add a LocalEntryListener.
+     * @throws NullPointerException if the listener is null.
      * @see #localKeySet()
      * @see MapListener
      */
@@ -814,6 +823,9 @@ public interface IMap<K, V>
      *
      * @param listener entry listener.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws UnsupportedOperationException if this operation isn't supported. For example
+     *                                       on the client side it isn't possible to add a LocalEntryListener.
+     * @throws NullPointerException if the listener is null.
      * @see #localKeySet()
      * @deprecated use {@link #addLocalEntryListener(MapListener)} instead.
      */
@@ -829,6 +841,10 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws UnsupportedOperationException if this operation isn't supported. For example
+     *                                       on the client side it isn't possible to add a LocalEntryListener.
+     * @throws NullPointerException if the listener is null.
+     * @throws NullPointerException if the predicate is null.
      * @see MapListener
      */
     String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue);
@@ -843,6 +859,8 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the listener is null.
+     * @throws NullPointerException if the predicate is null.
      * @deprecated use {@link #addLocalEntryListener(MapListener, com.hazelcast.query.Predicate, boolean)}
      */
     String addLocalEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue);
@@ -858,6 +876,8 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the listener is null.
+     * @throws NullPointerException if the predicate is null.
      * @see MapListener
      */
     String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
@@ -874,7 +894,9 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
-     * @deprecated use {@link #addLocalEntryListener(MapListener, com.hazelcast.query.Predicate, boolean)} instead
+     * @throws NullPointerException if the listener is null.
+     * @throws NullPointerException if the predicate is null.
+     * @deprecated use {@link #addLocalEntryListener(MapListener, com.hazelcast.query.Predicate, Object, boolean)} instead
      */
     String addLocalEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
@@ -904,6 +926,7 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the specified listener is null.
      * @see MapListener
      */
     String addEntryListener(MapListener listener, boolean includeValue);
@@ -916,6 +939,7 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the specified listener is null.
      * @deprecated use {@link #addEntryListener(MapListener, boolean)} instead.
      */
     String addEntryListener(EntryListener listener, boolean includeValue);
@@ -971,6 +995,7 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the specified listener is null.
      * @throws NullPointerException if the specified key is null.
      * @see MapListener
      */
@@ -991,8 +1016,9 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the specified listener is null.
      * @throws NullPointerException if the specified key is null.
-     * @deprecated use {@link #addEntryListener(MapListener, Predicate, Object, boolean)} instead.
+     * @deprecated use {@link #addEntryListener(MapListener, Object, boolean)} instead.
      */
     String addEntryListener(EntryListener listener, K key, boolean includeValue);
 
@@ -1005,6 +1031,8 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the specified listener is null.
+     * @throws NullPointerException if the specified predicate is null.
      * @see MapListener
      */
     String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue);
@@ -1018,7 +1046,9 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
-     * @deprecated use {@link #addEntryListener(MapListener, Predicate, boolean)} instead.
+     * @throws NullPointerException if the specified listener is null.
+     * @throws NullPointerException if the specified predicate is null.
+     * @deprecated use {@link #addEntryListener(MapListener, com.hazelcast.query.Predicate, boolean)} instead.
      */
     String addEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue);
 
@@ -1032,6 +1062,8 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the specified listener is null.
+     * @throws NullPointerException if the specified predicate is null.
      * @see MapListener
      */
     String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
@@ -1046,7 +1078,9 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
-     * @deprecated use {@link #addEntryListener(MapListener, Object, boolean)}
+     * @throws NullPointerException if the specified listener is null.
+     * @throws NullPointerException if the specified predicate is null.
+     * @deprecated use {@link #addEntryListener(MapListener, com.hazelcast.query.Predicate, Object, boolean)}
      */
     String addEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
@@ -1109,13 +1143,13 @@ public interface IMap<K, V>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      * <p/>
-     * On the server side this method is executed by a distributed query
+     * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a set clone of the keys contained in this map.
-     * @throws QueryResultSizeExceededException on server side if query result size limit is exceeded
-     * @see GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT
+     * @throws QueryResultSizeExceededException if query result size limit is exceeded
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> keySet();
 
@@ -1126,13 +1160,13 @@ public interface IMap<K, V>
      * The collection is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
      * <p/>
-     * On the server side this method is executed by a distributed query
+     * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a collection clone of the values contained in this map
-     * @throws QueryResultSizeExceededException on server side if query result size limit is exceeded
-     * @see GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT
+     * @throws QueryResultSizeExceededException if query result size limit is exceeded
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Collection<V> values();
 
@@ -1143,13 +1177,13 @@ public interface IMap<K, V>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      * <p/>
-     * On the server side this method is executed by a distributed query
+     * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a set clone of the keys mappings in this map
-     * @throws QueryResultSizeExceededException on server side if query result size limit is exceeded
-     * @see GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT
+     * @throws QueryResultSizeExceededException if query result size limit is exceeded
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<Map.Entry<K, V>> entrySet();
 
@@ -1163,14 +1197,15 @@ public interface IMap<K, V>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      * <p/>
-     * This method is always executed by a distributed query
+     * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria.
      * @return result key set of the query.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT
+     * @throws NullPointerException if the predicate is null
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> keySet(Predicate predicate);
 
@@ -1184,14 +1219,15 @@ public interface IMap<K, V>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      * <p/>
-     * This method is always executed by a distributed query
+     * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria.
      * @return result entry set of the query.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT
+     * @throws NullPointerException if the predicate is null
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<Map.Entry<K, V>> entrySet(Predicate predicate);
 
@@ -1205,14 +1241,15 @@ public interface IMap<K, V>
      * The collection is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
      * <p/>
-     * This method is always executed by a distributed query
+     * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria.
      * @return result value collection of the query.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT
+     * @throws NullPointerException if the predicate is null
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Collection<V> values(Predicate predicate);
 
@@ -1230,13 +1267,13 @@ public interface IMap<K, V>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      * <p/>
-     * On the server side this method is executed by a distributed query
+     * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return locally owned keys.
-     * @throws QueryResultSizeExceededException on server side if query result size limit is exceeded
-     * @see GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT
+     * @throws QueryResultSizeExceededException if query result size limit is exceeded
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> localKeySet();
 
@@ -1254,14 +1291,14 @@ public interface IMap<K, V>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      * <p/>
-     * This method is always executed by a distributed query
+     * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria.
      * @return keys of matching locally owned entries.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT
+     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> localKeySet(Predicate predicate);
 

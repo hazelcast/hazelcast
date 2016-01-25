@@ -20,13 +20,16 @@ package com.hazelcast.hibernate;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.Hazelcast;
 
+import com.hazelcast.hibernate.entity.AnnotatedEntity;
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.entity.DummyProperty;
 import com.hazelcast.hibernate.instance.HazelcastMockInstanceLoader;
+import org.hibernate.Criteria;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.criterion.Restrictions;
 import org.hibernate.stat.SecondLevelCacheStatistics;
 import org.junit.After;
 import org.junit.Before;
@@ -38,6 +41,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public abstract class HibernateStatisticsTestSupport extends HibernateTestSupport {
 
@@ -46,6 +50,7 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 
     protected final String CACHE_ENTITY = DummyEntity.class.getName();
     protected final String CACHE_PROPERTY = DummyProperty.class.getName();
+    protected final String ANNOTATED_ENTITY = AnnotatedEntity.class.getName();
     private static  TestHazelcastFactory factory;
 
     @Before
@@ -96,6 +101,17 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         } finally {
             session.close();
         }
+    }
+
+    protected void insertAnnotatedEntities(int count) {
+        Session session = sf.openSession();
+        Transaction tx = session.beginTransaction();
+        for(int i=0; i< count; i++) {
+            AnnotatedEntity annotatedEntity = new AnnotatedEntity("dummy:"+i);
+            session.save(annotatedEntity);
+        }
+        tx.commit();
+        session.close();
     }
 
     protected List<DummyEntity> executeQuery(SessionFactory factory) {
@@ -204,5 +220,21 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         SecondLevelCacheStatistics dummyEntityCacheStats = sf.getStatistics().getSecondLevelCacheStatistics(CACHE_ENTITY);
         assertEquals(10, dummyEntityCacheStats.getMissCount());
         assertEquals(0, dummyEntityCacheStats.getHitCount());
+    }
+
+    @Test
+    public void testUpdateQueryCausesInvalidationOfEntireCollectionRegion() {
+        insertDummyEntities(1, 10);
+
+        //properties reference in DummyEntity is evicted because of custom SQL query on Collection region
+        executeUpdateQuery(sf, "update DummyProperty ent set ent.key='manually-updated'");
+        sf.getStatistics().clear();
+
+        //property reference missed in cache.
+        getPropertiesOfEntity(sf, 0);
+
+        SecondLevelCacheStatistics dummyPropertyCacheStats = sf.getStatistics().getSecondLevelCacheStatistics(CACHE_ENTITY + ".properties");
+        assertEquals(0, dummyPropertyCacheStats.getHitCount());
+        assertEquals(1, dummyPropertyCacheStats.getMissCount());
     }
 }

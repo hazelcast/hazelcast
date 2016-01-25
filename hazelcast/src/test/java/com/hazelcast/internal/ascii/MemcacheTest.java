@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.ascii;
 
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.internal.ascii.memcache.MemcacheEntry;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
@@ -57,11 +58,15 @@ public class MemcacheTest extends HazelcastTestSupport {
     final static Config config = new XmlConfigBuilder().build();
 
     @BeforeClass
+    public static void setup() throws IOException {
+        config.setProperty(GroupProperty.MEMCACHE_ENABLED.getName(),"true");
+    }
+    
     @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    public static void tearDown() throws IOException {
         Hazelcast.shutdownAll();
     }
-
+    
     public MemcachedClient getMemcacheClient(HazelcastInstance instance) throws IOException {
         final LinkedList<InetSocketAddress> addresses = new LinkedList<InetSocketAddress>();
         addresses.add(instance.getCluster().getLocalMember().getSocketAddress());

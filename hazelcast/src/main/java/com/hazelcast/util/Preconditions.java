@@ -30,7 +30,6 @@ public final class Preconditions {
     private Preconditions() {
     }
 
-
     /**
      * Tests if a string contains text.
      *
@@ -65,7 +64,7 @@ public final class Preconditions {
     /**
      * Tests if an argument is not null.
      *
-     * @param argument     the argument tested to see if it is not null.
+     * @param argument the argument tested to see if it is not null.
      * @return the argument that was tested.
      * @throws java.lang.NullPointerException if argument is null
      */
@@ -277,7 +276,7 @@ public final class Preconditions {
     /**
      * Tests whether the supplied expression is {@code true}.
      *
-     * @param expression the expression tested to see if it is {@code true}.
+     * @param expression   the expression tested to see if it is {@code true}.
      * @param errorMessage the errorMessage
      * @throws java.lang.IllegalArgumentException if the supplied expression is {@code false}.
      */
@@ -304,6 +303,7 @@ public final class Preconditions {
 
     /**
      * Check the state of a condition
+     *
      * @param condition
      * @param message
      * @throws IllegalStateException if condition if false

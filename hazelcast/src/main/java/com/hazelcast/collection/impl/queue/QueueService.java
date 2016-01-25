@@ -24,12 +24,12 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
@@ -72,10 +72,9 @@ import java.util.logging.Level;
  */
 public class QueueService implements ManagedService, MigrationAwareService, TransactionalService,
         RemoteService, EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService {
-    /**
-     * Service name.
-     */
+
     public static final String SERVICE_NAME = "hz:impl:queueService";
+
     private final EntryTaskScheduler queueEvictionScheduler;
     private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, QueueContainer> containerMap
@@ -240,11 +239,19 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
     }
 
-    public String addItemListener(String name, ItemListener listener, boolean includeValue) {
+    public String addItemListener(String name, ItemListener listener, boolean includeValue, boolean isLocal) {
         EventService eventService = nodeEngine.getEventService();
         QueueEventFilter filter = new QueueEventFilter(includeValue);
-        EventRegistration registration = eventService.registerListener(
-                QueueService.SERVICE_NAME, name, filter, listener);
+        EventRegistration registration;
+        if (isLocal) {
+            registration = eventService.registerLocalListener(
+                    QueueService.SERVICE_NAME, name, filter, listener);
+
+        } else {
+            registration = eventService.registerListener(
+                    QueueService.SERVICE_NAME, name, filter, listener);
+
+        }
         return registration.getId();
     }
 

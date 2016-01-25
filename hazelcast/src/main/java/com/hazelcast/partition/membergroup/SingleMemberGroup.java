@@ -124,10 +124,6 @@ public class SingleMemberGroup implements MemberGroup {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("SingleMemberGroup");
-        sb.append("{member=").append(member);
-        sb.append('}');
-        return sb.toString();
+        return "SingleMemberGroup{member=" + member + '}';
     }
 }

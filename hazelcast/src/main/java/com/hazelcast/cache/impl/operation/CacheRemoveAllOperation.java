@@ -33,15 +33,20 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheCompleteEvent;
+
 /**
  * TODO add a proper JavaDoc
  */
-public class CacheRemoveAllOperation extends PartitionWideCacheOperation implements BackupAwareOperation, MutatingOperation {
+public class CacheRemoveAllOperation
+        extends PartitionWideCacheOperation
+        implements BackupAwareOperation, MutatingOperation {
 
     private Set<Data> keys;
     private int completionId;
 
     private transient Set<Data> filteredKeys = new HashSet<Data>();
+    private transient ICacheService service;
     private transient ICacheRecordStore cache;
 
     public CacheRemoveAllOperation() {
@@ -51,6 +56,47 @@ public class CacheRemoveAllOperation extends PartitionWideCacheOperation impleme
         super(name);
         this.keys = keys;
         this.completionId = completionId;
+    }
+
+    @Override
+    public void beforeRun() throws Exception {
+        service = getService();
+        cache = service.getRecordStore(name, getPartitionId());
+    }
+
+    @Override
+    public void run() throws Exception {
+        if (cache == null) {
+            service.publishEvent(createCacheCompleteEvent(completionId).setCacheName(name));
+            return;
+        }
+        filterKeys();
+        try {
+            if (keys == null) {
+                // Here the filteredKeys is empty, this means we will remove all data
+                // filteredKeys will get filled with removed keys
+                cache.removeAll(filteredKeys, completionId);
+            } else if (!filteredKeys.isEmpty()) {
+                cache.removeAll(filteredKeys, completionId);
+            } else {
+                service.publishEvent(createCacheCompleteEvent(completionId).setCacheName(name));
+            }
+            response = new CacheClearResponse(Boolean.TRUE);
+        } catch (CacheException e) {
+            response = new CacheClearResponse(e);
+        }
+    }
+
+    private void filterKeys() {
+        if (keys == null) {
+            return;
+        }
+        InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+        for (Data k : keys) {
+            if (partitionService.getPartitionId(k) == getPartitionId()) {
+                filteredKeys.add(k);
+            }
+        }
     }
 
     @Override
@@ -71,49 +117,6 @@ public class CacheRemoveAllOperation extends PartitionWideCacheOperation impleme
     @Override
     public Operation getBackupOperation() {
         return new CacheRemoveAllBackupOperation(name, filteredKeys);
-    }
-
-    @Override
-    public int getId() {
-        return CacheDataSerializerHook.REMOVE_ALL;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-        ICacheService service = getService();
-        cache = service.getRecordStore(name, getPartitionId());
-    }
-
-    @Override
-    public void run() throws Exception {
-        if (cache == null) {
-            return;
-        }
-        filterKeys();
-        try {
-            if (keys == null) {
-                // Here the filteredKeys is empty, this means we will remove all data
-                // filteredKeys will get filled with removed keys
-                cache.removeAll(filteredKeys, completionId);
-            } else if (!filteredKeys.isEmpty()) {
-                cache.removeAll(filteredKeys, completionId);
-            }
-            response = new CacheClearResponse(Boolean.TRUE);
-        } catch (CacheException e) {
-            response = new CacheClearResponse(e);
-        }
-    }
-
-    private void filterKeys() {
-        if (keys == null) {
-            return;
-        }
-        InternalPartitionService partitionService = getNodeEngine().getPartitionService();
-        for (Data k : keys) {
-            if (partitionService.getPartitionId(k) == getPartitionId()) {
-                filteredKeys.add(k);
-            }
-        }
     }
 
     @Override
@@ -143,4 +146,10 @@ public class CacheRemoveAllOperation extends PartitionWideCacheOperation impleme
             }
         }
     }
+
+    @Override
+    public int getId() {
+        return CacheDataSerializerHook.REMOVE_ALL;
+    }
+
 }

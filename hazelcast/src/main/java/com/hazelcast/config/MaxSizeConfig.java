@@ -57,30 +57,53 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
      * Maximum Size Policy
      */
     public enum MaxSizePolicy {
+
         /**
-         * Decide maximum entry count according to node
+         * Policy based on maximum number of entries stored per data structure (map, cache etc)
+         * on each Hazelcast instance
          */
         PER_NODE,
         /**
-         * Decide maximum entry count according to partition
+         * Policy based on maximum number of entries stored per data structure (map, cache etc)
+         * on each partition
          */
         PER_PARTITION,
         /**
-         * Decide maximum size with use heap percentage
+         * Policy based on maximum used JVM heap memory percentage per data structure (map, cache etc)
+         * on each Hazelcast instance
          */
         USED_HEAP_PERCENTAGE,
         /**
-         * Decide maximum size with use heap size
+         * Policy based on maximum used JVM heap memory in megabytes per data structure (map, cache etc)
+         * on each Hazelcast instance
          */
         USED_HEAP_SIZE,
         /**
-         * Decide minimum free heap percentage to trigger cleanup
+         * Policy based on minimum free JVM heap memory percentage per JVM
          */
         FREE_HEAP_PERCENTAGE,
         /**
-         * Decide minimum free heap size to trigger cleanup
+         * Policy based on minimum free JVM heap memory in megabytes per JVM
          */
-        FREE_HEAP_SIZE
+        FREE_HEAP_SIZE,
+        /**
+         * Policy based on maximum used native memory in megabytes per data structure (map, cache etc)
+         * on each Hazelcast instance
+         */
+        USED_NATIVE_MEMORY_SIZE,
+        /**
+         * Policy based on maximum used native memory percentage per data structure (map, cache etc)
+         * on each Hazelcast instance
+         */
+        USED_NATIVE_MEMORY_PERCENTAGE,
+        /**
+         * Policy based on minimum free native memory in megabytes per Hazelcast instance
+         */
+        FREE_NATIVE_MEMORY_SIZE,
+        /**
+         * Policy based on minimum free native memory percentage per Hazelcast instance
+         */
+        FREE_NATIVE_MEMORY_PERCENTAGE
     }
 
     public MaxSizeConfigReadOnly getAsReadOnly() {

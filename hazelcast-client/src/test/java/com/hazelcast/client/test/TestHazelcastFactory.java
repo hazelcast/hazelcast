@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
-    private static final AtomicInteger clientPorts = new AtomicInteger(6000);
+    private static final AtomicInteger clientPorts = new AtomicInteger(40000);
     private final boolean mockNetwork = TestEnvironment.isMockNetwork();
     private final List<HazelcastClientInstanceImpl> clients = new ArrayList<HazelcastClientInstanceImpl>(10);
     private final TestClientRegistry clientRegistry;
@@ -99,6 +99,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
                 }
 
                 return inetAddresses;
+
             }
         };
     }

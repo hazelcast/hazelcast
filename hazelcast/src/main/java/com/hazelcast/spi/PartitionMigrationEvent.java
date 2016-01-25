@@ -56,11 +56,6 @@ public class PartitionMigrationEvent extends EventObject {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("PartitionMigrationEvent");
-        sb.append("{migrationEndpoint=").append(migrationEndpoint);
-        sb.append(", partitionId=").append(partitionId);
-        sb.append('}');
-        return sb.toString();
+        return "PartitionMigrationEvent{migrationEndpoint=" + migrationEndpoint + ", partitionId=" + partitionId + '}';
     }
 }

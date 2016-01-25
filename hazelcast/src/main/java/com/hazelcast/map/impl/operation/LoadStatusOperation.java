@@ -28,7 +28,7 @@ import java.io.IOException;
 /**
  * Notifies RecordStores about completion of loading
  **/
-public class LoadStatusOperation extends AbstractMapOperation implements PartitionAwareOperation, MutatingOperation {
+public class LoadStatusOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
 
     private Throwable exception;
 

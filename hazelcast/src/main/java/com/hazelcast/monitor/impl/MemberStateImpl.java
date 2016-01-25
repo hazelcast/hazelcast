@@ -28,7 +28,9 @@ import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.MemberPartitionState;
 import com.hazelcast.monitor.MemberState;
 
@@ -50,7 +52,9 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalQueueStats> queueStats = new HashMap<String, LocalQueueStats>();
     private Map<String, LocalTopicStats> topicStats = new HashMap<String, LocalTopicStats>();
     private Map<String, LocalExecutorStats> executorStats = new HashMap<String, LocalExecutorStats>();
+    private Map<String, LocalReplicatedMapStats> replicatedMapStats = new HashMap<String, LocalReplicatedMapStats>();
     private Map<String, LocalCacheStats> cacheStats = new HashMap<String, LocalCacheStats>();
+    private Map<String, LocalWanStats> wanStats = new HashMap<String, LocalWanStats>();
     private Collection<ClientEndPointDTO> clients = new HashSet<ClientEndPointDTO>();
     private MXBeansDTO beans = new MXBeansDTO();
     private LocalMemoryStats memoryStats = new LocalMemoryStatsImpl();
@@ -90,6 +94,11 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    public LocalReplicatedMapStats getLocalReplicatedMapStats(String replicatedMapName) {
+        return replicatedMapStats.get(replicatedMapName);
+    }
+
+    @Override
     public LocalExecutorStats getLocalExecutorStats(String executorName) {
         return executorStats.get(executorName);
     }
@@ -97,6 +106,11 @@ public class MemberStateImpl implements MemberState {
     @Override
     public LocalCacheStats getLocalCacheStats(String cacheName) {
         return cacheStats.get(cacheName);
+    }
+
+    @Override
+    public LocalWanStats getLocalWanStats(String schemeName) {
+        return wanStats.get(schemeName);
     }
 
     @Override
@@ -120,6 +134,10 @@ public class MemberStateImpl implements MemberState {
         queueStats.put(name, localQueueStats);
     }
 
+    public void putLocalReplicatedMapStats(String name, LocalReplicatedMapStats localReplicatedMapStats) {
+        replicatedMapStats.put(name, localReplicatedMapStats);
+    }
+
     public void putLocalTopicStats(String name, LocalTopicStats localTopicStats) {
         topicStats.put(name, localTopicStats);
     }
@@ -130,6 +148,10 @@ public class MemberStateImpl implements MemberState {
 
     public void putLocalCacheStats(String name, LocalCacheStats localCacheStats) {
         cacheStats.put(name, localCacheStats);
+    }
+
+    public void putLocalWanStats(String name, LocalWanStats localWanStats) {
+        wanStats.put(name, localWanStats);
     }
 
     public Collection<ClientEndPointDTO> getClients() {
@@ -186,6 +208,11 @@ public class MemberStateImpl implements MemberState {
             multimapStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("multiMapStats", multimapStatsObject);
+        JsonObject replicatedMapStatsObject = new JsonObject();
+        for (Map.Entry<String, LocalReplicatedMapStats> entry : replicatedMapStats.entrySet()) {
+            replicatedMapStatsObject.add(entry.getKey(), entry.getValue().toJson());
+        }
+        root.add("replicatedMapStats", replicatedMapStatsObject);
         JsonObject queueStatsObject = new JsonObject();
         for (Map.Entry<String, LocalQueueStats> entry : queueStats.entrySet()) {
             queueStatsObject.add(entry.getKey(), entry.getValue().toJson());
@@ -206,6 +233,11 @@ public class MemberStateImpl implements MemberState {
             cacheStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("cacheStats", cacheStatsObject);
+        JsonObject wanStatsObject = new JsonObject();
+        for (Map.Entry<String, LocalWanStats> entry : wanStats.entrySet()) {
+            wanStatsObject.add(entry.getKey(), entry.getValue().toJson());
+        }
+        root.add("wanStats", wanStatsObject);
         JsonObject runtimePropsObject = new JsonObject();
         for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
             runtimePropsObject.add(entry.getKey(), entry.getValue());
@@ -223,6 +255,7 @@ public class MemberStateImpl implements MemberState {
         return root;
     }
 
+    //CHECKSTYLE:OFF
     @Override
     public void fromJson(JsonObject json) {
         address = getString(json, "address");
@@ -235,6 +268,11 @@ public class MemberStateImpl implements MemberState {
             LocalMultiMapStatsImpl stats = new LocalMultiMapStatsImpl();
             stats.fromJson(next.getValue().asObject());
             multiMapStats.put(next.getName(), stats);
+        }
+        for (JsonObject.Member next : getObject(json, "replicatedMapStats", new JsonObject())) {
+            LocalReplicatedMapStats stats = new LocalReplicatedMapStatsImpl();
+            stats.fromJson(next.getValue().asObject());
+            replicatedMapStats.put(next.getName(), stats);
         }
         for (JsonObject.Member next : getObject(json, "queueStats")) {
             LocalQueueStatsImpl stats = new LocalQueueStatsImpl();
@@ -255,6 +293,11 @@ public class MemberStateImpl implements MemberState {
             LocalCacheStats stats = new LocalCacheStatsImpl();
             stats.fromJson(next.getValue().asObject());
             cacheStats.put(next.getName(), stats);
+        }
+        for (JsonObject.Member next : getObject(json, "wanStats", new JsonObject())) {
+            LocalWanStats stats = new LocalWanStatsImpl();
+            stats.fromJson(next.getValue().asObject());
+            wanStats.put(next.getName(), stats);
         }
         for (JsonObject.Member next : getObject(json, "runtimeProps")) {
             runtimeProps.put(next.getName(), next.getValue().asLong());
@@ -281,7 +324,7 @@ public class MemberStateImpl implements MemberState {
             memberPartitionState.fromJson(jsonMemberPartitionState);
         }
     }
-
+    //CHECKSTYLE:ON
     @Override
     public String toString() {
         return "MemberStateImpl{"
@@ -289,6 +332,7 @@ public class MemberStateImpl implements MemberState {
                 + ", runtimeProps=" + runtimeProps
                 + ", mapStats=" + mapStats
                 + ", multiMapStats=" + multiMapStats
+                + ", replicatedMapStats=" + replicatedMapStats
                 + ", queueStats=" + queueStats
                 + ", topicStats=" + topicStats
                 + ", executorStats=" + executorStats

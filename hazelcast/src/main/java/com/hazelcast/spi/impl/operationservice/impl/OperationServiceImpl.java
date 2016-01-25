@@ -19,17 +19,18 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.cluster.ClusterClock;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -59,14 +60,15 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_CALL_TIMEOUT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
+import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
-import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 
 /**
  * This is the implementation of the {@link com.hazelcast.spi.impl.operationservice.InternalOperationService}.
@@ -100,16 +102,16 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     final ILogger invocationLogger;
     final ManagedExecutorService asyncExecutor;
 
-    @Probe(name = "completed.count")
+    @Probe(name = "completed.count", level = MANDATORY)
     final AtomicLong completedOperationsCount = new AtomicLong();
 
-    @Probe(name = "operationTimeoutCount")
+    @Probe(name = "operationTimeoutCount", level = MANDATORY)
     final MwCounter operationTimeoutCount = MwCounter.newMwCounter();
 
-    @Probe(name = "callTimeoutCount")
+    @Probe(name = "callTimeoutCount", level = MANDATORY)
     final MwCounter callTimeoutCount = MwCounter.newMwCounter();
 
-    @Probe(name = "retryCount")
+    @Probe(name = "retryCount", level = MANDATORY)
     final MwCounter retryCount = MwCounter.newMwCounter();
 
     final NodeEngineImpl nodeEngine;
@@ -124,6 +126,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     private final IsStillRunningService isStillRunningService;
     private final AsyncResponsePacketHandler responsePacketExecutor;
     private final SerializationService serializationService;
+    private final InvocationMonitor invocationMonitor;
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -134,7 +137,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
         this.invocationLogger = nodeEngine.getLogger(Invocation.class);
         GroupProperties groupProperties = node.getGroupProperties();
-        this.defaultCallTimeoutMillis = groupProperties.OPERATION_CALL_TIMEOUT_MILLIS.getLong();
+        this.defaultCallTimeoutMillis = groupProperties.getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS);
         this.backpressureRegulator = new BackpressureRegulator(groupProperties, logger);
 
         int coreSize = Runtime.getRuntime().availableProcessors();
@@ -142,6 +145,15 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
 
         this.invocationsRegistry = new InvocationRegistry(nodeEngine, logger, backpressureRegulator, concurrencyLevel);
+
+        this.invocationMonitor = new InvocationMonitor(
+                invocationsRegistry,
+                logger,
+                groupProperties,
+                node.getHazelcastThreadGroup(),
+                nodeEngine.getExecutionService(),
+                nodeEngine.getMetricsRegistry());
+
         this.operationBackupHandler = new OperationBackupHandler(this);
 
         this.responsePacketExecutor = new AsyncResponsePacketHandler(
@@ -169,6 +181,10 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
         this.slowOperationDetector = initSlowOperationDetector();
         metricsRegistry.scanAndRegister(this, "operation");
+    }
+
+    public void start() {
+        ((ClassicOperationExecutor) operationExecutor).start();
     }
 
     private SlowOperationDetector initSlowOperationDetector() {
@@ -222,13 +238,13 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         return invocationsRegistry.size();
     }
 
-    @Probe(name = "queue.size")
+    @Probe(name = "queue.size", level = MANDATORY)
     @Override
     public int getOperationExecutorQueueSize() {
         return operationExecutor.getOperationExecutorQueueSize();
     }
 
-    @Probe(name = "priority-queue.size")
+    @Probe(name = "priority-queue.size", level = MANDATORY)
     @Override
     public int getPriorityOperationExecutorQueueSize() {
         return operationExecutor.getPriorityOperationExecutorQueueSize();
@@ -238,7 +254,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         return operationExecutor;
     }
 
-    @Probe(name = "response-queue.size")
+    @Probe(name = "response-queue.size", level = MANDATORY)
     @Override
     public int getResponseQueueSize() {
         return responsePacketExecutor.getQueueSize();
@@ -419,7 +435,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     }
 
     public void onMemberLeft(MemberImpl member) {
-        invocationsRegistry.onMemberLeft(member);
+        invocationMonitor.onMemberLeft(member);
     }
 
     public void reset() {
@@ -432,9 +448,10 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         operationExecutor.shutdown();
         responsePacketExecutor.shutdown();
         slowOperationDetector.shutdown();
+        invocationMonitor.shutdown();
 
         try {
-            invocationsRegistry.awaitTermination(TERMINATION_TIMEOUT_MILLIS);
+            invocationMonitor.awaitTermination(TERMINATION_TIMEOUT_MILLIS);
         } catch (InterruptedException e) {
             //restore the interrupt.
             //todo: we need a better mechanism for dealing with interruption and waiting for termination

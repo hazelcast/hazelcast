@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -64,19 +65,19 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class BasicMapTest extends HazelcastTestSupport {
 
-    private static final int instanceCount = 3;
-    private static final Random rand = new Random();
+    static final int instanceCount = 3;
+    static final Random rand = new Random();
 
-    private HazelcastInstance[] instances;
+    HazelcastInstance[] instances;
 
     @Before
     public void init() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
-        Config config = new Config();
+        Config config = getConfig();
         instances = factory.newInstances(config);
     }
 
-    private HazelcastInstance getInstance() {
+    HazelcastInstance getInstance() {
         return instances[rand.nextInt(instanceCount)];
     }
 
@@ -185,7 +186,6 @@ public class BasicMapTest extends HazelcastTestSupport {
             assertTrue(e instanceof NullPointerException);
         }
     }
-
 
     @Test
     public void testMapEvictAndListener() throws InterruptedException {
@@ -628,7 +628,12 @@ public class BasicMapTest extends HazelcastTestSupport {
         final IMap<Integer, Integer> map = instance.getMap("testEntryView");
         long time1 = Clock.currentTimeMillis();
         map.put(1, 1);
+        map.put(1, 1);
+        map.get(1);
         map.put(2, 2);
+        map.put(2, 2);
+        map.get(2);
+        map.put(3, 3);
         map.put(3, 3);
         long time2 = Clock.currentTimeMillis();
         map.get(3);
@@ -649,13 +654,13 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals((Integer) 22, entryView2.getValue());
         assertEquals((Integer) 3, entryView3.getValue());
 
-        assertEquals(0, entryView1.getHits());
-        assertEquals(1, entryView2.getHits());
-        assertEquals(2, entryView3.getHits());
+        assertEquals(2, entryView1.getHits());
+        assertEquals(3, entryView2.getHits());
+        assertEquals(3, entryView3.getHits());
 
-        assertEquals(0, entryView1.getVersion());
-        assertEquals(1, entryView2.getVersion());
-        assertEquals(0, entryView3.getVersion());
+        assertEquals(1, entryView1.getVersion());
+        assertEquals(2, entryView2.getVersion());
+        assertEquals(1, entryView3.getVersion());
 
         assertTrue(entryView1.getCreationTime() >= time1 && entryView1.getCreationTime() <= time2);
         assertTrue(entryView2.getCreationTime() >= time1 && entryView2.getCreationTime() <= time2);
@@ -897,7 +902,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testMapQueryListener() throws InterruptedException {
-        final IMap<Object, Object> map = getInstance().getMap("testMapQueryListener");
+        final IMap<Object, Object> map = getInstance().getMap(randomMapName());
         final Object[] addedKey = new Object[1];
         final Object[] addedValue = new Object[1];
         final Object[] updatedKey = new Object[1];
@@ -942,15 +947,19 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key2", "bcd");
         map.put("key2", "axyz");
         map.remove("key1");
-        Thread.sleep(1000);
 
-        assertEquals(addedKey[0], "key1");
-        assertEquals(addedValue[0], "abc");
-        assertEquals(updatedKey[0], "key2");
-        assertEquals(oldValue[0], "bcd");
-        assertEquals(newValue[0], "axyz");
-        assertEquals(removedKey[0], "key1");
-        assertEquals(removedValue[0], "abc");
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals("key1", addedKey[0]);
+                assertEquals("abc", addedValue[0]);
+                assertEquals("key2", updatedKey[0]);
+                assertEquals("bcd", oldValue[0]);
+                assertEquals("axyz", newValue[0]);
+                assertEquals("key1", removedKey[0]);
+                assertEquals("abc", removedValue[0]);
+            }
+        });
     }
 
     static class StartsWithPredicate implements Predicate<Object, Object>, Serializable {
@@ -962,10 +971,12 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         public boolean apply(Map.Entry<Object, Object> mapEntry) {
             String val = (String) mapEntry.getValue();
-            if (val == null)
+            if (val == null) {
                 return false;
-            if (val.startsWith(pref))
+            }
+            if (val.startsWith(pref)) {
                 return true;
+            }
             return false;
         }
     }
@@ -1094,20 +1105,16 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testPutWithTtl() throws InterruptedException {
-        IMap<String, String> map = getInstance().getMap("testPutWithTtl");
-        final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryAdapter<String, String>() {
-            public void entryEvicted(EntryEvent<String, String> event) {
-                latch.countDown();
+        final IMap<String, String> map = getInstance().getMap("testPutWithTtl");
+
+        map.put("key", "value", 2, TimeUnit.SECONDS);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNull(map.get("key"));
             }
-        }, true);
-
-        // ttl should be bigger than 5sec (= sync backup wait timeout)
-        map.put("key", "value", 6, TimeUnit.SECONDS);
-        assertEquals("value", map.get("key"));
-
-        assertOpenEventually(latch);
-        assertNull(map.get("key"));
+        }, 30);
     }
 
     @Test

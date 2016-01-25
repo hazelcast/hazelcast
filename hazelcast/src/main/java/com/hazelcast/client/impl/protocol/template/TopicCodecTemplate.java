@@ -22,17 +22,38 @@ import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
-@GenerateCodec(id = TemplateConstants.TOPIC_TEMPLATE_ID, name = "Topic", ns = "Hazelcast.Client.Protocol.Topic")
+@GenerateCodec(id = TemplateConstants.TOPIC_TEMPLATE_ID, name = "Topic", ns = "Hazelcast.Client.Protocol.Codec")
 public interface TopicCodecTemplate {
-
-    @Request(id = 1, retryable = false, response = ResponseMessageConst.VOID)
+    /**
+     * Publishes the message to all subscribers of this topic
+     *
+     * @param name Name of the Topic
+     * @param message The message to publish to all subscribers of this topic
+     *
+     */
+    @Request(id = 1, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "name")
     void publish(String name, Data message);
 
-    @Request(id = 2, retryable = true, response = ResponseMessageConst.STRING
+    /**
+     * Subscribes to this topic. When someone publishes a message on this topic. onMessage() function of the given
+     * MessageListener is called. More than one message listener can be added on one instance.
+     *
+     * @param name Name of the Topic
+     * @param localOnly if true listens only local events on registered member
+     * @return returns the registration id
+     */
+    @Request(id = 2, retryable = false, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_TOPIC})
-    void addMessageListener(String name);
+    Object addMessageListener(String name, boolean localOnly);
+    /**
+     * Stops receiving messages for the given message listener.If the given listener already removed, this method does nothing.
+     *
+     * @param name Name of the Topic
+     * @param registrationId Id of listener registration.
+     * @return True if registration is removed, false otherwise
+     */
+    @Request(id = 3, retryable = true, response = ResponseMessageConst.BOOLEAN)
+    Object removeMessageListener(String name, String registrationId);
 
-    @Request(id = 3, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void removeMessageListener(String name, String registrationId);
 
 }

@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl.mapstore.writethrough;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -36,8 +36,10 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
 
     @Override
     public Object add(Data key, Object value, long time) {
+        Object objectKey = toObject(key);
         Object objectValue = toObject(value);
-        getStore().store(toObject(key), objectValue);
+
+        getStore().store(objectKey, objectValue);
         // if store is not a post-processing map-store, then avoid extra de-serialization phase.
         return getStore().isPostProcessingMapStore() ? objectValue : value;
     }
@@ -84,7 +86,7 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public Object flush(Data key, Object value, long now, boolean backup) {
+    public Object flush(Data key, Object value, boolean backup) {
         return value;
     }
 

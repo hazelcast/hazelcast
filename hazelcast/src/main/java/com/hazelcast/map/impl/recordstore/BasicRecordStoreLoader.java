@@ -16,13 +16,14 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
-import com.hazelcast.map.impl.operation.PutFromLoadAllOperation;
-import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -66,7 +67,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
 
     private final int partitionId;
 
-    public BasicRecordStoreLoader(RecordStore recordStore) {
+    BasicRecordStoreLoader(RecordStore recordStore) {
         this.recordStore = recordStore;
         final MapContainer mapContainer = recordStore.getMapContainer();
         this.name = mapContainer.getName();
@@ -219,7 +220,8 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
 
     private Operation createOperation(List<Data> keyValueSequence, final AtomicInteger finishedBatchCounter) {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final Operation operation = new PutFromLoadAllOperation(name, keyValueSequence);
+        MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(name);
+        MapOperation operation = operationProvider.createPutFromLoadAllOperation(name, keyValueSequence);
         operation.setNodeEngine(nodeEngine);
         operation.setOperationResponseHandler(new OperationResponseHandler() {
             @Override
@@ -245,11 +247,11 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         if (keys == null || keys.isEmpty()) {
             return;
         }
-        final Map<Data, Record> records = recordStore.getRecordMap();
-        final Iterator<Data> iterator = keys.iterator();
+        Storage storage = recordStore.getStorage();
+        Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext()) {
-            final Data nextKey = iterator.next();
-            if (records.containsKey(nextKey)) {
+            Data key = iterator.next();
+            if (storage.containsKey(key)) {
                 iterator.remove();
             }
         }
@@ -269,6 +271,6 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
     }
 
     private int getLoadBatchSize() {
-        return mapServiceContext.getNodeEngine().getGroupProperties().MAP_LOAD_CHUNK_SIZE.getInteger();
+        return mapServiceContext.getNodeEngine().getGroupProperties().getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE);
     }
 }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -27,19 +27,21 @@ import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
-public class GetAllOperation extends AbstractMapOperation implements ReadonlyOperation, PartitionAwareOperation {
+public class GetAllOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation {
 
-    private Set<Data> keys = new HashSet<Data>();
-    private MapEntrySet entrySet;
+    private List<Data> keys = new ArrayList<Data>();
+    private MapEntries entries;
     private transient RecordStore recordStore;
 
     public GetAllOperation() {
     }
 
-    public GetAllOperation(String name, Set<Data> keys) {
+    public GetAllOperation(String name, List<Data> keys) {
         super(name);
         this.keys = keys;
     }
@@ -55,33 +57,28 @@ public class GetAllOperation extends AbstractMapOperation implements ReadonlyOpe
                 partitionKeySet.add(key);
             }
         }
-        entrySet = recordStore.getAll(partitionKeySet);
+        entries = recordStore.getAll(partitionKeySet);
     }
 
     @Override
     public void afterRun() throws Exception {
         super.afterRun();
-        if (!entrySet.isEmpty()) {
-            evict(false);
+        if (!entries.isEmpty()) {
+            evict();
         }
     }
 
-    protected void evict(boolean backup) {
+    protected void evict() {
         if (recordStore == null) {
             return;
         }
         final long now = Clock.currentTimeMillis();
-        recordStore.evictEntries(now, backup);
+        recordStore.evictEntries(now);
     }
 
     @Override
     public Object getResponse() {
-        return entrySet;
-    }
-
-    @Override
-    public String toString() {
-        return "GetAllOperation{}";
+        return entries;
     }
 
     @Override

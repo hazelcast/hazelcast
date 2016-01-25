@@ -16,10 +16,18 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
+import com.hazelcast.cache.impl.event.CachePartitionLostListener;
+import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
 import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CachePartitionLostListenerConfig;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -31,8 +39,10 @@ import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.expiry.ExpiryPolicy;
 import java.util.Collection;
+import java.util.EventListener;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,9 +86,22 @@ abstract class AbstractInternalCacheProxy<K, V>
         asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncLocks = new ConcurrentHashMap<Integer, CountDownLatch>();
+
+        final List<CachePartitionLostListenerConfig> configs = cacheConfig.getPartitionLostListenerConfigs();
+        for (CachePartitionLostListenerConfig listenerConfig : configs) {
+            final CachePartitionLostListener listener = initializeListener(listenerConfig);
+            if (listener != null) {
+                final InternalCachePartitionLostListenerAdapter listenerAdapter =
+                        new InternalCachePartitionLostListenerAdapter(listener);
+                final EventFilter filter = new CachePartitionLostEventFilter();
+                final ICacheService service = getService();
+                service.getNodeEngine().getEventService()
+                        .registerListener(AbstractCacheService.SERVICE_NAME, name, filter, listenerAdapter);
+            }
+        }
     }
 
-    protected <T> InternalCompletableFuture<T> invoke(Operation op, Data keyData, boolean completionOperation) {
+    protected <T> InternalCompletableFuture<T> invoke(Operation op, int partitionId, boolean completionOperation) {
         Integer completionId = null;
         if (completionOperation) {
             completionId = registerCompletionLatch(1);
@@ -87,10 +110,9 @@ abstract class AbstractInternalCacheProxy<K, V>
             }
         }
         try {
-            final int partitionId = getPartitionId(getNodeEngine(), keyData);
             final InternalCompletableFuture<T> f =
                     getNodeEngine().getOperationService()
-                        .invokeOnPartition(getServiceName(), op, partitionId);
+                            .invokeOnPartition(getServiceName(), op, partitionId);
             if (completionOperation) {
                 waitCompletionLatch(completionId);
             }
@@ -107,7 +129,11 @@ abstract class AbstractInternalCacheProxy<K, V>
         }
     }
 
-    //region internal base operations
+    protected <T> InternalCompletableFuture<T> invoke(Operation op, Data keyData, boolean completionOperation) {
+        final int partitionId = getPartitionId(getNodeEngine(), keyData);
+        return invoke(op, partitionId, completionOperation);
+    }
+
     protected <T> InternalCompletableFuture<T> removeAsyncInternal(K key, V oldValue, boolean hasOldValue,
                                                                    boolean isGet, boolean withCompletionEvent) {
         ensureOpen();
@@ -235,9 +261,7 @@ abstract class AbstractInternalCacheProxy<K, V>
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
         }
     }
-    //endregion internal base operations
 
-    //region Listener operations
     protected void addListenerLocally(String regId,
                                       CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         if (cacheEntryListenerConfiguration.isSynchronous()) {
@@ -255,6 +279,16 @@ abstract class AbstractInternalCacheProxy<K, V>
             regs = asyncListenerRegistrations;
         }
         return regs.remove(cacheEntryListenerConfiguration);
+    }
+
+    protected String getListenerIdLocal(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+        final ConcurrentMap<CacheEntryListenerConfiguration, String> regs;
+        if (cacheEntryListenerConfiguration.isSynchronous()) {
+            regs = syncListenerRegistrations;
+        } else {
+            regs = asyncListenerRegistrations;
+        }
+        return regs.get(cacheEntryListenerConfiguration);
     }
 
     private void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
@@ -287,14 +321,16 @@ abstract class AbstractInternalCacheProxy<K, V>
         }
     }
 
-    public void countDownCompletionLatch(int id) {
-        final CountDownLatch countDownLatch = syncLocks.get(id);
-        if (countDownLatch == null) {
-            return;
-        }
-        countDownLatch.countDown();
-        if (countDownLatch.getCount() == 0) {
-            deregisterCompletionLatch(id);
+    public void countDownCompletionLatch(int countDownLatchId) {
+        if (countDownLatchId != IGNORE_COMPLETION) {
+            final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
+            if (countDownLatch == null) {
+                return;
+            }
+            countDownLatch.countDown();
+            if (countDownLatch.getCount() == 0) {
+                deregisterCompletionLatch(countDownLatchId);
+            }
         }
     }
 
@@ -310,24 +346,29 @@ abstract class AbstractInternalCacheProxy<K, V>
     }
 
     protected void deregisterCompletionLatch(Integer countDownLatchId) {
-        syncLocks.remove(countDownLatchId);
+        if (countDownLatchId != IGNORE_COMPLETION) {
+            syncLocks.remove(countDownLatchId);
+        }
     }
 
     protected void waitCompletionLatch(Integer countDownLatchId) {
-        final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
-        if (countDownLatch != null) {
-            awaitLatch(countDownLatch);
+        if (countDownLatchId != IGNORE_COMPLETION) {
+            final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
+            if (countDownLatch != null) {
+                awaitLatch(countDownLatch);
+            }
         }
     }
 
     protected void waitCompletionLatch(Integer countDownLatchId, int offset) {
-        //fix completion count
-        final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
-        if (countDownLatch != null) {
-            for (int i = 0; i < offset; i++) {
-                countDownLatch.countDown();
+        if (countDownLatchId != IGNORE_COMPLETION) {
+            final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
+            if (countDownLatch != null) {
+                for (int i = 0; i < offset; i++) {
+                    countDownLatch.countDown();
+                }
+                awaitLatch(countDownLatch);
             }
-            awaitLatch(countDownLatch);
         }
     }
 
@@ -343,7 +384,7 @@ abstract class AbstractInternalCacheProxy<K, V>
             while (currentTimeoutMs > 0
                     && !countDownLatch.await(COMPLETION_LATCH_WAIT_TIME_STEP, TimeUnit.MILLISECONDS)) {
                 currentTimeoutMs -= COMPLETION_LATCH_WAIT_TIME_STEP;
-                if (!getNodeEngine().isActive()) {
+                if (!getNodeEngine().isRunning()) {
                     throw new HazelcastInstanceNotActiveException();
                 } else if (isClosed()) {
                     throw new IllegalStateException("Cache (" + nameWithPrefix + ") is closed !");
@@ -356,5 +397,28 @@ abstract class AbstractInternalCacheProxy<K, V>
             ExceptionUtil.sneakyThrow(e);
         }
     }
-    //endregion Listener operations
+
+    private <T extends EventListener> T initializeListener(ListenerConfig listenerConfig) {
+        T listener = null;
+        if (listenerConfig.getImplementation() != null) {
+            listener = (T) listenerConfig.getImplementation();
+        } else if (listenerConfig.getClassName() != null) {
+            try {
+                return ClassLoaderUtil.newInstance(getNodeEngine().getConfigClassLoader(),
+                                                   listenerConfig.getClassName());
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        }
+        return listener;
+    }
+
+    @Override
+    public CacheStatistics getLocalCacheStatistics() {
+        // TODO Throw `UnsupportedOperationException` if cache statistics are not enabled
+        // but it breaks backward compatibility.
+        final ICacheService service = getService();
+        return service.createCacheStatIfAbsent(cacheConfig.getNameWithPrefix());
+    }
+
 }

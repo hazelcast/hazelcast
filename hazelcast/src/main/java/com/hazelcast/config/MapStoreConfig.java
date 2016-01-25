@@ -305,7 +305,7 @@ public class MapStoreConfig {
      * Default value is {@value #DEFAULT_WRITE_COALESCING}.
      *
      * @param writeCoalescing {@code true} to enable write-coalescing, {@code false} otherwise.
-     * @see com.hazelcast.instance.GroupProperties.GroupProperty#MAP_WRITE_BEHIND_QUEUE_CAPACITY
+     * @see com.hazelcast.instance.GroupProperty#MAP_WRITE_BEHIND_QUEUE_CAPACITY
      */
     public void setWriteCoalescing(boolean writeCoalescing) {
         this.writeCoalescing = writeCoalescing;

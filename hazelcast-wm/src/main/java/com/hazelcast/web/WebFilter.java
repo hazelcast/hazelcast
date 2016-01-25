@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.util.UuidUtil;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -38,7 +39,6 @@ import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Properties;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
@@ -67,7 +67,7 @@ import java.util.logging.Level;
  * destroyed (Default: {@code true})</li>
  * <li>{@code map-name}: Names the {@link IMap} the filter should use to persist session details (Default:
  * {@code "_web_" + ServletContext.getServletContextName()}; e.g. "_web_MyApp")</li>
- * <li>{@code session-ttl-seconds}: Sets the {@link MapConfig#setTimeToLiveSeconds(int) time-to-live} for
+ *  * <li>{@code session-ttl-seconds}: Sets the {@link MapConfig#setMaxIdleSeconds(int)} (int) time-to-live} for
  * the {@link IMap} used to persist session details (Default: Uses the existing {@link MapConfig} setting
  * for the {@link IMap}, which defaults to infinite)</li>
  * <li>{@code sticky-session}: When enabled, optimizes {@link IMap} interactions by assuming individual sessions
@@ -121,6 +121,10 @@ public class WebFilter implements Filter {
         this.properties = properties;
     }
 
+    public Properties getProperties() {
+        return properties;
+    }
+
     void destroyOriginalSession(HttpSession originalSession) {
         String hazelcastSessionId = originalSessions.remove(originalSession.getId());
         if (hazelcastSessionId != null) {
@@ -136,9 +140,9 @@ public class WebFilter implements Filter {
     }
 
     private static String generateSessionId() {
-        final String id = UUID.randomUUID().toString();
-        final StringBuilder sb = new StringBuilder("HZ");
-        final char[] chars = id.toCharArray();
+        String id = UuidUtil.newSecureUuidString();
+        StringBuilder sb = new StringBuilder("HZ");
+        char[] chars = id.toCharArray();
         for (final char c : chars) {
             if (c != '-') {
                 if (Character.isLetter(c)) {
@@ -151,6 +155,7 @@ public class WebFilter implements Filter {
         return sb.toString();
     }
 
+    @Override
     public final void init(final FilterConfig config)
             throws ServletException {
         filterConfig = config;
@@ -165,8 +170,7 @@ public class WebFilter implements Filter {
         if (mapName == null) {
             mapName = "_web_" + servletContext.getServletContextName();
         }
-        String sessionTTL = getParam("session-ttl-seconds");
-        clusteredSessionService = new ClusteredSessionService(filterConfig, properties, mapName, sessionTTL);
+        clusteredSessionService = new ClusteredSessionService(filterConfig, properties, mapName);
 
         if (LOGGER.isLoggable(Level.FINEST)) {
             LOGGER.finest("sticky:" + stickySession + ", shutdown-on-destroy: " + shutdownOnDestroy
@@ -216,6 +220,8 @@ public class WebFilter implements Filter {
         setProperty(HazelcastInstanceLoader.INSTANCE_NAME);
         setProperty(HazelcastInstanceLoader.USE_CLIENT);
         setProperty(HazelcastInstanceLoader.CLIENT_CONFIG_LOCATION);
+        setProperty(HazelcastInstanceLoader.STICKY_SESSION_CONFIG);
+        setProperty(HazelcastInstanceLoader.SESSION_TTL_CONFIG);
     }
 
     private void setProperty(String propertyName) {
@@ -333,6 +339,7 @@ public class WebFilter implements Filter {
         return null;
     }
 
+    @Override
     public final void doFilter(ServletRequest req, ServletResponse res, final FilterChain chain)
             throws IOException, ServletException {
         if (!(req instanceof HttpServletRequest)) {
@@ -366,6 +373,7 @@ public class WebFilter implements Filter {
         }
     }
 
+    @Override
     public final void destroy() {
         sessions.clear();
         originalSessions.clear();
@@ -458,10 +466,11 @@ public class WebFilter implements Filter {
         }
 
         private HazelcastHttpSession readSessionFromLocal() {
-
+            String invalidatedOriginalSessionId = null;
             if (hazelcastSession != null && !hazelcastSession.isValid()) {
                 LOGGER.finest("Session is invalid!");
                 destroySession(hazelcastSession, true);
+                invalidatedOriginalSessionId = hazelcastSession.invalidatedOriginalSessionId;
                 hazelcastSession = null;
             } else if (hazelcastSession != null) {
                 return hazelcastSession;
@@ -477,8 +486,16 @@ public class WebFilter implements Filter {
                     }
                     return hazelcastSession;
                 }
-                originalSessions.remove(originalSession.getId());
-                originalSession.invalidate();
+                // Even though session can be taken from request, it might be already invalidated.
+                // For example, in Wildfly (uses Undertow), taken wrapper session might be valid
+                // but its underlying real session might be already invalidated after redirection
+                // due to its request/url based wrapper session (points to same original session) design.
+                // Therefore, we check the taken session id and
+                // ignore its invalidation if it is already invalidated inside Hazelcast's session.
+                // See issue on Wildfly https://github.com/hazelcast/hazelcast/issues/6335
+                if (!originalSession.getId().equals(invalidatedOriginalSessionId)) {
+                    originalSession.invalidate();
+                }
             }
             if (clusteredSessionId != null) {
                 hazelcastSession = sessions.get(clusteredSessionId);

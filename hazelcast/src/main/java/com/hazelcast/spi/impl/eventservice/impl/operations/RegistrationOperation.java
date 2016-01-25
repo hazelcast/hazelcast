@@ -19,12 +19,13 @@ package com.hazelcast.spi.impl.eventservice.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.Registration;
 
 import java.io.IOException;
 
-public class RegistrationOperation extends AbstractOperation {
+public class RegistrationOperation extends AbstractOperation implements AllowedDuringPassiveState {
 
     private Registration registration;
     private boolean response;

@@ -1,10 +1,11 @@
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -16,6 +17,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -26,15 +28,14 @@ import static org.junit.Assert.assertTrue;
 public class MapMemoryUsageStressTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private final ILogger logger = Logger.getLogger(MapMemoryUsageStressTest.class);
     private HazelcastInstance client;
 
     @Before
     public void launchHazelcastServer() {
-        hazelcastFactory.newHazelcastInstance();
-        ClientConfig config = new ClientConfig();
-        config.setGroupConfig(new GroupConfig("dev", "dev-pass"));
-        config.getNetworkConfig().addAddress("127.0.0.1");
-        client = hazelcastFactory.newHazelcastClient(config);
+        Config config = getConfig();
+        hazelcastFactory.newHazelcastInstance(config);
+        client = hazelcastFactory.newHazelcastClient();
     }
 
     @After
@@ -42,7 +43,7 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-    @Test
+    @Test(timeout = 30 * 60 * 1000)
     public void voidCacher() throws Exception {
         final AtomicInteger counter = new AtomicInteger(200000);
         final AtomicInteger errors = new AtomicInteger();
@@ -53,7 +54,7 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
             stressThread.start();
         }
 
-        assertJoinable(TimeUnit.MINUTES.toSeconds(10), threads);
+        assertJoinable(TimeUnit.MINUTES.toSeconds(30), threads);
         assertEquals(0, errors.get());
         assertTrue(counter.get() <= 0);
     }
@@ -81,7 +82,7 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
                     map.destroy();
 
                     if (index % 1000 == 0) {
-                        System.out.println("At: " + index);
+                        logger.log(Level.INFO, "At: " + index);
                     }
                 }
             } catch (Throwable t) {

@@ -18,29 +18,23 @@ package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryEntry;
-
+import com.hazelcast.query.impl.QueryableEntry;
 import java.util.Map;
 
 /**
  * This class is used to transfer a predicate as an remote operation and filter values matching the predicate
  */
-public class ReplicatedQueryEventFilter
-        extends ReplicatedEntryEventFilter {
+public class ReplicatedQueryEventFilter extends ReplicatedEntryEventFilter {
 
     private Predicate predicate;
 
-    public ReplicatedQueryEventFilter(Object key, Predicate predicate) {
+    public ReplicatedQueryEventFilter(Data key, Predicate predicate) {
         super(key);
         this.predicate = predicate;
     }
 
-    public Object getPredicate() {
-        return predicate;
-    }
-
     public boolean eval(Object arg) {
-        final QueryEntry entry = (QueryEntry) arg;
+        final QueryableEntry entry = (QueryableEntry) arg;
         final Data keyData = entry.getKeyData();
         return (key == null || key.equals(keyData)) && predicate.apply((Map.Entry) arg);
     }

@@ -17,18 +17,18 @@
 package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.internal.ascii.AbstractTextCommand;
-import com.hazelcast.internal.ascii.TextCommandConstants;
+import com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType;
 
 import java.nio.ByteBuffer;
 
 public class SimpleCommand extends AbstractTextCommand {
-    ByteBuffer response;
+    private ByteBuffer response;
 
-    public SimpleCommand(TextCommandConstants.TextCommandType type) {
+    public SimpleCommand(TextCommandType type) {
         super(type);
     }
 
-    public boolean readFrom(ByteBuffer cb) {
+    public boolean readFrom(ByteBuffer src) {
         return true;
     }
 
@@ -36,9 +36,9 @@ public class SimpleCommand extends AbstractTextCommand {
         this.response = ByteBuffer.wrap(value);
     }
 
-    public boolean writeTo(ByteBuffer bb) {
-        while (bb.hasRemaining() && response.hasRemaining()) {
-            bb.put(response.get());
+    public boolean writeTo(ByteBuffer dst) {
+        while (dst.hasRemaining() && response.hasRemaining()) {
+            dst.put(response.get());
         }
         return !response.hasRemaining();
     }

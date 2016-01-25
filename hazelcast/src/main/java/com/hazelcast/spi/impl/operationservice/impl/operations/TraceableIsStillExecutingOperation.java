@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.IsStillRunningService;
@@ -26,7 +27,8 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.io.IOException;
 
-public class TraceableIsStillExecutingOperation extends AbstractOperation implements UrgentSystemOperation {
+public class TraceableIsStillExecutingOperation extends AbstractOperation
+        implements UrgentSystemOperation, ReadonlyOperation {
 
     private String serviceName;
     private Object identifier;

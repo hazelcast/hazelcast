@@ -68,10 +68,11 @@ public final class Aggregations {
      * This aggregation is similar to: <pre>SELECT COUNT(*) FROM x</pre>
      *
      * @param <Key> the input key type
+     * @param <Value> the supplied value type
      * @return the count of all supplied elements
      */
-    public static <Key> Aggregation<Key, Object, Long> count() {
-        return new AggregationAdapter(new CountAggregation<Object, Object>());
+    public static <Key, Value> Aggregation<Key, Value, Long> count() {
+        return new AggregationAdapter(new CountAggregation<Key, Value>());
     }
 
     /**

@@ -50,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
@@ -81,9 +82,9 @@ public class ProxyServiceImpl
     private final ConcurrentMap<String, ProxyRegistry> registries =
             new ConcurrentHashMap<String, ProxyRegistry>();
 
-    @Probe(name = "createdCount")
+    @Probe(name = "createdCount", level = MANDATORY)
     private final MwCounter createdCounter = newMwCounter();
-    @Probe(name = "destroyedCount")
+    @Probe(name = "destroyedCount", level = MANDATORY)
     private final MwCounter destroyedCounter = newMwCounter();
 
     public ProxyServiceImpl(NodeEngineImpl nodeEngine) {
@@ -161,9 +162,7 @@ public class ProxyServiceImpl
             destroyedCounter.inc();
         }
         RemoteService service = nodeEngine.getService(serviceName);
-        if (service != null) {
-            service.destroyDistributedObject(name);
-        }
+        service.destroyDistributedObject(name);
         String message = "DistributedObject[" + service + " -> " + name + "] has been destroyed!";
         Throwable cause = new DistributedObjectDestroyedException(message);
         nodeEngine.getWaitNotifyService().cancelWaitingOps(serviceName, name, cause);
@@ -205,7 +204,7 @@ public class ProxyServiceImpl
 
     @Override
     public String addProxyListener(DistributedObjectListener distributedObjectListener) {
-        String id = UuidUtil.buildRandomUuidString();
+        String id = UuidUtil.newUnsecureUuidString();
         listeners.put(id, distributedObjectListener);
         return id;
     }

@@ -17,12 +17,16 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
 import java.util.Random;
 
+import static com.hazelcast.instance.GroupProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
+import static com.hazelcast.instance.GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
+import static com.hazelcast.instance.GroupProperty.BACKPRESSURE_SYNCWINDOW;
 import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static java.lang.Math.max;
@@ -81,15 +85,13 @@ public class BackpressureRegulator {
     private final boolean disabled;
     private final int syncWindow;
     private final int partitionCount;
-    private final ILogger logger;
     private final int maxConcurrentInvocations;
     private final int backoffTimeoutMs;
 
     public BackpressureRegulator(GroupProperties properties, ILogger logger) {
-        this.enabled = properties.BACKPRESSURE_ENABLED.getBoolean();
+        this.enabled = properties.getBoolean(GroupProperty.BACKPRESSURE_ENABLED);
         this.disabled = !enabled;
-        this.logger = logger;
-        this.partitionCount = properties.PARTITION_COUNT.getInteger();
+        this.partitionCount = properties.getInteger(GroupProperty.PARTITION_COUNT);
         this.syncWindow = getSyncWindow(properties);
         this.maxConcurrentInvocations = getMaxConcurrentInvocations(properties);
         this.backoffTimeoutMs = getBackoffTimeoutMs(properties);
@@ -109,33 +111,30 @@ public class BackpressureRegulator {
     }
 
     private int getSyncWindow(GroupProperties props) {
-        int syncWindow = props.BACKPRESSURE_SYNCWINDOW.getInteger();
+        int syncWindow = props.getInteger(BACKPRESSURE_SYNCWINDOW);
         if (enabled && syncWindow <= 0) {
-            throw new IllegalArgumentException("Can't have '"
-                    + props.BACKPRESSURE_SYNCWINDOW.getName() + "' with a value smaller than 1");
+            throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_SYNCWINDOW + "' with a value smaller than 1");
         }
         return syncWindow;
     }
 
     private int getBackoffTimeoutMs(GroupProperties props) {
-        int backoffTimeoutMs = props.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS.getInteger();
+        int backoffTimeoutMs = (int) props.getMillis(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS);
         if (enabled && backoffTimeoutMs < 0) {
-            throw new IllegalArgumentException("Can't have '"
-                    + props.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS.getName() + "' with a value smaller than 0");
+            throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS
+                    + "' with a value smaller than 0");
         }
         return backoffTimeoutMs;
     }
 
     private int getMaxConcurrentInvocations(GroupProperties props) {
-        GroupProperties.GroupProperty invocationsPerPartitionProp = props.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
-
-        int invocationsPerPartition = invocationsPerPartitionProp.getInteger();
+        int invocationsPerPartition = props.getInteger(BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION);
         if (invocationsPerPartition < 1) {
-            throw new IllegalArgumentException("Can't have '"
-                    + invocationsPerPartitionProp.getName() + "' with a value smaller than 1");
+            throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION
+                    + "' with a value smaller than 1");
         }
 
-        return (props.PARTITION_COUNT.getInteger() + 1) * invocationsPerPartition;
+        return (partitionCount + 1) * invocationsPerPartition;
     }
 
     /**

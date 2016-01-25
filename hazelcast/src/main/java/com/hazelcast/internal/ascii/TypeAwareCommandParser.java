@@ -17,6 +17,7 @@
 package com.hazelcast.internal.ascii;
 
 public abstract class TypeAwareCommandParser implements CommandParser {
+
     protected final TextCommandConstants.TextCommandType type;
 
     protected TypeAwareCommandParser(TextCommandConstants.TextCommandType type) {

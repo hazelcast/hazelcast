@@ -21,20 +21,23 @@ import java.nio.ByteBuffer;
 import static com.hazelcast.util.StringUtil.bytesToString;
 
 public class NoOpCommand extends AbstractTextCommand {
-    final ByteBuffer response;
+
+    private final ByteBuffer response;
 
     public NoOpCommand(byte[] response) {
         super(TextCommandConstants.TextCommandType.NO_OP);
         this.response = ByteBuffer.wrap(response);
     }
 
-    public boolean readFrom(ByteBuffer cb) {
+    @Override
+    public boolean readFrom(ByteBuffer src) {
         return true;
     }
 
-    public boolean writeTo(ByteBuffer bb) {
-        while (bb.hasRemaining() && response.hasRemaining()) {
-            bb.put(response.get());
+    @Override
+    public boolean writeTo(ByteBuffer dst) {
+        while (dst.hasRemaining() && response.hasRemaining()) {
+            dst.put(response.get());
         }
         return !response.hasRemaining();
     }

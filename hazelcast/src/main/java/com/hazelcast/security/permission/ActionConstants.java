@@ -16,7 +16,9 @@
 
 package com.hazelcast.security.permission;
 
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
@@ -28,8 +30,8 @@ import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.topic.impl.TopicService;
 
 import java.security.Permission;
@@ -149,6 +151,18 @@ public final class ActionConstants {
             @Override
             public Permission create(String name, String... actions) {
                 return new AtomicReferencePermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(CacheService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new CachePermission(name, actions);
+            }
+        });
+        PERMISSION_FACTORY_MAP.put(RingbufferService.SERVICE_NAME, new PermissionFactory() {
+            @Override
+            public Permission create(String name, String... actions) {
+                return new RingBufferPermission(name, actions);
             }
         });
     }

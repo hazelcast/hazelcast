@@ -27,11 +27,11 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -42,8 +42,8 @@ import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
+import com.hazelcast.util.UuidUtil;
 
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -57,12 +57,8 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     public static final int MAX_BACKOFF = 2000;
     public static final int INITIAL_BACKOFF_MS = 100;
 
-    protected final ILogger logger = Logger.getLogger(getClass());
-
-    private final ConcurrentMap<String, MessageRunner> runnersMap
-            = new ConcurrentHashMap<String, MessageRunner>();
-
-    private final String name;
+    private final ILogger logger = Logger.getLogger(getClass());
+    private final ConcurrentMap<String, MessageRunner> runnersMap = new ConcurrentHashMap<String, MessageRunner>();
     private final Ringbuffer ringbuffer;
     private final SerializationService serializationService;
     private final ClientReliableTopicConfig config;
@@ -71,8 +67,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
 
     public ClientReliableTopicProxy(String objectId, HazelcastClientInstanceImpl client) {
         super(SERVICE_NAME, objectId);
-        this.name = objectId;
-        this.ringbuffer = client.getRingbuffer(TOPIC_RB_PREFIX + name);
+        this.ringbuffer = client.getRingbuffer(TOPIC_RB_PREFIX + objectId);
         this.serializationService = client.getSerializationService();
 
         this.config = client.getClientConfig().getReliableTopicConfig(objectId);
@@ -112,7 +107,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            throw new HazelcastException("Failed to publish message: " + payload + " to topic:" + getName(), e);
+            throw new HazelcastException("Failed to publish message: " + payload + " to topic:" + name, e);
         }
     }
 
@@ -123,7 +118,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     private void addOrFail(ReliableTopicMessage message) throws Exception {
         long sequenceId = (Long) ringbuffer.addAsync(message, OverflowPolicy.FAIL).get();
         if (sequenceId == -1) {
-            throw new TopicOverloadException("Failed to publish message: " + message + " on topic:" + getName());
+            throw new TopicOverloadException("Failed to publish message: " + message + " on topic:" + name);
         }
     }
 
@@ -147,7 +142,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     public String addMessageListener(MessageListener<E> listener) {
         checkNotNull(listener, "listener can't be null");
 
-        String id = UUID.randomUUID().toString();
+        String id = UuidUtil.newUnsecureUuidString();
         ReliableMessageListener<E> reliableMessageListener = toReliableMessageListener(listener);
 
         MessageRunner runner = new MessageRunner(id, reliableMessageListener);
@@ -181,9 +176,13 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
         throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
+    public Ringbuffer getRingbuffer() {
+        return ringbuffer;
+    }
+
     @Override
     public String toString() {
-        return "ITopic{" + "name='" + getName() + '\'' + '}';
+        return "ITopic{" + "name='" + name + '\'' + '}';
     }
 
     class MessageRunner implements ExecutionCallback<ReadResultSet<ReliableTopicMessage>> {
@@ -328,4 +327,5 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
             }
         }
     }
+
 }

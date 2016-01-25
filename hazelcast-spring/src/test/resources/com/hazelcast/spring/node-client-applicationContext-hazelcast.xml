@@ -217,6 +217,24 @@
 
     </hz:client>
 
+    <hz:client id="client7-empty-serialization-config" credentials-ref="credentials">
+        <hz:network connection-attempt-limit="3"
+                    connection-attempt-period="3000"
+                    connection-timeout="1000"
+                    redo-operation="false"
+                    smart-routing="false">
+
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"/>
+        </hz:network>
+        <hz:serialization></hz:serialization>
+    </hz:client>
+
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
         <property name="username" value="spring-group"/>
         <property name="password" value="spring-group-pass"/>

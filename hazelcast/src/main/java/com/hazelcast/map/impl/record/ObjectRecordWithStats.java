@@ -16,17 +16,16 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.nio.serialization.Data;
-
 class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
 
-    private Object value;
+    private volatile Object value;
 
-    public ObjectRecordWithStats() {
+    ObjectRecordWithStats() {
+        super();
     }
 
-    public ObjectRecordWithStats(Data key, Object value) {
-        super(key);
+    ObjectRecordWithStats(Object value) {
+        super();
         this.value = value;
     }
 
@@ -38,11 +37,6 @@ class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
     @Override
     public void setValue(Object value) {
         this.value = value;
-    }
-
-    @Override
-    public void invalidate() {
-        value = null;
     }
 
     @Override

@@ -134,12 +134,11 @@ public class SerializerConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("SerializerConfig{");
-        sb.append("className='").append(className).append('\'');
-        sb.append(", implementation=").append(implementation);
-        sb.append(", typeClass=").append(typeClass);
-        sb.append(", typeClassName='").append(typeClassName).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "SerializerConfig{"
+                + "className='" + className + '\''
+                + ", implementation=" + implementation
+                + ", typeClass=" + typeClass
+                + ", typeClassName='" + typeClassName + '\''
+                + '}';
     }
 }

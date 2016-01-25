@@ -18,16 +18,25 @@ package com.hazelcast.util;
 
 import com.hazelcast.nio.Address;
 
+import java.security.SecureRandom;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Util class to generate random unique identifiers
+ * Util class to generate type 4 (pseudo randomly generated) {@link UUID}.
+ * <p/>
+ * Creates {@link UUID} of different quality of randomness,
+ * which are based on cryptographically weak {@link Random}
+ * and strong {@link SecureRandom} pseudo random number generators.
  */
+@SuppressWarnings("unused")
 public final class UuidUtil {
 
-    private static final ThreadLocal<Random> RANDOMIZERS = new ThreadLocal<Random>() {
+    private static final AtomicLong SEED_UNIQUIFIER = new AtomicLong(8682522807148012L);
+    private static final long MOTHER_OF_MAGIC_NUMBERS = 181783497276652981L;
+
+    private static final ThreadLocal<Random> THREAD_LOCAL_UNSECURE_RANDOM = new ThreadLocal<Random>() {
         @Override
         protected Random initialValue() {
             // Using the same way as the OpenJDK version just to
@@ -37,51 +46,102 @@ public final class UuidUtil {
         }
     };
 
-    private static final AtomicLong SEED_UNIQUIFIER = new AtomicLong(8682522807148012L);
-    private static final long MOTHER_OF_MAGIC_NUMBERS = 181783497276652981L;
+    private static final ThreadLocal<SecureRandom> THREAD_LOCAL_SECURE_RANDOM = new ThreadLocal<SecureRandom>() {
+        @Override
+        protected SecureRandom initialValue() {
+            return new SecureRandom();
+        }
+    };
 
     private UuidUtil() {
     }
 
-    private static long seedUniquifier() {
-        // L'Ecuyer, "Tables of Linear Congruential Generators of
-        // Different Sizes and Good Lattice Structure", 1999
-        for (;;) {
-            long current = SEED_UNIQUIFIER.get();
-            long next = current * MOTHER_OF_MAGIC_NUMBERS;
-            if (SEED_UNIQUIFIER.compareAndSet(current, next)) {
-                return next;
-            }
-        }
-    }
-
+    /**
+     * Creates a new cluster {@link UUID} string,
+     * based on a cryptographically weak pseudo random number generator.
+     *
+     * @return a new cluster {@link UUID} string
+     */
     public static String createClusterUuid() {
-        return  buildRandomUuidString();
+        return newUnsecureUuidString();
     }
 
+    /**
+     * Creates a new member {@link UUID} string,
+     * based on a cryptographically weak pseudo random number generator.
+     *
+     * @return a new member {@link UUID} string
+     */
     public static String createMemberUuid(Address endpoint) {
-        return buildRandomUUID().toString();
+        return newUnsecureUuidString();
     }
 
+    /**
+     * Creates a new client {@link UUID} string,
+     * based on a cryptographically weak pseudo random number generator.
+     *
+     * @return a new client {@link UUID} string
+     */
     public static String createClientUuid(Address endpoint) {
-        return buildRandomUUID().toString();
+        return newUnsecureUuidString();
     }
 
-    public static String buildRandomUuidString() {
-        return buildRandomUUID().toString();
+    /**
+     * Static factory to retrieve a type 4 (pseudo randomly generated) UUID based string.
+     *
+     * The {@code UUID} string is generated using a cryptographically weak pseudo random number generator.
+     *
+     * @return A randomly generated {@code UUID} base string
+     */
+    public static String newUnsecureUuidString() {
+        return newUnsecureUUID().toString();
     }
 
-    public static UUID buildRandomUUID() {
+    /**
+     * Static factory to retrieve a type 4 (pseudo randomly generated) UUID based string.
+     *
+     * The {@code UUID} string is generated using a cryptographically strong pseudo random number generator.
+     *
+     * @return A randomly generated {@code UUID} base string
+     */
+    public static String newSecureUuidString() {
+        return newSecureUUID().toString();
+    }
+
+    /**
+     * Static factory to retrieve a type 4 (pseudo randomly generated) UUID.
+     *
+     * The {@code UUID} is generated using a cryptographically weak pseudo random number generator.
+     *
+     * @return A randomly generated {@code UUID}
+     */
+    public static UUID newUnsecureUUID() {
+        return getUUID(THREAD_LOCAL_UNSECURE_RANDOM.get());
+    }
+
+    /**
+     * Static factory to retrieve a type 4 (pseudo randomly generated) UUID.
+     *
+     * The {@code UUID} is generated using a cryptographically strong pseudo random number generator.
+     *
+     * @return A randomly generated {@code UUID}
+     */
+    public static UUID newSecureUUID() {
+        return getUUID(THREAD_LOCAL_SECURE_RANDOM.get());
+    }
+
+    private static UUID getUUID(Random random) {
         //CHECKSTYLE:OFF  suppressed because of magic numbers
         byte[] data = new byte[16];
-        RANDOMIZERS.get().nextBytes(data);
-        /* clear version        */
+        random.nextBytes(data);
+
+        // clear version
         data[6] &= 0x0f;
-        /* set to version 4     */
+        // set to version 4
         data[6] |= 0x40;
-        /* clear variant        */
+        // clear variant
         data[8] &= 0x3f;
-        /* set to IETF variant  */
+        // set to IETF variant
         data[8] |= 0x80;
 
         long mostSigBits = 0;
@@ -95,5 +155,16 @@ public final class UuidUtil {
         }
         return new UUID(mostSigBits, leastSigBits);
         //CHECKSTYLE:ON
+    }
+
+    private static long seedUniquifier() {
+        // L'Ecuyer, "Tables of Linear Congruential Generators of Different Sizes and Good Lattice Structure", 1999
+        for (; ; ) {
+            long current = SEED_UNIQUIFIER.get();
+            long next = current * MOTHER_OF_MAGIC_NUMBERS;
+            if (SEED_UNIQUIFIER.compareAndSet(current, next)) {
+                return next;
+            }
+        }
     }
 }

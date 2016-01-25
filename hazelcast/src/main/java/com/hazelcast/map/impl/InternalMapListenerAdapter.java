@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.map.listener.MapListener;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.map.impl.MapListenerAdaptors.createListenerAdapters;
 import static com.hazelcast.util.Preconditions.isNotNull;
@@ -31,7 +32,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * And also to provide an abstraction over all {@link MapListener} sub-interfaces to make a smooth usage when passing
  * fired events to listeners e.g. only calling {@link ListenerAdapter#onEvent} is sufficient to fire any event.
  */
-class InternalMapListenerAdapter implements ListenerAdapter {
+public class InternalMapListenerAdapter implements ListenerAdapter<IMapEvent> {
 
     private final ListenerAdapter[] listenerAdapters;
 
@@ -43,12 +44,21 @@ class InternalMapListenerAdapter implements ListenerAdapter {
 
     @Override
     public void onEvent(IMapEvent event) {
-        final EntryEventType eventType = event.getEventType();
-        final ListenerAdapter listenerAdapter = listenerAdapters[eventType.ordinal()];
+        EntryEventType eventType = event.getEventType();
+        if (eventType == null) {
+            return;
+        }
+
+        ListenerAdapter listenerAdapter = listenerAdapters[eventType.ordinal()];
         if (listenerAdapter == null) {
             return;
         }
         listenerAdapter.onEvent(event);
+    }
+
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "listenerAdapters internal state is never changed")
+    public ListenerAdapter[] getListenerAdapters() {
+        return listenerAdapters;
     }
 }
 

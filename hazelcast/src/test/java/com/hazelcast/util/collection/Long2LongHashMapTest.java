@@ -1,6 +1,6 @@
 /*
- * Original work Copyright 2014 Real Logic Ltd.
- * Modified work Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Original work Copyright 2015 Real Logic Ltd.
+ * Modified work Copyright (c) 2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 
 package com.hazelcast.util.collection;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.collection.Long2LongHashMap.LongLongCursor;
 import com.hazelcast.util.function.LongLongConsumer;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,7 +34,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static java.lang.Long.MAX_VALUE;
 import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -41,8 +42,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class Long2LongHashMapTest {
     public static final long MISSING_VALUE = -1L;
 
@@ -106,6 +107,18 @@ public class Long2LongHashMapTest {
         inOrder.verify(mockConsumer).accept(1L, 1L);
         inOrder.verify(mockConsumer).accept(100L, 100L);
         inOrder.verifyNoMoreInteractions();
+    }
+
+    @Test public void cursorShouldLoopOverEveryElement() {
+        map.put(1L, 1L);
+        map.put(100L, 100L);
+        final LongLongCursor cursor = map.cursor();
+        assertTrue(cursor.advance());
+        assertEquals(1L, cursor.key());
+        assertEquals(1L, cursor.value());
+        assertTrue(cursor.advance());
+        assertEquals(100L, cursor.key());
+        assertEquals(100L, cursor.value());
     }
 
     @Test public void shouldNotContainKeyOfAMissingKey() {
@@ -218,16 +231,10 @@ public class Long2LongHashMapTest {
         }
     }
 
-    @Test public void shouldHaveNoMinValueForEmptyCollection() {
-        assertEquals(MAX_VALUE, map.minValue());
-    }
-
-    @Test public void shouldFindMinValue() {
+    @Test public void toStringShouldReportAllEntries() {
         map.put(1, 2);
-        map.put(2, 10);
-        map.put(3, -5);
-
-        assertEquals(-5, map.minValue());
+        map.put(3, 4);
+        assertEquals("{3->4 1->2}", map.toString());
     }
 
     private static void assertEntryIs(final Entry<Long, Long> entry, final long expectedKey, final long expectedValue) {

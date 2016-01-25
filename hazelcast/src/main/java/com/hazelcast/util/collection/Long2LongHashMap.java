@@ -1,6 +1,6 @@
 /*
- * Original work Copyright 2014 Real Logic Ltd.
- * Modified work Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Original work Copyright 2015 Real Logic Ltd.
+ * Modified work Copyright (c) 2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,16 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import static com.hazelcast.util.collection.Hashing.evenLongHash;
+
 /**
  * A Probing hashmap specialised for long key and value pairs.
  */
 public class Long2LongHashMap implements Map<Long, Long> {
+    /** The default load factor for constructors not explicitly supplying it */
+    public static final double DEFAULT_LOAD_FACTOR = 0.6;
     private final Set<Long> keySet;
-    private final LongIterator valueIterator = new LongIterator(1);
+    private final LongIterator valueIterator;
     private final Collection<Long> values;
     private final Set<Entry<Long, Long>> entrySet;
 
@@ -49,39 +53,31 @@ public class Long2LongHashMap implements Map<Long, Long> {
     private int resizeThreshold;
     private int size;
 
-    public Long2LongHashMap(final long missingValue) {
-        this(16, 0.6, missingValue);
+    public Long2LongHashMap(int initialCapacity, double loadFactor, long missingValue) {
+        this(loadFactor, missingValue);
+        capacity(QuickMath.nextPowerOfTwo(initialCapacity));
     }
 
-    @SuppressWarnings("unchecked")
-    public Long2LongHashMap(final int initialCapacity, final double loadFactor, final long missingValue) {
+    public Long2LongHashMap(long missingValue) {
+        this(16, DEFAULT_LOAD_FACTOR, missingValue);
+    }
+
+    public Long2LongHashMap(Long2LongHashMap that) {
+        this(that.loadFactor, that.missingValue);
+        this.entries = Arrays.copyOf(that.entries, that.entries.length);
+        this.capacity = that.capacity;
+        this.mask = that.mask;
+        this.resizeThreshold = that.resizeThreshold;
+        this.size = that.size;
+    }
+
+    private Long2LongHashMap(double loadFactor, long missingValue) {
+        this.entrySet = entrySetSingleton();
+        this.keySet = keySetSingleton();
+        this.values = valuesSingleton();
+        this.valueIterator = new LongIterator(1);
         this.loadFactor = loadFactor;
         this.missingValue = missingValue;
-        capacity(QuickMath.nextPowerOfTwo(initialCapacity));
-        final LongIterator keyIterator = new LongIterator(0);
-        keySet = new MapDelegatingSet<Long>(this, new IteratorSupplier(keyIterator), new Predicate() {
-            @Override public boolean test(Object value) {
-                return containsValue(value);
-            }
-        });
-        values = new MapDelegatingSet<Long>(this, new Supplier<Iterator<Long>>() {
-            @Override public Iterator<Long> get() {
-                return valueIterator.reset();
-            }
-        }, new Predicate() {
-            @Override
-            public boolean test(Object key) {
-                return containsKey(key);
-            }
-        });
-        final EntryIterator entryIterator = new EntryIterator();
-        entrySet = new MapDelegatingSet<Entry<Long, Long>>(this, new EntryIteratorSupplier(entryIterator), new
-                Predicate() {
-            @Override
-            public boolean test(Object e) {
-                return Long2LongHashMap.this.containsKey(((Entry<Long, Long>) e).getKey());
-            }
-        });
     }
 
     /**
@@ -100,7 +96,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
 
     public long get(final long key) {
         final long[] entries = this.entries;
-        int index = hash(key);
+        int index = evenLongHash(key, mask);
         long candidateKey;
         while ((candidateKey = entries[index]) != missingValue) {
             if (candidateKey == key) {
@@ -112,8 +108,10 @@ public class Long2LongHashMap implements Map<Long, Long> {
     }
 
     public long put(final long key, final long value) {
+        assert key != missingValue : "Invalid key " + key;
+        assert value != missingValue : "Invalid value " + value;
         long oldValue = missingValue;
-        int index = hash(key);
+        int index = evenLongHash(key, mask);
         long candidateKey;
         while ((candidateKey = entries[index]) != missingValue) {
             if (candidateKey == key) {
@@ -152,12 +150,6 @@ public class Long2LongHashMap implements Map<Long, Long> {
         }
     }
 
-    private int hash(final long key) {
-        int hash = (int) key ^ (int) (key >>> 32);
-        hash = (hash << 1) - (hash << 8);
-        return hash & mask;
-    }
-
     /**
      * Primitive specialised forEach implementation.
      * <p/>
@@ -173,6 +165,37 @@ public class Long2LongHashMap implements Map<Long, Long> {
             if (key != missingValue) {
                 consumer.accept(entries[i], entries[i + 1]);
             }
+        }
+    }
+
+    /**
+     * Provides a cursor over the map's entries. Similar to {@code entrySet().iterator()},
+     * but with a simpler and more clear API.
+     */
+    public LongLongCursor cursor() {
+        return new LongLongCursor();
+    }
+
+    /**
+     * Implements the cursor.
+     */
+    public final class LongLongCursor {
+        private int i = -2;
+
+        public boolean advance() {
+            final long[] es = entries;
+            do {
+                i += 2;
+            } while (i < es.length && es[i] == missingValue);
+            return i < es.length;
+        }
+
+        public long key() {
+            return entries[i];
+        }
+
+        public long value() {
+            return entries[i + 1];
         }
     }
 
@@ -286,7 +309,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
 
     public long remove(final long key) {
         final long[] entries = this.entries;
-        int index = hash(key);
+        int index = evenLongHash(key, mask);
         long candidateKey;
         while ((candidateKey = entries[index]) != missingValue) {
             if (candidateKey == key) {
@@ -303,6 +326,19 @@ public class Long2LongHashMap implements Map<Long, Long> {
         return missingValue;
     }
 
+    @Override public String toString() {
+        final StringBuilder b = new StringBuilder(size() * 8);
+        b.append('{');
+        longForEach(new LongLongConsumer() {
+            String separator = "";
+            @Override public void accept(long key, long value) {
+                b.append(separator).append(key).append("->").append(value);
+                separator = " ";
+            }
+        });
+        return b.append('}').toString();
+    }
+
     private void compactChain(int deleteIndex) {
         final long[] entries = this.entries;
         int index = deleteIndex;
@@ -311,7 +347,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
             if (entries[index] == missingValue) {
                 return;
             }
-            final int hash = hash(entries[index]);
+            final int hash = evenLongHash(entries[index], mask);
             if ((index < hash && (hash <= deleteIndex || deleteIndex <= index))
                     || (hash <= deleteIndex && deleteIndex <= index)) {
                 entries[deleteIndex] = entries[index];
@@ -321,15 +357,6 @@ public class Long2LongHashMap implements Map<Long, Long> {
                 deleteIndex = index;
             }
         }
-    }
-
-    public long minValue() {
-        long min = Long.MAX_VALUE;
-        final LongIterator iterator = valueIterator.reset();
-        while (iterator.hasNext()) {
-            min = Math.min(min, iterator.nextValue());
-        }
-        return min;
     }
 
     private static class IteratorSupplier implements Supplier<Iterator<Long>> {
@@ -374,44 +401,67 @@ public class Long2LongHashMap implements Map<Long, Long> {
     // ---------------- Utility Classes ----------------
 
     private abstract class AbstractIterator {
-        protected final int firstIndex;
+        private int capacity;
+        private int mask;
+        private int positionCounter;
+        private int stopCounter;
 
-        protected int index;
+        private void reset() {
+            final long[] entries = Long2LongHashMap.this.entries;
+            capacity = entries.length;
+            mask = capacity - 1;
+            int i = capacity;
+            if (entries[capacity - 2] != missingValue) {
+                i = 0;
+                for (int size = capacity; i < size; i += 2) {
+                    if (entries[i] == missingValue) {
+                        break;
+                    }
+                }
+            }
+            stopCounter = i;
+            positionCounter = i + capacity;
+        }
 
-        protected AbstractIterator(final int firstIndex) {
-            this.firstIndex = firstIndex;
-            index = firstIndex - 2;
+        protected int keyPosition() {
+            return positionCounter & mask;
         }
 
         public boolean hasNext() {
-            boolean beforeFirst = index < 0;
-            while (beforeFirst || entries[index] == missingValue) {
-                nextIndex();
-                if (index == firstIndex && !beforeFirst) {
-                    return false;
+            final long[] entries = Long2LongHashMap.this.entries;
+            boolean hasNext = false;
+            for (int i = positionCounter - 2; i >= stopCounter; i -= 2) {
+                final int index = i & mask;
+                if (entries[index] != missingValue) {
+                    hasNext = true;
+                    break;
                 }
-                beforeFirst = false;
             }
-            return true;
+            return hasNext;
+        }
+
+        protected void findNext() {
+            final long[] entries = Long2LongHashMap.this.entries;
+            for (int i = positionCounter - 2; i >= stopCounter; i -= 2) {
+                final int index = i & mask;
+                if (entries[index] != missingValue) {
+                    positionCounter = i;
+                    return;
+                }
+            }
+            throw new NoSuchElementException();
         }
 
         public void remove() {
             throw new UnsupportedOperationException("remove");
         }
-
-        protected void nextIndex() {
-            index = next(index);
-        }
     }
 
     private final class LongIterator extends AbstractIterator implements Iterator<Long> {
-        private LongIterator(final int firstIndex) {
-            super(firstIndex);
-        }
+        private final int offset;
 
-        LongIterator reset() {
-            index = firstIndex - 2;
-            return this;
+        private LongIterator(final int offset) {
+            this.offset = offset;
         }
 
         public Long next() {
@@ -419,42 +469,25 @@ public class Long2LongHashMap implements Map<Long, Long> {
         }
 
         public long nextValue() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-            final long ret = entries[index];
-            nextIndex();
-            return ret;
+            findNext();
+            return entries[keyPosition() + offset];
+        }
+
+        public LongIterator reset() {
+            super.reset();
+            return this;
         }
     }
 
     @SuppressFBWarnings(value = "PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS",
             justification = "deliberate, documented choice")
     private final class EntryIterator
-            extends AbstractIterator
-            implements Iterator<Entry<Long, Long>>, Entry<Long, Long> {
-
+            extends AbstractIterator implements Iterator<Entry<Long, Long>>, Entry<Long, Long>
+    {
         private long key;
         private long value;
 
-        EntryIterator() {
-            super(0);
-        }
-
-        EntryIterator reset() {
-            index = firstIndex - 2;
-            return this;
-        }
-
-        public Entry<Long, Long> next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-            key = entries[index];
-            value = entries[index + 1];
-            nextIndex();
-            return this;
-        }
+        private EntryIterator() { }
 
         public Long getKey() {
             return key;
@@ -464,8 +497,23 @@ public class Long2LongHashMap implements Map<Long, Long> {
             return value;
         }
 
-        public Long setValue(final Long ignored) {
+        public Long setValue(final Long value) {
             throw new UnsupportedOperationException();
+        }
+
+        public Entry<Long, Long> next() {
+            findNext();
+            final int keyPosition = keyPosition();
+            key = entries[keyPosition];
+            value = entries[keyPosition + 1];
+            return this;
+        }
+
+        public EntryIterator reset() {
+            super.reset();
+            key = missingValue;
+            value = missingValue;
+            return this;
         }
     }
 
@@ -480,5 +528,35 @@ public class Long2LongHashMap implements Map<Long, Long> {
         entries = new long[newCapacity * 2];
         size = 0;
         Arrays.fill(entries, missingValue);
+    }
+
+    private MapDelegatingSet<Entry<Long, Long>> entrySetSingleton() {
+        return new MapDelegatingSet<Entry<Long, Long>>(this, new EntryIteratorSupplier(new EntryIterator()),
+                new Predicate() {
+                    @SuppressWarnings("unchecked")
+                    @Override public boolean test(Object e) {
+                        return containsKey(((Entry<Long, Long>) e).getKey());
+                    }
+                });
+    }
+
+    private MapDelegatingSet<Long> keySetSingleton() {
+        return new MapDelegatingSet<Long>(this, new IteratorSupplier(new LongIterator(0)), new Predicate() {
+            @Override public boolean test(Object value) {
+                return containsValue(value);
+            }
+        });
+    }
+
+    private MapDelegatingSet<Long> valuesSingleton() {
+        return new MapDelegatingSet<Long>(this, new Supplier<Iterator<Long>>() {
+            @Override public Iterator<Long> get() {
+                return valueIterator.reset();
+            }
+        }, new Predicate() {
+            @Override public boolean test(Object key) {
+                return containsKey(key);
+            }
+        });
     }
 }

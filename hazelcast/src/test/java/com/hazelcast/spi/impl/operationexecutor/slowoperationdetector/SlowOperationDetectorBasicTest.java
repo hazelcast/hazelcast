@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -50,8 +50,8 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
     @Test
     public void testDisabled() {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_ENABLED, "false");
-        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "1000");
+        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED, "false");
+        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "1000");
 
         instance = createHazelcastInstance(config);
 
@@ -59,8 +59,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         getOperationService(instance).execute(runnable);
         runnable.await();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 0);
+        getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 0);
     }
 
     @Test
@@ -71,8 +70,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         getOperationService(instance).execute(runnable);
         runnable.await();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, 1);
@@ -88,8 +86,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         getOperationService(instance).execute(runnable);
         runnable.await();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, 1);
@@ -105,8 +102,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         executeOperation(instance, operation);
         operation.await();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, 1);
@@ -122,8 +118,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         executeOperation(instance, operation);
         operation.await();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, 1);
@@ -141,8 +136,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         executeOperation(instance, operation);
         operation.await();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, 1);
@@ -160,8 +154,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         executeOperation(instance, operation);
         operation.await();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, 1);
@@ -176,9 +169,9 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         int recursionDepth = 15;
 
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "1000");
-        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS, String.valueOf(Integer.MAX_VALUE));
-        config.setProperty(GroupProperties.PROP_PARTITION_OPERATION_THREAD_COUNT, String.valueOf(partitionThreads));
+        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "1000");
+        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS, String.valueOf(Integer.MAX_VALUE));
+        config.setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT, String.valueOf(partitionThreads));
         instance = createHazelcastInstance(config);
 
         List<SlowRecursiveOperation> operations = new ArrayList<SlowRecursiveOperation>(numberOfOperations);
@@ -197,8 +190,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
             operation.await();
         }
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
-        assertNumberOfSlowOperationLogs(logs, 1);
+        Collection<SlowOperationLog> logs = getSlowOperationLogsAndAssertNumberOfSlowOperationLogs(instance, 1);
 
         SlowOperationLog firstLog = logs.iterator().next();
         assertTotalInvocations(firstLog, numberOfOperations);

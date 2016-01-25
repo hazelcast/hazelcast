@@ -39,13 +39,15 @@ public final class UnsafeHelper {
     public static final boolean UNSAFE_AVAILABLE;
 
     public static final long BYTE_ARRAY_BASE_OFFSET;
+    public static final long BOOLEAN_ARRAY_BASE_OFFSET;
     public static final long SHORT_ARRAY_BASE_OFFSET;
     public static final long CHAR_ARRAY_BASE_OFFSET;
     public static final long INT_ARRAY_BASE_OFFSET;
     public static final long FLOAT_ARRAY_BASE_OFFSET;
     public static final long LONG_ARRAY_BASE_OFFSET;
-    public static final long DOUBLE_ARRAY_BASE_OFFSET;
 
+    public static final long DOUBLE_ARRAY_BASE_OFFSET;
+    public static final int BOOLEAN_ARRAY_INDEX_SCALE;
     public static final int BYTE_ARRAY_INDEX_SCALE;
     public static final int SHORT_ARRAY_INDEX_SCALE;
     public static final int CHAR_ARRAY_INDEX_SCALE;
@@ -70,7 +72,6 @@ public final class UnsafeHelper {
             + "seem to support unaligned access to memory. Unsafe usage has been enforced via System Property "
             + UNSAFE_MODE_PROPERTY_NAME + " This is not a supported configuration and it can crash JVM or corrupt your data!";
 
-
     static {
         Unsafe unsafe;
         try {
@@ -81,6 +82,7 @@ public final class UnsafeHelper {
         UNSAFE = unsafe;
 
         BYTE_ARRAY_BASE_OFFSET = arrayBaseOffset(byte[].class, unsafe);
+        BOOLEAN_ARRAY_BASE_OFFSET = arrayBaseOffset(boolean[].class, unsafe);
         SHORT_ARRAY_BASE_OFFSET = arrayBaseOffset(short[].class, unsafe);
         CHAR_ARRAY_BASE_OFFSET = arrayBaseOffset(char[].class, unsafe);
         INT_ARRAY_BASE_OFFSET = arrayBaseOffset(int[].class, unsafe);
@@ -89,6 +91,7 @@ public final class UnsafeHelper {
         DOUBLE_ARRAY_BASE_OFFSET = arrayBaseOffset(double[].class, unsafe);
 
         BYTE_ARRAY_INDEX_SCALE = arrayIndexScale(byte[].class, unsafe);
+        BOOLEAN_ARRAY_INDEX_SCALE = arrayIndexScale(boolean[].class, unsafe);
         SHORT_ARRAY_INDEX_SCALE = arrayIndexScale(short[].class, unsafe);
         CHAR_ARRAY_INDEX_SCALE = arrayIndexScale(char[].class, unsafe);
         INT_ARRAY_INDEX_SCALE = arrayIndexScale(int[].class, unsafe);
@@ -102,6 +105,7 @@ public final class UnsafeHelper {
             if (unsafe != null) {
                 byte[] buffer = new byte[8];
                 unsafe.putChar(buffer, BYTE_ARRAY_BASE_OFFSET, '0');
+                unsafe.putBoolean(buffer, BYTE_ARRAY_BASE_OFFSET, false);
                 unsafe.putShort(buffer, BYTE_ARRAY_BASE_OFFSET, (short) 1);
                 unsafe.putInt(buffer, BYTE_ARRAY_BASE_OFFSET, 2);
                 unsafe.putFloat(buffer, BYTE_ARRAY_BASE_OFFSET, 3f);
@@ -129,7 +133,7 @@ public final class UnsafeHelper {
         return unsafe == null ? -1 : unsafe.arrayIndexScale(type);
     }
 
-    private static Unsafe findUnsafeIfAllowed() {
+    static Unsafe findUnsafeIfAllowed() {
         if (isUnsafeExplicitlyDisabled()) {
             Logger.getLogger(UnsafeHelper.class).warning(UNSAFE_WARNING_WHEN_EXPLICTLY_DISABLED);
             return null;
@@ -160,13 +164,11 @@ public final class UnsafeHelper {
     }
 
     private static boolean isUnalignedAccessAllowed() {
-        //we can't use Unsafe to access memory on platforms where unaligned access is not allowed
-        //see https://github.com/hazelcast/hazelcast/issues/5518 for details.
+        // we can't use Unsafe to access memory on platforms where unaligned access is not allowed
+        // see https://github.com/hazelcast/hazelcast/issues/5518 for details.
         String arch = System.getProperty("os.arch");
-        //list of architectures copied from OpenJDK - java.nio.Bits::unaligned
-        boolean unalignedAllowed = arch.equals("i386") || arch.equals("x86")
-                || arch.equals("amd64") || arch.equals("x86_64");
-        return unalignedAllowed;
+        // list of architectures copied from OpenJDK - java.nio.Bits::unaligned
+        return arch.equals("i386") || arch.equals("x86") || arch.equals("amd64") || arch.equals("x86_64");
     }
 
     private static Unsafe findUnsafe() {

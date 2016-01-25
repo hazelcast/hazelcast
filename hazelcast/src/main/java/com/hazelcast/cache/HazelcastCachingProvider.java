@@ -17,7 +17,7 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -73,7 +73,7 @@ public final class HazelcastCachingProvider
 
     public HazelcastCachingProvider() {
         CachingProvider cp = null;
-        String providerType = System.getProperty(GroupProperties.PROP_JCACHE_PROVIDER_TYPE);
+        String providerType = GroupProperty.JCACHE_PROVIDER_TYPE.getSystemProperty();
         if (providerType != null) {
             if ("client".equals(providerType)) {
                 cp = createClientProvider();
@@ -178,9 +178,6 @@ public final class HazelcastCachingProvider
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("HazelcastCachingProvider{");
-        sb.append("delegate=").append(delegate);
-        sb.append('}');
-        return sb.toString();
+        return "HazelcastCachingProvider{delegate=" + delegate + '}';
     }
 }

@@ -27,11 +27,11 @@ import java.util.EnumMap;
 import java.util.Map;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
-import static com.hazelcast.core.EntryEventType.REMOVED;
-import static com.hazelcast.core.EntryEventType.EVICTED;
-import static com.hazelcast.core.EntryEventType.UPDATED;
-import static com.hazelcast.core.EntryEventType.EVICT_ALL;
 import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
+import static com.hazelcast.core.EntryEventType.EVICTED;
+import static com.hazelcast.core.EntryEventType.EVICT_ALL;
+import static com.hazelcast.core.EntryEventType.REMOVED;
+import static com.hazelcast.core.EntryEventType.UPDATED;
 
 /**
  * Used to support deprecated {@link com.hazelcast.core.IMap IMap} listener related methods
@@ -56,7 +56,7 @@ public final class EntryListenerAdaptors {
             new ConstructorFunction<EntryListener, ListenerAdapter>() {
                 @Override
                 public ListenerAdapter createNew(final EntryListener listener) {
-                    return new ListenerAdapter() {
+                    return new ListenerAdapter<IMapEvent>() {
                         @Override
                         public void onEvent(IMapEvent event) {
                             listener.entryAdded((EntryEvent) event);
@@ -72,7 +72,7 @@ public final class EntryListenerAdaptors {
             new ConstructorFunction<EntryListener, ListenerAdapter>() {
                 @Override
                 public ListenerAdapter createNew(final EntryListener listener) {
-                    return new ListenerAdapter() {
+                    return new ListenerAdapter<IMapEvent>() {
                         @Override
                         public void onEvent(IMapEvent event) {
                             listener.entryRemoved((EntryEvent) event);
@@ -89,7 +89,7 @@ public final class EntryListenerAdaptors {
             new ConstructorFunction<EntryListener, ListenerAdapter>() {
                 @Override
                 public ListenerAdapter createNew(final EntryListener listener) {
-                    return new ListenerAdapter() {
+                    return new ListenerAdapter<IMapEvent>() {
                         @Override
                         public void onEvent(IMapEvent event) {
                             listener.entryEvicted((EntryEvent) event);
@@ -106,7 +106,7 @@ public final class EntryListenerAdaptors {
             new ConstructorFunction<EntryListener, ListenerAdapter>() {
                 @Override
                 public ListenerAdapter createNew(final EntryListener listener) {
-                    return new ListenerAdapter() {
+                    return new ListenerAdapter<IMapEvent>() {
                         @Override
                         public void onEvent(IMapEvent event) {
                             listener.entryUpdated((EntryEvent) event);
@@ -123,7 +123,7 @@ public final class EntryListenerAdaptors {
             new ConstructorFunction<EntryListener, ListenerAdapter>() {
                 @Override
                 public ListenerAdapter createNew(final EntryListener listener) {
-                    return new ListenerAdapter() {
+                    return new ListenerAdapter<IMapEvent>() {
                         @Override
                         public void onEvent(IMapEvent event) {
                             listener.mapEvicted((MapEvent) event);
@@ -140,7 +140,7 @@ public final class EntryListenerAdaptors {
             new ConstructorFunction<EntryListener, ListenerAdapter>() {
                 @Override
                 public ListenerAdapter createNew(final EntryListener listener) {
-                    return new ListenerAdapter() {
+                    return new ListenerAdapter<IMapEvent>() {
                         @Override
                         public void onEvent(IMapEvent event) {
                             listener.mapCleared((MapEvent) event);
@@ -174,7 +174,7 @@ public final class EntryListenerAdaptors {
      */
     public static ListenerAdapter[] createListenerAdapters(EntryListener listener) {
         // We only care about these reference event types for backward compatibility.
-        EntryEventType[] values = new EntryEventType[] { ADDED, REMOVED, EVICTED , UPDATED , EVICT_ALL, CLEAR_ALL};
+        EntryEventType[] values = new EntryEventType[]{ADDED, REMOVED, EVICTED, UPDATED, EVICT_ALL, CLEAR_ALL};
         ListenerAdapter[] listenerAdapters = new ListenerAdapter[values.length];
         for (EntryEventType eventType : values) {
             listenerAdapters[eventType.ordinal()] = createListenerAdapter(eventType, listener);

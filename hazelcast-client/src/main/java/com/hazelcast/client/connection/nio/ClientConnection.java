@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.LifecycleService;
@@ -26,7 +25,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Protocols;
-import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
@@ -49,7 +48,7 @@ public class ClientConnection implements Connection, Closeable {
     private final AtomicBoolean live = new AtomicBoolean(true);
     private final ILogger logger = Logger.getLogger(ClientConnection.class);
 
-    private final AtomicInteger packetCount = new AtomicInteger(0);
+    private final AtomicInteger pendingPacketCount = new AtomicInteger(0);
     private final ClientWriteHandler writeHandler;
     private final ClientReadHandler readHandler;
     private final SocketChannelWrapper socketChannelWrapper;
@@ -59,6 +58,7 @@ public class ClientConnection implements Connection, Closeable {
 
     private volatile Address remoteEndpoint;
     private volatile boolean heartBeating = true;
+    private boolean isAuthenticatedAsOwner;
 
     public ClientConnection(HazelcastClientInstanceImpl client, NonBlockingIOThread in, NonBlockingIOThread out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
@@ -83,16 +83,16 @@ public class ClientConnection implements Connection, Closeable {
         socketChannelWrapper = null;
     }
 
-    public void incrementPacketCount() {
-        packetCount.incrementAndGet();
+    public void incrementPendingPacketCount() {
+        pendingPacketCount.incrementAndGet();
     }
 
-    public void decrementPacketCount() {
-        packetCount.decrementAndGet();
+    public void decrementPendingPacketCount() {
+        pendingPacketCount.decrementAndGet();
     }
 
-    public int getPacketCount() {
-        return packetCount.get();
+    public int getPendingPacketCount() {
+        return pendingPacketCount.get();
     }
 
     public SerializationService getSerializationService() {
@@ -100,21 +100,20 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     @Override
-    public boolean write(SocketWritable packet) {
+    public boolean write(OutboundFrame frame) {
         if (!live.get()) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Connection is closed, won't write packet -> " + packet);
+                logger.finest("Connection is closed, dropping frame -> " + frame);
             }
             return false;
         }
-        writeHandler.enqueueSocketWritable(packet);
+        writeHandler.enqueue(frame);
         return true;
     }
 
     public void init() throws IOException {
-        final ByteBuffer buffer = ByteBuffer.allocate(6);
-        buffer.put(stringToBytes(Protocols.CLIENT_BINARY));
-        buffer.put(stringToBytes(ClientTypes.JAVA));
+        final ByteBuffer buffer = ByteBuffer.allocate(3);
+        buffer.put(stringToBytes(Protocols.CLIENT_BINARY_NEW));
         buffer.flip();
         socketChannelWrapper.write(buffer);
     }
@@ -130,12 +129,12 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     @Override
-    public long lastReadTime() {
+    public long lastReadTimeMillis() {
         return readHandler.getLastHandle();
     }
 
     @Override
-    public long lastWriteTime() {
+    public long lastWriteTimeMillis() {
         return writeHandler.getLastHandle();
     }
 
@@ -212,7 +211,7 @@ public class ClientConnection implements Connection, Closeable {
         }
         String message = "Connection [" + getRemoteSocketAddress() + "] lost. Reason: ";
         if (t != null) {
-            message += t.getClass().getName() + "[" + t.getMessage() + "]";
+            message += t.getClass().getName() + '[' + t.getMessage() + ']';
         } else {
             message += "Socket explicitly closed";
         }
@@ -243,6 +242,14 @@ public class ClientConnection implements Connection, Closeable {
         return live.get() && heartBeating;
     }
 
+    public boolean isAuthenticatedAsOwner() {
+        return isAuthenticatedAsOwner;
+    }
+
+    public void setIsAuthenticatedAsOwner() {
+        this.isAuthenticatedAsOwner = true;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -268,14 +275,13 @@ public class ClientConnection implements Connection, Closeable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ClientConnection{");
-        sb.append("live=").append(live);
-        sb.append(", writeHandler=").append(writeHandler);
-        sb.append(", readHandler=").append(readHandler);
-        sb.append(", connectionId=").append(connectionId);
-        sb.append(", socketChannel=").append(socketChannelWrapper);
-        sb.append(", remoteEndpoint=").append(remoteEndpoint);
-        sb.append('}');
-        return sb.toString();
+        return "ClientConnection{"
+                + "live=" + live
+                + ", writeHandler=" + writeHandler
+                + ", readHandler=" + readHandler
+                + ", connectionId=" + connectionId
+                + ", socketChannel=" + socketChannelWrapper
+                + ", remoteEndpoint=" + remoteEndpoint
+                + '}';
     }
 }

@@ -75,9 +75,8 @@ public interface MapDataStore<K, V> {
      *
      * @param key    key to be flushed
      * @param value  value to be flushed
-     * @param now    now in millis
      * @param backup <code>true</code> calling this method for backup partition, <code>false</code> for owner partition.
      * @return flushed value.
      */
-    V flush(K key, V value, long now, boolean backup);
+    V flush(K key, V value, boolean backup);
 }

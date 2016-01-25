@@ -20,63 +20,66 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.eviction.EvictionOperator;
-import com.hazelcast.map.impl.eviction.MaxSizeChecker;
+import com.hazelcast.map.impl.event.MapEventPublisher;
+import com.hazelcast.map.impl.eviction.EvictionChecker;
+import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.core.EntryEventType.EVICTED;
+import static com.hazelcast.core.EntryEventType.EXPIRED;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateExpirationWithDelay;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.getIdlenessStartTime;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.getLifeStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+
 
 /**
  * Contains eviction specific functionality.
  */
 abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
-    /**
-     * Number of reads before clean up.
-     * A nice number such as 2^n - 1.
-     */
-    private static final int POST_READ_CHECK_POINT = 63;
-
+    private final long expiryDelayMillis;
+    private final Evictor evictor;
     /**
      * Iterates over a pre-set entry count/percentage in one round.
      * Used in expiration logic for traversing entries. Initializes lazily.
      */
     private Iterator<Record> expirationIterator;
-
-    /**
-     * If there is no clean-up caused by puts after some time,
-     * count a number of gets and start eviction.
-     */
-    private int readCountBeforeCleanUp;
-
     /**
      * used in LRU eviction logic.
      */
     private long lruAccessSequenceNumber;
-
     /**
      * Last run time of cleanup operation.
      */
     private long lastEvictionTime;
-
     private volatile boolean hasEntryWithCustomTTL;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        GroupProperties groupProperties = nodeEngine.getGroupProperties();
+        expiryDelayMillis = groupProperties.getMillis(GroupProperty.MAP_EXPIRY_DELAY_SECONDS);
+        evictor = mapContainer.getEvictor();
     }
 
+    @Override
     public boolean isEvictionEnabled() {
+        // this can be updated dynamically by UpdateMapConfigOperation.
+        // that is why this check was put in a method instead of a class final field.
         EvictionPolicy evictionPolicy = getEvictionPolicy();
         return !EvictionPolicy.NONE.equals(evictionPolicy);
     }
@@ -94,17 +97,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         final MapConfig mapConfig = mapContainer.getMapConfig();
         return hasEntryWithCustomTTL || mapConfig.getMaxIdleSeconds() > 0
                 || mapConfig.getTimeToLiveSeconds() > 0;
-    }
-
-    /**
-     * @see com.hazelcast.instance.GroupProperties#PROP_MAP_EXPIRY_DELAY_SECONDS
-     */
-    private long getBackupExpiryDelayMillis() {
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        GroupProperties groupProperties = nodeEngine.getGroupProperties();
-        GroupProperties.GroupProperty delaySecondsProperty = groupProperties.MAP_EXPIRY_DELAY_SECONDS;
-        int delaySeconds = delaySecondsProperty.getInteger();
-        return TimeUnit.SECONDS.toMillis(delaySeconds);
     }
 
     @Override
@@ -169,7 +161,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     private void initExpirationIterator() {
         if (expirationIterator == null || !expirationIterator.hasNext()) {
-            expirationIterator = records.values().iterator();
+            expirationIterator = storage.values().iterator();
         }
     }
 
@@ -177,84 +169,56 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         lruAccessSequenceNumber = 0L;
     }
 
-    /**
-     * TODO make checkEvictable fast by carrying threshold logic to partition.
-     * This cleanup adds some latency to write operations.
-     * But it sweeps records much better under high write loads.
-     * <p/>
-     *
-     * @param now now in time.
-     */
     @Override
-    public void evictEntries(long now, boolean backup) {
+    public void evictEntries(long now) {
         if (isEvictionEnabled()) {
-            cleanUp(now, backup);
+            cleanUp(now);
         }
-    }
-
-    /**
-     * If there is no clean-up caused by puts after some time,
-     * try to clean-up from gets.
-     *
-     * @param now now.
-     */
-    protected void postReadCleanUp(long now, boolean backup) {
-        if (isEvictionEnabled()) {
-            readCountBeforeCleanUp++;
-            if ((readCountBeforeCleanUp & POST_READ_CHECK_POINT) == 0) {
-                cleanUp(now, backup);
-            }
-        }
-
     }
 
     /**
      * Makes eviction clean-up logic.
      *
-     * @param now    now in millis.
-     * @param backup <code>true</code> if running on a backup partition, otherwise <code>false</code>
+     * @param now now in millis.
      */
-    private void cleanUp(long now, boolean backup) {
+    private void cleanUp(long now) {
         if (size() == 0) {
             return;
         }
         if (shouldEvict(now)) {
-            removeEvictableRecords(backup);
+            evict();
             lastEvictionTime = now;
-            readCountBeforeCleanUp = 0;
         }
     }
 
     protected boolean shouldEvict(long now) {
-        return isEvictionEnabled() && inEvictableTimeWindow(now) && isEvictable();
+        return isEvictionEnabled() && inEvictableTimeWindow(now) && checkEvictionPossible();
     }
 
-    private void removeEvictableRecords(boolean backup) {
-        final int evictableSize = getEvictableSize();
-        if (evictableSize < 1) {
+    private void evict() {
+        int removalSize = getRemovalSize();
+        if (removalSize < 1) {
             return;
         }
-        final MapConfig mapConfig = mapContainer.getMapConfig();
-        getEvictionOperator().removeEvictableRecords(this, evictableSize, mapConfig, backup);
+        evictor.removeSize(removalSize, this);
     }
 
-    private int getEvictableSize() {
+    private int getRemovalSize() {
         final int size = size();
         if (size < 1) {
             return 0;
         }
-        final int evictableSize = getEvictionOperator().evictableSize(size, mapContainer.getMapConfig());
-        if (evictableSize < 1) {
+        int removalSize = evictor.findRemovalSize(this);
+        if (removalSize < 1) {
             return 0;
         }
-        return evictableSize;
+        return removalSize;
     }
 
 
-    private EvictionOperator getEvictionOperator() {
-        return mapServiceContext.getEvictionOperator();
+    private Evictor getEvictor() {
+        return mapContainer.getEvictor();
     }
-
 
     /**
      * Eviction waits at least {@link MapConfig#minEvictionCheckMillis} milliseconds to run.
@@ -263,6 +227,12 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * otherwise <code>false</code>
      */
     private boolean inEvictableTimeWindow(long now) {
+        if (NATIVE == inMemoryFormat) {
+            // Beware that eviction mechanism is different for NATIVE in-memory format. " +
+            // For this in-memory-format `minEvictionCheckMillis` has no effect".
+            return true;
+        }
+
         long minEvictionCheckMillis = getMinEvictionCheckMillis();
         return minEvictionCheckMillis == 0L
                 || (now - lastEvictionTime) > minEvictionCheckMillis;
@@ -273,10 +243,10 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return mapConfig.getMinEvictionCheckMillis();
     }
 
-    private boolean isEvictable() {
-        final EvictionOperator evictionOperator = getEvictionOperator();
-        final MaxSizeChecker maxSizeChecker = evictionOperator.getMaxSizeChecker();
-        return maxSizeChecker.checkEvictable(mapContainer, partitionId);
+    private boolean checkEvictionPossible() {
+        Evictor evictor = getEvictor();
+        EvictionChecker evictionChecker = evictor.getEvictionChecker();
+        return evictionChecker.checkEvictionPossible(this);
     }
 
     protected void markRecordStoreExpirable(long ttl) {
@@ -284,8 +254,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             hasEntryWithCustomTTL = true;
         }
     }
-
-    abstract Object evictInternal(Data key, boolean backup);
 
     /**
      * Check if record is reachable according to ttl or idle times.
@@ -309,9 +277,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             return record;
         }
         final Object value = record.getValue();
-        evictInternal(key, backup);
+        evict(key, backup);
         if (!backup) {
-            doPostExpirationOperations(key, value);
+            doPostEvictionOperations(key, value, true);
         }
         return null;
     }
@@ -326,12 +294,14 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (record == null) {
             return null;
         }
-        // lastAccessTime : updates on every touch (put/get).
-        final long lastAccessTime = record.getLastAccessTime();
-        final long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
-        final long idleMillis = calculateExpirationWithDelay(maxIdleMillis,
-                getBackupExpiryDelayMillis(), backup);
-        final long elapsedMillis = now - lastAccessTime;
+
+        long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
+        if (maxIdleMillis == Long.MAX_VALUE) {
+            return record;
+        }
+        long idlenessStartTime = getIdlenessStartTime(record);
+        long idleMillis = calculateExpirationWithDelay(maxIdleMillis, expiryDelayMillis, backup);
+        long elapsedMillis = now - idlenessStartTime;
         return elapsedMillis >= idleMillis ? null : record;
     }
 
@@ -339,15 +309,14 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (record == null) {
             return null;
         }
-        final long ttl = record.getTtl();
-        // when ttl is zero or negative, it should remain eternally.
-        if (ttl < 1L) {
+        long ttl = record.getTtl();
+        // when ttl is zero or negative or Long.MAX_VALUE, it should remain eternally.
+        if (ttl < 1L || ttl == Long.MAX_VALUE) {
             return record;
         }
-        final long lastUpdateTime = record.getLastUpdateTime();
-        final long ttlMillis = calculateExpirationWithDelay(ttl,
-                getBackupExpiryDelayMillis(), backup);
-        final long elapsedMillis = now - lastUpdateTime;
+        long ttlStartTime = getLifeStartTime(record);
+        long ttlMillis = calculateExpirationWithDelay(ttl, expiryDelayMillis, backup);
+        long elapsedMillis = now - ttlStartTime;
         return elapsedMillis >= ttlMillis ? null : record;
     }
 
@@ -358,10 +327,31 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * @param key   the key to be processed.
      * @param value the value to be processed.
      */
-    private void doPostExpirationOperations(Data key, Object value) {
-        final String mapName = this.name;
-        final MapServiceContext mapServiceContext = this.mapServiceContext;
-        getEvictionOperator().fireEvent(key, value, mapName, mapServiceContext);
+    @Override
+    public void doPostEvictionOperations(Data key, Object value, boolean isExpired) {
+        MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        EventService eventService = nodeEngine.getEventService();
+
+        if (!eventService.hasEventRegistration(SERVICE_NAME, name)) {
+            return;
+        }
+
+        Address thisAddress = nodeEngine.getThisAddress();
+
+        // Fire EVICTED event also in case of expiration because historically eviction-listener
+        // listens all kind of eviction and expiration events and by firing EVICTED event we are preserving
+        // this behavior.
+        mapEventPublisher.publishEvent(thisAddress, name, EVICTED, key, value, null);
+
+        if (isExpired) {
+            // We will be in this if in two cases:
+            // 1. In case of TTL or max-idle-seconds expiration.
+            // 2. When evicting due to the size-based eviction, we are also firing an EXPIRED event
+            //    because there is a possibility that evicted entry may be also an expired one. Trying to catch
+            //    as much as possible expired entries.
+            mapEventPublisher.publishEvent(thisAddress, name, EXPIRED, key, value, null);
+        }
     }
 
     void increaseRecordEvictionCriteriaNumber(Record record, EvictionPolicy evictionPolicy) {
@@ -393,6 +383,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         final long ttlMillis = mergingEntry.getTtl();
         record.setTtl(ttlMillis);
 
+        final long creationTime = mergingEntry.getCreationTime();
+        record.setCreationTime(creationTime);
+
         final long lastAccessTime = mergingEntry.getLastAccessTime();
         record.setLastAccessTime(lastAccessTime);
 
@@ -404,7 +397,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
         markRecordStoreExpirable(record.getTtl());
     }
-
 
     /**
      * Read only iterator. Iterates by checking whether a record expired or not.

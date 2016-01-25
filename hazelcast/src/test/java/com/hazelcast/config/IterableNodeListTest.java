@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -25,8 +24,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -35,11 +34,12 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static com.hazelcast.config.AbstractXmlConfigHelper.asElementIterable;
+import static com.hazelcast.config.AbstractXmlConfigHelper.cleanNodeName;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-/**
- *
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class IterableNodeListTest {
@@ -47,20 +47,18 @@ public class IterableNodeListTest {
     private Document document;
 
     @Before
-    public void setupNodeList() throws ParserConfigurationException, SAXException, IOException {
-        final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        final String testXml = "<root><element></element><element></element><element></element></root>";
+    public void setup() throws ParserConfigurationException, SAXException, IOException {
+        final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        final DocumentBuilder builder = dbf.newDocumentBuilder();
+        final String testXml = "<rOOt><element></element><element></element><element></element></rOOt>";
         document = builder.parse(new ByteArrayInputStream(testXml.getBytes()));
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.XmlConfigBuilder.IterableNodeList#IterableNodeList(org.w3c.dom.NodeList)}.
-     */
     @Test
     public void testIterableNodeList() {
-        NodeList nodeList = document.getFirstChild().getChildNodes();
         int count = 0;
-        for (Node node : new XmlConfigBuilder.IterableNodeList(nodeList)) {
+        for (Node node : asElementIterable(document.getFirstChild().getChildNodes())) {
             count += (node != null) ? 1 : 0;
         }
         assertEquals(3, count);
@@ -68,19 +66,22 @@ public class IterableNodeListTest {
 
     @Test
     public void testHasNext() {
-        NodeList nodeList = document.getChildNodes();
-        assertTrue(new XmlConfigBuilder.IterableNodeList(nodeList).iterator().hasNext());
+        assertTrue(asElementIterable(document.getChildNodes()).iterator().hasNext());
     }
 
     @Test
     public void testNext() {
-        NodeList nodeList = document.getChildNodes();
-        assertNotNull(new XmlConfigBuilder.IterableNodeList(nodeList).iterator().next());
+        assertNotNull(asElementIterable(document.getChildNodes()).iterator().next());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testRemove() {
-        NodeList nodeList = document.getChildNodes();
-        new XmlConfigBuilder.IterableNodeList(nodeList).iterator().remove();
+        asElementIterable(document.getChildNodes()).iterator().remove();
     }
+
+    @Test
+    public void testCleanNodeName() {
+        assertEquals("root", cleanNodeName(document.getDocumentElement()));
+    }
+
 }

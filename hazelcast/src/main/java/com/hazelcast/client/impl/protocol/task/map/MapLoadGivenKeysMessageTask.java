@@ -18,10 +18,9 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapLoadGivenKeysCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.MapLoadAllOperationFactory;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
@@ -33,7 +32,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 public class MapLoadGivenKeysMessageTask
-        extends AbstractAllPartitionsMessageTask<MapLoadGivenKeysCodec.RequestParameters> {
+        extends AbstractMapAllPartitionsMessageTask<MapLoadGivenKeysCodec.RequestParameters> {
 
     public MapLoadGivenKeysMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -41,8 +40,10 @@ public class MapLoadGivenKeysMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        Data[] keys = parameters.keys.toArray(new Data[0]);
-        return new MapLoadAllOperationFactory(parameters.name, Arrays.asList(keys), parameters.replaceExistingValues);
+        Data[] keys = parameters.keys.toArray(new Data[parameters.keys.size()]);
+        MapOperationProvider operationProvider = getOperationProvider(parameters.name);
+        return operationProvider.createLoadAllOperationFactory(parameters.name,
+                Arrays.asList(keys), parameters.replaceExistingValues);
     }
 
     @Override

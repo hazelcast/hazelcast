@@ -16,9 +16,11 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.CacheEntryViews;
 import com.hazelcast.cache.impl.ICacheRecordStore;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -41,22 +43,43 @@ public class CachePutBackupOperation
         implements BackupOperation, MutatingOperation {
 
     private CacheRecord cacheRecord;
+    private boolean wanOriginated;
 
     public CachePutBackupOperation() {
     }
 
     public CachePutBackupOperation(String name, Data key, CacheRecord cacheRecord) {
         super(name, key);
+        if (cacheRecord == null) {
+            throw new IllegalArgumentException("Cache record of backup operation cannot be null!");
+        }
         this.cacheRecord = cacheRecord;
+    }
+
+    public CachePutBackupOperation(String name, Data key, CacheRecord cacheRecord, boolean wanOriginated) {
+        this(name, key, cacheRecord);
+        if (cacheRecord == null) {
+            throw new IllegalArgumentException("Cache record of backup operation cannot be null!");
+        }
+        this.wanOriginated = wanOriginated;
     }
 
     @Override
     public void run()
             throws Exception {
-        CacheService service = getService();
+        ICacheService service = getService();
         ICacheRecordStore cache = service.getOrCreateRecordStore(name, getPartitionId());
         cache.putRecord(key, cacheRecord);
         response = Boolean.TRUE;
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (!wanOriginated && cache.isWanReplicationEnabled()) {
+            CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key,
+                    getNodeEngine().getSerializationService().toData(cacheRecord.getValue()), cacheRecord);
+            wanEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
+        }
     }
 
     @Override
@@ -64,6 +87,7 @@ public class CachePutBackupOperation
             throws IOException {
         super.writeInternal(out);
         out.writeObject(cacheRecord);
+        out.writeBoolean(wanOriginated);
     }
 
     @Override
@@ -71,6 +95,7 @@ public class CachePutBackupOperation
             throws IOException {
         super.readInternal(in);
         cacheRecord = in.readObject();
+        wanOriginated = in.readBoolean();
     }
 
     @Override

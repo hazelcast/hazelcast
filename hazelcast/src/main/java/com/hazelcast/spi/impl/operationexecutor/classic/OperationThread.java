@@ -55,6 +55,8 @@ public abstract class OperationThread extends HazelcastManagedThread {
     private final SwCounter processedOperationsCount = newSwCounter();
     @Probe
     private final SwCounter processedPartitionSpecificRunnableCount = newSwCounter();
+    @Probe
+    private final SwCounter processedRunnableCount = newSwCounter();
 
     private final NodeExtension nodeExtension;
     private final ILogger logger;
@@ -76,7 +78,7 @@ public abstract class OperationThread extends HazelcastManagedThread {
 
     @Probe
     int priorityPendingCount() {
-        return scheduleQueue.normalSize();
+        return scheduleQueue.prioritySize();
     }
 
     @Probe
@@ -141,14 +143,19 @@ public abstract class OperationThread extends HazelcastManagedThread {
             return;
         }
 
+        if (task instanceof Runnable) {
+            processRunnable((Runnable) task);
+            return;
+        }
+
         throw new IllegalStateException("Unhandled task type for task:" + task);
     }
 
     private void processPartitionSpecificRunnable(PartitionSpecificRunnable runnable) {
         processedPartitionSpecificRunnableCount.inc();
 
-        currentOperationRunner = getOperationRunner(runnable.getPartitionId());
         try {
+            currentOperationRunner = getOperationRunner(runnable.getPartitionId());
             currentOperationRunner.run(runnable);
         } catch (Throwable e) {
             inspectOutputMemoryError(e);
@@ -158,11 +165,22 @@ public abstract class OperationThread extends HazelcastManagedThread {
         }
     }
 
+    private void processRunnable(Runnable runnable) {
+        processedRunnableCount.inc();
+
+        try {
+            runnable.run();
+        } catch (Throwable e) {
+            inspectOutputMemoryError(e);
+            logger.severe("Failed to process task: " + runnable + " on " + getName(), e);
+        }
+    }
+
     private void processPacket(Packet packet) {
         processedPacketCount.inc();
 
-        currentOperationRunner = getOperationRunner(packet.getPartitionId());
         try {
+            currentOperationRunner = getOperationRunner(packet.getPartitionId());
             currentOperationRunner.run(packet);
         } catch (Throwable e) {
             inspectOutputMemoryError(e);
@@ -175,8 +193,8 @@ public abstract class OperationThread extends HazelcastManagedThread {
     private void processOperation(Operation operation) {
         processedOperationsCount.inc();
 
-        currentOperationRunner = getOperationRunner(operation.getPartitionId());
         try {
+            currentOperationRunner = getOperationRunner(operation.getPartitionId());
             currentOperationRunner.run(operation);
         } catch (Throwable e) {
             inspectOutputMemoryError(e);
@@ -194,5 +212,9 @@ public abstract class OperationThread extends HazelcastManagedThread {
     public final void awaitTermination(int timeout, TimeUnit unit) throws InterruptedException {
         long timeoutMs = unit.toMillis(timeout);
         join(timeoutMs);
+    }
+
+    public int getThreadId() {
+        return threadId;
     }
 }

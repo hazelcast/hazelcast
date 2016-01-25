@@ -24,7 +24,7 @@ import com.hazelcast.transaction.TransactionContext;
  * Provides a context to perform transactional operations: beginning/committing transactions, but also retrieving
  * transactional data-structures like the {@link com.hazelcast.core.TransactionalMap}.
  * <p/>
- * Provides client instance and client connection proxies needs to access to send invocations
+ * Provides client instance and client connection proxies that need to be accessed for sending invocations.
  */
 public interface ClientTransactionContext extends TransactionContext {
 

@@ -19,6 +19,7 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
 
@@ -52,7 +53,7 @@ public class ManagementService implements DistributedObjectListener {
     public ManagementService(HazelcastInstanceImpl instance) {
         this.instance = instance;
         this.logger = instance.getLoggingService().getLogger(getClass());
-        this.enabled = instance.node.groupProperties.ENABLE_JMX.getBoolean();
+        this.enabled = instance.node.groupProperties.getBoolean(GroupProperty.ENABLE_JMX);
         if (!enabled) {
             this.instanceMBean = null;
             this.registrationId = null;
@@ -122,7 +123,7 @@ public class ManagementService implements DistributedObjectListener {
 
     @Override
     public void distributedObjectDestroyed(DistributedObjectEvent event) {
-        unregisterDistributedObject(event.getDistributedObject());
+        unregisterDistributedObject(event.getServiceName(), (String) event.getObjectName());
     }
 
     private void registerDistributedObject(DistributedObject distributedObject) {
@@ -149,17 +150,17 @@ public class ManagementService implements DistributedObjectListener {
 
     }
 
-    private void unregisterDistributedObject(DistributedObject distributedObject) {
-        final String objectType = getObjectTypeOrNull(distributedObject);
+    private void unregisterDistributedObject(String serviceName, String objectName) {
+        final String objectType = getObjectTypeOrNull(serviceName);
         if (objectType == null) {
             return;
         }
 
-        ObjectName objectName = createObjectName(objectType, distributedObject.getName());
+        ObjectName beanName = createObjectName(objectType, objectName);
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        if (mbs.isRegistered(objectName)) {
+        if (mbs.isRegistered(beanName)) {
             try {
-                mbs.unregisterMBean(objectName);
+                mbs.unregisterMBean(beanName);
             } catch (Exception e) {
                 logger.warning("Error while un-registering " + objectName, e);
             }

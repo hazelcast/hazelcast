@@ -16,6 +16,8 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -32,9 +34,6 @@ import java.util.Collection;
 public interface ICacheService extends ManagedService, RemoteService, MigrationAwareService,
             EventPublishingService<Object, CacheEventListener> {
 
-    /**
-     * Service name
-     */
     String SERVICE_NAME = "hz:impl:cacheService";
 
     ICacheRecordStore getOrCreateRecordStore(String name, int partitionId);
@@ -55,7 +54,9 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     CacheStatisticsImpl createCacheStatIfAbsent(String name);
 
-    void destroyCache(String objectName, boolean isLocal, String callerUuid);
+    CacheContext getOrCreateCacheContext(String name);
+
+    void deleteCache(String objectName, boolean isLocal, String callerUuid, boolean destroy);
 
     void deleteCacheStat(String name);
 
@@ -69,20 +70,26 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     NodeEngine getNodeEngine();
 
-    String registerListener(String name, CacheEventListener listener);
+    String registerListener(String name, CacheEventListener listener, boolean isLocal);
 
-    String registerListener(String name, CacheEventListener listener, EventFilter eventFilter);
+    String registerListener(String name, CacheEventListener listener, EventFilter eventFilter, boolean isLocal);
 
     boolean deregisterListener(String name, String registrationId);
 
     void deregisterAllListener(String name);
 
-    CacheStatisticsImpl getStatistics(String name);
+    CacheStatistics getStatistics(String name);
 
     /**
      * Creates cache operations according to the storage-type of the cache
      */
     CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, InMemoryFormat storageType);
 
+    String addInvalidationListener(String name, CacheEventListener listener, boolean localOnly);
+
     void sendInvalidationEvent(String name, Data key, String sourceUuid);
+
+    boolean isWanReplicationEnabled(String cacheName);
+
+    CacheWanEventPublisher getCacheWanEventPublisher();
 }

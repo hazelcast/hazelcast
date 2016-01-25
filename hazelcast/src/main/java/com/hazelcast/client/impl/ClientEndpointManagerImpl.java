@@ -18,6 +18,8 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
+import com.hazelcast.client.ClientEvent;
+import com.hazelcast.client.ClientEventType;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
@@ -35,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 
@@ -49,11 +52,11 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     private final ClientEngineImpl clientEngine;
     private final NodeEngine nodeEngine;
 
-    @Probe(name = "count")
+    @Probe(name = "count", level = MANDATORY)
     private final ConcurrentMap<Connection, ClientEndpoint> endpoints =
             new ConcurrentHashMap<Connection, ClientEndpoint>();
 
-    @Probe(name = "totalRegistrations")
+    @Probe(name = "totalRegistrations", level = MANDATORY)
     private MwCounter totalRegistrations = newMwCounter();
 
     public ClientEndpointManagerImpl(ClientEngineImpl clientEngine, NodeEngine nodeEngine) {
@@ -136,7 +139,11 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
                 }
             }, DESTROY_ENDPOINT_DELAY_MS, TimeUnit.MILLISECONDS);
         }
-        clientEngine.sendClientEvent(endpoint);
+        ClientEvent event = new ClientEvent(endpoint.getUuid(),
+                ClientEventType.DISCONNECTED,
+                endpoint.getSocketAddress(),
+                endpoint.getClientType());
+        clientEngine.sendClientEvent(event);
     }
 
     public void removeEndpoints(String memberUuid) {

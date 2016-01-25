@@ -16,7 +16,7 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceManager;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.ParserContext;
@@ -64,7 +64,7 @@ public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefi
 
         public SpringXmlBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
-            this.builder = BeanDefinitionBuilder.rootBeanDefinition(HazelcastInstanceFactory.class);
+            this.builder = BeanDefinitionBuilder.rootBeanDefinition(HazelcastInstanceManager.class);
             this.builder.setFactoryMethod("newHazelcastInstance");
             this.builder.setDestroyMethodName("shutdown");
         }
@@ -76,8 +76,8 @@ public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefi
         public void handle(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
             Element config = null;
-            for (Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
-                final String nodeName = cleanNodeName(node.getNodeName());
+            for (Node node : childElements(element)) {
+                final String nodeName = cleanNodeName(node);
                 if ("config".equals(nodeName)) {
                     config = (Element) node;
                 }

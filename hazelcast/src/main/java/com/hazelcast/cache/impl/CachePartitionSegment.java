@@ -32,23 +32,21 @@ import java.util.concurrent.ConcurrentMap;
  * </p>
  * A {@link CacheService} manages all <code>CachePartitionSegment</code>s.
  */
-public final class CachePartitionSegment {
+public class CachePartitionSegment implements ConstructorFunction<String, ICacheRecordStore> {
 
-    private final AbstractCacheService cacheService;
-    private final int partitionId;
-    private final ConstructorFunction<String, ICacheRecordStore> storeConstructorFunction;
-    private final ConcurrentMap<String, ICacheRecordStore> recordStores = new ConcurrentHashMap<String, ICacheRecordStore>();
-    private final Object mutex = new Object();
+    protected final AbstractCacheService cacheService;
+    protected final int partitionId;
+    protected final ConcurrentMap<String, ICacheRecordStore> recordStores =
+            new ConcurrentHashMap<String, ICacheRecordStore>();
+    protected final Object mutex = new Object();
 
-    CachePartitionSegment(final AbstractCacheService cacheService, final int partitionId) {
-        this.storeConstructorFunction = new ConstructorFunction<String, ICacheRecordStore>() {
-            @Override
-            public ICacheRecordStore createNew(String arg) {
-                return cacheService.createNewRecordStore(arg, partitionId);
-            }
-        };
+    public CachePartitionSegment(final AbstractCacheService cacheService, final int partitionId) {
         this.cacheService = cacheService;
         this.partitionId = partitionId;
+    }
+
+    @Override public ICacheRecordStore createNew(String name) {
+        return cacheService.createNewRecordStore(name, partitionId);
     }
 
     public Iterator<ICacheRecordStore> recordStoreIterator() {
@@ -64,31 +62,26 @@ public final class CachePartitionSegment {
     }
 
     public ICacheRecordStore getOrCreateRecordStore(String name) {
-        return ConcurrencyUtil.getOrPutSynchronized(recordStores, name, mutex, storeConstructorFunction);
+        return ConcurrencyUtil.getOrPutSynchronized(recordStores, name, mutex, this);
     }
 
     public ICacheRecordStore getRecordStore(String name) {
         return recordStores.get(name);
     }
 
-    public void deleteRecordStore(String name) {
-        ICacheRecordStore store = recordStores.remove(name);
-        if (store != null) {
-            store.destroy();
-        }
-    }
-
-    public void clear() {
-        synchronized (mutex) {
-            for (ICacheRecordStore store : recordStores.values()) {
+    public void deleteRecordStore(String name, boolean destroy) {
+        ICacheRecordStore store;
+        if (destroy) {
+            store = recordStores.remove(name);
+            if (store != null) {
                 store.destroy();
             }
+        } else {
+            store = recordStores.get(name);
+            if (store != null) {
+                store.close(false);
+            }
         }
-        recordStores.clear();
-    }
-
-    public void destroy() {
-        clear();
     }
 
     public boolean hasAnyRecordStore() {
@@ -97,5 +90,29 @@ public final class CachePartitionSegment {
 
     public boolean hasRecordStore(String name) {
         return recordStores.containsKey(name);
+    }
+
+    public void init() {
+        synchronized (mutex) {
+            for (ICacheRecordStore store : recordStores.values()) {
+                store.init();
+            }
+        }
+    }
+
+    public void clear() {
+        synchronized (mutex) {
+            for (ICacheRecordStore store : recordStores.values()) {
+                store.clear();
+            }
+        }
+    }
+
+    public void shutdown() {
+        synchronized (mutex) {
+            for (ICacheRecordStore store : recordStores.values()) {
+                store.close(true);
+            }
+        }
     }
 }

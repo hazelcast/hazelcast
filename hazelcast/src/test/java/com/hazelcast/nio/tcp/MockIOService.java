@@ -99,11 +99,6 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public void handleClientPacket(Packet p) {
-
-    }
-
-    @Override
     public void handleClientMessage(ClientMessage cm, Connection connection) {
 
     }
@@ -374,8 +369,8 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public PacketReader createPacketReader(final TcpIpConnection connection) {
-        return new MemberPacketReader(connection, new PacketDispatcher() {
+    public ReadHandler createReadHandler(final TcpIpConnection connection) {
+        return new MemberReadHandler(connection, new PacketDispatcher() {
             private ILogger logger = getLogger("MockIOService");
 
             @Override
@@ -397,8 +392,8 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public PacketWriter createPacketWriter(TcpIpConnection connection) {
-        return new MemberPacketWriter();
+    public WriteHandler createWriteHandler(TcpIpConnection connection) {
+        return new MemberWriteHandler();
     }
 
 }

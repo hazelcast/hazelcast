@@ -18,47 +18,41 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexImpl;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hazelcast.query.impl.predicates.AttributeUtils.readAttribute;
-
 /**
  * Like Predicate
  */
-public class LikePredicate implements Predicate, DataSerializable {
-    protected String attribute;
-    protected String second;
+public class LikePredicate extends AbstractPredicate {
+
+    protected String expression;
     private volatile Pattern pattern;
 
     public LikePredicate() {
     }
 
-    public LikePredicate(String attribute, String second) {
-        this.attribute = attribute;
-        this.second = second;
+    public LikePredicate(String attributeName, String expression) {
+        this.attributeName = attributeName;
+        this.expression = expression;
     }
 
     @Override
-    public boolean apply(Map.Entry entry) {
-        Comparable attribute = readAttribute(entry, this.attribute);
-        String firstVal = attribute == IndexImpl.NULL ? null : (String) attribute;
-        if (firstVal == null) {
-            return (second == null);
-        } else if (second == null) {
+    protected boolean applyForSingleAttributeValue(Map.Entry mapEntry, Comparable attributeValue) {
+        String attributeValueString = (String) attributeValue;
+        if (attributeValueString == null) {
+            return (expression == null);
+        } else if (expression == null) {
             return false;
         } else {
             if (pattern == null) {
                 // we quote the input string then escape then replace % and _
                 // at the end we have a regex pattern look like : \QSOME_STRING\E.*\QSOME_OTHER_STRING\E
-                final String quoted = Pattern.quote(second);
-                String regex = quoted
+                final String quotedExpression = Pattern.quote(expression);
+                String regex = quotedExpression
                         //escaped %
                         .replaceAll("(?<!\\\\)[%]", "\\\\E.*\\\\Q")
                                 //escaped _
@@ -70,21 +64,21 @@ public class LikePredicate implements Predicate, DataSerializable {
                 int flags = getFlags();
                 pattern = Pattern.compile(regex, flags);
             }
-            Matcher m = pattern.matcher(firstVal);
+            Matcher m = pattern.matcher(attributeValueString);
             return m.matches();
         }
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attribute);
-        out.writeUTF(second);
+        out.writeUTF(attributeName);
+        out.writeUTF(expression);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        attribute = in.readUTF();
-        second = in.readUTF();
+        attributeName = in.readUTF();
+        expression = in.readUTF();
     }
 
 
@@ -95,10 +89,11 @@ public class LikePredicate implements Predicate, DataSerializable {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder(attribute)
-                .append(" LIKE '")
-                .append(second)
-                .append("'");
-        return builder.toString();
+        return attributeName + " LIKE '" + expression + "'";
+    }
+
+    @Override
+    public int getId() {
+        return PredicateDataSerializerHook.LIKE_PREDICATE;
     }
 }

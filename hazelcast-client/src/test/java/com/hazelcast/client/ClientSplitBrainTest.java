@@ -9,7 +9,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -40,8 +40,8 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
     @Test
     public void testClientListeners_InSplitBrain() throws Throwable {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
-        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "5");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "5");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "5");
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 

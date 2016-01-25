@@ -16,27 +16,33 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.Repeat;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -49,11 +55,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.LockSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -68,9 +69,8 @@ public class JoinStressTest extends HazelcastTestSupport {
 
     @Before
     @After
-    public void tearDown() {
-        System.clearProperty("hazelcast.serialization.custom.override");
-        HazelcastInstanceFactory.terminateAll();
+    public void tearDown() throws Exception {
+        HazelcastInstanceManager.terminateAll();
     }
 
     @Test
@@ -83,32 +83,26 @@ public class JoinStressTest extends HazelcastTestSupport {
         testJoinWithManyNodes(true);
     }
 
-    @Repeat(50)
     @Test
-    public void testJoincompletesCorrectlyWhenMultipleNodesStartedParallel() {
+    public void testJoincompletesCorrectlyWhenMultipleNodesStartedParallel() throws Exception {
         int count = 10;
         final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(count);
         final HazelcastInstance[] instances = new HazelcastInstance[count];
         final CountDownLatch latch = new CountDownLatch(count);
-        final Config config = new Config();
-        final SerializationConfig serializationConfig = new SerializationConfig();
-        final SerializerConfig serializerConfig = new SerializerConfig();
-        serializerConfig.setTypeClassName(MemberInfoUpdateOperation.class.getName());
-        serializerConfig.setImplementation(new MemberInfoUpdateOperationSerializer());
-        serializationConfig.addSerializerConfig(serializerConfig);
-        config.setSerializationConfig(serializationConfig);
-        System.setProperty("hazelcast.serialization.custom.override", "true");
+
+        updateFactory(new TestClusterDataSerializerFactoryImpl());
 
         for (int i = 0; i < count; i++) {
             final int index = i;
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    instances[index] = factory.newHazelcastInstance(config);
+                    instances[index] = factory.newHazelcastInstance();
                     latch.countDown();
                 }
             }).start();
         }
+        updateFactory(new ClusterDataSerializerHook.ClusterDataSerializerFactoryImpl());
         assertOpenEventually(latch);
         for (int i = 0; i < count; i++) {
             assertClusterSize(count, instances[i]);
@@ -155,7 +149,6 @@ public class JoinStressTest extends HazelcastTestSupport {
         int rand = (int) (Math.random() * (max - min)) + min;
         LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(rand));
     }
-
 
     @Test
     public void testTCPIPJoinWithManyNodesMultipleGroups() throws InterruptedException {
@@ -217,8 +210,7 @@ public class JoinStressTest extends HazelcastTestSupport {
         }
     }
 
-    private void initNetworkConfig(NetworkConfig networkConfig, int basePort, int portSeed,
-                                   boolean multicast, int nodeCount) {
+    private void initNetworkConfig(NetworkConfig networkConfig, int basePort, int portSeed, boolean multicast, int nodeCount) {
 
         networkConfig.setPortAutoIncrement(false);
         networkConfig.setPort(basePort + portSeed);
@@ -239,6 +231,19 @@ public class JoinStressTest extends HazelcastTestSupport {
         }
         Collections.sort(members);
         tcpIpConfig.setMembers(members);
+    }
+
+    private void updateFactory(ClusterDataSerializerHook.ClusterDataSerializerFactoryImpl factory) throws NoSuchFieldException, IllegalAccessException {
+        Field field = ClusterDataSerializerHook.class.getDeclaredField("FACTORY");
+
+        // remove final modifier from field
+        Field modifiersField = Field.class.getDeclaredField("modifiers");
+        modifiersField.setAccessible(true);
+        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+
+        field.setAccessible(true);
+        field.set(null, factory);
+
     }
 
     public class MemberInfoUpdateOperationSerializer implements StreamSerializer<MemberInfoUpdateOperation> {
@@ -279,4 +284,14 @@ public class JoinStressTest extends HazelcastTestSupport {
         }
     }
 
+    public static class TestClusterDataSerializerFactoryImpl extends ClusterDataSerializerHook.ClusterDataSerializerFactoryImpl {
+
+        @Override
+        public IdentifiedDataSerializable create(int typeId) {
+            if (typeId == ClusterDataSerializerHook.MEMBER_INFO_UPDATE) {
+                return new DelayedMemberInfoUpdateOperation();
+            }
+            return super.create(typeId);
+        }
+    }
 }

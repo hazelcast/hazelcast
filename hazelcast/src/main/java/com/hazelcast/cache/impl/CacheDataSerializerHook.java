@@ -17,6 +17,8 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.HazelcastExpiryPolicy;
+import com.hazelcast.cache.impl.client.CacheBatchInvalidationMessage;
+import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.cache.impl.operation.CacheBackupEntryProcessorOperation;
 import com.hazelcast.cache.impl.operation.CacheClearBackupOperation;
 import com.hazelcast.cache.impl.operation.CacheClearOperation;
@@ -36,7 +38,9 @@ import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperation;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheManagementConfigOperation;
+import com.hazelcast.cache.impl.operation.CacheMergeOperation;
 import com.hazelcast.cache.impl.operation.CachePutAllBackupOperation;
+import com.hazelcast.cache.impl.operation.CachePutAllOperation;
 import com.hazelcast.cache.impl.operation.CachePutBackupOperation;
 import com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation;
 import com.hazelcast.cache.impl.operation.CachePutOperation;
@@ -104,8 +108,12 @@ public final class CacheDataSerializerHook
     public static final short REMOVE_ALL = 34;
     public static final short REMOVE_ALL_BACKUP = 35;
     public static final short REMOVE_ALL_FACTORY = 36;
+    public static final short PUT_ALL = 37;
+    public static final short MERGE = 38;
+    public static final short INVALIDATION_MESSAGE = 39;
+    public static final short BATCH_INVALIDATION_MESSAGE = 40;
 
-    private static final int LEN = 37;
+    private static final int LEN = 41;
 
     public int getFactoryId() {
         return F_ID;
@@ -294,6 +302,26 @@ public final class CacheDataSerializerHook
         constructors[REMOVE_ALL_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheRemoveAllOperationFactory();
+            }
+        };
+        constructors[PUT_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CachePutAllOperation();
+            }
+        };
+        constructors[MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheMergeOperation();
+            }
+        };
+        constructors[INVALIDATION_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheSingleInvalidationMessage();
+            }
+        };
+        constructors[BATCH_INVALIDATION_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheBatchInvalidationMessage();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

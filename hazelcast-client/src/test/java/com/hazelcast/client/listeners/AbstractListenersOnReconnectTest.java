@@ -17,24 +17,29 @@
 package com.hazelcast.client.listeners;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.ClientTestUtil;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.spi.impl.listener.ClientEventRegistration;
+import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
+import java.util.Collection;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractListenersOnReconnectTest extends HazelcastTestSupport {
 
     protected HazelcastInstance client;
+    private int EVENT_COUNT = 10;
     private TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
@@ -42,40 +47,101 @@ public abstract class AbstractListenersOnReconnectTest extends HazelcastTestSupp
         factory.terminateAll();
     }
 
-    @Test
-    public void testListeners() {
-        HazelcastInstance h1 = factory.newHazelcastInstance();
-
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setRedoOperation(true);
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
-        client = factory.newHazelcastClient(clientConfig);
-        final CountDownLatch connectedLatch = new CountDownLatch(2);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                connectedLatch.countDown();
-            }
-        });
+    private void testListenersInternal() {
+        int clusterSize = factory.getAllHazelcastInstances().size();
+        assertClusterSizeEventually(clusterSize, client);
 
         final AtomicInteger eventCount = new AtomicInteger();
-        String registrationId = addListener(eventCount);
+        final String registrationId = addListener(eventCount);
 
-        h1.shutdown();
-
+        terminateRandomNode();
         factory.newHazelcastInstance();
-        assertOpenEventually(connectedLatch, 10);
+        assertClusterSizeEventually(clusterSize, client);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                produceEvent();
-                int count = eventCount.get();
-                assertTrue("No events generated!", count > 0);
+                assertNotEquals(0, getClientEventRegistrations(client, registrationId).size());
             }
-        }, 30);
+        });
+
+        for (int i = 0; i < EVENT_COUNT; i++) {
+            produceEvent();
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(EVENT_COUNT, eventCount.get());
+            }
+        });
 
         assertTrue(removeListener(registrationId));
+    }
+
+    private void terminateRandomNode() {
+        int clusterSize = factory.getAllHazelcastInstances().size();
+        HazelcastInstance[] instances = new HazelcastInstance[clusterSize];
+        factory.getAllHazelcastInstances().toArray(instances);
+        int randNode = new Random().nextInt(clusterSize);
+        instances[randNode].getLifecycleService().terminate();
+    }
+
+    @Test(timeout = 120000)
+    public void testListenersNonSmartRouting() {
+        factory.newHazelcastInstance();
+
+        ClientConfig clientConfig = createClientConfig();
+        clientConfig.getNetworkConfig().setSmartRouting(false);
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        client = factory.newHazelcastClient(clientConfig);
+
+        testListenersInternal();
+    }
+
+    @Test(timeout = 120000)
+    public void testListenersSmartRouting() {
+        factory.newHazelcastInstance();
+
+        ClientConfig clientConfig = createClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+        testListenersInternal();
+    }
+
+    @Test(timeout = 120000)
+    public void testListenersSmartRoutingMultipleServer() {
+        factory.newHazelcastInstance();
+        factory.newHazelcastInstance();
+        factory.newHazelcastInstance();
+
+        ClientConfig clientConfig = createClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+        testListenersInternal();
+    }
+
+    @Test(timeout = 120000)
+    public void testListenersNonSmartRoutingMultipleServer() {
+        factory.newHazelcastInstance();
+        factory.newHazelcastInstance();
+        factory.newHazelcastInstance();
+
+        ClientConfig clientConfig = createClientConfig();
+        clientConfig.getNetworkConfig().setSmartRouting(false);
+        client = factory.newHazelcastClient(clientConfig);
+        testListenersInternal();
+    }
+
+    private ClientConfig createClientConfig() {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setRedoOperation(true);
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        return clientConfig;
+    }
+
+    private Collection<ClientEventRegistration> getClientEventRegistrations(HazelcastInstance client, String id) {
+        HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
+        ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) clientImpl.getListenerService();
+        return listenerService.getActiveRegistrations(id);
     }
 
     protected abstract String addListener(final AtomicInteger eventCount);

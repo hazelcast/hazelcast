@@ -21,13 +21,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
 // should not be an urgent operation. required to be in order with backup operations on target node
-public final class CheckReplicaVersion extends Operation implements PartitionAwareOperation {
+public final class CheckReplicaVersion extends Operation implements PartitionAwareOperation, AllowedDuringPassiveState {
 
     private long version;
     private boolean returnResponse;
@@ -113,8 +114,9 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
     }
 
     @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex()
-                + ", version=" + version + '}';
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", version=").append(version);
     }
 }

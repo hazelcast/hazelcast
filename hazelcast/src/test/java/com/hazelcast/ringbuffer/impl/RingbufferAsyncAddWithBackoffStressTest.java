@@ -37,7 +37,7 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
     public void whenTTLEnabled() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
                 .setCapacity(200 * 1000)
-                .setTimeToLiveSeconds(1);
+                .setTimeToLiveSeconds(2);
         test(ringbufferConfig);
     }
 
@@ -45,7 +45,7 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
     public void whenLongTTLAndSmallBuffer() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
                 .setCapacity(1000)
-                .setTimeToLiveSeconds(1);
+                .setTimeToLiveSeconds(30);
         test(ringbufferConfig);
     }
 
@@ -53,7 +53,7 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
     public void whenShortTTLAndBigBuffer() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
                 .setCapacity(20 * 1000 * 1000)
-                .setTimeToLiveSeconds(1);
+                .setTimeToLiveSeconds(2);
         test(ringbufferConfig);
     }
 
@@ -74,7 +74,7 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
         ProduceThread producer = new ProduceThread();
         producer.start();
 
-        sleepAndStop(stop, 5 * 60);
+        sleepAndStop(stop, 3 * 60);
         System.out.println("Waiting for completion");
 
         producer.assertSucceedsEventually();

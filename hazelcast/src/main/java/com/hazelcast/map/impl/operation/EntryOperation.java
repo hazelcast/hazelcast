@@ -21,19 +21,19 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
@@ -41,11 +41,14 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.Map;
 
+import static com.hazelcast.core.EntryEventType.ADDED;
+import static com.hazelcast.core.EntryEventType.REMOVED;
+import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
 /**
  * GOTCHA : This operation LOADS missing keys from map-store, in contrast with PartitionWideEntryOperation.
@@ -67,7 +70,9 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     @Override
-    public void innerBeforeRun() {
+    public void innerBeforeRun() throws Exception {
+        super.innerBeforeRun();
+
         final SerializationService serializationService = getNodeEngine().getSerializationService();
         final ManagedContext managedContext = serializationService.getManagedContext();
         managedContext.initialize(entryProcessor);
@@ -76,7 +81,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     @Override
     public void run() {
         final long now = getNow();
-        oldValue = getValueFor(dataKey, now);
+        oldValue = recordStore.get(dataKey, false);
 
         Map.Entry entry = createMapEntry(dataKey, oldValue);
 
@@ -98,10 +103,10 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         if (eventType == null) {
             return;
         }
-        invalidateNearCaches();
+        invalidateNearCache(dataKey);
         publishEntryEvent();
         publishWanReplicationEvent();
-        evict(false);
+        evict();
     }
 
     @Override
@@ -112,11 +117,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     @Override
     public Object getResponse() {
         return response;
-    }
-
-    @Override
-    public String toString() {
-        return "EntryOperation{}";
     }
 
     @Override
@@ -144,11 +144,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         return Clock.currentTimeMillis() - begin;
     }
 
-    private Object toObject(Object data) {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        return mapServiceContext.toObject(data);
-    }
-
     private Data toData(Object obj) {
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.toData(obj);
@@ -173,7 +168,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         if (value == null) {
             recordStore.remove(dataKey);
             getLocalMapStats().incrementRemoves(getLatencyFrom(now));
-            eventType = pickEventTypeOrNull(entry);
+            eventType = REMOVED;
             return true;
         }
         return false;
@@ -182,44 +177,19 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     /**
      * Only difference between add and update is event type to be published.
      */
-    private boolean entryAddedOrUpdated(Map.Entry entry, long now) {
-        final Object value = entry.getValue();
-        if (value != null) {
-            put(value);
-            getLocalMapStats().incrementPuts(getLatencyFrom(now));
-            eventType = pickEventTypeOrNull(entry);
-            return true;
-        }
-        return false;
+    private void entryAddedOrUpdated(Map.Entry entry, long now) {
+        Object value = entry.getValue();
+        put(dataKey, value);
+        getLocalMapStats().incrementPuts(getLatencyFrom(now));
+
+        dataValue = value;
+        eventType = oldValue == null ? ADDED : UPDATED;
     }
 
-    private EntryEventType pickEventTypeOrNull(Map.Entry entry) {
-        final Object value = entry.getValue();
-        if (value == null) {
-            return EntryEventType.REMOVED;
-        } else {
-            dataValue = value;
-            if (oldValue == null) {
-                return EntryEventType.ADDED;
-            }
-            final LazyMapEntry mapEntrySimple = (LazyMapEntry) entry;
-            if (mapEntrySimple.isModified()) {
-                return EntryEventType.UPDATED;
-            }
-        }
-        // return null for read only operations.
-        return null;
+    private void put(Data key, Object value) {
+        recordStore.put(key, value, DEFAULT_TTL);
     }
 
-    private void put(Object value) {
-        recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, value));
-    }
-
-
-    private Object getValueFor(Data dataKey, long now) {
-        final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(dataKey, now);
-        return mapEntry.getValue();
-    }
 
     private Data process(Map.Entry entry) {
         final Object result = entryProcessor.process(entry);
@@ -249,7 +219,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     private void nullifyOldValueIfNecessary() {
         final MapConfig mapConfig = mapContainer.getMapConfig();
         final InMemoryFormat format = mapConfig.getInMemoryFormat();
-        if (format == InMemoryFormat.OBJECT && eventType != EntryEventType.REMOVED) {
+        if (format == InMemoryFormat.OBJECT && eventType != REMOVED) {
             oldValue = null;
         }
     }
@@ -258,9 +228,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         if (hasRegisteredListenerForThisMap()) {
             nullifyOldValueIfNecessary();
             final MapEventPublisher mapEventPublisher = getMapEventPublisher();
-            dataValue = toData(dataValue);
-            mapEventPublisher.
-                    publishEvent(getCallerAddress(), name, eventType, dataKey, toData(oldValue), (Data) dataValue);
+            mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, dataValue);
         }
     }
 
@@ -273,7 +241,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         final MapEventPublisher mapEventPublisher = getMapEventPublisher();
         final Data key = dataKey;
 
-        if (EntryEventType.REMOVED.equals(eventType)) {
+        if (REMOVED.equals(eventType)) {
             mapEventPublisher.publishWanReplicationRemove(name, key, getNow());
         } else {
             final Record record = recordStore.getRecord(key);

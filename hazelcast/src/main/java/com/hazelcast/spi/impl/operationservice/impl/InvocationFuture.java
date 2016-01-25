@@ -58,12 +58,12 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     volatile boolean interrupted;
     volatile Object response;
+    final Invocation invocation;
 
     // Contains the number of threads waiting for a result from this future.
     // is updated through the WAITER_COUNT.
     private volatile int waiterCount;
     private final OperationServiceImpl operationService;
-    private final Invocation invocation;
     private volatile ExecutionCallbackNode<E> callbackHead;
 
     InvocationFuture(OperationServiceImpl operationService, Invocation invocation, ExecutionCallback callback) {
@@ -407,12 +407,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("InvocationFuture{");
-        sb.append("invocation=").append(invocation.toString());
-        sb.append(", response=").append(response);
-        sb.append(", done=").append(isDone());
-        sb.append('}');
-        return sb.toString();
+        return "InvocationFuture{invocation=" + invocation.toString() + ", response=" + response + ", done=" + isDone() + '}';
     }
 
     private static final class ExecutionCallbackNode<E> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,28 +17,28 @@
 package com.hazelcast.quorum.map;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.core.IMap;
+import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.quorum.PartitionedCluster;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static com.hazelcast.map.InterceptorTest.SimpleInterceptor;
 import static com.hazelcast.map.TempData.LoggingEntryProcessor;
@@ -81,7 +81,7 @@ public class MapReadWriteQuorumTest {
 
     @AfterClass
     public static void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceFactory.terminateAll();
+        HazelcastInstanceManager.terminateAll();
     }
 
     @Test
@@ -454,36 +454,5 @@ public class MapReadWriteQuorumTest {
         Future foo = map4.submitToKey("foo", new LoggingEntryProcessor());
         foo.get();
     }
-
-    @Ignore
-    @Test(expected = QuorumException.class)
-    public void testLockOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        map4.lock("foo");
-    }
-
-    @Ignore
-    @Test(expected = QuorumException.class)
-    public void testTryLockOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        map4.tryLock("foo");
-    }
-
-    @Ignore
-    @Test(expected = QuorumException.class)
-    public void testUnlockOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        map4.unlock("foo");
-    }
-
-    @Ignore
-    @Test(expected = QuorumException.class)
-    public void testIsLockedOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        map4.isLocked("foo");
-    }
-
-    @Ignore
-    @Test(expected = QuorumException.class)
-    public void testForceUnlockOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        map4.forceUnlock("foo");
-    }
-
 
 }

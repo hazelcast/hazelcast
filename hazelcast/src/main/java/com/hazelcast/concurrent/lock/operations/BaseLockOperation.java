@@ -145,4 +145,11 @@ public abstract class BaseLockOperation extends AbstractOperation
         leaseTime = in.readLong();
         referenceCallId = in.readLong();
     }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", namespace=").append(namespace);
+    }
 }

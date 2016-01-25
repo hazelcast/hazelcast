@@ -30,18 +30,20 @@ public enum FieldType {
     UTF(9),
     PORTABLE_ARRAY(10),
     BYTE_ARRAY(11),
-    CHAR_ARRAY(12),
-    SHORT_ARRAY(13),
-    INT_ARRAY(14),
-    LONG_ARRAY(15),
-    FLOAT_ARRAY(16),
-    DOUBLE_ARRAY(17);
+    BOOLEAN_ARRAY(12),
+    CHAR_ARRAY(13),
+    SHORT_ARRAY(14),
+    INT_ARRAY(15),
+    LONG_ARRAY(16),
+    FLOAT_ARRAY(17),
+    DOUBLE_ARRAY(18),
+    UTF_ARRAY(19);
 
     private static final FieldType[] ALL = FieldType.values();
 
     private final byte type;
 
-    private FieldType(int type) {
+    FieldType(int type) {
         this.type = (byte) type;
     }
 

@@ -270,6 +270,9 @@ public class NearCacheConfig
     /**
      * True to evict the cached entries if the entries are changed (updated or removed).
      *
+     * When true, the member listens for cluster-wide changes on the entries and invalidates
+     * them on change. Changes done on the local member always invalidate the cache.
+     *
      * @return This near cache config instance.
      */
     public boolean isInvalidateOnChange() {
@@ -278,6 +281,9 @@ public class NearCacheConfig
 
     /**
      * True to evict the cached entries if the entries are changed (updated or removed).
+     *
+     * If set to true, the member will listen for cluster-wide changes on the entries and invalidate
+     * them on change. Changes done on the local member always invalidate the cache.
      *
      * @param invalidateOnChange True to evict the cached entries if the entries are
      *                           changed (updated or removed), false otherwise.
@@ -414,17 +420,16 @@ public class NearCacheConfig
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("NearCacheConfig{");
-        sb.append("timeToLiveSeconds=").append(timeToLiveSeconds);
-        sb.append(", maxSize=").append(maxSize);
-        sb.append(", evictionPolicy='").append(evictionPolicy).append('\'');
-        sb.append(", maxIdleSeconds=").append(maxIdleSeconds);
-        sb.append(", invalidateOnChange=").append(invalidateOnChange);
-        sb.append(", inMemoryFormat=").append(inMemoryFormat);
-        sb.append(", cacheLocalEntries=").append(cacheLocalEntries);
-        sb.append(", localUpdatePolicy=").append(localUpdatePolicy);
-        sb.append(", evictionConfig=").append(evictionConfig);
-        sb.append('}');
-        return sb.toString();
+        return "NearCacheConfig{"
+                + "timeToLiveSeconds=" + timeToLiveSeconds
+                + ", maxSize=" + maxSize
+                + ", evictionPolicy='" + evictionPolicy + '\''
+                + ", maxIdleSeconds=" + maxIdleSeconds
+                + ", invalidateOnChange=" + invalidateOnChange
+                + ", inMemoryFormat=" + inMemoryFormat
+                + ", cacheLocalEntries=" + cacheLocalEntries
+                + ", localUpdatePolicy=" + localUpdatePolicy
+                + ", evictionConfig=" + evictionConfig
+                + '}';
     }
 }

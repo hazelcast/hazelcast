@@ -16,6 +16,8 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.query.SampleObjects.ObjectWithBigDecimal;
 import com.hazelcast.query.SampleObjects.ObjectWithBoolean;
@@ -31,6 +33,7 @@ import com.hazelcast.query.SampleObjects.ObjectWithSqlDate;
 import com.hazelcast.query.SampleObjects.ObjectWithSqlTimestamp;
 import com.hazelcast.query.SampleObjects.ObjectWithUUID;
 import com.hazelcast.query.impl.DateHelperTest;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -57,34 +60,37 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class SqlPredicateTest {
+
+    final SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+
     @Test
-    public void testEqualsWhenSqlMatches() throws Exception {
+    public void testEqualsWhenSqlMatches() {
         SqlPredicate sql1 = new SqlPredicate("foo='bar'");
         SqlPredicate sql2 = new SqlPredicate("foo='bar'");
         assertEquals(sql1, sql2);
     }
 
     @Test
-    public void testEqualsWhenSqlDifferent() throws Exception {
+    public void testEqualsWhenSqlDifferent() {
         SqlPredicate sql1 = new SqlPredicate("foo='bar'");
         SqlPredicate sql2 = new SqlPredicate("foo='baz'");
         assertNotEquals(sql1, sql2);
     }
 
     @Test
-    public void testEqualsNull() throws Exception {
+    public void testEqualsNull() {
         SqlPredicate sql = new SqlPredicate("foo='bar'");
         assertNotEquals(sql, null);
     }
 
     @Test
-    public void testEqualsSameObject() throws Exception {
+    public void testEqualsSameObject() {
         SqlPredicate sql = new SqlPredicate("foo='bar'");
         assertEquals(sql, sql);
     }
 
     @Test
-    public void testHashCode() throws Exception {
+    public void testHashCode() {
         SqlPredicate sql = new SqlPredicate("foo='bar'");
         assertEquals("foo='bar'".hashCode(), sql.hashCode());
     }
@@ -158,6 +164,7 @@ public class SqlPredicateTest {
         assertSqlTrue("attribute = 123", value);
         assertSqlTrue("attribute = '123'", value);
         assertSqlTrue("attribute != 124", value);
+        assertSqlTrue("attribute <> 124", value);
         assertSqlFalse("attribute = 124", value);
         assertSqlTrue("attribute between 122 and 124", value);
         assertSqlTrue("attribute in (122, 123, 124)", value);
@@ -173,6 +180,8 @@ public class SqlPredicateTest {
         assertSqlTrue("name = NULL", nullNameValue);
         assertSqlTrue("name != null", value);
         assertSqlTrue("name != NULL", value);
+        assertSqlTrue("name <> null", value);
+        assertSqlTrue("name <> NULL", value);
         assertSqlTrue(" (name LIKE 'abc-%') AND (age <= " + 40 + ")", value);
         assertSqlTrue(" (name REGEX 'abc-.*') AND (age <= " + 40 + ")", value);
 
@@ -298,7 +307,8 @@ public class SqlPredicateTest {
         assertEquals("active=true", sql("active"));
         assertEquals("(active=true AND name=abc xyz 123)", sql("active AND name='abc xyz 123'"));
         assertEquals("(name LIKE 'abc-xyz+(123)' AND name=abc xyz 123)", sql("name like 'abc-xyz+(123)' AND name='abc xyz 123'"));
-        assertEquals("(name REGEX '\\w{3}-\\w{3}+\\(\\d{3}\\)' AND name=abc xyz 123)", sql("name regex '\\w{3}-\\w{3}+\\(\\d{3}\\)' AND name='abc xyz 123'"));
+        assertEquals("(name REGEX '\\w{3}-\\w{3}+\\(\\d{3}\\)' AND name=abc xyz 123)",
+                sql("name regex '\\w{3}-\\w{3}+\\(\\d{3}\\)' AND name='abc xyz 123'"));
         assertEquals("(active=true AND age>4)", sql("active and age > 4"));
         assertEquals("(active=true AND age>4)", sql("active and age>4"));
         assertEquals("(active=false AND age<=4)", sql("active=false AND age<=4"));
@@ -329,10 +339,12 @@ public class SqlPredicateTest {
         assertEquals("(active=true AND age BETWEEN 10 AND 15)", sql("active and age between 10 and 15"));
         assertEquals("(age BETWEEN 10 AND 15 AND active=true)", sql("age between 10 and 15 and active"));
         assertEquals("(active=true OR age BETWEEN 10 AND 15)", sql("active or (age between 10 and 15)"));
-        assertEquals("(age>10 AND (active=true OR age BETWEEN 10 AND 15))", sql("age>10 AND (active or (age between 10 and 15))"));
-        assertEquals("(age<=10 AND (active=true OR NOT(age BETWEEN 10 AND 15)))", sql("age<=10 AND (active or (age not between 10 and 15))"));
+        assertEquals("(age>10 AND (active=true OR age BETWEEN 10 AND 15))",
+                sql("age>10 AND (active or (age between 10 and 15))"));
+        assertEquals("(age<=10 AND (active=true OR NOT(age BETWEEN 10 AND 15)))",
+                sql("age<=10 AND (active or (age not between 10 and 15))"));
         assertEquals("name ILIKE 'J%'", sql("name ilike 'J%'"));
-        //issue #594
+        // issue #594
         assertEquals("(name IN (name0,name2) AND age IN (2,5,8))", sql("name in('name0', 'name2') and age   IN ( 2, 5  ,8)"));
     }
 
@@ -356,8 +368,8 @@ public class SqlPredicateTest {
         return new SqlPredicate(sql).toString();
     }
 
-    private static Map.Entry createEntry(final Object key, final Object value) {
-        return new QueryEntry(null, toData(key), key, value);
+    private Map.Entry createEntry(final Object key, final Object value) {
+        return new QueryEntry(serializationService, toData(key), value, Extractors.empty());
     }
 
     private void assertSqlTrue(String s, Object value) {
@@ -378,9 +390,5 @@ public class SqlPredicateTest {
 
     private Employee createValue(String name) {
         return new Employee(name, 34, true, 10D);
-    }
-
-    private Employee createValue(int age) {
-        return new Employee("abc-123-xvz", age, true, 10D);
     }
 }
