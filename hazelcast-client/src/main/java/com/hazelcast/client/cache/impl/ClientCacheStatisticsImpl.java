@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.cache.impl;
 
-import com.hazelcast.cache.impl.CacheEntryCountResolver;
 import com.hazelcast.cache.impl.CacheStatisticsImpl;
 import com.hazelcast.monitor.NearCacheStats;
 
@@ -29,11 +28,11 @@ public class ClientCacheStatisticsImpl
     private NearCacheStats nearCacheStats;
 
     public ClientCacheStatisticsImpl(long creationTime) {
-        super(creationTime, CacheEntryCountResolver.createEntryCountResolver());
+        super(creationTime);
     }
 
     public ClientCacheStatisticsImpl(long creationTime, NearCacheStats nearCacheStats) {
-        super(creationTime, CacheEntryCountResolver.createEntryCountResolver());
+        super(creationTime);
         this.nearCacheStats = nearCacheStats;
     }
 

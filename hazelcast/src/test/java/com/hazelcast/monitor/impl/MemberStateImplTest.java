@@ -1,6 +1,5 @@
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.cache.impl.CacheEntryCountResolver;
 import com.hazelcast.cache.impl.CacheStatisticsImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
@@ -41,11 +40,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
 
         LocalReplicatedMapStatsImpl replicatedMapStats = new LocalReplicatedMapStatsImpl();
         replicatedMapStats.incrementPuts(30);
-        CacheStatisticsImpl cacheStatistics =
-                new CacheStatisticsImpl(Clock.currentTimeMillis(),
-                                        CacheEntryCountResolver.createEntryCountResolver());
+        CacheStatisticsImpl cacheStatistics = new CacheStatisticsImpl(Clock.currentTimeMillis());
         cacheStatistics.increaseCacheHits(5);
-        
 
         Collection<ClientEndPointDTO> clients = new ArrayList<ClientEndPointDTO>();
         ClientEndPointDTO client = new ClientEndPointDTO();
