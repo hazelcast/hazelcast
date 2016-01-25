@@ -44,5 +44,7 @@ public enum Lang {
     /**
      * Binary Protocol Document representing a human readable document in English
      */
-    MD
+    MD,
+    
+    NODE
 }
