@@ -18,6 +18,7 @@ package com.hazelcast.client.protocol.generator;
 
 import javax.lang.model.element.TypeElement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -28,6 +29,23 @@ public final class CodeGenerationUtils {
     public static final int BYTE_BIT_COUNT = 8;
     public static final String CODEC_PACKAGE = "com.hazelcast.client.impl.protocol.codec.";
     public static final String DATA_FULL_NAME = "com.hazelcast.nio.serialization.Data";
+
+    private static final Map<String, String> JAVA_TO_PYTHON_TYPES = new HashMap<String, String>() {{
+        put(DATA_FULL_NAME, "Data");
+        put("java.lang.String", "str");
+        put("java.lang.Integer", "int");
+        put("boolean", "bool");
+        put("java.util.List", "list");
+        put("java.util.Set", "set");
+        put("java.util.Collection", "collection");
+        put("java.util.Map", "dictionary");
+        put("java.util.Map.Entry", "tuple");
+        put("com.hazelcast.nio.Address", "Address");
+        put("com.hazelcast.client.impl.client.DistributedObjectInfo", "DistributedObjectInfo");
+        put("com.hazelcast.core.Member", "Member");
+        put("com.hazelcast.cluster.client.MemberAttributeChange", "MemberAttributeChange");
+        put("com.hazelcast.map.impl.SimpleEntryView", "SimpleEntryView");
+    }};
 
     private static final Map<String, String> JAVA_TO_CSHARP_TYPES = new HashMap<String, String>() {{
         put(DATA_FULL_NAME, "IData");
@@ -69,6 +87,11 @@ public final class CodeGenerationUtils {
         put("com.hazelcast.cluster.client.MemberAttributeChange", "MemberAttributeChange");
         put("com.hazelcast.map.impl.SimpleEntryView", "EntryView");
     }};
+
+    private static final List<String> PYTHON_RESERVED_WORDS = Arrays
+            .asList("and", "del", "from", "not", "while", "as", "elif", "global", "or", "with", "assert", "else", "if", "pass",
+                    "yield", "break", "except", "import", "print", "class", "exec", "in", "raise", "continue", "finally", "is",
+                    "return", "def", "for", "lambda", "try");
 
     private CodeGenerationUtils() {
     }
@@ -271,7 +294,11 @@ public final class CodeGenerationUtils {
         return paramList;
     }
 
-    public static String getCSharpType(String type, Map<String, String> languageMapping) {
+    public static String getPythonType(String type) {
+        return getLanguageType(Lang.PY, type, JAVA_TO_PYTHON_TYPES);
+    }
+
+    public static String getCSharpType(String type) {
         return getLanguageType(Lang.CS, type, JAVA_TO_CSHARP_TYPES);
     }
 
@@ -322,4 +349,17 @@ public final class CodeGenerationUtils {
                 .equals("EnterpriseMap") || codecName.equals("XATransaction"));
     }
 
+    public static String convertToSnakeCase(String camelCase) {
+        return camelCase.replaceAll("(.)(\\p{Upper})", "$1_$2").toLowerCase();
+    }
+
+    public static String escape(String str, Lang lang) {
+        switch (lang) {
+            case PY:
+                return PYTHON_RESERVED_WORDS.contains(str) ? str + "_" : str;
+            default:
+                //TODO add other lang reserved words
+                return str;
+        }
+    }
 }
