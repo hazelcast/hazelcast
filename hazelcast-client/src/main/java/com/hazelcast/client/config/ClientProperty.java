@@ -76,7 +76,14 @@ public enum ClientProperty implements HazelcastProperty {
      * <p/>
      * By default it is configured as Integer.MaxValue.
      */
-    MAX_CONCURRENT_INVOCATIONS("hazelcast.client.max.concurrent.invocations", Integer.MAX_VALUE);
+    MAX_CONCURRENT_INVOCATIONS("hazelcast.client.max.concurrent.invocations", Integer.MAX_VALUE),
+
+    /**
+     * <p>Enables the Discovery SPI lookup over the old native implementations. This property is temporary and will
+     * eventually be removed when the experimental marker is removed.</p>
+     * <p>Discovery SPI is <b>disabled</b> by default</p>
+     */
+    DISCOVERY_SPI_ENABLED("hazelcast.discovery.enabled", false);
 
     private final String name;
     private final String defaultValue;

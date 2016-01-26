@@ -70,6 +70,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -228,6 +229,58 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         assertEquals(address, translator.translate(address));
     }
 
+    @Test
+    public void testDiscoveryServiceLifecycleMethodsCalledWhenClientAndServerStartAndShutdown() {
+
+        //Given
+        Config config = new Config();
+        config.setProperty("hazelcast.discovery.enabled", "true");
+
+        config.getNetworkConfig().setPort(50001);
+        InterfacesConfig interfaces = config.getNetworkConfig().getInterfaces();
+        interfaces.clear();
+        interfaces.setEnabled(true);
+        interfaces.addInterface("127.0.0.1");
+
+        //Both server and client are using the same LifecycleDiscoveryStrategyFactory so latch count is set to 2.
+        CountDownLatch startLatch = new CountDownLatch(2);
+        CountDownLatch stopLatch = new CountDownLatch(2);
+
+        List<DiscoveryNode> discoveryNodes = new CopyOnWriteArrayList<DiscoveryNode>();
+        DiscoveryStrategyFactory factory = new LifecycleDiscoveryStrategyFactory(startLatch, stopLatch, discoveryNodes);
+
+        JoinConfig join = config.getNetworkConfig().getJoin();
+        join.getTcpIpConfig().setEnabled(false);
+        join.getMulticastConfig().setEnabled(false);
+        DiscoveryConfig discoveryConfig = join.getDiscoveryConfig();
+        discoveryConfig.getDiscoveryStrategyConfigs().clear();
+
+        DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.<String, Comparable>emptyMap());
+        discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
+
+        final HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty("hazelcast.discovery.enabled", "true");
+        discoveryConfig = clientConfig.getNetworkConfig().getDiscoveryConfig();
+        discoveryConfig.getDiscoveryStrategyConfigs().clear();
+
+        strategyConfig = new DiscoveryStrategyConfig(factory, Collections.<String, Comparable>emptyMap());
+        discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
+
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        assertNotNull(hazelcastInstance);
+        assertNotNull(client);
+
+        //When
+        HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
+
+        //Then
+        assertOpenEventually(startLatch);
+        assertOpenEventually(stopLatch);
+    }
+
     private DiscoveryServiceSettings buildDiscoveryServiceSettings(DiscoveryConfig config) {
         return new DiscoveryServiceSettings().setConfigClassLoader(ClientDiscoverySpiTest.class.getClassLoader())
                                              .setDiscoveryConfig(config).setDiscoveryMode(DiscoveryMode.Client).setLogger(LOGGER);
@@ -347,6 +400,75 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         @Override
         public void destroy() {
             super.destroy();
+            discoveryNodes.remove(discoveryNode);
+        }
+    }
+
+    public static class LifecycleDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
+
+        private final CountDownLatch startLatch;
+        private final CountDownLatch stopLatch;
+        private final List<DiscoveryNode> discoveryNodes;
+
+        private LifecycleDiscoveryStrategyFactory(CountDownLatch startLatch, CountDownLatch stopLatch,
+                                                  List<DiscoveryNode> discoveryNodes) {
+            this.startLatch = startLatch;
+            this.stopLatch = stopLatch;
+            this.discoveryNodes = discoveryNodes;
+        }
+
+        @Override
+        public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
+            return LifecycleDiscoveryStrategy.class;
+        }
+
+        @Override
+        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
+                                                      Map<String, Comparable> properties) {
+            return new LifecycleDiscoveryStrategy(startLatch, stopLatch, discoveryNode, discoveryNodes, logger, properties);
+        }
+
+        @Override
+        public Collection<PropertyDefinition> getConfigurationProperties() {
+            return null;
+        }
+    }
+
+    private static class LifecycleDiscoveryStrategy extends AbstractDiscoveryStrategy {
+
+        private final CountDownLatch startLatch;
+        private final CountDownLatch stopLatch;
+        private final List<DiscoveryNode> discoveryNodes;
+        private final DiscoveryNode discoveryNode;
+
+        public LifecycleDiscoveryStrategy(CountDownLatch startLatch, CountDownLatch stopLatch,
+                                          DiscoveryNode discoveryNode, List<DiscoveryNode> discoveryNodes,
+                                          ILogger logger, Map<String, Comparable> properties) {
+            super(logger, properties);
+            this.startLatch = startLatch;
+            this.stopLatch = stopLatch;
+            this.discoveryNodes = discoveryNodes;
+            this.discoveryNode = discoveryNode;
+        }
+
+        @Override
+        public void start() {
+            super.start();
+            startLatch.countDown();
+            if (discoveryNode != null) {
+                discoveryNodes.add(discoveryNode);
+            }
+        }
+
+        @Override
+        public Iterable<DiscoveryNode> discoverNodes() {
+            return new ArrayList<DiscoveryNode>(discoveryNodes);
+        }
+
+        @Override
+        public void destroy() {
+            super.destroy();
+            stopLatch.countDown();
             discoveryNodes.remove(discoveryNode);
         }
     }
