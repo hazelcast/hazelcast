@@ -306,9 +306,11 @@ public class CodecCodeGenerator
         if (codecModel.getLang() == Lang.JAVA) {
             saveClass(codecModel.getPackageName(), codecModel.getClassName(), content);
         } else {
-            //TODO
-            saveFile(codecModel.getClassName() + "." + codecModel.getLang().name().toLowerCase(), codecModel.getPackageName(),
-                    content);
+            String fileName = codecModel.getClassName() + "." + codecModel.getLang().name().toLowerCase();
+            if(codecModel.getLang() == Lang.PY) {
+                fileName = fileName.replaceAll("(.)(\\p{Upper})", "$1_$2").toLowerCase();
+            }
+            saveFile(fileName, codecModel.getPackageName(), content);
         }
     }
 
@@ -354,9 +356,11 @@ public class CodecCodeGenerator
         if (codecModel.getLang() == Lang.JAVA) {
             saveClass(codecModel.getPackageName(), codecModel.getClassName(), content);
         } else {
-            //TODO
-            saveFile(codecModel.getClassName() + "." + codecModel.getLang().name().toLowerCase(), codecModel.getPackageName(),
-                    content);
+            String fileName = codecModel.getClassName() + "." + codecModel.getLang().name().toLowerCase();
+            if(codecModel.getLang() == Lang.PY) {
+                fileName = fileName.replaceAll("(.)(\\p{Upper})", "$1_$2").toLowerCase();
+            }
+            saveFile(fileName, codecModel.getPackageName(), content);
         }
     }
 
