@@ -18,6 +18,4 @@
  * <p>Client protocol tasks implementations for Transactional MultiMap</p>
  */
 
-@GenerateMessageTaskFactoryProvider package com.hazelcast.client.impl.protocol.task.transactionalmultimap;
-
-import com.hazelcast.annotation.GenerateMessageTaskFactoryProvider;
+package com.hazelcast.client.impl.protocol.task.transactionalmultimap;

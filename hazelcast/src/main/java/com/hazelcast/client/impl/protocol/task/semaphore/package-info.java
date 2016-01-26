@@ -17,6 +17,5 @@
 /**
  * <p>Client protocol tasks implementations for Semaphore</p>
  */
-@GenerateMessageTaskFactoryProvider package com.hazelcast.client.impl.protocol.task.semaphore;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactoryProvider;
+package com.hazelcast.client.impl.protocol.task.semaphore;

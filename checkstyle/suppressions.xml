@@ -134,16 +134,9 @@
     <!-- Client Protocol -->
     <suppress checks="IllegalImport" files="com/hazelcast/client/impl/protocol/util/UnsafeBuffer"/>
     <!-- Parameters classes are auto-generated -->
+    <suppress checks="" files="com/hazelcast/client/impl/protocol/DefaultMessageTaskFactoryProvider"/>
     <suppress checks="" files="com/hazelcast/client/impl/protocol/ClientExceptionFactory.java"/>
-    <suppress checks="" files="com/hazelcast/client/impl/protocol/map/.*Parameters"/>
-    <suppress checks="" files="com/hazelcast/client/impl/protocol/.*Parameters"/>
-    <suppress checks="" files="com/hazelcast/client/impl/protocol/.*Codec"/>
-    <suppress checks="" files="com/hazelcast/client/impl/protocol/template/.*Template*"/>
-    <suppress checks="" files="com/hazelcast/client/protocol/generator/*"/>
-    <suppress checks="" files="com/hazelcast/client/impl/protocol/.*Const"/>
-    <suppress checks="MethodCount" files="com/hazelcast/client/impl/protocol/parameters/MapTemplate"/>
-    <suppress checks="MethodCount" files="com/hazelcast/client/impl/protocol/parameters/CacheTemplate"/>
-    <suppress checks="ParameterNumber" files="com/hazelcast/client/impl/protocol/parameters/MapReduceTemplate"/>
+
     <suppress checks="ParameterNumber" files="com/hazelcast/client/proxy/ClientMapReduceProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/impl/protocol/ClientMessage"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/impl/protocol/util/MessageFlyweight"/>
