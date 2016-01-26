@@ -87,13 +87,19 @@ public class CodeGeneratorMessageTaskFactory
             return false;
         }
         boolean isEnterprise = false;
+        boolean isJet=false;
         for (Element element : elementsAnnotatedWith) {
             isEnterprise = element.toString().contains("enterprise");
+            if (element.toString().contains("jet")) {
+                isJet = true;
+            }
             map.put(element.toString(), addAllFromPackage((PackageElement) element));
         }
         String className;
         if (isEnterprise) {
             className = "EnterpriseMessageTaskFactoryImpl";
+        } else if (isJet) {
+            className = "JetMessageTaskFactoryImpl";
         } else {
             className = "MessageTaskFactoryImpl";
         }
