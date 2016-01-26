@@ -56,7 +56,7 @@ public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxy
         Collection<MultiMapRecord> coll = getInternal(dataKey);
         Collection<V> collection = new ArrayList<V>(coll.size());
         for (MultiMapRecord record : coll) {
-            collection.add((V) getNodeEngine().toObject(record.getObject()));
+            collection.add((V) toObjectIfNeeded(record.getObject()));
         }
         return collection;
     }
@@ -76,7 +76,7 @@ public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxy
         Collection<MultiMapRecord> coll = removeAllInternal(dataKey);
         Collection<V> result = new ArrayList<V>(coll.size());
         for (MultiMapRecord record : coll) {
-            result.add((V) getNodeEngine().toObject(record.getObject()));
+            result.add((V) toObjectIfNeeded(record.getObject()));
         }
         return result;
     }

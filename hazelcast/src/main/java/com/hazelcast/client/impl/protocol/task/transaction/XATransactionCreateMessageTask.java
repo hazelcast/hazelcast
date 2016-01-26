@@ -40,7 +40,7 @@ public class XATransactionCreateMessageTask
     protected Object call() throws Exception {
         ClientEndpoint endpoint = getEndpoint();
         XAService xaService = getService(getServiceName());
-        TransactionContext context = xaService.newXATransactionContext(parameters.xid, (int) parameters.timeout);
+        TransactionContext context = xaService.newXATransactionContext(parameters.xid, (int) parameters.timeout, true);
         TransactionAccessor.getTransaction(context).begin();
         endpoint.setTransactionContext(context);
         return context.getTxnId();

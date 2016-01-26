@@ -16,8 +16,6 @@
 
 package com.hazelcast.collection.impl.txnqueue;
 
-import com.hazelcast.config.QueueConfig;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.SizeOperation;
@@ -26,11 +24,13 @@ import com.hazelcast.collection.impl.txnqueue.operations.TxnPeekOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPollOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnReserveOfferOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnReservePollOperation;
-import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.config.QueueConfig;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
@@ -45,11 +45,10 @@ import java.util.concurrent.Future;
 /**
  * Provides support for proxy of the Transactional Queue.
  */
-public abstract class TransactionalQueueProxySupport extends AbstractDistributedObject<QueueService>
+public abstract class TransactionalQueueProxySupport extends TransactionalDistributedObject<QueueService>
         implements TransactionalObject {
 
     protected final String name;
-    protected final Transaction tx;
     protected final int partitionId;
     protected final QueueConfig config;
     private final LinkedList<QueueItem> offeredQueue = new LinkedList<QueueItem>();
@@ -57,9 +56,8 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
 
     protected TransactionalQueueProxySupport(NodeEngine nodeEngine, QueueService service, String name,
                                              Transaction tx) {
-        super(nodeEngine, service);
+        super(nodeEngine, service, tx);
         this.name = name;
-        this.tx = tx;
         partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
         config = nodeEngine.getConfig().findQueueConfig(name);
     }

@@ -81,9 +81,11 @@ public final class XATransaction implements Transaction {
     private State state = NO_TXN;
     private long startTime;
 
-    public XATransaction(NodeEngine nodeEngine, Xid xid, String txOwnerUuid, int timeout) {
-        this.transactionLog = new TransactionLog();
+    private boolean originatedFromClient;
+
+    public XATransaction(NodeEngine nodeEngine, Xid xid, String txOwnerUuid, int timeout, boolean originatedFromClient) {
         this.nodeEngine = nodeEngine;
+        this.transactionLog = new TransactionLog();
         this.timeoutMillis = SECONDS.toMillis(timeout);
         this.txnId = UuidUtil.newUnsecureUuidString();
         this.xid = new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());
@@ -92,23 +94,25 @@ public final class XATransaction implements Transaction {
         ILogger logger = nodeEngine.getLogger(getClass());
         this.commitExceptionHandler = logAllExceptions(logger, "Error during commit!", Level.WARNING);
         this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.WARNING);
+
+        this.originatedFromClient = originatedFromClient;
     }
 
     public XATransaction(NodeEngine nodeEngine, List<TransactionLogRecord> logs,
                          String txnId, SerializableXID xid, String txOwnerUuid, long timeoutMillis, long startTime) {
         this.nodeEngine = nodeEngine;
         this.transactionLog = new TransactionLog(logs);
+        this.timeoutMillis = timeoutMillis;
+        this.txnId = txnId;
+        this.xid = xid;
+        this.txOwnerUuid = txOwnerUuid;
 
         ILogger logger = nodeEngine.getLogger(getClass());
         this.commitExceptionHandler = logAllExceptions(logger, "Error during commit!", Level.WARNING);
         this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.WARNING);
 
-        state = PREPARED;
-        this.txnId = txnId;
-        this.xid = xid;
-        this.txOwnerUuid = txOwnerUuid;
-        this.timeoutMillis = timeoutMillis;
         this.startTime = startTime;
+        state = PREPARED;
     }
 
     @Override
@@ -252,6 +256,11 @@ public final class XATransaction implements Transaction {
     @Override
     public String getOwnerUuid() {
         return txOwnerUuid;
+    }
+
+    @Override
+    public boolean isOriginatedFromClient() {
+        return originatedFromClient;
     }
 
     public SerializableXID getXid() {

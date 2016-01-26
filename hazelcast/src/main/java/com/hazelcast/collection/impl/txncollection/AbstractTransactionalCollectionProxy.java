@@ -23,10 +23,10 @@ import com.hazelcast.collection.impl.txncollection.operations.CollectionReserveR
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;
@@ -40,17 +40,15 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public abstract class AbstractTransactionalCollectionProxy<S extends RemoteService, E> extends AbstractDistributedObject<S> {
+public abstract class AbstractTransactionalCollectionProxy<S extends RemoteService, E> extends TransactionalDistributedObject<S> {
 
     protected final String name;
-    protected final Transaction tx;
     protected final int partitionId;
     protected final Set<Long> itemIdSet = new HashSet<Long>();
 
     public AbstractTransactionalCollectionProxy(String name, Transaction tx, NodeEngine nodeEngine, S service) {
-        super(nodeEngine, service);
+        super(nodeEngine, service, tx);
         this.name = name;
-        this.tx = tx;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
