@@ -401,14 +401,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in the <tt>key</tt>'s class.
      * <p/>
-     * <p><b>Warning 2:</b></p>
-     * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
      *
      * @param key      the key of the map entry.
      * @param value    the new value of the map entry.
-     * @param ttl      maximum time for this entry to stay in the map.
-     *                 0 means infinite.
-     * @param timeunit time unit for the ttl.
      * @return Future on which to block.
      * @throws NullPointerException if the specified key or value is null.
      * @see java.util.concurrent.Future
