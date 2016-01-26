@@ -21,7 +21,6 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.wan.WanReplicationService;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,19 +38,11 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class WanReplicationTest extends HazelcastTestSupport {
 
-    private TestHazelcastInstanceFactory factory;
-    private HazelcastInstance instance1;
-    private HazelcastInstance instance2;
-
-    @Before
-    public void setup() {
-        factory = createHazelcastInstanceFactory(3);
-        instance1 = factory.newHazelcastInstance(getConfig());
-        instance2 = factory.newHazelcastInstance(getConfig());
-    }
-
     @Test
     public void mapPutRemoveTest() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(getConfig());
+        HazelcastInstance instance2 = factory.newHazelcastInstance(getConfig());
         IMap<Object, Object> map = instance1.getMap("dummy-wan-test-map");
 
         for (int i = 0; i < 10; i++) {
@@ -68,6 +59,9 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
     @Test
     public void entryProcessorTest() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(getConfig());
+        HazelcastInstance instance2 = factory.newHazelcastInstance(getConfig());
         IMap<Object, Object> map = instance1.getMap("dummy-wan-entryprocessor-test-map");
 
         for (int i = 0; i < 10; i++) {
@@ -108,6 +102,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
     @Test
     public void programmaticImplCreationTest() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         Config config = getConfig();
         WanTargetClusterConfig targetClusterConfig = config.getWanReplicationConfig("dummyWan").getTargetClusterConfigs().get(0);
         DummyWanReplication dummyWanReplication = new DummyWanReplication();
