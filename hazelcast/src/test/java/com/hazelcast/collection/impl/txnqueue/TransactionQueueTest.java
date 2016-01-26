@@ -54,6 +54,32 @@ import static org.junit.Assert.fail;
 public class TransactionQueueTest extends HazelcastTestSupport {
 
     @Test
+    public void testPeekWithTimeout() {
+        final String name = randomString();
+        final String item = randomString();
+        HazelcastInstance instance = createHazelcastInstance();
+        final IQueue<String> queue = instance.getQueue(name);
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                sleepSeconds(1);
+                queue.offer(item);
+            }
+        });
+
+        TransactionContext context = instance.newTransactionContext();
+        context.beginTransaction();
+        try {
+            TransactionalQueue<String> txnQueue = context.getQueue(name);
+            String peeked = txnQueue.peek(10, TimeUnit.SECONDS);
+            assertEquals(item, peeked);
+            context.commitTransaction();
+        } catch (Exception e) {
+            context.rollbackTransaction();
+        }
+    }
+
+    @Test
     public void testOrder_WhenMultipleConcurrentTransactionRollback() throws InterruptedException {
         final HazelcastInstance instance = createHazelcastInstance();
         final String name = randomString();
