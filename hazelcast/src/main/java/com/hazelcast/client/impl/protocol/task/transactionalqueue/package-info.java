@@ -18,6 +18,6 @@
  * <p>Client protocol tasks implementations for Transactional Queue</p>
  */
 
-@GenerateMessageTaskFactory package com.hazelcast.client.impl.protocol.task.transactionalqueue;
+package com.hazelcast.client.impl.protocol.task.transactionalqueue;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactory;
+

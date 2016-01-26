@@ -45,29 +45,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven.compiler.plugin.version}</version>
-                <configuration>
-                    <source>${jdk.version}</source>
-                    <target>${jdk.version}</target>
-                    <encoding>${project.build.sourceEncoding}</encoding>
-                    <annotationProcessors>
-                        <annotationProcessor>com.hazelcast.client.protocol.generator.CodecCodeGenerator</annotationProcessor>
-                        <annotationProcessor>com.hazelcast.client.protocol.generator.CodeGeneratorMessageTaskFactory
-                        </annotationProcessor>
-                    </annotationProcessors>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.hazelcast</groupId>
-                        <artifactId>hazelcast-code-generator</artifactId>
-                        <version>${project.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-
-            <plugin>
                 <groupId>pl.project13.maven</groupId>
                 <artifactId>git-commit-id-plugin</artifactId>
                 <version>${maven.git.commit.id.plugin.version}</version>
@@ -235,6 +212,7 @@
                             <artifactSet>
                                 <includes>
                                     <include>com.eclipsesource.minimal-json:minimal-json</include>
+                                    <include>com.hazelcast:hazelcast-client-protocol</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -337,9 +315,9 @@
 
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-code-generator</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
+            <artifactId>hazelcast-client-protocol</artifactId>
+            <version>${client.protocol.version}</version>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
