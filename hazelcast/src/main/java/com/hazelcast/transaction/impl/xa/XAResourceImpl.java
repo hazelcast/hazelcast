@@ -107,7 +107,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
 
     private TransactionContext createTransactionContext(Xid xid) {
         XAService xaService = getService();
-        TransactionContext context = xaService.newXATransactionContext(xid, timeoutInSeconds.get());
+        TransactionContext context = xaService.newXATransactionContext(xid, timeoutInSeconds.get(), false);
         getTransaction(context).begin();
         return context;
     }

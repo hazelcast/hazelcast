@@ -16,9 +16,9 @@
 
 package com.hazelcast.collection.impl.txnqueue;
 
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.EmptyStatement;
@@ -80,7 +80,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
 
         checkTransactionState();
         Data data = pollInternal(unit.toMillis(timeout));
-        return getNodeEngine().toObject(data);
+        return (E) toObjectIfNeeded(data);
     }
 
     @Override
@@ -100,7 +100,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
 
         checkTransactionState();
         Data data = peekInternal(unit.toMillis(timeout));
-        return getNodeEngine().toObject(data);
+        return (E) toObjectIfNeeded(data);
     }
 
     @Override
