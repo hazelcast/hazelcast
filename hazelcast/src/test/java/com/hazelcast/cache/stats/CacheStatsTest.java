@@ -14,6 +14,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.cache.CacheManager;
+import javax.cache.spi.CachingProvider;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -383,9 +386,39 @@ public class CacheStatsTest extends CacheTestSupport {
     }
 
     @Test
-    public void testOwnedEntryCount() {
-        ICache<Integer, String> cache = createCache();
-        final CacheStatistics stats = cache.getLocalCacheStatistics();
+    public void testOwnedEntryCountWhenThereIsNoBackup() {
+        doTestForOwnedEntryCount(false, false);
+    }
+
+    @Test
+    public void testOwnedEntryCountWhenThereAreBackupsOnStaticCluster() {
+        doTestForOwnedEntryCount(true, false);
+    }
+
+    @Test
+    public void testOwnedEntryCountWhenThereAreBackupsOnDynamicCluster() {
+        doTestForOwnedEntryCount(true, true);
+    }
+
+    private void doTestForOwnedEntryCount(boolean useBackups, boolean triggerMigration) {
+        final String cacheName = randomName();
+
+        ICache<Integer, String> cache;
+        CacheStatistics[] allStats;
+        HazelcastInstance instance2 = null;
+
+        if (useBackups) {
+            // Create the second instance to store data as backup.
+            instance2 = getHazelcastInstance();
+            CachingProvider cp = getCachingProvider(instance2);
+            CacheManager cm = cp.getCacheManager();
+            cache = createCache(cacheName);
+            ICache<Integer, String> c = cm.getCache(cacheName).unwrap(ICache.class);
+            allStats = new CacheStatistics[]{ cache.getLocalCacheStatistics(), c.getLocalCacheStatistics() };
+        } else {
+            cache = createCache(cacheName);
+            allStats = new CacheStatistics[]{ cache.getLocalCacheStatistics() };
+        }
 
         final int ENTRY_COUNT = 100;
 
@@ -393,44 +426,86 @@ public class CacheStatsTest extends CacheTestSupport {
             cache.put(i, "Value-" + i);
         }
 
-        assertEquals(ENTRY_COUNT, stats.getOwnedEntryCount());
+        assertEquals(ENTRY_COUNT, getOwnedEntryCount(allStats));
+
+        if (triggerMigration && instance2 != null) {
+            // Shutdown the second instance to trigger migration so first instance will be owner of all partitions.
+            instance2.shutdown();
+            allStats = new CacheStatistics[]{ cache.getLocalCacheStatistics() };
+
+            final CacheStatistics[] allStatistics = allStats;
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(ENTRY_COUNT, getOwnedEntryCount(allStatistics));
+                }
+            });
+        }
 
         for (int i = 0; i < 10; i++) {
             cache.remove(i);
         }
 
-        assertEquals(ENTRY_COUNT - 10, stats.getOwnedEntryCount());
+        assertEquals(ENTRY_COUNT - 10, getOwnedEntryCount(allStats));
 
         for (int i = 10; i < ENTRY_COUNT; i++) {
             cache.remove(i);
         }
 
-        assertEquals(0, stats.getOwnedEntryCount());
+        assertEquals(0, getOwnedEntryCount(allStats));
 
         for (int i = 0; i < ENTRY_COUNT; i++) {
             cache.put(i, "Value-" + i);
         }
 
-        assertEquals(ENTRY_COUNT, stats.getOwnedEntryCount());
+        assertEquals(ENTRY_COUNT, getOwnedEntryCount(allStats));
+
+        if (triggerMigration) {
+            // Create the second instance to trigger migration
+            // so the second instance will be owner of some partitions
+            // and the first instance will lose ownership of some instances.
+            instance2 = getHazelcastInstance();
+            CachingProvider cp = getCachingProvider(instance2);
+            CacheManager cm = cp.getCacheManager();
+            ICache<Integer, String> c = cm.getCache(cacheName).unwrap(ICache.class);
+            allStats = new CacheStatistics[]{ cache.getLocalCacheStatistics(), c.getLocalCacheStatistics() };
+
+            final CacheStatistics[] allStatistics = allStats;
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(ENTRY_COUNT, getOwnedEntryCount(allStatistics));
+                }
+            });
+        }
 
         cache.clear();
 
-        assertEquals(0, stats.getOwnedEntryCount());
+        assertEquals(0, getOwnedEntryCount(allStats));
 
         for (int i = 0; i < ENTRY_COUNT; i++) {
             cache.put(i, "Value-" + i);
         }
 
-        assertEquals(ENTRY_COUNT, stats.getOwnedEntryCount());
+        assertEquals(ENTRY_COUNT, getOwnedEntryCount(allStats));
 
         cache.destroy();
 
+        final CacheStatistics[] allStatistics = allStats;
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(0, stats.getOwnedEntryCount());
+                assertEquals(0, getOwnedEntryCount(allStatistics));
             }
         });
+    }
+
+    private long getOwnedEntryCount(CacheStatistics... statsList) {
+        long ownedEntryCount = 0;
+        for (CacheStatistics stats : statsList) {
+            ownedEntryCount += stats.getOwnedEntryCount();
+        }
+        return ownedEntryCount;
     }
 
     @Test

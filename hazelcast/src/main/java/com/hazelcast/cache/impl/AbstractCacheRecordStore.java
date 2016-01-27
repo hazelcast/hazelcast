@@ -174,6 +174,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public void init() {
         primary = isPrimary();
+        records.setEntryCounting(primary);
     }
 
     protected boolean isReadThrough() {

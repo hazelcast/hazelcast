@@ -96,7 +96,11 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
     }
 
     protected CachingProvider getCachingProvider() {
-        return HazelcastServerCachingProvider.createCachingProvider(getHazelcastInstance());
+        return getCachingProvider(getHazelcastInstance());
+    }
+
+    protected CachingProvider getCachingProvider(HazelcastInstance instance) {
+        return HazelcastServerCachingProvider.createCachingProvider(instance);
     }
 
     protected int getMaxCacheSizeWithoutEviction(CacheConfig cacheConfig) {
