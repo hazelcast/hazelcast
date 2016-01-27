@@ -22,11 +22,9 @@ import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.EvictionCandidate;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.SampleableConcurrentHashMap;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 
 public class CacheRecordHashMap
@@ -36,24 +34,38 @@ public class CacheRecordHashMap
     private static final long serialVersionUID = 1L;
 
     private final transient CacheContext cacheContext;
+    private boolean entryCountingEnable;
 
     public CacheRecordHashMap(int initialCapacity, CacheContext cacheContext) {
         super(initialCapacity);
         this.cacheContext = cacheContext;
     }
 
-    public CacheRecordHashMap(int initialCapacity, float loadFactor, int concurrencyLevel,
-            ConcurrentReferenceHashMap.ReferenceType keyType,
-            ConcurrentReferenceHashMap.ReferenceType valueType,
-            EnumSet<Option> options, CacheContext cacheContext) {
-        super(initialCapacity, loadFactor, concurrencyLevel, keyType, valueType, options);
-        this.cacheContext = cacheContext;
+    // Called by only same partition thread. So there is no synchronization and visibility problem.
+    @Override
+    public void setEntryCounting(boolean enable) {
+        if (enable) {
+            if (!entryCountingEnable) {
+                // It was disable before but now it will be enable.
+                // Therefore, we increase the entry count as size of records.
+                cacheContext.increaseEntryCount(size());
+            }
+        } else {
+            if (entryCountingEnable) {
+                int size = size();
+                assert (size == 0) : "Expected empty cache record map!";
+                // It was enable before but now it will be disable.
+                // Therefore, we decrease the entry count as size of records.
+                cacheContext.decreaseEntryCount(size);
+            }
+        }
+        this.entryCountingEnable = enable;
     }
 
     @Override
     public CacheRecord put(Data key, CacheRecord value) {
         CacheRecord oldRecord = super.put(key, value);
-        if (oldRecord == null) {
+        if (oldRecord == null && entryCountingEnable) {
             // New put
             cacheContext.increaseEntryCount();
         }
@@ -63,7 +75,7 @@ public class CacheRecordHashMap
     @Override
     public CacheRecord putIfAbsent(Data key, CacheRecord value) {
         CacheRecord oldRecord = super.putIfAbsent(key, value);
-        if (oldRecord == null) {
+        if (oldRecord == null && entryCountingEnable) {
             // New put
             cacheContext.increaseEntryCount();
         }
@@ -73,7 +85,7 @@ public class CacheRecordHashMap
     @Override
     public CacheRecord remove(Object key) {
         CacheRecord removedRecord = super.remove(key);
-        if (removedRecord != null) {
+        if (removedRecord != null && entryCountingEnable) {
             // Removed
             cacheContext.decreaseEntryCount();
         }
@@ -83,7 +95,7 @@ public class CacheRecordHashMap
     @Override
     public boolean remove(Object key, Object value) {
         boolean removed = super.remove(key, value);
-        if (removed) {
+        if (removed && entryCountingEnable) {
             // Removed
             cacheContext.decreaseEntryCount();
         }
@@ -94,7 +106,9 @@ public class CacheRecordHashMap
     public void clear() {
         final int sizeBeforeClear = size();
         super.clear();
-        cacheContext.decreaseEntryCount(sizeBeforeClear);
+        if (entryCountingEnable) {
+            cacheContext.decreaseEntryCount(sizeBeforeClear);
+        }
     }
 
     public class EvictableSamplingEntry extends SamplingEntry implements EvictionCandidate {
