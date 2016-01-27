@@ -50,9 +50,9 @@ final class TransactionContextImpl implements TransactionContext {
             = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
 
     TransactionContextImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngineImpl nodeEngine,
-                           TransactionOptions options, String ownerUuid) {
+                           TransactionOptions options, String ownerUuid, boolean originatedFromClient) {
         this.nodeEngine = nodeEngine;
-        this.transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, ownerUuid);
+        this.transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, ownerUuid, originatedFromClient);
     }
 
     @Override

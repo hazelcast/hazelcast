@@ -638,6 +638,11 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
         @Override
         public String getOwnerUuid() {return tx.getOwnerUuid();}
+
+        @Override
+        public boolean isOriginatedFromClient() {
+            return tx.isOriginatedFromClient();
+        }
     }
 
     public static void changeClusterStateEventually(HazelcastInstance hz, ClusterState newState) {

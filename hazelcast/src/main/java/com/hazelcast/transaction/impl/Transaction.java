@@ -53,4 +53,6 @@ public interface Transaction {
     TransactionLogRecord get(Object key);
 
     String getOwnerUuid();
+
+    boolean isOriginatedFromClient();
 }
