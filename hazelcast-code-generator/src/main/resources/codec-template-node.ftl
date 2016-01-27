@@ -122,17 +122,18 @@ static handle(clientMessage, <#list model.events as event>handle_event_${event.n
         <#local keyType = util.getFirstGenericParameterType(type)>
         <#local valueType = util.getSecondGenericParameterType(type)>
         <#local n= varName>
-    for key, val in ${varName}.iteritems():
-        <@sizeTextInternal varName="key"  type=keyType />
-        <@sizeTextInternal varName="val"  type=valueType />
+    for( entry in ${varName}){
+        <@sizeTextInternal varName="entry.key"  type=keyType />
+        <@sizeTextInternal varName="entry.val"  type=valueType />
+    }
 </#switch>
 </#macro>
 
 <#--SETTER NULL CHECK MACRO -->
 <#macro setterText varName type isNullable=false>
-<#local isNullVariableName= "${varName}_is_null">
+<#local isNullVariableName= "${varName}IsNull">
 <#if isNullable>
-    clientMessage.appendBool(${varName} is None);
+    clientMessage.appendBool(${varName} === null);
     if(${varName} !== null){
 <@setterTextInternal varName=varName type=type />
     }
@@ -153,24 +154,27 @@ static handle(clientMessage, <#list model.events as event>handle_event_${event.n
     <#if cat == "COLLECTION">
     clientMessage.appendInt(len(${varName}))
         <#local itemType= util.getGenericType(type)>
-        <#local itemTypeVar= varName + "_item">
-    for ${itemTypeVar} in ${varName}:
+        <#local itemTypeVar= varName + "Item">
+    for( ${itemTypeVar} in ${varName}) {
     <@setterTextInternal varName=itemTypeVar type=itemType />
+    }
     </#if>
     <#if cat == "ARRAY">
     clientMessage.appendInt(len(${varName}));
         <#local itemType= util.getArrayType(type)>
-        <#local itemTypeVar= varName + "_item">
-    for ${itemTypeVar} in ${varName}:
+        <#local itemTypeVar= varName + "Item">
+    for( ${itemTypeVar} in ${varName}){
     <@setterTextInternal varName=itemTypeVar  type=itemType />
+    }
     </#if>
     <#if cat == "MAP">
         <#local keyType = util.getFirstGenericParameterType(type)>
         <#local valueType = util.getSecondGenericParameterType(type)>
     clientMessage.appendInt(len(${varName}))
-    for key, value in ${varName}.iteritems():
-    <@setterTextInternal varName="key"  type=keyType />
-    <@setterTextInternal varName="val"  type=valueType />
+    for( entry in ${varName}){
+    <@setterTextInternal varName="entry.key"  type=keyType />
+    <@setterTextInternal varName="entry.val"  type=valueType />
+    }
     </#if>
 </#macro>
 
@@ -217,25 +221,26 @@ if(clientMessage.readBool() === true){
     <#case "ARRAY">
     <#local collectionType>java.util.ArrayList</#local>
     <#local itemVariableType= util.getGenericType(varType)>
-    <#local itemVariableName= "${varName}_item">
-    <#local sizeVariableName= "${varName}_size">
-    <#local indexVariableName= "${varName}_index">
+    <#local itemVariableName= "${varName}Item">
+    <#local sizeVariableName= "${varName}Size">
+    <#local indexVariableName= "${varName}Index">
     ${sizeVariableName} = client_message.read_int()
-    ${varName} = []
-    for ${indexVariableName} in xrange(0, ${sizeVariableName}):
+    ${varName} = [];
+    for(var ${indexVariableName} = 0 ;  ${indexVariableName} <= ${sizeVariableName} ; ${indexVariableName}++){
                             <@getterTextInternal varName=itemVariableName varType=itemVariableType isEvent=true />
-        ${varName}.append(${itemVariableName})
+        ${varName}.push(${itemVariableName})
+    }
 <#if !isEvent>
     parameters['${varName}'] = ${varName}
 </#if>
         <#break >
     <#case "MAP">
-        <#local sizeVariableName= "${varName}_size">
-        <#local indexVariableName= "${varName}_index">
+        <#local sizeVariableName= "${varName}Size">
+        <#local indexVariableName= "${varName}Index">
         <#local keyType = util.getFirstGenericParameterType(varType)>
         <#local valueType = util.getSecondGenericParameterType(varType)>
-        <#local keyVariableName= "${varName}_key">
-        <#local valVariableName= "${varName}_val">
+        <#local keyVariableName= "${varName}Key">
+        <#local valVariableName= "${varName}Val">
     ${sizeVariableName} = client_message.read_int()
     ${varName} = {}
     for ${indexVariableName} in xrange(0,${sizeVariableName}):
