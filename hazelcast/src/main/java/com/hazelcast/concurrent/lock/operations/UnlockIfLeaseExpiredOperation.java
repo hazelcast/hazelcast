@@ -18,9 +18,13 @@ package com.hazelcast.concurrent.lock.operations;
 
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
@@ -50,6 +54,23 @@ public final class UnlockIfLeaseExpiredOperation extends UnlockOperation {
                         + lockVersion + " vs " + version);
             }
         }
+    }
+
+    /**
+     * This operation runs on both primary and backup
+     * If it is running on backup we should not send a backup operation
+     * @return
+     */
+    @Override
+    public boolean shouldBackup() {
+        NodeEngine nodeEngine = getNodeEngine();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        Address thisAddress = nodeEngine.getThisAddress();
+        InternalPartition partition = partitionService.getPartition(getPartitionId());
+        if (!thisAddress.equals(partition.getOwnerOrNull())) {
+            return false;
+        }
+        return super.shouldBackup();
     }
 
     @Override
