@@ -36,6 +36,6 @@ public class MapFlushBackupOperation extends MapOperation implements BackupOpera
     @Override
     public void run() throws Exception {
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
-        recordStore.getMapDataStore().clear();
+        recordStore.softFlush();
     }
 }

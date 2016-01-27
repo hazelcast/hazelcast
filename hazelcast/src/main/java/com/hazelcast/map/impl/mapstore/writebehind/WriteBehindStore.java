@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.core.IMap;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
@@ -54,9 +55,13 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     /**
      * Number of issued flush operations.
-     * Flushes may be caused by an eviction. Instead of directly flushing entries
-     * upon eviction, the flushes are counted and immediately processed
-     * in {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker}.
+     *
+     * Flushes may be caused by an eviction or {@link IMap#flush()}. Instead of directly flushing entries
+     * the flushes are counted and immediately processed in
+     * {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker}.
+     *
+     * With this counter we know that how much entry should immediately be processes regardless of scheduled
+     * store-time in the future.
      */
     private final AtomicInteger flushCounter;
 
@@ -255,14 +260,29 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
                 || !writeBehindQueue.contains(DelayedEntries.createWithoutValue(key))) {
             return null;
         }
+
         flushCounter.incrementAndGet();
 
         return value;
     }
 
     @Override
-    public Collection<Data> flush() {
-        return writeBehindProcessor.flush(writeBehindQueue);
+    public void softFlush() {
+        int size = writeBehindQueue.size();
+        if (size == 0) {
+            return;
+        }
+
+        flushCounter.set(size);
+    }
+
+    @Override
+    public void hardFlush() {
+        if (writeBehindQueue.size() == 0) {
+            return;
+        }
+
+        writeBehindProcessor.flush(writeBehindQueue);
     }
 
     public WriteBehindQueue<DelayedEntry> getWriteBehindQueue() {
@@ -277,8 +297,19 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         this.writeBehindProcessor = writeBehindProcessor;
     }
 
-    public AtomicInteger getFlushCounter() {
-        return flushCounter;
+    public void setNumberOfEntriesToFlush(int numberOfEntriesToFlush) {
+        flushCounter.set(numberOfEntriesToFlush);
+    }
+
+    public int getNumberOfEntriesToFlush() {
+        return flushCounter.get();
+    }
+
+    // only one thread can call at a time.
+    public void decrementFlushCounter() {
+        if (flushCounter.get() > 0) {
+            flushCounter.decrementAndGet();
+        }
     }
 
     void removeFromStagingArea(DelayedEntry delayedEntry) {
@@ -296,5 +327,4 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         }
         return delayedEntry;
     }
-
 }

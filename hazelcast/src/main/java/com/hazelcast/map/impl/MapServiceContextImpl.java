@@ -24,6 +24,7 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.event.MapEventPublisherImpl;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
+import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.BasePutOperation;
 import com.hazelcast.map.impl.operation.BaseRemoveOperation;
@@ -215,11 +216,16 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void flushMaps() {
+        for (MapContainer mapContainer : mapContainers.values()) {
+            mapContainer.getMapStoreContext().stop();
+        }
+
         for (PartitionContainer partitionContainer : partitionContainers) {
             for (String mapName : mapContainers.keySet()) {
                 RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
                 if (recordStore != null) {
-                    recordStore.flush();
+                    MapDataStore mapDataStore = recordStore.getMapDataStore();
+                    mapDataStore.hardFlush();
                 }
             }
         }

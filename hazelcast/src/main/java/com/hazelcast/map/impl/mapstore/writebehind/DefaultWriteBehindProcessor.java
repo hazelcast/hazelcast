@@ -284,13 +284,16 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
     }
 
     @Override
-    public Collection flush(WriteBehindQueue queue) {
-        if (queue.size() == 0) {
-            return Collections.emptyList();
+    public void flush(WriteBehindQueue queue) {
+        int size = queue.size();
+
+        if (size == 0) {
+            return;
         }
-        final List<DelayedEntry> delayedEntries = new ArrayList<DelayedEntry>(queue.size());
+
+        List<DelayedEntry> delayedEntries = new ArrayList<DelayedEntry>(size);
         queue.drainTo(delayedEntries);
-        return flushInternal(delayedEntries);
+        flushInternal(delayedEntries);
     }
 
     @Override
@@ -299,13 +302,14 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         flushInternal(entries);
     }
 
-    private Collection<Data> flushInternal(List<DelayedEntry> delayedEntries) {
+    private void flushInternal(List<DelayedEntry> delayedEntries) {
         sort(delayedEntries);
-        final Map<Integer, List<DelayedEntry>> failedStoreOpPerPartition = process(delayedEntries);
+
+        Map<Integer, List<DelayedEntry>> failedStoreOpPerPartition = process(delayedEntries);
+
         if (failedStoreOpPerPartition.size() > 0) {
             printErrorLog(failedStoreOpPerPartition);
         }
-        return getDataKeys(delayedEntries);
     }
 
     private void printErrorLog(Map<Integer, List<DelayedEntry>> failsPerPartition) {
@@ -316,18 +320,6 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         }
         final String logMessage = String.format("Map store flush operation can not be done for %d entries", size);
         logger.severe(logMessage);
-    }
-
-    private List<Data> getDataKeys(final Collection<DelayedEntry> sortedDelayedEntries) {
-        if (sortedDelayedEntries == null || sortedDelayedEntries.isEmpty()) {
-            return Collections.emptyList();
-        }
-        final List<Data> keys = new ArrayList<Data>(sortedDelayedEntries.size());
-        for (DelayedEntry entry : sortedDelayedEntries) {
-            // TODO Key type always should be Data. No need to call mapService.toData but check first if it is.
-            keys.add(toData(entry.getKey()));
-        }
-        return keys;
     }
 
     @Override

@@ -38,7 +38,7 @@ public class MapFlushOperation extends MapOperation implements BackupAwareOperat
     @Override
     public void run() {
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
-        recordStore.flush();
+        recordStore.softFlush();
     }
 
     @Override

@@ -21,9 +21,6 @@ import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.Collection;
-import java.util.Collections;
-
 /**
  * Write through map data store implementation.
  * Created per map.
@@ -81,8 +78,13 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public Collection<Data> flush() {
-        return Collections.emptyList();
+    public void softFlush() {
+        // Only write-behind configured map-stores are flushable.
+    }
+
+    @Override
+    public void hardFlush() {
+        // Only write-behind configured map-stores are flushable.
     }
 
     @Override

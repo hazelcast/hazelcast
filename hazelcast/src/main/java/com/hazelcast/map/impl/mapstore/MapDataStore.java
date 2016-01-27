@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.impl.mapstore;
 
-import com.hazelcast.nio.serialization.Data;
-
 import java.util.Collection;
 import java.util.Map;
 
@@ -64,11 +62,25 @@ public interface MapDataStore<K, V> {
     boolean isPostProcessingMapStore();
 
     /**
-     * Flushes all keys in this map-store.
+     * Only marks this {@link MapDataStore} as flushable. Flush means storing entries from write-behind-queue into map-store
+     * regardless of the scheduled store-time. Actual flushing is done by another thread than partition-operation thread
+     * which runs {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker}.
      *
-     * @return flushed {@link com.hazelcast.nio.serialization.Data} keys list.
+     * @see com.hazelcast.map.impl.operation.MapFlushOperation
      */
-    Collection<Data> flush();
+    void softFlush();
+
+    /**
+     * Flushes write-behind-queue into map-store in calling thread.
+     *
+     * After calling of this method, all elements in the {@link com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue}
+     * of this {@link MapDataStore} should be in map-store regardless of the scheduled store-time.
+     *
+     * The only call to this method is in node-shutdown.
+     *
+     * @see com.hazelcast.map.impl.MapManagedService#shutdown(boolean)
+     */
+    void hardFlush();
 
     /**
      * Flushes the supplied key to the map-store.

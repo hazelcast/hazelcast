@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -24,7 +23,6 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
@@ -35,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 
@@ -46,55 +43,47 @@ import static com.hazelcast.util.CollectionUtil.isEmpty;
  */
 public class StoreWorker implements Runnable {
 
+    private static final int ARRAY_LIST_DEFAULT_CAPACITY = 16;
+
+    /**
+     * Write-behind-queues of backup partitions are processed after this delay
+     */
+    private final long backupRunIntervalMillis;
+    private final int partitionCount;
     private final String mapName;
-
     private final MapServiceContext mapServiceContext;
-
+    private final InternalPartitionService partitionService;
     private final WriteBehindProcessor writeBehindProcessor;
 
-    /**
-     * Run on backup nodes after this interval.
-     */
-    private final long backupRunIntervalTime;
-
-    /**
-     * Last run time of this processor.
-     */
-    private long lastRunTime;
-
+    private long lastRunTimeMillis;
 
     public StoreWorker(MapStoreContext mapStoreContext, WriteBehindProcessor writeBehindProcessor) {
         this.mapName = mapStoreContext.getMapName();
         this.mapServiceContext = mapStoreContext.getMapServiceContext();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        this.partitionService = nodeEngine.getPartitionService();
         this.writeBehindProcessor = writeBehindProcessor;
-        this.backupRunIntervalTime = getReplicaWaitTime();
-        this.lastRunTime = Clock.currentTimeMillis();
+        this.backupRunIntervalMillis = getReplicaWaitTimeMillis();
+        this.lastRunTimeMillis = Clock.currentTimeMillis();
+        this.partitionCount = partitionService.getPartitionCount();
     }
 
 
     @Override
     public void run() {
         long now = Clock.currentTimeMillis();
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        int partitionCount = partitionService.getPartitionCount();
+
         List<DelayedEntry> entries = new ArrayList<DelayedEntry>(partitionCount);
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            InternalPartition partition = partitionService.getPartition(partitionId, false);
-            Address owner = partition.getOwnerOrNull();
-            if (owner == null) {
-                continue;
-            }
-
             RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
             if (recordStore == null) {
                 continue;
             }
 
-            List<DelayedEntry> entriesToStore = getEntriesToStore(now, recordStore);
-            if (!partition.isLocal()) {
-                if (now > lastRunTime + backupRunIntervalTime) {
+            List<DelayedEntry> entriesToStore = getEntriesToStore(recordStore, now);
+            if (!isPartitionLocal(partitionId)) {
+                if (now > lastRunTimeMillis + backupRunIntervalMillis) {
                     doInBackup(entriesToStore, partitionId);
                 }
             } else {
@@ -102,24 +91,28 @@ public class StoreWorker implements Runnable {
             }
         }
 
-        if (entries.isEmpty()) {
-            return;
+        if (!entries.isEmpty()) {
+            Map<Integer, List<DelayedEntry>> failuresPerPartition = writeBehindProcessor.process(entries);
+            removeFinishedStoreOperationsFromQueues(mapName, entries);
+            readdFailedStoreOperationsToQueues(mapName, failuresPerPartition);
+            lastRunTimeMillis = now;
         }
 
-        Map<Integer, List<DelayedEntry>> failuresPerPartition = writeBehindProcessor.process(entries);
-        removeFinishedStoreOperationsFromQueues(mapName, entries);
-        readdFailedStoreOperationsToQueues(mapName, failuresPerPartition);
-        lastRunTime = now;
     }
 
-    private List<DelayedEntry> getEntriesToStore(long now, RecordStore recordStore) {
-        int flushCount = getNumberOfFlushedEntries(recordStore);
-        WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
+    private boolean isPartitionLocal(int partitionId) {
+        InternalPartition partition = partitionService.getPartition(partitionId, false);
+        return partition.isLocal();
+    }
 
-        final int defaultCapacity = 16;
-        int initialCapacity = Math.max(flushCount, defaultCapacity);
+    private List<DelayedEntry> getEntriesToStore(RecordStore recordStore, long now) {
+        int numberOfEntriesToFlush = getNumberOfEntriesToFlush(recordStore);
+        int initialCapacity = Math.max(numberOfEntriesToFlush, ARRAY_LIST_DEFAULT_CAPACITY);
+
         List<DelayedEntry> entries = new ArrayList<DelayedEntry>(initialCapacity);
-        filterWriteBehindQueue(now, flushCount, entries, queue);
+
+        WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
+        filterWriteBehindQueue(now, numberOfEntriesToFlush, entries, queue);
 
         return entries;
     }
@@ -135,18 +128,10 @@ public class StoreWorker implements Runnable {
 
     private void removeFinishedStoreOperationsFromQueues(String mapName, List<DelayedEntry> entries) {
         for (DelayedEntry entry : entries) {
-            final int partitionId = entry.getPartitionId();
-            final RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
-            if (recordStore == null) {
-                continue;
-            }
-            final WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
-            queue.removeFirstOccurrence(entry);
-
-            final AtomicInteger flushCounter = getFlushCounter(recordStore);
-            final int flushCount = flushCounter.get();
-            if (flushCount > 0) {
-                flushCounter.addAndGet(-1);
+            RecordStore recordStore = getRecordStoreOrNull(mapName, entry.getPartitionId());
+            if (recordStore != null) {
+                getWriteBehindQueue(recordStore).removeFirstOccurrence(entry);
+                decrementFlushCounter(recordStore);
             }
         }
     }
@@ -156,12 +141,12 @@ public class StoreWorker implements Runnable {
             return;
         }
         for (Map.Entry<Integer, List<DelayedEntry>> entry : failuresPerPartition.entrySet()) {
-            final Integer partitionId = entry.getKey();
-            final List<DelayedEntry> failures = failuresPerPartition.get(partitionId);
+            Integer partitionId = entry.getKey();
+            List<DelayedEntry> failures = failuresPerPartition.get(partitionId);
             if (isEmpty(failures)) {
                 continue;
             }
-            final RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
+            RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
             if (recordStore == null) {
                 continue;
             }
@@ -177,46 +162,39 @@ public class StoreWorker implements Runnable {
      * @param delayedEntries entries to be processed.
      * @param partitionId    corresponding partition id.
      */
-    private void doInBackup(final List<DelayedEntry> delayedEntries, final int partitionId) {
-        if (CollectionUtil.isEmpty(delayedEntries)) {
+    private void doInBackup(List<DelayedEntry> delayedEntries, int partitionId) {
+        if (CollectionUtil.isEmpty(delayedEntries) || isPartitionLocal(partitionId)) {
             return;
         }
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final ClusterService clusterService = nodeEngine.getClusterService();
-        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        final Address thisAddress = clusterService.getThisAddress();
-        final InternalPartition partition = partitionService.getPartition(partitionId, false);
-        final Address owner = partition.getOwnerOrNull();
-        if (owner != null && !owner.equals(thisAddress)) {
-            writeBehindProcessor.callBeforeStoreListeners(delayedEntries);
-            removeFinishedStoreOperationsFromQueues(mapName, delayedEntries);
-            writeBehindProcessor.callAfterStoreListeners(delayedEntries);
-        }
+
+        writeBehindProcessor.callBeforeStoreListeners(delayedEntries);
+        removeFinishedStoreOperationsFromQueues(mapName, delayedEntries);
+        writeBehindProcessor.callAfterStoreListeners(delayedEntries);
     }
 
-    private long getReplicaWaitTime() {
+    private long getReplicaWaitTimeMillis() {
         GroupProperties groupProperties = mapServiceContext.getNodeEngine().getGroupProperties();
         return groupProperties.getMillis(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS);
     }
 
     private RecordStore getRecordStoreOrNull(String mapName, int partitionId) {
-        final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
+        PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         return partitionContainer.getExistingRecordStore(mapName);
     }
 
-    private static WriteBehindQueue<DelayedEntry> getWriteBehindQueue(RecordStore recordStore) {
+    private WriteBehindQueue<DelayedEntry> getWriteBehindQueue(RecordStore recordStore) {
         WriteBehindStore writeBehindStore = (WriteBehindStore) recordStore.getMapDataStore();
         return writeBehindStore.getWriteBehindQueue();
     }
 
-    private static AtomicInteger getFlushCounter(RecordStore recordStore) {
+    private int getNumberOfEntriesToFlush(RecordStore recordStore) {
         WriteBehindStore writeBehindStore = (WriteBehindStore) recordStore.getMapDataStore();
-        return writeBehindStore.getFlushCounter();
+        return writeBehindStore.getNumberOfEntriesToFlush();
     }
 
-    private static int getNumberOfFlushedEntries(RecordStore recordStore) {
-        AtomicInteger flushCounter = getFlushCounter(recordStore);
-        return flushCounter.get();
+    private void decrementFlushCounter(RecordStore recordStore) {
+        WriteBehindStore writeBehindStore = (WriteBehindStore) recordStore.getMapDataStore();
+        writeBehindStore.decrementFlushCounter();
     }
 }
 
