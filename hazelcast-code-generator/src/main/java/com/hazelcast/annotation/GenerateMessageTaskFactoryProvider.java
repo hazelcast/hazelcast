@@ -14,9 +14,18 @@
  * limitations under the License.
  */
 
-/**
- * <p>Client protocol tasks implementations for set</p>
- */
-@GenerateMessageTaskFactoryProvider package com.hazelcast.client.impl.protocol.task.set;
+package com.hazelcast.annotation;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactoryProvider;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * This annotation is for marking packages to generate MessageTaskFactory registry
+ */
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.PACKAGE)
+public @interface GenerateMessageTaskFactoryProvider {
+}
+

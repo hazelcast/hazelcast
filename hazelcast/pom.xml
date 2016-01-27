@@ -54,7 +54,7 @@
                     <encoding>${project.build.sourceEncoding}</encoding>
                     <annotationProcessors>
                         <annotationProcessor>com.hazelcast.client.protocol.generator.CodecCodeGenerator</annotationProcessor>
-                        <annotationProcessor>com.hazelcast.client.protocol.generator.CodeGeneratorMessageTaskFactory
+                        <annotationProcessor>com.hazelcast.client.protocol.generator.CodeGeneratorMessageTaskFactoryProvider
                         </annotationProcessor>
                     </annotationProcessors>
                 </configuration>

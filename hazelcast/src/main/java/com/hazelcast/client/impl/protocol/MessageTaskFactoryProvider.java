@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-/**
- * <p>Client protocol tasks implementations for set</p>
- */
-@GenerateMessageTaskFactoryProvider package com.hazelcast.client.impl.protocol.task.set;
+package com.hazelcast.client.impl.protocol;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactoryProvider;
+/**
+ * Provider for client's Message task factories;
+ * Will be read from META-INF/services
+ */
+public interface MessageTaskFactoryProvider {
+    MessageTaskFactory[] getFactories();
+}

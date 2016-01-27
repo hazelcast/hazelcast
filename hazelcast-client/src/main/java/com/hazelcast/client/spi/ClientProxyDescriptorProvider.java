@@ -14,9 +14,24 @@
  * limitations under the License.
  */
 
-/**
- * <p>Client protocol tasks implementations for set</p>
- */
-@GenerateMessageTaskFactoryProvider package com.hazelcast.client.impl.protocol.task.set;
+package com.hazelcast.client.spi;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactoryProvider;
+
+/**
+ * It will be discovered from some external source (like META-INF/services)
+ * and registered in the system.
+ * <p/>
+ * Examples:
+ * <pre>
+ *           JetClientProxyDescriptorProvider
+ *           TreeClientProxyDescriptorProvider
+ * </pre>
+ * <p/>
+ * Descriptor of Hazelcast proxy descriptors
+ */
+public interface ClientProxyDescriptorProvider {
+    /**
+     * Return registered clientProxy descriptors
+     */
+    ClientProxyDescriptor[] createClientProxyDescriptors();
+}

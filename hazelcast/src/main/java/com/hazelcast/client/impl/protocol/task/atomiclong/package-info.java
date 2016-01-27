@@ -17,7 +17,7 @@
 /**
  * <p>Client protocol tasks implementations for AtomicLong</p>
  */
-@GenerateMessageTaskFactory package com.hazelcast.client.impl.protocol.task.atomiclong;
+@GenerateMessageTaskFactoryProvider package com.hazelcast.client.impl.protocol.task.atomiclong;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactory;
+import com.hazelcast.annotation.GenerateMessageTaskFactoryProvider;
 

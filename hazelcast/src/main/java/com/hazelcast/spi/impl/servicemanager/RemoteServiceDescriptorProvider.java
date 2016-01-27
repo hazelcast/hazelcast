@@ -14,9 +14,20 @@
  * limitations under the License.
  */
 
-/**
- * <p>Client protocol tasks implementations for set</p>
- */
-@GenerateMessageTaskFactoryProvider package com.hazelcast.client.impl.protocol.task.set;
+package com.hazelcast.spi.impl.servicemanager;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactoryProvider;
+/***
+ * Provides information about remote services.
+ * <p/>
+ * All possible providers will be looked for in different sources (like META-INF/services).
+ * <p/>
+ * examples:
+ * <p/>
+ * <pre>
+ *     JetRemoteServiceProvider
+ *     TreeRemoteServiceProvider
+ * </pre>
+ */
+public interface RemoteServiceDescriptorProvider {
+    RemoteServiceDescriptor[] createRemoteServiceDescriptors();
+}
