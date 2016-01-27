@@ -88,9 +88,15 @@ public class TransactionImpl implements Transaction {
     private long startTime;
     private Address[] backupAddresses = EMPTY_ADDRESSES;
     private boolean backupLogsCreated;
+    private boolean originatedFromClient;
 
     public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
                            TransactionOptions options, String txOwnerUuid) {
+        this(transactionManagerService, nodeEngine, options, txOwnerUuid, false);
+    }
+
+    public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
+                           TransactionOptions options, String txOwnerUuid, boolean originatedFromClient) {
         this.transactionLog = new TransactionLog();
         this.transactionManagerService = transactionManagerService;
         this.nodeEngine = nodeEngine;
@@ -104,6 +110,7 @@ public class TransactionImpl implements Transaction {
         this.logger = nodeEngine.getLogger(getClass());
         this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", WARNING);
         this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", WARNING);
+        this.originatedFromClient = originatedFromClient;
     }
 
     // used by tx backups
@@ -139,6 +146,10 @@ public class TransactionImpl implements Transaction {
     @Override
     public String getOwnerUuid() {
         return txOwnerUuid;
+    }
+
+    public boolean isOriginatedFromClient() {
+        return originatedFromClient;
     }
 
     @Override

@@ -91,7 +91,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
         checkNotNull(task, "TransactionalTask is required!");
 
-        final TransactionContextImpl context = new TransactionContextImpl(this, nodeEngine, options, null);
+
+        TransactionContext context = newTransactionContext(options);
         context.beginTransaction();
         try {
             T value = task.execute(context);
@@ -114,12 +115,12 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
     @Override
     public TransactionContext newTransactionContext(TransactionOptions options) {
-        return new TransactionContextImpl(this, nodeEngine, options, null);
+        return new TransactionContextImpl(this, nodeEngine, options, null, false);
     }
 
     @Override
     public TransactionContext newClientTransactionContext(TransactionOptions options, String clientUuid) {
-        return new TransactionContextImpl(this, nodeEngine, options, clientUuid);
+        return new TransactionContextImpl(this, nodeEngine, options, clientUuid, true);
     }
 
     /**
@@ -340,8 +341,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         final String callerUuid;
         final long timeoutMillis;
         final long startTime;
-        volatile State state;
         final boolean allowedDuringPassiveState;
+        volatile State state;
 
         private TxBackupLog(List<TransactionLogRecord> records, String callerUuid, State state,
                             long timeoutMillis, long startTime, boolean allowedDuringPassiveState) {

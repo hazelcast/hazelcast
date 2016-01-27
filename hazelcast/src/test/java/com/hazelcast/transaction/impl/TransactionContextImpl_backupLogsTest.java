@@ -68,7 +68,7 @@ public class TransactionContextImpl_backupLogsTest extends HazelcastTestSupport 
     public void assertBackupLogCreationForced(String serviceName) {
         TransactionOptions options = new TransactionOptions();
 
-        TransactionContextImpl txContext = new TransactionContextImpl(localTxManager, localNodeEngine, options, ownerUuid);
+        TransactionContextImpl txContext = new TransactionContextImpl(localTxManager, localNodeEngine, options, ownerUuid, false);
         txContext.beginTransaction();
 
         TransactionalObject result = txContext.getTransactionalObject(serviceName, "foo");
@@ -90,7 +90,7 @@ public class TransactionContextImpl_backupLogsTest extends HazelcastTestSupport 
     public void assertBackupLogCreationNotForced(String serviceName) {
         TransactionOptions options = new TransactionOptions();
 
-        TransactionContextImpl txContext = new TransactionContextImpl(localTxManager, localNodeEngine, options, ownerUuid);
+        TransactionContextImpl txContext = new TransactionContextImpl(localTxManager, localNodeEngine, options, ownerUuid, false);
         txContext.beginTransaction();
 
         TransactionalObject result = txContext.getTransactionalObject(serviceName, "foo");

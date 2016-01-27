@@ -24,9 +24,9 @@ import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
@@ -45,10 +45,10 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 /**
  * Base class contains proxy helper methods for {@link com.hazelcast.map.impl.tx.TransactionalMapProxy}
  */
-public abstract class TransactionalMapProxySupport extends AbstractDistributedObject<MapService> implements TransactionalObject {
+public abstract class TransactionalMapProxySupport
+        extends TransactionalDistributedObject<MapService> implements TransactionalObject {
 
     protected final String name;
-    protected final Transaction tx;
     protected final PartitioningStrategy partitionStrategy;
     protected final Map<Data, VersionedValue> valueMap = new HashMap<Data, VersionedValue>();
     protected final RecordFactory recordFactory;
@@ -56,9 +56,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     protected final MapServiceContext mapServiceContext;
 
     public TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
-        super(nodeEngine, mapService);
+        super(nodeEngine, mapService, transaction);
         this.name = name;
-        this.tx = transaction;
         this.mapServiceContext = mapService.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(name);
         this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
@@ -128,7 +127,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
                     .invokeOnAllPartitions(SERVICE_NAME, sizeOperationFactory);
             int total = 0;
             for (Object result : results.values()) {
-                Integer size = (Integer) getService().getMapServiceContext().toObject(result);
+                Integer size = getNodeEngine().toObject(result);
                 total += size;
             }
             return total;
@@ -137,19 +136,11 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         }
     }
 
-    public Data putInternal(Data key, Data value) {
-        VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        MapOperation operation = operationProvider.createTxnSetOperation(name, key, value, versionedValue.version, -1);
-        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation, versionedValue.version, tx.getOwnerUuid()));
-        return versionedValue.value;
-    }
-
     public Data putInternal(Data key, Data value, long ttl, TimeUnit timeUnit) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         long timeInMillis = getTimeInMillis(ttl, timeUnit);
         MapOperation operation = operationProvider.createTxnSetOperation(name, key, value, versionedValue.version, timeInMillis);
-        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key),
-                operation, versionedValue.version, tx.getOwnerUuid()));
+        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation, versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
@@ -252,7 +243,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     /**
      * Locks the key on the partition owner and returns the value with the version. Does not invokes maploader if
      * the key is missing in memory
-     * @param key serialized key
+     *
+     * @param key     serialized key
      * @param timeout timeout in millis
      * @return VersionedValue wrapper for value/version pair.
      */
@@ -275,8 +267,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
                     .invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
             versionedValue = future.get();
             if (versionedValue == null) {
-                throw new TransactionException("Transaction couldn't obtain lock for the key: "
-                        + getService().getMapServiceContext().toObject(key));
+                throw new TransactionException("Transaction couldn't obtain lock for the key: " + toObjectIfNeeded(key));
             }
             valueMap.put(key, versionedValue);
             return versionedValue;
