@@ -163,8 +163,8 @@ public final class CodeGenerationUtils {
         String t = endIndex > 0 ? type.substring(0, endIndex) : type;
         if (CodecModel.CUSTOM_CODEC_MAP.containsKey(t)) {
             return "CUSTOM";
-        } else if (t.equals("java.util.Map")) {
-            return "MAP";
+        } else if (t.equals("java.util.Map.Entry")) {
+            return "MAPENTRY";
         } else if (t.equals("java.util.List") || t.equals("java.util.Set") || t.equals("java.util.Collection")) {
             return "COLLECTION";
         } else if (type.endsWith("[]")) {

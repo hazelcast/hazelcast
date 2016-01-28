@@ -47,7 +47,7 @@ public class GetPartitionsMessageTask
             Address owner = partition.getOwnerOrNull();
             if (owner == null) {
                 partitionsMap.clear();
-                return ClientGetPartitionsCodec.encodeResponse(partitionsMap);
+                return ClientGetPartitionsCodec.encodeResponse(partitionsMap.entrySet());
             }
             List<Integer> indexes = partitionsMap.get(owner);
             if (indexes == null) {
@@ -56,7 +56,7 @@ public class GetPartitionsMessageTask
             }
             indexes.add(partition.getPartitionId());
         }
-        return ClientGetPartitionsCodec.encodeResponse(partitionsMap);
+        return ClientGetPartitionsCodec.encodeResponse(partitionsMap.entrySet());
     }
 
     @Override

@@ -605,7 +605,7 @@ public interface MapCodecTemplate {
      * @param entries mappings to be stored in this map
      */
     @Request(id = 48, retryable = false, response = ResponseMessageConst.VOID, partitionIdentifier = "any key belongs to target partition")
-    void putAll(String name, Map<Data, Data> entries);
+    void putAll(String name, List<Map.Entry<Data, Data>> entries);
 
     /**
      * This method clears the map and invokes MapStore#deleteAll deleteAll on MapStore which, if connected to a database,

@@ -187,16 +187,14 @@ public final class ${model.className} {
         <@sizeText varName="${n}_item"  type=genericType/>
             }
         <#break >
-    <#case "MAP">
+    <#case "MAPENTRY">
         <#local keyType = util.getFirstGenericParameterType(type)>
         <#local valueType = util.getSecondGenericParameterType(type)>
         <#local n= varName>
-        for (java.util.Map.Entry<${keyType},${valueType}> entry : ${varName}.entrySet() ) {
-            ${keyType} key = entry.getKey();
-            ${valueType} val = entry.getValue();
+            ${keyType} key =  ${varName}.getKey();
+            ${valueType} val =  ${varName}.getValue();
         <@sizeText varName="key"  type=keyType/>
         <@sizeText varName="val"  type=valueType/>
-        }
 </#switch>
 </#macro>
 
@@ -243,16 +241,13 @@ public final class ${model.className} {
         <@setterTextInternal varName=itemTypeVar  type=itemType/>
         }
     </#if>
-    <#if cat == "MAP">
+    <#if cat == "MAPENTRY">
         <#local keyType = util.getFirstGenericParameterType(type)>
         <#local valueType = util.getSecondGenericParameterType(type)>
-        clientMessage.set(${varName}.size());
-        for (java.util.Map.Entry<${keyType},${valueType}> entry : ${varName}.entrySet() ) {
-            ${keyType} key = entry.getKey();
-            ${valueType} val = entry.getValue();
+            ${keyType} key = ${varName}.getKey();
+            ${valueType} val = ${varName}.getValue();
         <@setterTextInternal varName="key"  type=keyType/>
         <@setterTextInternal varName="val"  type=valueType/>
-        }
     </#if>
 </#macro>
 
@@ -290,9 +285,6 @@ public final class ${model.className} {
             <#case "java.lang.String">
         ${varName} = clientMessage.getStringUtf8();
                 <#break >
-            <#case "java.util.Map.Entry<com.hazelcast.nio.serialization.Data,com.hazelcast.nio.serialization.Data>">
-        ${varName} = clientMessage.getMapEntry();
-                <#break >
             <#default>
         ${varName} = clientMessage.get${util.capitalizeFirstLetter(varType)}();
         </#switch>
@@ -327,21 +319,17 @@ public final class ${model.className} {
                 ${varName}[${indexVariableName}] = ${itemVariableName};
             }
         <#break >
-    <#case "MAP">
+    <#case "MAPENTRY">
         <#local sizeVariableName= "${varName}_size">
         <#local indexVariableName= "${varName}_index">
         <#local keyType = util.getFirstGenericParameterType(varType)>
         <#local valueType = util.getSecondGenericParameterType(varType)>
         <#local keyVariableName= "${varName}_key">
         <#local valVariableName= "${varName}_val">
-        int ${sizeVariableName} = clientMessage.getInt();
-        ${varName} = new java.util.HashMap<${keyType},${valueType}>(${sizeVariableName});
-        for (int ${indexVariableName} = 0;${indexVariableName}<${sizeVariableName};${indexVariableName}++) {
             ${keyType} ${keyVariableName};
             ${valueType} ${valVariableName};
             <@getterTextInternal varName=keyVariableName varType=keyType/>
             <@getterTextInternal varName=valVariableName varType=valueType/>
-            ${varName}.put(${keyVariableName}, ${valVariableName});
-        }
+        ${varName} = new java.util.AbstractMap.SimpleEntry<${keyType},${valueType}>(${keyVariableName}, ${valVariableName});
 </#switch>
 </#macro>
