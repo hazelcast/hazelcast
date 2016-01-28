@@ -62,6 +62,9 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
 
     private Map<String, Comparable> properties; 
+    private ArrayList<VirtualMachine> virtuaMachines;
+    private NetworkInterfaceOperations mockNicOps = mock(NetworkInterfaceOperations.class);
+    private PublicIpAddressOperations mockPubOps = mock(PublicIpAddressOperations.class);
 
     {
         properties = new HashMap<String, Comparable>();
@@ -73,10 +76,6 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
         properties.put("group-name", "test-value");
         virtuaMachines = new ArrayList<VirtualMachine>();
     }
-
-    private ArrayList<VirtualMachine> virtuaMachines;
-    private NetworkInterfaceOperations mockNicOps = mock(NetworkInterfaceOperations.class);
-    private PublicIpAddressOperations mockPubOps = mock(PublicIpAddressOperations.class);
 
     @Before
     public void setup() throws Exception {
@@ -101,9 +100,23 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
     }
 
     private void buildFakeVmList(int count) throws IOException, ServiceException {
-        
+        virtuaMachines.clear();
         for (int i = 0; i < count; i++) {
             VirtualMachine vm = new VirtualMachine();
+            
+            // set instance status
+            VirtualMachineInstanceView mockInstanceView = new VirtualMachineInstanceView();
+            ArrayList<InstanceViewStatus> statuses = new ArrayList<InstanceViewStatus>();
+            InstanceViewStatus mockStatus1 = new InstanceViewStatus();
+            InstanceViewStatus mockStatus2 = new InstanceViewStatus();
+            // this is based on what running VMs look like on resources.azure.com
+            mockStatus1.setCode("PowerState/running");
+            mockStatus2.setCode("ProvisioningState/succeeded");
+            statuses.add(mockStatus1);
+            statuses.add(mockStatus2);
+            mockInstanceView.setStatuses(statuses);
+            vm.setInstanceView(mockInstanceView);
+
             NetworkProfile profile = new NetworkProfile();
             NetworkInterfaceReference nir = new NetworkInterfaceReference();
             nir.setReferenceUri("/subscriptions/" + (String)properties.get("subscription-id") 
@@ -149,9 +162,12 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
         }
     }
 
+    private void test_DiscoverNodesMocked(int vmCount) throws IOException, ServiceException {
+        test_DiscoverNodesMockedWithSkip(vmCount, -1);
+    }
 
-    public void test_DiscoverNodesMocked(int vmCount) throws IOException, ServiceException {
-        buildFakeVmList(vmCount);
+    private void test_DiscoverNodesMockedWithSkip(int vmCount, int skipIndex) throws IOException, ServiceException {
+        
         AzureDiscoveryStrategyFactory factory = new AzureDiscoveryStrategyFactory();
         AzureDiscoveryStrategy strategy = (AzureDiscoveryStrategy)factory.newDiscoveryStrategy(null,null, properties);
 
@@ -163,41 +179,78 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
         ArrayList<DiscoveryNode> nodeList = new ArrayList<DiscoveryNode>();
         while(nodes.hasNext()) {
             DiscoveryNode node = nodes.next();
-            System.out.println("Found Node:");
-            System.out.println(node.getPrivateAddress());
-            System.out.println(node.getPublicAddress());
             nodeList.add(node);
         }
 
         assertEquals(vmCount, nodeList.size());
 
         for (int i = 0; i < nodeList.size(); i++) {
-            assertEquals("10.0.0." + i, nodeList.get(i).getPrivateAddress().getHost());
+            int ipSuffix = i;
+
+            if (skipIndex != -1 && i >= skipIndex) {
+                ipSuffix += 1;
+            }
+
+            assertEquals("10.0.0." + ipSuffix, nodeList.get(i).getPrivateAddress().getHost());
             assertEquals(5701, nodeList.get(i).getPrivateAddress().getPort());
 
-            assertEquals("44.18.12." + i, nodeList.get(i).getPublicAddress().getHost());
+            assertEquals("44.18.12." + ipSuffix, nodeList.get(i).getPublicAddress().getHost());
             assertEquals(5701, nodeList.get(i).getPublicAddress().getPort());
         }
     }
 
     @Test
-    public void test_DiscoverNodesMocked_10000() throws IOException, ServiceException {
-       test_DiscoverNodesMocked(3);
+    public void test_DiscoverNodesMocked_255() throws IOException, ServiceException {
+        buildFakeVmList(255);
+        test_DiscoverNodesMocked(255);
     }
 
     @Test
     public void test_DiscoverNodesMocked_3() throws IOException, ServiceException {
-       test_DiscoverNodesMocked(3);
+        buildFakeVmList(3);
+        test_DiscoverNodesMocked(3);
     }
 
     @Test
     public void test_DiscoverNodesMocked_1() throws IOException, ServiceException {
+        buildFakeVmList(1);
         test_DiscoverNodesMocked(1);
-        
     }
 
     @Test
     public void test_DiscoverNodesMocked_0() throws IOException, ServiceException {
+        buildFakeVmList(0);
         test_DiscoverNodesMocked(0);
+    }
+
+    @Test
+    public void test_DiscoverNodesStoppedVM() throws IOException, ServiceException {
+        buildFakeVmList(4);
+        VirtualMachine vmToTurnOff = virtuaMachines.get(2);
+        
+        // turn off the vm
+        for (InstanceViewStatus status : vmToTurnOff.getInstanceView().getStatuses()) {
+            if (status.getCode() == "PowerState/running") {
+                status.setCode("PowerState/deallocated");
+                break;
+            }
+        }
+
+        // should only recognize 3 hazelcast instances now
+        test_DiscoverNodesMockedWithSkip(3, 2);
+    }
+
+    @Test
+    public void test_DiscoverNodesUntaggedVM() throws IOException, ServiceException {
+        buildFakeVmList(6);
+        VirtualMachine vmToUntag = virtuaMachines.get(3);
+        
+        // retag vm
+        HashMap<String, String> newTags = new HashMap<String, String>();
+        newTags.put("INVALID_TAG", "INVALID_PORT");
+        vmToUntag.setTags(newTags);
+
+        // should only recognize 5 hazelcast instances now
+        test_DiscoverNodesMockedWithSkip(5, 3);
     }
 }
