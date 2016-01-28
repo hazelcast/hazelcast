@@ -52,6 +52,14 @@ public class AzureDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
 
     @Override
     public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode node, ILogger logger, Map<String, Comparable> properties) {
+
+        // validate configuration
+        for (PropertyDefinition prop : PROPERTY_DEFINITIONS) {
+            if (AzureProperties.getOrNull(prop, properties) == null) {
+                throw new IllegalArgumentException("Property, " + prop + " cannot be null");
+            }
+        }
+
         return new AzureDiscoveryStrategy(properties);
     }
 

@@ -5,7 +5,7 @@ import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import org.junit.Test;
@@ -15,14 +15,13 @@ import org.junit.runner.RunWith;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
-import static org.junit.Assert.assertEquals;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class LiveTest extends HazelcastTestSupport {
 
     public static final String CLIENT_ID   =  System.getProperty("test.azure.client-id");
@@ -44,8 +43,8 @@ public class LiveTest extends HazelcastTestSupport {
         return properties;
     }
 
-    @Test
-    public void test_DiscoveryStrategyDiscoverNodes() throws Exception {
+    // @Test
+    public void test_DiscoveryStrategyDiscoverNodesLive() throws Exception {
         Map<String, Comparable> properties = getProperties();
         properties.put("group", GROUP_NAME);
         AzureDiscoveryStrategy strategy = new AzureDiscoveryStrategy(properties);

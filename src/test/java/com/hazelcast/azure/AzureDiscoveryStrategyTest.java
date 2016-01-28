@@ -1,0 +1,203 @@
+package com.hazelcast.azure;
+
+
+import com.hazelcast.config.Config;
+import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.Hazelcast;
+
+import com.hazelcast.spi.discovery.DiscoveryNode;
+
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
+
+import com.hazelcast.config.properties.PropertyDefinition;
+import com.hazelcast.config.properties.ValidationException;
+
+import com.microsoft.windowsazure.core.*;
+import com.microsoft.windowsazure.exception.ServiceException;
+import com.microsoft.windowsazure.Configuration;
+
+import com.microsoft.azure.management.compute.*;
+import com.microsoft.azure.management.compute.models.*;
+
+import com.microsoft.azure.management.network.*;
+import com.microsoft.azure.management.network.models.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.Iterator;
+
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import org.mockito.Mockito;
+
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(fullyQualifiedNames={
+    "com.microsoft.windowsazure.core.*", 
+    "com.microsoft.azure.management.compute.*", 
+    "com.microsoft.azure.management.network.*",
+    "com.hazelcast.azure.AzureAuthHelper"
+})
+public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
+
+    private Map<String, Comparable> properties; 
+
+    {
+        properties = new HashMap<String, Comparable>();
+        properties.put("client-id", "test-value");
+        properties.put("client-secret", "test-value");
+        properties.put("subscription-id", "test-value");
+        properties.put("hzlcst-cluster-id", "cluster000");
+        properties.put("tenant-id", "test-value");
+        properties.put("group-name", "test-value");
+        virtuaMachines = new ArrayList<VirtualMachine>();
+    }
+
+    private ArrayList<VirtualMachine> virtuaMachines;
+    private NetworkInterfaceOperations mockNicOps = mock(NetworkInterfaceOperations.class);
+    private PublicIpAddressOperations mockPubOps = mock(PublicIpAddressOperations.class);
+
+    @Before
+    public void setup() throws Exception {
+        Configuration mockAzureConfig = mock(Configuration.class);
+        ComputeManagementClient mockComputeManagementClient = mock(ComputeManagementClient.class);
+        NetworkResourceProviderClient mockNetworkResourceProviderClient = mock(NetworkResourceProviderClient.class);
+        VirtualMachineOperations mockVmOps = mock(VirtualMachineOperations.class);
+        VirtualMachineListResponse mockVmListResponse = mock(VirtualMachineListResponse.class);
+
+        // mock all the static methods in a class called "Static"
+        PowerMockito.mockStatic(AzureAuthHelper.class);
+        Mockito.when(AzureAuthHelper.getAzureConfiguration(properties)).thenReturn(mockAzureConfig);
+        PowerMockito.mockStatic(ComputeManagementService.class);
+        Mockito.when(ComputeManagementService.create(mockAzureConfig)).thenReturn(mockComputeManagementClient);
+        PowerMockito.mockStatic(NetworkResourceProviderService.class);
+        Mockito.when(NetworkResourceProviderService.create(mockAzureConfig)).thenReturn(mockNetworkResourceProviderClient);
+        Mockito.when(mockNetworkResourceProviderClient.getNetworkInterfacesOperations()).thenReturn(mockNicOps);
+        Mockito.when(mockNetworkResourceProviderClient.getPublicIpAddressesOperations()).thenReturn(mockPubOps);
+        Mockito.when(mockComputeManagementClient.getVirtualMachinesOperations()).thenReturn(mockVmOps);
+        Mockito.when(mockVmOps.list((String)properties.get("group-name"))).thenReturn(mockVmListResponse);
+        Mockito.when(mockVmListResponse.getVirtualMachines()).thenReturn(virtuaMachines);
+    }
+
+    private void buildFakeVmList(int count) throws IOException, ServiceException {
+        
+        for (int i = 0; i < count; i++) {
+            VirtualMachine vm = new VirtualMachine();
+            NetworkProfile profile = new NetworkProfile();
+            NetworkInterfaceReference nir = new NetworkInterfaceReference();
+            nir.setReferenceUri("/subscriptions/" + (String)properties.get("subscription-id") 
+                + "/resourceGroups/" + (String)properties.get("subscription-id") + "/virtualMachines/vm-" + i);
+            ArrayList<NetworkInterfaceReference> nirs = new ArrayList<NetworkInterfaceReference>();
+            nirs.add(nir);
+            profile.setNetworkInterfaces(nirs);
+            vm.setNetworkProfile(profile);
+
+            HashMap<String, String> tags = new HashMap<String, String>();
+            tags.put((String)properties.get("hzlcst-cluster-id"), "5701");
+            vm.setTags(tags);
+            virtuaMachines.add(vm);
+
+            NetworkInterface mockNic = new NetworkInterface();
+            ArrayList<NetworkInterfaceIpConfiguration> ips = new ArrayList<NetworkInterfaceIpConfiguration>();
+            NetworkInterfaceIpConfiguration ip = new NetworkInterfaceIpConfiguration();
+            
+            
+            ResourceId pubIpRid = new ResourceId();
+            pubIpRid.setId("/subscriptions/" + (String)properties.get("subscription-id") 
+                + "/resourceGroups/" + (String)properties.get("subscription-id") + "/publicIpAddresses/pubip-" + i);
+            
+            // this assumes we'll never have more than 256 fake vms
+            ip.setPrivateIpAddress("10.0.0." + i);
+            ip.setPublicIpAddress(pubIpRid);
+            ips.add(ip);
+            mockNic.setIpConfigurations(ips);
+
+            // setup public ip address
+            PublicIpAddressGetResponse mockPubIpGetResponse = new PublicIpAddressGetResponse();
+            PublicIpAddress mockPubIp = new PublicIpAddress();
+            mockPubIp.setIpAddress("44.18.12." + i);
+            mockPubIpGetResponse.setPublicIpAddress(mockPubIp);
+            
+            Mockito.when(mockPubOps.get((String)properties.get("group-name"), "pubip-" + i)).thenReturn(mockPubIpGetResponse);
+
+            NetworkInterfaceGetResponse mockNicGetResponse = mock(NetworkInterfaceGetResponse.class);
+            Mockito.when(mockNicGetResponse.getNetworkInterface()).thenReturn(mockNic);
+
+            Mockito.when(mockNicOps.get((String)properties.get("group-name"), "vm-" + i)).thenReturn(mockNicGetResponse);
+            
+        }
+    }
+
+
+    public void test_DiscoverNodesMocked(int vmCount) throws IOException, ServiceException {
+        buildFakeVmList(vmCount);
+        AzureDiscoveryStrategyFactory factory = new AzureDiscoveryStrategyFactory();
+        AzureDiscoveryStrategy strategy = (AzureDiscoveryStrategy)factory.newDiscoveryStrategy(null,null, properties);
+
+        strategy.start();
+        Iterator<DiscoveryNode> nodes = strategy.discoverNodes().iterator();
+
+        assertTrue(nodes != null);
+
+        ArrayList<DiscoveryNode> nodeList = new ArrayList<DiscoveryNode>();
+        while(nodes.hasNext()) {
+            DiscoveryNode node = nodes.next();
+            System.out.println("Found Node:");
+            System.out.println(node.getPrivateAddress());
+            System.out.println(node.getPublicAddress());
+            nodeList.add(node);
+        }
+
+        assertEquals(vmCount, nodeList.size());
+
+        for (int i = 0; i < nodeList.size(); i++) {
+            assertEquals("10.0.0." + i, nodeList.get(i).getPrivateAddress().getHost());
+            assertEquals(5701, nodeList.get(i).getPrivateAddress().getPort());
+
+            assertEquals("44.18.12." + i, nodeList.get(i).getPublicAddress().getHost());
+            assertEquals(5701, nodeList.get(i).getPublicAddress().getPort());
+        }
+    }
+
+    @Test
+    public void test_DiscoverNodesMocked_10000() throws IOException, ServiceException {
+       test_DiscoverNodesMocked(3);
+    }
+
+    @Test
+    public void test_DiscoverNodesMocked_3() throws IOException, ServiceException {
+       test_DiscoverNodesMocked(3);
+    }
+
+    @Test
+    public void test_DiscoverNodesMocked_1() throws IOException, ServiceException {
+        test_DiscoverNodesMocked(1);
+        
+    }
+
+    @Test
+    public void test_DiscoverNodesMocked_0() throws IOException, ServiceException {
+        test_DiscoverNodesMocked(0);
+    }
+}
