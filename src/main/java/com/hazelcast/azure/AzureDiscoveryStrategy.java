@@ -34,6 +34,8 @@ import com.microsoft.azure.management.compute.models.NetworkProfile;
 import com.microsoft.azure.management.compute.models.NetworkInterfaceReference;
 import com.microsoft.azure.management.compute.models.VirtualMachine;
 import com.microsoft.azure.management.compute.models.VirtualMachineListResponse;
+import com.microsoft.azure.management.compute.models.VirtualMachineInstanceView;
+import com.microsoft.azure.management.compute.models.InstanceViewStatus;
 import com.microsoft.azure.management.compute.ComputeManagementService;
 
 import com.microsoft.azure.management.network.NetworkInterfaceOperations;
@@ -110,6 +112,11 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
                     continue;
                 }
 
+                // skip any deallocated vms
+                if (!isVirtualMachineOn(vm)) {
+                    continue;
+                }
+
                 int port = Integer.parseInt(tags.get(clusterId));
                 DiscoveryNode node = buildDiscoveredNode(netProfile, port);
                 
@@ -132,6 +139,17 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
         // no native resources were allocated so nothing to do here
     }
 
+    private boolean isVirtualMachineOn(VirtualMachine vm) {
+        VirtualMachineInstanceView vmInstanceView = vm.getInstanceView();
+
+        for(InstanceViewStatus status : vmInstanceView.getStatuses()) {
+            if (status.getCode() == "PowerState/running") {
+                return true;
+            }
+        }
+        
+        return false;
+    }
     /**
     * Takes a reference URI like:
     * /subscriptions/{SubcriptionId}/resourceGroups/{ResourceGroupName}/...

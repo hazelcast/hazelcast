@@ -43,7 +43,7 @@ public class LiveTest extends HazelcastTestSupport {
         return properties;
     }
 
-    // @Test
+    @Test
     public void test_DiscoveryStrategyDiscoverNodesLive() throws Exception {
         Map<String, Comparable> properties = getProperties();
         properties.put("group", GROUP_NAME);
