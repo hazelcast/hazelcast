@@ -426,39 +426,33 @@ public class CacheStatsTest extends CacheTestSupport {
             cache.put(i, "Value-" + i);
         }
 
-        assertEquals(ENTRY_COUNT, getOwnedEntryCount(allStats));
+        assertOwnedEntryCount(ENTRY_COUNT, allStats);
 
         if (triggerMigration && instance2 != null) {
             // Shutdown the second instance to trigger migration so first instance will be owner of all partitions.
             instance2.shutdown();
             allStats = new CacheStatistics[]{ cache.getLocalCacheStatistics() };
 
-            final CacheStatistics[] allStatistics = allStats;
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertEquals(ENTRY_COUNT, getOwnedEntryCount(allStatistics));
-                }
-            });
+            assertOwnedEntryCount(ENTRY_COUNT, allStats);
         }
 
         for (int i = 0; i < 10; i++) {
             cache.remove(i);
         }
 
-        assertEquals(ENTRY_COUNT - 10, getOwnedEntryCount(allStats));
+        assertOwnedEntryCount(ENTRY_COUNT - 10, allStats);
 
         for (int i = 10; i < ENTRY_COUNT; i++) {
             cache.remove(i);
         }
 
-        assertEquals(0, getOwnedEntryCount(allStats));
+        assertOwnedEntryCount(0, allStats);
 
         for (int i = 0; i < ENTRY_COUNT; i++) {
             cache.put(i, "Value-" + i);
         }
 
-        assertEquals(ENTRY_COUNT, getOwnedEntryCount(allStats));
+        assertOwnedEntryCount(ENTRY_COUNT, allStats);
 
         if (triggerMigration) {
             // Create the second instance to trigger migration
@@ -470,34 +464,22 @@ public class CacheStatsTest extends CacheTestSupport {
             ICache<Integer, String> c = cm.getCache(cacheName).unwrap(ICache.class);
             allStats = new CacheStatistics[]{ cache.getLocalCacheStatistics(), c.getLocalCacheStatistics() };
 
-            final CacheStatistics[] allStatistics = allStats;
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertEquals(ENTRY_COUNT, getOwnedEntryCount(allStatistics));
-                }
-            });
+            assertOwnedEntryCount(ENTRY_COUNT, allStats);
         }
 
         cache.clear();
 
-        assertEquals(0, getOwnedEntryCount(allStats));
+        assertOwnedEntryCount(0, allStats);
 
         for (int i = 0; i < ENTRY_COUNT; i++) {
             cache.put(i, "Value-" + i);
         }
 
-        assertEquals(ENTRY_COUNT, getOwnedEntryCount(allStats));
+        assertOwnedEntryCount(ENTRY_COUNT, allStats);
 
         cache.destroy();
 
-        final CacheStatistics[] allStatistics = allStats;
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(0, getOwnedEntryCount(allStatistics));
-            }
-        });
+        assertOwnedEntryCount(0, allStats);
     }
 
     private long getOwnedEntryCount(CacheStatistics... statsList) {
@@ -506,6 +488,15 @@ public class CacheStatsTest extends CacheTestSupport {
             ownedEntryCount += stats.getOwnedEntryCount();
         }
         return ownedEntryCount;
+    }
+    
+    private void assertOwnedEntryCount(final int expectedEntryCount, final CacheStatistics... statsList) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(expectedEntryCount, getOwnedEntryCount(statsList));
+            }
+        });
     }
 
     @Test
