@@ -34,17 +34,14 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
 
     private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
-    private final ByteBuffer buffer;
-
     private boolean ready;
 
-    private ClientMessage lastMessage;
+    private ByteBuffer lastMessage;
 
     private volatile long lastHandle;
 
     public ClientWriteHandler(ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize) {
         super(connection, ioThread);
-        buffer = ByteBuffer.allocate(bufferSize);
     }
 
     @Override
@@ -58,7 +55,7 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
             lastMessage = poll();
         }
 
-        if (lastMessage == null && buffer.position() == 0) {
+        if (lastMessage == null) {
             ready = true;
             return;
         }
@@ -69,27 +66,14 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
     }
 
     private void writeBuffer() throws IOException {
-        while (buffer.hasRemaining() && lastMessage != null) {
-            boolean complete = lastMessage.writeTo(buffer);
-            if (complete) {
+        while (lastMessage != null) {
+            socketChannel.write(lastMessage);
+            if (!lastMessage.hasRemaining()) {
                 lastMessage = poll();
             } else {
+                lastMessage.compact();
                 break;
             }
-        }
-
-        if (buffer.position() == 0) {
-            // there is nothing to write, we are done
-            return;
-        }
-
-        buffer.flip();
-        socketChannel.write(buffer);
-
-        if (buffer.hasRemaining()) {
-            buffer.compact();
-        } else {
-            buffer.clear();
         }
     }
 
@@ -104,8 +88,12 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
         }
     }
 
-    private ClientMessage poll() {
-        return writeQueue.poll();
+    private ByteBuffer poll() {
+        ClientMessage clientMessage = writeQueue.poll();
+        if (clientMessage == null) {
+            return null;
+        }
+        return ByteBuffer.wrap(clientMessage.buffer().byteArray(), 0, clientMessage.getFrameLength());
     }
 
     @Override
