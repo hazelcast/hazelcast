@@ -92,6 +92,23 @@
                     <hz:property name="javax.net.ssl.protocol">TLS</hz:property>
                 </hz:properties>
             </hz:ssl>
+            <hz:discovery-strategies>
+                <hz:node-filter implementation="dummyNodeFilter"/>
+                <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory">
+                    <hz:properties>
+                        <hz:property name="key-string">foo</hz:property>
+                        <hz:property name="key-int">123</hz:property>
+                        <hz:property name="key-boolean">true</hz:property>
+                    </hz:properties>
+                </hz:discovery-strategy>
+                <hz:discovery-strategy class-name="com.hazelcast.spring.DummyDiscoveryStrategy">
+                    <hz:properties>
+                        <hz:property name="key-string">foo2</hz:property>
+                    </hz:properties>
+                </hz:discovery-strategy>
+                <hz:discovery-strategy class-name="com.hazelcast.spring.DummyDiscoveryStrategy"/>
+                <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory"/>
+            </hz:discovery-strategies>
         </hz:network>
 
         <hz:listeners>
@@ -146,5 +163,8 @@
     <hz:map id="map" instance-ref="client" name="map"/>
 
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
+
+    <bean id="dummyNodeFilter" class="com.hazelcast.spring.DummyNodeFilter"/>
+    <bean id="dummyDiscoveryStrategyFactory" class="com.hazelcast.spring.DummyDiscoveryStrategyFactory"/>
 
 </beans>

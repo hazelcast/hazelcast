@@ -166,6 +166,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleSSLConfig(child, clientNetworkConfig);
                 } else if ("aws".equals(nodeName)) {
                     handleAws(child, clientNetworkConfig);
+                } else if ("discovery-strategies".equals(nodeName)) {
+                    handleDiscoveryStrategies(child, clientNetworkConfig);
                 }
             }
             clientNetworkConfig.addPropertyValue("addresses", members);

@@ -19,6 +19,8 @@ package com.hazelcast.spring;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.nio.ssl.TestKeyStoreUtil;
@@ -32,8 +34,11 @@ import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
 import java.io.IOException;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"clientNetworkConfig-applicationContext.xml"})
@@ -85,6 +90,33 @@ public class TestClientNetworkConfig {
         ClientConfig config = client.getClientConfig();
         assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory"
                 , config.getNetworkConfig().getSSLConfig().getFactoryClassName());
+    }
+
+    @Test
+    public void smokeDiscoverySpiConfig() {
+        DiscoveryConfig discoveryConfig = client.getClientConfig().getNetworkConfig().getDiscoveryConfig();
+        assertNull(discoveryConfig.getDiscoveryServiceProvider());
+        assertTrue(discoveryConfig.getNodeFilter() instanceof DummyNodeFilter);
+        List<DiscoveryStrategyConfig> discoveryStrategyConfigs
+                = (List<DiscoveryStrategyConfig>) discoveryConfig.getDiscoveryStrategyConfigs();
+        assertEquals(4, discoveryStrategyConfigs.size());
+        DiscoveryStrategyConfig discoveryStrategyConfig = discoveryStrategyConfigs.get(0);
+        assertTrue(discoveryStrategyConfig.getDiscoveryStrategyFactory() instanceof DummyDiscoveryStrategyFactory);
+        assertEquals(3, discoveryStrategyConfig.getProperties().size());
+        assertEquals("foo", discoveryStrategyConfig.getProperties().get("key-string"));
+        assertEquals("123", discoveryStrategyConfig.getProperties().get("key-int"));
+        assertEquals("true", discoveryStrategyConfig.getProperties().get("key-boolean"));
+
+        DiscoveryStrategyConfig discoveryStrategyConfig2 = discoveryStrategyConfigs.get(1);
+        assertEquals(DummyDiscoveryStrategy.class.getName(), discoveryStrategyConfig2.getClassName());
+        assertEquals(1, discoveryStrategyConfig2.getProperties().size());
+        assertEquals("foo2", discoveryStrategyConfig2.getProperties().get("key-string"));
+
+        DiscoveryStrategyConfig discoveryStrategyConfig3 = discoveryStrategyConfigs.get(2);
+        assertEquals(DummyDiscoveryStrategy.class.getName(), discoveryStrategyConfig3.getClassName());
+
+        DiscoveryStrategyConfig discoveryStrategyConfig4 = discoveryStrategyConfigs.get(3);
+        assertTrue(discoveryStrategyConfig4.getDiscoveryStrategyFactory() instanceof DummyDiscoveryStrategyFactory);
     }
 
 
