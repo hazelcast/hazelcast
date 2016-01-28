@@ -849,6 +849,9 @@ public abstract class HazelcastTestSupport {
                 try {
                     task.run();
                 } catch (Exception e) {
+                    if (e instanceof RuntimeException) {
+                        throw (RuntimeException) e;
+                    }
                     throw new RuntimeException(e);
                 }
                 return;
