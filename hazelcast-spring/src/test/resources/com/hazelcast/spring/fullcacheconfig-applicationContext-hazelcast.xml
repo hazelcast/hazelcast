@@ -88,6 +88,22 @@
                     <hz:aws enabled="false" access-key="sample-access-key" secret-key="sample-secret-key"
                             region="sample-region" security-group-name="sample-group"
                             tag-key="sample-tag-key" tag-value="sample-tag-value"/>
+                    <hz:discovery-strategies>
+                        <hz:node-filter implementation="dummyNodeFilter"/>
+                        <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory">
+                            <hz:properties>
+                                <hz:property name="key-string">foo</hz:property>
+                                <hz:property name="key-int">123</hz:property>
+                                <hz:property name="key-boolean">true</hz:property>
+                            </hz:properties>
+                        </hz:discovery-strategy>
+                        <hz:discovery-strategy class-name="com.hazelcast.spring.DummyDiscoveryStrategy">
+                            <hz:properties>
+                                <hz:property name="key-string">foo2</hz:property>
+                            </hz:properties>
+                        </hz:discovery-strategy>
+                        <hz:discovery-service-provider implementation="dummyDiscoveryServiceProvider"/>
+                    </hz:discovery-strategies>
                 </hz:join>
                 <hz:interfaces enabled="false">
                     <hz:interface>10.10.1.*</hz:interface>
@@ -393,5 +409,8 @@
     <bean id="dummyQuorumListener" class="com.hazelcast.spring.DummyQuorumListener"/>
     <bean id="dummySSLContextFactory" class="com.hazelcast.spring.DummySSLContextFactory"/>
     <bean id="dummySocketInterceptor" class="com.hazelcast.spring.DummySocketInterceptor"/>
+    <bean id="dummyNodeFilter" class="com.hazelcast.spring.DummyNodeFilter"/>
+    <bean id="dummyDiscoveryStrategyFactory" class="com.hazelcast.spring.DummyDiscoveryStrategyFactory"/>
+    <bean id="dummyDiscoveryServiceProvider" class="com.hazelcast.spring.DummyDiscoveryServiceProvider"/>
 
 </beans>

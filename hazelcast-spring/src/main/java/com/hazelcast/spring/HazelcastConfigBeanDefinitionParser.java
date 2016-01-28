@@ -435,6 +435,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleTcpIp(child, joinConfigBuilder);
                 } else if ("aws".equals(name)) {
                     handleAws(child, joinConfigBuilder);
+                } else if ("discovery-strategies".equals(name)) {
+                    handleDiscoveryStrategies(child, joinConfigBuilder);
                 }
             }
             networkConfigBuilder.addPropertyValue("join", beanDefinition);
