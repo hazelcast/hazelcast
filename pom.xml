@@ -27,6 +27,14 @@
     <build>
       <plugins>
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.4.1</version>
+          <configuration>
+            <argLine></argLine>
+          </configuration>
+        </plugin>
+        <plugin>
           <groupId>com.fizzed</groupId>
           <artifactId>fizzed-watcher-maven-plugin</artifactId>
           <version>1.0.4</version>
@@ -81,7 +89,6 @@
             <artifactId>junit</artifactId>
             <version>4.12</version>
             <scope>test</scope>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>log4j</groupId>
@@ -89,6 +96,24 @@
             <version>1.2.17</version>
             <scope>test</scope>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+            <version>2.0.2-beta</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.powermock</groupId>
+          <artifactId>powermock-module-junit4</artifactId>
+          <version>1.6.4</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.powermock</groupId>
+          <artifactId>powermock-api-mockito</artifactId>
+          <version>1.6.4</version>
+          <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
