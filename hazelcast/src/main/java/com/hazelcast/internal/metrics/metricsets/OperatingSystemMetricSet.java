@@ -30,11 +30,11 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * A Metric set for exposing {@link java.lang.management.OperatingSystemMXBean} metrics.
  */
-public final class OperatingSystemMetricsSet {
+public final class OperatingSystemMetricSet {
 
     private static final double PERCENTAGE_MULTIPLIER = 100d;
 
-    private OperatingSystemMetricsSet() {
+    private OperatingSystemMetricSet() {
     }
 
     /**
