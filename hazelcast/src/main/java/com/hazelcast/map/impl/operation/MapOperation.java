@@ -19,7 +19,9 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
@@ -70,6 +72,11 @@ public abstract class MapOperation extends AbstractNamedOperation {
 
     @Override
     public void afterRun() throws Exception {
+    }
+
+    protected boolean isPostProcessing(RecordStore recordStore) {
+        MapDataStore mapDataStore = recordStore.getMapDataStore();
+        return mapDataStore.isPostProcessingMapStore() || mapServiceContext.hasInterceptor(name);
     }
 
     public void setThreadId(long threadId) {

@@ -103,6 +103,11 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         if (eventType == null) {
             return;
         }
+        mapServiceContext.interceptAfterPut(name, dataValue);
+        if (isPostProcessing(recordStore)) {
+            Record record = recordStore.getRecord(dataKey);
+            dataValue = record.getValue();
+        }
         invalidateNearCache(dataKey);
         publishEntryEvent();
         publishWanReplicationEvent();
@@ -178,18 +183,13 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
      * Only difference between add and update is event type to be published.
      */
     private void entryAddedOrUpdated(Map.Entry entry, long now) {
-        Object value = entry.getValue();
-        put(dataKey, value);
+        dataValue = entry.getValue();
+        recordStore.put(dataKey, dataValue, DEFAULT_TTL);
+
         getLocalMapStats().incrementPuts(getLatencyFrom(now));
 
-        dataValue = value;
         eventType = oldValue == null ? ADDED : UPDATED;
     }
-
-    private void put(Data key, Object value) {
-        recordStore.put(key, value, DEFAULT_TTL);
-    }
-
 
     private Data process(Map.Entry entry) {
         final Object result = entryProcessor.process(entry);
