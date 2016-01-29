@@ -122,7 +122,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     }
 
     private Data getValueOrPostProcessedValue(Data dataKey, Data dataValue) {
-        if (!recordStore.getMapDataStore().isPostProcessingMapStore()) {
+        if (!isPostProcessing(recordStore)) {
             return dataValue;
         }
         Record record = recordStore.getRecord(dataKey);
