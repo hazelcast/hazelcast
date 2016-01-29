@@ -59,7 +59,7 @@
     "nicName": "myVMNic",
     "addressPrefix": "10.0.0.0/16",
     "subnetName": "Subnet",
-    "subnetPrefix": "10.0.0.0/24",
+    "subnetPrefix": "10.0.1.0/24",
     "storageAccountType": "Standard_LRS",
     "publicIPAddressName": "myPublicIP",
     "publicIPAddressType": "Dynamic",
@@ -127,10 +127,11 @@
           {
             "name": "ipconfig1",
             "properties": {
-              "privateIPAllocationMethod": "Dynamic",
+              "privateIPAllocationMethod": "Static",
               "publicIPAddress": {
                 "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]"
               },
+              "privateIpAddress": "10.0.1.100",
               "subnet": {
                 "id": "[variables('subnetRef')]"
               }
@@ -153,7 +154,8 @@
           {
             "name": "ipconfig1",
             "properties": {
-              "privateIPAllocationMethod": "Dynamic",
+              "privateIPAllocationMethod": "Static",
+              "privateIpAddress": "10.0.1.101",
               "subnet": {
                 "id": "[variables('subnetRef')]"
               }
@@ -176,7 +178,8 @@
           {
             "name": "ipconfig1",
             "properties": {
-              "privateIPAllocationMethod": "Dynamic",
+              "privateIPAllocationMethod": "Static",
+              "privateIpAddress": "10.0.1.102",
               "subnet": {
                 "id": "[variables('subnetRef')]"
               }
@@ -199,7 +202,8 @@
           {
             "name": "ipconfig1",
             "properties": {
-              "privateIPAllocationMethod": "Dynamic",
+              "privateIPAllocationMethod": "Static",
+              "privateIpAddress": "10.0.1.103",
               "subnet": {
                 "id": "[variables('subnetRef')]"
               }
