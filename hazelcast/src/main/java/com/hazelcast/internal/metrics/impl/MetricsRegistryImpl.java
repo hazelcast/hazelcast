@@ -24,7 +24,7 @@ import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
 import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
-import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricsSet;
+import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
 import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
@@ -84,7 +84,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
         RuntimeMetricSet.register(this);
         GarbageCollectionMetricSet.register(this);
-        OperatingSystemMetricsSet.register(this);
+        OperatingSystemMetricSet.register(this);
         ThreadMetricSet.register(this);
         ClassLoadingMetricSet.register(this);
     }

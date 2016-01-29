@@ -2,7 +2,6 @@ package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -17,7 +16,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
-import static com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricsSet.registerMethod;
+import static com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet.registerMethod;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -38,7 +37,7 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void utilityConstructor(){
-        assertUtilityConstructor(OperatingSystemMetricsSet.class);
+        assertUtilityConstructor(OperatingSystemMetricSet.class);
     }
 
     @Test
