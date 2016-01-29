@@ -21,7 +21,7 @@
     <name>hazelcast-azure</name>
     <artifactId>hazelcast-azure</artifactId>
     <groupId>com.hazelcast.azure</groupId>
-    <version>1.0.0</version>
+    <version>1.0.0-RC1</version>
     <packaging>jar</packaging>
 
     <distributionManagement>
