@@ -100,9 +100,9 @@
           <version>1.6.3</version>
           <extensions>true</extensions>
           <configuration>
-             <serverId>ossrh</serverId>
-             <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-             <autoReleaseAfterClose>true</autoReleaseAfterClose>
+            <serverId>ossrh</serverId>
+            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+            <autoReleaseAfterClose>true</autoReleaseAfterClose>
           </configuration>
         </plugin>
       </plugins>
@@ -122,19 +122,25 @@
             <classifier>tests</classifier>
         </dependency>
         <dependency>
-          <groupId>com.microsoft.azure</groupId>
-          <artifactId>azure-mgmt-compute</artifactId>
-          <version>0.9.1</version>
+            <groupId>com.microsoft.azure</groupId>
+            <artifactId>azure-mgmt-compute</artifactId>
+            <version>0.9.1</version>
         </dependency>
         <dependency>
-          <groupId>com.microsoft.azure</groupId>
-          <artifactId>azure-mgmt-resources</artifactId>
-          <version>0.9.1</version>
+            <groupId>com.microsoft.azure</groupId>
+            <artifactId>azure-mgmt-resources</artifactId>
+            <version>0.9.1</version>
         </dependency>
         <dependency>
-          <groupId>com.microsoft.azure</groupId>
-          <artifactId>azure-mgmt-network</artifactId>
-          <version>0.9.1</version>
+            <groupId>com.microsoft.azure</groupId>
+            <artifactId>azure-mgmt-network</artifactId>
+            <version>0.9.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.azure</groupId>
+            <artifactId>azure-mgmt-utility</artifactId>
+            <version>0.9.1</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -156,16 +162,16 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-          <groupId>org.powermock</groupId>
-          <artifactId>powermock-module-junit4</artifactId>
-          <version>1.6.4</version>
-          <scope>test</scope>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
+            <version>1.6.4</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
-          <groupId>org.powermock</groupId>
-          <artifactId>powermock-api-mockito</artifactId>
-          <version>1.6.4</version>
-          <scope>test</scope>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito</artifactId>
+            <version>1.6.4</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

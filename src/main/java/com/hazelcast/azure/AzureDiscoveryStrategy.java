@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
+import java.net.URISyntaxException;
 import java.io.IOException;
 
 /**
@@ -113,7 +114,7 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
                 }
 
                 // skip any deallocated vms
-                if (!isVirtualMachineOn(vm)) {
+                if (!isVirtualMachineOn(vmOps, vm)) {
                     continue;
                 }
 
@@ -131,7 +132,7 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
             LOGGER.finest("Failed to discover nodes with Azure SPI", e);
             return null;
         }
-        
+
     }
 
     @Override
@@ -139,15 +140,20 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
         // no native resources were allocated so nothing to do here
     }
 
-    private boolean isVirtualMachineOn(VirtualMachine vm) {
-        VirtualMachineInstanceView vmInstanceView = vm.getInstanceView();
+    private boolean isVirtualMachineOn(VirtualMachineOperations vmOps, VirtualMachine vm)
+        throws IOException, ServiceException, URISyntaxException {
+
+        String rgName = AzureProperties.getOrNull(AzureProperties.GROUP_NAME, properties);
+        VirtualMachine vmWithInstanceView = vmOps.getWithInstanceView(rgName, 
+            vm.getName()).getVirtualMachine();
+        VirtualMachineInstanceView vmInstanceView = vmWithInstanceView.getInstanceView();
 
         for(InstanceViewStatus status : vmInstanceView.getStatuses()) {
-            if (status.getCode() == "PowerState/running") {
+            if (status.getCode().equals("PowerState/running")) {
                 return true;
             }
         }
-        
+
         return false;
     }
     /**

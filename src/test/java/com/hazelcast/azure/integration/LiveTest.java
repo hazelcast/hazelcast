@@ -1,4 +1,8 @@
-package com.hazelcast.azure.integration;
+package com.hazelcast.azure.test.integration;
+
+import com.hazelcast.azure.AzureAuthHelper;
+
+import com.microsoft.windowsazure.Configuration;
 
 import com.hazelcast.azure.AzureDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
@@ -8,15 +12,27 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.HazelcastTestSupport;
 
-import com.microsoft.azure.utility.ComputeHelper
+import com.microsoft.azure.utility.ComputeHelper;
+import com.microsoft.azure.utility.ResourceHelper;
+import com.microsoft.azure.utility.ResourceContext;
+
+import com.microsoft.azure.management.resources.DeploymentOperations;
+import com.microsoft.azure.management.resources.models.DeploymentMode;
+import com.microsoft.azure.management.resources.models.DeploymentExtended;
+import com.microsoft.azure.management.resources.ResourceManagementClient;
+import com.microsoft.azure.management.resources.ResourceManagementService;
+import com.microsoft.azure.management.resources.ResourceGroupOperations;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.Before;
+import org.junit.After;
 
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -32,7 +48,7 @@ public class LiveTest extends HazelcastTestSupport {
     public static final String SUBSCRIPTION_ID =  System.getProperty("test.azure.subscription-id");
     public static final String GROUP_NAME = System.getProperty("test.azure.group-name");
     public static final String HZLCST_CLUSTER_ID = System.getProperty("test.azure.cluster-id");
-    
+
     protected Map<String, Comparable> getProperties() {
         Map<String, Comparable> properties = new HashMap<String, Comparable>();
         properties.put("client-id", CLIENT_ID);
@@ -50,36 +66,69 @@ public class LiveTest extends HazelcastTestSupport {
     }
 
     @Before
-    public void deployVirtualMachines() {
-      String resourceGroupName = GROUP_NAME;
-      String resourceGroupLocation = "westus"
-      String deploymentName = getInput("depoloyment.name", generateRandomName("deployment"));
+    public void deployVirtualMachines() throws Exception {
+      // String resourceGroupName = GROUP_NAME;
+      // String resourceGroupLocation = "westus";
+      // String deploymentName = generateRandomName("deployment");
 
-      Map<String, Comparable> parameters = new HashMap<String, String>();
-      parameters.put("newStorageAccountName", getInput("storage.name",
-              UUID.randomUUID().toString().replace("-", "").substring(0, 20)));
-      parameters.put("location", "westus");
-      parameters.put("adminUsername", "userName");
-      parameters.put("adminPassword", "Password@123");
-      parameters.put("dnsNameForPublicIP", generateRandomName("vm"));
+      // Map<String, String> parameters = new HashMap<String, String>();
+      // parameters.put("newStorageAccountName",
+      //         UUID.randomUUID().toString().replace("-", "").substring(0, 20));
+      // parameters.put("location", "West US");
+      // parameters.put("adminUsername", "userName");
+      // parameters.put("adminPassword", "Password@123");
+      // parameters.put("dnsNameForPublicIP", generateRandomName("vm"));
 
-      Configuration config = AzureAuthHelper.getAzureConfiguration(parameters);
+      // Configuration config = AzureAuthHelper.getAzureConfiguration(getProperties());
 
-      ResourceManagementClient client = ResourceManagementService.create(config);
-      ResourceContext resourceContext = new ResourceContext(
-                    resourceGroupLocation, resourceGroupName,
-                    SUBSCRIPTION_ID, false);
-      ComputeHelper.createOrUpdateResourceGroup(resourceManagementClient, resourceContext);
+      // ResourceManagementClient client = ResourceManagementService.create(config);
 
-      DeploymentExtended deployment = ResourceHelper.createTemplateDeploymentFromURI(
-                    resourceManagementClient,
-                    resourceGroupName,
-                    DeploymentMode.Incremental,
-                    deploymentName,
-                    TEMPLATE_URI,
-                    "1.0.0.0",
-                    parameters);
+      // ResourceContext resourceContext = new ResourceContext(
+      //               resourceGroupLocation, resourceGroupName,
+      //               SUBSCRIPTION_ID, false);
+      // ComputeHelper.createOrUpdateResourceGroup(client, resourceContext);
+
+      // DeploymentExtended deployment = ResourceHelper.createTemplateDeploymentFromURI(
+      //               client,
+      //               resourceGroupName,
+      //               DeploymentMode.Incremental,
+      //               deploymentName,
+      //               "https://raw.githubusercontent.com/sedouard/hazelcast-azure/master/src/test/java/com/hazelcast/azure/integration/azuredeploy.json",
+      //               "1.0.0.0",
+      //               parameters);
+
+      // DeploymentOperations deployOps = client.getDeploymentsOperations();
+
+      // // wait for deployment to complete
+      // while (true) {
+      //   DeploymentExtended extended = deployOps.get(resourceGroupName, deploymentName).getDeployment();
+      //   String provisioningState = extended.getProperties().getProvisioningState();
+
+      //   if (provisioningState.equals("Succeeded")) {
+      //       break;
+      //   }
+
+      //   if (provisioningState.equals("Failed")) {
+      //       throw new Exception("Azure provisioning failed");
+      //   }
+      // }
+
+      // // It really sucks, but theres an ARBITRARY delay
+      // // from when the deployment completes to when VMs
+      // // have their 'instanceView' objects ready...
+      // // here we delay 30 seconds
+      // Thread.sleep(30000);
     }
+
+    @After
+    public void cleanupVirtualMachines () throws Exception {
+      // Configuration config = AzureAuthHelper.getAzureConfiguration(getProperties());
+      // String resourceGroupName = GROUP_NAME;
+      // ResourceManagementClient client = ResourceManagementService.create(config);
+      // ResourceGroupOperations rgOps = client.getResourceGroupsOperations();
+      // rgOps.delete(resourceGroupName);
+    }
+
     @Test
     public void test_DiscoveryStrategyDiscoverNodesLive() throws Exception {
         Map<String, Comparable> properties = getProperties();
@@ -101,6 +150,6 @@ public class LiveTest extends HazelcastTestSupport {
             System.out.println(node.getPublicAddress());
         }
 
-        assertEquals(2, count);
+        assertEquals(3, count);
     }
 }
