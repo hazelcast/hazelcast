@@ -72,8 +72,12 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
             Object previousValue = recordStore.putFromLoad(key, value);
 
             callAfterPutInterceptors(value);
-            publishEntryEvent(key, previousValue, dataValue);
-            publishWanReplicationEvent(key, dataValue, recordStore.getRecord(key));
+            Record record = recordStore.getRecord(key);
+            if (isPostProcessing(recordStore)) {
+                value = record.getValue();
+            }
+            publishEntryEvent(key, previousValue, value);
+            publishWanReplicationEvent(key, value, record);
             addInvalidation(key);
         }
     }
@@ -95,24 +99,23 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
         mapService.getMapServiceContext().interceptAfterPut(name, value);
     }
 
-    private void publishEntryEvent(Data key, Object previousValue, Data newValue) {
+    private void publishEntryEvent(Data key, Object previousValue, Object newValue) {
         final EntryEventType eventType = previousValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, key, previousValue, newValue);
     }
 
-    private void publishWanReplicationEvent(Data key, Data value, Record record) {
-        if (record == null) {
+    private void publishWanReplicationEvent(Data key, Object value, Record record) {
+        if (record == null || !mapContainer.isWanReplicationEnabled()) {
             return;
         }
 
-        if (mapContainer.isWanReplicationEnabled()) {
-            final EntryView entryView = EntryViews.createSimpleEntryView(key, value, record);
-            MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-            MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
-            mapEventPublisher.publishWanReplicationUpdate(name, entryView);
-        }
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        value = mapServiceContext.toData(value);
+        EntryView entryView = EntryViews.createSimpleEntryView(key, value, record);
+        mapEventPublisher.publishWanReplicationUpdate(name, entryView);
     }
 
     @Override
