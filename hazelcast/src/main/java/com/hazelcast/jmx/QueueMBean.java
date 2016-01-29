@@ -19,6 +19,9 @@ package com.hazelcast.jmx;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.jmx.suppliers.LocalQueueStatsSupplier;
+import com.hazelcast.jmx.suppliers.StatsSupplier;
+import com.hazelcast.monitor.LocalQueueStats;
 
 /**
  * Management bean for {@link com.hazelcast.core.IQueue}
@@ -26,75 +29,79 @@ import com.hazelcast.core.IQueue;
 @ManagedDescription("IQueue")
 public class QueueMBean extends HazelcastMBean<IQueue> {
 
+    private final LocalStatsDelegate<LocalQueueStats> localQueueStatsDelegate;
+
     protected QueueMBean(IQueue managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = service.createObjectName("IQueue", managedObject.getName());
+        StatsSupplier<LocalQueueStats> localQueueStatsSupplier = new LocalQueueStatsSupplier(managedObject);
+        localQueueStatsDelegate = new LocalStatsDelegate<LocalQueueStats>(localQueueStatsSupplier, updateIntervalSec);
     }
 
     @ManagedAnnotation("localOwnedItemCount")
     @ManagedDescription("the number of owned items in this member.")
     public long getLocalOwnedItemCount() {
-        return managedObject.getLocalQueueStats().getOwnedItemCount();
+        return localQueueStatsDelegate.getLocalStats().getOwnedItemCount();
     }
 
     @ManagedAnnotation("localBackupItemCount")
     @ManagedDescription("the number of backup items in this member.")
     public long getLocalBackupItemCount() {
-        return managedObject.getLocalQueueStats().getBackupItemCount();
+        return localQueueStatsDelegate.getLocalStats().getBackupItemCount();
     }
 
     @ManagedAnnotation("localMinAge")
     @ManagedDescription("the min age of the items in this member.")
     public long getLocalMinAge() {
-        return managedObject.getLocalQueueStats().getMinAge();
+        return localQueueStatsDelegate.getLocalStats().getMinAge();
     }
 
     @ManagedAnnotation("localMaxAge")
     @ManagedDescription("the max age of the items in this member.")
     public long getLocalMaxAge() {
-        return managedObject.getLocalQueueStats().getMaxAge();
+        return localQueueStatsDelegate.getLocalStats().getMaxAge();
     }
 
     @ManagedAnnotation("localAvgAge")
     @ManagedDescription("the average age of the items in this member.")
     public long getLocalAvgAge() {
-        return managedObject.getLocalQueueStats().getAvgAge();
+        return localQueueStatsDelegate.getLocalStats().getAvgAge();
     }
 
     @ManagedAnnotation("localOfferOperationCount")
     @ManagedDescription("the number of offer/put/add operations in this member")
     public long getLocalOfferOperationCount() {
-        return managedObject.getLocalQueueStats().getOfferOperationCount();
+        return localQueueStatsDelegate.getLocalStats().getOfferOperationCount();
     }
 
     @ManagedAnnotation("localRejectedOfferOperationCount")
     @ManagedDescription("the number of rejected offers in this member")
     public long getLocalRejectedOfferOperationCount() {
-        return managedObject.getLocalQueueStats().getRejectedOfferOperationCount();
+        return localQueueStatsDelegate.getLocalStats().getRejectedOfferOperationCount();
     }
 
     @ManagedAnnotation("localPollOperationCount")
     @ManagedDescription("the number of poll/take/remove operations in this member")
     public long getLocalPollOperationCount() {
-        return managedObject.getLocalQueueStats().getPollOperationCount();
+        return localQueueStatsDelegate.getLocalStats().getPollOperationCount();
     }
 
     @ManagedAnnotation("localEmptyPollOperationCount")
     @ManagedDescription("number of null returning poll operations in this member")
     public long getLocalEmptyPollOperationCount() {
-        return managedObject.getLocalQueueStats().getEmptyPollOperationCount();
+        return localQueueStatsDelegate.getLocalStats().getEmptyPollOperationCount();
     }
 
     @ManagedAnnotation("localOtherOperationsCount")
     @ManagedDescription("number of other operations in this member")
     public long getLocalOtherOperationsCount() {
-        return managedObject.getLocalQueueStats().getOtherOperationsCount();
+        return localQueueStatsDelegate.getLocalStats().getOtherOperationsCount();
     }
 
     @ManagedAnnotation("localEventOperationCount")
     @ManagedDescription("number of event operations in this member")
     public long getLocalEventOperationCount() {
-        return managedObject.getLocalQueueStats().getEventOperationCount();
+        return localQueueStatsDelegate.getLocalStats().getEventOperationCount();
     }
 
     @ManagedAnnotation("name")
