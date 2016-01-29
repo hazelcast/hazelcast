@@ -107,7 +107,7 @@ public interface ResponseTemplate {
      * @param partitions mappings from member address to list of partition id 's that member owns
      */
     @Response(ResponseMessageConst.PARTITIONS)
-    void Partitions(Map<Address, List<Integer>> partitions);
+    void Partitions(List<Map.Entry<Address, List<Integer>>> partitions);
 
     /**
      * @param response An list of DistributedObjectInfo (service name and object name).

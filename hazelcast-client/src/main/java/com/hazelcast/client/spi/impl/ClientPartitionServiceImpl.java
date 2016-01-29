@@ -146,15 +146,15 @@ public final class ClientPartitionServiceImpl
 
     private boolean processPartitionResponse(ClientGetPartitionsCodec.ResponseParameters response) {
         LOGGER.finest("Processing partition response.");
-        Map<Address, List<Integer>> partitionResponse = response.partitions;
-        for (Map.Entry<Address, List<Integer>> entry : partitionResponse.entrySet()) {
+        List<Map.Entry<Address, List<Integer>>> partitions = response.partitions;
+        for (Map.Entry<Address, List<Integer>> entry : partitions) {
             Address address = entry.getKey();
             for (Integer partition : entry.getValue()) {
                 this.partitions.put(partition, address);
             }
         }
-        partitionCount = partitions.size();
-        return partitionResponse.size() > 0;
+        partitionCount = this.partitions.size();
+        return partitions.size() > 0;
     }
 
     public void stop() {

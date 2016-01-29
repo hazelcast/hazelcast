@@ -1013,7 +1013,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             try {
                 ClientMessage response = future.get();
                 MapGetAllCodec.ResponseParameters resultParameters = MapGetAllCodec.decodeResponse(response);
-        
+
                 for (Entry<Data, Data> entry : resultParameters.response) {
                     final V value = toObject(entry.getValue());
                     final K key = toObject(entry.getKey());
@@ -1352,7 +1352,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public void putAll(Map<? extends K, ? extends V> m) {
         ClientPartitionService partitionService = getContext().getPartitionService();
-        Map<Integer, Map<Data, Data>> entryMap = new HashMap<Integer, Map<Data, Data>>(partitionService.getPartitionCount());
+        Map<Integer, List<Map.Entry<Data, Data>>> entryMap = new HashMap<Integer, List<Map.Entry<Data, Data>>>(partitionService.getPartitionCount());
 
         for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
             checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
@@ -1361,21 +1361,21 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             Data keyData = toData(entry.getKey());
 
             int partitionId = partitionService.getPartitionId(keyData);
-            Map<Data, Data> partition = entryMap.get(partitionId);
+            List<Map.Entry<Data, Data>> partition = entryMap.get(partitionId);
             if (partition == null) {
-                partition = new HashMap<Data, Data>();
+                partition = new ArrayList<Map.Entry<Data, Data>>();
                 entryMap.put(partitionId, partition);
             }
 
-            partition.put(keyData, toData(entry.getValue()));
+            partition.add(new AbstractMap.SimpleEntry<Data, Data>(keyData, toData(entry.getValue())));
         }
 
         putAllInternal(entryMap);
     }
 
-    protected void putAllInternal(Map<Integer, Map<Data, Data>> entryMap) {
+    protected void putAllInternal(Map<Integer, List<Map.Entry<Data, Data>>> entryMap) {
         List<Future<?>> futures = new ArrayList<Future<?>>(entryMap.size());
-        for (final Entry<Integer, Map<Data, Data>> entry : entryMap.entrySet()) {
+        for (final Entry<Integer, List<Map.Entry<Data, Data>>> entry : entryMap.entrySet()) {
             final Integer partitionId = entry.getKey();
             //If there is only one entry, consider how we can use MapPutRequest
             //without having to get back the return value.
