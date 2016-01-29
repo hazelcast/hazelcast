@@ -8,6 +8,8 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.HazelcastTestSupport;
 
+import com.microsoft.azure.utility.ComputeHelper
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -43,6 +45,41 @@ public class LiveTest extends HazelcastTestSupport {
         return properties;
     }
 
+    protected static String generateRandomName(String prefix) {
+        return "hzlcst-azure" + prefix + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+    }
+
+    @Before
+    public void deployVirtualMachines() {
+      String resourceGroupName = GROUP_NAME;
+      String resourceGroupLocation = "westus"
+      String deploymentName = getInput("depoloyment.name", generateRandomName("deployment"));
+
+      Map<String, Comparable> parameters = new HashMap<String, String>();
+      parameters.put("newStorageAccountName", getInput("storage.name",
+              UUID.randomUUID().toString().replace("-", "").substring(0, 20)));
+      parameters.put("location", "westus");
+      parameters.put("adminUsername", "userName");
+      parameters.put("adminPassword", "Password@123");
+      parameters.put("dnsNameForPublicIP", generateRandomName("vm"));
+
+      Configuration config = AzureAuthHelper.getAzureConfiguration(parameters);
+
+      ResourceManagementClient client = ResourceManagementService.create(config);
+      ResourceContext resourceContext = new ResourceContext(
+                    resourceGroupLocation, resourceGroupName,
+                    SUBSCRIPTION_ID, false);
+      ComputeHelper.createOrUpdateResourceGroup(resourceManagementClient, resourceContext);
+
+      DeploymentExtended deployment = ResourceHelper.createTemplateDeploymentFromURI(
+                    resourceManagementClient,
+                    resourceGroupName,
+                    DeploymentMode.Incremental,
+                    deploymentName,
+                    TEMPLATE_URI,
+                    "1.0.0.0",
+                    parameters);
+    }
     @Test
     public void test_DiscoveryStrategyDiscoverNodesLive() throws Exception {
         Map<String, Comparable> properties = getProperties();
