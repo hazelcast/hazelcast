@@ -17,8 +17,6 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.ClusterService;
-import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordStatistics;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.Address;
@@ -29,7 +27,6 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -111,46 +108,11 @@ public class LocalMapStatsProvider {
         if (!hasRecords(recordStore)) {
             return;
         }
-        int lockedEntryCount = 0;
-        long lastAccessTime = 0;
-        long lastUpdateTime = 0;
-        long ownedEntryMemoryCost = 0;
-        long hits = 0;
 
-        final Iterator<Record> iterator = recordStore.iterator();
-        while (iterator.hasNext()) {
-            final Record record = iterator.next();
-            hits += getHits(record);
-            ownedEntryMemoryCost += record.getCost();
-            lockedEntryCount += isLocked(record, recordStore);
-            lastAccessTime = Math.max(lastAccessTime, record.getLastAccessTime());
-            lastUpdateTime = Math.max(lastUpdateTime, record.getLastUpdateTime());
-        }
-
-        localMapOnDemandCalculatedStats.incrementOwnedEntryMemoryCost(ownedEntryMemoryCost);
-        localMapOnDemandCalculatedStats.incrementLockedEntryCount(lockedEntryCount);
-        localMapOnDemandCalculatedStats.incrementHits(hits);
+        localMapOnDemandCalculatedStats.incrementOwnedEntryMemoryCost(recordStore.getHeapCost());
         localMapOnDemandCalculatedStats.incrementDirtyEntryCount(recordStore.getMapDataStore().notFinishedOperationsCount());
-        localMapStats.setLastAccessTime(lastAccessTime);
-        localMapStats.setLastUpdateTime(lastUpdateTime);
         localMapOnDemandCalculatedStats.incrementHeapCost(recordStore.getHeapCost());
         localMapOnDemandCalculatedStats.incrementOwnedEntryCount(recordStore.size());
-    }
-
-    private long getHits(Record record) {
-        final RecordStatistics stats = record.getStatistics();
-        return stats.getHits();
-    }
-
-    /**
-     * Return 1 if locked, otherwise 0.
-     * Used to find {@link LocalMapStatsImpl#lockedEntryCount}.
-     */
-    private int isLocked(Record record, RecordStore recordStore) {
-        if (recordStore.isLocked(record.getKey())) {
-            return 1;
-        }
-        return 0;
     }
 
     /**
@@ -174,7 +136,7 @@ public class LocalMapStatsProvider {
                 if (hasRecords(recordStore)) {
                     heapCost += recordStore.getHeapCost();
                     backupEntryCount += recordStore.size();
-                    backupEntryMemoryCost += getMemoryCost(recordStore);
+                    backupEntryMemoryCost += recordStore.getHeapCost();
                 }
             }
         }
@@ -197,16 +159,6 @@ public class LocalMapStatsProvider {
 
     private void printWarning(InternalPartition partition, int replica) {
         nodeEngine.getLogger(getClass()).warning("Partition: " + partition + ", replica: " + replica + " has no owner!");
-    }
-
-    private long getMemoryCost(RecordStore recordStore) {
-        final Iterator<Record> iterator = recordStore.iterator();
-        long cost = 0L;
-        while (iterator.hasNext()) {
-            final Record record = iterator.next();
-            cost += record.getCost();
-        }
-        return cost;
     }
 
     private RecordStore getRecordStoreOrNull(String mapName, int partitionId) {

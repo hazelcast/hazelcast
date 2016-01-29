@@ -15,6 +15,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -28,7 +29,15 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class LocalMapStatsTest extends HazelcastTestSupport {
 
+    /**
+     * For some specific reasons,
+     * hits, lockedEntryCount, lastAccessTime, lastUpdateTime
+     * are removed from LocalMapStats class. Because of this,
+     * tests which tests these stats are ignored in this branch.
+     */
+
     @Test
+    @Ignore
     public void testHitsGenerated() throws Exception {
         HazelcastInstance h1 = createHazelcastInstance();
         IMap<Integer, Integer> map = h1.getMap(randomMapName());
@@ -41,6 +50,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void testPutAndHitsGenerated() throws Exception {
         HazelcastInstance h1 = createHazelcastInstance();
         IMap<Integer, Integer> map = h1.getMap(randomMapName());
@@ -54,6 +64,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void testGetAndHitsGenerated() throws Exception {
         HazelcastInstance h1 = createHazelcastInstance();
         IMap<Integer, Integer> map = h1.getMap(randomMapName());
@@ -67,6 +78,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void testHitsGenerated_updatedConcurrently() throws Exception {
         HazelcastInstance h1 = createHazelcastInstance();
         final IMap<Integer, Integer> map = h1.getMap(randomMapName());
@@ -99,6 +111,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void testLastAccessTime() throws InterruptedException {
         final long startTime = Clock.currentTimeMillis();
 
@@ -118,6 +131,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void testLastAccessTime_updatedConcurrently() throws InterruptedException {
         final long startTime = Clock.currentTimeMillis();
 
@@ -162,6 +176,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void testHits_whenMultipleNodes() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances();
