@@ -38,6 +38,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ExceptionUtil;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.ComparisonFailure;
@@ -833,7 +834,7 @@ public abstract class HazelcastTestSupport {
             try {
                 task.run();
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw ExceptionUtil.rethrow(e);
             }
             sleepSeconds(1);
         }
@@ -849,7 +850,7 @@ public abstract class HazelcastTestSupport {
                 try {
                     task.run();
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    throw ExceptionUtil.rethrow(e);
                 }
                 return;
             } catch (AssertionError e) {
@@ -873,7 +874,7 @@ public abstract class HazelcastTestSupport {
         try {
             task.run();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
