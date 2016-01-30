@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    compile 'org.hazelcast.azure:hazelcast-azure:1.0'
+    compile 'com.hazelcast.azure:hazelcast-azure:1.0'
 }
 ```
 
@@ -25,7 +25,7 @@ dependencies {
 ```xml
 <dependencies>
     <dependency>
-        <groupId>org.hazelcast.azure</groupId>
+        <groupId>com.hazelcast.azure</groupId>
         <artifactId>hazelcast-azure</artifactId>
         <version>1.0</version>
     </dependency>
