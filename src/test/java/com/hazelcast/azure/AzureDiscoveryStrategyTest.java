@@ -144,7 +144,7 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
             ArrayList<NetworkInterfaceIpConfiguration> ips = new ArrayList<NetworkInterfaceIpConfiguration>();
             NetworkInterfaceIpConfiguration ip = new NetworkInterfaceIpConfiguration();
             
-            
+
             ResourceId pubIpRid = new ResourceId();
             pubIpRid.setId("/subscriptions/" + (String)properties.get("subscription-id") 
                 + "/resourceGroups/" + (String)properties.get("subscription-id") + "/publicIpAddresses/pubip-" + i);
@@ -235,16 +235,18 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
     @Test
     public void test_DiscoverNodesStoppedVM() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(4);
-        VirtualMachine vmToTurnOff = virtuaMachines.get(2);
-        
+        VirtualMachine vmToTurnOff = virtuaMachines.remove(2);
         // turn off the vm
-        for (InstanceViewStatus status : vmToTurnOff.getInstanceView().getStatuses()) {
-            if (status.getCode() == "PowerState/running") {
-                status.setCode("PowerState/deallocated");
-                break;
-            }
-        }
-
+        VirtualMachineInstanceView newView = new VirtualMachineInstanceView();
+        ArrayList<InstanceViewStatus> statuses = new ArrayList<InstanceViewStatus>();
+        InstanceViewStatus status1 = new InstanceViewStatus();
+        InstanceViewStatus status2 = new InstanceViewStatus();
+        statuses.add(status1);
+        statuses.add(status2);
+        newView.setStatuses(statuses);
+        status1.setCode("PowerState/deallocated");
+        status2.setCode("ProvisioningState/succeeded");
+        vmToTurnOff.setInstanceView(newView);
         // should only recognize 3 hazelcast instances now
         test_DiscoverNodesMockedWithSkip(3, 2);
     }

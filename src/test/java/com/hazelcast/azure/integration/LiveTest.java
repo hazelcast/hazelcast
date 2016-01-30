@@ -67,66 +67,60 @@ public class LiveTest extends HazelcastTestSupport {
 
     @Before
     public void deployVirtualMachines() throws Exception {
-      // String resourceGroupName = GROUP_NAME;
-      // String resourceGroupLocation = "westus";
-      // String deploymentName = generateRandomName("deployment");
+      String resourceGroupName = GROUP_NAME;
+      String resourceGroupLocation = "westus";
+      String deploymentName = generateRandomName("deployment");
 
-      // Map<String, String> parameters = new HashMap<String, String>();
-      // parameters.put("newStorageAccountName",
-      //         UUID.randomUUID().toString().replace("-", "").substring(0, 20));
-      // parameters.put("location", "West US");
-      // parameters.put("adminUsername", "userName");
-      // parameters.put("adminPassword", "Password@123");
-      // parameters.put("dnsNameForPublicIP", generateRandomName("vm"));
+      Map<String, String> parameters = new HashMap<String, String>();
+      parameters.put("newStorageAccountName",
+              UUID.randomUUID().toString().replace("-", "").substring(0, 20));
+      parameters.put("location", "West US");
+      parameters.put("adminUsername", "userName");
+      parameters.put("adminPassword", "Password@123");
+      parameters.put("dnsNameForPublicIP", generateRandomName("vm"));
 
-      // Configuration config = AzureAuthHelper.getAzureConfiguration(getProperties());
+      Configuration config = AzureAuthHelper.getAzureConfiguration(getProperties());
 
-      // ResourceManagementClient client = ResourceManagementService.create(config);
+      ResourceManagementClient client = ResourceManagementService.create(config);
 
-      // ResourceContext resourceContext = new ResourceContext(
-      //               resourceGroupLocation, resourceGroupName,
-      //               SUBSCRIPTION_ID, false);
-      // ComputeHelper.createOrUpdateResourceGroup(client, resourceContext);
+      ResourceContext resourceContext = new ResourceContext(
+                    resourceGroupLocation, resourceGroupName,
+                    SUBSCRIPTION_ID, false);
+      ComputeHelper.createOrUpdateResourceGroup(client, resourceContext);
 
-      // DeploymentExtended deployment = ResourceHelper.createTemplateDeploymentFromURI(
-      //               client,
-      //               resourceGroupName,
-      //               DeploymentMode.Incremental,
-      //               deploymentName,
-      //               "https://raw.githubusercontent.com/sedouard/hazelcast-azure/master/src/test/java/com/hazelcast/azure/integration/azuredeploy.json",
-      //               "1.0.0.0",
-      //               parameters);
+      DeploymentExtended deployment = ResourceHelper.createTemplateDeploymentFromURI(
+                    client,
+                    resourceGroupName,
+                    DeploymentMode.Incremental,
+                    deploymentName,
+                    "https://raw.githubusercontent.com/sedouard/hazelcast-azure/master/src/test/java/com/hazelcast/azure/integration/azuredeploy.json",
+                    "1.0.0.0",
+                    parameters);
 
-      // DeploymentOperations deployOps = client.getDeploymentsOperations();
+      DeploymentOperations deployOps = client.getDeploymentsOperations();
 
-      // // wait for deployment to complete
-      // while (true) {
-      //   DeploymentExtended extended = deployOps.get(resourceGroupName, deploymentName).getDeployment();
-      //   String provisioningState = extended.getProperties().getProvisioningState();
+      // wait for deployment to complete
+      while (true) {
+        DeploymentExtended extended = deployOps.get(resourceGroupName, deploymentName).getDeployment();
+        String provisioningState = extended.getProperties().getProvisioningState();
 
-      //   if (provisioningState.equals("Succeeded")) {
-      //       break;
-      //   }
+        if (provisioningState.equals("Succeeded")) {
+            break;
+        }
 
-      //   if (provisioningState.equals("Failed")) {
-      //       throw new Exception("Azure provisioning failed");
-      //   }
-      // }
-
-      // // It really sucks, but theres an ARBITRARY delay
-      // // from when the deployment completes to when VMs
-      // // have their 'instanceView' objects ready...
-      // // here we delay 30 seconds
-      // Thread.sleep(30000);
+        if (provisioningState.equals("Failed")) {
+            throw new Exception("Azure provisioning failed");
+        }
+      }
     }
 
     @After
     public void cleanupVirtualMachines () throws Exception {
-      // Configuration config = AzureAuthHelper.getAzureConfiguration(getProperties());
-      // String resourceGroupName = GROUP_NAME;
-      // ResourceManagementClient client = ResourceManagementService.create(config);
-      // ResourceGroupOperations rgOps = client.getResourceGroupsOperations();
-      // rgOps.delete(resourceGroupName);
+      Configuration config = AzureAuthHelper.getAzureConfiguration(getProperties());
+      String resourceGroupName = GROUP_NAME;
+      ResourceManagementClient client = ResourceManagementService.create(config);
+      ResourceGroupOperations rgOps = client.getResourceGroupsOperations();
+      rgOps.delete(resourceGroupName);
     }
 
     @Test
@@ -141,13 +135,22 @@ public class LiveTest extends HazelcastTestSupport {
         assertTrue(nodes != null);
 
         int count = 0;
-
+        String ipBase = "10.0.1.10";
         while(nodes.hasNext()) {
-            count++;
+            
             DiscoveryNode node = nodes.next();
-            System.out.println("Found Node:");
-            System.out.println(node.getPrivateAddress());
-            System.out.println(node.getPublicAddress());
+
+            // first node in the test template has a public ip address
+            if (count == 0) {
+                assertTrue(!node.getPrivateAddress().getHost().equals(node.getPublicAddress().getHost()));
+            }
+
+            String ip = ipBase + count;
+
+            assertEquals(ip, node.getPrivateAddress().getHost());
+            assertEquals(5701, node.getPrivateAddress().getPort());
+            assertEquals(5701, node.getPublicAddress().getPort());
+            count++;
         }
 
         assertEquals(3, count);
