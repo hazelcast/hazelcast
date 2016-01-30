@@ -1,5 +1,8 @@
-package com.hazelcast.azure;
+package com.hazelcast.azure.test;
 
+import com.hazelcast.azure.AzureDiscoveryStrategy;
+import com.hazelcast.azure.AzureDiscoveryStrategyFactory;
+import com.hazelcast.azure.AzureAuthHelper;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -36,6 +39,8 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import java.net.URISyntaxException;
+
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -65,7 +70,7 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
     private ArrayList<VirtualMachine> virtuaMachines;
     private NetworkInterfaceOperations mockNicOps = mock(NetworkInterfaceOperations.class);
     private PublicIpAddressOperations mockPubOps = mock(PublicIpAddressOperations.class);
-
+    private VirtualMachineOperations mockVmOps = mock(VirtualMachineOperations.class);
     {
         properties = new HashMap<String, Comparable>();
         properties.put("client-id", "test-value");
@@ -82,7 +87,6 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
         Configuration mockAzureConfig = mock(Configuration.class);
         ComputeManagementClient mockComputeManagementClient = mock(ComputeManagementClient.class);
         NetworkResourceProviderClient mockNetworkResourceProviderClient = mock(NetworkResourceProviderClient.class);
-        VirtualMachineOperations mockVmOps = mock(VirtualMachineOperations.class);
         VirtualMachineListResponse mockVmListResponse = mock(VirtualMachineListResponse.class);
 
         // mock all the static methods in a class called "Static"
@@ -99,7 +103,7 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
         Mockito.when(mockVmListResponse.getVirtualMachines()).thenReturn(virtuaMachines);
     }
 
-    private void buildFakeVmList(int count) throws IOException, ServiceException {
+    private void buildFakeVmList(int count) throws IOException, ServiceException, URISyntaxException {
         virtuaMachines.clear();
         for (int i = 0; i < count; i++) {
             VirtualMachine vm = new VirtualMachine();
@@ -131,11 +135,16 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
             vm.setTags(tags);
             virtuaMachines.add(vm);
 
+            // we already stick the instance view on the vm, unlike the api list response
+            VirtualMachineGetResponse getVmResponse = new VirtualMachineGetResponse();
+            getVmResponse.setVirtualMachine(vm);
+            Mockito.when(mockVmOps.getWithInstanceView((String)properties.get("group-name"), vm.getName()))
+            .thenReturn(getVmResponse);
             NetworkInterface mockNic = new NetworkInterface();
             ArrayList<NetworkInterfaceIpConfiguration> ips = new ArrayList<NetworkInterfaceIpConfiguration>();
             NetworkInterfaceIpConfiguration ip = new NetworkInterfaceIpConfiguration();
             
-            
+
             ResourceId pubIpRid = new ResourceId();
             pubIpRid.setId("/subscriptions/" + (String)properties.get("subscription-id") 
                 + "/resourceGroups/" + (String)properties.get("subscription-id") + "/publicIpAddresses/pubip-" + i);
@@ -200,48 +209,50 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_DiscoverNodesMocked_255() throws IOException, ServiceException {
+    public void test_DiscoverNodesMocked_255() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(255);
         test_DiscoverNodesMocked(255);
     }
 
     @Test
-    public void test_DiscoverNodesMocked_3() throws IOException, ServiceException {
+    public void test_DiscoverNodesMocked_3() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(3);
         test_DiscoverNodesMocked(3);
     }
 
     @Test
-    public void test_DiscoverNodesMocked_1() throws IOException, ServiceException {
+    public void test_DiscoverNodesMocked_1() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(1);
         test_DiscoverNodesMocked(1);
     }
 
     @Test
-    public void test_DiscoverNodesMocked_0() throws IOException, ServiceException {
+    public void test_DiscoverNodesMocked_0() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(0);
         test_DiscoverNodesMocked(0);
     }
 
     @Test
-    public void test_DiscoverNodesStoppedVM() throws IOException, ServiceException {
+    public void test_DiscoverNodesStoppedVM() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(4);
-        VirtualMachine vmToTurnOff = virtuaMachines.get(2);
-        
+        VirtualMachine vmToTurnOff = virtuaMachines.remove(2);
         // turn off the vm
-        for (InstanceViewStatus status : vmToTurnOff.getInstanceView().getStatuses()) {
-            if (status.getCode() == "PowerState/running") {
-                status.setCode("PowerState/deallocated");
-                break;
-            }
-        }
-
+        VirtualMachineInstanceView newView = new VirtualMachineInstanceView();
+        ArrayList<InstanceViewStatus> statuses = new ArrayList<InstanceViewStatus>();
+        InstanceViewStatus status1 = new InstanceViewStatus();
+        InstanceViewStatus status2 = new InstanceViewStatus();
+        statuses.add(status1);
+        statuses.add(status2);
+        newView.setStatuses(statuses);
+        status1.setCode("PowerState/deallocated");
+        status2.setCode("ProvisioningState/succeeded");
+        vmToTurnOff.setInstanceView(newView);
         // should only recognize 3 hazelcast instances now
         test_DiscoverNodesMockedWithSkip(3, 2);
     }
 
     @Test
-    public void test_DiscoverNodesUntaggedVM() throws IOException, ServiceException {
+    public void test_DiscoverNodesUntaggedVM() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(6);
         VirtualMachine vmToUntag = virtuaMachines.get(3);
         

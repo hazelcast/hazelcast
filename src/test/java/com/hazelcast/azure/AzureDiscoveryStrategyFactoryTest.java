@@ -1,5 +1,8 @@
-package com.hazelcast.azure;
+package com.hazelcast.azure.test;
 
+import com.hazelcast.azure.AzureProperties;
+import com.hazelcast.azure.AzureDiscoveryStrategy;
+import com.hazelcast.azure.AzureDiscoveryStrategyFactory;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
