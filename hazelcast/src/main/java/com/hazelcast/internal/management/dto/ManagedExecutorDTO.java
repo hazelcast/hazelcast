@@ -26,7 +26,7 @@ import static com.hazelcast.util.JsonUtil.getLong;
 import static com.hazelcast.util.JsonUtil.getString;
 
 /**
- * A Serializable DTO for {@link com.hazelcast.jmx.ManagedExecutorServiceMBean}.
+ * A Serializable DTO for {@link com.hazelcast.internal.jmx.ManagedExecutorServiceMBean}.
  */
 public class ManagedExecutorDTO implements JsonSerializable {
 

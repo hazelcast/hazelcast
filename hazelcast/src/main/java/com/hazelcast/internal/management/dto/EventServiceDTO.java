@@ -23,7 +23,7 @@ import com.hazelcast.spi.EventService;
 import static com.hazelcast.util.JsonUtil.getInt;
 
 /**
- * A Serializable DTO for {@link com.hazelcast.jmx.EventServiceMBean}.
+ * A Serializable DTO for {@link com.hazelcast.internal.jmx.EventServiceMBean}.
  */
 public class EventServiceDTO implements JsonSerializable {
 

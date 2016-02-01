@@ -26,7 +26,7 @@ import java.net.InetSocketAddress;
 import static com.hazelcast.util.JsonUtil.getInt;
 
 /**
- * A Serializable DTO for {@link com.hazelcast.jmx.PartitionServiceMBean}.
+ * A Serializable DTO for {@link com.hazelcast.internal.jmx.PartitionServiceMBean}.
  */
 public class PartitionServiceBeanDTO implements JsonSerializable {
 

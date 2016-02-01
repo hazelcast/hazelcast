@@ -423,10 +423,10 @@
     <suppress checks="IllegalType" files="LinkedListStreamSerializer\.java$"/>
 
     <!-- JMX -->
-    <suppress checks="CyclomaticComplexity" files="com/hazelcast/jmx/ManagementService"/>
+    <suppress checks="CyclomaticComplexity" files="com/hazelcast/internal/jmx/ManagementService"/>
     <!-- IMap interface has a lot of methods -->
-    <suppress checks="MethodCount" files="com/hazelcast/jmx/MapMBean"/>
-    <suppress checks="MethodCount" files="com/hazelcast/jmx/ReplicatedMapMBean"/>
+    <suppress checks="MethodCount" files="com/hazelcast/internal/jmx/MapMBean"/>
+    <suppress checks="MethodCount" files="com/hazelcast/internal/jmx/ReplicatedMapMBean"/>
 
     <!-- AWS -->
     <suppress checks="JavadocMethod" files="com/hazelcast/aws/"/>
