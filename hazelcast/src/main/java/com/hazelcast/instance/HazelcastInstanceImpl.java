@@ -52,7 +52,6 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.internal.monitors.HealthMonitor;
-import com.hazelcast.internal.monitors.PerformanceMonitor;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
@@ -105,8 +104,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
     final ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
 
-    final PerformanceMonitor performanceMonitor;
-
     final HealthMonitor healthMonitor;
 
     protected HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext)
@@ -135,7 +132,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
             managementService = new ManagementService(this);
             initManagedContext(configuredManagedContext);
 
-            this.performanceMonitor = new PerformanceMonitor(this).start();
             this.healthMonitor = new HealthMonitor(node).start();
         } catch (Throwable e) {
             try {

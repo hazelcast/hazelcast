@@ -50,10 +50,14 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
 
     private static final long TIMEOUT = 3;
 
+    @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "out.writeQueueSize")
-    private final Queue<OutboundFrame> writeQueue;
+    public final Queue<OutboundFrame> writeQueue;
+
+    @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "out.priorityWriteQueueSize")
-    private final Queue<OutboundFrame> urgentWriteQueue;
+    public final Queue<OutboundFrame> urgentWriteQueue;
+
     private final ILogger logger;
     private final SocketChannelWrapper socketChannel;
     private ByteBuffer outputBuffer;

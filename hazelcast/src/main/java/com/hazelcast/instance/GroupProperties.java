@@ -45,8 +45,6 @@ public class GroupProperties extends HazelcastProperties {
     @Deprecated
     public static final String PROP_PERFORMANCE_MONITOR_ENABLED = GroupProperty.PERFORMANCE_MONITOR_ENABLED.getName();
     @Deprecated
-    public static final String PROP_PERFORMANCE_MONITOR_DELAY_SECONDS = GroupProperty.PERFORMANCE_MONITOR_DELAY_SECONDS.getName();
-    @Deprecated
     public static final String PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB
             = GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB.getName();
     @Deprecated

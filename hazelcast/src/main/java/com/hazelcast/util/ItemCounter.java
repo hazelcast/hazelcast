@@ -18,6 +18,7 @@ package com.hazelcast.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Non Thread-Safe Counter of things. It allows to count items without worrying about nulls.
@@ -26,6 +27,15 @@ import java.util.Map;
  */
 public final class ItemCounter<T> {
     private final Map<T, MutableLong> map = new HashMap<T, MutableLong>();
+
+    /**
+     * Returns an iterator over all keys.
+     *
+     * @return the key iterator.
+     */
+    public Set<T> keySet() {
+        return map.keySet();
+    }
 
     /**
      * Get current counter for an item item

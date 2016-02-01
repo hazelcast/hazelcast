@@ -75,7 +75,7 @@ import static java.util.logging.Level.WARNING;
  * <p/>
  * Using the InvocationFuture, one can wait for the completion of a Invocation.
  */
-abstract class Invocation implements OperationResponseHandler, Runnable {
+public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED =
             AtomicReferenceFieldUpdater.newUpdater(Invocation.class, Boolean.class, "responseReceived");
@@ -88,6 +88,9 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     //some constants for logging purposes
     private static final int LOG_MAX_INVOCATION_COUNT = 99;
     private static final int LOG_INVOCATION_COUNT_MOD = 10;
+
+    @SuppressWarnings("checkstyle:visibilitymodifier")
+    public final Operation op;
 
     // The time in millis when the response of the primary has been received.
     volatile long pendingResponseReceivedMillis = -1;
@@ -103,7 +106,6 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     final long callTimeout;
     final NodeEngineImpl nodeEngine;
     final String serviceName;
-    final Operation op;
     final int partitionId;
     final int replicaIndex;
     final int tryCount;
@@ -118,6 +120,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
 
     // writes to that are normally handled through the INVOKE_COUNT to ensure atomic increments / decrements
     volatile int invokeCount;
+
 
     Invocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, ExecutionCallback callback,

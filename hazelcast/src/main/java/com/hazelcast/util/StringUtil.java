@@ -29,6 +29,11 @@ public final class StringUtil {
      */
     public static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
+    /**
+     * Points to the System property 'line.separator'.
+     */
+    public static final String LINE_SEPARATOR =  System.getProperty("line.separator");
+
     private static final Locale LOCALE_INTERNAL = Locale.ENGLISH;
 
     private StringUtil() {
@@ -128,6 +133,6 @@ public final class StringUtil {
      * @return line seperator for the specific OS
      */
     public static String getLineSeperator() {
-        return System.getProperty("line.separator");
+        return LINE_SEPARATOR;
     }
 }
