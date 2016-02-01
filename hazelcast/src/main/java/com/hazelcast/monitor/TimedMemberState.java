@@ -32,7 +32,7 @@ import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getLong;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
-import static com.hazelcast.util.StringUtil.getLineSeperator;
+import static com.hazelcast.util.StringUtil.NEW_LINE;
 
 public final class TimedMemberState implements Cloneable, JsonSerializable {
 
@@ -148,7 +148,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
     @Override
     public String toString() {
         return "TimedMemberState{"
-                + getLineSeperator() + '\t' + memberState
-                + getLineSeperator() + "} Instances: " + instanceNames;
+                + NEW_LINE + '\t' + memberState
+                + NEW_LINE + "} Instances: " + instanceNames;
     }
 }
