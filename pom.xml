@@ -31,7 +31,7 @@
     <url>http://github.com/sedouard/hazelcast-azure</url>
     <artifactId>hazelcast-azure</artifactId>
     <groupId>com.hazelcast.azure</groupId>
-    <version>1.0.0-RC1</version>
+    <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <distributionManagement>
@@ -39,6 +39,10 @@
         <id>ossrh</id>
         <url>https://oss.sonatype.org/content/repositories/snapshots</url>
       </snapshotRepository>
+      <repository>
+        <id>ossrh</id>
+        <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+      </repository>
     </distributionManagement>
     <build>
       <plugins>
