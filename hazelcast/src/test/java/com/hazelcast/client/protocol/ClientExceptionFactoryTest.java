@@ -92,7 +92,6 @@ import java.util.concurrent.TimeoutException;
 
 import static junit.framework.Assert.assertNull;
 import static junit.framework.TestCase.assertEquals;
-import static org.junit.Assert.assertArrayEquals;
 
 @RunParallel
 @RunWith(HazelcastTestRunner.class)
@@ -195,13 +194,28 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
         ClientMessage responseMessage = ClientMessage.createForDecode(exceptionMessage.buffer(), 0);
         Throwable resurrectedThrowable = exceptionFactory.createException(responseMessage);
         assertEquals(throwable.getClass(), resurrectedThrowable.getClass());
-        assertArrayEquals(throwable.getStackTrace(), resurrectedThrowable.getStackTrace());
+        assertStackTraceArrayEquals(throwable.getStackTrace(), resurrectedThrowable.getStackTrace());
         Throwable cause = throwable.getCause();
         if (cause == null) {
             assertNull(resurrectedThrowable.getCause());
         } else {
             assertEquals(cause.getClass(), resurrectedThrowable.getCause().getClass());
         }
+    }
+
+    private void assertStackTraceArrayEquals(StackTraceElement[] stackTrace1, StackTraceElement[] stackTrace2) {
+        assertEquals(stackTrace1.length, stackTrace2.length);
+        for (int i = 0; i < stackTrace1.length; i++) {
+            StackTraceElement stackTraceElement1 = stackTrace1[i];
+            StackTraceElement stackTraceElement2 = stackTrace1[i];
+            //Not using stackTraceElement.equals
+            //because in IBM JDK stacktraceElements with null method name are not equal
+            assertEquals(stackTraceElement1.getClassName(), stackTraceElement2.getClassName());
+            assertEquals(stackTraceElement1.getMethodName(), stackTraceElement2.getMethodName());
+            assertEquals(stackTraceElement1.getFileName(), stackTraceElement2.getFileName());
+            assertEquals(stackTraceElement1.getLineNumber(), stackTraceElement2.getLineNumber());
+        }
+
     }
 
 }
