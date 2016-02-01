@@ -29,6 +29,13 @@ public final class StringUtil {
      */
     public static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
+    /**
+     * New line separator.
+     * Use this instead of <code>\n</code> to maintain platform independence
+     *
+     */
+    public static final String NEW_LINE = System.getProperty("line.separator");
+
     private static final Locale LOCALE_INTERNAL = Locale.ENGLISH;
 
     private StringUtil() {
@@ -124,10 +131,12 @@ public final class StringUtil {
     }
 
     /**
+     * @deprecated use {@link #NEW_LINE} field instead
+     *
      * Returns system property "line.seperator"
      * @return line seperator for the specific OS
      */
     public static String getLineSeperator() {
-        return System.getProperty("line.separator");
+        return NEW_LINE;
     }
 }

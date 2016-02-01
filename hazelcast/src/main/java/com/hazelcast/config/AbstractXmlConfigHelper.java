@@ -57,6 +57,7 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.util.StringUtil.NEW_LINE;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 import static java.lang.Boolean.parseBoolean;
 
@@ -138,7 +139,6 @@ public abstract class AbstractXmlConfigHelper {
     protected void schemaValidation(Document doc) throws Exception {
         ArrayList<StreamSource> schemas = new ArrayList<StreamSource>();
         InputStream inputStream = null;
-        String lineSeperator = StringUtil.getLineSeperator();
         String schemaLocation = doc.getDocumentElement().getAttribute("xsi:schemaLocation");
         schemaLocation = schemaLocation.replaceAll("^ +| +$| (?= )", "");
 
@@ -150,8 +150,8 @@ public abstract class AbstractXmlConfigHelper {
             if (xsdLocation.isEmpty()) {
                 continue;
             }
-            String namespace = xsdLocation.split('[' + lineSeperator + " ]+")[0];
-            String uri = xsdLocation.split('[' + lineSeperator + " ]+")[1];
+            String namespace = xsdLocation.split('[' + NEW_LINE + " ]+")[0];
+            String uri = xsdLocation.split('[' + NEW_LINE + " ]+")[1];
 
             // if this is hazelcast namespace but location is different log only warning
             if (namespace.equals(xmlns) && !uri.endsWith(hazelcastSchemaLocation)) {
