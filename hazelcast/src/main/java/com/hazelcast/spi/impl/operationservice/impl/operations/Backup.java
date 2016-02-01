@@ -78,6 +78,10 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         }
     }
 
+    public Operation getBackupOp() {
+        return backupOp;
+    }
+
     @Override
     public void beforeRun() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();

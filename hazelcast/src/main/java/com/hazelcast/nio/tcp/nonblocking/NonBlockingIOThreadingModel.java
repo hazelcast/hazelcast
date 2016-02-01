@@ -23,13 +23,14 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.IOThreadingModel;
 import com.hazelcast.nio.tcp.SocketReader;
-import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.SocketWriter;
+import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.nio.tcp.nonblocking.PacketSampler.isPacketSamplerEnabled;
 import static com.hazelcast.util.HashUtil.hashToIndex;
 import static java.lang.Boolean.getBoolean;
 import static java.util.logging.Level.FINE;
@@ -58,6 +59,7 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
     private boolean inputSelectNow = getBoolean("hazelcast.io.input.thread.selectNow");
     private boolean outputSelectNow = getBoolean("hazelcast.io.output.thread.selectNow");
     private volatile IOBalancer ioBalancer;
+    private volatile PacketSampler packetSampler;
 
     public NonBlockingIOThreadingModel(
             IOService ioService,
@@ -141,16 +143,27 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
             thread.start();
         }
         startIOBalancer();
+
+        if (isPacketSamplerEnabled()) {
+            packetSampler = new PacketSampler(hazelcastThreadGroup, ioService);
+            packetSampler.start();
+        }
     }
 
     @Override
     public void onConnectionAdded(TcpIpConnection connection) {
         ioBalancer.connectionAdded(connection);
+        if (packetSampler != null) {
+            packetSampler.onConnectionAdded(connection);
+        }
     }
 
     @Override
     public void onConnectionRemoved(TcpIpConnection connection) {
         ioBalancer.connectionRemoved(connection);
+        if (packetSampler != null) {
+            packetSampler.onConnectionRemoved(connection);
+        }
     }
 
     private void startIOBalancer() {
@@ -170,6 +183,10 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
 
         shutdown(inputThreads);
         shutdown(outputThreads);
+
+        if (packetSampler != null) {
+            packetSampler.shutdown();
+        }
     }
 
     private void shutdown(NonBlockingIOThread[] threads) {
