@@ -17,6 +17,6 @@
 /**
  * <p>Client protocol tasks implementations for ReplicatedMap</p>
  */
-@GenerateMessageTaskFactory package com.hazelcast.client.impl.protocol.task.replicatedmap;
+package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactory;
+

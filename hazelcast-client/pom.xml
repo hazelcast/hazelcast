@@ -157,6 +157,13 @@
             <classifier>tests</classifier>
         </dependency>
 
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-client-protocol</artifactId>
+            <version>${client.protocol.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- dependencies for XATransaction tests -->
         <dependency>
             <groupId>com.atomikos</groupId>

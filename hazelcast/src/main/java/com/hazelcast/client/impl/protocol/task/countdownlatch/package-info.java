@@ -17,7 +17,7 @@
 /**
  * <p>Client protocol tasks implementations for CountDownLatch</p>
  */
-@GenerateMessageTaskFactory package com.hazelcast.client.impl.protocol.task.countdownlatch;
+package com.hazelcast.client.impl.protocol.task.countdownlatch;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactory;
+
 
