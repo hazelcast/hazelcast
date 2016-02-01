@@ -30,7 +30,7 @@ import java.util.List;
  */
 public class DiscoveryConfig {
 
-    private final List<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>();
+    private List<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>();
     private DiscoveryServiceProvider discoveryServiceProvider;
     private NodeFilter nodeFilter;
     private String nodeFilterClass;
@@ -96,6 +96,10 @@ public class DiscoveryConfig {
      */
     public Collection<DiscoveryStrategyConfig> getDiscoveryStrategyConfigs() {
         return discoveryStrategyConfigs;
+    }
+
+    public void setDiscoveryStrategyConfigs(List<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
+        this.discoveryStrategyConfigs = discoveryStrategyConfigs;
     }
 
     /**
