@@ -1982,15 +1982,6 @@
 		                </xs:documentation>
 		            </xs:annotation>
 		        </xs:attribute>
-                <xs:attribute name="cluster-id" type="xs:string" use="optional">
-		            <xs:annotation>
-		                <xs:documentation>
-		                    The Hazelcast cluster from which Management Center will take
-		                    information.
-		                </xs:documentation>
-		            </xs:annotation>
-		        </xs:attribute>
-                <xs:attribute name="security-token" type="xs:string" use="optional"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
