@@ -70,9 +70,26 @@
     - enabled: Set to true to be able to use the Management Center. Its default is false.
     - update-interval: The time frequency (in seconds) for which Management Center will take information from Hazelcast cluster. Its default is 3 seconds.
     Hazelcast's Open Source edition provides the Management Center with monitoring at most 2 members in your cluster.
-    To use it for more members, you need to have either a Management Center license, Hazelcast Enterprise license or Hazelcast Enterprise HD license. 
+    To use it for more members, you need to have either a Management Center, Hazelcast Enterprise or Hazelcast Enterprise HD license. 
 -->        
     <management-center enabled="true" update-interval="2">http://localhost:8080/mancenter</management-center>
+<!--
+    Let's you to add properties to some of the Hazelcast elements used to configure some of the Hazelcast modules. 
+    You can define the name and value of your property using the sub-element <property>.
+    You can use this element for the following Hazelcast configuration elements:
+    - <discovery-strategy>
+    - <map-store>
+    - <queue-store>
+    - <ssl>
+    - <service>
+    - <login-module>
+    - <security-object>
+    - <socket-interceptor>
+-->        
+    <properties>
+    	<property name="your-property">Value of the property</property>
+    </properties>
+    
     <network>
         <port auto-increment="true" port-count="100">5701</port>
         <outbound-ports>
