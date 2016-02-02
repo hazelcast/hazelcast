@@ -172,7 +172,7 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
     }
 
     private void testDiscoverNodesMocked(int vmCount) throws IOException, ServiceException {
-        test_DiscoverNodesMockedWithSkip(vmCount, -1);
+        testDiscoverNodesMockedWithSkip(vmCount, -1);
     }
 
     private void testDiscoverNodesMockedWithSkip(int vmCount, int skipIndex) throws IOException, ServiceException {
@@ -211,25 +211,25 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
     @Test
     public void testDiscoverNodesMocked255() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(255);
-        test_DiscoverNodesMocked(255);
+        testDiscoverNodesMocked(255);
     }
 
     @Test
     public void testDiscoverNodesMocked3() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(3);
-        test_DiscoverNodesMocked(3);
+        testDiscoverNodesMocked(3);
     }
 
     @Test
     public void testDiscoverNodesMocked1() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(1);
-        test_DiscoverNodesMocked(1);
+        testDiscoverNodesMocked(1);
     }
 
     @Test
     public void testDiscoverNodesMocked_0() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(0);
-        test_DiscoverNodesMocked(0);
+        testDiscoverNodesMocked(0);
     }
 
     @Test
@@ -248,7 +248,7 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
         status2.setCode("ProvisioningState/succeeded");
         vmToTurnOff.setInstanceView(newView);
         // should only recognize 3 hazelcast instances now
-        test_DiscoverNodesMockedWithSkip(3, 2);
+        testDiscoverNodesMockedWithSkip(3, 2);
     }
 
     @Test
@@ -262,6 +262,6 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
         vmToUntag.setTags(newTags);
 
         // should only recognize 5 hazelcast instances now
-        test_DiscoverNodesMockedWithSkip(5, 3);
+        testDiscoverNodesMockedWithSkip(5, 3);
     }
 }
