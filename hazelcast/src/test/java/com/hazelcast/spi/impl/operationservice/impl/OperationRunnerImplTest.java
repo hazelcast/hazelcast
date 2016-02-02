@@ -2,6 +2,8 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.AbstractOperation;
@@ -20,6 +22,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.spi.OperationAccessor.setCallId;
@@ -218,6 +221,14 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
             @Override
             public String getObjectName() {
                 return "someobject";
+            }
+
+            @Override
+            public void writeData(ObjectDataOutput out) throws IOException {
+            }
+
+            @Override
+            public void readData(ObjectDataInput in) throws IOException {
             }
         };
 

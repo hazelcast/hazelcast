@@ -21,18 +21,20 @@ import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.ExecutionTracingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.spi.impl.OperationTracingService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.MapUtil;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -44,7 +46,10 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public class DistributedExecutorService implements ManagedService, RemoteService, ExecutionTracingService,
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+
+public class DistributedExecutorService implements ManagedService, RemoteService, OperationTracingService,
         StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
@@ -87,6 +92,20 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     @Override
     public void shutdown(boolean terminate) {
         reset();
+    }
+
+    @Override
+    public void scan(Map<Address, List<Long>> result) {
+        for (CallableProcessor processor : submittedTasks.values()) {
+            Operation op = processor.op;
+            List<Long> callIds = result.get(op.getCallerAddress());
+            if (callIds == null) {
+                callIds = new ArrayList<Long>();
+                result.put(op.getCallerAddress(), callIds);
+            }
+
+            callIds.add(op.getCallId());
+        }
     }
 
     public void execute(String name, String uuid, Callable callable, Operation op) {
@@ -161,12 +180,6 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     @Override
-    public boolean isOperationExecuting(Address callerAddress, String callerUuid, Object identifier) {
-        String uuid = String.valueOf(identifier);
-        return submittedTasks.containsKey(uuid);
-    }
-
-    @Override
     public Map<String, LocalExecutorStats> getStats() {
         Map<String, LocalExecutorStats> executorStats = MapUtil.createHashMap(statsMap.size());
         for (Map.Entry<String, LocalExecutorStatsImpl> queueStat : statsMap.entrySet()) {
@@ -211,6 +224,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
                 if (uuid != null) {
                     submittedTasks.remove(uuid);
                 }
+
+                sendResponse(result);
+
                 if (!isCancelled()) {
                     sendResponse(result);
                     finishExecution(name, Clock.currentTimeMillis() - start);

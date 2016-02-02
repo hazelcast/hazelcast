@@ -31,4 +31,6 @@ public interface WaitSupport {
     long getWaitTimeout();
 
     void onWaitExpire();
+
+    void onInterrupt();
 }

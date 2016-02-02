@@ -40,6 +40,7 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.EmptyStatement;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -109,10 +110,9 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
 
         try {
             future.get(1, TimeUnit.MINUTES);
-            fail("Future.get() should fail with a MemberLeftException!");
-        } catch (MemberLeftException e) {
-            // expected
-            EmptyStatement.ignore(e);
+            fail("Future.get() should fail with a ExecutionException!");
+        } catch (ExecutionException e) {
+            assertInstanceOf(MemberLeftException.class, e.getCause());
         } catch (Exception e) {
             fail(e.getClass().getName() + ": " + e.getMessage());
         }
@@ -207,6 +207,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
 
         @Override
         public void onWaitExpire() {
+            //todo: do we really want this exception?
             sendResponse(new TimeoutException());
         }
 

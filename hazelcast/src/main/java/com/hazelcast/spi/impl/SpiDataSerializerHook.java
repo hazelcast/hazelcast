@@ -27,7 +27,9 @@ import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.InterruptedResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
+import com.hazelcast.spi.impl.waitnotifyservice.impl.InterruptOperation;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY_ID;
@@ -46,6 +48,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int COLLECTION = 7;
     public static final int CALL_TIMEOUT_RESPONSE = 8;
     public static final int ERROR_RESPONSE = 9;
+    public static final int INTERRUPT_RESPONSE = 10;
+    public static final int INTERRUPT_OPERATION = 11;
 
     @Override
     public DataSerializableFactory createFactory() {
@@ -73,6 +77,10 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new CallTimeoutResponse();
                     case ERROR_RESPONSE:
                         return new ErrorResponse();
+                    case INTERRUPT_RESPONSE:
+                        return new InterruptedResponse();
+                    case INTERRUPT_OPERATION:
+                        return new InterruptOperation();
                     default:
                         return null;
                 }

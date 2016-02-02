@@ -19,6 +19,8 @@ package com.hazelcast.spi;
 /**
  * A service for an object where one can wait on, like ICondition or ILock when a thread needs
  * to wait for a lock to be released.
+ *
+ * todo: this class doesn't need to be public.
  */
 public interface WaitNotifyService {
 

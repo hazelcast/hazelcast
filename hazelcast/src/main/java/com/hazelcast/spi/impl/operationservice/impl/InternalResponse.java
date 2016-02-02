@@ -19,21 +19,17 @@ package com.hazelcast.spi.impl.operationservice.impl;
 final class InternalResponse {
 
     /**
-     * A response indicating the 'null' value.
+     * A response indicating that a timeout has happened.
+     *
+     * A timeout response can happen when an operation is about to get executed, but it is too stale.
      */
-    static final Object NULL_RESPONSE = new InternalResponse("Invocation::NULL_RESPONSE");
-
-     /**
-     * Indicating that there currently is no 'result' available. An example is some kind of blocking
-     * operation like ILock.lock. If this lock isn't available at the moment, the wait response
-     * is returned.
-     */
-    static final Object WAIT_RESPONSE = new InternalResponse("Invocation::WAIT_RESPONSE");
+    static final Object CALL_TIMEOUT_RESPONSE = new InternalResponse("Invocation::CALL_TIMEOUT_RESPONSE");
 
     /**
-     * A response indicating that a timeout has happened.
+     * A response indicating that an operation is considered to be dead. So the system has no way of
+     * figuring out what happened to the operation or to its response.
      */
-    static final Object TIMEOUT_RESPONSE = new InternalResponse("Invocation::TIMEOUT_RESPONSE");
+    static final Object DEAD_OPERATION_RESPONSE = new InternalResponse("Invocation::DEAD_OPERATION_RESPONSE");
 
     /**
      * A response indicating that the operation execution was interrupted.

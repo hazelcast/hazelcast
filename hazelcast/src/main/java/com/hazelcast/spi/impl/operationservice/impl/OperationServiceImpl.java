@@ -114,6 +114,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     @Probe(name = "retryCount", level = MANDATORY)
     final MwCounter retryCount = MwCounter.newMwCounter();
 
+    final OperationHeartbeatReporter operationHeartbeatReporter;
     final NodeEngineImpl nodeEngine;
     final MetricsRegistry metricsRegistry;
     final Node node;
@@ -123,7 +124,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     final long defaultCallTimeoutMillis;
 
     private final SlowOperationDetector slowOperationDetector;
-    private final IsStillRunningService isStillRunningService;
     private final AsyncResponsePacketHandler responsePacketExecutor;
     private final SerializationService serializationService;
     private final InvocationMonitor invocationMonitor;
@@ -174,13 +174,19 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
                 metricsRegistry
         );
 
-        this.isStillRunningService = new IsStillRunningService(operationExecutor, nodeEngine, logger);
-
         ExecutionService executionService = nodeEngine.getExecutionService();
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
         this.slowOperationDetector = initSlowOperationDetector();
         metricsRegistry.scanAndRegister(this, "operation");
+
+        this.operationHeartbeatReporter = new OperationHeartbeatReporter(
+                nodeEngine,
+                node.getHazelcastThreadGroup(),
+                serializationService,
+                invocationsRegistry,
+                operationExecutor,
+                node.getLogger(OperationHeartbeatReporter.class));
     }
 
     public void start() {
@@ -193,10 +199,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
                 operationExecutor.getPartitionOperationRunners(),
                 node.groupProperties,
                 node.getHazelcastThreadGroup());
-    }
-
-    public IsStillRunningService getIsStillRunningService() {
-        return isStillRunningService;
     }
 
     @Override
@@ -267,6 +269,8 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
         if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
             responsePacketExecutor.handle(packet);
+        } else if (packet.isHeaderSet(Packet.HEADER_OP_HEARTBEAT)) {
+            operationHeartbeatReporter.handle(packet);
         } else {
             operationExecutor.execute(packet);
         }
@@ -393,13 +397,17 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         }
 
         if (nodeEngine.getThisAddress().equals(target)) {
-            throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
+            //  throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
+            op.setNodeEngine(nodeEngine);
+            op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
+            operationExecutor.execute(op);
+            return true;
         }
 
         byte[] bytes = serializationService.toBytes(op);
         int partitionId = op.getPartitionId();
-        Packet packet = new Packet(bytes, partitionId);
-        packet.setHeader(Packet.HEADER_OP);
+        Packet packet = new Packet(bytes, partitionId)
+                .setHeader(Packet.HEADER_OP);
 
         if (op instanceof UrgentSystemOperation) {
             packet.setHeader(Packet.HEADER_URGENT);
@@ -421,9 +429,9 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         }
 
         byte[] bytes = serializationService.toBytes(response);
-        Packet packet = new Packet(bytes, -1);
-        packet.setHeader(Packet.HEADER_OP);
-        packet.setHeader(Packet.HEADER_RESPONSE);
+        Packet packet = new Packet(bytes, -1)
+                .setHeader(Packet.HEADER_OP)
+                .setHeader(Packet.HEADER_RESPONSE);
 
         if (response.isUrgent()) {
             packet.setHeader(Packet.HEADER_URGENT);
@@ -449,6 +457,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         responsePacketExecutor.shutdown();
         slowOperationDetector.shutdown();
         invocationMonitor.shutdown();
+        operationHeartbeatReporter.shutdown();
 
         try {
             invocationMonitor.awaitTermination(TERMINATION_TIMEOUT_MILLIS);

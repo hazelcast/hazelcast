@@ -59,6 +59,7 @@ import java.util.logging.Level;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.nio.IOUtil.extractOperationCallId;
 import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
+import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
@@ -221,6 +222,12 @@ class OperationRunnerImpl extends OperationRunner {
 
         WaitSupport waitSupport = (WaitSupport) op;
         if (waitSupport.shouldWait()) {
+            // todo: this is a hack. The problem is that in the old system operations are retried if
+            // the call-timeout happens. In the new approach it won't. In case of a blocking operation
+            // we don't want it to timeout after it has been picked up.
+            // todo: this can cause problems for local calls due to instance being shared/reused
+            setCallTimeout(op, Long.MAX_VALUE);
+
             nodeEngine.getWaitNotifyService().await(waitSupport);
             return true;
         }
@@ -232,6 +239,7 @@ class OperationRunnerImpl extends OperationRunner {
             return false;
         }
 
+        System.out.println("Operation ran into a call timeout:" + op);
         CallTimeoutResponse callTimeoutResponse = new CallTimeoutResponse(op.getCallId(), op.isUrgent());
         OperationResponseHandler responseHandler = op.getOperationResponseHandler();
         responseHandler.sendResponse(op, callTimeoutResponse);

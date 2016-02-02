@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.countdownlatch;
+package com.hazelcast.core;
 
-import com.hazelcast.spi.AbstractWaitNotifyKey;
+/**
+ * A {@link OperationTimeoutException} that is thrown in the case that the system can't determine what
+ * happened with an operation.
+ */
+public class DeadOperationException extends OperationTimeoutException {
 
-public class LatchKey extends AbstractWaitNotifyKey {
-
-    private LatchKey() {
-    }
-
-    public LatchKey(String name) {
-        super(CountDownLatchService.SERVICE_NAME, name);
+    public DeadOperationException(String message) {
+        super(message);
     }
 }

@@ -16,14 +16,21 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 
+import java.io.IOException;
+
 public final class LockWaitNotifyKey implements WaitNotifyKey {
 
-    private final ObjectNamespace namespace;
-    private final Data key;
+    private ObjectNamespace namespace;
+    private Data key;
+
+    private LockWaitNotifyKey() {
+    }
 
     public LockWaitNotifyKey(ObjectNamespace namespace, Data key) {
         this.namespace = namespace;
@@ -74,5 +81,18 @@ public final class LockWaitNotifyKey implements WaitNotifyKey {
                 + "namespace=" + namespace
                 + ", key=" + key
                 + '}';
+    }
+
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(namespace);
+        out.writeData(key);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        namespace = in.readObject();
+        key = in.readData();
     }
 }

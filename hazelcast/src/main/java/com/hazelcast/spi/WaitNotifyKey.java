@@ -16,10 +16,12 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.nio.serialization.DataSerializable;
+
 /**
  * A key for a wait notify object e.g. an ICondition.
  */
-public interface WaitNotifyKey {
+public interface WaitNotifyKey extends DataSerializable {
 
     /**
      * Returns the service name of the wait notify object for this key.

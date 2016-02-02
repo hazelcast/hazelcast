@@ -69,6 +69,7 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
         Object response;
         long timeout = getWaitTimeout();
         if (timeout < 0 || timeout == Long.MAX_VALUE) {
+            //todo: so we really need this? Would a CallTimeoutResponse not be better?
             response = new OperationTimeoutException();
         } else {
             response = Boolean.FALSE;

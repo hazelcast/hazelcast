@@ -65,6 +65,7 @@ public class CountOperation extends MultiMapKeyBasedOperation implements WaitSup
 
     @Override
     public void onWaitExpire() {
+        //todo: do we really want this exception?
         sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
 

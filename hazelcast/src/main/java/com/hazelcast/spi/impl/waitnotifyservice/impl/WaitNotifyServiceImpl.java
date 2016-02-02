@@ -31,29 +31,37 @@ import com.hazelcast.spi.WaitNotifyService;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.OperationTracingService;
 import com.hazelcast.spi.impl.waitnotifyservice.InternalWaitNotifyService;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static java.lang.System.currentTimeMillis;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
+
+public class WaitNotifyServiceImpl implements InternalWaitNotifyService, OperationTracingService {
 
     private static final long FIRST_WAIT_TIME = 1000;
     private static final long TIMEOUT_UPPER_BOUND = 1500;
 
-    private final ConcurrentMap<WaitNotifyKey, Queue<WaitingOperation>> mapWaitingOps =
+    private final ConcurrentMap<WaitNotifyKey, Queue<WaitingOperation>> blockedOperationsMap =
             new ConcurrentHashMap<WaitNotifyKey, Queue<WaitingOperation>>(100);
+
+    // todo: contention point.
     private final DelayQueue delayQueue = new DelayQueue();
     private final ExecutorService expirationService;
     private final Future expirationTask;
@@ -68,13 +76,13 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
         }
     };
 
-    public WaitNotifyServiceImpl(final NodeEngineImpl nodeEngine) {
+    public WaitNotifyServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        final Node node = nodeEngine.getNode();
+        Node node = nodeEngine.getNode();
         logger = node.getLogger(WaitNotifyService.class.getName());
 
         HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
-        expirationService = Executors.newSingleThreadExecutor(
+        expirationService = newSingleThreadExecutor(
                 new SingleExecutorThreadFactory(threadGroup.getInternalThreadGroup(),
                         threadGroup.getClassLoader(),
                         threadGroup.getThreadNamePrefix("wait-notify")));
@@ -82,8 +90,58 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
         expirationTask = expirationService.submit(new ExpirationTask());
     }
 
-    private void invalidate(final WaitingOperation waitingOp) throws Exception {
+    @Override
+    public void scan(Map<Address, List<Long>> result) {
+        for (Queue<WaitingOperation> queue : blockedOperationsMap.values()) {
+
+            for (WaitingOperation op : queue) {
+                Address callerAddress = op.getCallerAddress();
+                if (callerAddress == null) {
+                    // this check sucks; we should rely on getCallerAddress to be valid.
+                    callerAddress = nodeEngine.getThisAddress();
+                }
+
+                List<Long> callIds = result.get(callerAddress);
+                if (callIds == null) {
+                    callIds = new ArrayList<Long>();
+                    result.put(callerAddress, callIds);
+                }
+
+                callIds.add(op.getCallId());
+            }
+        }
+    }
+
+    @Override
+    public void interrupt(WaitNotifyKey key, String callerUUID, long callId) {
+        WaitingOperation waitingOp = deleteOperation(key, callerUUID, callId);
+        if (waitingOp == null) {
+            return;
+        }
+
+        // we mark the WaitingOperation as interrupted
+        waitingOp.setInterrupted();
+        // and then we schedule the Waiting op. Is will take the right choice
         nodeEngine.getOperationService().executeOperation(waitingOp);
+    }
+
+    private WaitingOperation deleteOperation(WaitNotifyKey key, String callerUUID, long callId) {
+        Queue<WaitingOperation> operations = blockedOperationsMap.get(key);
+        if (operations == null) {
+            return null;
+        }
+
+        Iterator<WaitingOperation> it = operations.iterator();
+        while (it.hasNext()) {
+            WaitingOperation waitingOperation = it.next();
+            Operation targetOperation = waitingOperation.getOperation();
+            if (targetOperation.getCallId() == callId && targetOperation.getCallerUuid().equals(callerUUID)) {
+                it.remove();
+                return waitingOperation;
+            }
+        }
+
+        return null;
     }
 
     // Runs in operation thread, we can assume that
@@ -91,8 +149,8 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
     // see javadoc
     @Override
     public void await(WaitSupport waitSupport) {
-        final WaitNotifyKey key = waitSupport.getWaitKey();
-        final Queue<WaitingOperation> q = ConcurrencyUtil.getOrPutIfAbsent(mapWaitingOps, key, waitQueueConstructor);
+        WaitNotifyKey key = waitSupport.getWaitKey();
+        Queue<WaitingOperation> q = getOrPutIfAbsent(blockedOperationsMap, key, waitQueueConstructor);
         long timeout = waitSupport.getWaitTimeout();
         WaitingOperation waitingOp = new WaitingOperation(q, waitSupport);
         waitingOp.setNodeEngine(nodeEngine);
@@ -108,13 +166,13 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
     @Override
     public void notify(Notifier notifier) {
         WaitNotifyKey key = notifier.getNotifiedKey();
-        Queue<WaitingOperation> q = mapWaitingOps.get(key);
+        Queue<WaitingOperation> q = blockedOperationsMap.get(key);
         if (q == null) {
             return;
         }
         WaitingOperation waitingOp = q.peek();
         while (waitingOp != null) {
-            final Operation op = waitingOp.getOperation();
+            Operation op = waitingOp.getOperation();
             if (notifier == op) {
                 throw new IllegalStateException("Found cyclic wait-notify! -> " + notifier);
             }
@@ -140,20 +198,20 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
             // cannot be called in parallel.
             // We can safely remove this queue from registration map here.
             if (waitingOp == null) {
-                mapWaitingOps.remove(key);
+                blockedOperationsMap.remove(key);
             }
         }
     }
 
     // for testing purposes only
     public int getAwaitQueueCount() {
-        return mapWaitingOps.size();
+        return blockedOperationsMap.size();
     }
 
     // for testing purposes only
     public int getTotalWaitingOperationCount() {
         int count = 0;
-        for (Queue<WaitingOperation> queue : mapWaitingOps.values()) {
+        for (Queue<WaitingOperation> queue : blockedOperationsMap.values()) {
             count += queue.size();
         }
         return count;
@@ -169,7 +227,7 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
     }
 
     private void invalidateWaitingOps(String callerUuid) {
-        for (Queue<WaitingOperation> q : mapWaitingOps.values()) {
+        for (Queue<WaitingOperation> q : blockedOperationsMap.values()) {
             for (WaitingOperation waitingOp : q) {
                 if (waitingOp.isValid()) {
                     Operation op = waitingOp.getOperation();
@@ -188,7 +246,7 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
         }
 
         int partitionId = migrationInfo.getPartitionId();
-        for (Queue<WaitingOperation> q : mapWaitingOps.values()) {
+        for (Queue<WaitingOperation> q : blockedOperationsMap.values()) {
             Iterator<WaitingOperation> it = q.iterator();
             while (it.hasNext()) {
                 if (Thread.interrupted()) {
@@ -212,7 +270,7 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
 
     @Override
     public void cancelWaitingOps(String serviceName, Object objectId, Throwable cause) {
-        for (Queue<WaitingOperation> q : mapWaitingOps.values()) {
+        for (Queue<WaitingOperation> q : blockedOperationsMap.values()) {
             for (WaitingOperation waitingOp : q) {
                 if (waitingOp.isValid()) {
                     WaitNotifyKey wnk = waitingOp.waitSupport.getWaitKey();
@@ -227,19 +285,19 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
 
     public void reset() {
         delayQueue.clear();
-        mapWaitingOps.clear();
+        blockedOperationsMap.clear();
     }
 
     public void shutdown() {
         logger.finest("Stopping tasks...");
         expirationTask.cancel(true);
         expirationService.shutdown();
-        final Object response = new HazelcastInstanceNotActiveException();
-        final Address thisAddress = nodeEngine.getThisAddress();
-        for (Queue<WaitingOperation> q : mapWaitingOps.values()) {
+        Object response = new HazelcastInstanceNotActiveException();
+        Address thisAddress = nodeEngine.getThisAddress();
+        for (Queue<WaitingOperation> q : blockedOperationsMap.values()) {
             for (WaitingOperation waitingOp : q) {
                 if (waitingOp.isValid()) {
-                    final Operation op = waitingOp.getOperation();
+                    Operation op = waitingOp.getOperation();
                     // only for local invocations, remote ones will be expired via #onMemberLeft()
                     if (thisAddress.equals(op.getCallerAddress())) {
                         try {
@@ -253,7 +311,7 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
             }
             q.clear();
         }
-        mapWaitingOps.clear();
+        blockedOperationsMap.clear();
     }
 
     @Override
@@ -262,7 +320,7 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
         sb.append("delayQueue=");
         sb.append(delayQueue.size());
         sb.append(" \n[");
-        for (Queue<WaitingOperation> scheduledOps : mapWaitingOps.values()) {
+        for (Queue<WaitingOperation> scheduledOps : blockedOperationsMap.values()) {
             sb.append("\t");
             sb.append(scheduledOps.size());
             sb.append(", ");
@@ -294,21 +352,21 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
         private boolean doRun() throws Exception {
             long waitTime = FIRST_WAIT_TIME;
             while (waitTime > 0) {
-                long begin = System.currentTimeMillis();
+                long begin = currentTimeMillis();
                 WaitingOperation waitingOp = (WaitingOperation) delayQueue.poll(waitTime, TimeUnit.MILLISECONDS);
                 if (waitingOp != null) {
                     if (waitingOp.isValid()) {
                         invalidate(waitingOp);
                     }
                 }
-                long end = System.currentTimeMillis();
+                long end = currentTimeMillis();
                 waitTime -= (end - begin);
                 if (waitTime > FIRST_WAIT_TIME) {
                     waitTime = FIRST_WAIT_TIME;
                 }
             }
 
-            for (Queue<WaitingOperation> q : mapWaitingOps.values()) {
+            for (Queue<WaitingOperation> q : blockedOperationsMap.values()) {
                 for (WaitingOperation waitingOp : q) {
                     if (Thread.interrupted()) {
                         return true;
@@ -319,6 +377,10 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
                 }
             }
             return false;
+        }
+
+        private void invalidate(WaitingOperation waitingOp) throws Exception {
+            nodeEngine.getOperationService().executeOperation(waitingOp);
         }
     }
 }
