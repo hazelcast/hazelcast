@@ -76,7 +76,7 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
         properties.put("client-id", "test-value");
         properties.put("client-secret", "test-value");
         properties.put("subscription-id", "test-value");
-        properties.put("hzlcst-cluster-id", "cluster000");
+        properties.put("cluster-id", "cluster000");
         properties.put("tenant-id", "test-value");
         properties.put("group-name", "test-value");
         virtuaMachines = new ArrayList<VirtualMachine>();
@@ -131,7 +131,7 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
             vm.setNetworkProfile(profile);
 
             HashMap<String, String> tags = new HashMap<String, String>();
-            tags.put((String)properties.get("hzlcst-cluster-id"), "5701");
+            tags.put((String)properties.get("cluster-id"), "5701");
             vm.setTags(tags);
             virtuaMachines.add(vm);
 
@@ -171,11 +171,11 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
         }
     }
 
-    private void test_DiscoverNodesMocked(int vmCount) throws IOException, ServiceException {
+    private void testDiscoverNodesMocked(int vmCount) throws IOException, ServiceException {
         test_DiscoverNodesMockedWithSkip(vmCount, -1);
     }
 
-    private void test_DiscoverNodesMockedWithSkip(int vmCount, int skipIndex) throws IOException, ServiceException {
+    private void testDiscoverNodesMockedWithSkip(int vmCount, int skipIndex) throws IOException, ServiceException {
         
         AzureDiscoveryStrategyFactory factory = new AzureDiscoveryStrategyFactory();
         AzureDiscoveryStrategy strategy = (AzureDiscoveryStrategy)factory.newDiscoveryStrategy(null,null, properties);
@@ -209,31 +209,31 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_DiscoverNodesMocked_255() throws IOException, ServiceException, URISyntaxException {
+    public void testDiscoverNodesMocked255() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(255);
         test_DiscoverNodesMocked(255);
     }
 
     @Test
-    public void test_DiscoverNodesMocked_3() throws IOException, ServiceException, URISyntaxException {
+    public void testDiscoverNodesMocked3() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(3);
         test_DiscoverNodesMocked(3);
     }
 
     @Test
-    public void test_DiscoverNodesMocked_1() throws IOException, ServiceException, URISyntaxException {
+    public void testDiscoverNodesMocked1() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(1);
         test_DiscoverNodesMocked(1);
     }
 
     @Test
-    public void test_DiscoverNodesMocked_0() throws IOException, ServiceException, URISyntaxException {
+    public void testDiscoverNodesMocked_0() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(0);
         test_DiscoverNodesMocked(0);
     }
 
     @Test
-    public void test_DiscoverNodesStoppedVM() throws IOException, ServiceException, URISyntaxException {
+    public void testDiscoverNodesStoppedVM() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(4);
         VirtualMachine vmToTurnOff = virtuaMachines.remove(2);
         // turn off the vm
@@ -252,7 +252,7 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_DiscoverNodesUntaggedVM() throws IOException, ServiceException, URISyntaxException {
+    public void testDiscoverNodesUntaggedVM() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(6);
         VirtualMachine vmToUntag = virtuaMachines.get(3);
         

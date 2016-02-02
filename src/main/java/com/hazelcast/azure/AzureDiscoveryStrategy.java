@@ -82,12 +82,12 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
     @Override
     public void start() {
         try {
-            Configuration config = AzureAuthHelper.getAzureConfiguration(this.properties);
-            this.computeManagement = ComputeManagementService.create(config);
-            this.networkManagement = NetworkResourceProviderService.create(config);
+          Configuration config = AzureAuthHelper.getAzureConfiguration(this.properties);
+          this.computeManagement = ComputeManagementService.create(config);
+          this.networkManagement = NetworkResourceProviderService.create(config);
         }
         catch (Exception e) {
-            LOGGER.finest("Failed to start Azure SPI", e);
+          LOGGER.finest("Failed to start Azure SPI", e);
         }
     }
 
@@ -97,7 +97,7 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
             VirtualMachineOperations vmOps = this.computeManagement.getVirtualMachinesOperations();
        
             String resourceGroup = AzureProperties.getOrNull(AzureProperties.GROUP_NAME, properties);
-            String clusterId = AzureProperties.getOrNull(AzureProperties.HZLCST_CLUSTER_ID, properties);
+            String clusterId = AzureProperties.getOrNull(AzureProperties.CLUSTER_ID, properties);
 
             VirtualMachineListResponse vms = vmOps.list(resourceGroup);
 
@@ -106,9 +106,9 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
             for (VirtualMachine vm : vms.getVirtualMachines()) {
                 NetworkProfile netProfile = vm.getNetworkProfile();
                 HashMap<String, String> tags = vm.getTags();
-                
                 // a tag is required with the hazelcast clusterid
                 // and the value should be the port number
+
                 if (tags.get(clusterId) == null) {
                     continue;
                 }
@@ -125,6 +125,7 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
                     nodes.add(node);
                 }
             }
+            LOGGER.info("Azure Discovery SPI Discovered " + nodes.size() + " nodes");
             return nodes;
         }
         catch (Exception e) {

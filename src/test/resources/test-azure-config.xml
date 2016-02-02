@@ -35,7 +35,7 @@
                         <property name="client-secret">CLIENT_SECRET</property>
                         <property name="tenant-id">TENANT_ID</property>
                         <property name="subscription-id">SUB_ID</property>
-                        <property name="hzlcst-cluster-id">HZLCAST001</property>
+                        <property name="cluster-id">HZLCAST001</property>
                         <property name="group-name">GROUP-NAME</property>
                     </properties>
                 </discovery-strategy>

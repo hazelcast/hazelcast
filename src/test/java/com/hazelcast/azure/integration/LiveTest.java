@@ -47,7 +47,7 @@ public class LiveTest extends HazelcastTestSupport {
     public static final String TENANT_ID =  System.getProperty("test.azure.tenant-id");
     public static final String SUBSCRIPTION_ID =  System.getProperty("test.azure.subscription-id");
     public static final String GROUP_NAME = System.getProperty("test.azure.group-name");
-    public static final String HZLCST_CLUSTER_ID = System.getProperty("test.azure.cluster-id");
+    public static final String CLUSTER_ID = System.getProperty("test.azure.cluster-id");
 
     protected Map<String, Comparable> getProperties() {
         Map<String, Comparable> properties = new HashMap<String, Comparable>();
@@ -55,7 +55,7 @@ public class LiveTest extends HazelcastTestSupport {
         properties.put("client-secret", CLIENT_SECRET);
         properties.put("tenant-id", TENANT_ID);
         properties.put("subscription-id", SUBSCRIPTION_ID);
-        properties.put("hzlcst-cluster-id", HZLCST_CLUSTER_ID);
+        properties.put("cluster-id", CLUSTER_ID);
         properties.put("group-name", GROUP_NAME);
 
         return properties;
@@ -124,7 +124,7 @@ public class LiveTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_DiscoveryStrategyDiscoverNodesLive() throws Exception {
+    public void testDiscoveryStrategyDiscoverNodesLive() throws Exception {
         Map<String, Comparable> properties = getProperties();
         properties.put("group", GROUP_NAME);
         AzureDiscoveryStrategy strategy = new AzureDiscoveryStrategy(properties);
