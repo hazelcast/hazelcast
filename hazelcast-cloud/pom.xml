@@ -137,5 +137,11 @@
             <version>${project.parent.version}</version>
             <classifier>tests</classifier>
         </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-core</artifactId>
+            <version>1.10.30</version>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 </project>

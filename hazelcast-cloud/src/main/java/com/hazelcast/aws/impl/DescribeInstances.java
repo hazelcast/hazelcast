@@ -16,6 +16,8 @@
 
 package com.hazelcast.aws.impl;
 
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSSessionCredentials;
 import com.hazelcast.aws.security.EC2RequestSigner;
 import com.hazelcast.aws.utility.CloudyUtility;
 import com.hazelcast.config.AwsConfig;
@@ -42,23 +44,32 @@ import static com.hazelcast.nio.IOUtil.closeResource;
 public class DescribeInstances {
     private static final String IAM_ROLE_ENDPOINT = "169.254.169.254";
     String timeStamp = getFormattedTimestamp();
+    String endpoint;
+    Map<String, String> attributes = new HashMap<String, String>();
     private EC2RequestSigner rs;
     private AwsConfig awsConfig;
-    private String endpoint;
-    private Map<String, String> attributes = new HashMap<String, String>();
 
-    public DescribeInstances(AwsConfig awsConfig, String endpoint) {
+    public DescribeInstances(AwsConfig awsConfig) {
         if (awsConfig == null) {
             throw new IllegalArgumentException("AwsConfig is required!");
         }
-        if (awsConfig.getAccessKey() == null && awsConfig.getIamRole() == null) {
-            throw new IllegalArgumentException("AWS access key or IAM Role is required!");
+        if (awsConfig.getAccessKey() == null && awsConfig.getIamRole() == null
+                && awsConfig.getAwsCredentialsProvider() == null) {
+            throw new IllegalArgumentException("AWS access key, IAM Role, or credentials provider is required!");
         }
         this.awsConfig = awsConfig;
-        this.endpoint = endpoint;
-        if (awsConfig.getIamRole() != null) {
+
+        this.endpoint = awsConfig.getHostHeader();
+        if (awsConfig.getRegion() != null && awsConfig.getRegion().length() > 0) {
+            this.endpoint = "ec2." + awsConfig.getRegion() + ".amazonaws.com";
+        }
+
+        if (awsConfig.getAwsCredentialsProvider() != null) {
+            getKeysFromCredentialsProvider();
+        } else if (awsConfig.getIamRole() != null) {
             getKeysFromIamRole();
         }
+
         rs = new EC2RequestSigner(awsConfig, timeStamp, endpoint);
         attributes.put("Action", this.getClass().getSimpleName());
         attributes.put("Version", DOC_VERSION);
@@ -67,6 +78,17 @@ public class DescribeInstances {
         attributes.put("X-Amz-Date", timeStamp);
         attributes.put("X-Amz-SignedHeaders", "host");
         attributes.put("X-Amz-Expires", "30");
+    }
+
+    private void getKeysFromCredentialsProvider() {
+        AWSCredentials creds = awsConfig.getAwsCredentialsProvider().getCredentials();
+        awsConfig.setAccessKey(creds.getAWSAccessKeyId());
+        awsConfig.setSecretKey(creds.getAWSSecretKey());
+
+        if (creds instanceof AWSSessionCredentials) {
+            attributes.put("X-Amz-Security-Token",
+                    ((AWSSessionCredentials) creds).getSessionToken());
+        }
     }
 
     private void getKeysFromIamRole() {
@@ -84,8 +106,8 @@ public class DescribeInstances {
         }
     }
 
-    public Map parseIamRole(BufferedReader reader) throws IOException {
-        Map map = new HashMap();
+    public Map<String, String> parseIamRole(BufferedReader reader) throws IOException {
+        Map<String, String> map = new HashMap<String, String>();
         Pattern keyPattern = Pattern.compile("\"(.*?)\" : ");
         Pattern valuePattern = Pattern.compile(" : \"(.*?)\",");
         String line;
@@ -111,11 +133,11 @@ public class DescribeInstances {
 
     public Map<String, String> execute() throws Exception {
         final String signature = rs.sign("ec2", attributes);
-        Map response = null;
+        Map response;
         InputStream stream = null;
         attributes.put("X-Amz-Signature", signature);
         try {
-            stream = callService(endpoint, signature);
+            stream = callService(endpoint);
             response = CloudyUtility.unmarshalTheResponse(stream, awsConfig);
             return response;
         } finally {
@@ -123,7 +145,7 @@ public class DescribeInstances {
         }
     }
 
-    private InputStream callService(String endpoint, String signature) throws Exception {
+    private InputStream callService(String endpoint) throws Exception {
         String query = rs.getCanonicalizedQueryString(attributes);
         URL url = new URL("https", endpoint, -1, "/?" + query);
         HttpURLConnection httpConnection = (HttpURLConnection) (url.openConnection());

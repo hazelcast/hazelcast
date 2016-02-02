@@ -100,7 +100,7 @@ public class CloudyUtilityTest {
         awsConfig1.setAccessKey("some-access-key");
         awsConfig1.setSecretKey("some-secret-key");
         awsConfig1.setSecurityGroupName("hazelcast");
-        DescribeInstances describeInstances = new DescribeInstances(awsConfig, "");
+        DescribeInstances describeInstances = new DescribeInstances(awsConfig);
 
         Map map = describeInstances.parseIamRole(br);
         assertEquals("Success", map.get("Code"));

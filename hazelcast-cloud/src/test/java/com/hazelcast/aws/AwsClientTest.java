@@ -16,6 +16,8 @@
 
 package com.hazelcast.aws;
 
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.internal.StaticCredentialsProvider;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -23,8 +25,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -49,11 +49,19 @@ public class AwsClientTest {
     }
 
     @Test
-    public void testAwsClient_getEndPoint() {
+    public void testAwsClient_whenCredentialsProvider() {
         AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setIamRole("test");
-        AWSClient awsClient = new AWSClient(awsConfig);
-        assertEquals("ec2.us-east-1.amazonaws.com", awsClient.getEndpoint());
+        awsConfig.setAwsCredentialsProvider(new StaticCredentialsProvider(
+                new BasicAWSCredentials("accesskey", "secretkey")));
+
+        new AWSClient(awsConfig); // no exception
     }
 
+    @Test
+    public void testAwsClient_whenIamRole() {
+        AwsConfig awsConfig = new AwsConfig();
+        awsConfig.setIamRole("role");
+
+        new AWSClient(awsConfig); // no exception
+    }
 }
