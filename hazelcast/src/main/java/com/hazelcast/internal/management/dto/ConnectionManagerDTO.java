@@ -23,7 +23,7 @@ import com.hazelcast.nio.ConnectionManager;
 import static com.hazelcast.util.JsonUtil.getInt;
 
 /**
- * A Serializable DTO for {@link com.hazelcast.jmx.ConnectionManagerMBean}.
+ * A Serializable DTO for {@link com.hazelcast.internal.jmx.ConnectionManagerMBean}.
  */
 public class ConnectionManagerDTO implements JsonSerializable {
 

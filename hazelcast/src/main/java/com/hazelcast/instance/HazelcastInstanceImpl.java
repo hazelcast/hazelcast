@@ -53,7 +53,7 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.internal.monitors.HealthMonitor;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.jmx.ManagementService;
+import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
