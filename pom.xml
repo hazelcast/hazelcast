@@ -31,8 +31,42 @@
     <url>http://github.com/sedouard/hazelcast-azure</url>
     <artifactId>hazelcast-azure</artifactId>
     <groupId>com.hazelcast.azure</groupId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0-RC1</version>
     <packaging>jar</packaging>
+
+    <licenses>
+      <license>
+        <name>The MIT License (MIT)</name>
+        <url>https://raw.githubusercontent.com/sedouard/hazelcast-azure/master/LICENSE</url>
+        <distribution>repo</distribution>
+      </license>
+    </licenses>
+
+    <scm>
+      <connection>https://github.com/sedouard/hazelcast-azure.git</connection>
+      <developerConnection>https://github.com/sedouard/hazelcast-azure.git</developerConnection>
+      <tag>HEAD</tag>
+      <url>https://github.com/sedouard/hazelcast-azure</url>
+    </scm>
+
+    <developers>
+      <developer>
+        <id>sedouard</id>
+        <name>Steven Edouard</name>
+        <email>sedouard@microsoft.com</email>
+        <url>http://www.stevenedouard.com</url>
+        <organization>Microsoft</organization>
+        <organizationUrl>http://www.microsoft.com</organizationUrl>
+        <roles>
+          <role>architect</role>
+          <role>developer</role>
+        </roles>
+        <timezone>America/Los_Angeles</timezone>
+        <properties>
+          <picUrl>https://avatars.githubusercontent.com/u/3053263?v=3</picUrl>
+        </properties>
+      </developer>
+    </developers>
 
     <distributionManagement>
       <snapshotRepository>
@@ -108,6 +142,32 @@
             <nexusUrl>https://oss.sonatype.org/</nexusUrl>
             <autoReleaseAfterClose>true</autoReleaseAfterClose>
           </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>2.2.1</version>
+          <executions>
+            <execution>
+              <id>attach-sources</id>
+              <goals>
+                <goal>jar-no-fork</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>2.9.1</version>
+          <executions>
+            <execution>
+              <id>attach-javadocs</id>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+            </execution>
+          </executions>
         </plugin>
       </plugins>
     </build>

@@ -22,7 +22,8 @@ import java.util.concurrent.ExecutorService;
 public class AzureAuthHelper {
     /**
      * Use the ResourceManagementService factory helper method to create a client based on the management config.
-     *
+     * 
+     * @param properties The properties Map provided by Hazelcast
      * @return ResourceManagementClient a client to be used to make authenticated requests to the ARM REST API
      * @throws Exception all of the exceptions
      */
@@ -39,7 +40,7 @@ public class AzureAuthHelper {
      * Create configuration builds the management configuration needed for creating the ResourceManagementService.
      * The config contains the baseURI which is the base of the ARM REST service, the subscription id as the context for
      * the ResourceManagementService and the AAD token required for the HTTP Authorization header.
-     *
+     * 
      * @return Configuration the generated configuration
      * @throws Exception all of the exceptions!!
      */

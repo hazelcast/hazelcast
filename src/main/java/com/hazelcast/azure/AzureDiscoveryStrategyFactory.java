@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Factory class which returns {@link JCloudsDiscoveryStrategy} to Discovery SPI
+ * Factory class which returns {@link AzureDiscoveryStrategy} to Discovery SPI
  */
 public class AzureDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
 
