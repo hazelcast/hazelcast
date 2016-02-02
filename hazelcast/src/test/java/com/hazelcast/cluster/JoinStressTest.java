@@ -16,8 +16,8 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.cluster.impl.operations.MemberInfoUpdateOperation;
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MulticastConfig;

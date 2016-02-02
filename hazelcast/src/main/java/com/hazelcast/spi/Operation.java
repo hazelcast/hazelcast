@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -323,7 +324,7 @@ public abstract class Operation implements DataSerializable {
     /**
      * Gets the time in milliseconds since this invocation started.
      *
-     * For more information, see {@link com.hazelcast.cluster.ClusterClock#getClusterTime()}.
+     * For more information, see {@link ClusterClock#getClusterTime()}.
      *
      * @return the time of the invocation start.
      */

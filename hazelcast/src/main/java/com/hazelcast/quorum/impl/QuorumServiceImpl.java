@@ -16,7 +16,7 @@
 
 package com.hazelcast.quorum.impl;
 
-import com.hazelcast.cluster.impl.MemberSelectingCollection;
+import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.core.Member;
@@ -41,7 +41,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**

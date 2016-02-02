@@ -38,11 +38,11 @@ import com.hazelcast.spi.AbstractOperation;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
-import static com.hazelcast.cluster.memberselector.MemberSelectors.LOCAL_MEMBER_SELECTOR;
-import static com.hazelcast.cluster.memberselector.MemberSelectors.and;
-import static com.hazelcast.cluster.memberselector.MemberSelectors.or;
+import static com.hazelcast.internal.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
+import static com.hazelcast.internal.cluster.memberselector.MemberSelectors.LOCAL_MEMBER_SELECTOR;
+import static com.hazelcast.internal.cluster.memberselector.MemberSelectors.and;
+import static com.hazelcast.internal.cluster.memberselector.MemberSelectors.or;
 
 /**
  * This operation is used to prepare a {@link com.hazelcast.mapreduce.KeyValueSource} based
