@@ -95,7 +95,7 @@ public class AzureDiscoveryStrategyFactoryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_getDiscoveryStrategyType() {
+    public void testgetDiscoveryStrategyType() {
         AzureDiscoveryStrategyFactory factory = new AzureDiscoveryStrategyFactory();
         assertEquals(factory.getDiscoveryStrategyType(), AzureDiscoveryStrategy.class);
     }
