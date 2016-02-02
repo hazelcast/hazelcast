@@ -70,7 +70,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         IMap<String, String> m = client.getMap("default");
         h1.shutdown();
         hazelcastFactory.newHazelcastInstance();
-        assertOpenEventually(connectedLatch, 10);
+        assertOpenEventually(connectedLatch);
         assertNull(m.put("test", "test"));
         assertEquals("test", m.get("test"));
     }
@@ -123,7 +123,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         });
         server.shutdown();
 
-        assertOpenEventually(shutdownLatch, 10);
+        assertOpenEventually(shutdownLatch);
     }
 
     @Test(expected = HazelcastClientNotActiveException.class, timeout = 30000)
