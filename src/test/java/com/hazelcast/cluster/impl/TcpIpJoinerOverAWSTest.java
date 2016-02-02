@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster;
+package com.hazelcast.cluster.impl;
 
-import com.hazelcast.cluster.impl.TcpIpJoinerOverAWS;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
@@ -24,6 +23,7 @@ import com.hazelcast.instance.DefaultNodeContext;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
