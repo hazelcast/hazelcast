@@ -45,7 +45,8 @@
     <import resource="your-configuration-XML-file"/>
 <!--
     Specifies the name and password for a cluster group you create.
-    Cluster groups allow you to create separate sub-clusters within your Hazelcast cluster. 
+    Cluster groups allow you to create separate sub-clusters within your Hazelcast cluster to create a simple security
+    and they are also used for the WAN Replication feature. 
 -->
     <group>
         <name>dev</name>
@@ -67,8 +68,8 @@
     Configuration for Hazelcast's Management Center.
     The value for the element <management-center> is the URL where you deploy the Management Center.
     It has two optional attributes:
-    - enabled: Set to true to be able to use the Management Center. Its default is false.
-    - update-interval: The time frequency (in seconds) for which Management Center will take information from Hazelcast cluster. Its default is 3 seconds.
+    * enabled: Set to true to be able to use the Management Center. Its default is false.
+    * update-interval: The time frequency (in seconds) for which Management Center will take information from Hazelcast cluster. Its default is 3 seconds.
     Hazelcast's Open Source edition provides the Management Center with monitoring at most 2 members in your cluster.
     To use it for more members, you need to have either a Management Center, Hazelcast Enterprise or Hazelcast Enterprise HD license. 
 -->        
@@ -77,14 +78,14 @@
     Let's you to add properties to some of the Hazelcast elements used to configure some of the Hazelcast modules. 
     You can define the name and value of your property using the sub-element <property>.
     You can use this element for the following Hazelcast configuration elements:
-    - <discovery-strategy>
-    - <map-store>
-    - <queue-store>
-    - <ssl>
-    - <service>
-    - <login-module>
-    - <security-object>
-    - <socket-interceptor>
+    * <discovery-strategy>
+    * <map-store>
+    * <queue-store>
+    * <ssl>
+    * <service>
+    * <login-module>
+    * <security-object>
+    * <socket-interceptor>
 -->        
     <properties>
     	<property name="your-property">Value of the property</property>
@@ -93,11 +94,33 @@
     Configuration for Hazelcast's WAN Replication feature. This feature is available only in Hazelcast Enterprise.
     
     It has two attributes:
-    - name: Name of your WAN Replication. This name is referenced in IMap or ICache configuration when you add WAN Replication
+    * name: Name of your WAN Replication. This name is referenced in IMap or ICache configuration when you add WAN Replication
     for these data structures (using the element <wan-replication-ref> in the configuration of IMap or ICache). Please see 
     the <map> and <cache> configuration descriptions in this XML.
-    - snapshot-enabled:  This attribute is valid when you use `WanBathReplication` as the WAN Replication implementation. Whem
+    - snapshot-enabled:  This attribute is valid when you use `WanBatchReplication` as the WAN Replication implementation. When
     set to true, only the latest events (based on key) are selected and sent to the target cluster in a batch.
+    
+    It has the below elements:
+    * <target-cluster>: Specifies the target cluster to which the events will be replicated. It has the group-name and
+    group-password attributes. These attributes correspond to the <name> and <password> sub-elements, respectively, defined 
+    in the target cluster's <group> element. Please see the <group> configuration description in this XML.
+    * <replication-impl>: Name of the class implementation for WAN Replication. There are two values:
+    	- WanNoDelayReplication: It sends replication events to the target cluster as soon as they are generated.
+    	- WanBatchReplication: It waits until a batch size is reached or a delay time is passed.
+    	Please see the <batch-size> and <batch-max-delay-millis> configuration descriptions below.
+    * <end-points>: IP addresses of the target cluster members for which the WAN replication is implemented. These addresses
+    are given using the <address> sub-elements.
+    * <batch-size>: This element is valid when you use `WanBatchReplication` as the WAN Replication implementation. It is 
+    used to change the maximum size of events that are sent to the target cluster in a single batch. The batch of events is not 
+    send until this size is reached. Its default is 500.
+    * <batch-max-delay-millis>: This element is valid when you use `WanBatchReplication` as the WAN Replication implementation. If the 
+    number of events generated does not reach the <batch-size>, they are sent to the target cluster after a certain 
+    amount of time is passed. You can set this duration in milliseconds using this element. Its default is 1000 milliseconds.
+    * <response-timeout-millis>: After a replication event is sent to the target cluster, the source member waits for a confirmation 
+    that tells the event has reached the target. If confirmation is not received for a period of <response-timeout-millis>, 
+    the event is resent to the target cluster. Its default is 60000 milliseconds.
+    
+  
     
     
     
@@ -117,7 +140,7 @@
             <response-timeout-millis>70000</response-timeout-millis>
             <queue-capacity>15000</queue-capacity>
             <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>
-            <acknowledge-type>ACOK_ON_OPERATION_COMPLETE</acknowledge-type>
+            <acknowledge-type>ACK_ON_OPERATION_COMPLETE</acknowledge-type>
         </target-cluster>
     </wan-replication>
     
