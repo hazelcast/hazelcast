@@ -42,6 +42,7 @@ public class AzureDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
         propertyDefinitions.add(AzureProperties.SUBSCRIPTION_ID);
         propertyDefinitions.add(AzureProperties.TENANT_ID);
         propertyDefinitions.add(AzureProperties.GROUP_NAME);
+        propertyDefinitions.add(AzureProperties.CLUSTER_ID);
         PROPERTY_DEFINITIONS = Collections.unmodifiableCollection(propertyDefinitions);
     }
 

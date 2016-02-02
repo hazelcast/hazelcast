@@ -20,6 +20,7 @@ import org.junit.runner.RunWith;
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -32,13 +33,13 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 public class AzureDiscoveryStrategyFactoryTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_newDiscoveryFactory() throws Exception {
+    public void testNewDiscoveryFactory() throws Exception {
 
         Map<String, Comparable> properties = new HashMap<String, Comparable>();
         properties.put("client-id", "test-value");
         properties.put("client-secret", "test-value");
         properties.put("subscription-id", "test-value");
-        properties.put("hzlcst-cluster-id", "test-value");
+        properties.put("cluster-id", "test-value");
         properties.put("group-name", "test-value");
 
         AzureDiscoveryStrategyFactory factory = new AzureDiscoveryStrategyFactory();
@@ -46,13 +47,13 @@ public class AzureDiscoveryStrategyFactoryTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_missing_config_value() throws Exception {
+    public void testMissingConfigValue() throws Exception {
 
         Map<String, Comparable> properties = new HashMap<String, Comparable>();
         properties.put("client-id", "test-value");
         properties.put("client-secret", "test-value");
         properties.put("subscription-id", "test-value");
-        properties.put("hzlcst-cluster-id", "test-value");
+        properties.put("cluster-id", "test-value");
         properties.put("group-name", "test-value");
 
         AzureDiscoveryStrategyFactory factory = new AzureDiscoveryStrategyFactory();
@@ -61,13 +62,26 @@ public class AzureDiscoveryStrategyFactoryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_getConfigurationProperties() {
+    public void testPropertyDefintions() {
+        AzureDiscoveryStrategyFactory factory = new AzureDiscoveryStrategyFactory();
+        Collection<PropertyDefinition> properties = factory.getConfigurationProperties();
+
+        assertTrue(properties.contains(AzureProperties.CLIENT_ID));
+        assertTrue(properties.contains(AzureProperties.TENANT_ID));
+        assertTrue(properties.contains(AzureProperties.SUBSCRIPTION_ID));
+        assertTrue(properties.contains(AzureProperties.CLIENT_SECRET));
+        assertTrue(properties.contains(AzureProperties.CLUSTER_ID));
+        assertTrue(properties.contains(AzureProperties.GROUP_NAME));
+    }
+
+    @Test
+    public void testGetConfigurationProperties() {
 
         Map<String, Comparable> properties = new HashMap<String, Comparable>();
         properties.put("client-id", "test-value");
         properties.put("client-secret", "test-value");
         properties.put("subscription-id", "test-value");
-        properties.put("hzlcst-cluster-id", "test-value");
+        properties.put("cluster-id", "test-value");
         properties.put("tenant-id", "test-value");
         properties.put("group-name", "test-value");
 

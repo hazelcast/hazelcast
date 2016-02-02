@@ -71,7 +71,7 @@ In your Hazelcast configuration, use the `AzureDiscoveryStrategy`:
                     <property name="client-secret">CLIENT_SECRET</property>
                     <property name="tenant-id">TENANT_ID</property>
                     <property name="subscription-id">SUB_ID</property>
-                    <property name="hzlcst-cluster-id">HZLCAST001</property>
+                    <property name="cluster-id">HZLCAST001</property>
                     <property name="group-name">GROUP-NAME</property>
                 </properties>
             </discovery-strategy>
@@ -84,6 +84,6 @@ You'll need to setup [Azure Active Directory Service Principal credentials](http
 
 ## Azure Configuration
 
-With every Hazelcast Virtual Machine you deploy in your resource group, you need to ensure that each VM is tagged with the value of `hzlcst-cluster-id` defined in your Hazelcast configuration. The only requirement is that every VM can access each other either by private or public IP address.
+With every Hazelcast Virtual Machine you deploy in your resource group, you need to ensure that each VM is tagged with the value of `cluster-id` defined in your Hazelcast configuration. The only requirement is that every VM can access each other either by private or public IP address.
 
 Read more about how you can [tag your virtual machines](https://azure.microsoft.com/en-us/documentation/articles/virtual-machines-tagging-arm/).

@@ -34,13 +34,13 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 public class AzurePropertiesTest extends HazelcastTestSupport {
 
     @Test
-    public void test_newDiscoveryFactory() throws Exception {
+    public void testNewDiscoveryFactory() throws Exception {
 
         Map<String, Comparable> properties = new HashMap<String, Comparable>();
         properties.put("client-id", "test-value");
         properties.put("client-secret", "test-value");
         properties.put("subscription-id", "test-value");
-        properties.put("hzlcst-cluster-id", "test-value");
+        properties.put("cluster-id", "test-value");
         properties.put("tenant-id", "test-value");
         properties.put("group-name", "test-value");
 
@@ -48,12 +48,12 @@ public class AzurePropertiesTest extends HazelcastTestSupport {
         assertTrue("Expected to find AzureProperties.TENANT_ID", AzureProperties.getOrNull(AzureProperties.TENANT_ID, properties) != null);
         assertTrue("Expected to find AzureProperties.SUBSCRIPTION_ID", AzureProperties.getOrNull(AzureProperties.SUBSCRIPTION_ID, properties) != null);
         assertTrue("Expected to find AzureProperties.CLIENT_SECRET", AzureProperties.getOrNull(AzureProperties.CLIENT_SECRET, properties) != null);
-        assertTrue("Expected to find AzureProperties.HZLCST_CLUSTER_ID", AzureProperties.getOrNull(AzureProperties.HZLCST_CLUSTER_ID, properties) != null);
+        assertTrue("Expected to find AzureProperties.CLUSTER_ID", AzureProperties.getOrNull(AzureProperties.CLUSTER_ID, properties) != null);
         assertTrue("Expected to find AzureProperties.GROUP_NAME", AzureProperties.getOrNull(AzureProperties.GROUP_NAME, properties) != null);
     }
 
     @Test(expected = ValidationException.class)
-    public void test_PortValueValidator_validate_negative_val() throws Exception {
+    public void testPortValueValidator_validate_negative_val() throws Exception {
 
         AzureProperties.PortValueValidator validator = new AzureProperties.PortValueValidator();
 
@@ -61,7 +61,7 @@ public class AzurePropertiesTest extends HazelcastTestSupport {
     }
 
     @Test(expected = ValidationException.class)
-    public void test_PortValueValidator_validate_too_big() throws Exception {
+    public void testPortValueValidatorValidateTooBig() throws Exception {
 
         AzureProperties.PortValueValidator validator = new AzureProperties.PortValueValidator();
 
@@ -69,7 +69,7 @@ public class AzurePropertiesTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_PortValueValidator_validate() throws Exception {
+    public void testPortValueValidatorValidate() throws Exception {
 
         AzureProperties.PortValueValidator validator = new AzureProperties.PortValueValidator();
 

@@ -50,8 +50,10 @@ public final class AzureProperties {
      * Property used to define zones for node filtering
      */
     public static final PropertyDefinition CLIENT_SECRET = property("client-secret", STRING);
-
-    public static final PropertyDefinition HZLCST_CLUSTER_ID = property("hzlcst-cluster-id", STRING);
+    /**
+     * Used to compare against the tag on each VM to identify which cluster it belongs
+     */
+    public static final PropertyDefinition CLUSTER_ID = property("cluster-id", STRING);
     /**
      * Resouce group to scan for virtual machines
      */

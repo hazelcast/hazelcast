@@ -31,7 +31,7 @@
     <url>http://github.com/sedouard/hazelcast-azure</url>
     <artifactId>hazelcast-azure</artifactId>
     <groupId>com.hazelcast.azure</groupId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <distributionManagement>
