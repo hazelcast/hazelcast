@@ -93,7 +93,7 @@ mvn clean compile -P findbugs
 ```
 
 ```
-mvn clean validate -P checkstyle`
+mvn clean validate -P checkstyle
 ```
 
 ### Contributing to Hazelcast
