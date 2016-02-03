@@ -33,7 +33,6 @@
     <suppress checks="AnonInnerLength" files="SerializerHook\.java$"/>
     <suppress checks="ClassFanOutComplexityCheck" files="SerializerHook\.java$"/>
     <suppress checks="CyclomaticComplexityCheck" files="SerializerHook\.java$"/>
-    <suppress checks="IllegalType" files="SerializerHook\.java$"/>
 
     <!-- ConsoleApp -->
     <suppress checks="FileLengthCheck" files="ConsoleApp\.java"/>
