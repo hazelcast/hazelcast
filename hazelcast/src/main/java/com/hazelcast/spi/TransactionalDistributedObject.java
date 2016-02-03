@@ -20,6 +20,8 @@ import com.hazelcast.transaction.impl.Transaction;
 
 /**
  * To centralize de-serialization for transactional proxies
+ *
+ * @param <S> type of the {@link RemoteService}
  */
 public abstract class TransactionalDistributedObject<S extends RemoteService> extends AbstractDistributedObject<S> {
 

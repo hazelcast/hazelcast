@@ -29,6 +29,7 @@ import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.IOException;
 import java.util.Date;
 import java.util.logging.Level;
@@ -37,10 +38,13 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * An operation could be compared to a {@link Runnable}. It contains logic that is going to be executed; this logic
- * will be placed in the {@link #run()} method.
+ * will be placed in the {@link Operation#run()} method.
  */
 public abstract class Operation implements DataSerializable {
 
+    /**
+     * Marks an {@link Operation} as non partition specific.
+     */
     public static final int GENERIC_PARTITION_ID = -1;
 
     /**
