@@ -90,12 +90,12 @@ import java.util.logging.Level;
  */
 public class WebFilter implements Filter {
 
-    public static final String WEB_FILTER_ATTRIBUTE_KEY = WebFilter.class.getName();
-
     protected static final ILogger LOGGER = Logger.getLogger(WebFilter.class);
     protected static final LocalCacheEntry NULL_ENTRY = new LocalCacheEntry(false);
     protected static final String HAZELCAST_REQUEST = "*hazelcast-request";
     protected static final String HAZELCAST_SESSION_COOKIE_NAME = "hazelcast.sessionId";
+
+    private static final String WEB_FILTER_ATTRIBUTE_KEY = WebFilter.class.getName();
 
     protected ServletContext servletContext;
     protected FilterConfig filterConfig;

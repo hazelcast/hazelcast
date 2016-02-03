@@ -373,7 +373,6 @@
     <!-- Web -->
     <suppress checks="JavadocMethod" files="com/hazelcast/web/"/>
     <suppress checks="JavadocType" files="com/hazelcast/web/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/web/"/>
 
     <!-- Util -->
     <suppress checks="Header|IllegalImport" files="com/hazelcast/util/HashUtil"/>
