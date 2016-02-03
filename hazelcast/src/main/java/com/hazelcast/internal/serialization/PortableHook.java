@@ -21,7 +21,6 @@ import com.hazelcast.nio.serialization.PortableFactory;
 
 import java.util.Collection;
 
-
 public interface PortableHook {
 
     int getFactoryId();
@@ -29,6 +28,4 @@ public interface PortableHook {
     PortableFactory createFactory();
 
     Collection<ClassDefinition> getBuiltinDefinitions();
-
 }
-
