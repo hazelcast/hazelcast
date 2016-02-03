@@ -263,7 +263,6 @@
     <!-- Multimap -->
     <suppress checks="JavadocMethod" files="com/hazelcast/multimap/"/>
     <suppress checks="JavadocType" files="com/hazelcast/multimap/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/multimap/"/>
     <!-- TODO: needs to be fixed -->
     <suppress checks="MethodCount|CyclomaticComplexity|ClassFanOutComplexity"
               files="com/hazelcast/multimap/impl/MultiMapService"/>
