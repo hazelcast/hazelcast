@@ -21,8 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.eventservice.impl.EventEnvelope;
-import com.hazelcast.spi.impl.eventservice.impl.EventProcessor;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
 
 import java.io.IOException;
 
@@ -41,7 +41,10 @@ public class SendEventOperation extends AbstractOperation implements AllowedDuri
     @Override
     public void run() throws Exception {
         EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
-        eventService.executeEventCallback(new EventProcessor(eventService, eventEnvelope, orderKey));
+        Registration registration = eventService.getRegistration(eventEnvelope);
+        if (registration != null) {
+        	eventService.publishEvent(eventEnvelope.getServiceName(), registration, eventService.getEvent(eventEnvelope), orderKey);
+        }
     }
 
     @Override

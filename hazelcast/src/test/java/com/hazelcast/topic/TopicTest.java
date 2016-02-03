@@ -39,7 +39,9 @@ import com.hazelcast.util.UuidUtil;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -627,4 +629,76 @@ public class TopicTest extends HazelcastTestSupport {
         assertEquals(1000, stats.getPublishOperationCount());
         assertEquals(2000, stats.getReceiveOperationCount());
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testTopicMultiThreading() throws Exception {
+        final int nodeCount = 5;
+        final int count = 1000;
+        final String randomTopicName = randomString();
+
+        Config config = new Config();
+        config.getTopicConfig(randomTopicName).setGlobalOrderingEnabled(false);
+        config.getTopicConfig(randomTopicName).setMultiThreadingEnabled(true);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
+
+        final Set<String>[] threads = new Set[nodeCount];
+        for (int i = 0; i < nodeCount; i++) {
+            threads[i] = new HashSet<String>();
+        }
+
+        final CountDownLatch startLatch = new CountDownLatch(nodeCount);
+        final CountDownLatch messageLatch = new CountDownLatch(nodeCount * nodeCount * count);
+        final CountDownLatch publishLatch = new CountDownLatch(nodeCount * count);
+
+        ExecutorService ex = Executors.newFixedThreadPool(nodeCount);
+        for (int i = 0; i < nodeCount; i++) {
+            final int finalI = i;
+            ex.execute(new Runnable() {
+                public void run() {
+                    final Set<String> thNames = threads[finalI];
+                    HazelcastInstance hz = instances[finalI];
+                    ITopic<TestMessage> topic = hz.getTopic(randomTopicName);
+                    topic.addMessageListener(new MessageListener<TestMessage>() {
+                        public void onMessage(Message<TestMessage> message) {
+                            thNames.add(Thread.currentThread().getName());
+                            messageLatch.countDown();
+                        }
+                    });
+
+                    startLatch.countDown();
+                    try {
+                        startLatch.await(1, TimeUnit.MINUTES);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        return;
+                    }
+
+                    Member localMember = hz.getCluster().getLocalMember();
+                    for (int j = 0; j < count; j++) {
+                        topic.publish(new TestMessage(localMember, UuidUtil.newUnsecureUuidString()));
+                        publishLatch.countDown();
+                    }
+                }
+            });
+        }
+
+        try {
+            assertTrue(publishLatch.await(2, TimeUnit.MINUTES));
+            assertTrue(messageLatch.await(5, TimeUnit.MINUTES));
+
+            boolean passed = false;
+            for (int i = 0; i < nodeCount; i++) {
+            	if (threads[i].size() > 1) {
+            		passed = true;
+            	}
+            }
+            assertTrue("All listeners received messages in single thread. Expecting more threads involved", passed);
+        } finally {
+            ex.shutdownNow();
+        }
+    }
+
 }

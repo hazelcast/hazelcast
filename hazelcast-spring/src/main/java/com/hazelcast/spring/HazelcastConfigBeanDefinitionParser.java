@@ -987,6 +987,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("global-ordering-enabled".equals(cleanNodeName(childNode))) {
                     final String globalOrderingEnabled = getTextContent(childNode);
                     topicConfigBuilder.addPropertyValue("globalOrderingEnabled", globalOrderingEnabled);
+                } else if ("multi-threading-enabled".equals(cleanNodeName(childNode))) {
+                    final String multiThreadingEnabled = getTextContent(childNode);
+                    topicConfigBuilder.addPropertyValue("multiThreadingEnabled", multiThreadingEnabled);
                 }
             }
             topicManagedMap.put(name, topicConfigBuilder.getBeanDefinition());
