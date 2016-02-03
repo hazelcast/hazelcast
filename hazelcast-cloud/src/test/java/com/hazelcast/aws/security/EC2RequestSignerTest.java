@@ -16,7 +16,6 @@
 
 package com.hazelcast.aws.security;
 
-import com.hazelcast.aws.impl.Constants;
 import com.hazelcast.aws.impl.DescribeInstances;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -31,14 +30,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
-/**
- * Created by igmar on 03/11/14.
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class EC2RequestSignerTest {
+
     private final static String TEST_REGION = "eu-central-1";
     private final static String TEST_HOST = "ec2.eu-central-1.amazonaws.com";
     private final static String TEST_SERVICE = "ec2";
@@ -47,16 +43,6 @@ public class EC2RequestSignerTest {
     private final static String TEST_REQUEST_DATE = "20141106T111126Z";
     private final static String TEST_DERIVED_EXPECTED = "7038265e40236063ebcd2e201908ad6e9f64e533439bfa7a5faa07ba419329bc";
     private final static String TEST_SIGNATURE_EXPECTED = "c9347599958aab0ea079c296b8fe3355553bac767c5957dff7e7a1fce72ce132";
-
-
-    @Test
-    public void test_Constasts() {
-        Constants constants = new Constants();
-        assertNotNull(constants.DATE_FORMAT);
-        assertNotNull(constants.DOC_VERSION);
-        assertNotNull(constants.SIGNATURE_METHOD_V4);
-        assertNotNull(constants.GET);
-    }
 
     @Test(expected = IllegalArgumentException.class)
     public void whenConfigIsNull() {
@@ -84,7 +70,7 @@ public class EC2RequestSignerTest {
 
     @Test
     public void deriveSigningKeyTest() throws Exception {
-        // This is from http://docs.aws.amazon.com/general/latest/gr/signature-v4-examples.html
+        // this is from http://docs.aws.amazon.com/general/latest/gr/signature-v4-examples.html
         AwsConfig awsConfig = new AwsConfig();
         awsConfig.setRegion(TEST_REGION).
                 setHostHeader(TEST_HOST).
@@ -135,7 +121,6 @@ public class EC2RequestSignerTest {
 
         assertEquals(TEST_SIGNATURE_EXPECTED, signature);
     }
-
 
     private String bytesToHex(byte[] in) {
         final char[] hexArray = "0123456789abcdef".toCharArray();

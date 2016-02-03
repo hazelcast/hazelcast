@@ -322,8 +322,6 @@
     <!-- AWS -->
     <suppress checks="JavadocMethod" files="com/hazelcast/aws/"/>
     <suppress checks="JavadocType" files="com/hazelcast/aws/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/aws/"/>
-    <suppress checks="HideUtilityClassConstructor" files="com/hazelcast/aws/impl/Constants"/>
 
     <!-- Hibernate -->
     <suppress checks="IllegalImport" files="com/hazelcast/hibernate/serialization/Hibernate3CacheEntrySerializer"/>
