@@ -206,7 +206,6 @@
     <!-- Transaction -->
     <suppress checks="JavadocMethod" files="com/hazelcast/transaction/"/>
     <suppress checks="JavadocType" files="com/hazelcast/transaction/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/transaction/"/>
 
     <!-- Security -->
     <suppress checks="JavadocMethod" files="com/hazelcast/security/"/>
