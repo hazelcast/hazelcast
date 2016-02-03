@@ -22,4 +22,7 @@ public final class Constants {
     public static final String DOC_VERSION = "2014-06-15";
     public static final String SIGNATURE_METHOD_V4 = "AWS4-HMAC-SHA256";
     public static final String GET = "GET";
+
+    private Constants() {
+    }
 }
