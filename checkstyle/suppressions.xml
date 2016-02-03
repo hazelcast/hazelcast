@@ -375,23 +375,17 @@
     <suppress checks="JavadocType" files="com/hazelcast/web/"/>
 
     <!-- Util -->
+    <!-- written by Doug Lea  -->
+    <suppress checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|NPath|Cyclomatic"
+              files="com/hazelcast/util/ConcurrentReferenceHashMap"/>
     <suppress checks="Header|IllegalImport" files="com/hazelcast/util/HashUtil"/>
     <suppress checks="MagicNumber" files="com/hazelcast/util/QuickMath"/>
-
+    <suppress checks="NPathComplexity|CyclomaticComplexity" files="com/hazelcast/client/util/ClientDelegatingFuture"/>
     <suppress checks="IllegalImport|InnerAssignment" files="com/hazelcast/util/counters/SwCounter"/>
-
     <suppress checks="JavadocMethod" files="com/hazelcast/util/executor/"/>
     <suppress checks="JavadocType" files="com/hazelcast/util/executor/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/util/executor/"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/util/executor/DelegatingFuture"/>
-    <suppress checks="NPathComplexity|CyclomaticComplexity" files="com/hazelcast/client/util/ClientDelegatingFuture"/>
-
-    <suppress checks="JavadocType|JavadocVariable" files="com/hazelcast/util/scheduler/ScheduleType"/>
-    <suppress checks="JavadocType" files="com/hazelcast/util/scheduler/SecondsBasedEntryTaskScheduler"/>
-
-    <!-- Written by Doug Lea  -->
-    <suppress checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|NPath|Cyclomatic"
-              files="com/hazelcast/util/ConcurrentReferenceHashMap"/>
 
     <!-- Exclude Clover instrumented sources -->
     <suppress checks="" files="/src-instrumented/"/>
