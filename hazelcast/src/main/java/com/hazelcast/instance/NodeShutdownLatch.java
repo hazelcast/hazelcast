@@ -21,6 +21,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.util.EmptyStatement;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -53,7 +54,7 @@ final class NodeShutdownLatch {
                         final String id = clusterService.addMembershipListener(new ShutdownMembershipListener());
                         registrations.put(id, instance);
                     } catch (Throwable ignored) {
-
+                        EmptyStatement.ignore(ignored);
                     }
                 }
             }
@@ -75,6 +76,7 @@ final class NodeShutdownLatch {
         try {
             latch.tryAcquire(permits, time, unit);
         } catch (InterruptedException ignored) {
+            EmptyStatement.ignore(ignored);
         }
 
         for (Map.Entry<String, HazelcastInstanceImpl> entry : registrations.entrySet()) {
@@ -82,6 +84,7 @@ final class NodeShutdownLatch {
             try {
                 instance.node.clusterService.removeMembershipListener(entry.getKey());
             } catch (Throwable ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
         registrations.clear();
