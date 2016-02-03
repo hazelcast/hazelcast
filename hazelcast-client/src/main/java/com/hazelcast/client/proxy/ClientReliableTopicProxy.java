@@ -54,8 +54,9 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E> {
-    public static final int MAX_BACKOFF = 2000;
-    public static final int INITIAL_BACKOFF_MS = 100;
+
+    private static final int MAX_BACKOFF = 2000;
+    private static final int INITIAL_BACKOFF_MS = 100;
 
     private final ILogger logger = Logger.getLogger(getClass());
     private final ConcurrentMap<String, MessageRunner> runnersMap = new ConcurrentHashMap<String, MessageRunner>();
