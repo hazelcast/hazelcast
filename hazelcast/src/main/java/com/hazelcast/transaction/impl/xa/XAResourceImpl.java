@@ -16,7 +16,7 @@
 
 package com.hazelcast.transaction.impl.xa;
 
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;

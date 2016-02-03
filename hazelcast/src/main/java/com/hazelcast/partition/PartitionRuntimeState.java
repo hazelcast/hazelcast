@@ -16,7 +16,7 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.ascii.rest;
 
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.instance.GroupProperty;

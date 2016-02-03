@@ -16,6 +16,7 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.nio.Address;
 
 /**
@@ -41,7 +42,7 @@ public interface InternalPartition {
      * Checks if the partition is local.
      *
      * A partition is local if and only if the {@link #getOwnerOrNull()} returns the same address as 'this' address of the
-     * {@link com.hazelcast.cluster.ClusterService#getThisAddress()}. If the address is null or a different address, false
+     * {@link ClusterService#getThisAddress()}. If the address is null or a different address, false
      * is returned.
      *
      * @return true if local, false otherwise.

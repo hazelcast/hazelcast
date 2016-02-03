@@ -16,7 +16,7 @@
 
 package com.hazelcast.partition.impl;
 
-import com.hazelcast.cluster.impl.operations.JoinOperation;
+import com.hazelcast.internal.cluster.impl.operations.JoinOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartitionService;

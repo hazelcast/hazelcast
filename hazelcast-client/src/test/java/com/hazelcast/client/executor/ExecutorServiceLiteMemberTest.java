@@ -21,7 +21,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
+import static com.hazelcast.internal.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
 import static com.hazelcast.executor.ExecutorServiceTestSupport.CountingDownExecutionCallback;
 import static com.hazelcast.executor.ExecutorServiceTestSupport.LocalMemberReturningCallable;
 import static com.hazelcast.executor.ExecutorServiceTestSupport.ResultHoldingMultiExecutionCallback;
