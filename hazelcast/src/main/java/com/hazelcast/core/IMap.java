@@ -375,6 +375,84 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     Future<V> putAsync(K key, V value, long ttl, TimeUnit timeunit);
 
     /**
+     * Asynchronously puts the given key and value.
+     * the entry lives forever.
+     * Similar to the put operation except that set
+     * doesn't return the old value, which is more efficient.
+     * <pre>{@code Future<Void> future = map.setAsync(key, value);
+     * // do some other stuff, when ready get the result
+     * future.get();
+     * }</pre>
+     * Future.get() will block until the actual map.get() completes.
+     * If your application requires a timely response,
+     * then you can use Future.get(timeout, timeunit).
+     * <pre>{@code
+     * try{
+     *     Future<Void> future = map.setAsync(key, newValue);
+     *     future.get(40, TimeUnit.MILLISECOND);
+     * }catch (TimeoutException t) {
+     *     // time wasn't enough
+     * }
+     * }</pre>
+     * ExecutionException is never thrown.
+     * <p/>
+     * <p><b>Warning 1:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in the <tt>key</tt>'s class.
+     * <p/>
+     *
+     * @param key      the key of the map entry.
+     * @param value    the new value of the map entry.
+     * @return Future on which to block.
+     * @throws NullPointerException if the specified key or value is null.
+     * @see java.util.concurrent.Future
+     */
+    Future<Void> setAsync(K key, V value);
+
+    /**
+     * Asynchronously puts the given key and value into this map with a given ttl (time to live) value.
+     * Entry will expire and get evicted after the ttl. If ttl is 0, then
+     * the entry lives forever.
+     * Similar to the put operation except that set
+     * doesn't return the old value, which is more efficient.
+     * <pre>{@code Future<Void> future = map.setAsync(key, value, ttl, timeunit);
+     * // do some other stuff, when ready get the result
+     * future.get();
+     * }</pre>
+     * Future.get() will block until the actual map.get() completes.
+     * If your application requires a timely response,
+     * then you can use Future.get(timeout, timeunit).
+     * <pre>{@code
+     * try{
+     *     Future<Void> future = map.setAsync(key, newValue, ttl, timeunit);
+     *     future.get(40, TimeUnit.MILLISECOND);
+     * }catch (TimeoutException t) {
+     *     // time wasn't enough
+     * }
+     * }</pre>
+     * ExecutionException is never thrown.
+     * <p/>
+     * <p><b>Warning 1:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in the <tt>key</tt>'s class.
+     * <p/>
+     * <p><b>Warning 2:</b></p>
+     * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
+     *
+     * @param key      the key of the map entry.
+     * @param value    the new value of the map entry.
+     * @param ttl      maximum time for this entry to stay in the map.
+     *                 0 means infinite.
+     * @param timeunit time unit for the ttl.
+     * @return Future on which to block.
+     * @throws NullPointerException if the specified key or value is null.
+     * @see java.util.concurrent.Future
+     */
+    Future<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit);
+
+    /**
      * Asynchronously removes the given key.
      * <p/>
      * <p><b>Warning:</b></p>

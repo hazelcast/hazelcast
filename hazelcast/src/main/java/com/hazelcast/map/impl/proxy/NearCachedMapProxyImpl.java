@@ -154,6 +154,12 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
+    protected ICompletableFuture<Data> setAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+        invalidateCache(key);
+        return super.setAsyncInternal(key, value, ttl, timeunit);
+    }
+
+    @Override
     protected boolean replaceInternal(Data key, Data expect, Data update) {
         invalidateCache(key);
         return super.replaceInternal(key, expect, update);
