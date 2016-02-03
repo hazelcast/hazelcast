@@ -25,15 +25,18 @@ import java.util.concurrent.TimeUnit;
  * @author mdogan 18/12/14
  */
 class JumpingSystemClock extends Clock.ClockImpl {
-    public static final int JUMP_AFTER_SECONDS = 30;
 
-    private final long jumpAfter = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(JUMP_AFTER_SECONDS);
+    public static final String JUMP_AFTER_SECONDS_PROPERTY = "com.hazelcast.clock.jump.after";
+
+    private final long jumpAfter;
     private final long jumpOffset;
 
     public JumpingSystemClock() {
         String clockOffset = System.getProperty(Clock.HAZELCAST_CLOCK_OFFSET);
+        String jumpAfterSeconds = System.getProperty(JUMP_AFTER_SECONDS_PROPERTY);
         try {
-            this.jumpOffset = Long.parseLong(clockOffset);
+            jumpOffset = Long.parseLong(clockOffset);
+            jumpAfter = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(Integer.parseInt(jumpAfterSeconds));
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
