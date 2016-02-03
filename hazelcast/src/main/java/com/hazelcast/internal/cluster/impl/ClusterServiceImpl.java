@@ -58,7 +58,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.ExecutorType;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -291,7 +290,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
         if (node.isMaster()) {
             clusterHeartbeatManager.resetMemberMasterConfirmations();
-            clusterClock.reset();
         } else {
             clusterHeartbeatManager.sendMasterConfirmation();
         }
@@ -351,7 +349,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 if (member == null) {
                     member = createMember(memberInfo, scopeId);
                     newMembers.add(member);
-                    long now = Clock.currentTimeMillis();
+                    long now = clusterClock.getClusterTime();
                     clusterHeartbeatManager.onHeartbeat(member, now);
                     clusterHeartbeatManager.acceptMasterConfirmation(member, now);
 

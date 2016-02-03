@@ -17,11 +17,12 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.cluster.impl.ClusterClockImpl;
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -101,7 +102,9 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     private void initClusterStates(ClusterServiceImpl clusterService) {
         clusterService.initialClusterState(clusterState);
         clusterService.setClusterId(clusterId);
-        clusterService.getClusterClock().setClusterStartTime(clusterStartTime);
+        ClusterClockImpl clusterClock = clusterService.getClusterClock();
+        clusterClock.setClusterStartTime(clusterStartTime);
+        clusterClock.setMasterTime(masterTime);
     }
 
     private void processPartitionState() {
