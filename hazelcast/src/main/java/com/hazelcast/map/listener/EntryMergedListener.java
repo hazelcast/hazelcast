@@ -21,9 +21,11 @@ import com.hazelcast.core.EntryEvent;
 /**
  * Invoked after WAN replicated entry is merged.
  *
+ * @param <K> the type of key.
+ * @param <V> the type of value.
  * @since 3.5
  */
-public interface EntryMergedListener<K, V>  extends MapListener {
+public interface EntryMergedListener<K, V> extends MapListener {
 
     /**
      * Invoked after WAN replicated entry is merged.

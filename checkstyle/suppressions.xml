@@ -349,9 +349,6 @@
     <suppress checks="VisibilityModifier" files="com/hazelcast/internal/management/dto/\w*"/>
 
     <!-- Map -->
-    <suppress checks="JavadocMethod" files="com/hazelcast/map/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/map/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/map/"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/recordstore/RecordStore"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/recordstore/AbstractEvictableRecordStore"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/recordstore/DefaultRecordStore"/>
