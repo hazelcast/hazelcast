@@ -119,12 +119,18 @@
     * <response-timeout-millis>: After a replication event is sent to the target cluster, the source member waits for a confirmation 
     that tells the event has reached the target. If confirmation is not received for a period of <response-timeout-millis>, 
     the event is resent to the target cluster. Its default is 60000 milliseconds.
-    
-  
-    
-    
-    
-     
+    * <queue-capacity>: Size of the queue of events. Its default value is 10000. You might exceed the queue size so that the 
+    oldest, not yet replicated, updates might get lost. Therefore, if you have a large rate of put/update/remove operations,
+    you should increase <queue-capacity>.
+    * <queueu-full-behavior>: Policy to be applied when WAN Replication event queues are full. There are two values:
+    	- DISCARD_AFTER_MUTATION: The new WAN events generated are dropped and not replicated to the target cluster.
+	- THROW_EXCEPTION: The WAN queue size is checked before each supported mutating operation If one the queues of target 
+	cluster is full, WANReplicationQueueFullException is thrown and the operation is not allowed.
+    * <acknowledge-type>: Acknowledgment type for each target cluster when the events are replicated. There are two values:
+    	- ACK_ON_RECEIPT: Means that events are received by the target cluster successfuly. It does not guarantee that 
+    	the received event is actually applied, but it is faster.
+	- ACK_ON_OPERATION_COMPLETE: This option guarantees that the event is received by the target cluster and it is applied. 
+	It is more time consuming, but it is the best way if you have strong consistency requirements.
 -->        
     <wan-replication name="my-wan-cluster-batch" snapshot-enabled="false">
         <target-cluster group-name="nyc" group-password="nyc-pass">

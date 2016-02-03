@@ -42,7 +42,9 @@ public final class HashUtil {
 
     private static final boolean LITTLE_ENDIAN = ByteOrder.LITTLE_ENDIAN == ByteOrder.nativeOrder();
     private static final int DEFAULT_MURMUR_SEED = 0x01000193;
-    private static final int[] PERTURBATIONS = new int[Integer.SIZE]; static {
+    private static final int[] PERTURBATIONS = new int[Integer.SIZE];
+
+    static {
         final int primeDisplacement = 17;
         for (int i = 0; i < PERTURBATIONS.length; i++) {
             PERTURBATIONS[i] = MurmurHash3_fmix(primeDisplacement + i);
@@ -265,8 +267,8 @@ public final class HashUtil {
                 h1 = h1 * 3 + 0x52dce729;
                 h2 = h2 * 3 + 0x38495ab5;
 
-//                c1 = c1 * 5 + 0x7b7d159c;   // unused, used only for 128-bit version
-//                c2 = c2 * 5 + 0x6bce6396;   // unused, used only for 128-bit version
+                //c1 = c1 * 5 + 0x7b7d159c;   // unused, used only for 128-bit version
+                //c2 = c2 * 5 + 0x6bce6396;   // unused, used only for 128-bit version
             default:
         }
 
@@ -279,7 +281,7 @@ public final class HashUtil {
         h2 = MurmurHash3_fmix(h2);
 
         h1 += h2;
-//        h2 += h1; // unused, used only for 128-bit version
+        //h2 += h1; // unused, used only for 128-bit version
         return h1;
     }
 
@@ -379,8 +381,8 @@ public final class HashUtil {
                 h1 = h1 * 3 + 0x52dce729;
                 h2 = h2 * 3 + 0x38495ab5;
 
-//                c1 = c1 * 5 + 0x7b7d159c;   // unused, used only for 128-bit version
-//                c2 = c2 * 5 + 0x6bce6396;   // unused, used only for 128-bit version
+                //c1 = c1 * 5 + 0x7b7d159c;   // unused, used only for 128-bit version
+                //c2 = c2 * 5 + 0x6bce6396;   // unused, used only for 128-bit version
             default:
         }
 
@@ -393,7 +395,7 @@ public final class HashUtil {
         h2 = MurmurHash3_fmix(h2);
 
         h1 += h2;
-//        h2 += h1; // unused, used only for 128-bit version
+        //h2 += h1; // unused, used only for 128-bit version
         return h1;
     }
 
@@ -494,7 +496,7 @@ public final class HashUtil {
      * keys are nearly-ordered by their hashed values so when adding one container's
      * values to the other, the number of collisions can skyrocket into the worst case
      * possible.
-     * <p/>f
+     * <p/>
      * <p>If it is known that hash containers will not be added to each other
      * (will be used for counting only, for example) then some speed can be gained by
      * not perturbing keys before hashing and returning a value of zero for all possible
