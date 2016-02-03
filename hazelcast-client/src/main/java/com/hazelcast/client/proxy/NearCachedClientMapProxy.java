@@ -44,7 +44,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -238,7 +237,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected void loadAllInternal(boolean replaceExistingValues, Set<Data> dataKeys) {
+    protected void loadAllInternal(boolean replaceExistingValues, List<Data> dataKeys) {
         invalidateNearCache(dataKeys);
         super.loadAllInternal(replaceExistingValues, dataKeys);
     }

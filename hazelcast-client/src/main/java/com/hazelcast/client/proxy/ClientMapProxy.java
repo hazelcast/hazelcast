@@ -966,21 +966,21 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             return;
         }
 
-        Set<Data> dataKeys = convertKeysToData(keys);
+        List<Data> dataKeys = convertKeysToData(keys);
         loadAllInternal(replaceExistingValues, dataKeys);
     }
 
-    protected void loadAllInternal(boolean replaceExistingValues, Set<Data> dataKeys) {
+    protected void loadAllInternal(boolean replaceExistingValues, List<Data> dataKeys) {
         ClientMessage request = MapLoadGivenKeysCodec.encodeRequest(name, dataKeys, replaceExistingValues);
         invoke(request);
     }
 
     // todo duplicate code.
-    private <K> Set<Data> convertKeysToData(Set<K> keys) {
+    private List<Data> convertKeysToData(Set<K> keys) {
         if (keys == null || keys.isEmpty()) {
-            return Collections.emptySet();
+            return Collections.emptyList();
         }
-        final Set<Data> dataKeys = new HashSet<Data>(keys.size());
+        final List<Data> dataKeys = new ArrayList<Data>(keys.size());
         for (K key : keys) {
             checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
