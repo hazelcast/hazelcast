@@ -68,16 +68,18 @@
     Configuration for Hazelcast's Management Center.
     The value for the element <management-center> is the URL where you deploy the Management Center.
     It has two optional attributes:
-    * enabled: Set to true to be able to use the Management Center. Its default is false.
-    * update-interval: The time frequency (in seconds) for which Management Center will take information from Hazelcast cluster. Its default is 3 seconds.
-    Hazelcast's Open Source edition provides the Management Center with monitoring at most 2 members in your cluster.
-    To use it for more members, you need to have either a Management Center, Hazelcast Enterprise or Hazelcast Enterprise HD license. 
+    * enabled: 
+              Set to true to be able to use the Management Center. Its default is false.
+    * update-interval: 
+              The time frequency (in seconds) for which Management Center will take information from Hazelcast cluster. Its default is 3 seconds.
+              Hazelcast's Open Source edition provides the Management Center with monitoring at most 2 members in your cluster.
+              To use it for more members, you need to have either a Management Center, Hazelcast Enterprise or Hazelcast Enterprise HD license. 
 -->        
     <management-center enabled="true" update-interval="2">http://localhost:8080/mancenter</management-center>
 <!--
     Let's you to add properties to some of the Hazelcast elements used to configure some of the Hazelcast modules. 
     You can define the name and value of your property using the sub-element <property>.
-    You can use this element for the following Hazelcast configuration elements:
+    You can use <properties> for the following Hazelcast configuration elements:
     * <discovery-strategy>
     * <map-store>
     * <queue-store>
@@ -94,25 +96,32 @@
     Configuration for Hazelcast's WAN Replication feature. This feature is available only in Hazelcast Enterprise.
     
     It has two attributes:
-    * name: Name of your WAN Replication. This name is referenced in IMap or ICache configuration when you add WAN Replication
-    for these data structures (using the element <wan-replication-ref> in the configuration of IMap or ICache). Please see 
-    the <map> and <cache> configuration descriptions in this XML.
-    - snapshot-enabled:  This attribute is valid when you use `WanBatchReplication` as the WAN Replication implementation. When
-    set to true, only the latest events (based on key) are selected and sent to the target cluster in a batch.
+    * name: 
+            Name of your WAN Replication. This name is referenced in IMap or ICache configuration when you add WAN Replication
+            for these data structures (using the element <wan-replication-ref> in the configuration of IMap or ICache). Please see 
+            the <map> and <cache> configuration descriptions in this XML.
+    * snapshot-enabled: 
+            This attribute is valid when you use `WanBatchReplication` as the WAN Replication implementation. When
+            set to true, only the latest events (based on key) are selected and sent to the target cluster in a batch.
     
-    It has the below elements:
-    * <target-cluster>: Specifies the target cluster to which the events will be replicated. It has the group-name and
-    group-password attributes. These attributes correspond to the <name> and <password> sub-elements, respectively, defined 
-    in the target cluster's <group> element. Please see the <group> configuration description in this XML.
+    It has the following elements:
+    * <target-cluster>: 
+            Specifies the target cluster to which the events will be replicated. It has the group-name and
+            group-password attributes. These attributes correspond to the <name> and <password> sub-elements, respectively, defined 
+            in the target cluster's <group> element. Please see the <group> configuration description in this XML.
     * <replication-impl>: Name of the class implementation for WAN Replication. There are two values:
-    	- WanNoDelayReplication: It sends replication events to the target cluster as soon as they are generated.
-    	- WanBatchReplication: It waits until a batch size is reached or a delay time is passed.
-    	Please see the <batch-size> and <batch-max-delay-millis> configuration descriptions below.
-    * <end-points>: IP addresses of the target cluster members for which the WAN replication is implemented. These addresses
-    are given using the <address> sub-elements.
-    * <batch-size>: This element is valid when you use `WanBatchReplication` as the WAN Replication implementation. It is 
-    used to change the maximum size of events that are sent to the target cluster in a single batch. The batch of events is not 
-    send until this size is reached. Its default is 500.
+    	- WanNoDelayReplication: 
+    	    It sends replication events to the target cluster as soon as they are generated.
+    	- WanBatchReplication: 
+    	    It waits until a batch size is reached or a delay time is passed.
+    	    Please see the <batch-size> and <batch-max-delay-millis> configuration descriptions below.
+    * <end-points>: 
+            IP addresses of the target cluster members for which the WAN replication is implemented. These addresses
+            are given using the <address> sub-elements.
+    * <batch-size>: 
+            This element is valid when you use `WanBatchReplication` as the WAN Replication implementation. It is 
+            used to change the maximum size of events that are sent to the target cluster in a single batch. The batch of events is not 
+            send until this size is reached. Its default is 500.
     * <batch-max-delay-millis>: This element is valid when you use `WanBatchReplication` as the WAN Replication implementation. If the 
     number of events generated does not reach the <batch-size>, they are sent to the target cluster after a certain 
     amount of time is passed. You can set this duration in milliseconds using this element. Its default is 1000 milliseconds.
@@ -125,12 +134,12 @@
     * <queueu-full-behavior>: Policy to be applied when WAN Replication event queues are full. There are two values:
     	- DISCARD_AFTER_MUTATION: The new WAN events generated are dropped and not replicated to the target cluster.
 	- THROW_EXCEPTION: The WAN queue size is checked before each supported mutating operation If one the queues of target 
-	cluster is full, WANReplicationQueueFullException is thrown and the operation is not allowed.
+	                   cluster is full, WANReplicationQueueFullException is thrown and the operation is not allowed.
     * <acknowledge-type>: Acknowledgment type for each target cluster when the events are replicated. There are two values:
     	- ACK_ON_RECEIPT: Means that events are received by the target cluster successfuly. It does not guarantee that 
-    	the received event is actually applied, but it is faster.
+    	                  the received event is actually applied, but it is faster.
 	- ACK_ON_OPERATION_COMPLETE: This option guarantees that the event is received by the target cluster and it is applied. 
-	It is more time consuming, but it is the best way if you have strong consistency requirements.
+	                             It is more time consuming, but it is the best way if you have strong consistency requirements.
 -->        
     <wan-replication name="my-wan-cluster-batch" snapshot-enabled="false">
         <target-cluster group-name="nyc" group-password="nyc-pass">
@@ -149,6 +158,22 @@
             <acknowledge-type>ACK_ON_OPERATION_COMPLETE</acknowledge-type>
         </target-cluster>
     </wan-replication>
+<!--
+    Configuration to build your Hazelcast's network; includes port, interface, discovery mechanism, SSL, 
+    encryption, etc. configuration. Parent configuration element is <network> and it includes the following sub-elements:
+    
+    * <public address>:  This optional element overrides the public address of a member and it is useful when 
+    you have a private cloud. Normally, a member selects its socket address as its public address. But behind a NAT, 
+    two members may not be able to see/access each other. In this case, you can set their public addresses to their 
+    defined addresses on NAT. The value should be given in the format "host IP address:port number".
+    * <port>: Specifies the ports that Hazelcast will use to communicate between cluster members. It is optional and 
+    its default value is 5701. It has the following attributes:
+    	- port-count: By default, Hazelcast will try 100 ports to bind (i.e. the ports between 5701 and 5801). 
+    	              It is optional and its default value is 100.
+    	- auto-increment:
+    	.
+    .
+-->        
     
     
     
