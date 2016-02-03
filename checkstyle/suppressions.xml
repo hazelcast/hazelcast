@@ -224,7 +224,6 @@
     <!-- Logging -->
     <suppress checks="JavadocMethod" files="com/hazelcast/logging/"/>
     <suppress checks="JavadocType" files="com/hazelcast/logging/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/logging/"/>
 
     <!-- Partition -->
     <suppress checks="JavadocMethod" files="com/hazelcast/partition/"/>
