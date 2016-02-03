@@ -153,7 +153,6 @@
     <!-- Monitor -->
     <suppress checks="JavadocMethod" files="com/hazelcast/monitor/"/>
     <suppress checks="JavadocType" files="com/hazelcast/monitor/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/monitor/"/>
     <suppress checks="CyclomaticComplexity|NPathComplexity" files="com/hazelcast/monitor/impl/LocalCacheStatsImpl"/>
     <suppress checks="MethodCount|MethodLength|CyclomaticComplexity|NPathComplexity"
               files="com/hazelcast/monitor/impl/LocalMapStatsImpl"/>
