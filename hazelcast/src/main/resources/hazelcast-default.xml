@@ -250,11 +250,6 @@
 
     <serialization>
         <portable-version>0</portable-version>
-        <serializers>
-            <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
-            <serializer type-class="com.hazelcast.examples.DummyType"
-                        class-name="com.hazelcast.examples.SerializerFactory"/>
-        </serializers>
     </serialization>
 
     <services enable-defaults="true"/>
