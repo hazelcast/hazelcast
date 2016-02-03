@@ -191,7 +191,8 @@ public class EventServiceImpl implements InternalEventService {
         }
         EventServiceSegment segment = getSegment(serviceName, true);
         String id = UuidUtil.newUnsecureUuidString();
-        Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener, localOnly);
+        Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener, localOnly,
+        		nodeEngine.getConfig().getTopicConfig(topic).isMultiThreadingEnabled());
         if (!segment.addRegistration(topic, reg)) {
             return null;
         }
@@ -314,7 +315,7 @@ public class EventServiceImpl implements InternalEventService {
             executeLocal(serviceName, event, registration, orderKey);
         } else {
             EventEnvelope eventEnvelope = new EventEnvelope(registration.getId(), serviceName, event);
-            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey);
+            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey, ((Registration) registration).isMultiThreaded());
         }
     }
 
@@ -334,7 +335,7 @@ public class EventServiceImpl implements InternalEventService {
                 eventData = serializationService.toData(event);
             }
             EventEnvelope eventEnvelope = new EventEnvelope(registration.getId(), serviceName, eventData);
-            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey);
+            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey, ((Registration) registration).isMultiThreaded());
         }
     }
 
@@ -352,7 +353,7 @@ public class EventServiceImpl implements InternalEventService {
                 continue;
             }
             EventEnvelope eventEnvelope = new EventEnvelope(registration.getId(), serviceName, eventData);
-            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey);
+            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey, ((Registration) registration).isMultiThreaded());
         }
     }
 
@@ -361,8 +362,15 @@ public class EventServiceImpl implements InternalEventService {
             Registration reg = (Registration) registration;
             try {
                 if (reg.getListener() != null) {
-                    eventExecutor.execute(new LocalEventDispatcher(this, serviceName, event, reg.getListener()
-                            , orderKey, eventQueueTimeoutMs));
+                	Runnable dispatcher;
+                	if (reg.isMultiThreaded()) {
+                		dispatcher = new StripedEventDispatcher(this, serviceName, event, reg.getListener(), 
+                				eventQueueTimeoutMs, orderKey);
+                	} else {
+                		dispatcher = new LocalEventDispatcher(this, serviceName, event, reg.getListener(), 
+                				eventQueueTimeoutMs);
+                	}
+                    eventExecutor.execute(dispatcher);
                 } else {
                     logger.warning("Something seems wrong! Listener instance is null! -> " + reg);
                 }
@@ -377,7 +385,7 @@ public class EventServiceImpl implements InternalEventService {
         }
     }
 
-    private void sendEvent(Address subscriber, EventEnvelope eventEnvelope, int orderKey) {
+    private void sendEvent(Address subscriber, EventEnvelope eventEnvelope, int orderKey, boolean isMultiThreaded) {
         final String serviceName = eventEnvelope.getServiceName();
         final EventServiceSegment segment = getSegment(serviceName, true);
         boolean sync = segment.incrementPublish() % eventSyncFrequency == 0;

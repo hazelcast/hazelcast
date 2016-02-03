@@ -35,6 +35,7 @@ public class TopicConfig {
     private String name;
     private boolean globalOrderingEnabled = DEFAULT_GLOBAL_ORDERING_ENABLED;
     private boolean statisticsEnabled = true;
+    private boolean multiThreadingEnabled = false;
     private List<ListenerConfig> listenerConfigs;
     private TopicConfigReadOnly readOnly;
 
@@ -114,9 +115,43 @@ public class TopicConfig {
      */
     public TopicConfig setGlobalOrderingEnabled(boolean globalOrderingEnabled) {
         this.globalOrderingEnabled = globalOrderingEnabled;
+        if (this.globalOrderingEnabled && this.multiThreadingEnabled) {
+        	this.multiThreadingEnabled = false;
+        }
         return this;
     }
+    
+    /**
+     * Checks if multi-threaded processing of incoming messages is enabled or not. 
+     * When disabled only one dedicated thread will handle all topic messages. Otherwise
+     * any thread from events thread pool can be used for message handling.
+     *
+     * @return true if multi-threading is enabled, false if disabled
+     */
+    public boolean isMultiThreadingEnabled() {
+        return multiThreadingEnabled;
+    }
+    
 
+    /**
+     * Enable multi-threaded message handling. When enabled any thread from events 
+     * thread pool can be used for incoming message processing. Otherwise only one
+     * dedicated thread will be used to handle topic messages.    
+     * Note: it can be enabled only in case when global ordering is disabled.
+     *
+     * @param multiThreadingEnabled set to true to enable multi-threaded message processing, false to disable
+     * @return The updated TopicConfig
+     */
+    public TopicConfig setMultiThreadingEnabled(boolean multiThreadingEnabled) {
+    	if (this.globalOrderingEnabled) {
+    		// log warn/error ?
+            this.multiThreadingEnabled = false;
+    	} else {
+    		this.multiThreadingEnabled = multiThreadingEnabled;
+    	}
+        return this;
+    }
+    
     /**
      * Adds a message listener to this topic (listens for when messages are added or removed).
      *
@@ -171,8 +206,7 @@ public class TopicConfig {
     }
 
     public int hashCode() {
-        return (globalOrderingEnabled ? 1231 : 1237)
-                + 31 * (name != null ? name.hashCode() : 0);
+        return 31 * (name != null ? name.hashCode() : 0);
     }
 
     /**
@@ -188,12 +222,11 @@ public class TopicConfig {
             return false;
         }
         TopicConfig other = (TopicConfig) obj;
-        return
-                (this.name != null ? this.name.equals(other.name) : other.name == null)
-                        && this.globalOrderingEnabled == other.globalOrderingEnabled;
+        return (this.name != null ? this.name.equals(other.name) : other.name == null);
     }
 
     public String toString() {
-        return "TopicConfig [name=" + name + ", globalOrderingEnabled=" + globalOrderingEnabled + "]";
+        return "TopicConfig [name=" + name + ", globalOrderingEnabled=" + globalOrderingEnabled + 
+        		", multiThreadingEnabled=" + multiThreadingEnabled + "]";
     }
 }

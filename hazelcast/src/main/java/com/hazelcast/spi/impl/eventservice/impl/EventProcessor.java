@@ -20,16 +20,14 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.util.executor.StripedRunnable;
 
-public class EventProcessor implements StripedRunnable {
+public class EventProcessor implements Runnable {
 
     private final EventServiceImpl eventService;
-    private final int orderKey;
     private final EventEnvelope envelope;
 
-    public EventProcessor(EventServiceImpl eventService, EventEnvelope envelope, int orderKey) {
+    public EventProcessor(EventServiceImpl eventService, EventEnvelope envelope) {
         this.eventService = eventService;
         this.envelope = envelope;
-        this.orderKey = orderKey;
     }
 
     @Override
@@ -88,11 +86,6 @@ public class EventProcessor implements StripedRunnable {
             event = eventService.nodeEngine.toObject(event);
         }
         return event;
-    }
-
-    @Override
-    public int getKey() {
-        return orderKey;
     }
 
     @Override

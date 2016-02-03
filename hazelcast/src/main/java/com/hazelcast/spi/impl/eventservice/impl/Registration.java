@@ -31,6 +31,7 @@ public class Registration implements EventRegistration {
     private String topic;
     private EventFilter filter;
     private Address subscriber;
+    private boolean multiThreaded;
     private transient boolean localOnly;
     private transient Object listener;
 
@@ -38,7 +39,8 @@ public class Registration implements EventRegistration {
     }
 
     public Registration(String id, String serviceName, String topic,
-                        EventFilter filter, Address subscriber, Object listener, boolean localOnly) {
+                        EventFilter filter, Address subscriber, Object listener, 
+                        boolean localOnly, boolean multiThreaded) {
         this.filter = filter;
         this.id = id;
         this.listener = listener;
@@ -46,6 +48,7 @@ public class Registration implements EventRegistration {
         this.topic = topic;
         this.subscriber = subscriber;
         this.localOnly = localOnly;
+        this.multiThreaded = multiThreaded;
     }
 
     public String getServiceName() {
@@ -74,6 +77,10 @@ public class Registration implements EventRegistration {
     @Override
     public boolean isLocalOnly() {
         return localOnly;
+    }
+
+    public boolean isMultiThreaded() {
+        return multiThreaded;
     }
 
     public Object getListener() {
@@ -107,6 +114,9 @@ public class Registration implements EventRegistration {
         if (subscriber != null ? !subscriber.equals(that.subscriber) : that.subscriber != null) {
             return false;
         }
+        if (multiThreaded != that.multiThreaded) {
+            return false;
+        }
 
         return true;
     }
@@ -119,6 +129,7 @@ public class Registration implements EventRegistration {
         result = 31 * result + (topic != null ? topic.hashCode() : 0);
         result = 31 * result + (filter != null ? filter.hashCode() : 0);
         result = 31 * result + (subscriber != null ? subscriber.hashCode() : 0);
+        result = 31 * result + (multiThreaded ? 1 : 0);
         return result;
     }
 
@@ -129,6 +140,7 @@ public class Registration implements EventRegistration {
         out.writeUTF(topic);
         subscriber.writeData(out);
         out.writeObject(filter);
+        out.writeBoolean(multiThreaded);
     }
 
     @Override
@@ -139,6 +151,7 @@ public class Registration implements EventRegistration {
         subscriber = new Address();
         subscriber.readData(in);
         filter = in.readObject();
+        multiThreaded = in.readBoolean();
     }
 
     @Override
@@ -149,6 +162,7 @@ public class Registration implements EventRegistration {
                 + ", serviceName='" + serviceName + '\''
                 + ", subscriber=" + subscriber
                 + ", listener=" + listener
+                + ", multiThreaded=" + multiThreaded
                 + '}';
     }
 }

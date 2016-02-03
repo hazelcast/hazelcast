@@ -24,7 +24,7 @@ public class RemoteEventProcessor extends EventProcessor implements StripedRunna
     private Packet packet;
 
     public RemoteEventProcessor(EventServiceImpl eventService, Packet packet) {
-        super(eventService, null, packet.getPartitionId());
+        super(eventService, null); //, packet.getPartitionId());
         this.eventService = eventService;
         this.packet = packet;
     }

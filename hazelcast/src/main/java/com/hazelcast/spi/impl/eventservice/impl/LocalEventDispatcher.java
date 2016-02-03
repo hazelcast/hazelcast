@@ -22,21 +22,18 @@ import com.hazelcast.util.executor.TimeoutRunnable;
 
 import java.util.concurrent.TimeUnit;
 
-public final class LocalEventDispatcher implements StripedRunnable, TimeoutRunnable {
+public class LocalEventDispatcher implements TimeoutRunnable {
     private EventServiceImpl eventService;
     private final String serviceName;
     private final Object event;
     private final Object listener;
-    private final int orderKey;
     private final long timeoutMs;
 
-    LocalEventDispatcher(EventServiceImpl eventService, String serviceName, Object event, Object listener,
-                         int orderKey, long timeoutMs) {
+    LocalEventDispatcher(EventServiceImpl eventService, String serviceName, Object event, Object listener, long timeoutMs) {
         this.eventService = eventService;
         this.serviceName = serviceName;
         this.event = event;
         this.listener = listener;
-        this.orderKey = orderKey;
         this.timeoutMs = timeoutMs;
     }
 
@@ -56,8 +53,4 @@ public final class LocalEventDispatcher implements StripedRunnable, TimeoutRunna
         service.dispatchEvent(event, listener);
     }
 
-    @Override
-    public int getKey() {
-        return orderKey;
-    }
 }
