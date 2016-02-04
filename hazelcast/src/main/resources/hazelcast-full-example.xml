@@ -205,10 +205,68 @@ or the Reference Manual at https://hazelcast.org/documentation/.
     * <reuse-address>:
     	    If you set this to true, Hazelcast will use the same port when you restart a member right after you shut it down.
     	    It is optional and its default value is false.
+    * <join>:
+    	    This configuration lets you to choose a discovery mechanism that Hazelcast will use to form a cluster. 
+    	    Hazelcast can find members by multicast, TCP/IP lists and in the clouds supported by jclouds API. The following
+    	    are the elements of <join>:
+    	    - <multicast>:
+		    Set its "enabled" attribute to true for discovery by multicast. It has the following sub-elements
+		    to fine tune the multicast discovery.
+		    - <multicast-group>:
+		    			Specifies multicast group IP address when you want to create clusters within 
+		                        the same network. Its default value is 224.2.2.3.
+		    - <multicast-port>: 
+		    			Specifies the multicast socket port that the Hazelcast member listens to and 
+		                        sends discovery messages through. Its default value is 54327.
+		    - <multicast-time-to-live>: 
+		    			Time-to-live value for multicast packets sent out to control the scope of multicasts.
+		    - <multicast-timeout-seconds>: 
+		    			Only when the members are starting up, this timeout (in seconds) specifies the 
+		    			period during which a member waits for a multicast response from another node. 
+		    			For example, if you set it as 60 seconds, each node will wait for 60 seconds until a 
+		    			leader node is selected. Its default value is 2 seconds.
+		    - <trusted-interfaces>: 
+		    			Includes IP addresses of trusted members. When a node wants to join to the cluster, 
+		    			its join request will be rejected if it is not a trusted member. 
+		    			You can give an IP addresses range using the wildcard (*) on the last digit of 
+		    			IP address (e.g. 192.168.1.* or 192.168.1.100-110).
+    	    - <tcp>:
+		    Set its "enabled" attribute to true for discovery by TCP/IP. It has the following sub-elements
+		    to fine tune the multicast discovery.
+		    - <required-member>:
+		    			IP address of the required member. Cluster will only formed if the member with this IP address is found.
+		    - <member>:
+		    			IP address(es) of one or more well known members. Once members are connected to these well known ones, 
+		    			all member addresses will be communicated with each other. You can also give comma separated IP addresses 
+		    			using the <members> element.
+		    - <connection-timeout-seconds>:
+		    			Defines the connection timeout. This is the maximum amount of time Hazelcast is going to try to connect 
+		    			to a well known member before giving up. Increasing this value is recommended if you have many IPs listed and 
+		    			the members cannot properly build up the cluster. Its default value is 5.
+    	    - <discovery-strategies>:
+		    Set its "enabled" attribute to true for discovery in a jclouds backed cloud. You also need to set the
+		    value of "hazelcast.discovery.enabled" property to true. See the description of <properties> element
+		    to learn how to do this.
+		    You can define multiple discovery strategies using the <discovery-strategy> sub-element and its 
+		    properties. Please refer to 
+		    http://docs.hazelcast.org/docs/3.6/manual/html-single/index.html#discovering-members-with-jclouds
+		    to see the properties you can use.
+		    The following is an example for EC2 cloud.
+		    <discovery-strategies>
+        		<discovery-strategy class="com.hazelcast.jclouds.JCloudsDiscoveryStrategy" enabled="true">
+          		  <properties>
+           		    <property name="provider">aws-ec2</property>
+           		    <property name="identity">AWS_IDENTITY</property>
+           		    <property name="credential">AWS_CREDENTIAL</property>
+          		  </properties>
+        		</discovery-strategy>
+    		    </discovery-strategies>
+    * <interfaces>:
+    	    .
+		    			.
+    	       
 
-    	          
-    	.
-    .
+
 -->        
     
     
@@ -228,15 +286,6 @@ or the Reference Manual at https://hazelcast.org/documentation/.
             <tcp-ip enabled="false">
                 <interface>127.0.0.1</interface>
             </tcp-ip>
-            <aws enabled="false">
-                <access-key>my-access-key</access-key>
-                <secret-key>my-secret-key</secret-key>
-                <region>us-west-1</region>
-                <host-header>ec2.amazonaws.com</host-header>
-                <security-group-name>hazelcast-sg</security-group-name>
-                <tag-key>type</tag-key>
-                <tag-value>hz-nodes</tag-value>
-            </aws>
             <discovery-strategies>
               <discovery-strategy ... />
             </discovery-strategies>
