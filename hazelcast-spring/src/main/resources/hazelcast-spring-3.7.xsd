@@ -801,7 +801,7 @@
                         </xs:element>
                         <xs:element name="topic" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
-                                <xs:sequence>
+                                <xs:all>
                                     <xs:element name="statistics-enabled" type="parameterized-boolean" minOccurs="0" maxOccurs="1"
                                                 default="true">
                                         <xs:annotation>
@@ -812,14 +812,22 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="global-ordering-enabled" type="parameterized-boolean" minOccurs="0"
-                                                maxOccurs="1"
-                                                default="false">
+                                                maxOccurs="1" default="false">
                                         <xs:annotation>
                                             <xs:documentation>
                                                 By default, it is false, meaning there is no global order
                                                 guarantee by default.
                                             </xs:documentation>
                                         </xs:annotation>
+                                    </xs:element>
+                                    <xs:element name="multi-threading-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" 
+                                                default="false">
+                                        <xs:annotation>
+		                            <xs:documentation>
+			                        Default is `false`, meaning only one dedicated thread will handle topic messages. 
+			                        When multi-threading enabled (true) all threads from event thread pool can be used for message handling.
+		                            </xs:documentation>
+		                        </xs:annotation>
                                     </xs:element>
                                     <xs:element name="message-listeners" minOccurs="0" maxOccurs="1">
                                         <xs:complexType>
@@ -829,7 +837,7 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
-                                </xs:sequence>
+                                </xs:all>
                                 <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
                             </xs:complexType>
                         </xs:element>

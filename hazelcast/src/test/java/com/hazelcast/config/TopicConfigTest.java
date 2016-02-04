@@ -70,4 +70,26 @@ public class TopicConfigTest {
         TopicConfig topicConfig = new TopicConfig().setGlobalOrderingEnabled(true);
         assertTrue(topicConfig.isGlobalOrderingEnabled());
     }
+
+    /**
+     * Test method for {@link com.hazelcast.config.TopicConfig#isMultiThreadingEnabled()}.
+     */
+    @Test
+    public void testIsMultiThreadingEnabled() {
+        TopicConfig topicConfig = new TopicConfig();
+        assertFalse(topicConfig.isMultiThreadingEnabled());
+    }
+
+    /**
+     * Test method for {@link com.hazelcast.config.TopicConfig#setMultiThreadingEnabled(boolean)}.
+     */
+    @Test
+    public void testSetMultiThreadingEnabled() {
+        TopicConfig topicConfig = new TopicConfig().setGlobalOrderingEnabled(false);
+        topicConfig.setMultiThreadingEnabled(true);
+        assertTrue(topicConfig.isMultiThreadingEnabled());
+        topicConfig.setGlobalOrderingEnabled(true);
+        // multi-threading must be disabled when global-ordering is enabled
+        assertFalse(topicConfig.isMultiThreadingEnabled());
+    }
 }

@@ -289,6 +289,41 @@ public class EventServiceImpl implements InternalEventService {
         }
         return Collections.emptySet();
     }
+    
+    public Registration getRegistration(EventEnvelope eventEnvelope) {
+    	String serviceName = eventEnvelope.getServiceName();
+        EventServiceSegment segment = getSegment(serviceName, false);
+        if (segment == null) {
+            if (nodeEngine.isRunning()) {
+                logger.warning("No service registration found for " + serviceName);
+            }
+            return null;
+        }
+
+        String id = eventEnvelope.getEventId();
+        Registration registration = (Registration) segment.getRegistrationIdMap().get(id);
+        if (registration == null) {
+            if (nodeEngine.isRunning()) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("No registration found for " + serviceName + " / " + id);
+                }
+            }
+            return null;
+        }
+
+        if (!isLocal(registration)) {
+            logger.severe("Invalid target for  " + registration);
+            return null;
+        }
+
+        if (registration.getListener() == null) {
+            logger.warning("Something seems wrong! Subscriber is local but listener instance is null! -> "
+                    + registration);
+            return null;
+        }
+
+        return registration;
+    }
 
     @Override
     public boolean hasEventRegistration(String serviceName, String topic) {
@@ -297,6 +332,14 @@ public class EventServiceImpl implements InternalEventService {
             return segment.hasRegistration(topic);
         }
         return false;
+    }
+
+    public Object getEvent(EventEnvelope eventEnvelope) {
+        Object event = eventEnvelope.getEvent();
+        if (event instanceof Data) {
+            event = nodeEngine.toObject(event);
+        }
+        return event;
     }
 
     @Override
@@ -315,7 +358,7 @@ public class EventServiceImpl implements InternalEventService {
             executeLocal(serviceName, event, registration, orderKey);
         } else {
             EventEnvelope eventEnvelope = new EventEnvelope(registration.getId(), serviceName, event);
-            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey, ((Registration) registration).isMultiThreaded());
+            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey);
         }
     }
 
@@ -335,7 +378,7 @@ public class EventServiceImpl implements InternalEventService {
                 eventData = serializationService.toData(event);
             }
             EventEnvelope eventEnvelope = new EventEnvelope(registration.getId(), serviceName, eventData);
-            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey, ((Registration) registration).isMultiThreaded());
+            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey);
         }
     }
 
@@ -353,7 +396,7 @@ public class EventServiceImpl implements InternalEventService {
                 continue;
             }
             EventEnvelope eventEnvelope = new EventEnvelope(registration.getId(), serviceName, eventData);
-            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey, ((Registration) registration).isMultiThreaded());
+            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey);
         }
     }
 
@@ -385,7 +428,7 @@ public class EventServiceImpl implements InternalEventService {
         }
     }
 
-    private void sendEvent(Address subscriber, EventEnvelope eventEnvelope, int orderKey, boolean isMultiThreaded) {
+    private void sendEvent(Address subscriber, EventEnvelope eventEnvelope, int orderKey) {
         final String serviceName = eventEnvelope.getServiceName();
         final EventServiceSegment segment = getSegment(serviceName, true);
         boolean sync = segment.incrementPublish() % eventSyncFrequency == 0;
@@ -449,17 +492,22 @@ public class EventServiceImpl implements InternalEventService {
 
     @Override
     public void handle(Packet packet) {
-        try {
-            eventExecutor.execute(new RemoteEventProcessor(this, packet));
-        } catch (RejectedExecutionException e) {
-            rejectedCount.inc();
-
-            if (eventExecutor.isLive()) {
-                Connection conn = packet.getConn();
-                String endpoint = conn.getEndPoint() != null ? conn.getEndPoint().toString() : conn.toString();
-                logFailure("EventQueue overloaded! Failed to process event packet sent from: %s", endpoint);
+        //try {
+            EventEnvelope eventEnvelope = (EventEnvelope) nodeEngine.toObject(packet);
+            Registration registration = getRegistration(eventEnvelope);
+            if (registration != null) {
+            	publishEvent(eventEnvelope.getServiceName(), registration, getEvent(eventEnvelope), packet.getPartitionId());
             }
-        }
+            //eventExecutor.execute(new RemoteEventProcessor(this, packet));
+        //} catch (RejectedExecutionException e) {
+        //    rejectedCount.inc();
+
+        //    if (eventExecutor.isLive()) {
+        //        Connection conn = packet.getConn();
+        //        String endpoint = conn.getEndPoint() != null ? conn.getEndPoint().toString() : conn.toString();
+        //        logFailure("EventQueue overloaded! Failed to process event packet sent from: %s", endpoint);
+        //    }
+        //}
     }
 
     public PostJoinRegistrationOperation getPostJoinOperation() {

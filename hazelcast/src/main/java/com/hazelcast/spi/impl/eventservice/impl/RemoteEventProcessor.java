@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.eventservice.impl;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.util.executor.StripedRunnable;
 
-public class RemoteEventProcessor extends EventProcessor implements StripedRunnable {
+public class RemoteEventProcessor extends EventProcessor { // implements StripedRunnable {
     private EventServiceImpl eventService;
     private Packet packet;
 

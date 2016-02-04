@@ -1638,6 +1638,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 }
             } else if ("statistics-enabled".equals(nodeName)) {
                 tConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
+            } else if ("multi-threading-enabled".equals(nodeName)) {
+                tConfig.setMultiThreadingEnabled(getBooleanValue(getTextContent(n)));
             }
         }
         config.addTopicConfig(tConfig);
