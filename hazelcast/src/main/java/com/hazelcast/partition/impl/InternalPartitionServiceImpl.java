@@ -100,7 +100,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
-import static com.hazelcast.internal.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.partition.impl.InternalPartitionServiceState.MIGRATION_LOCAL;
 import static com.hazelcast.partition.impl.InternalPartitionServiceState.MIGRATION_ON_MASTER;
 import static com.hazelcast.partition.impl.InternalPartitionServiceState.REPLICA_NOT_SYNC;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.cluster.memberselector;
+package com.hazelcast.cluster.memberselector;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;

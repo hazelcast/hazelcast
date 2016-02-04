@@ -14,30 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.cluster.memberselector;
-
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberSelector;
-
 /**
- * Selects a member if one of the sub-selectors succeed
+ * <p>This package contains several {@link com.hazelcast.core.MemberSelector} implementations.<br/>
  */
-class OrMemberSelector implements MemberSelector {
-
-    private final MemberSelector[] selectors;
-
-    public OrMemberSelector(MemberSelector... selectors) {
-        this.selectors = selectors;
-    }
-
-    @Override
-    public boolean select(Member member) {
-        for (MemberSelector selector : selectors) {
-            if (selector.select(member)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-}
+package com.hazelcast.cluster.memberselector;

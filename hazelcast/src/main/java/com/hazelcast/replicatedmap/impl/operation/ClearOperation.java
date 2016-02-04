@@ -16,7 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
-import com.hazelcast.internal.cluster.memberselector.MemberSelectors;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;

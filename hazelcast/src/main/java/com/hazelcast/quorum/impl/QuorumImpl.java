@@ -34,7 +34,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 
 /**
  * {@link QuorumImpl} can be used to notify quorum service for a particular quorum result that originated externally.
