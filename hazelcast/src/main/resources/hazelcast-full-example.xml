@@ -262,7 +262,9 @@ or the Reference Manual at https://hazelcast.org/documentation/.
         		</discovery-strategy>
     		    </discovery-strategies>
     * <interfaces>:
-    	    .
+    	    Specifies which network interfaces Hazelcast should use. You need to set its "enabled" attribute
+    	    to true to be able use your defined interfaces. You can define multiple interfaces
+    	    using its <interface> sub-element. The "enabled" attribute's default value is false.
 		    			.
     	       
 
