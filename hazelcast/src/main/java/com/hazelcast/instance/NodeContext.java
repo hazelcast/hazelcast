@@ -17,7 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.internal.cluster.Joiner;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.internal.connection.ConnectionManager;
 
 import java.nio.channels.ServerSocketChannel;
 

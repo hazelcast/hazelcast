@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.concurrent.semaphore.operations.ReleaseOperation;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SemaphorePermission;
 import com.hazelcast.spi.Operation;

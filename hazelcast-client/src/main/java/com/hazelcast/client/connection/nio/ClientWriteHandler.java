@@ -17,10 +17,10 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.internal.connection.OutboundFrame;
+import com.hazelcast.internal.connection.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.OutboundFrame;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;

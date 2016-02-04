@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 
 /**
  * A listener for the {@link com.hazelcast.client.connection.ClientConnectionManager} to listen to connection heartbeats

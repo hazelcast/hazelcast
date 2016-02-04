@@ -37,8 +37,8 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
-import com.hazelcast.nio.tcp.DefaultSocketChannelWrapperFactory;
-import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
+import com.hazelcast.internal.connection.tcp.DefaultSocketChannelWrapperFactory;
+import com.hazelcast.internal.connection.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.util.ExceptionUtil;
 

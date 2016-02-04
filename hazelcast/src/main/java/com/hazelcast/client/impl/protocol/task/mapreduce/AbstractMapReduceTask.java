@@ -36,7 +36,7 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.operation.KeyValueJobOperation;
 import com.hazelcast.mapreduce.impl.operation.StartProcessingJobOperation;
 import com.hazelcast.mapreduce.impl.task.TrackableJobFuture;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;

@@ -25,7 +25,7 @@ import com.hazelcast.map.impl.nearcache.CleaningNearCacheInvalidation;
 import com.hazelcast.map.impl.nearcache.Invalidation;
 import com.hazelcast.map.impl.nearcache.InvalidationListener;
 import com.hazelcast.map.impl.nearcache.SingleNearCacheInvalidation;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;

@@ -24,9 +24,9 @@ import com.hazelcast.instance.NodeContext;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.instance.NodeExtensionFactory;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
+import com.hazelcast.internal.connection.ConnectionManager;
+import com.hazelcast.internal.connection.NodeIOService;
+import com.hazelcast.internal.connection.tcp.FirewallingMockConnectionManager;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.nio.channels.ServerSocketChannel;

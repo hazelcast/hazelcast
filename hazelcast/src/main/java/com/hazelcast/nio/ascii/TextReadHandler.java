@@ -32,10 +32,10 @@ import com.hazelcast.internal.ascii.rest.HttpDeleteCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpGetCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.tcp.ReadHandler;
-import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.internal.connection.ConnectionType;
+import com.hazelcast.internal.connection.IOService;
+import com.hazelcast.internal.connection.tcp.ReadHandler;
+import com.hazelcast.internal.connection.tcp.TcpIpConnection;
 import com.hazelcast.util.StringUtil;
 
 import java.nio.ByteBuffer;

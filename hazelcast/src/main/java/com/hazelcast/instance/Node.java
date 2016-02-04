@@ -18,15 +18,6 @@ package com.hazelcast.instance;
 
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.internal.cluster.Joiner;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.cluster.impl.ConfigCheck;
-import com.hazelcast.internal.cluster.impl.DiscoveryJoiner;
-import com.hazelcast.internal.cluster.impl.JoinMessage;
-import com.hazelcast.internal.cluster.impl.JoinRequest;
-import com.hazelcast.internal.cluster.impl.MulticastJoiner;
-import com.hazelcast.internal.cluster.impl.MulticastService;
-import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
@@ -41,17 +32,26 @@ import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
+import com.hazelcast.internal.cluster.Joiner;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.ConfigCheck;
+import com.hazelcast.internal.cluster.impl.DiscoveryJoiner;
+import com.hazelcast.internal.cluster.impl.JoinMessage;
+import com.hazelcast.internal.cluster.impl.JoinRequest;
+import com.hazelcast.internal.cluster.impl.MulticastJoiner;
+import com.hazelcast.internal.cluster.impl.MulticastService;
+import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
+import com.hazelcast.internal.connection.ConnectionManager;
+import com.hazelcast.internal.connection.Packet;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
@@ -65,8 +65,8 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.PhoneHome;
+import com.hazelcast.util.UuidUtil;
 
 import java.lang.reflect.Constructor;
 import java.nio.channels.ServerSocketChannel;
@@ -76,8 +76,8 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
 import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
+import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
 import static com.hazelcast.util.UuidUtil.createMemberUuid;
 
 public class Node {
@@ -448,6 +448,7 @@ public class Node {
 
     /**
      * Indicates that node is not shutting down or it has not already shut down
+     *
      * @return true if node is not shutting down or it has not already shut down
      */
     public boolean isRunning() {

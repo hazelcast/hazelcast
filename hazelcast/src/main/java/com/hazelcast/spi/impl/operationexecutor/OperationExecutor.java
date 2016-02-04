@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationexecutor;
 
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.connection.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 

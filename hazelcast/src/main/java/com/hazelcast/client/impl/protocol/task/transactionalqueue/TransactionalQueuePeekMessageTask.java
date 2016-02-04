@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.transaction.TransactionContext;

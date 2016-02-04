@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.spi.Operation;
 
 import java.util.concurrent.TimeUnit;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 
 import java.util.Collection;
 import java.util.Set;

@@ -1,7 +1,6 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
-import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.connection.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
@@ -15,7 +14,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests {@link ClassicOperationExecutor#execute(com.hazelcast.nio.Packet)}
+ * Tests {@link ClassicOperationExecutor#execute(Packet)}
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)

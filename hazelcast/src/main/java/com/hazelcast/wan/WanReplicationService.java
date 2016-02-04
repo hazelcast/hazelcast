@@ -16,7 +16,7 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.connection.Packet;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.PacketHandler;
