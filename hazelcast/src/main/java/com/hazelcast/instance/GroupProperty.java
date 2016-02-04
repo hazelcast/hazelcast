@@ -353,6 +353,7 @@ public enum GroupProperty implements HazelcastProperty {
 
     ENABLE_JMX("hazelcast.jmx", false),
     ENABLE_JMX_DETAILED("hazelcast.jmx.detailed", false),
+    JMX_UPDATE_INTERVAL_SECONDS("hazelcast.jmx.update.interval.seconds", 5, SECONDS),
 
     MC_MAX_VISIBLE_INSTANCE_COUNT("hazelcast.mc.max.visible.instance.count", 100),
     MC_MAX_VISIBLE_SLOW_OPERATION_COUNT("hazelcast.mc.max.visible.slow.operations.count", 10),

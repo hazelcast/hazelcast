@@ -16,11 +16,8 @@
 
 package com.hazelcast.internal.jmx;
 
-import java.lang.management.ManagementFactory;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Map;
+import com.hazelcast.instance.GroupProperty;
+
 import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.AttributeNotFoundException;
@@ -36,6 +33,11 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
+import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Map;
 
 /**
  * Base class for beans registered to JMX by Hazelcast.
@@ -47,14 +49,19 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
     protected HashMap<String, BeanInfo> attributeMap = new HashMap<String, BeanInfo>();
     protected HashMap<String, BeanInfo> operationMap = new HashMap<String, BeanInfo>();
 
+    protected final long updateIntervalSec;
+
     final T managedObject;
     final ManagementService service;
+
     String description;
     ObjectName objectName;
+
 
     protected HazelcastMBean(T managedObject, ManagementService service) {
         this.managedObject = managedObject;
         this.service = service;
+        updateIntervalSec = service.instance.node.groupProperties.getLong(GroupProperty.JMX_UPDATE_INTERVAL_SECONDS);
     }
 
     public void register(HazelcastMBean mbean) {
