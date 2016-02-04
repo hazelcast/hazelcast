@@ -122,8 +122,8 @@ public final class HazelcastInstanceManager {
     /**
      * Creates a new Hazelcast instance.
      *
-     * @param config       the configuration to use; if <code>null</code>, the set of defaults
-     *                     as specified in the XSD for the configuration XML will be used.
+     * @param config the configuration to use; if <code>null</code>, the set of defaults
+     *               as specified in the XSD for the configuration XML will be used.
      * @return the configured {@link HazelcastInstance}
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
@@ -144,9 +144,10 @@ public final class HazelcastInstanceManager {
 
     /**
      * Return real name for the hazelcast instance's instance
+     *
      * @param instanceName -  template of the name
-     * @param config    -   config
-     * @return  -   real hazelcast instance's name
+     * @param config       -   config
+     * @return -   real hazelcast instance's name
      */
     public static String getInstanceName(String instanceName, Config config) {
         String name = instanceName;
@@ -209,7 +210,7 @@ public final class HazelcastInstanceManager {
         return set;
     }
 
-    protected static HazelcastInstanceProxy newHazelcastProxy(HazelcastInstanceImpl hazelcastInstance) {
+    private static HazelcastInstanceProxy newHazelcastProxy(HazelcastInstanceImpl hazelcastInstance) {
         return new HazelcastInstanceProxy(hazelcastInstance);
     }
 
@@ -225,7 +226,9 @@ public final class HazelcastInstanceManager {
             HazelcastInstanceImpl hazelcastInstance =
                     (HazelcastInstanceImpl) INSTANCE_FACTORY.newHazelcastInstance(config, instanceName, nodeContext);
             OutOfMemoryErrorDispatcher.registerServer(hazelcastInstance);
+
             proxy = newHazelcastProxy(hazelcastInstance);
+
             Node node = hazelcastInstance.node;
             boolean firstMember = isFirstMember(node);
             long initialWaitSeconds = node.groupProperties.getSeconds(GroupProperty.INITIAL_WAIT_SECONDS);

@@ -87,6 +87,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -100,9 +101,11 @@ import static com.hazelcast.client.config.ClientProperty.INVOCATION_TIMEOUT_SECO
  * The ProxyManager handles client proxy instantiation and retrieval at start- and runtime by registering
  * corresponding service manager names and their {@link com.hazelcast.client.spi.ClientProxyFactory}s.
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public final class ProxyManager {
-
+    private static final String PROVIDER_ID = "com.hazelcast.client.spi.ClientProxyDescriptorProvider";
     private static final Class[] CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class};
+
 
     private final HazelcastClientInstanceImpl client;
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
@@ -186,6 +189,29 @@ public final class ProxyManager {
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }
+        }
+
+        readProxyDescriptors();
+    }
+
+    private void readProxyDescriptors() {
+        try {
+            ClassLoader classLoader = client.getClientConfig().getClassLoader();
+            Iterator<Class<ClientProxyDescriptorProvider>> iter =
+                    com.hazelcast.util.ServiceLoader.classIterator(PROVIDER_ID, classLoader);
+
+            while (iter.hasNext()) {
+                Class<ClientProxyDescriptorProvider> clazz = iter.next();
+                Constructor<ClientProxyDescriptorProvider> constructor = clazz.getDeclaredConstructor();
+                ClientProxyDescriptorProvider provider = constructor.newInstance();
+                ClientProxyDescriptor[] services = provider.createClientProxyDescriptors();
+
+                for (ClientProxyDescriptor serviceDescriptor : services) {
+                    register(serviceDescriptor.getServiceName(), serviceDescriptor.getClientProxyClass());
+                }
+            }
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
         }
     }
 

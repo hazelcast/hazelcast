@@ -118,7 +118,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         this.nodeEngine = node.nodeEngine;
         this.endpointManager = new ClientEndpointManagerImpl(this, nodeEngine);
         this.executor = newExecutor();
-        this.messageTaskFactory = node.getNodeExtension().createMessageTaskFactory();
+        this.messageTaskFactory = new CompositeMessageTaskFactory(this.nodeEngine);
         this.clientExceptionFactory = initClientExceptionFactory();
 
         ClientHeartbeatMonitor heartBeatMonitor = new ClientHeartbeatMonitor(

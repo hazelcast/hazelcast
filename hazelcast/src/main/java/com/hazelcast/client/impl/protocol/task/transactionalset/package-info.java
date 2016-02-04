@@ -18,6 +18,6 @@
  * <p>Client protocol tasks implementations for Transactional Set</p>
  */
 
-@GenerateMessageTaskFactory package com.hazelcast.client.impl.protocol.task.transactionalset;
+@GenerateMessageTaskFactoryProvider package com.hazelcast.client.impl.protocol.task.transactionalset;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactory;
+import com.hazelcast.annotation.GenerateMessageTaskFactoryProvider;

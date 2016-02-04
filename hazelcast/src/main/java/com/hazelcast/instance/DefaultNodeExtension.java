@@ -18,8 +18,6 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.client.impl.protocol.MessageTaskFactory;
-import com.hazelcast.client.impl.protocol.MessageTaskFactoryImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
@@ -187,11 +185,6 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public WriteHandler createWriteHandler(TcpIpConnection connection, IOService ioService) {
         return new MemberWriteHandler();
-    }
-
-    @Override
-    public MessageTaskFactory createMessageTaskFactory() {
-        return new MessageTaskFactoryImpl(node);
     }
 
     @Override

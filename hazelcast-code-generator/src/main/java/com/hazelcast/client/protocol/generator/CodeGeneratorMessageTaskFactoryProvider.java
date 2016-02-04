@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.protocol.generator;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactory;
+import com.hazelcast.annotation.GenerateMessageTaskFactoryProvider;
 import freemarker.cache.ClassTemplateLoader;
 import freemarker.log.Logger;
 import freemarker.template.Configuration;
@@ -47,14 +47,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@SupportedAnnotationTypes("com.hazelcast.annotation.GenerateMessageTaskFactory")
+@SupportedAnnotationTypes("com.hazelcast.annotation.GenerateMessageTaskFactoryProvider")
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
-public class CodeGeneratorMessageTaskFactory
+public class CodeGeneratorMessageTaskFactoryProvider
         extends AbstractProcessor {
 
     private Filer filer;
     private Messager messager;
-    private Template messageFactoryTemplate;
+    private Template messageFactoryProviderTemplate;
     private Map<String, Map<String, String>> map = new HashMap<String, Map<String, String>>();
 
     private Elements elementUtils;
@@ -73,7 +73,7 @@ public class CodeGeneratorMessageTaskFactory
         Configuration cfg = new Configuration(Configuration.VERSION_2_3_22);
         cfg.setTemplateLoader(new ClassTemplateLoader(getClass(), "/"));
         try {
-            messageFactoryTemplate = cfg.getTemplate("messagefactory-template-java.ftl");
+            messageFactoryProviderTemplate = cfg.getTemplate("messagefactoryprovider-template-java.ftl");
         } catch (IOException e) {
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());
             throw new RuntimeException(e);
@@ -82,7 +82,7 @@ public class CodeGeneratorMessageTaskFactory
 
     @Override
     public boolean process(Set<? extends TypeElement> elements, RoundEnvironment env) {
-        final Set<? extends Element> elementsAnnotatedWith = env.getElementsAnnotatedWith(GenerateMessageTaskFactory.class);
+        final Set<? extends Element> elementsAnnotatedWith = env.getElementsAnnotatedWith(GenerateMessageTaskFactoryProvider.class);
         if (elementsAnnotatedWith == null || elementsAnnotatedWith.size() == 0) {
             return false;
         }
@@ -97,14 +97,14 @@ public class CodeGeneratorMessageTaskFactory
         }
         String className;
         if (isEnterprise) {
-            className = "EnterpriseMessageTaskFactoryImpl";
+            className = "EnterpriseMessageTaskFactoryProvider";
         } else if (isJet) {
-            className = "JetMessageTaskFactoryImpl";
+            className = "JetMessageTaskFactoryProvider";
         } else {
-            className = "MessageTaskFactoryImpl";
+            className = "DefaultMessageTaskFactoryProvider";
         }
         MessageFactoryModel model = new MessageFactoryModel(className, map);
-        final String content = generateFromTemplate(messageFactoryTemplate, model);
+        final String content = generateFromTemplate(messageFactoryProviderTemplate, model);
         saveClass("com.hazelcast.client.impl.protocol", className, content);
         return true;
     }

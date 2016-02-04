@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.config.XmlConfigBuilder;
 
 /***
- * Default implementation for Hazelcast instance factoriy;
+ * Default implementation for Hazelcast instance factory;
  */
 public class DefaultHazelcastInstanceFactory implements HazelcastInstanceFactory {
     protected Config wrapConfig(Config config) {
@@ -32,11 +32,13 @@ public class DefaultHazelcastInstanceFactory implements HazelcastInstanceFactory
         return config;
     }
 
+    @Override
     public HazelcastInstance newHazelcastInstance(Config config, String instanceName,
                                                   NodeContext nodeContext) throws Exception {
         return new HazelcastInstanceImpl(instanceName, wrapConfig(config), nodeContext);
     }
 
+    @Override
     public HazelcastInstance newHazelcastInstance(Config config) throws Exception {
         Config wrappedConfig = wrapConfig(config);
         return newHazelcastInstance(wrappedConfig, wrappedConfig.getInstanceName(), new DefaultNodeContext());

@@ -16,7 +16,6 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.memory.MemoryStats;
@@ -126,11 +125,6 @@ public interface NodeExtension {
      * @return the created WriteHandler
      */
     WriteHandler createWriteHandler(TcpIpConnection connection, IOService ioService);
-
-    /**
-     * Creates factory method that creates server side client message handlers
-     */
-    MessageTaskFactory createMessageTaskFactory();
 
     /**
      * Called on thread start to inject/intercept extension specific logic,
