@@ -2,15 +2,12 @@ package com.hazelcast.internal.monitors;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -49,8 +46,7 @@ public class MetricsPluginTest extends AbstractPerformanceMonitorPluginTest {
     }
 
     @Test
-    @Ignore
-    public void testRunWithProblematicProbe() throws IOException {
+    public void testRunWithProblematicProbe() throws Throwable {
         metricsRegistry.register(this, "broken", MANDATORY, new LongProbeFunction() {
             @Override
             public long get(Object source) throws Exception {
@@ -60,7 +56,12 @@ public class MetricsPluginTest extends AbstractPerformanceMonitorPluginTest {
 
         plugin.run(logWriter);
 
-        assertContains("broken=java.lang.RuntimeException:error");
+        try {
+            assertContains("broken=java.lang.RuntimeException:error");
+        } catch (Throwable t) {
+            System.out.println(metricsRegistry.getNames());
+            throw t;
+        }
     }
 
     @Test
