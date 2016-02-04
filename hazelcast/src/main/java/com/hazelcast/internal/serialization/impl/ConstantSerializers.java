@@ -19,7 +19,6 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
-import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
 
@@ -46,7 +45,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.C
 
 public final class ConstantSerializers {
 
-    public static final class NullSerializer extends SingletonSerializer<Object> {
+    public static final class NullSerializer extends AbstractStreamSerializer<Object> {
 
         @Override
         public int getTypeId() {
@@ -63,7 +62,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class ByteSerializer extends SingletonSerializer<Byte> {
+    public static final class ByteSerializer extends AbstractStreamSerializer<Byte> {
 
         @Override
         public int getTypeId() {
@@ -81,7 +80,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class BooleanSerializer extends SingletonSerializer<Boolean> {
+    public static final class BooleanSerializer extends AbstractStreamSerializer<Boolean> {
 
         @Override
         public int getTypeId() {
@@ -99,7 +98,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class CharSerializer extends SingletonSerializer<Character> {
+    public static final class CharSerializer extends AbstractStreamSerializer<Character> {
 
         @Override
         public int getTypeId() {
@@ -117,7 +116,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class ShortSerializer extends SingletonSerializer<Short> {
+    public static final class ShortSerializer extends AbstractStreamSerializer<Short> {
 
         @Override
         public int getTypeId() {
@@ -135,7 +134,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class IntegerSerializer extends SingletonSerializer<Integer> {
+    public static final class IntegerSerializer extends AbstractStreamSerializer<Integer> {
 
         @Override
         public int getTypeId() {
@@ -153,7 +152,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class LongSerializer extends SingletonSerializer<Long> {
+    public static final class LongSerializer extends AbstractStreamSerializer<Long> {
 
         @Override
         public int getTypeId() {
@@ -171,7 +170,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class FloatSerializer extends SingletonSerializer<Float> {
+    public static final class FloatSerializer extends AbstractStreamSerializer<Float> {
 
         @Override
         public int getTypeId() {
@@ -189,7 +188,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class DoubleSerializer extends SingletonSerializer<Double> {
+    public static final class DoubleSerializer extends AbstractStreamSerializer<Double> {
 
         @Override
         public int getTypeId() {
@@ -207,7 +206,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class StringSerializer extends SingletonSerializer<String> {
+    public static final class StringSerializer extends AbstractStreamSerializer<String> {
 
         @Override
         public int getTypeId() {
@@ -247,7 +246,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class BooleanArraySerializer extends SingletonSerializer<boolean[]> {
+    public static final class BooleanArraySerializer extends AbstractStreamSerializer<boolean[]> {
 
         @Override
         public int getTypeId() {
@@ -265,7 +264,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class CharArraySerializer extends SingletonSerializer<char[]> {
+    public static final class CharArraySerializer extends AbstractStreamSerializer<char[]> {
 
         @Override
         public int getTypeId() {
@@ -283,7 +282,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class ShortArraySerializer extends SingletonSerializer<short[]> {
+    public static final class ShortArraySerializer extends AbstractStreamSerializer<short[]> {
 
         @Override
         public int getTypeId() {
@@ -301,7 +300,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class IntegerArraySerializer extends SingletonSerializer<int[]> {
+    public static final class IntegerArraySerializer extends AbstractStreamSerializer<int[]> {
 
         @Override
         public int getTypeId() {
@@ -319,7 +318,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class LongArraySerializer extends SingletonSerializer<long[]> {
+    public static final class LongArraySerializer extends AbstractStreamSerializer<long[]> {
 
         @Override
         public int getTypeId() {
@@ -337,7 +336,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class FloatArraySerializer extends SingletonSerializer<float[]> {
+    public static final class FloatArraySerializer extends AbstractStreamSerializer<float[]> {
 
         @Override
         public int getTypeId() {
@@ -355,7 +354,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class DoubleArraySerializer extends SingletonSerializer<double[]> {
+    public static final class DoubleArraySerializer extends AbstractStreamSerializer<double[]> {
 
         @Override
         public int getTypeId() {
@@ -373,7 +372,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class StringArraySerializer extends SingletonSerializer<String[]> {
+    public static final class StringArraySerializer extends AbstractStreamSerializer<String[]> {
 
         @Override
         public int getTypeId() {
@@ -388,13 +387,6 @@ public final class ConstantSerializers {
         @Override
         public void write(final ObjectDataOutput out, final String[] obj) throws IOException {
             out.writeUTFArray(obj);
-        }
-    }
-
-    private abstract static class SingletonSerializer<T> implements StreamSerializer<T> {
-
-        @Override
-        public void destroy() {
         }
     }
 

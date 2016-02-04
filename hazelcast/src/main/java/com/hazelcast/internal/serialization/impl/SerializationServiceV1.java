@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.BooleanSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.ByteSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.StringArraySerializer;
+import com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.ExternalizableSerializer;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -70,12 +71,10 @@ import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.C
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.DateSerializer;
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.EnumSerializer;
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.JavaSerializer;
-import static com.hazelcast.internal.serialization.impl.SerializationUtil.createSerializerAdapter;
 
 public class SerializationServiceV1 extends AbstractSerializationService {
 
     private final PortableContextImpl portableContext;
-    private final PortableSerializer portableSerializer;
 
     SerializationServiceV1(InputOutputFactory inputOutputFactory, byte version, int portableVersion, ClassLoader classLoader,
             Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
@@ -91,17 +90,15 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             portableContext.registerClassDefinition(cd);
         }
 
-        dataSerializerAdapter = createSerializerAdapter(new DataSerializer(dataSerializableFactories, classLoader), this);
+        dataSerializer = new DataSerializer(dataSerializableFactories, classLoader);
         portableSerializer = new PortableSerializer(portableContext, loader.getFactories());
-        portableSerializerAdapter = createSerializerAdapter(portableSerializer, this);
-
-        javaSerializerAdapter = createSerializerAdapter(new JavaSerializer(enableSharedObject, enableCompression), this);
-        javaExternalizableAdapter = createSerializerAdapter(
-                new JavaDefaultSerializers.ExternalizableSerializer(enableCompression), this);
+        javaSerializer = new JavaSerializer(enableSharedObject, enableCompression);
+        javaExternalizableSerializer = new ExternalizableSerializer(enableCompression);
         registerConstantSerializers();
         registerJavaTypeSerializers();
     }
 
+    @Override
     public PortableReader createPortableReader(Data data) throws IOException {
         if (!data.isPortable()) {
             throw new IllegalArgumentException("Given data is not Portable! -> " + data.getType());
@@ -110,14 +107,15 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         return portableSerializer.createReader(in);
     }
 
+    @Override
     public PortableContext getPortableContext() {
         return portableContext;
     }
 
     private void registerConstantSerializers() {
-        registerConstant(null, nullSerializerAdapter);
-        registerConstant(DataSerializable.class, dataSerializerAdapter);
-        registerConstant(Portable.class, portableSerializerAdapter);
+        registerConstant(null, nullSerializer);
+        registerConstant(DataSerializable.class, dataSerializer);
+        registerConstant(Portable.class, portableSerializer);
         //primitives and String
         registerConstant(Byte.class, new ByteSerializer());
         registerConstant(Boolean.class, new BooleanSerializer());
@@ -150,8 +148,8 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(ArrayList.class, new ArrayListStreamSerializer());
         registerConstant(LinkedList.class, new LinkedListStreamSerializer());
 
-        safeRegister(Serializable.class, javaSerializerAdapter);
-        safeRegister(Externalizable.class, javaExternalizableAdapter);
+        safeRegister(Serializable.class, javaSerializer);
+        safeRegister(Externalizable.class, javaExternalizableSerializer);
     }
 
     public void registerClassDefinitions(Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors) {

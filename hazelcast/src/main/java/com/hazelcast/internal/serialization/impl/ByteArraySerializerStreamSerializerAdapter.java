@@ -20,16 +20,25 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
-import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
 
-class ByteArraySerializerAdapter implements SerializerAdapter {
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
-    protected final ByteArraySerializer serializer;
+/**
+ * An adaptor that adapts a {@link ByteArraySerializer} to behave like a {@link StreamSerializer}.
+ */
+class ByteArraySerializerStreamSerializerAdapter implements StreamSerializer {
 
-    public ByteArraySerializerAdapter(ByteArraySerializer serializer) {
-        this.serializer = serializer;
+    private final ByteArraySerializer serializer;
+
+    public ByteArraySerializerStreamSerializerAdapter(ByteArraySerializer serializer) {
+        this.serializer = checkNotNull(serializer, "serializer can't be null");
+    }
+
+    public ByteArraySerializer getSerializer() {
+        return serializer;
     }
 
     @SuppressWarnings("unchecked")
@@ -59,13 +68,8 @@ class ByteArraySerializerAdapter implements SerializerAdapter {
     }
 
     @Override
-    public Serializer getImpl() {
-        return serializer;
-    }
-
-    @Override
     public String toString() {
-        return "SerializerAdapter{serializer=" + serializer + '}';
+        return getClass().getSimpleName() + "{serializer=" + serializer + '}';
     }
 
     @Override
@@ -77,17 +81,12 @@ class ByteArraySerializerAdapter implements SerializerAdapter {
             return false;
         }
 
-        ByteArraySerializerAdapter that = (ByteArraySerializerAdapter) o;
-
-        if (serializer != null ? !serializer.equals(that.serializer) : that.serializer != null) {
-            return false;
-        }
-
-        return true;
+        ByteArraySerializerStreamSerializerAdapter that = (ByteArraySerializerStreamSerializerAdapter) o;
+        return that.serializer == this.serializer;
     }
 
     @Override
     public int hashCode() {
-        return serializer != null ? serializer.hashCode() : 0;
+        return serializer.hashCode();
     }
 }

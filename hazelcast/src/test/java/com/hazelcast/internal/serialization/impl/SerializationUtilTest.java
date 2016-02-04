@@ -14,33 +14,39 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.asStreamSerializer;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.getPortableVersion;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.handleException;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.isNullData;
+import static org.junit.Assert.assertTrue;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class SerializationUtilTest {
 
     @Test
     public void testIsNullData() throws Exception {
-        Assert.assertTrue(SerializationUtil.isNullData(new HeapData()));
+        assertTrue(isNullData(new HeapData()));
     }
 
     @Test(expected = Error.class)
     public void testHandleException_OOME() throws Exception {
-        SerializationUtil.handleException(new OutOfMemoryError());
+        handleException(new OutOfMemoryError());
     }
 
     @Test(expected = Error.class)
     public void testHandleException_otherError() throws Exception {
-        SerializationUtil.handleException(new UnknownError());
+        handleException(new UnknownError());
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testCreateSerializerAdapter_invalidSerializer() throws Exception {
-        SerializationUtil.createSerializerAdapter(new InvalidSerializer(), null);
+    public void testAsStreamSerializer_invalidSerializer() throws Exception {
+        asStreamSerializer(new InvalidSerializer());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testGetPortableVersion_negativeVersion() throws Exception {
-        SerializationUtil.getPortableVersion(new DummyVersionedPortable(), 1);
+        getPortableVersion(new DummyVersionedPortable(), 1);
     }
 
     private class InvalidSerializer implements Serializer {

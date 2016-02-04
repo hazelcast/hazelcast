@@ -61,17 +61,14 @@ public final class SerializationUtil {
         throw new HazelcastSerializationException(e);
     }
 
-    static SerializerAdapter createSerializerAdapter(Serializer serializer, SerializationService serializationService) {
-        final SerializerAdapter s;
+    static StreamSerializer asStreamSerializer(Serializer serializer) {
         if (serializer instanceof StreamSerializer) {
-            s = new StreamSerializerAdapter(serializationService, (StreamSerializer) serializer);
+            return (StreamSerializer) serializer;
         } else if (serializer instanceof ByteArraySerializer) {
-            s = new ByteArraySerializerAdapter((ByteArraySerializer) serializer);
+            return new ByteArraySerializerStreamSerializerAdapter((ByteArraySerializer) serializer);
         } else {
-            throw new IllegalArgumentException(
-                    "Serializer must be instance of either " + "StreamSerializer or ByteArraySerializer!");
+            throw new IllegalArgumentException("Serializer must be instance of either StreamSerializer or ByteArraySerializer!");
         }
-        return s;
     }
 
     static void getInterfaces(Class clazz, Set<Class> interfaces) {
