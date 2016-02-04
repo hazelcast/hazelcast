@@ -17,7 +17,7 @@
 
 <!--
 This is a full example hazelcast.xml including all the configuration elements and attributes of Hazelcast.
-To use this, rename it to hazelcast.xml and place in the directory where you start Hazelcast.
+To use this, rename it to hazelcast.xml and place it in the directory where you start Hazelcast.
 Please see the schema to learn how to configure Hazelcast at https://hazelcast.com/schema/config/hazelcast-config-3.6.xsd 
 or the Reference Manual at https://hazelcast.org/documentation/.
 -->
@@ -183,8 +183,29 @@ or the Reference Manual at https://hazelcast.org/documentation/.
     	          By default, Hazelcast will try 100 ports to bind (i.e. the ports between 5701 and 5801). You can choose to 
     	          change the port count in the cases like having large instances on a single machine or willing to have only a few 
     	          ports to be assigned. It is optional and its default value is 100.
-    	- auto-increment:
-    	          
+    	    - auto-increment:
+    	          By default, Hazelcast tries to find a port by automatically incrementing the port numbers. If you 
+    	          don't want this (you want to use a specific port), set this attribute's value to false. If it is 
+    	          set to false, the port-count attribute is ignored. It is optional and its default value is true.
+    	    Examples:
+    	    Below example looks for ports between 5701 and 5721, incrementing the ports starting from 5701.	
+    	    <port port-count="20">5701</port>
+    	    Below example forces Hazelcast to use only the port 5701.
+    	    <port auto-increment="false">5701</port>
+    * <outbound-ports>:
+	    By default, Hazelcast lets the system pick up an ephemeral port during socket bind operation. But security 
+	    policies/firewalls may require you to restrict outbound ports to be used by Hazelcast-enabled applications. 
+	    You can specify these ports using <ports> under the element <outbound-ports>. You can give a single port number,
+	    comma separated multiple ports or port ranges. See the example below.
+	    <outbound-ports>
+               <ports>33000-35000</ports>
+               <ports>37000,37001,37002,37003</ports> 
+               <ports>38000,38500-38600</ports>
+            </outbound-ports>
+    * <reuse-address>:
+    	    If you set this to true, Hazelcast will use the same port when you restart a member right after you shut it down.
+    	    It is optional and its default value is false.
+
     	          
     	.
     .
@@ -192,15 +213,13 @@ or the Reference Manual at https://hazelcast.org/documentation/.
     
     
     
-    <network>
+   <network>
+        <public-address>11.22.33.44:5555</public-address>
         <port auto-increment="true" port-count="100">5701</port>
         <outbound-ports>
-            <!--
-            Allowed port range when connecting to other nodes.
-            0 or * means use system provided port.
-            -->
             <ports>0</ports>
         </outbound-ports>
+        <reuse-address>false</reuse-address>
         <join>
             <multicast enabled="true">
                 <multicast-group>224.2.2.3</multicast-group>
@@ -208,45 +227,29 @@ or the Reference Manual at https://hazelcast.org/documentation/.
             </multicast>
             <tcp-ip enabled="false">
                 <interface>127.0.0.1</interface>
-                <member-list>
-                    <member>127.0.0.1</member>
-                </member-list>
             </tcp-ip>
             <aws enabled="false">
                 <access-key>my-access-key</access-key>
                 <secret-key>my-secret-key</secret-key>
-                <!--optional, default is us-east-1 -->
                 <region>us-west-1</region>
-                <!--optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property -->
                 <host-header>ec2.amazonaws.com</host-header>
-                <!-- optional, only instances belonging to this group will be discovered, default will try all running instances -->
                 <security-group-name>hazelcast-sg</security-group-name>
                 <tag-key>type</tag-key>
                 <tag-value>hz-nodes</tag-value>
             </aws>
             <discovery-strategies>
+              <discovery-strategy ... />
             </discovery-strategies>
         </join>
         <interfaces enabled="false">
             <interface>10.10.1.*</interface>
         </interfaces>
-        <ssl enabled="false"/>
-        <socket-interceptor enabled="false"/>
+        <ssl enabled="false" />
+        <socket-interceptor enabled="false" />
         <symmetric-encryption enabled="false">
-            <!--
-               encryption algorithm such as
-               DES/ECB/PKCS5Padding,
-               PBEWithMD5AndDES,
-               AES/CBC/PKCS5Padding,
-               Blowfish,
-               DESede
-            -->
             <algorithm>PBEWithMD5AndDES</algorithm>
-            <!-- salt value to use when generating the secret key -->
             <salt>thesalt</salt>
-            <!-- pass phrase to use when generating the secret key -->
             <password>thepass</password>
-            <!-- iteration count to use when generating the secret key -->
             <iteration-count>19</iteration-count>
         </symmetric-encryption>
     </network>
