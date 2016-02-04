@@ -73,7 +73,7 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
     /**
      * Instantiates a new AzureDiscoveryStrategy
      *
-     * @param properties the properties
+     * @param properties the discovery strategy properties
      */
     public AzureDiscoveryStrategy(Map<String, Comparable> properties) {
          this.properties = properties;
@@ -141,6 +141,13 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
         // no native resources were allocated so nothing to do here
     }
 
+    /**
+    * Determines if a VM is allocated, or not
+    * 
+    * @param VirtualMachineOperations the vmOperations client
+    * @param VirtualMachine the VirtualMachine to check
+    * @return boolean true if VirtualMachine is on
+    */
     private boolean isVirtualMachineOn(VirtualMachineOperations vmOps, VirtualMachine vm)
         throws IOException, ServiceException, URISyntaxException {
 
@@ -157,12 +164,14 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
 
         return false;
     }
+
     /**
     * Takes a reference URI like:
     * /subscriptions/{SubcriptionId}/resourceGroups/{ResourceGroupName}/...
     * and returns the resource name
     * 
     * @param referenceUri reference uri of resource
+    * @return String the resource name
     */
     private String getResourceNameFromUri(String referenceUri) {
         String[] parts = referenceUri.split("/");
@@ -170,6 +179,15 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
         return name;
     }
 
+    /**
+    * Takes a reference URI like:
+    * /subscriptions/{SubcriptionId}/resourceGroups/{ResourceGroupName}/...
+    * and returns the resource name
+    * 
+    * @param profile the network profile of the target VM
+    * @port the port number of the Hazelcast service
+    * @return DiscoveryNode the Hazelcast DiscoveryNode
+    */
     private DiscoveryNode buildDiscoveredNode(NetworkProfile profile, int port) throws UnknownHostException, IOException, ServiceException, Exception {
         PublicIpAddressOperations pubOps = this.networkManagement.getPublicIpAddressesOperations();
         String rgName = AzureProperties.getOrNull(AzureProperties.GROUP_NAME, properties);

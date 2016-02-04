@@ -29,7 +29,8 @@ import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 import java.util.Map;
 
 /**
- *  Defines the name and default value for JCloud properties
+ *  Defines the properties required by teh Azure SPI and the names used in the configuration
+ *  Includes helpers for retrieving properties
  */
 public final class AzureProperties {
 
@@ -62,10 +63,25 @@ public final class AzureProperties {
     private AzureProperties() {
     }
 
+    /**
+     * Returns a property definition given a string and type converter
+     *
+     * @param key the key to use for the property
+     * @param typeConverter the PropertyTypeConverter to convert the property
+     * @return PropertyDefition the PropertyDefition for they key
+     */
     private static PropertyDefinition property(String key, PropertyTypeConverter typeConverter) {
         return property(key, typeConverter, null);
     }
 
+    /**
+     * Returns a property definition given a string and type converter
+     *
+     * @param key the key to use for the property
+     * @param typeConverter the PropertyTypeConverter to convert the property
+     * @param valueValidator the validator for the key value
+     * @return SimplePropertyDefinition the PropertyDefition for they key
+     */
     private static PropertyDefinition property(String key, PropertyTypeConverter typeConverter,
                                                ValueValidator valueValidator) {
         return new SimplePropertyDefinition(key, true, typeConverter, valueValidator);
@@ -79,6 +95,12 @@ public final class AzureProperties {
      */
     public static class PortValueValidator implements ValueValidator<Integer> {
 
+        /**
+        * Returns a validation
+        *
+        * @param value the integer to validate
+        * @throws ValidationException if value does not fall in valid port number range
+        */
         public void validate(Integer value) throws ValidationException {
             if (value < MIN_PORT) {
                 throw new ValidationException("hz-port number must be greater 0");
@@ -89,6 +111,14 @@ public final class AzureProperties {
         }
     }
 
+    /**
+    * Returns a Comparable type for the specified property defition in the provided
+    * property map
+    *
+    * @param property the PropertyDefition to use provided by {@link AzureProperties}
+    * @param properties the properties map to retrieve the property from
+    * @throws ValidationException if value does not fall in valid port number range
+    */
     public static <T extends Comparable> T getOrNull(PropertyDefinition property, Map<String, Comparable> properties) {
         return getOrDefault(property, properties, null);
     }

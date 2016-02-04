@@ -10,15 +10,21 @@ import com.microsoft.windowsazure.management.configuration.ManagementConfigurati
 import javax.naming.ServiceUnavailableException;
 
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URI;
-
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-
+import javax.naming.ServiceUnavailableException;
 import java.util.concurrent.Future;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutionException;
+import java.io.IOException;
+import java.lang.InterruptedException;
 
+/**
+ * Authentication helper for Azure Active Directory
+ */
 public class AzureAuthHelper {
     /**
      * Use the ResourceManagementService factory helper method to create a client based on the management config.
@@ -42,10 +48,16 @@ public class AzureAuthHelper {
      * the ResourceManagementService and the AAD token required for the HTTP Authorization header.
      * 
      * @return Configuration the generated configuration
-     * @throws Exception all of the exceptions!!
+     * @throws URISyntaxException if the URI used to authenticate is invalid
+     * @throws IOException if we cannot read the response
+     * @throws ServiceUnavailableException when the azure auth service is unavailable
+     * @throws InterruptedException if task is interrupted
+     * @throws ExecutionException
      */
     private static Configuration createConfiguration(String subscriptionId, 
-        String clientId, String tenantId, String clientSecret) throws Exception {
+        String clientId, String tenantId, String clientSecret) throws 
+        URISyntaxException, IOException, ServiceUnavailableException, 
+        ExecutionException, InterruptedException {
         String baseUri = "https://management.core.windows.net";
         return ManagementConfiguration.configure(
                 null,
