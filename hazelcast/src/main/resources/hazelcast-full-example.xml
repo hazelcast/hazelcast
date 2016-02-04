@@ -312,7 +312,7 @@ or the Reference Manual at https://hazelcast.org/documentation/.
         <public-address>11.22.33.44:5555</public-address>
         <port auto-increment="true" port-count="100">5701</port>
         <outbound-ports>
-            <ports>0</ports>
+            <ports>34500</ports>
         </outbound-ports>
         <reuse-address>false</reuse-address>
         <join>
@@ -327,17 +327,12 @@ or the Reference Manual at https://hazelcast.org/documentation/.
               <discovery-strategy ... />
             </discovery-strategies>
         </join>
-        <interfaces enabled="false">
+        <interfaces enabled="true">
             <interface>10.10.1.*</interface>
         </interfaces>
         <ssl enabled="false" />
         <socket-interceptor enabled="false" />
-        <symmetric-encryption enabled="false">
-            <algorithm>PBEWithMD5AndDES</algorithm>
-            <salt>thesalt</salt>
-            <password>thepass</password>
-            <iteration-count>19</iteration-count>
-        </symmetric-encryption>
+        <symmetric-encryption enabled="false" />
     </network>
     
     
