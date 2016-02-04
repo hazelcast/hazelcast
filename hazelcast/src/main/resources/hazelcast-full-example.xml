@@ -134,7 +134,7 @@ or the Reference Manual at https://hazelcast.org/documentation/.
             Size of the queue of events. Its default value is 10000. You might exceed the queue size so that the 
             oldest, not yet replicated, updates might get lost. Therefore, if you have a large rate of put/update/remove operations,
             you should increase <queue-capacity>.
-    * <queueu-full-behavior>: 
+    * <queue-full-behavior>: 
             Policy to be applied when WAN Replication event queues are full. There are two values:
     	    - DISCARD_AFTER_MUTATION: 
     	          The new WAN events generated are dropped and not replicated to the target cluster.
@@ -144,7 +144,7 @@ or the Reference Manual at https://hazelcast.org/documentation/.
     * <acknowledge-type>: 
             Acknowledgment type for each target cluster when the events are replicated. There are two values:
     	    - ACK_ON_RECEIPT: 
-    	          Means that events are received by the target cluster successfuly. It does not guarantee that 
+    	          Means that events are received by the target cluster successfully. It does not guarantee that 
     	          the received event is actually applied, but it is faster.
 	    - ACK_ON_OPERATION_COMPLETE: 
 	          This option guarantees that the event is received by the target cluster and it is applied. 
