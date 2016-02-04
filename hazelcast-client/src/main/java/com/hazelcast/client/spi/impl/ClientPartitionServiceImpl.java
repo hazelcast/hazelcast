@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientPartitionService;
-import com.hazelcast.internal.cluster.memberselector.MemberSelectors;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;

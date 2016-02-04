@@ -17,7 +17,7 @@
 package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.memberselector.MemberSelectors;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.mapreduce.Collator;
@@ -32,7 +32,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.UuidUtil;
 
-import static com.hazelcast.internal.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.executeOperation;
 
 /**

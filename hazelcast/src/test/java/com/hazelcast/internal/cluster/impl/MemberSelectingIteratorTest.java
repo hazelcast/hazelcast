@@ -16,10 +16,10 @@ import java.util.LinkedHashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import static com.hazelcast.internal.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.internal.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
-import static com.hazelcast.internal.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
-import static com.hazelcast.internal.cluster.memberselector.MemberSelectors.and;
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
+import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
+import static com.hazelcast.cluster.memberselector.MemberSelectors.and;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
