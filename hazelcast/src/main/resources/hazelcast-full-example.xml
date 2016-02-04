@@ -264,15 +264,50 @@ or the Reference Manual at https://hazelcast.org/documentation/.
     * <interfaces>:
     	    Specifies which network interfaces Hazelcast should use. You need to set its "enabled" attribute
     	    to true to be able use your defined interfaces. You can define multiple interfaces
-    	    using its <interface> sub-element. The "enabled" attribute's default value is false.
-		    			.
-    	       
-
-
+    	    using its <interface> sub-element. By default, it is disabled.
+    * <ssl>:
+    	    Lets you to configure SSL using the SSL context factory. This feature is available only in Hazelcast
+    	    Enterprise. To be able to use it, the encryption should NOT be enabled and you should first implement the 
+    	    your SSLContextFactory class. Its configuration contains the factory class and SSL properties. By default, it is
+    	    disabled. The following is an example:
+    	    <ssl enabled="true">
+      		<factory-class-name>
+          	    com.hazelcast.nio.ssl.BasicSSLContextFactory
+      		</factory-class-name>
+      		<properties>
+        	    <property name="keyStore">keyStore</property>
+        	    <property name="keyStorePassword">keyStorePassword</property>
+        	    <property name="keyManagerAlgorithm">SunX509</property>
+        	    <property name="trustManagerAlgorithm">SunX509</property>
+        	    <property name="protocol">TLS</property>
+      		</properties>
+    	    </ssl>
+    * <socket-interceptor>:
+    	    Lets you to add custom hooks to join and perform connection procedures (like identity checking using Kerberos, etc.).
+    	    This feature is available only in Hazelcast Enterprise. To be able to use it, you should first implement the 
+    	    MemberSocketInterceptor (for members joining to a cluster) or SocketInterceptor (for clients connecting to a member) class. 
+    	    Its configuration contains the class you implemented and socket interceptor properties. By default, it is
+    	    disabled. The following is an example:
+    	    <socket-interceptor enabled="true">
+      		<class-name>
+      		    com.hazelcast.examples.MySocketInterceptor
+      		</class-name>
+      		<properties>
+        	   <property name="kerberos-host">kerb-host-name</property>
+        	   <property name="kerberos-config-file">kerb.conf</property>
+      		</properties>
+	    </socket-interceptor>
+    * <symmetric-encryption>:
+    	    Lets you to encrypt the entire socket level communication among all Hazelcast members.
+    	    This feature is available only in Hazelcast Enterprise.  Its configuration contains the encryption properties and
+    	    the same configuration must be placed to all members. By default, it is disabled. The following is an example:
+    	    <symmetric-encryption enabled="true">
+	       <algorithm>PBEWithMD5AndDES</algorithm>
+	       <salt>thesalt</salt>
+	       <password>thepass</password>
+	       <iteration-count>19</iteration-count>
+	    </symmetric-encryption>
 -->        
-    
-    
-    
    <network>
         <public-address>11.22.33.44:5555</public-address>
         <port auto-increment="true" port-count="100">5701</port>
@@ -304,6 +339,9 @@ or the Reference Manual at https://hazelcast.org/documentation/.
             <iteration-count>19</iteration-count>
         </symmetric-encryption>
     </network>
+    
+    
+    
     <partition-group enabled="false"/>
     <executor-service name="default">
         <pool-size>16</pool-size>
