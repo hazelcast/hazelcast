@@ -296,6 +296,34 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     }
 
     @Override
+    public Future<Void> setAsync(final K key, final V value) {
+        return setAsync(key, value, -1L, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public Future<Void> setAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
+        Data keyData = toData(key);
+        Data valueData = toData(value);
+
+        return setAsyncInternal(ttl, timeunit, keyData, valueData);
+    }
+
+    protected Future<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
+        MapSetRequest request = new MapSetRequest(name, keyData, valueData,
+                ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
+        request.setAsAsync();
+        try {
+            ICompletableFuture<Void> future = invokeOnKeyOwner(request, keyData);
+            return new DelegatingFuture<Void>(future, getContext().getSerializationService());
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    @Override
     public Future<V> removeAsync(final K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 

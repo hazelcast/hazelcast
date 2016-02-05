@@ -24,6 +24,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
@@ -42,6 +43,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -317,6 +319,84 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
 
         assertEquals(oldValue, result.get());
         sleepSeconds(2);
+        assertEquals(null, map.get(key));
+    }
+
+    @Test
+    public void testSetAsync() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "Key";
+        String value = "Val";
+
+        Future<Void> result = map.setAsync(key, value);
+
+        result.get();
+        assertEquals(value, map.get(key));
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testSetAsync_withKeyNull() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String val = "Val";
+
+        map.setAsync(null, val);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testSetAsync_withValueNull() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "key";
+
+        map.setAsync(key, null);
+    }
+
+    @Test
+    public void testSetAsyncTTL() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "Key";
+        String value = "Val";
+
+        Future<Void> result = map.setAsync(key, value, 5, TimeUnit.MINUTES);
+
+        result.get();
+        assertEquals(value, map.get(key));
+    }
+
+    @Test
+    public void testSetAsyncTTL_afterExpire() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "Key";
+        String value = "Val";
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryEvictedListener<String, String>() {
+            public void entryEvicted(EntryEvent<String, String> event) {
+                latch.countDown();
+            }
+        }, true);
+
+        Future<Void> result = map.setAsync(key, value, 1, TimeUnit.SECONDS);
+        result.get();
+        assertOpenEventually(latch);
+        assertEquals(null, map.get(key));
+    }
+
+    @Test
+    public void testSetAsyncTTL_afterExpireWhenKeyExists() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "Key";
+        String oldValue = "oldValue";
+        String newValue = "Val";
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryEvictedListener<String, String>() {
+            public void entryEvicted(EntryEvent<String, String> event) {
+                latch.countDown();
+            }
+        }, true);
+
+        map.set(key, oldValue);
+        Future<Void> result = map.setAsync(key, newValue, 1, TimeUnit.SECONDS);
+        result.get();
+        assertOpenEventually(latch);
         assertEquals(null, map.get(key));
     }
 

@@ -277,18 +277,34 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public Future putAsync(K key, V value) {
+    public Future<V> putAsync(K key, V value) {
         return putAsync(key, value, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override
-    public ICompletableFuture putAsync(K key, V value, long ttl, TimeUnit timeunit) {
+    public ICompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit timeunit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data k = toData(key, partitionStrategy);
         Data v = toData(value);
         return new DelegatingFuture<V>(putAsyncInternal(k, v, ttl, timeunit),
+                getNodeEngine().getSerializationService());
+    }
+
+    @Override
+    public Future<Void> setAsync(K key, V value) {
+        return setAsync(key, value, -1, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
+        Data k = toData(key, partitionStrategy);
+        Data v = toData(value);
+        return new DelegatingFuture<Void>(setAsyncInternal(k, v, ttl, timeunit),
                 getNodeEngine().getSerializationService());
     }
 

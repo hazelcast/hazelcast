@@ -350,6 +350,19 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
+    protected ICompletableFuture<Data> setAsyncInternal(final Data key, final Data value,
+                                                        final long ttl, final TimeUnit timeunit) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        MapOperation operation = operationProvider.createSetOperation(name, key, value, getTimeInMillis(ttl, timeunit));
+        operation.setThreadId(ThreadUtil.getThreadId());
+        try {
+            return operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
     protected boolean replaceInternal(final Data key, final Data expect, final Data update) {
         MapOperation operation = operationProvider.createReplaceIfSameOperation(name, key, expect, update);
         return (Boolean) invokeOperation(key, operation);
