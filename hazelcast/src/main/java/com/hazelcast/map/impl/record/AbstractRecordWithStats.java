@@ -18,6 +18,9 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
 
+import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+
+
 /**
  * @param <V>
  */
@@ -56,9 +59,8 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
 
     @Override
     public long getCost() {
-        final long cost = super.getCost();
-        // reference cost of RecordStatistics object.
-        final int objectReferenceInBytes = 4;
-        return cost + objectReferenceInBytes + recordStatistics.size();
+        return super.getCost()
+                // recordStatistics ref. cost + recordStatistics cost
+                + REFERENCE_COST_IN_BYTES + recordStatistics.size();
     }
 }

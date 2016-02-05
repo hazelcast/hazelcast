@@ -462,6 +462,7 @@
     <suppress checks="" files="com.hazelcast.util.Base64"/>
 
     <suppress checks="" files="com.hazelcast.util.DebugUtil"/>
+    <suppress checks="" files="com.hazelcast.util.JVMUtil"/>
 
     <suppress checks="IllegalImport" files="com.hazelcast.util.counters.SwCounter"/>
     <suppress checks="InnerAssignment" files="com.hazelcast.util.counters.SwCounter"/>

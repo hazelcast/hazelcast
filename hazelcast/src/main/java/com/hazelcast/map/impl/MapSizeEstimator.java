@@ -18,6 +18,10 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.map.impl.record.Record;
 
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.util.JVMUtil.OBJECT_HEADER_IN_BYTES;
+import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+
 /**
  * Size estimator for map.
  *
@@ -43,13 +47,22 @@ class MapSizeEstimator<T extends Record> implements SizeEstimator<T> {
         if (record == null) {
             return 0L;
         }
-        final long cost = record.getCost();
+        long cost = record.getCost();
         if (cost == 0L) {
             return cost;
         }
-        final int numberOfIntegers = 4;
-        // entry size in CHM
-        long refSize = numberOfIntegers * ((Integer.SIZE / Byte.SIZE));
-        return refSize + cost;
+
+        return cost
+                // key header
+                + OBJECT_HEADER_IN_BYTES
+                // value header
+                + OBJECT_HEADER_IN_BYTES
+
+                // CHM entry costs
+                + INT_SIZE_IN_BYTES + (3 * REFERENCE_COST_IN_BYTES)
+                // CHM entry header
+                + OBJECT_HEADER_IN_BYTES;
+
+
     }
 }

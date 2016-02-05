@@ -21,6 +21,9 @@ import com.hazelcast.util.HashUtil;
 
 import java.util.Arrays;
 
+import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+
+
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
 public final class DefaultData implements Data {
 
@@ -84,9 +87,7 @@ public final class DefaultData implements Data {
 
     @Override
     public int getHeapCost() {
-        // reference (assuming compressed oops)
-        int objectRef = Bits.INT_SIZE_IN_BYTES;
-        return objectRef + (data != null ? ARRAY_HEADER_SIZE_IN_BYTES + data.length : 0);
+        return REFERENCE_COST_IN_BYTES + (data != null ? ARRAY_HEADER_SIZE_IN_BYTES + data.length : 0);
     }
 
     @Override

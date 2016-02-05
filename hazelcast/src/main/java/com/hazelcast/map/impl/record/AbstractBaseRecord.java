@@ -16,11 +16,15 @@
 
 package com.hazelcast.map.impl.record;
 
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+
 /**
  * @param <V>
  */
 @SuppressWarnings("VolatileLongOrDoubleField")
 abstract class AbstractBaseRecord<V> implements Record<V> {
+
+    private static final int NUMBER_OF_LONG_FIELDS = 6;
 
     protected long version;
     /**
@@ -32,7 +36,7 @@ abstract class AbstractBaseRecord<V> implements Record<V> {
     protected long lastUpdateTime;
     protected long creationTime;
 
-    public AbstractBaseRecord() {
+    AbstractBaseRecord() {
         version = 0L;
     }
 
@@ -96,8 +100,7 @@ abstract class AbstractBaseRecord<V> implements Record<V> {
 
     @Override
     public long getCost() {
-        final int numberOfLongs = 6;
-        return numberOfLongs * (Long.SIZE / Byte.SIZE);
+        return NUMBER_OF_LONG_FIELDS * LONG_SIZE_IN_BYTES;
     }
 
 }
