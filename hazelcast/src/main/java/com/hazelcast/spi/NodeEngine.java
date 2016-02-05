@@ -220,6 +220,8 @@ public interface NodeEngine {
      */
     <T> T toObject(Object object);
 
+    <T> T toObject(Data object);
+
     /**
      * Checks if the HazelcastInstance that this {@link NodeEngine} belongs to is still active.
      * <p/>

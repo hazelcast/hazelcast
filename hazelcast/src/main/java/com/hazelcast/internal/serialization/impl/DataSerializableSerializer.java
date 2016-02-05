@@ -47,7 +47,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.C
  * Due to the operation responding on deserialization errors this class
  * has a dependency to {@link com.hazelcast.nio.IOUtil#extractOperationCallId(com.hazelcast.nio.serialization.Data,
  * com.hazelcast.internal.serialization.SerializationService)}.
- * If the way the DataSerializer serializes values is changed the extract method needs to be changed too!
+ * If the way the DataSerializableSerializer serializes values is changed the extract method needs to be changed too!
  */
 final class DataSerializableSerializer implements StreamSerializer<DataSerializable> {
 

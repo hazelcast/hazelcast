@@ -373,7 +373,7 @@ class OperationRunnerImpl extends OperationRunner {
         Connection connection = packet.getConn();
         Address caller = connection.getEndPoint();
         try {
-            Object object = nodeEngine.toObject(packet);
+            Object object = nodeEngine.getSerializationService().toObject(packet);
             Operation op = (Operation) object;
             op.setNodeEngine(nodeEngine);
             setCallerAddress(op, caller);

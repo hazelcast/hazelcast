@@ -21,15 +21,22 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
 
-class ByteArraySerializerAdapter implements SerializerAdapter {
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
+/**
+ * The {@link ByteArraySerializerStreamSerializerAdapter} adapts a {@link ByteArraySerializer} to behave like a
+ * {@link StreamSerializer}.
+ */
+final class ByteArraySerializerStreamSerializerAdapter implements StreamSerializer {
 
     protected final ByteArraySerializer serializer;
 
-    public ByteArraySerializerAdapter(ByteArraySerializer serializer) {
-        this.serializer = serializer;
+    public ByteArraySerializerStreamSerializerAdapter(ByteArraySerializer serializer) {
+        this.serializer = checkNotNull(serializer, "serializer can't be null");
     }
 
     @SuppressWarnings("unchecked")
@@ -58,14 +65,13 @@ class ByteArraySerializerAdapter implements SerializerAdapter {
         serializer.destroy();
     }
 
-    @Override
     public Serializer getImpl() {
         return serializer;
     }
 
     @Override
     public String toString() {
-        return "SerializerAdapter{serializer=" + serializer + '}';
+        return "StreamSerializer{serializer=" + serializer + '}';
     }
 
     @Override
@@ -73,13 +79,14 @@ class ByteArraySerializerAdapter implements SerializerAdapter {
         if (this == o) {
             return true;
         }
+
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
 
-        ByteArraySerializerAdapter that = (ByteArraySerializerAdapter) o;
+        ByteArraySerializerStreamSerializerAdapter that = (ByteArraySerializerStreamSerializerAdapter) o;
 
-        if (serializer != null ? !serializer.equals(that.serializer) : that.serializer != null) {
+        if (!serializer.equals(that.serializer)) {
             return false;
         }
 
@@ -88,6 +95,6 @@ class ByteArraySerializerAdapter implements SerializerAdapter {
 
     @Override
     public int hashCode() {
-        return serializer != null ? serializer.hashCode() : 0;
+        return serializer.hashCode();
     }
 }

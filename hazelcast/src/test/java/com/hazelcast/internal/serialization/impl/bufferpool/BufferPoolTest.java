@@ -56,37 +56,37 @@ public class BufferPoolTest extends HazelcastTestSupport {
         assertNotSame(found1, found2);
     }
 
-    @Test
-    public void returnOutputBuffer_whenNull() {
-        bufferPool.returnOutputBuffer(null);
-        assertEquals(0, bufferPool.outputQueue.size());
-    }
+//    @Test
+//    public void returnOutputBuffer_whenNull() {
+//        bufferPool.returnOutputBuffer(null);
+//        assertEquals(0, bufferPool.outputQueue.size());
+//    }
+//
+//    @Test
+//    public void returnOutputBuffer() {
+//        BufferObjectDataOutput out = mock(BufferObjectDataOutput.class);
+//
+//        bufferPool.returnOutputBuffer(out);
+//
+//        // lets see if the item was pushed on the queue
+//        assertEquals(1, bufferPool.outputQueue.size());
+//        // we need to make sure clear was called
+//        verify(out, times(1)).clear();
+//    }
 
-    @Test
-    public void returnOutputBuffer() {
-        BufferObjectDataOutput out = mock(BufferObjectDataOutput.class);
-
-        bufferPool.returnOutputBuffer(out);
-
-        // lets see if the item was pushed on the queue
-        assertEquals(1, bufferPool.outputQueue.size());
-        // we need to make sure clear was called
-        verify(out, times(1)).clear();
-    }
-
-    @Test
-    public void returnOutputBuffer_whenOverflowing() throws IOException {
-        for (int k = 0; k < BufferPoolImpl.MAX_POOLED_ITEMS; k++) {
-            bufferPool.returnOutputBuffer(mock(BufferObjectDataOutput.class));
-        }
-        BufferObjectDataOutput out = mock(BufferObjectDataOutput.class);
-
-        bufferPool.returnOutputBuffer(out);
-
-        assertEquals(BufferPoolImpl.MAX_POOLED_ITEMS, bufferPool.outputQueue.size());
-        // we need to make sure that the out was closed since we are not going to pool it.
-        verify(out, times(1)).close();
-    }
+//    @Test
+//    public void returnOutputBuffer_whenOverflowing() throws IOException {
+//        for (int k = 0; k < BufferPoolImpl.MAX_POOLED_ITEMS; k++) {
+//            bufferPool.returnOutputBuffer(mock(BufferObjectDataOutput.class));
+//        }
+//        BufferObjectDataOutput out = mock(BufferObjectDataOutput.class);
+//
+//        bufferPool.returnOutputBuffer(out);
+//
+//        assertEquals(BufferPoolImpl.MAX_POOLED_ITEMS, bufferPool.outputQueue.size());
+//        // we need to make sure that the out was closed since we are not going to pool it.
+//        verify(out, times(1)).close();
+//    }
 
     // ======================= in ==========================================
 
@@ -109,35 +109,35 @@ public class BufferPoolTest extends HazelcastTestSupport {
         assertNotSame(found1, found2);
     }
 
-    @Test
-    public void returnInputBuffer() {
-        BufferObjectDataInput in = mock(BufferObjectDataInput.class);
-
-        bufferPool.returnInputBuffer(in);
-
-        // lets see if the item was pushed on the queue
-        assertEquals(1, bufferPool.inputQueue.size());
-        // we need to make sure clear was called
-        verify(in, times(1)).clear();
-    }
-
-    @Test
-    public void returnInputBuffer_whenOverflowing() throws IOException {
-        for (int k = 0; k < BufferPoolImpl.MAX_POOLED_ITEMS; k++) {
-            bufferPool.returnInputBuffer(mock(BufferObjectDataInput.class));
-        }
-        BufferObjectDataInput in = mock(BufferObjectDataInput.class);
-
-        bufferPool.returnInputBuffer(in);
-
-        assertEquals(BufferPoolImpl.MAX_POOLED_ITEMS, bufferPool.inputQueue.size());
-        // we need to make sure that the in was closed since we are not going to pool it.
-        verify(in, times(1)).close();
-    }
-
-    @Test
-    public void returnInputBuffer_whenNull() {
-        bufferPool.returnInputBuffer(null);
-        assertEquals(0, bufferPool.inputQueue.size());
-    }
+//    @Test
+//    public void returnInputBuffer() {
+//        BufferObjectDataInput in = mock(BufferObjectDataInput.class);
+//
+//        bufferPool.returnInputBuffer(in);
+//
+//        // lets see if the item was pushed on the queue
+//        assertEquals(1, bufferPool.inputQueue.size());
+//        // we need to make sure clear was called
+//        verify(in, times(1)).clear();
+//    }
+//
+//    @Test
+//    public void returnInputBuffer_whenOverflowing() throws IOException {
+//        for (int k = 0; k < BufferPoolImpl.MAX_POOLED_ITEMS; k++) {
+//            bufferPool.returnInputBuffer(mock(BufferObjectDataInput.class));
+//        }
+//        BufferObjectDataInput in = mock(BufferObjectDataInput.class);
+//
+//        bufferPool.returnInputBuffer(in);
+//
+//        assertEquals(BufferPoolImpl.MAX_POOLED_ITEMS, bufferPool.inputQueue.size());
+//        // we need to make sure that the in was closed since we are not going to pool it.
+//        verify(in, times(1)).close();
+//    }
+//
+//    @Test
+//    public void returnInputBuffer_whenNull() {
+//        bufferPool.returnInputBuffer(null);
+//        assertEquals(0, bufferPool.inputQueue.size());
+//    }
 }

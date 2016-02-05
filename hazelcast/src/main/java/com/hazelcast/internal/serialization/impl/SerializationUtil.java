@@ -19,12 +19,9 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.Serializer;
-import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.serialization.VersionedPortable;
 
 import java.io.InputStream;
@@ -59,19 +56,6 @@ public final class SerializationUtil {
             throw (HazelcastSerializationException) e;
         }
         throw new HazelcastSerializationException(e);
-    }
-
-    static SerializerAdapter createSerializerAdapter(Serializer serializer, SerializationService serializationService) {
-        final SerializerAdapter s;
-        if (serializer instanceof StreamSerializer) {
-            s = new StreamSerializerAdapter(serializationService, (StreamSerializer) serializer);
-        } else if (serializer instanceof ByteArraySerializer) {
-            s = new ByteArraySerializerAdapter((ByteArraySerializer) serializer);
-        } else {
-            throw new IllegalArgumentException(
-                    "Serializer must be instance of either " + "StreamSerializer or ByteArraySerializer!");
-        }
-        return s;
     }
 
     static void getInterfaces(Class clazz, Set<Class> interfaces) {
