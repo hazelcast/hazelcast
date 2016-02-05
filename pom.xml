@@ -34,7 +34,6 @@
         <module>hazelcast-hibernate</module>
         <module>hazelcast-spring</module>
         <module>hazelcast-cloud</module>
-        <module>hazelcast-ra</module>
         <module>hazelcast-build-utils</module>
         <module>hazelcast-code-generator</module>
     </modules>
