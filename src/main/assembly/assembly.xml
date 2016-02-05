@@ -35,13 +35,6 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>hazelcast-wm/target/</directory>
-            <outputDirectory>/lib/</outputDirectory>
-            <includes>
-                <include>hazelcast-wm-${project.version}.jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>hazelcast-hibernate/hazelcast-hibernate3/target</directory>
             <outputDirectory>/lib/</outputDirectory>
             <includes>
@@ -69,7 +62,6 @@
                 <include>hazelcast-cloud-${project.version}.jar</include>
             </includes>
         </fileSet>
-
         <fileSet>
             <directory>hazelcast-client/target</directory>
             <outputDirectory>/lib/</outputDirectory>
