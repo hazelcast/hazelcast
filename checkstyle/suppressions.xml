@@ -160,9 +160,6 @@
     <suppress checks="CyclomaticComplexity|NPathComplexity|MethodCount" files="com/hazelcast/monitor/impl/MemberStateImpl"/>
     <suppress checks="CyclomaticComplexity|NPathComplexity" files="com/hazelcast/monitor/TimedMemberState"/>
 
-    <!-- JCA -->
-    <suppress checks="MethodCount|ClassFanOutComplexityCheck" files="HazelcastConnectionImpl"/>
-
     <!-- Query -->
     <suppress checks="MethodLength|CyclomaticComplexity|NPathComplexity" files="com/hazelcast/query/SqlPredicate"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/query/impl/TypeConverters"/>
@@ -365,10 +362,6 @@
     <suppress checks="MethodCount|ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/MapServiceContextImpl"/>
     <suppress checks="MethodCount" files="com/hazelcast/map/impl/MapServiceContext"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/tx/TransactionalMapProxySupport"/>
-
-    <!-- Web -->
-    <suppress checks="JavadocMethod" files="com/hazelcast/web/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/web/"/>
 
     <!-- Util -->
     <!-- written by Doug Lea  -->
