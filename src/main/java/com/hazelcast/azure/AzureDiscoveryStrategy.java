@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/*
+ * Additional Modifications by Microsoft Corporation
+ */
 package com.hazelcast.azure;
 
 import com.hazelcast.config.InvalidConfigurationException;
