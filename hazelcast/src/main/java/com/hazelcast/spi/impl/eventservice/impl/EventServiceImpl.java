@@ -407,11 +407,11 @@ public class EventServiceImpl implements InternalEventService {
                 if (reg.getListener() != null) {
                 	Runnable dispatcher;
                 	if (reg.isMultiThreaded()) {
-                		dispatcher = new StripedEventDispatcher(this, serviceName, event, reg.getListener(), 
-                				eventQueueTimeoutMs, orderKey);
-                	} else {
                 		dispatcher = new LocalEventDispatcher(this, serviceName, event, reg.getListener(), 
                 				eventQueueTimeoutMs);
+                	} else {
+                		dispatcher = new StripedEventDispatcher(this, serviceName, event, reg.getListener(), 
+                				eventQueueTimeoutMs, orderKey);
                 	}
                     eventExecutor.execute(dispatcher);
                 } else {
@@ -499,6 +499,7 @@ public class EventServiceImpl implements InternalEventService {
             	publishEvent(eventEnvelope.getServiceName(), registration, getEvent(eventEnvelope), packet.getPartitionId());
             }
             //eventExecutor.execute(new RemoteEventProcessor(this, packet));
+        //  no need for exception handling any more. The same is done in publishEvent processing.. 
         //} catch (RejectedExecutionException e) {
         //    rejectedCount.inc();
 
