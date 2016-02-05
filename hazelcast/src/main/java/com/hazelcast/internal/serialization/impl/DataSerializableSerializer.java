@@ -38,19 +38,25 @@ import java.util.Map;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DATA_SERIALIZABLE;
 
 /**
- * This class is the default serializer for all types that are serialized using Hazelcast
- * internal methods. Due to the operation responding on deserialization errors this class
+ * The {@link StreamSerializer} that handles:
+ * <ol>
+ *     <li>{@link DataSerializable}</li>
+ *     <li>{@link IdentifiedDataSerializable}</li>
+ * </ol>
+ *
+ * Due to the operation responding on deserialization errors this class
  * has a dependency to {@link com.hazelcast.nio.IOUtil#extractOperationCallId(com.hazelcast.nio.serialization.Data,
  * com.hazelcast.internal.serialization.SerializationService)}.
  * If the way the DataSerializer serializes values is changed the extract method needs to be changed too!
  */
-final class DataSerializer implements StreamSerializer<DataSerializable> {
+final class DataSerializableSerializer implements StreamSerializer<DataSerializable> {
 
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
 
     private final Int2ObjectHashMap<DataSerializableFactory> factories = new Int2ObjectHashMap<DataSerializableFactory>();
 
-    DataSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories, ClassLoader classLoader) {
+    DataSerializableSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
+                               ClassLoader classLoader) {
         try {
             final Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader);
             while (hooks.hasNext()) {
@@ -121,18 +127,22 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
             ds.readData(in);
             return ds;
         } catch (Exception e) {
-            if (e instanceof IOException) {
-                throw (IOException) e;
-            }
-            if (e instanceof HazelcastSerializationException) {
-                throw (HazelcastSerializationException) e;
-            }
-            throw new HazelcastSerializationException("Problem while reading DataSerializable, namespace: "
-                    + factoryId
-                    + ", id: " + id
-                    + ", class: '" + className + "'"
-                    + ", exception: " + e.getMessage(), e);
+            throw rethrowReadException(id, factoryId, className, e);
         }
+    }
+
+    private IOException rethrowReadException(int id, int factoryId, String className, Exception e) throws IOException {
+        if (e instanceof IOException) {
+            throw (IOException) e;
+        }
+        if (e instanceof HazelcastSerializationException) {
+            throw (HazelcastSerializationException) e;
+        }
+        throw new HazelcastSerializationException("Problem while reading DataSerializable, namespace: "
+                + factoryId
+                + ", id: " + id
+                + ", class: '" + className + "'"
+                + ", exception: " + e.getMessage(), e);
     }
 
     @Override
