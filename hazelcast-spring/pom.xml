@@ -158,6 +158,12 @@
                     <version>${org.springframework.version}</version>
                     <scope>provided</scope>
                 </dependency>
+                <dependency>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-tx</artifactId>
+                    <version>${org.springframework.version}</version>
+                    <scope>provided</scope>
+                </dependency>
 
                 <!--TEST DEPENDENCIES-->
                 <dependency>
@@ -176,12 +182,6 @@
                 <dependency>
                     <groupId>org.springframework</groupId>
                     <artifactId>spring-test</artifactId>
-                    <version>${org.springframework.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-tx</artifactId>
                     <version>${org.springframework.version}</version>
                     <scope>test</scope>
                 </dependency>
@@ -226,6 +226,12 @@
                     <version>${org.springframework.version}</version>
                     <scope>provided</scope>
                 </dependency>
+                <dependency>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-tx</artifactId>
+                    <version>${org.springframework.version}</version>
+                    <scope>provided</scope>
+                </dependency>
 
                 <!--TEST DEPENDENCIES-->
                 <dependency>
@@ -250,12 +256,6 @@
                 <dependency>
                     <groupId>org.springframework</groupId>
                     <artifactId>spring-test</artifactId>
-                    <version>${org.springframework.version}</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-tx</artifactId>
                     <version>${org.springframework.version}</version>
                     <scope>test</scope>
                 </dependency>
