@@ -22,6 +22,7 @@ import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -89,7 +90,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
      * @param found
      * @return true if compatible. False if part of another group.
      * @throws ConfigMismatchException if the configuration is not compatible.
-     * An exception is thrown so we can pass a nice message.
+     *                                 An exception is thrown so we can pass a nice message.
      */
     public boolean isCompatible(ConfigCheck found) {
         // check group-properties.
@@ -105,7 +106,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         return true;
     }
 
-    public boolean isSameGroup(ConfigCheck found){
+    public boolean isSameGroup(ConfigCheck found) {
         if (!equals(groupName, found.groupName)) {
             return false;
         }
@@ -122,8 +123,8 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         String expectedValidationToken = properties.get(APPLICATION_VALIDATION_TOKEN.getName());
         String foundValidationToken = found.properties.get(APPLICATION_VALIDATION_TOKEN.getName());
         if (!equals(expectedValidationToken, foundValidationToken)) {
-            throw new ConfigMismatchException("Incompatible '" + APPLICATION_VALIDATION_TOKEN + "'! expected: " +
-                    expectedValidationToken + ", found: " + foundValidationToken);
+            throw new ConfigMismatchException("Incompatible '" + APPLICATION_VALIDATION_TOKEN + "'! expected: "
+                    + expectedValidationToken + ", found: " + foundValidationToken);
         }
     }
 
@@ -215,6 +216,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
             try {
                 memberGroupType = PartitionGroupConfig.MemberGroupType.valueOf(s);
             } catch (IllegalArgumentException ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
         int propSize = in.readInt();

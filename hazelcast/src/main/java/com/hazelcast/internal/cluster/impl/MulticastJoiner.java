@@ -31,9 +31,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class MulticastJoiner extends AbstractJoiner {
 
+    private static final long JOIN_RETRY_INTERVAL = 1000L;
     private static final int PUBLISH_INTERVAL_MIN = 50;
     private static final int PUBLISH_INTERVAL_MAX = 200;
-    private static final long JOIN_RETRY_INTERVAL = 1000L;
+    private static final int TRY_COUNT_MAX_LAST_DIGITS = 512;
+    private static final int TRY_COUNT_MODULO = 10;
 
     private final AtomicInteger currentTryCount = new AtomicInteger(0);
     private final AtomicInteger maxTryCount;
@@ -122,7 +124,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 if (node.clusterService.getMember(joinInfo.getAddress()) != null) {
                     if (logger.isFinestEnabled()) {
                         logger.finest("Ignoring merge join response, since " + joinInfo.getAddress()
-                            + " is already a member.");
+                                + " is already a member.");
                     }
                     return;
                 }
@@ -140,6 +142,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 }
             }
         } catch (InterruptedException ignored) {
+            EmptyStatement.ignore(ignored);
         } catch (Exception e) {
             if (logger != null) {
                 logger.warning(e);
@@ -152,6 +155,12 @@ public class MulticastJoiner extends AbstractJoiner {
     @Override
     public String getType() {
         return "multicast";
+    }
+
+    void onReceivedJoinRequest(JoinRequest joinRequest) {
+        if (joinRequest.getUuid().compareTo(node.localMember.getUuid()) < 0) {
+            maxTryCount.incrementAndGet();
+        }
     }
 
     private Address findMasterWithMulticast() {
@@ -182,28 +191,22 @@ public class MulticastJoiner extends AbstractJoiner {
 
     private int calculateTryCount() {
         final NetworkConfig networkConfig = config.getNetworkConfig();
-        int timeoutSeconds = networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds();
+        long timeoutMillis = TimeUnit.SECONDS.toMillis(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds());
         int avgPublishInterval = (PUBLISH_INTERVAL_MAX + PUBLISH_INTERVAL_MIN) / 2;
-        int tryCount = timeoutSeconds * 1000 / avgPublishInterval;
+        int tryCount = (int) timeoutMillis / avgPublishInterval;
         String host = node.getThisAddress().getHost();
         int lastDigits;
         try {
             lastDigits = Integer.parseInt(host.substring(host.lastIndexOf('.') + 1));
         } catch (NumberFormatException e) {
-            lastDigits = RandomPicker.getInt(512);
+            lastDigits = RandomPicker.getInt(TRY_COUNT_MAX_LAST_DIGITS);
         }
         int portDiff = node.getThisAddress().getPort() - networkConfig.getPort();
-        tryCount += (lastDigits + portDiff) % 10;
+        tryCount += (lastDigits + portDiff) % TRY_COUNT_MODULO;
         return tryCount;
     }
 
     private int getPublishInterval() {
         return RandomPicker.getInt(PUBLISH_INTERVAL_MIN, PUBLISH_INTERVAL_MAX);
-    }
-
-    public void onReceivedJoinRequest(JoinRequest joinRequest) {
-        if (joinRequest.getUuid().compareTo(node.localMember.getUuid()) < 0) {
-            maxTryCount.incrementAndGet();
-        }
     }
 }

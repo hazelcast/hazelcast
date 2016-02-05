@@ -16,17 +16,17 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.internal.cluster.Joiner;
-import com.hazelcast.internal.cluster.impl.operations.JoinCheckOperation;
-import com.hazelcast.internal.cluster.impl.operations.MemberRemoveOperation;
-import com.hazelcast.internal.cluster.impl.operations.MergeClustersOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Joiner;
+import com.hazelcast.internal.cluster.impl.operations.JoinCheckOperation;
+import com.hazelcast.internal.cluster.impl.operations.MemberRemoveOperation;
+import com.hazelcast.internal.cluster.impl.operations.MergeClustersOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -50,18 +50,23 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmpty
 
 public abstract class AbstractJoiner implements Joiner {
 
+    private static final int JOIN_TRY_COUNT = 5;
+    private static final long MIN_WAIT_SECONDS_BEFORE_JOIN = 10;
     private static final long SPLIT_BRAIN_CONN_TIMEOUT = 5000;
     private static final long SPLIT_BRAIN_SLEEP_TIME = 10;
+    private static final int SPLIT_BRAIN_JOIN_CHECK_TIMEOUT_SECONDS = 10;
 
-    private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
-    private final AtomicInteger tryCount = new AtomicInteger(0);
-    // map blacklisted endpoints. Boolean value represents if blacklist is temporary or permanent
-    protected final ConcurrentMap<Address, Boolean> blacklistedAddresses = new ConcurrentHashMap<Address, Boolean>();
     protected final Config config;
     protected final Node node;
     protected final ClusterServiceImpl clusterService;
-    protected final ClusterJoinManager clusterJoinManager;
     protected final ILogger logger;
+
+    // map blacklisted endpoints. Boolean value represents if blacklist is temporary or permanent
+    final ConcurrentMap<Address, Boolean> blacklistedAddresses = new ConcurrentHashMap<Address, Boolean>();
+    final ClusterJoinManager clusterJoinManager;
+
+    private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
+    private final AtomicInteger tryCount = new AtomicInteger(0);
 
     private final long mergeNextRunDelayMs;
     private volatile Address targetAddress;
@@ -73,6 +78,16 @@ public abstract class AbstractJoiner implements Joiner {
         this.clusterService = node.getClusterService();
         this.clusterJoinManager = clusterService.getClusterJoinManager();
         mergeNextRunDelayMs = node.groupProperties.getMillis(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS);
+    }
+
+    @Override
+    public final long getStartTime() {
+        return joinStartTime.get();
+    }
+
+    @Override
+    public void setTargetAddress(Address targetAddress) {
+        this.targetAddress = targetAddress;
     }
 
     @Override
@@ -113,7 +128,7 @@ public abstract class AbstractJoiner implements Joiner {
         if (node.getState() != NodeState.ACTIVE) {
             return;
         }
-        if (tryCount.incrementAndGet() == 5) {
+        if (tryCount.incrementAndGet() == JOIN_TRY_COUNT) {
             logger.warning("Join try count exceed limit, setting this node as master!");
             node.setAsMaster();
         }
@@ -138,8 +153,9 @@ public abstract class AbstractJoiner implements Joiner {
             while (checkCount++ < connectAllWaitSeconds && !allConnected) {
                 try {
                     //noinspection BusyWait
-                    Thread.sleep(1000);
+                    TimeUnit.SECONDS.sleep(1);
                 } catch (InterruptedException ignored) {
+                    EmptyStatement.ignore(ignored);
                 }
 
                 allConnected = true;
@@ -156,17 +172,20 @@ public abstract class AbstractJoiner implements Joiner {
         }
     }
 
-    protected final long getMaxJoinMillis() {
+    final long getMaxJoinMillis() {
         return node.getGroupProperties().getMillis(GroupProperty.MAX_JOIN_SECONDS);
     }
 
-    protected final long getMaxJoinTimeToMasterNode() {
+    final long getMaxJoinTimeToMasterNode() {
         // max join time to found master node,
         // this should be significantly greater than MAX_WAIT_SECONDS_BEFORE_JOIN property
         // hence we add 10 seconds more
-        return TimeUnit.SECONDS.toMillis(10) + node.getGroupProperties().getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
+        return TimeUnit.SECONDS.toMillis(MIN_WAIT_SECONDS_BEFORE_JOIN)
+                + node.getGroupProperties().getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
     }
 
+    @SuppressWarnings({"checkstyle:methodlength", "checkstyle:returncount",
+            "checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity" })
     boolean shouldMerge(JoinMessage joinMessage) {
         if (joinMessage == null) {
             return false;
@@ -207,7 +226,7 @@ public abstract class AbstractJoiner implements Joiner {
                 node.nodeEngine.getOperationService()
                         .send(new MemberRemoveOperation(node.getThisAddress()), joinMessage.getAddress());
                 logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessage.getAddress()
-                    + ", because it thinks this-node as its member.");
+                        + ", because it thinks this-node as its member.");
                 return false;
             }
 
@@ -223,7 +242,7 @@ public abstract class AbstractJoiner implements Joiner {
 
             int targetDataMemberCount = joinMessage.getDataMemberCount();
             int currentDataMemberCount = clusterService.getSize(DATA_MEMBER_SELECTOR);
-            
+
             if (targetDataMemberCount > currentDataMemberCount) {
                 // I should join the other cluster
                 logger.info(node.getThisAddress() + " is merging to " + joinMessage.getAddress()
@@ -267,7 +286,8 @@ public abstract class AbstractJoiner implements Joiner {
         Connection conn = node.connectionManager.getOrConnect(target, true);
         long timeout = SPLIT_BRAIN_CONN_TIMEOUT;
         while (conn == null) {
-            if ((timeout -= SPLIT_BRAIN_SLEEP_TIME) < 0) {
+            timeout -= SPLIT_BRAIN_SLEEP_TIME;
+            if (timeout < 0) {
                 return null;
             }
             try {
@@ -281,11 +301,11 @@ public abstract class AbstractJoiner implements Joiner {
         }
 
         NodeEngine nodeEngine = node.nodeEngine;
-        Future f = nodeEngine.getOperationService().createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
+        Future future = nodeEngine.getOperationService().createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
                 new JoinCheckOperation(node.createSplitBrainJoinMessage()), target)
                 .setTryCount(1).invoke();
         try {
-            return (JoinMessage) f.get(10, TimeUnit.SECONDS);
+            return (JoinMessage) future.get(SPLIT_BRAIN_JOIN_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
             logger.finest("Timeout during join check!", e);
         } catch (Exception e) {
@@ -300,7 +320,7 @@ public abstract class AbstractJoiner implements Joiner {
         tryCount.set(0);
     }
 
-    protected void startClusterMerge(final Address targetAddress) {
+    void startClusterMerge(final Address targetAddress) {
         ClusterServiceImpl clusterService = node.clusterService;
 
         if (!prepareClusterState(clusterService)) {
@@ -344,7 +364,7 @@ public abstract class AbstractJoiner implements Joiner {
             }
 
             try {
-                Thread.sleep(1000);
+                TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException e) {
                 logger.warning("Interrupted while preparing cluster for merge!");
                 // restore interrupt flag
@@ -365,17 +385,7 @@ public abstract class AbstractJoiner implements Joiner {
         return true;
     }
 
-    @Override
-    public final long getStartTime() {
-        return joinStartTime.get();
-    }
-
-    @Override
-    public void setTargetAddress(Address targetAddress) {
-        this.targetAddress = targetAddress;
-    }
-
-    public Address getTargetAddress() {
+    Address getTargetAddress() {
         final Address target = targetAddress;
         targetAddress = null;
         return target;
