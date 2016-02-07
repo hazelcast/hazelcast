@@ -16,7 +16,7 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.MemberImpl;
@@ -41,7 +41,7 @@ public interface ClientEngine {
 
     InternalPartitionService getPartitionService();
 
-    ClusterService getClusterService();
+    InternalClusterService getClusterService();
 
     EventService getEventService();
 

@@ -60,7 +60,7 @@ public class ClusterStateManagerTest {
 
     private final Node node = mock(Node.class);
     private final InternalPartitionService partitionService = mock(InternalPartitionService.class);
-    private final ClusterServiceImpl clusterService = mock(ClusterServiceImpl.class);
+    private final InternalClusterServiceImpl clusterService = mock(InternalClusterServiceImpl.class);
     private final Lock lock = mock(Lock.class);
 
     private ClusterStateManager clusterStateManager;

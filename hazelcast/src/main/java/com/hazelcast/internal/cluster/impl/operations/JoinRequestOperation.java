@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -36,7 +36,7 @@ public class JoinRequestOperation extends AbstractClusterOperation implements Jo
 
     @Override
     public void run() {
-        ClusterServiceImpl cm = getService();
+        InternalClusterServiceImpl cm = getService();
         cm.getClusterJoinManager().handleJoinRequest(request, getConnection());
     }
 

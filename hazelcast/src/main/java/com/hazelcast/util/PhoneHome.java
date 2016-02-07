@@ -16,7 +16,7 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.GroupProperty;
@@ -131,7 +131,7 @@ public final class PhoneHome {
 
         //Calculate native memory usage from native memory config
         NativeMemoryConfig memoryConfig = hazelcastNode.getConfig().getNativeMemoryConfig();
-        final ClusterServiceImpl clusterService = hazelcastNode.getClusterService();
+        final InternalClusterServiceImpl clusterService = hazelcastNode.getClusterService();
         long totalNativeMemorySize = clusterService.getSize(DATA_MEMBER_SELECTOR)
                 * memoryConfig.getSize().bytes();
         String nativeMemoryParameter = (isEnterprise)

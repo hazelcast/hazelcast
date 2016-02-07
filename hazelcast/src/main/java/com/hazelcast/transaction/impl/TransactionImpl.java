@@ -16,7 +16,7 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -333,7 +333,7 @@ public class TransactionImpl implements Transaction {
         }
 
         OperationService operationService = nodeEngine.getOperationService();
-        ClusterService clusterService = nodeEngine.getClusterService();
+        InternalClusterService clusterService = nodeEngine.getClusterService();
         List<Future> futures = new ArrayList<Future>(backupAddresses.length);
         for (Address backupAddress : backupAddresses) {
             if (clusterService.getMember(backupAddress) != null) {
@@ -406,7 +406,7 @@ public class TransactionImpl implements Transaction {
         }
 
         OperationService operationService = nodeEngine.getOperationService();
-        ClusterService clusterService = nodeEngine.getClusterService();
+        InternalClusterService clusterService = nodeEngine.getClusterService();
         List<Future> futures = new ArrayList<Future>(backupAddresses.length);
         for (Address backupAddress : backupAddresses) {
             if (clusterService.getMember(backupAddress) != null) {
@@ -424,7 +424,7 @@ public class TransactionImpl implements Transaction {
         }
 
         OperationService operationService = nodeEngine.getOperationService();
-        ClusterService clusterService = nodeEngine.getClusterService();
+        InternalClusterService clusterService = nodeEngine.getClusterService();
         for (Address backupAddress : backupAddresses) {
             if (clusterService.getMember(backupAddress) != null) {
                 try {

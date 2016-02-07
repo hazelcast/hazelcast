@@ -1,6 +1,6 @@
 package com.hazelcast.cluster;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.NetworkConfig;
@@ -158,7 +158,7 @@ public class LiteMemberJoinTest {
         final Node node1 = getNode(instance1);
         final Node node2 = getNode(instance2);
 
-        final ClusterServiceImpl clusterService = node1.getClusterService();
+        final InternalClusterServiceImpl clusterService = node1.getClusterService();
         clusterService.merge(node2.address);
     }
 

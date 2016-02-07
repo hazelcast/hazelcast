@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.mapreduce;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.ExecutionCallback;
@@ -65,7 +65,7 @@ public abstract class AbstractMapReduceTask<Parameters>
         MapReduceService mapReduceService = getService(MapReduceService.SERVICE_NAME);
         NodeEngine nodeEngine = mapReduceService.getNodeEngine();
 
-        ClusterService clusterService = nodeEngine.getClusterService();
+        InternalClusterService clusterService = nodeEngine.getClusterService();
         if (clusterService.getSize(MemberSelectors.DATA_MEMBER_SELECTOR) == 0) {
             throw new IllegalStateException("Could not register map reduce job since there are no nodes owning a partition");
         }
@@ -117,7 +117,7 @@ public abstract class AbstractMapReduceTask<Parameters>
 
         final KeyPredicate predicate = getPredicate();
 
-        final ClusterService clusterService = nodeEngine.getClusterService();
+        final InternalClusterService clusterService = nodeEngine.getClusterService();
         for (Member member : clusterService.getMembers(KeyValueJobOperation.MEMBER_SELECTOR)) {
             Operation operation = new KeyValueJobOperation(name, jobId, chunkSize, keyValueSource, mapper, combinerFactory,
                     reducerFactory, communicateStats, topologyChangedStrategy);

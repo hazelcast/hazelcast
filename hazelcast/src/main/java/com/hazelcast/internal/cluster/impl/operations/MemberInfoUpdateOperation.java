@@ -18,7 +18,7 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
@@ -53,14 +53,14 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
 
     protected final void processMemberUpdate() {
         if (isValid()) {
-            final ClusterServiceImpl clusterService = getService();
+            final InternalClusterServiceImpl clusterService = getService();
             clusterService.getClusterClock().setMasterTime(masterTime);
             clusterService.updateMembers(memberInfos);
         }
     }
 
     protected final boolean isValid() {
-        final ClusterServiceImpl clusterService = getService();
+        final InternalClusterServiceImpl clusterService = getService();
         final Connection conn = getConnection();
         final Address masterAddress = conn != null ? conn.getEndPoint() : null;
         boolean isLocal = conn == null;

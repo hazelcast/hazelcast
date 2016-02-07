@@ -16,7 +16,7 @@
 
 package com.hazelcast.topic.impl.reliable;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
@@ -45,7 +45,7 @@ class ReliableMessageListenerRunner<E> implements ExecutionCallback<ReadResultSe
     private final Ringbuffer<ReliableTopicMessage> ringbuffer;
     private final String topicName;
     private final SerializationService serializationService;
-    private final ClusterService clusterService;
+    private final InternalClusterService clusterService;
     private final ILogger logger;
     private final String id;
     private final ReliableTopicProxy<E> proxy;

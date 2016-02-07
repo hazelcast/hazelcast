@@ -19,7 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.cluster.Joiner;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ConfigCheck;
 import com.hazelcast.internal.cluster.impl.DiscoveryJoiner;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
@@ -100,7 +100,7 @@ public class Node {
 
     public final InternalPartitionServiceImpl partitionService;
 
-    public final ClusterServiceImpl clusterService;
+    public final InternalClusterServiceImpl clusterService;
 
     public final MulticastService multicastService;
 
@@ -184,7 +184,7 @@ public class Node {
             clientEngine = new ClientEngineImpl(this);
             connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
             partitionService = new InternalPartitionServiceImpl(this);
-            clusterService = new ClusterServiceImpl(this);
+            clusterService = new InternalClusterServiceImpl(this);
             textCommandService = new TextCommandServiceImpl(this);
             nodeExtension.printNodeInfo();
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
@@ -284,7 +284,7 @@ public class Node {
         return serializationService;
     }
 
-    public ClusterServiceImpl getClusterService() {
+    public InternalClusterServiceImpl getClusterService() {
         return clusterService;
     }
 

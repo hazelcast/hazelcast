@@ -17,7 +17,7 @@
 
 package com.hazelcast.test.mocknetwork;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -103,7 +103,7 @@ public class MockConnectionManager implements ConnectionManager {
             if (nodeEngine != null && nodeEngine.isRunning()) {
                 nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
                     public void run() {
-                        ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+                        InternalClusterServiceImpl clusterService = (InternalClusterServiceImpl) nodeEngine.getClusterService();
                         clusterService.removeAddress(node.getThisAddress());
                     }
                 });

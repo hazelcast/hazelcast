@@ -4,7 +4,7 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClusterServiceMemberListTest
+public class InternalClusterServiceMemberListTest
         extends HazelcastTestSupport {
 
     private Config liteConfig = new Config().setLiteMember(true);
@@ -83,7 +83,7 @@ public class ClusterServiceMemberListTest
 
     private void verifyMembersFromLiteMember(final HazelcastInstance instance) {
         final Member localMember = getLocalMember(instance);
-        final ClusterService clusterService = getClusterService(instance);
+        final InternalClusterService clusterService = getClusterService(instance);
         final Collection<Member> liteMembers = clusterService.getMembers(LITE_MEMBER_SELECTOR);
         final Collection<Member> dataMembers = clusterService.getMembers(DATA_MEMBER_SELECTOR);
 
@@ -99,7 +99,7 @@ public class ClusterServiceMemberListTest
 
     private void verifyMembersFromDataMember(final HazelcastInstance instance) {
         final Member localMember = getLocalMember(instance);
-        final ClusterService clusterService = getClusterService(instance);
+        final InternalClusterService clusterService = getClusterService(instance);
         final Collection<Member> liteMembers = clusterService.getMembers(LITE_MEMBER_SELECTOR);
         final Collection<Member> dataMembers = clusterService.getMembers(DATA_MEMBER_SELECTOR);
 
@@ -114,7 +114,7 @@ public class ClusterServiceMemberListTest
     }
 
     private void verifySizeFromLiteMember(final HazelcastInstance instance) {
-        final ClusterService clusterService = getClusterService(instance);
+        final InternalClusterService clusterService = getClusterService(instance);
 
         assertEquals(1, clusterService.getSize(MemberSelectors.LITE_MEMBER_SELECTOR));
         assertEquals(2, clusterService.getSize(MemberSelectors.DATA_MEMBER_SELECTOR));
@@ -123,7 +123,7 @@ public class ClusterServiceMemberListTest
     }
 
     private void verifySizeFromDataMember(final HazelcastInstance instance) {
-        final ClusterService clusterService = getClusterService(instance);
+        final InternalClusterService clusterService = getClusterService(instance);
 
         assertEquals(1, clusterService.getSize(MemberSelectors.LITE_MEMBER_SELECTOR));
         assertEquals(2, clusterService.getSize(MemberSelectors.DATA_MEMBER_SELECTOR));

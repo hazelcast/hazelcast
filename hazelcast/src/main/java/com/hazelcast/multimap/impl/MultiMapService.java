@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.config.MultiMapConfig;
@@ -301,7 +301,7 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         long backupEntryCount = 0;
         long hits = 0;
         long lockedEntryCount = 0;
-        ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+        InternalClusterServiceImpl clusterService = (InternalClusterServiceImpl) nodeEngine.getClusterService();
 
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {

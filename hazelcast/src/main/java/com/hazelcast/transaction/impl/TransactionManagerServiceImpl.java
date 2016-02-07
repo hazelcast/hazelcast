@@ -16,7 +16,7 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
@@ -278,7 +278,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         // This should be cleaned up because this is quite a complex approach since it depends on
         // the number of members in the cluster and creates litter.
 
-        ClusterService clusterService = nodeEngine.getClusterService();
+        InternalClusterService clusterService = nodeEngine.getClusterService();
         List<MemberImpl> members = new ArrayList<MemberImpl>(clusterService.getMemberImpls());
         members.remove(nodeEngine.getLocalMember());
         int c = Math.min(members.size(), durability);

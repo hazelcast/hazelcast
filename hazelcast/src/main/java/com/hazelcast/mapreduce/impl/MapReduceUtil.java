@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.JobPartitionState;
@@ -219,7 +219,7 @@ public final class MapReduceUtil {
     public static <V> V executeOperation(Operation operation, Address address, MapReduceService mapReduceService,
                                          NodeEngine nodeEngine) {
 
-        ClusterService cs = nodeEngine.getClusterService();
+        InternalClusterService cs = nodeEngine.getClusterService();
         OperationService os = nodeEngine.getOperationService();
         boolean returnsResponse = operation.returnsResponse();
 

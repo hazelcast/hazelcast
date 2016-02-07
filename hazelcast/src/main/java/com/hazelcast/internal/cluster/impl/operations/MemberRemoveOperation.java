@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -38,7 +38,7 @@ public class MemberRemoveOperation extends AbstractClusterOperation implements A
 
     @Override
     public void run() {
-        final ClusterServiceImpl clusterService = getService();
+        final InternalClusterServiceImpl clusterService = getService();
         final Address caller = getCallerAddress();
         ILogger logger = getLogger();
         if (caller != null

@@ -1,6 +1,6 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -39,7 +39,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
     private HazelcastInstance remote;
     private OperationRunnerImpl operationRunner;
     private OperationServiceImpl operationService;
-    private ClusterService clusterService;
+    private InternalClusterService clusterService;
     private OperationResponseHandler responseHandler;
 
     @Before

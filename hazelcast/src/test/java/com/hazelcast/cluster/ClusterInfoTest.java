@@ -1,7 +1,7 @@
 package com.hazelcast.cluster;
 
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
@@ -61,7 +61,7 @@ public class ClusterInfoTest extends HazelcastTestSupport {
         Node node3 = TestUtil.getNode(h3);
 
         //All nodes should have same startTime
-        final ClusterServiceImpl clusterService = node1.getClusterService();
+        final InternalClusterServiceImpl clusterService = node1.getClusterService();
         long node1ClusterStartTime = clusterService.getClusterClock().getClusterStartTime();
         long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
         String node1ClusterId = clusterService.getClusterId();
@@ -91,7 +91,7 @@ public class ClusterInfoTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, h3);
 
         Node node1 = TestUtil.getNode(h1);
-        final ClusterServiceImpl clusterService = node1.getClusterService();
+        final InternalClusterServiceImpl clusterService = node1.getClusterService();
         long node1ClusterStartTime = clusterService.getClusterClock().getClusterStartTime();
         long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
         String node1ClusterId = clusterService.getClusterId();

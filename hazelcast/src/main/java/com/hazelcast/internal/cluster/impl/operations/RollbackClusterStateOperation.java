@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterStateManager;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
@@ -46,7 +46,7 @@ public class RollbackClusterStateOperation extends AbstractOperation implements 
 
     @Override
     public void run() throws Exception {
-        ClusterServiceImpl service = getService();
+        InternalClusterServiceImpl service = getService();
         ClusterStateManager clusterStateManager = service.getClusterStateManager();
         getLogger().info("Rolling back cluster state! Initiator: " + initiator);
         response = clusterStateManager.rollbackClusterState(txnId);
@@ -59,7 +59,7 @@ public class RollbackClusterStateOperation extends AbstractOperation implements 
 
     @Override
     public String getServiceName() {
-        return ClusterServiceImpl.SERVICE_NAME;
+        return InternalClusterServiceImpl.SERVICE_NAME;
     }
 
     @Override

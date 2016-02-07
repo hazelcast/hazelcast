@@ -17,7 +17,7 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -31,7 +31,7 @@ public class ShutdownNodeOperation
 
     @Override
     public void run() {
-        final ClusterServiceImpl clusterService = getService();
+        final InternalClusterServiceImpl clusterService = getService();
         final ILogger logger = getLogger();
 
         final ClusterState clusterState = clusterService.getClusterState();

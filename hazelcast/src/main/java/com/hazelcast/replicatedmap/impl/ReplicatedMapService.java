@@ -16,7 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
@@ -83,7 +83,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     private final NodeEngine nodeEngine;
     private final PartitionContainer[] partitionContainers;
     private final InternalPartitionServiceImpl partitionService;
-    private final ClusterServiceImpl clusterService;
+    private final InternalClusterServiceImpl clusterService;
     private final OperationService operationService;
     private final ReplicatedMapEventPublishingService eventPublishingService;
     private final MergePolicyProvider mergePolicyProvider;
@@ -102,7 +102,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         this.nodeEngine = nodeEngine;
         this.config = nodeEngine.getConfig();
         this.partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
-        this.clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+        this.clusterService = (InternalClusterServiceImpl) nodeEngine.getClusterService();
         this.operationService = nodeEngine.getOperationService();
         this.partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
         this.eventPublishingService = new ReplicatedMapEventPublishingService(this);

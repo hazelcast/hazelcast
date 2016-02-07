@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.spi.AbstractOperation;
 
 abstract class AbstractClusterOperation extends AbstractOperation implements JoinOperation {
@@ -28,6 +28,6 @@ abstract class AbstractClusterOperation extends AbstractOperation implements Joi
 
     @Override
     public final String getServiceName() {
-        return ClusterServiceImpl.SERVICE_NAME;
+        return InternalClusterServiceImpl.SERVICE_NAME;
     }
 }

@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 
-import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SERVICE_NAME;
+import static com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl.SERVICE_NAME;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 /**

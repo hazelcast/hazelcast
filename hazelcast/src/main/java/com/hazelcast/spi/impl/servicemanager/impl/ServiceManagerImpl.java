@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.servicemanager.impl;
 
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
@@ -115,7 +115,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         logger.finest("Registering core services...");
 
         Node node = nodeEngine.getNode();
-        registerService(ClusterServiceImpl.SERVICE_NAME, node.getClusterService());
+        registerService(InternalClusterServiceImpl.SERVICE_NAME, node.getClusterService());
         registerService(InternalPartitionService.SERVICE_NAME, node.getPartitionService());
         registerService(ProxyServiceImpl.SERVICE_NAME, nodeEngine.getProxyService());
         registerService(TransactionManagerServiceImpl.SERVICE_NAME, nodeEngine.getTransactionManagerService());

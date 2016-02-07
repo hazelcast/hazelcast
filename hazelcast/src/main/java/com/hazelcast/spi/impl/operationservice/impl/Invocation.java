@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -301,7 +301,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         invTarget = getTarget();
 
-        final ClusterService clusterService = nodeEngine.getClusterService();
+        final InternalClusterService clusterService = nodeEngine.getClusterService();
         if (invTarget == null) {
             remote = false;
             notifyWithExceptionWhenTargetIsNull();
@@ -332,7 +332,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     private void notifyWithExceptionWhenTargetIsNull() {
         Address thisAddress = nodeEngine.getThisAddress();
-        ClusterService clusterService = nodeEngine.getClusterService();
+        InternalClusterService clusterService = nodeEngine.getClusterService();
 
         if (!nodeEngine.isRunning()) {
             notify(new HazelcastInstanceNotActiveException());

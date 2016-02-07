@@ -192,7 +192,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             }
             if (node.getConnectionManager().getConnection(address) != null) {
                 Future future = node.nodeEngine.getOperationService()
-                        .createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
+                        .createInvocationBuilder(InternalClusterServiceImpl.SERVICE_NAME,
                                 new MasterClaimOperation(), address).setTryCount(1).invoke();
                 responses.add(future);
             }

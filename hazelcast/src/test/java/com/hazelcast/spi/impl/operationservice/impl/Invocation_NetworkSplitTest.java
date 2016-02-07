@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
@@ -100,7 +100,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         splitAction.run(node1, node2, node3);
 
         // Let node3 detect the split and merge it back to other two.
-        ClusterServiceImpl clusterService3 = node3.getClusterService();
+        InternalClusterServiceImpl clusterService3 = node3.getClusterService();
         clusterService3.merge(node1.address);
 
         assertClusterSizeEventually(3, hz1);
@@ -170,7 +170,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         });
 
         // Let node3 detect the split and merge it back to other two.
-        ClusterServiceImpl clusterService3 = node3.getClusterService();
+        InternalClusterServiceImpl clusterService3 = node3.getClusterService();
         clusterService3.merge(node1.address);
 
         assertEquals(4, node1.getClusterService().getSize());

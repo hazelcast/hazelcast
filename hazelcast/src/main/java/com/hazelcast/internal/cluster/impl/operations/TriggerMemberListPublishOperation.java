@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 
 /**
  * Requests member list publish from master node
@@ -28,7 +28,7 @@ public class TriggerMemberListPublishOperation extends AbstractClusterOperation 
 
     @Override
     public void run() throws Exception {
-        final ClusterServiceImpl clusterService = getService();
+        final InternalClusterServiceImpl clusterService = getService();
         clusterService.sendMemberListToMember(getCallerAddress());
     }
 
