@@ -29,7 +29,6 @@
 -->
 
 <module name="Checker">
-
     <!--
         If you set the basedir property below, then all reported file
         names will be relative to the specified directory. See
@@ -47,7 +46,7 @@
     <module name="SuppressionCommentFilter"/>
 
     <!-- Enable the suppression annotation @SuppressWarnings("checkstyle:lowercasecheckname"} -->
-    <module name="SuppressWarningsFilter" />
+    <module name="SuppressWarningsFilter"/>
 
     <!-- Checks that a package-info.java file exists for each package.     -->
     <!-- See http://checkstyle.sf.net/config_javadoc.html#JavadocPackage -->
@@ -88,12 +87,11 @@
     </module>
 
     <module name="TreeWalker">
-
         <!-- Activate comment suppression filters -->
         <module name="FileContentsHolder"/>
 
         <!-- Needed for SuppressWarningsFilter to work -->
-        <module name="SuppressWarningsHolder" />
+        <module name="SuppressWarningsHolder"/>
 
         <!-- Checks for Javadoc comments.                     -->
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
@@ -111,6 +109,7 @@
         </module>
         <module name="JavadocStyle">
             <property name="checkFirstSentence" value="false"/>
+            <property name="checkHtml" value="false"/>
         </module>
 
         <module name="TrailingComment"/>
@@ -131,7 +130,8 @@
         <!-- Checks for imports                              -->
         <!-- See http://checkstyle.sf.net/config_import.html -->
         <module name="AvoidStarImport"/>
-        <module name="IllegalImport"/> <!-- defaults to sun.* packages -->
+        <!-- defaults to sun.* packages -->
+        <module name="IllegalImport"/>
         <module name="RedundantImport"/>
         <module name="UnusedImports">
             <property name="processJavadoc" value="true"/>
@@ -229,6 +229,7 @@
             <property name="tokens" value="PARAMETER_DEF, METHOD_DEF"/>
         </module>
         <module name="InnerAssignment"/>
+        <module name="JUnitTestCase"/>
         <module name="ReturnCount">
             <property name="max" value="8"/>
         </module>
@@ -239,6 +240,10 @@
             <property name="max" value="2"/>
         </module>
         <module name="PackageDeclaration"/>
+        <module name="RedundantThrows">
+            <property name="severity" value="warning"/>
+            <property name="allowUnchecked" value="true"/>
+        </module>
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
         <module name="StringLiteralEquality"/>
@@ -247,7 +252,7 @@
         <module name="MagicNumber">
             <property name="ignoreHashCodeMethod" value="true"/>
             <property name="ignoreAnnotation" value="true"/>
-            <property name="ignoreNumbers" value="-1 , 0 , 1 ,2 , 3"/>
+            <property name="ignoreNumbers" value="-1, 0, 1, 2, 3"/>
         </module>
         <module name="EqualsHashCode"/>
         <module name="IllegalInstantiation"/>
@@ -293,7 +298,5 @@
             <property name="ignoreComments" value="true"/>
             <property name="message" value="Please use UuidUtil.buildRandomUUID() instead of UUID.randomUUID()!"/>
         </module>
-
     </module>
-
 </module>
