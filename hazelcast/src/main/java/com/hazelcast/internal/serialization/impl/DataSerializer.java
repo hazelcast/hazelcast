@@ -17,19 +17,18 @@
 package com.hazelcast.internal.serialization.impl;
 
 
+import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
-import com.hazelcast.util.collection.Int2ObjectHashMap;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -48,7 +47,9 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
 
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
 
-    private final Int2ObjectHashMap<DataSerializableFactory> factories = new Int2ObjectHashMap<DataSerializableFactory>();
+    //private final Int2ObjectHashMap<DataSerializableFactory> factories = new Int2ObjectHashMap<DataSerializableFactory>();
+
+    private DataSerializableFactory[] factories = new DataSerializableFactory[65536];
 
     DataSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories, ClassLoader classLoader) {
         try {
@@ -72,7 +73,9 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
     }
 
     private void register(int factoryId, DataSerializableFactory factory) {
-        final DataSerializableFactory current = factories.get(factoryId);
+        int index = toIndex(factoryId);
+
+        final DataSerializableFactory current = factories[index];
         if (current != null) {
             if (current.equals(factory)) {
                 Logger.getLogger(getClass()).warning("DataSerializableFactory[" + factoryId + "] is already registered! Skipping "
@@ -82,8 +85,12 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
                         + current + " -> " + factory);
             }
         } else {
-            factories.put(factoryId, factory);
+            factories[index] = factory;
         }
+    }
+
+    private int toIndex(int factoryId) {
+        return factoryId + 32768;
     }
 
     @Override
@@ -103,7 +110,7 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
             // BasicOperationService::extractOperationCallId
             if (identified) {
                 factoryId = in.readInt();
-                final DataSerializableFactory dsf = factories.get(factoryId);
+                final DataSerializableFactory dsf = factories[toIndex(factoryId)];
                 if (dsf == null) {
                     throw new HazelcastSerializationException("No DataSerializerFactory registered for namespace: " + factoryId);
                 }
@@ -153,6 +160,8 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
 
     @Override
     public void destroy() {
-        factories.clear();
+        for (int k = 0; k < factories.length; k++) {
+            factories[k] = null;
+        }
     }
 }
