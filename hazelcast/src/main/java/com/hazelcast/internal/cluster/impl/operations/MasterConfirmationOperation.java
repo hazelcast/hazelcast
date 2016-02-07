@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -45,7 +45,7 @@ public class MasterConfirmationOperation extends AbstractClusterOperation implem
             return;
         }
 
-        final ClusterServiceImpl clusterService = getService();
+        final InternalClusterServiceImpl clusterService = getService();
         final ILogger logger = getLogger();
         final MemberImpl member = clusterService.getMember(endpoint);
         if (member == null) {

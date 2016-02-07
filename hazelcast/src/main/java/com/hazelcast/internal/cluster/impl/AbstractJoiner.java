@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.cluster.impl.operations.JoinCheckOperation;
@@ -59,7 +59,7 @@ public abstract class AbstractJoiner implements Joiner {
     protected final ConcurrentMap<Address, Boolean> blacklistedAddresses = new ConcurrentHashMap<Address, Boolean>();
     protected final Config config;
     protected final Node node;
-    protected final ClusterServiceImpl clusterService;
+    protected final InternalClusterServiceImpl clusterService;
     protected final ClusterJoinManager clusterJoinManager;
     protected final ILogger logger;
 
@@ -281,7 +281,7 @@ public abstract class AbstractJoiner implements Joiner {
         }
 
         NodeEngine nodeEngine = node.nodeEngine;
-        Future f = nodeEngine.getOperationService().createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
+        Future f = nodeEngine.getOperationService().createInvocationBuilder(InternalClusterServiceImpl.SERVICE_NAME,
                 new JoinCheckOperation(node.createSplitBrainJoinMessage()), target)
                 .setTryCount(1).invoke();
         try {
@@ -301,7 +301,7 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     protected void startClusterMerge(final Address targetAddress) {
-        ClusterServiceImpl clusterService = node.clusterService;
+        InternalClusterServiceImpl clusterService = node.clusterService;
 
         if (!prepareClusterState(clusterService)) {
             return;
@@ -312,7 +312,7 @@ public abstract class AbstractJoiner implements Joiner {
         for (Member member : memberList) {
             if (!member.localMember()) {
                 Operation op = new MergeClustersOperation(targetAddress);
-                operationService.invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, member.getAddress());
+                operationService.invokeOnTarget(InternalClusterServiceImpl.SERVICE_NAME, op, member.getAddress());
             }
         }
 
@@ -322,7 +322,7 @@ public abstract class AbstractJoiner implements Joiner {
         operationService.runOperationOnCallingThread(mergeClustersOperation);
     }
 
-    private boolean prepareClusterState(ClusterServiceImpl clusterService) {
+    private boolean prepareClusterState(InternalClusterServiceImpl clusterService) {
         if (!preCheckClusterState(clusterService)) {
             return false;
         }
@@ -355,7 +355,7 @@ public abstract class AbstractJoiner implements Joiner {
         return false;
     }
 
-    private boolean preCheckClusterState(final ClusterService clusterService) {
+    private boolean preCheckClusterState(final InternalClusterService clusterService) {
         final ClusterState initialState = clusterService.getClusterState();
         if (initialState != ClusterState.ACTIVE) {
             logger.warning("Could not prepare cluster state since it has been changed to " + initialState);

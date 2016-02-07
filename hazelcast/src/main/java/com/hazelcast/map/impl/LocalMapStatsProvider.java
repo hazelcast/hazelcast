@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.record.Record;
@@ -59,7 +59,7 @@ public class LocalMapStatsProvider {
 
     protected final MapServiceContext mapServiceContext;
     protected final NearCacheProvider nearCacheProvider;
-    protected final ClusterService clusterService;
+    protected final InternalClusterService clusterService;
     protected final InternalPartitionService partitionService;
     protected final ILogger logger;
 

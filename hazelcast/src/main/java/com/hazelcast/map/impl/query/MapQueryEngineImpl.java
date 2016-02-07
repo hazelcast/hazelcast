@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -88,7 +88,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     protected final InternalPartitionService partitionService;
     protected final QueryOptimizer queryOptimizer;
     protected final OperationService operationService;
-    protected final ClusterService clusterService;
+    protected final InternalClusterService clusterService;
     protected final LocalMapStatsProvider localMapStatsProvider;
     protected final boolean parallelEvaluation;
     protected final ManagedExecutorService executor;

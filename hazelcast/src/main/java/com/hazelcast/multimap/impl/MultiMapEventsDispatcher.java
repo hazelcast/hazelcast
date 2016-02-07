@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMapEvent;
@@ -38,10 +38,10 @@ class MultiMapEventsDispatcher {
 
     private final ILogger logger = Logger.getLogger(MultiMapEventsDispatcher.class);
 
-    private final ClusterService clusterService;
+    private final InternalClusterService clusterService;
     private final MultiMapService multiMapService;
 
-    public MultiMapEventsDispatcher(MultiMapService multiMapService, ClusterService clusterService) {
+    public MultiMapEventsDispatcher(MultiMapService multiMapService, InternalClusterService clusterService) {
         this.multiMapService = multiMapService;
         this.clusterService = clusterService;
     }

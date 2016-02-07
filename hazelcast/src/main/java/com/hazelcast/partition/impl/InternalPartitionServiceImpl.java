@@ -18,7 +18,7 @@ package com.hazelcast.partition.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -325,7 +325,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private boolean isClusterFormedByOnlyLiteMembers() {
-        final ClusterServiceImpl clusterService = node.getClusterService();
+        final InternalClusterServiceImpl clusterService = node.getClusterService();
         return clusterService.getMembers(DATA_MEMBER_SELECTOR).isEmpty();
     }
 
@@ -664,7 +664,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             PartitionStateOperation op = new PartitionStateOperation(partitionState);
 
             OperationService operationService = nodeEngine.getOperationService();
-            final ClusterServiceImpl clusterService = node.clusterService;
+            final InternalClusterServiceImpl clusterService = node.clusterService;
             for (MemberImpl member : members) {
                 if (!(member.localMember() || clusterService.isMemberRemovedWhileClusterIsNotActive(member.getAddress()))) {
                     try {
@@ -708,7 +708,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private List<Future> firePartitionStateOperation(Collection<MemberImpl> members,
                                                      PartitionRuntimeState partitionState,
                                                      OperationService operationService) {
-        final ClusterServiceImpl clusterService = node.clusterService;
+        final InternalClusterServiceImpl clusterService = node.clusterService;
         List<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!(member.localMember() || clusterService.isMemberRemovedWhileClusterIsNotActive(member.getAddress()))) {
@@ -825,7 +825,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     private void searchUnknownAddressesInPartitionTable(Address sender, Set<Address> unknownAddresses, int partitionId,
                                                         PartitionInfo partitionInfo) {
-        final ClusterServiceImpl clusterService = node.clusterService;
+        final InternalClusterServiceImpl clusterService = node.clusterService;
         final ClusterState clusterState = clusterService.getClusterState();
         for (int index = 0; index < InternalPartition.MAX_REPLICA_COUNT; index++) {
             Address address = partitionInfo.getReplicaAddress(index);
@@ -1401,7 +1401,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private boolean checkClusterStateForReplicaSync(final Address address) {
-        final ClusterServiceImpl clusterService = node.clusterService;
+        final InternalClusterServiceImpl clusterService = node.clusterService;
         final ClusterState clusterState = clusterService.getClusterState();
 
         if (clusterState == ClusterState.ACTIVE || clusterState == ClusterState.IN_TRANSITION) {

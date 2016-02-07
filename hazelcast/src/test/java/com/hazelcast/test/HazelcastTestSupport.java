@@ -16,7 +16,7 @@
 
 package com.hazelcast.test;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
@@ -182,7 +182,7 @@ public abstract class HazelcastTestSupport {
         return node.connectionManager;
     }
 
-    public static ClusterService getClusterService(HazelcastInstance hz) {
+    public static InternalClusterService getClusterService(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.clusterService;
     }

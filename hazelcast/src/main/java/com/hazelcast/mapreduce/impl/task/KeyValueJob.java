@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.Member;
@@ -57,7 +57,7 @@ public class KeyValueJob<KeyIn, ValueIn>
 
     @Override
     protected <T> JobCompletableFuture<T> invoke(Collator collator) {
-        ClusterService clusterService = nodeEngine.getClusterService();
+        InternalClusterService clusterService = nodeEngine.getClusterService();
         if (clusterService.getSize(MemberSelectors.DATA_MEMBER_SELECTOR) == 0) {
             throw new IllegalStateException("Could not register map reduce job since there are no nodes owning a partition");
         }
@@ -85,7 +85,7 @@ public class KeyValueJob<KeyIn, ValueIn>
             topologyChangedStrategy = config.getTopologyChangedStrategy();
         }
 
-        ClusterService clusterService = nodeEngine.getClusterService();
+        InternalClusterService clusterService = nodeEngine.getClusterService();
         for (Member member : clusterService.getMembers(KeyValueJobOperation.MEMBER_SELECTOR)) {
             Operation operation = new KeyValueJobOperation<KeyIn, ValueIn>(name, jobId, chunkSize, keyValueSource, mapper,
                     combinerFactory, reducerFactory, communicateStats, topologyChangedStrategy);

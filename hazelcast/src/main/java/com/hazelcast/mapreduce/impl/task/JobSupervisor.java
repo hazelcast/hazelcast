@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.JobPartitionState;
@@ -490,7 +490,7 @@ public class JobSupervisor {
         public void run() {
             Object finalResult = null;
             try {
-                ClusterService clusterService = nodeEngine.getClusterService();
+                InternalClusterService clusterService = nodeEngine.getClusterService();
                 final Collection<Member> members = clusterService.getMembers(DATA_MEMBER_SELECTOR);
                 List<Map> results = MapReduceUtil.executeOperation(members, operationFactory, mapReduceService, nodeEngine);
                 boolean reducedResult = configuration.getReducerFactory() != null;

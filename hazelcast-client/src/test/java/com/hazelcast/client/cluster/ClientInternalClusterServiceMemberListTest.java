@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientClusterServiceMemberListTest {
+public class ClientInternalClusterServiceMemberListTest {
 
     private Config liteConfig = new Config().setLiteMember(true);
 

@@ -17,7 +17,7 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterStateManager;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -54,7 +54,7 @@ public class ChangeClusterStateOperation extends AbstractOperation implements Al
 
     @Override
     public void run() throws Exception {
-        ClusterServiceImpl service = getService();
+        InternalClusterServiceImpl service = getService();
         ClusterStateManager clusterStateManager = service.getClusterStateManager();
         getLogger().info("Changing cluster state state to " + newState + ", Initiator: " + initiator);
         clusterStateManager.commitClusterState(newState, initiator, txnId);
@@ -76,7 +76,7 @@ public class ChangeClusterStateOperation extends AbstractOperation implements Al
 
     @Override
     public String getServiceName() {
-        return ClusterServiceImpl.SERVICE_NAME;
+        return InternalClusterServiceImpl.SERVICE_NAME;
     }
 
     @Override

@@ -17,7 +17,7 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -45,7 +45,7 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
 
     @Override
     public void run() {
-        ClusterServiceImpl service = getService();
+        InternalClusterServiceImpl service = getService();
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         Node node = nodeEngine.getNode();
 
@@ -77,7 +77,7 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
     private boolean masterCheck(Node node) {
         ILogger logger = getLogger();
         Address caller = getCallerAddress();
-        ClusterServiceImpl service = getService();
+        InternalClusterServiceImpl service = getService();
 
         if (node.isMaster()) {
             if (service.getMember(caller) != null) {
@@ -98,7 +98,7 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
     @Override
     public void afterRun() throws Exception {
         if (removeCaller) {
-            ClusterServiceImpl service = getService();
+            InternalClusterServiceImpl service = getService();
             Address caller = getCallerAddress();
             service.removeAddress(caller);
         }

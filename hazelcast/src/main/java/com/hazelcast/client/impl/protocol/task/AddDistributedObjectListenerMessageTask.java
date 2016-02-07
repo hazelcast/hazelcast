@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.instance.Node;
@@ -114,7 +114,7 @@ public class AddDistributedObjectListenerMessageTask
             return false;
         }
 
-        ClusterService clusterService = clientEngine.getClusterService();
+        InternalClusterService clusterService = clientEngine.getClusterService();
         boolean currentMemberIsMaster = clusterService.getMasterAddress().equals(clientEngine.getThisAddress());
         if (parameters.localOnly && !currentMemberIsMaster) {
             //if client registered localOnly, only master is allowed to send request

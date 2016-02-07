@@ -17,7 +17,7 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -40,7 +40,7 @@ public final class HeartbeatOperation extends AbstractClusterOperation
 
     @Override
     public void run() {
-        ClusterServiceImpl service = getService();
+        InternalClusterServiceImpl service = getService();
         MemberImpl member = service.getMember(getCallerAddress());
         if (member == null) {
             ILogger logger = getLogger();

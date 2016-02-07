@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -42,7 +42,7 @@ public class MemberAttributeChangedOperation extends AbstractClusterOperation {
 
     @Override
     public void run() throws Exception {
-        final ClusterServiceImpl cs = getService();
+        final InternalClusterServiceImpl cs = getService();
         cs.updateMemberAttribute(getCallerUuid(), operationType, key, value);
     }
 

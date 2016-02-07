@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.MapOperation;
@@ -40,7 +40,7 @@ public abstract class AbstractNearCacheInvalidator implements NearCacheInvalidat
 
     protected final EventService eventService;
     protected final OperationService operationService;
-    protected final ClusterService clusterService;
+    protected final InternalClusterService clusterService;
     protected final MapServiceContext mapServiceContext;
     protected final NearCacheProvider nearCacheProvider;
     protected final NodeEngine nodeEngine;

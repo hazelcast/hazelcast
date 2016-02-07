@@ -19,9 +19,9 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.MemberAttributeEvent;
@@ -42,8 +42,8 @@ public class AddMembershipListenerMessageTask
 
     @Override
     protected Object call() {
-        String serviceName = ClusterServiceImpl.SERVICE_NAME;
-        ClusterServiceImpl service = getService(serviceName);
+        String serviceName = InternalClusterServiceImpl.SERVICE_NAME;
+        InternalClusterServiceImpl service = getService(serviceName);
         ClientEndpoint endpoint = getEndpoint();
         String registrationId = service.addMembershipListener(new MembershipListenerImpl(endpoint));
         endpoint.addListenerDestroyAction(serviceName, serviceName, registrationId);
@@ -62,7 +62,7 @@ public class AddMembershipListenerMessageTask
 
     @Override
     public String getServiceName() {
-        return ClusterServiceImpl.SERVICE_NAME;
+        return InternalClusterServiceImpl.SERVICE_NAME;
     }
 
     @Override
@@ -94,7 +94,7 @@ public class AddMembershipListenerMessageTask
 
         @Override
         public void init(InitialMembershipEvent membershipEvent) {
-            ClusterService service = getService(ClusterServiceImpl.SERVICE_NAME);
+            InternalClusterService service = getService(InternalClusterServiceImpl.SERVICE_NAME);
             Collection members = service.getMemberImpls();
             ClientMessage eventMessage = ClientAddMembershipListenerCodec.encodeMemberListEvent(members);
             sendClientMessage(endpoint.getUuid(), eventMessage);
@@ -146,7 +146,7 @@ public class AddMembershipListenerMessageTask
                 return false;
             }
 
-            ClusterService clusterService = clientEngine.getClusterService();
+            InternalClusterService clusterService = clientEngine.getClusterService();
             boolean currentMemberIsMaster = clusterService.getMasterAddress().equals(clientEngine.getThisAddress());
             if (parameters.localOnly && !currentMemberIsMaster) {
                 //if client registered localOnly, only master is allowed to send request

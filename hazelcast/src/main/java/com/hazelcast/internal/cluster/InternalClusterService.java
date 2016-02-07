@@ -30,7 +30,7 @@ import java.util.Collection;
  * <p/>
  * This API is an internal API; the end user will use the {@link com.hazelcast.core.Cluster} interface.
  */
-public interface ClusterService extends CoreService, Cluster {
+public interface InternalClusterService extends CoreService, Cluster {
 
     /**
      * Gets the member for the given address.

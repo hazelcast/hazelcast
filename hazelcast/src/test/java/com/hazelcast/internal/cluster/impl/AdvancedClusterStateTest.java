@@ -84,7 +84,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         }
 
         HazelcastInstance hz = instances[instances.length - 1];
-        ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(hz);
+        InternalClusterServiceImpl clusterService = (InternalClusterServiceImpl) getClusterService(hz);
         Collection<Member> initialMembers = new ArrayList<Member>(clusterService.getMembers());
         initialMembers.remove(clusterService.getLocalMember());
 
@@ -100,7 +100,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         }
 
         HazelcastInstance hz = instances[instances.length - 1];
-        ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(hz);
+        InternalClusterServiceImpl clusterService = (InternalClusterServiceImpl) getClusterService(hz);
         Collection<Member> initialMembers = new ArrayList<Member>(clusterService.getMembers());
 
         MemberImpl fakeMember = new MemberImpl((MemberImpl) clusterService.getLocalMember());
@@ -389,7 +389,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         final InternalPartitionService partitionService = getNode(hz1).getPartitionService();
         final int initialPartitionStateVersion = partitionService.getPartitionStateVersion();
 
-        final ClusterServiceImpl cluster = getNode(hz2).getClusterService();
+        final InternalClusterServiceImpl cluster = getNode(hz2).getClusterService();
         final ClusterState newState = ClusterState.PASSIVE;
 
         final Future future = spawn(new Runnable() {

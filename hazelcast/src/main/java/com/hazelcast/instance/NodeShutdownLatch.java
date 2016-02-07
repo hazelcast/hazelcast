@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
@@ -50,7 +50,7 @@ final class NodeShutdownLatch {
             for (HazelcastInstanceImpl instance : HazelcastInstanceManager.getInstanceImpls(members)) {
                 if (instance.node.isRunning()) {
                     try {
-                        ClusterServiceImpl clusterService = instance.node.clusterService;
+                        InternalClusterServiceImpl clusterService = instance.node.clusterService;
                         final String id = clusterService.addMembershipListener(new ShutdownMembershipListener());
                         registrations.put(id, instance);
                     } catch (Throwable ignored) {

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.ascii.rest;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.instance.GroupProperty;
@@ -76,7 +76,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String res = "{\"status\":\"${STATUS}\",\"state\":\"${STATE}\"}";
         try {
             Node node = textCommandService.getNode();
-            ClusterService clusterService = node.getClusterService();
+            InternalClusterService clusterService = node.getClusterService();
             GroupConfig groupConfig = node.getConfig().getGroupConfig();
             if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
                 res = res.replace("${STATUS}", "forbidden");
@@ -116,7 +116,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String res = "{\"status\":\"${STATUS}\",\"state\":\"${STATE}\"}";
         try {
             Node node = textCommandService.getNode();
-            ClusterService clusterService = node.getClusterService();
+            InternalClusterService clusterService = node.getClusterService();
             GroupConfig groupConfig = node.getConfig().getGroupConfig();
             if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
                 res = res.replace("${STATUS}", "forbidden");
@@ -162,7 +162,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String res = "{\"status\":\"${STATUS}\"}";
         try {
             Node node = textCommandService.getNode();
-            ClusterService clusterService = node.getClusterService();
+            InternalClusterService clusterService = node.getClusterService();
             GroupConfig groupConfig = node.getConfig().getGroupConfig();
             if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
                 res = res.replace("${STATUS}", "forbidden");

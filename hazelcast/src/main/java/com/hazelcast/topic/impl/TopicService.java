@@ -16,7 +16,7 @@
 
 package com.hazelcast.topic.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
@@ -119,7 +119,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     @Override
     public void dispatchEvent(Object event, Object listener) {
         TopicEvent topicEvent = (TopicEvent) event;
-        ClusterService clusterService = nodeEngine.getClusterService();
+        InternalClusterService clusterService = nodeEngine.getClusterService();
         MemberImpl member = clusterService.getMember(topicEvent.publisherAddress);
         if (member == null) {
             member = new MemberImpl(topicEvent.publisherAddress, false);

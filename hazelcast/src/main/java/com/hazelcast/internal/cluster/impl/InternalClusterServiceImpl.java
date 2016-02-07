@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.internal.cluster.MemberInfo;
@@ -85,7 +85,7 @@ import static java.lang.String.format;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 
-public class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
+public class InternalClusterServiceImpl implements InternalClusterService, ConnectionListener, ManagedService,
         EventPublishingService<MembershipEvent, MembershipListener>, TransactionalService {
 
     public static final String SERVICE_NAME = "hz:core:clusterService";
@@ -129,12 +129,12 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private String clusterId;
 
-    public ClusterServiceImpl(Node node) {
+    public InternalClusterServiceImpl(Node node) {
 
         this.node = node;
         nodeEngine = node.nodeEngine;
 
-        logger = node.getLogger(ClusterService.class.getName());
+        logger = node.getLogger(InternalClusterService.class.getName());
         clusterClock = new ClusterClockImpl(logger);
 
         thisAddress = node.getThisAddress();

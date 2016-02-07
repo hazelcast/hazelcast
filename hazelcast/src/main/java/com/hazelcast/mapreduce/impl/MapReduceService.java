@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.DistributedObject;
@@ -76,7 +76,7 @@ public class MapReduceService
     private final ConcurrentMap<JobSupervisorKey, JobSupervisor> jobSupervisors;
 
     private final InternalPartitionService partitionService;
-    private final ClusterService clusterService;
+    private final InternalClusterService clusterService;
 
     private final NodeEngineImpl nodeEngine;
     private final Config config;

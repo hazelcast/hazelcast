@@ -56,7 +56,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 
-import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.createMemberInfoList;
+import static com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl.createMemberInfoList;
 import static com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOperation.FINALIZE_JOIN_MAX_TIMEOUT;
 import static com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOperation.FINALIZE_JOIN_TIMEOUT_FACTOR;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
@@ -80,7 +80,7 @@ public class ClusterJoinManager {
     private final ILogger logger;
     private final Node node;
     private final NodeEngineImpl nodeEngine;
-    private final ClusterServiceImpl clusterService;
+    private final InternalClusterServiceImpl clusterService;
     private final Lock clusterServiceLock;
     private final ClusterClockImpl clusterClock;
     private final ClusterStateManager clusterStateManager;
@@ -94,7 +94,7 @@ public class ClusterJoinManager {
     private long timeToStartJoin;
     private boolean joinInProgress;
 
-    public ClusterJoinManager(Node node, ClusterServiceImpl clusterService, Lock clusterServiceLock) {
+    public ClusterJoinManager(Node node, InternalClusterServiceImpl clusterService, Lock clusterServiceLock) {
         this.node = node;
         this.clusterService = clusterService;
         this.clusterServiceLock = clusterServiceLock;
@@ -522,7 +522,7 @@ public class ClusterJoinManager {
 
     private Future invokeClusterOperation(Operation op, Address target) {
         return nodeEngine.getOperationService()
-                .createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME, op, target)
+                .createInvocationBuilder(InternalClusterServiceImpl.SERVICE_NAME, op, target)
                 .setTryCount(CLUSTER_OPERATION_RETRY_COUNT).invoke();
     }
 

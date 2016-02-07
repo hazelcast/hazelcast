@@ -19,7 +19,7 @@ package com.hazelcast.internal.cluster.impl.operations;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -76,7 +76,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
             return;
         }
 
-        final ClusterServiceImpl clusterService = getService();
+        final InternalClusterServiceImpl clusterService = getService();
         final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
 
         if (nodeEngine.getNode().joined()) {
@@ -98,7 +98,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         runPostJoinOp();
     }
 
-    private void initClusterStates(ClusterServiceImpl clusterService) {
+    private void initClusterStates(InternalClusterServiceImpl clusterService) {
         clusterService.initialClusterState(clusterState);
         clusterService.setClusterId(clusterId);
         clusterService.getClusterClock().setClusterStartTime(clusterStartTime);
@@ -110,7 +110,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         }
 
         partitionRuntimeState.setEndpoint(getCallerAddress());
-        ClusterServiceImpl clusterService = getService();
+        InternalClusterServiceImpl clusterService = getService();
         Node node = clusterService.getNodeEngine().getNode();
         node.partitionService.processPartitionRuntimeState(partitionRuntimeState);
     }
@@ -120,7 +120,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
             return;
         }
 
-        ClusterServiceImpl clusterService = getService();
+        InternalClusterServiceImpl clusterService = getService();
         NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
         InternalOperationService operationService = nodeEngine.getOperationService();
 
@@ -132,7 +132,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     }
 
     private void sendPostJoinOperations() {
-        final ClusterServiceImpl clusterService = getService();
+        final InternalClusterServiceImpl clusterService = getService();
         final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
 
         // Post join operations must be lock free; means no locks at all;
@@ -145,7 +145,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
             for (Member member : members) {
                 if (!member.localMember()) {
                     PostJoinOperation operation = new PostJoinOperation(postJoinOperations);
-                    operationService.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
+                    operationService.createInvocationBuilder(InternalClusterServiceImpl.SERVICE_NAME,
                             operation, member.getAddress()).setTryCount(100).invoke();
                 }
             }

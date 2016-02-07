@@ -17,7 +17,7 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.InternalClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterStateManager;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
@@ -62,7 +62,7 @@ public class LockClusterStateOperation extends AbstractOperation implements Allo
 
     @Override
     public void run() throws Exception {
-        ClusterServiceImpl service = getService();
+        InternalClusterServiceImpl service = getService();
         ClusterStateManager clusterStateManager = service.getClusterStateManager();
         ClusterState state = clusterStateManager.getState();
         if (state == ClusterState.IN_TRANSITION) {
@@ -94,7 +94,7 @@ public class LockClusterStateOperation extends AbstractOperation implements Allo
 
     @Override
     public String getServiceName() {
-        return ClusterServiceImpl.SERVICE_NAME;
+        return InternalClusterServiceImpl.SERVICE_NAME;
     }
 
     @Override

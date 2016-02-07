@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
@@ -214,7 +214,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public ClusterService getClusterService() {
+    public InternalClusterService getClusterService() {
         return node.getClusterService();
     }
 

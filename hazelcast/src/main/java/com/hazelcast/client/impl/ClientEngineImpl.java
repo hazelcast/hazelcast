@@ -28,7 +28,7 @@ import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
-import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.InternalClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
@@ -178,7 +178,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     @Override
-    public ClusterService getClusterService() {
+    public InternalClusterService getClusterService() {
         return nodeEngine.getClusterService();
     }
 
