@@ -359,13 +359,20 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 	</member-group
     </partition-group>
 <!--
-    . 
+    Configuration for Hazelcast's Executor Service. It has the optional attribute "name" with which you can specify the name
+    of your executor service configuration. Its default value is "default".
+    It has the following elements:
+    * <statistics-enabled>: When you enable it, you can retrieve executor service statistics such as pending operations count, 
+    started operations count, completed operations count, and cancelled operations count. Its default value is true.
+    * <pool-size>: The number of executor threads per member for the executor. Its default is 8.
+    * <queue-capacity>: Task queue capacity of the executor. Its default value is 0, meaning Integer.MAX_VALUE.
 -->
     <executor-service name="default">
+        <statistics-enabled>true</statistics-enabled>
         <pool-size>16</pool-size>
-        <!--Queue capacity. 0 means Integer.MAX_VALUE.-->
         <queue-capacity>0</queue-capacity>
     </executor-service>
+    
     <queue name="default">
         <!--
             Maximum size of the queue. When a JVM's local queue size reaches the maximum,
