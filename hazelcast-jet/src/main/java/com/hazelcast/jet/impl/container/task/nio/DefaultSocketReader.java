@@ -23,12 +23,12 @@ import java.util.ArrayList;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 
 import java.nio.channels.SocketChannel;
 
+import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.api.executor.Payload;
 import com.hazelcast.jet.api.data.io.SocketWriter;
 import com.hazelcast.jet.api.data.io.SocketReader;
@@ -51,6 +51,8 @@ public class DefaultSocketReader
 
     private final Address jetAddress;
 
+    private volatile boolean socketAssigned;
+
     private final ApplicationContext applicationContext;
 
     private final DefaultObjectIOStream<JetPacket> buffer;
@@ -59,9 +61,12 @@ public class DefaultSocketReader
 
     private final Map<Address, SocketWriter> writers = new HashMap<Address, SocketWriter>();
 
+    protected boolean isBufferActive;
+
+
     public DefaultSocketReader(ApplicationContext applicationContext,
                                Address jetAddress) {
-        super(applicationContext.getNodeEngine());
+        super(applicationContext.getNodeEngine(), jetAddress);
         this.jetAddress = jetAddress;
         this.applicationContext = applicationContext;
         this.chunkSize = applicationContext.getJetApplicationConfig().getChunkSize();
@@ -69,12 +74,19 @@ public class DefaultSocketReader
     }
 
     public DefaultSocketReader(NodeEngine nodeEngine) {
-        super(nodeEngine);
-        System.out.println("DefaultSocketAcceptor.constructor");
+        super(nodeEngine, null);
         this.jetAddress = null;
+        this.socketAssigned = true;
         this.applicationContext = null;
         this.chunkSize = JetApplicationConfig.DEFAULT_CHUNK_SIZE;
         this.buffer = new DefaultObjectIOStream<JetPacket>(new JetPacket[this.chunkSize]);
+    }
+
+    public void init() {
+        super.init();
+
+        this.socketAssigned = false;
+        this.isBufferActive = false;
     }
 
     @Override
@@ -91,12 +103,22 @@ public class DefaultSocketReader
             return false;
         }
 
+        if (!this.socketAssigned) {
+            return true;
+        }
+
         if (!isFlushed()) {
             payload.set(false);
             return true;
         }
 
-        process(payload);
+        if (this.isBufferActive) {
+            if (!readBuffer()) {
+                return true;
+            }
+        }
+
+        readSocket(payload);
 
         if (this.waitingForFinish) {
             if ((!payload.produced()) && (isFlushed())) {
@@ -112,31 +134,29 @@ public class DefaultSocketReader
         this.applicationContext.getApplicationMaster().notifyNetworkTaskFinished();
     }
 
-    private boolean process(Payload payload) {
+    private boolean readSocket(Payload payload) {
         if ((this.socketChannel != null) && (this.socketChannel.isConnected())) {
             try {
-                int readBytes = this.socketChannel.read(this.receiveBuffer);
+                SocketChannel socketChannel = this.socketChannel;
 
-                if (readBytes <= 0) {
-                    if (readBytes < 0) {
-                        closeSocket();
-                        return false;
+                if (socketChannel != null) {
+                    int readBytes = socketChannel.read(this.receiveBuffer);
+
+                    if (readBytes <= 0) {
+                        if (readBytes < 0) {
+                            return false;
+                        }
+
+                        payload.set(false);
+                        return readBytes == 0;
+                    } else {
+                        this.totalBytes += readBytes;
                     }
-
-                    payload.set(false);
-                    return readBytes == 0;
                 }
 
                 this.receiveBuffer.flip();
-
+                readBuffer();
                 payload.set(true);
-
-                if (!readPackets()) {
-                    return true;
-                }
-
-                flush();
-                clarifyBuffer(this.receiveBuffer);
             } catch (IOException e) {
                 closeSocket();
             } catch (Exception e) {
@@ -150,30 +170,19 @@ public class DefaultSocketReader
         }
     }
 
-    protected void clarifyBuffer(ByteBuffer buffer) {
-        if (buffer.hasRemaining()) {
-            buffer.compact();
-        } else {
-            buffer.clear();
-        }
-    }
-
-    protected boolean consumePacket(JetPacket packet) throws Exception {
-        this.buffer.consume(packet);
-        return true;
-    }
-
-    protected boolean readPackets() throws Exception {
+    protected boolean readBuffer() throws Exception {
         while (this.receiveBuffer.hasRemaining()) {
             if (this.packet == null) {
                 this.packet = new JetPacket();
             }
 
             if (!this.packet.readFrom(this.receiveBuffer)) {
+                alignBuffer(this.receiveBuffer);
+                this.isBufferActive = false;
                 return true;
             }
 
-            if (!consumePacket(this.packet)) {
+            if (!consumePacket(this.packet)) { // False means this is threadAcceptor
                 this.packet = null;
                 return false;
             }
@@ -182,10 +191,32 @@ public class DefaultSocketReader
 
             if (this.buffer.size() >= this.chunkSize) {
                 flush();
-                return true;
+
+                if (!isFlushed()) {
+                    this.isBufferActive = true;
+                    return false;
+                }
             }
         }
 
+        this.isBufferActive = false;
+        alignBuffer(this.receiveBuffer);
+        flush();
+        return isFlushed();
+    }
+
+    protected boolean alignBuffer(ByteBuffer buffer) {
+        if (buffer.hasRemaining()) {
+            buffer.compact();
+            return true;
+        } else {
+            buffer.clear();
+            return false;
+        }
+    }
+
+    protected boolean consumePacket(JetPacket packet) throws Exception {
+        this.buffer.consume(packet);
         return true;
     }
 
@@ -222,14 +253,19 @@ public class DefaultSocketReader
 
     @Override
     public void setSocketChannel(SocketChannel socketChannel,
-                                 ByteBuffer receiveBuffer) {
+                                 ByteBuffer receiveBuffer,
+                                 boolean isBufferActive) {
         this.receiveBuffer = receiveBuffer;
         this.socketChannel = socketChannel;
+        this.isBufferActive = isBufferActive;
+
         try {
-            this.socketChannel.configureBlocking(false);
+            socketChannel.configureBlocking(false);
         } catch (IOException e) {
             throw JetUtil.reThrow(e);
         }
+
+        this.socketAssigned = true;
     }
 
     @Override

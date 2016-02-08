@@ -47,7 +47,9 @@ public class ProducerTaskProcessor implements TaskProcessor {
 
     private int nextProducerIdx;
 
-    private boolean producersClosed;
+    private boolean producingReadFinished;
+
+    private boolean producersWriteFinished;
 
     public ProducerTaskProcessor(ObjectProducer[] producers,
                                  ContainerProcessor processor,
@@ -125,6 +127,10 @@ public class ProducerTaskProcessor implements TaskProcessor {
             }
         }
 
+        if ((!produced) && (this.producersWriteFinished)) {
+            this.producingReadFinished = true;
+        }
+
         if (producersCount > 0) {
             this.nextProducerIdx = (lastIdx + 1) % producersCount;
             this.produced = produced;
@@ -134,7 +140,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
     }
 
     private int startFrom() {
-        return this.producersClosed ? 0 : this.nextProducerIdx;
+        return this.producersWriteFinished ? 0 : this.nextProducerIdx;
     }
 
     private boolean processProducer(ObjectProducer producer) throws Exception {
@@ -194,9 +200,11 @@ public class ProducerTaskProcessor implements TaskProcessor {
     @Override
     public void reset() {
         resetProducers();
+
         this.finalized = false;
-        this.producersClosed = false;
         this.finalizationStarted = false;
+        this.producersWriteFinished = false;
+        this.producingReadFinished = false;
         this.pendingProducer = null;
     }
 
@@ -222,13 +230,13 @@ public class ProducerTaskProcessor implements TaskProcessor {
     }
 
     @Override
-    public void onProducersClosed() {
-        this.producersClosed = true;
+    public void onProducersWriteFinished() {
+        this.producersWriteFinished = true;
     }
 
     @Override
-    public void onReceiversClosed() {
-
+    public boolean producersReadFinished() {
+        return this.producingReadFinished;
     }
 
     private void resetProducers() {
@@ -246,5 +254,10 @@ public class ProducerTaskProcessor implements TaskProcessor {
     @Override
     public boolean hasActiveConsumers() {
         return false;
+    }
+
+    @Override
+    public void onReceiversClosed() {
+
     }
 }

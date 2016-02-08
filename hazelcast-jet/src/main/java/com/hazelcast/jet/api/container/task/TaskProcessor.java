@@ -22,7 +22,7 @@ import com.hazelcast.jet.api.data.io.ProducerInputStream;
 /**
  * Processor to execute inside task
  * It performs tasks' work:
- * <p/>
+ * <p>
  * <pre>
  *     1) Reading from producers
  *     2) Writing to consumers
@@ -105,7 +105,12 @@ public interface TaskProcessor {
     /**
      * Will be invoked when last producer send close signal;
      */
-    void onProducersClosed();
+    void onProducersWriteFinished();
+
+    /***
+     * @return true if all producers send close signal and no more data in producers
+     */
+    boolean producersReadFinished();
 
     /**
      * Will be invoked when last shuffling-network receiver send close signal;

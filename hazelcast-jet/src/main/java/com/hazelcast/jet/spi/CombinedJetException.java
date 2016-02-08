@@ -36,6 +36,10 @@ public class CombinedJetException extends RuntimeException {
         return errors;
     }
 
+    public Throwable getCause() {
+        return errors.size() > 0 ? errors.get(0) : null;
+    }
+
     public void printStackTrace(PrintStream s) {
         for (Throwable error : errors) {
             s.println("====== Exception ============");

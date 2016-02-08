@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.container.task.nio;
 
 import java.io.IOException;
 
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.logging.ILogger;
 
@@ -30,22 +31,30 @@ import com.hazelcast.jet.impl.container.task.AbstractTask;
 public abstract class AbstractNetworkTask extends AbstractTask
         implements NetworkTask {
 
+    protected boolean finished;
+    protected long totalBytes;
     protected final ILogger logger;
+    protected final Address jetAddress;
+    protected boolean waitingForFinish;
     protected volatile boolean destroyed;
+    protected volatile boolean finalized;
     protected volatile boolean inProgress;
     protected volatile boolean interrupted;
     protected volatile SocketChannel socketChannel;
     protected volatile long lastExecutionTimeOut = -1;
-    protected volatile boolean finalized;
-    protected boolean waitingForFinish;
-    protected boolean finished;
 
-    public AbstractNetworkTask(NodeEngine nodeEngine) {
+    public AbstractNetworkTask(NodeEngine nodeEngine,
+                               Address jetAddress) {
+        this.jetAddress = jetAddress;
         this.logger = nodeEngine.getLogger(getClass());
     }
 
     @Override
     public void init() {
+        closeSocket();
+
+        this.totalBytes = 0;
+        this.destroyed = false;
         this.finished = false;
         this.finalized = false;
         this.interrupted = false;
@@ -73,16 +82,18 @@ public abstract class AbstractNetworkTask extends AbstractTask
     @Override
     public void destroy() {
         try {
-            finalizeTask();
+            closeSocket();
         } finally {
-            this.interrupted = true;
+            this.finished = true;
+            this.finalized = true;
             this.destroyed = true;
+            this.inProgress = false;
+            this.interrupted = true;
         }
     }
 
     protected boolean checkFinished() {
         if (this.finished) {
-            closeSocket();
             notifyAMTaskFinished();
             return false;
         }
@@ -116,6 +127,7 @@ public abstract class AbstractNetworkTask extends AbstractTask
         if (this.socketChannel != null) {
             try {
                 this.socketChannel.close();
+                this.socketChannel = null;
             } catch (IOException e) {
                 this.logger.warning(e.getMessage(), e);
             }

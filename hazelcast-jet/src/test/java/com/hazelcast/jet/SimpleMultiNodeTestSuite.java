@@ -36,7 +36,7 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
     }
 
     @Test
-    @Repeat(value = 1)
+    @Repeat(value = 500)
     public void shufflingListTest() throws Exception {
         System.out.println(System.nanoTime() + " --> shufflingListTest");
         Application application = createApplication("shufflingListTest");
@@ -77,7 +77,7 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
     }
 
     @Test
-    @Repeat(value = 1)
+    @Repeat(value = 500)
     public void mapReverserTest() throws Exception {
         System.out.println(System.nanoTime() + " --> mapReverserTest");
         Application application = createApplication("mapReverserTest");

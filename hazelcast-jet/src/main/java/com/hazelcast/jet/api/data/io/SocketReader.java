@@ -26,10 +26,10 @@ import com.hazelcast.jet.impl.actor.RingBufferActor;
 
 /**
  * Represents abstract task to read from network socket;
- * <p/>
+ * <p>
  * The architecture is following:
- * <p/>
- * <p/>
+ * <p>
+ * <p>
  * <pre>
  *  SocketChannel (JetAddress)  -> SocketReader -> Consumer(ringBuffer)
  * </pre>
@@ -43,11 +43,12 @@ public interface SocketReader extends NetworkTask {
     /**
      * Assign corresponding socketChannel to reader-task;
      *
-     * @param socketChannel - network socketChannel;
-     * @param receiveBuffer - byteBuffer to be used to read data from socket;
+     * @param socketChannel  - network socketChannel;
+     * @param receiveBuffer  - byteBuffer to be used to read data from socket;
+     * @param isBufferActive - true , if buffer can be used for read (not all data has been read), false otherwise
      */
     void setSocketChannel(SocketChannel socketChannel,
-                          ByteBuffer receiveBuffer);
+                          ByteBuffer receiveBuffer, boolean isBufferActive);
 
     /**
      * Register output ringBuffer consumer;

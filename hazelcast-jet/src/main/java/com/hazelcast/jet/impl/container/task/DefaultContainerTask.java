@@ -379,7 +379,7 @@ public class DefaultContainerTask extends AbstractTask
             checkActiveProducers(processor);
 
             if (checkProducersClosed()) {
-                processor.onProducersClosed();
+                processor.onProducersWriteFinished();
                 return true;
             }
 
@@ -394,7 +394,7 @@ public class DefaultContainerTask extends AbstractTask
     }
 
     private boolean handleProcessorInProgress(TaskProcessor processor) {
-        if (this.producersClosed) {
+        if (processor.producersReadFinished()) {
             notifyFinalizationStarted();
             if (this.finalizationStarted) {
                 processor.startFinalization();
