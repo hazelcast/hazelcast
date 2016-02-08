@@ -356,7 +356,7 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 	   <interface>10.10.10.10-100</interface>
 	   <interface>10.10.1.*</interface>
 	   <interface>10.10.2.*</interface>
-	</member-group
+	</member-group>
     </partition-group>
 <!--
     Configuration for Hazelcast's Executor Service. It has the optional attribute "name" with which you can specify the name
