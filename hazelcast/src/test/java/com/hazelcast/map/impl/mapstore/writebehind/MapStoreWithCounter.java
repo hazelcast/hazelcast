@@ -15,6 +15,7 @@ public class MapStoreWithCounter<K, V> implements MapStore<K, V> {
 
     protected AtomicInteger countStore = new AtomicInteger(0);
     protected AtomicInteger countDelete = new AtomicInteger(0);
+    protected AtomicInteger countLoad = new AtomicInteger(0);
     protected AtomicInteger batchCounter = new AtomicInteger(0);
     protected Map<Integer, Integer> batchOpCountMap = new ConcurrentHashMap<Integer, Integer>();
 
@@ -54,6 +55,7 @@ public class MapStoreWithCounter<K, V> implements MapStore<K, V> {
 
     @Override
     public V load(K key) {
+        countLoad.incrementAndGet();
         return store.get(key);
     }
 
@@ -80,6 +82,10 @@ public class MapStoreWithCounter<K, V> implements MapStore<K, V> {
 
     public int getDeleteOpCount() {
         return countDelete.intValue();
+    }
+
+    public int getLoadCount() {
+        return countLoad.get();
     }
 
     public Map<Integer, Integer> getBatchOpCountMap() {

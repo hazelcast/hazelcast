@@ -171,7 +171,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     private boolean entryRemoved(Map.Entry entry, long now) {
         final Object value = entry.getValue();
         if (value == null) {
-            recordStore.remove(dataKey);
+            recordStore.delete(dataKey);
             getLocalMapStats().incrementRemoves(getLatencyFrom(now));
             eventType = REMOVED;
             return true;
@@ -184,7 +184,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
      */
     private void entryAddedOrUpdated(Map.Entry entry, long now) {
         dataValue = entry.getValue();
-        recordStore.put(dataKey, dataValue, DEFAULT_TTL);
+        recordStore.set(dataKey, dataValue, DEFAULT_TTL);
 
         getLocalMapStats().incrementPuts(getLatencyFrom(now));
 
