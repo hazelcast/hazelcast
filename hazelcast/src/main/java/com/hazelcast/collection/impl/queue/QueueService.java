@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.collection.common.DataAwareItemEvent;
+import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.queue.operations.QueueReplicationOperation;
 import com.hazelcast.collection.impl.txnqueue.TransactionalQueueProxy;
 import com.hazelcast.collection.impl.txnqueue.operations.QueueTransactionRollbackOperation;

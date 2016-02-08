@@ -34,7 +34,7 @@ import com.hazelcast.client.impl.protocol.codec.SetSizeCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
-import com.hazelcast.collection.common.DataAwareItemEvent;
+import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;

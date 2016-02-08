@@ -20,7 +20,7 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ListAddListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.collection.common.DataAwareItemEvent;
+import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.collection.CollectionEventFilter;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.ItemEvent;

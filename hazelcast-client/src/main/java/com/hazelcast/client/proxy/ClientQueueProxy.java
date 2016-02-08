@@ -41,7 +41,7 @@ import com.hazelcast.client.impl.protocol.codec.QueueTakeCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
-import com.hazelcast.collection.common.DataAwareItemEvent;
+import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.queue.QueueIterator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IQueue;
@@ -52,7 +52,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.Preconditions;
 
 import java.util.ArrayList;
 import java.util.Collection;
