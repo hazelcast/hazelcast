@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.common;
+package com.hazelcast.collection.impl.common;
 
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
