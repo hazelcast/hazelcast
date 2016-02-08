@@ -436,7 +436,68 @@ or the Reference Manual at https://hazelcast.org/documentation/.
   		</properties>
 	</queue-store>
     </queue>
-    
+<!--
+    Configuration for Hazelcast's Map distributed data structure. It has the optional attribute "name" with which you 
+    can specify the name of your map. Its default value is "default".
+    It has the following elements:
+    * <in-memory-format>: 
+    	
+    * <statistics-enabled>: 
+    	When you enable it, you can retrieve executor service statistics such as pending operations count, 
+    	started operations count, completed operations count, and cancelled operations count. Its default value is true.
+    * <optimize-queries>:
+    	
+    * <cache-deserialized-values>:
+    	
+    * <backup-count>:
+    	Number of synchronous backups. Queue is a non-partitioned data structure, so all entries of a Queue 
+    	resides in one partition. When this parameter is '1', it means there will be 1 backup of that Queue in 
+    	another member in the cluster. When it is '2', 2 members will have the backup. 0 means there will be no backups.
+    	Its default value is 1.
+    * <async-backup-count>:
+    	 Number of asynchronous backups. Its default value is 0.
+    * <time-to-live-seconds>:
+    	Used to purge unused or empty queues. If you define a value (time in seconds) for this element, then your queue will 
+    	be destroyed if it stays empty or unused for that time.
+    * <max-idle-seconds>:
+    	
+    * <eviction-policy>:
+    	
+    * <max-size>:
+    	
+    * <eviction-percentage>:
+    	
+    * <min-eviction-check-millis>:
+    	
+    * <merge-policy>:
+    	
+    * <read-backup-data>:
+    	
+    * <hot-restart>:
+    	
+    * <map-store>:
+    	
+    * <near-cache>:
+    	
+    	
+    * <wan-replication-ref>:
+    	
+    * <indexes>:
+    	
+    * <attributes>:
+    * <entry-listeners>:
+    	Adds listeners (listener classes) for the queue items using its sub-element <item-listener>. You can also set its 
+    	attribute "include-value" to true if you want the item event to contain the item values, and you can set its attribute 
+    	"local" to true if you want to listen to the items on the local member. 
+    * <partition-lost-listeners>:
+    	
+    * <partition-strategy>:
+    	
+    * <quorum-ref>:
+    	
+    * <query-caches>:
+    	
+-->    
     <map name="default">
         <!--
            Data type that will be used for storing recordMap.
