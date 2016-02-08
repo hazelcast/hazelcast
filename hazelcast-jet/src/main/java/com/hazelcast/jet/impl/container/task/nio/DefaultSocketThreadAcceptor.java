@@ -18,13 +18,16 @@ package com.hazelcast.jet.impl.container.task.nio;
 
 import java.nio.ByteBuffer;
 import java.io.IOException;
+import java.nio.ByteOrder;
 import java.util.Collection;
 
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 
 import java.nio.channels.SocketChannel;
+
+import com.hazelcast.jet.impl.util.JetUtil;
+
 import java.nio.channels.ServerSocketChannel;
 
 import com.hazelcast.jet.api.executor.Payload;
@@ -62,15 +65,14 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
                 Address address = applicationContext.getNodeEngine().getSerializationService().toObject(
                         new HeapData(packet.toByteArray())
                 );
-                clarifyBuffer(this.receiveBuffer);
-                SocketReader reader = applicationContext.getSocketReaders().get(address);
-                reader.setSocketChannel(this.socketChannel, this.receiveBuffer);
-            } else {
-                clarifyBuffer(this.receiveBuffer);
-            }
 
-            this.socketChannel = null;
-            this.receiveBuffer = null;
+                SocketReader reader = applicationContext.getSocketReaders().get(address);
+                reader.setSocketChannel(this.socketChannel, this.receiveBuffer, true);
+                this.socketChannel = null;
+                this.receiveBuffer = null;
+            } else {
+                alignBuffer(this.receiveBuffer);
+            }
         }
 
         return false;
@@ -82,10 +84,10 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
 
         if (this.socketChannel != null) {
             if (this.receiveBuffer == null) {
-                this.receiveBuffer = ByteBuffer.allocateDirect(JetApplicationConfig.DEFAULT_TCP_BUFFER_SIZE);
+                this.receiveBuffer = ByteBuffer.allocateDirect(JetApplicationConfig.DEFAULT_TCP_BUFFER_SIZE).order(ByteOrder.BIG_ENDIAN);
             }
 
-            super.executeTask(payload);
+            return super.executeTask(payload);
         }
 
         try {
@@ -135,10 +137,6 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
                 }
             }
         }
-    }
-
-    protected boolean isFinished() {
-        return false;
     }
 
     @Override

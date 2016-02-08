@@ -19,15 +19,14 @@ package com.hazelcast.jet.impl.container.task.nio;
 
 import java.util.List;
 import java.util.Queue;
+import java.nio.ByteOrder;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.io.IOException;
 
 import com.hazelcast.nio.Address;
 
-import java.nio.channels.Selector;
 import java.net.InetSocketAddress;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
 import com.hazelcast.jet.api.executor.Payload;
@@ -52,13 +51,11 @@ public class DefaultSocketWriter
 
     private Object[] currentFrames;
 
-    private Selector selector;
-
-    private final Address jetAddress;
-
     private final byte[] membersBytes;
 
     private final ByteBuffer sendByteBuffer;
+
+    private boolean memberEventSent;
 
     private final InetSocketAddress inetSocketAddress;
 
@@ -68,18 +65,26 @@ public class DefaultSocketWriter
 
     private final Queue<JetPacket> servicePackets = new ConcurrentLinkedQueue<JetPacket>();
 
+
     public DefaultSocketWriter(ApplicationContext applicationContext,
                                Address jetAddress) {
-        super(applicationContext.getNodeEngine());
+        super(applicationContext.getNodeEngine(), jetAddress);
+
         this.inetSocketAddress = new InetSocketAddress(jetAddress.getHost(), jetAddress.getPort());
-        this.sendByteBuffer = ByteBuffer.allocateDirect(applicationContext.getJetApplicationConfig().getDefaultTCPBufferSize());
+        this.sendByteBuffer = ByteBuffer.allocateDirect(applicationContext.getJetApplicationConfig().getDefaultTCPBufferSize())
+                .order(ByteOrder.BIG_ENDIAN);
+
         this.applicationContext = applicationContext;
-        this.jetAddress = jetAddress;
         this.membersBytes = applicationContext.getNodeEngine().getSerializationService().toBytes(
                 applicationContext.getLocalJetAddress()
         );
 
         reset();
+    }
+
+    public void init() {
+        super.init();
+        this.memberEventSent = false;
     }
 
     private boolean checkServicesQueue(Payload payload) {
@@ -135,15 +140,22 @@ public class DefaultSocketWriter
             return;
         }
 
-        if (processSocketChannel()) {
+        if (!processSocketChannel()) {
             return;
+        }
+
+        if (!this.memberEventSent) {
+            JetPacket packet = new JetPacket(this.applicationContext.getName().getBytes(), this.membersBytes);
+            packet.setHeader(JetPacket.HEADER_JET_MEMBER_EVENT);
+            this.lastPacket = packet;
+            this.memberEventSent = true;
         }
 
         if (!writeToSocket(payload)) {
             return;
         }
 
-        if (processLastPacket(payload)) {
+        if (!processLastPacket(payload)) {
             return;
         }
 
@@ -153,30 +165,28 @@ public class DefaultSocketWriter
     private boolean processLastPacket(Payload payload) {
         if (this.lastPacket != null) {
             if (!processPacket(this.lastPacket, payload)) {
-                return true;
+                return false;
             }
 
             if (!writeToSocket(payload)) {
-                return true;
+                return false;
             }
         }
-        return false;
+
+        return true;
     }
 
-    private boolean processSocketChannel() {
-        if ((this.socketChannel == null) || (!this.socketChannel.isConnected())) {
-            if (!connect()) {
-                this.socketChannel = null;
-                return true;
-            } else {
-                if (this.lastPacket == null) {
-                    JetPacket packet = new JetPacket(this.applicationContext.getName().getBytes(), this.membersBytes);
-                    packet.setHeader(JetPacket.HEADER_JET_MEMBER_EVENT);
-                    this.lastPacket = packet;
-                }
-            }
+    private boolean processSocketChannel() throws IOException {
+        if ((this.socketChannel != null) && (!this.socketChannel.finishConnect())) {
+            return false;
         }
-        return false;
+
+        if ((this.socketChannel == null) || (!this.socketChannel.isConnected())) {
+            connect();
+            return false;
+        }
+
+        return true;
     }
 
     private boolean processProducers(Payload payload) throws Exception {
@@ -220,20 +230,7 @@ public class DefaultSocketWriter
 
     private void checkTaskFinished(boolean activeProducer) throws IOException {
         if ((!activeProducer) && (this.waitingForFinish)) {
-            if (this.selector == null) {
-                this.socketChannel.socket().getOutputStream().flush();
-                this.selector = this.socketChannel.provider().openSelector();
-                this.socketChannel.register(this.selector, SelectionKey.OP_WRITE);
-            }
-
-            if (this.selector.selectNow() > 0) {
-                for (SelectionKey key : this.selector.keys()) {
-                    if ((key.isWritable()) && (key.isValid())) {
-                        this.selector.close();
-                        this.finished = true;
-                    }
-                }
-            }
+            this.finished = true;
         }
     }
 
@@ -282,14 +279,31 @@ public class DefaultSocketWriter
         return packet.writeTo(this.sendByteBuffer);
     }
 
+
+    @Override
+    public void closeSocket() {
+        if (this.socketChannel != null) {
+            try {
+                this.socketChannel.close();
+                this.socketChannel = null;
+            } catch (IOException e) {
+                this.logger.warning(e.getMessage(), e);
+            }
+        }
+    }
+
+
     private boolean writeToSocket(Payload payload) {
         if (this.sendByteBuffer.position() > 0) {
             try {
                 this.sendByteBuffer.flip();
 
-                int bytesWritten = this.socketChannel.write(this.sendByteBuffer);
+                SocketChannel socketChannel = this.socketChannel;
 
-                payload.set(bytesWritten > 0);
+                if (socketChannel != null) {
+                    int bytesWritten = socketChannel.write(this.sendByteBuffer);
+                    payload.set(bytesWritten > 0);
+                }
 
                 if (this.sendByteBuffer.hasRemaining()) {
                     this.sendByteBuffer.compact();
@@ -306,22 +320,13 @@ public class DefaultSocketWriter
         return true;
     }
 
-    private boolean connect() {
-        try {
-            if (this.socketChannel != null) {
-                this.socketChannel.close();
-            }
-
-            if (this.selector != null) {
-                this.selector.close();
-            }
-
-            this.socketChannel = SocketChannel.open(this.inetSocketAddress);
-            this.socketChannel.configureBlocking(false);
-            return this.socketChannel.finishConnect();
-        } catch (IOException e) {
-            return false;
+    private void connect() throws IOException {
+        if (this.socketChannel != null) {
+            this.socketChannel.close();
         }
+        this.socketChannel = SocketChannel.open(this.inetSocketAddress);
+        this.socketChannel.configureBlocking(false);
+        //this.socketChannel.socket().setSendBufferSize(1);
     }
 
     @Override

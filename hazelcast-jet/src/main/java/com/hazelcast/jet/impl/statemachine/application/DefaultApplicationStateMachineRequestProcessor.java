@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.statemachine.application;
 
+import com.hazelcast.jet.impl.application.ApplicationContextImpl;
 import com.hazelcast.jet.api.statemachine.application.ApplicationEvent;
 import com.hazelcast.jet.api.statemachine.application.ApplicationStateMachineRequestProcessor;
-import com.hazelcast.jet.impl.application.ApplicationContextImpl;
 
 public class DefaultApplicationStateMachineRequestProcessor implements ApplicationStateMachineRequestProcessor {
     private final ApplicationContextImpl applicationContext;
@@ -32,6 +32,14 @@ public class DefaultApplicationStateMachineRequestProcessor implements Applicati
         if (event == ApplicationEvent.EXECUTION_START) {
             this.applicationContext.getExecutorContext().getNetworkTaskContext().init();
             this.applicationContext.getExecutorContext().getApplicationTaskContext().init();
+        }
+
+        if ((event == ApplicationEvent.EXECUTION_FAILURE) ||
+                (event == ApplicationEvent.EXECUTION_SUCCESS) ||
+                (event == ApplicationEvent.INTERRUPTION_FAILURE) ||
+                (event == ApplicationEvent.INTERRUPTION_SUCCESS)
+                ) {
+            this.applicationContext.getExecutorContext().getNetworkTaskContext().destroy();
         }
     }
 }

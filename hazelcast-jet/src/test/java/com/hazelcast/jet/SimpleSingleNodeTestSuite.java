@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.ArrayList;
 
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 
 import java.util.concurrent.Future;
@@ -23,7 +22,7 @@ import com.hazelcast.jet.base.JetBaseTest;
 import com.hazelcast.jet.impl.dag.DAGImpl;
 import com.hazelcast.jet.impl.dag.EdgeImpl;
 import com.hazelcast.config.InMemoryFormat;
-
+import com.hazelcast.core.HazelcastInstance;
 
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.core.PartitioningStrategy;
@@ -232,7 +231,6 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
     }
 
     @Test
-    @Ignore
     public void clientMixinTest() throws Exception {
         mixing(
                 CLIENT, "clientMixinTest"
@@ -261,10 +259,10 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
         Application application4 = createApplication(applicationName + ".4");
 
         try {
-            final IMap<Integer, String> targetMap1 = instance.getMap("target1." + applicationName);
-            final IMap<Integer, String> targetMap2 = instance.getMap("target2." + applicationName);
-            final IMap<Integer, String> targetMap3 = instance.getMap("target3." + applicationName);
-            final IMap<Integer, String> targetMap4 = instance.getMap("target4." + applicationName);
+            final IMap<Integer, String> targetMap1 = SERVER.getMap("target1." + applicationName);
+            final IMap<Integer, String> targetMap2 = SERVER.getMap("target2." + applicationName);
+            final IMap<Integer, String> targetMap3 = SERVER.getMap("target3." + applicationName);
+            final IMap<Integer, String> targetMap4 = SERVER.getMap("target4." + applicationName);
 
             int CNT = 100;
 

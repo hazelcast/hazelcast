@@ -192,13 +192,18 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     }
 
     @Override
-    public void onProducersClosed() {
+    public void onProducersWriteFinished() {
 
     }
 
     @Override
     public void onReceiversClosed() {
 
+    }
+
+    @Override
+    public boolean producersReadFinished() {
+        return true;
     }
 
     @Override

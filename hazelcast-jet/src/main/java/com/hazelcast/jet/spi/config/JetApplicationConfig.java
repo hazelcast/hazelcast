@@ -30,7 +30,7 @@ public class JetApplicationConfig implements Serializable {
 
     public static final int PORT_AUTO_INCREMENT = 1;
 
-    public static final int DEFAULT_CONNECTIONS_CHECKING_INTERVAL_MS = 10000;
+    public static final int DEFAULT_CONNECTIONS_CHECKING_INTERVAL_MS = 100000;
 
     public static final int DEFAULT_CONNECTIONS_SILENCE_TIMEOUT_MS = 1000;
 

@@ -17,12 +17,11 @@
 package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
 
 import com.hazelcast.jet.api.Dummy;
+import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.api.container.ProcessingContainer;
 import com.hazelcast.jet.api.executor.ApplicationTaskContext;
 import com.hazelcast.jet.api.container.ContainerPayLoadProcessor;
 import com.hazelcast.jet.api.container.applicationmaster.ApplicationMaster;
-import com.hazelcast.jet.impl.util.JetUtil;
-
 
 public class FinalizeApplicationProcessor implements ContainerPayLoadProcessor<Dummy> {
     private final ApplicationMaster applicationMaster;
