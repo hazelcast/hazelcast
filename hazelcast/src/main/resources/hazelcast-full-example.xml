@@ -324,7 +324,9 @@ or the Reference Manual at https://hazelcast.org/documentation/.
                 <interface>127.0.0.1</interface>
             </tcp-ip>
             <discovery-strategies>
-              <discovery-strategy ... />
+              <discovery-strategy>
+              	...
+              </discovery-strategy>
             </discovery-strategies>
         </join>
         <interfaces enabled="true">
