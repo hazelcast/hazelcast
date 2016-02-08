@@ -17,8 +17,8 @@
 package com.hazelcast.internal.monitors;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.internal.instance.GroupProperties;
+import com.hazelcast.internal.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -32,8 +32,8 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static java.lang.Math.round;
 import static java.lang.String.format;

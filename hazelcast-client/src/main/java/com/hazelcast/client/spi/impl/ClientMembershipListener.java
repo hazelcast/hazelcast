@@ -25,7 +25,7 @@ import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.instance.AbstractMember;
+import com.hazelcast.internal.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;

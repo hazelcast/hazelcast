@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.internal.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionService;
 import java.net.InetSocketAddress;

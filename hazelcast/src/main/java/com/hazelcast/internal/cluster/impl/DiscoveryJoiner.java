@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.MemberImpl;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;

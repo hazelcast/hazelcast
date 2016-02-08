@@ -25,7 +25,7 @@ import com.hazelcast.collection.impl.collection.CollectionEventFilter;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;

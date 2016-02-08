@@ -19,7 +19,7 @@ package com.hazelcast.executor.impl.operations;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.RunnableAdapter;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.internal.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

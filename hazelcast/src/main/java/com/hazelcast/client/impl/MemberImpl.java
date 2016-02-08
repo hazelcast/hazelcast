@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.AbstractMember;
+import com.hazelcast.internal.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;

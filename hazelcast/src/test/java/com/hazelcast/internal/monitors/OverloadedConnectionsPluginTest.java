@@ -7,7 +7,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.test.AssertTask;
@@ -15,14 +14,13 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_PERIOD_SECONDS;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_SAMPLES;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_THRESHOLD;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_PERIOD_SECONDS;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_SAMPLES;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_THRESHOLD;
 import static org.junit.Assert.assertEquals;
 
 /**

@@ -14,8 +14,8 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;

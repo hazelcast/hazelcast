@@ -19,7 +19,7 @@ package com.hazelcast.replicatedmap;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.internal.instance.HazelcastInstanceManager;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import java.util.ArrayList;

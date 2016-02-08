@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.internal.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.instance.NodeExtension;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 

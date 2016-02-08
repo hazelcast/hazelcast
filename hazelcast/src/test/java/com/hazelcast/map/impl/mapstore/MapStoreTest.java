@@ -31,7 +31,7 @@ import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.PostProcessingMapStore;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;

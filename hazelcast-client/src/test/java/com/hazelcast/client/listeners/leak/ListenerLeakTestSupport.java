@@ -23,7 +23,7 @@ import com.hazelcast.client.spi.impl.listener.ClientEventRegistration;
 import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 

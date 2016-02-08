@@ -19,7 +19,7 @@ package com.hazelcast.client.impl;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.ClientService;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;

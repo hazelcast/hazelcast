@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.internal.instance.GroupProperties;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionManager;
@@ -37,9 +37,9 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_PERIOD_SECONDS;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_SAMPLES;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_THRESHOLD;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_PERIOD_SECONDS;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_SAMPLES;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_THRESHOLD;
 import static java.lang.Math.min;
 import static java.util.Collections.emptySet;
 

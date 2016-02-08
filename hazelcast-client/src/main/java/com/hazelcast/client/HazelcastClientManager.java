@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;

@@ -17,7 +17,7 @@
 package com.hazelcast.internal.ascii;
 
 import com.hazelcast.internal.ascii.memcache.Stats;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 
 public interface TextCommandService {
 

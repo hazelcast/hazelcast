@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
 import com.hazelcast.nio.Connection;

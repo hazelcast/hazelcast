@@ -18,11 +18,11 @@
 package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.internal.cluster.Joiner;
-import com.hazelcast.instance.AddressPicker;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeContext;
-import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.instance.NodeExtensionFactory;
+import com.hazelcast.internal.instance.AddressPicker;
+import com.hazelcast.internal.instance.Node;
+import com.hazelcast.internal.instance.NodeContext;
+import com.hazelcast.internal.instance.NodeExtension;
+import com.hazelcast.internal.instance.NodeExtensionFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;

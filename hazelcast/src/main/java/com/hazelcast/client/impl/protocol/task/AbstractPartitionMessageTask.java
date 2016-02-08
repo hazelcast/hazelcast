@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;

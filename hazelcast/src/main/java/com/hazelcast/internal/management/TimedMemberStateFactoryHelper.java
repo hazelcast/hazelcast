@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.management;
 
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.internal.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.management.dto.ConnectionManagerDTO;
 import com.hazelcast.internal.management.dto.EventServiceDTO;
 import com.hazelcast.internal.management.dto.MXBeansDTO;

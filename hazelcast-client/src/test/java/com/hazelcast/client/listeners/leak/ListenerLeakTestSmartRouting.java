@@ -29,7 +29,7 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -40,7 +40,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
-import java.util.Set;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;

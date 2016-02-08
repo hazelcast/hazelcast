@@ -1,7 +1,7 @@
 package com.hazelcast.test;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.TestUtil.getNode;
+import static com.hazelcast.internal.instance.TestUtil.getNode;
 import static com.hazelcast.partition.InternalPartition.MAX_REPLICA_COUNT;
 
 public class TestPartitionUtils {

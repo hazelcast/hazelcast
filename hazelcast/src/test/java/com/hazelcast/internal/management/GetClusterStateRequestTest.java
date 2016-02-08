@@ -4,7 +4,7 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.internal.management.request.GetClusterStateRequest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

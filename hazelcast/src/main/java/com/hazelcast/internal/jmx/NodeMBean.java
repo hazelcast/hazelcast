@@ -17,14 +17,14 @@
 package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Address;
 import java.util.Hashtable;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
 
 /**
- * Management bean for {@link com.hazelcast.instance.Node}
+ * Management bean for {@link com.hazelcast.internal.instance.Node}
  */
 @ManagedDescription("HazelcastInstance.Node")
 public class NodeMBean extends HazelcastMBean<Node> {

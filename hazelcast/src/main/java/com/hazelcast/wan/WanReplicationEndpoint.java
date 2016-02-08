@@ -16,7 +16,7 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 
 /**
  * Implementations of this interface represent a replication endpoint, normally another

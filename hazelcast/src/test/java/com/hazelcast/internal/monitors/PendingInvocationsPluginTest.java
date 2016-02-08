@@ -16,8 +16,8 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Map;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_PENDING_INVOCATIONS_PERIOD_SECONDS;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_PENDING_INVOCATIONS_THRESHOLD;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_PENDING_INVOCATIONS_PERIOD_SECONDS;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_PENDING_INVOCATIONS_THRESHOLD;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)

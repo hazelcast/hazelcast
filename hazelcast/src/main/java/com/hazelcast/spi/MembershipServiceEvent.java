@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.instance.MemberImpl;
 
 /**
  * Membership event fired when a new member is added

@@ -19,7 +19,7 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.internal.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

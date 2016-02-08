@@ -1,7 +1,7 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;

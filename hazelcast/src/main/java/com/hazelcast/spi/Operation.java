@@ -347,7 +347,7 @@ public abstract class Operation implements DataSerializable {
      * aborted, then the call-timeout is 60000 milliseconds.
      *
      * For more information about the default value, see
-     * {@link com.hazelcast.instance.GroupProperties#OPERATION_CALL_TIMEOUT_MILLIS}
+     * {@link com.hazelcast.internal.instance.GroupProperties#OPERATION_CALL_TIMEOUT_MILLIS}
      *
      * @return the call timeout in milliseconds.
      * @see #setCallTimeout(long)

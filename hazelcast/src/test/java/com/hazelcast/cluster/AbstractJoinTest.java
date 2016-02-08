@@ -3,7 +3,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import static org.junit.Assert.assertEquals;

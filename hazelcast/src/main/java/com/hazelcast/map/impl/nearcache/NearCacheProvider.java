@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.internal.instance.GroupProperties;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapManagedService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -31,8 +31,8 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
-import static com.hazelcast.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.internal.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.internal.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 
 /**
  * Provides near cache specific functionality.

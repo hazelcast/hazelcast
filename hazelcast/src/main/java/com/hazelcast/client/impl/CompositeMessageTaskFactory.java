@@ -18,7 +18,7 @@ package com.hazelcast.client.impl;
 
 import java.util.Iterator;
 
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
 

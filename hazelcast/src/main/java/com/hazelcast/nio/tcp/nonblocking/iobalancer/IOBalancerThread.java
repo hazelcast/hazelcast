@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.EmptyStatement;
 

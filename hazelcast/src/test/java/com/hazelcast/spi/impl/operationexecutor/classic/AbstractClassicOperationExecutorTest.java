@@ -1,12 +1,12 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.DefaultNodeExtension;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.BuildInfo;
+import com.hazelcast.internal.instance.DefaultNodeExtension;
+import com.hazelcast.internal.instance.GroupProperties;
+import com.hazelcast.internal.instance.GroupProperty;
+import com.hazelcast.internal.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.Logger;

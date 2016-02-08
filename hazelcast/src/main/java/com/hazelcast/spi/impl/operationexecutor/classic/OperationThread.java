@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.internal.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.instance.NodeExtension;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
@@ -29,7 +29,7 @@ import com.hazelcast.util.executor.HazelcastManagedThread;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
+import static com.hazelcast.internal.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 
 /**

@@ -10,7 +10,7 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.MapStoreFactory;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.map.impl.mapstore.writebehind.TestMapUsingMapStoreBuilder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;

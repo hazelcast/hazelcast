@@ -18,7 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.ascii;
 
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.internal.ascii.memcache.MemcacheEntry;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;

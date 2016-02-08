@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.query.SampleObjects.Value;

@@ -22,7 +22,7 @@ import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.membergroup.ConfigMemberGroupFactory;

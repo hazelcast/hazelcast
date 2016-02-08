@@ -15,7 +15,7 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapService;

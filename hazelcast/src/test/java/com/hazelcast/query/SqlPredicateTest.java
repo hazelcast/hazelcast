@@ -51,7 +51,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.TestUtil.toData;
+import static com.hazelcast.internal.instance.TestUtil.toData;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;

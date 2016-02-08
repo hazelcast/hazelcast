@@ -17,9 +17,9 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.LifecycleServiceImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.GroupProperty;
+import com.hazelcast.internal.instance.LifecycleServiceImpl;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.util.Clock;

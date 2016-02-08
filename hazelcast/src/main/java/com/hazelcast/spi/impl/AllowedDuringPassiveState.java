@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
+import com.hazelcast.internal.instance.Node;
+import com.hazelcast.internal.instance.NodeState;
 
 /**
  * Marker interface for operations those are allowed to be executed or invoked during

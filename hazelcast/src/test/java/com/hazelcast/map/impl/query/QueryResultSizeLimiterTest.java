@@ -1,7 +1,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.internal.instance.GroupProperties;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -22,9 +22,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.instance.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.instance.GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
-import static com.hazelcast.instance.GroupProperty.QUERY_RESULT_SIZE_LIMIT;
+import static com.hazelcast.internal.instance.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.internal.instance.GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
+import static com.hazelcast.internal.instance.GroupProperty.QUERY_RESULT_SIZE_LIMIT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

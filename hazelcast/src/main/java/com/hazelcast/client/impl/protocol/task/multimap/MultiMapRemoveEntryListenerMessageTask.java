@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;

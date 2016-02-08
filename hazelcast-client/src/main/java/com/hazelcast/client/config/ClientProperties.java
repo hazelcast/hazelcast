@@ -17,7 +17,7 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.instance.HazelcastProperties;
+import com.hazelcast.internal.instance.HazelcastProperties;
 
 import static com.hazelcast.client.config.ClientProperty.EVENT_QUEUE_CAPACITY;
 import static com.hazelcast.client.config.ClientProperty.EVENT_THREAD_COUNT;

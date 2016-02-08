@@ -21,7 +21,7 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
+import static com.hazelcast.internal.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.nio.Packet.HEADER_BIND;
 import static com.hazelcast.nio.Packet.HEADER_EVENT;
 import static com.hazelcast.nio.Packet.HEADER_OP;

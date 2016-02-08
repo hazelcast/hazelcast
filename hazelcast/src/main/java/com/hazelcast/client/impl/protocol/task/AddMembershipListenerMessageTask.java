@@ -26,8 +26,8 @@ import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.MemberImpl;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Connection;
 
 import java.security.Permission;

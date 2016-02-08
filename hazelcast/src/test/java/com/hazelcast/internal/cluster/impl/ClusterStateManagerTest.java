@@ -17,8 +17,8 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.internal.instance.Node;
+import com.hazelcast.internal.instance.NodeExtension;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionService;

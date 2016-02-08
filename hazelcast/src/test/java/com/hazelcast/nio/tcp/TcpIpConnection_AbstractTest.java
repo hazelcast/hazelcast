@@ -1,6 +1,6 @@
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.serialization.SerializationService;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.exception.RetryableException;
 

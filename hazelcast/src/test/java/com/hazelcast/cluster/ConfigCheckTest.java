@@ -4,7 +4,7 @@ import com.hazelcast.internal.cluster.impl.ConfigCheck;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;

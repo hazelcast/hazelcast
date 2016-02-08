@@ -1,7 +1,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.internal.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -17,8 +17,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.instance.GroupProperty.BACKPRESSURE_ENABLED;
-import static com.hazelcast.instance.GroupProperty.BACKPRESSURE_SYNCWINDOW;
+import static com.hazelcast.internal.instance.GroupProperty.BACKPRESSURE_ENABLED;
+import static com.hazelcast.internal.instance.GroupProperty.BACKPRESSURE_SYNCWINDOW;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

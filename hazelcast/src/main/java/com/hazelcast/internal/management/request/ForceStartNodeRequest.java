@@ -17,7 +17,7 @@
 package com.hazelcast.internal.management.request;
 
 import com.eclipsesource.json.JsonObject;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.internal.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.logging.ILogger;
 

@@ -50,7 +50,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.instance.TestUtil.toData;
+import static com.hazelcast.internal.instance.TestUtil.toData;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

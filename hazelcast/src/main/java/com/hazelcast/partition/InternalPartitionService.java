@@ -18,7 +18,7 @@ package com.hazelcast.partition;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationListener;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.CoreService;

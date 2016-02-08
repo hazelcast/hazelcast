@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.instance.BuildInfo;
+import com.hazelcast.internal.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 

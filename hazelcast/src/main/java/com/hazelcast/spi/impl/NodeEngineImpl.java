@@ -20,9 +20,9 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.GroupProperties;
+import com.hazelcast.internal.instance.MemberImpl;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -70,7 +70,7 @@ import com.hazelcast.wan.WanReplicationService;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_METRICS_LEVEL;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_METRICS_LEVEL;
 
 /**
  * The NodeEngineImpl is the where the construction of the Hazelcast dependencies take place. It can be

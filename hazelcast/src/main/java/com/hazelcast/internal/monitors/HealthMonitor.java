@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeState;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.instance.GroupProperty;
+import com.hazelcast.internal.instance.Node;
+import com.hazelcast.internal.instance.NodeState;
+import com.hazelcast.internal.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -40,13 +40,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p/>
  * Health monitor can be configured with system properties.
  * <p/>
- * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_LEVEL}
+ * {@link com.hazelcast.internal.instance.GroupProperty#HEALTH_MONITORING_LEVEL}
  * This property can be one of the following:
  * {@link HealthMonitorLevel#NOISY}  => does not check threshold, always prints.
  * {@link HealthMonitorLevel#SILENT} => prints only if metrics are above threshold (default).
  * {@link HealthMonitorLevel#OFF}    => does not print anything.
  * <p/>
- * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_DELAY_SECONDS}
+ * {@link com.hazelcast.internal.instance.GroupProperty#HEALTH_MONITORING_DELAY_SECONDS}
  * Time between printing two logs of health monitor. Default values is 30 seconds.
  */
 public class HealthMonitor {

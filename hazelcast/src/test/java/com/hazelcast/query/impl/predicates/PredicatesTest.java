@@ -49,7 +49,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static com.hazelcast.instance.TestUtil.toData;
+import static com.hazelcast.internal.instance.TestUtil.toData;
 import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.between;
 import static com.hazelcast.query.Predicates.equal;

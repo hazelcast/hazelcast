@@ -20,7 +20,7 @@ import com.hazelcast.cache.impl.CacheContext;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.instance.TestUtil;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

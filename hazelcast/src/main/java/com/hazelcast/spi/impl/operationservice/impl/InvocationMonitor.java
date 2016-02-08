@@ -17,10 +17,10 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.instance.GroupProperties;
+import com.hazelcast.internal.instance.GroupProperty;
+import com.hazelcast.internal.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.instance.MemberImpl;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
@@ -37,7 +37,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
+import static com.hazelcast.internal.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 import static java.util.logging.Level.FINE;

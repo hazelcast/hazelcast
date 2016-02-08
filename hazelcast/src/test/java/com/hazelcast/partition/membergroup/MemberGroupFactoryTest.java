@@ -2,7 +2,7 @@ package com.hazelcast.partition.membergroup;
 
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;

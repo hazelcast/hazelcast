@@ -17,9 +17,9 @@
 package com.hazelcast.spi.impl.waitnotifyservice.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.instance.MemberImpl;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationInfo;

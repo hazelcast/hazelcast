@@ -1,8 +1,8 @@
 package com.hazelcast.internal.monitors;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.instance.BuildInfo;
+import com.hazelcast.internal.instance.BuildInfoProvider;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;

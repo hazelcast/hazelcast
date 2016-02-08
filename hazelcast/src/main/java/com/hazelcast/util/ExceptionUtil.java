@@ -17,7 +17,7 @@
 package com.hazelcast.util;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.instance.OutOfMemoryErrorDispatcher;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

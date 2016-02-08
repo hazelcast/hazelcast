@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.HazelcastInstanceManager;
-import com.hazelcast.instance.NodeContext;
+import com.hazelcast.internal.instance.GroupProperty;
+import com.hazelcast.internal.instance.HazelcastInstanceManager;
+import com.hazelcast.internal.instance.NodeContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 
@@ -36,8 +36,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.HazelcastTestSupport.getAddress;
-import static com.hazelcast.instance.TestUtil.getNode;
-import static com.hazelcast.instance.TestUtil.terminateInstance;
+import static com.hazelcast.internal.instance.TestUtil.getNode;
+import static com.hazelcast.internal.instance.TestUtil.terminateInstance;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class TestHazelcastInstanceFactory {

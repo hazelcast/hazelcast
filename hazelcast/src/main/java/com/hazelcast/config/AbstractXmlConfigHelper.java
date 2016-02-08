@@ -18,8 +18,8 @@ package com.hazelcast.config;
 
 import com.hazelcast.config.AbstractConfigBuilder.ConfigType;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.instance.BuildInfo;
+import com.hazelcast.internal.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.MemorySize;

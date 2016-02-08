@@ -17,7 +17,6 @@
 package com.hazelcast.client.cache.nearcache;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
@@ -31,9 +30,8 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.LifecycleServiceImpl;
-import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.instance.GroupProperties;
+import com.hazelcast.internal.instance.LifecycleServiceImpl;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.AssertTask;
@@ -43,9 +41,7 @@ import org.junit.Before;
 
 import javax.cache.spi.CachingProvider;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;

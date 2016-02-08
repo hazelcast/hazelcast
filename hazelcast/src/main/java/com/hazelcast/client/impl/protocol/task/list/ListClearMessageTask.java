@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.ListClearCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionClearOperation;
 import com.hazelcast.collection.impl.list.ListService;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;

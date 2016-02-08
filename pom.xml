@@ -737,7 +737,7 @@
                                 *.handlermigration:*.client.connection.nio:*.client.console:*.buildutils:
                                 *.client.protocol.generator:*.cluster.client:*.concurrent:*.collection:
                                 *.nio.ascii:*.nio.ssl:*.nio.tcp:*.partition.client:*.transaction.client:
-                                *.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder
+                                *.core.server:com.hazelcast.internal.instance:com.hazelcast.PlaceHolder
                             </excludePackageNames>
                         </configuration>
                         <executions>

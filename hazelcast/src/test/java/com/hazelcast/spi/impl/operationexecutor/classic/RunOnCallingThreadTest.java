@@ -1,6 +1,6 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;

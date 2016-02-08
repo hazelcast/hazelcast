@@ -17,10 +17,10 @@
 package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.instance.GroupProperties;
+import com.hazelcast.internal.instance.GroupProperty;
+import com.hazelcast.internal.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.instance.MemberImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;

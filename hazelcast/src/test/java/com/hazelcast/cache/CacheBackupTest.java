@@ -5,7 +5,7 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.test.AssertTask;

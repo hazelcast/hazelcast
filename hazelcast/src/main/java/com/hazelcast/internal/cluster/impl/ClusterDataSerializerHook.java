@@ -19,7 +19,7 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOperation;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatOperation;
 import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.instance.MemberImpl;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializableFactory;

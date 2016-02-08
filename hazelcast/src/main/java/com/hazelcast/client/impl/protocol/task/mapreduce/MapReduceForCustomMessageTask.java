@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.mapreduce;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapReduceForCustomCodec;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.mapreduce.KeyValueSource;
