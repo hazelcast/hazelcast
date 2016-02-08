@@ -390,9 +390,7 @@ or the Reference Manual at https://hazelcast.org/documentation/.
     can specify the name of your queue. Its default value is "default".
     It has the following elements:
     * <statistics-enabled>: 
-	When you enable it, you can retrieve executor service statistics such as pending operations count, 
-	started operations count, completed operations count, and cancelled operations count. Its default 
-	value is true.
+	When you enable it, you can retrieve queue statistics. Its default value is true.
     * <max-size>: 
 	Maximum size of the queue. When a JVM's local queue size reaches the maximum, all put/offer operations 
 	will be blocked until the queue size of the JVM goes down below this maximum. Its default value is 0, 
@@ -420,14 +418,14 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 		If you do not reach the queue store from an external application, you might prefer that the items 
 		be inserted in binary form. Set this property to true and skip the deserialization step, which is a 
 		performance optimization. Its default value is false.
-		- memory-limit:
-			Number of items after which Hazelcast will store items only to datastore. For example, 
-			if the memory limit is 1000, then the 1001st item will be put only to datastore. 
-			This feature is useful when you want to avoid out-of-memory conditions. If you want to 
-			always use memory, you can set it to Integer.MAX_VALUE. Its default value is 1000.
-		- bulk-load:
-			Size of the bulks loaded from QueueStore when the queue is initialized. Its default 
-			value is 250.
+	- memory-limit:
+		Number of items after which Hazelcast will store items only to datastore. For example, 
+		if the memory limit is 1000, then the 1001st item will be put only to datastore. 
+		This feature is useful when you want to avoid out-of-memory conditions. If you want to 
+		always use memory, you can set it to Integer.MAX_VALUE. Its default value is 1000.
+	- bulk-load:
+		Size of the bulks loaded from QueueStore when the queue is initialized. Its default 
+		value is 250.
 -->    
     <queue name="default">
         <statistics-enabled>true</statistics-enabled>
@@ -454,14 +452,25 @@ or the Reference Manual at https://hazelcast.org/documentation/.
     can specify the name of your map. Its default value is "default".
     It has the following elements:
     * <in-memory-format>: 
-    	
+	Specifies in which format data will be stored in your map. Available values are as follows:
+	- BINARY:
+		Data will be stored in serialized binary format. It is the default option.
+	- OBJECT:
+		Data will be stored in deserialized form.
+	- NATIVE:
+		Data will be stored in the map that uses Hazelcast's High-Density Memory Store feature. This option
+		is available only in Hazelcast Enterprise HD.
     * <statistics-enabled>: 
-    	When you enable it, you can retrieve executor service statistics such as pending operations count, 
-    	started operations count, completed operations count, and cancelled operations count. Its default value is true.
+    	When you enable it, you can retrieve map entry statistics such as creation time, expiration time,  
+    	number of hits, key, value, etc. Its default value is true.
     * <optimize-queries>:
-    	
+	It is deprecated as of Hazelcast 3.6. Use <cache-deserialized-values> element instead. When  
+	<optimize-queries> and <cache-deserialized-values> are used at the same time Hazelcast will do its 
+	best to detect possible conflicts. Conflict detection is done on best-effort basis and you should not 
+	rely on it. If true, it increases the speed of query processes in the map. It only works when <in-memory-format>
+	is set as BINARY and performs a pre-caching on the entries queried. Its default value is false.
     * <cache-deserialized-values>:
-    	
+	
     * <backup-count>:
     	Number of synchronous backups. Queue is a non-partitioned data structure, so all entries of a Queue 
     	resides in one partition. When this parameter is '1', it means there will be 1 backup of that Queue in 
@@ -512,13 +521,6 @@ or the Reference Manual at https://hazelcast.org/documentation/.
     	
 -->    
     <map name="default">
-        <!--
-           Data type that will be used for storing recordMap.
-           Possible values:
-           BINARY (default): keys and values will be stored as binary data
-           OBJECT : values will be stored in their object forms
-           NATIVE : values will be stored in non-heap region of JVM
-        -->
         <in-memory-format>BINARY</in-memory-format>
 
         <!--
