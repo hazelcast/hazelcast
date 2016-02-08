@@ -62,10 +62,11 @@ class MapRemoteService implements RemoteService {
         mapServiceContext.destroyMap(name);
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
         Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
-        MapContainer mapContainer = mapContainers.remove(name);
+        MapContainer mapContainer = mapContainers.get(name);
         if (mapContainer != null) {
             mapServiceContext.getNearCacheProvider().destroyNearCache(name);
             mapContainer.getMapStoreContext().stop();
+            mapContainers.remove(name);
         }
     }
 

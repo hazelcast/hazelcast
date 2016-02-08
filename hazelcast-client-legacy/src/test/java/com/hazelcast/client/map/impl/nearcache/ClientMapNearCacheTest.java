@@ -23,6 +23,7 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
@@ -971,6 +972,22 @@ public class ClientMapNearCacheTest {
         });
     }
 
+
+    @Test
+    public void testMapDestroy_succeeds_when_writeBehind_and_nearCache_enabled() {
+        Config config = newConfig();
+        MapConfig mapConfig = config.getMapConfig("default");
+        mapConfig.getMapStoreConfig()
+                .setEnabled(true)
+                .setWriteDelaySeconds(1)
+                .setImplementation(new MapStoreAdapter());
+
+        IMap<Integer, Integer> map = getNearCachedMapFromClient(config, newInvalidationEnabledNearCacheConfig());
+        populateNearCache(map, 10);
+
+        map.destroy();
+    }
+
     protected void populateNearCache(IMap<Integer, Integer> map, int size) {
         for (int i = 0; i < size; i++) {
             map.put(i, i);
@@ -1130,8 +1147,12 @@ public class ClientMapNearCacheTest {
     }
 
     protected <K, V> IMap<K, V> getNearCachedMapFromClient(NearCacheConfig nearCacheConfig) {
+        return getNearCachedMapFromClient(newConfig(), nearCacheConfig);
+    }
+
+    protected <K, V> IMap<K, V> getNearCachedMapFromClient(Config config, NearCacheConfig nearCacheConfig) {
         String mapName = randomMapName();
-        hazelcastFactory.newHazelcastInstance(newConfig());
+        hazelcastFactory.newHazelcastInstance(config);
 
         nearCacheConfig.setName(mapName + "*");
 
