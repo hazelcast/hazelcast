@@ -91,7 +91,8 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             portableContext.registerClassDefinition(cd);
         }
 
-        dataSerializerAdapter = createSerializerAdapter(new DataSerializer(dataSerializableFactories, classLoader), this);
+        dataSerializerAdapter = createSerializerAdapter(
+                new DataSerializableSerializer(dataSerializableFactories, classLoader), this);
         portableSerializer = new PortableSerializer(portableContext, loader.getFactories());
         portableSerializerAdapter = createSerializerAdapter(portableSerializer, this);
 
