@@ -24,6 +24,10 @@ import com.hazelcast.util.QuickMath;
 import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.util.JVMUtil.OBJECT_HEADER_IN_BYTES;
+import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+
+
 /**
  * Entry holder to be used in Client and Node side Near cache
  */
@@ -91,13 +95,13 @@ public class NearCacheRecord {
             return 0;
         }
         // value is Data
-        return ((Data) key).getHeapCost()
+        return OBJECT_HEADER_IN_BYTES + ((Data) key).getHeapCost()
                 + ((Data) value).getHeapCost()
                 + 2 * (Long.SIZE / Byte.SIZE)
                 // sizeof atomic long
-                + (Long.SIZE / Byte.SIZE)
-                // object references (key, value, hit)
-                + 3 * (Integer.SIZE / Byte.SIZE);
+                + (Long.SIZE / Byte.SIZE) + OBJECT_HEADER_IN_BYTES + REFERENCE_COST_IN_BYTES
+                // object references (key, value, hit) in
+                + 2 * (Integer.SIZE / Byte.SIZE) + 2 * OBJECT_HEADER_IN_BYTES;
     }
 
     public boolean isExpired(long maxIdleMillis, long timeToLiveMillis) {

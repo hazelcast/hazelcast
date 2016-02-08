@@ -18,7 +18,11 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
 
-class DataRecordWithStats extends AbstractRecordWithStats<Data> {
+import static com.hazelcast.util.JVMUtil.OBJECT_HEADER_IN_BYTES;
+import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+
+
+public class DataRecordWithStats extends AbstractRecordWithStats<Data> {
 
     protected Data value;
 
@@ -35,11 +39,10 @@ class DataRecordWithStats extends AbstractRecordWithStats<Data> {
      */
     @Override
     public long getCost() {
-        long cost = super.getCost();
-        final int objectReferenceInBytes = 4;
-        // add value size.
-        cost += objectReferenceInBytes + (value == null ? 0L : value.getHeapCost());
-        return cost;
+        return OBJECT_HEADER_IN_BYTES
+                + super.getCost()
+                // memory cost estimation of `value`
+                + REFERENCE_COST_IN_BYTES + (value == null ? 0L : value.getHeapCost());
     }
 
     public Data getValue() {
@@ -53,4 +56,5 @@ class DataRecordWithStats extends AbstractRecordWithStats<Data> {
     public void invalidate() {
         value = null;
     }
+
 }

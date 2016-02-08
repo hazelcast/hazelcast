@@ -16,11 +16,16 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
+
+import static com.hazelcast.util.JVMUtil.OBJECT_HEADER_IN_BYTES;
+
 
 /**
  * TODO empty statistics.
@@ -70,9 +75,11 @@ public class RecordStatistics implements DataSerializable {
     }
 
     public long size() {
-        //size of the instance.
-        final int numberOfLongVariables = 3;
-        return numberOfLongVariables * (Long.SIZE / Byte.SIZE) + (Integer.SIZE / Byte.SIZE);
+        return OBJECT_HEADER_IN_BYTES
+                // lastStoredTime and expirationTime
+                + 2 * Bits.LONG_SIZE_IN_BYTES
+                // hits
+                + Bits.INT_SIZE_IN_BYTES;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

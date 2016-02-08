@@ -18,17 +18,19 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
 
+import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+
 
 @SuppressWarnings("VolatileLongOrDoubleField")
 abstract class AbstractRecord<V> extends AbstractBaseRecord<V> {
 
     protected Data key;
 
-    public AbstractRecord(Data key) {
+    AbstractRecord(Data key) {
         this.key = key;
     }
 
-    public AbstractRecord() {
+    AbstractRecord() {
     }
 
     public final Data getKey() {
@@ -64,11 +66,9 @@ abstract class AbstractRecord<V> extends AbstractBaseRecord<V> {
 
     @Override
     public long getCost() {
-        long size = super.getCost();
-        final int objectReferenceInBytes = 4;
-        // add key size.
-        size += objectReferenceInBytes + key.getHeapCost();
-        return size;
+        return super.getCost()
+                // cost estimation of `key`
+                + REFERENCE_COST_IN_BYTES + key.getHeapCost();
     }
 
     @Override

@@ -18,11 +18,12 @@ package com.hazelcast.map.impl;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.util.JVMUtil.OBJECT_HEADER_IN_BYTES;
+
 /**
  * Size estimator for near cache.
  */
-class NearCacheSizeEstimator
-        implements SizeEstimator<NearCacheRecord> {
+class NearCacheSizeEstimator implements SizeEstimator<NearCacheRecord> {
 
     private static final AtomicLongFieldUpdater<NearCacheSizeEstimator> SIZE_UPDATER = AtomicLongFieldUpdater
             .newUpdater(NearCacheSizeEstimator.class, "size");
@@ -45,12 +46,9 @@ class NearCacheSizeEstimator
         if (cost == 0) {
             return 0;
         }
-        final int numberOfIntegers = 4;
-        long size = 0;
         // entry size in CHM
-        size += numberOfIntegers * ((Integer.SIZE / Byte.SIZE));
-        size += cost;
-        return size;
+        final int numberOfIntegers = 4;
+        return numberOfIntegers * (Integer.SIZE / Byte.SIZE) + OBJECT_HEADER_IN_BYTES + cost;
     }
 
     @Override
