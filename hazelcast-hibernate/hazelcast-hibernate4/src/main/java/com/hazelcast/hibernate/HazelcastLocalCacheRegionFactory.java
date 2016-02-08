@@ -21,11 +21,13 @@ import com.hazelcast.hibernate.local.LocalRegionCache;
 import com.hazelcast.hibernate.local.TimestampsRegionCache;
 import com.hazelcast.hibernate.region.HazelcastCollectionRegion;
 import com.hazelcast.hibernate.region.HazelcastEntityRegion;
+import com.hazelcast.hibernate.region.HazelcastNaturalIdRegion;
 import com.hazelcast.hibernate.region.HazelcastTimestampsRegion;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.spi.CacheDataDescription;
 import org.hibernate.cache.spi.CollectionRegion;
 import org.hibernate.cache.spi.EntityRegion;
+import org.hibernate.cache.spi.NaturalIdRegion;
 import org.hibernate.cache.spi.RegionFactory;
 import org.hibernate.cache.spi.TimestampsRegion;
 
@@ -52,6 +54,7 @@ public class HazelcastLocalCacheRegionFactory extends AbstractHazelcastCacheRegi
 
     public CollectionRegion buildCollectionRegion(final String regionName, final Properties properties,
                                                   final CacheDataDescription metadata) throws CacheException {
+        /* Collection regions are never versioned, so pass in null for metadata */
         final HazelcastCollectionRegion<LocalRegionCache> region = new HazelcastCollectionRegion<LocalRegionCache>(instance,
                 regionName, properties, metadata, new LocalRegionCache(regionName, instance, null));
         cleanupService.registerCache(region.getCache());
@@ -62,6 +65,16 @@ public class HazelcastLocalCacheRegionFactory extends AbstractHazelcastCacheRegi
                                           final CacheDataDescription metadata) throws CacheException {
         final HazelcastEntityRegion<LocalRegionCache> region = new HazelcastEntityRegion<LocalRegionCache>(instance,
                 regionName, properties, metadata, new LocalRegionCache(regionName, instance, metadata));
+        cleanupService.registerCache(region.getCache());
+        return region;
+    }
+
+    public NaturalIdRegion buildNaturalIdRegion(final String regionName, final Properties properties
+            , final CacheDataDescription metadata)
+            throws CacheException {
+        /* Natural id regions are never versioned, so pass in null for metadata */
+        HazelcastNaturalIdRegion<LocalRegionCache> region = new HazelcastNaturalIdRegion<LocalRegionCache>(instance,
+                regionName, properties, metadata, new LocalRegionCache(regionName, instance, null));
         cleanupService.registerCache(region.getCache());
         return region;
     }

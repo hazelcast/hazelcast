@@ -20,13 +20,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.instance.HazelcastInstanceFactory;
 import com.hazelcast.hibernate.instance.IHazelcastInstanceLoader;
 import com.hazelcast.hibernate.local.CleanupService;
-import com.hazelcast.hibernate.region.HazelcastNaturalIdRegion;
 import com.hazelcast.hibernate.region.HazelcastQueryResultsRegion;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.hibernate.cache.CacheException;
-import org.hibernate.cache.spi.CacheDataDescription;
-import org.hibernate.cache.spi.NaturalIdRegion;
 import org.hibernate.cache.spi.QueryResultsRegion;
 import org.hibernate.cache.spi.RegionFactory;
 import org.hibernate.cache.spi.access.AccessType;
@@ -62,12 +59,6 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
         HazelcastQueryResultsRegion region = new HazelcastQueryResultsRegion(instance, regionName, properties);
         cleanupService.registerCache(region.getCache());
         return region;
-    }
-
-    public NaturalIdRegion buildNaturalIdRegion(final String regionName, final Properties properties
-            , final CacheDataDescription metadata)
-            throws CacheException {
-        return new HazelcastNaturalIdRegion(instance, regionName, properties, metadata);
     }
 
     /**
