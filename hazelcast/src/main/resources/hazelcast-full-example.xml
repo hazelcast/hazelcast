@@ -334,10 +334,33 @@ or the Reference Manual at https://hazelcast.org/documentation/.
         <socket-interceptor enabled="false" />
         <symmetric-encryption enabled="false" />
     </network>
-    
-    
-    
-    <partition-group enabled="false"/>
+<!--
+    Configuration for the partition groups you create. You can enable it and specify the type using the "enabled" and
+    "group-type" attributes. For CUSTOM type, you can define groups using its <member-group> and <interface> sub-elements.
+    You can group the members with one of the following types:
+    * HOST_AWARE: 
+    	Members sharing the same network interface are grouped together. All members on the same host will be a 
+    	single partition group.
+    * CUSTOM: 
+    	You can add different and multiple members to a group.
+    * PER_MEMBER: 
+    	Each member is a group of its own and primary/backup partitions are distributed randomly. This
+-->
+    <partition-group enabled="true" group-type="CUSTOM">
+	<member-group>
+	   <interface>10.10.0.*</interface>
+	   <interface>10.10.3.*</interface>
+	   <interface>10.10.5.*</interface>
+	</member-group>
+	<member-group>
+	   <interface>10.10.10.10-100</interface>
+	   <interface>10.10.1.*</interface>
+	   <interface>10.10.2.*</interface>
+	</member-group
+    </partition-group>
+<!--
+    . 
+-->
     <executor-service name="default">
         <pool-size>16</pool-size>
         <!--Queue capacity. 0 means Integer.MAX_VALUE.-->
