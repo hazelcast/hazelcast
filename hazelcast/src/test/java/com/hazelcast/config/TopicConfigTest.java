@@ -69,6 +69,13 @@ public class TopicConfigTest {
     public void testSetGlobalOrderingEnabled() {
         TopicConfig topicConfig = new TopicConfig().setGlobalOrderingEnabled(true);
         assertTrue(topicConfig.isGlobalOrderingEnabled());
+        try {
+        	topicConfig.setMultiThreadingEnabled(true);
+        	assertTrue("multi-threading must be disabled when global-ordering is enabled", false);
+        } catch (IllegalArgumentException e) {
+        	// anticipated..
+        }
+        assertFalse(topicConfig.isMultiThreadingEnabled());
     }
 
     /**
@@ -88,8 +95,12 @@ public class TopicConfigTest {
         TopicConfig topicConfig = new TopicConfig().setGlobalOrderingEnabled(false);
         topicConfig.setMultiThreadingEnabled(true);
         assertTrue(topicConfig.isMultiThreadingEnabled());
-        topicConfig.setGlobalOrderingEnabled(true);
-        // multi-threading must be disabled when global-ordering is enabled
-        assertFalse(topicConfig.isMultiThreadingEnabled());
+        try {
+        	topicConfig.setGlobalOrderingEnabled(true);
+        	assertTrue("global-ordering must be disabled when multi-threading is enabled", false);
+        } catch (IllegalArgumentException e) {
+        	// anticipated..
+        }
+        assertFalse(topicConfig.isGlobalOrderingEnabled());
     }
 }
