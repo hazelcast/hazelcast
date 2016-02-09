@@ -5,6 +5,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -54,14 +55,14 @@ public class MetricsPluginTest extends AbstractPerformanceMonitorPluginTest {
             }
         });
 
-        plugin.run(logWriter);
-
-        try {
-            assertContains("broken=java.lang.RuntimeException:error");
-        } catch (Throwable t) {
-            // this is a hack to figure out which probes are really available.
-            throw new Exception("existing probes:"+metricsRegistry.getNames(), t);
-        }
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                logWriter.clean();
+                plugin.run(logWriter);
+                assertContains("broken=java.lang.RuntimeException:error");
+            }
+        });
     }
 
     @Test
