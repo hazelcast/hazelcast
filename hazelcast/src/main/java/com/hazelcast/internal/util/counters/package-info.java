@@ -17,4 +17,4 @@
 /**
  * Provides various counter implementations.
  */
-package com.hazelcast.util.counters;
+package com.hazelcast.internal.util.counters;

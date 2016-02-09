@@ -37,7 +37,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.counters.MwCounter;
+import com.hazelcast.internal.util.counters.MwCounter;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,7 +55,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 
 public class ProxyServiceImpl
         implements InternalProxyService, PostJoinAwareService, EventPublishingService<DistributedObjectEventPacket, Object> {

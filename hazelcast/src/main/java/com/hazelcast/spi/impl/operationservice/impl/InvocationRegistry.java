@@ -28,8 +28,8 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutRespons
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
-import com.hazelcast.util.counters.MwCounter;
-import com.hazelcast.util.counters.SwCounter;
+import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -39,8 +39,8 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
-import static com.hazelcast.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 /**
  * The InvocationsRegistry is responsible for the registration of all pending invocations. Using the InvocationRegistry the

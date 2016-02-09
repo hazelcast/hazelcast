@@ -40,7 +40,7 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.counters.MwCounter;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedExecutor;
 
 import java.io.Closeable;
@@ -59,7 +59,7 @@ import java.util.logging.Level;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 
 public class EventServiceImpl implements InternalEventService {
 

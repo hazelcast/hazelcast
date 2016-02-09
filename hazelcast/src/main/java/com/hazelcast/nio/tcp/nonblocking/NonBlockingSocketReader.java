@@ -25,8 +25,8 @@ import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.util.counters.Counter;
-import com.hazelcast.util.counters.SwCounter;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.SwCounter;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -41,7 +41,7 @@ import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.StringUtil.bytesToString;
-import static com.hazelcast.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 /**
  * A {@link SocketReader} tailored for non blocking IO.

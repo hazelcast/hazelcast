@@ -18,7 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
-import com.hazelcast.util.counters.Counter;
+import com.hazelcast.internal.util.counters.Counter;
 
 import java.nio.ByteBuffer;
 

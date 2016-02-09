@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.counters;
+package com.hazelcast.internal.util.counters;
 
 import com.hazelcast.nio.UnsafeHelper;
 import sun.misc.Unsafe;

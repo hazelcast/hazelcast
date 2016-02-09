@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.util.counters.Counter;
+import com.hazelcast.internal.util.counters.Counter;
 
 import java.util.ArrayList;
 import java.util.Collection;
