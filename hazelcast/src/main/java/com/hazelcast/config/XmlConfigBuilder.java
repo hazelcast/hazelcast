@@ -90,6 +90,7 @@ import static com.hazelcast.config.XmlElements.TOPIC;
 import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
 import static com.hazelcast.config.XmlElements.canOccurMultipleTimes;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
@@ -229,22 +230,21 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         try {
             doc = builder.parse(is);
         } catch (final Exception e) {
-            String lineSeparator = StringUtil.getLineSeperator();
             if (configurationFile != null) {
                 String msg = "Failed to parse " + configurationFile
-                        + lineSeparator + "Exception: " + e.getMessage()
-                        + lineSeparator + "Hazelcast startup interrupted.";
+                        +  LINE_SEPARATOR + "Exception: " + e.getMessage()
+                        +  LINE_SEPARATOR + "Hazelcast startup interrupted.";
                 LOGGER.severe(msg);
 
             } else if (configurationUrl != null) {
                 String msg = "Failed to parse " + configurationUrl
-                        + lineSeparator + "Exception: " + e.getMessage()
-                        + lineSeparator + "Hazelcast startup interrupted.";
+                        +  LINE_SEPARATOR + "Exception: " + e.getMessage()
+                        +  LINE_SEPARATOR + "Hazelcast startup interrupted.";
                 LOGGER.severe(msg);
             } else {
                 String msg = "Failed to parse the inputstream"
-                        + lineSeparator + "Exception: " + e.getMessage()
-                        + lineSeparator + "Hazelcast startup interrupted.";
+                        +  LINE_SEPARATOR + "Exception: " + e.getMessage()
+                        +  LINE_SEPARATOR + "Hazelcast startup interrupted.";
                 LOGGER.severe(msg);
             }
             throw new InvalidConfigurationException(e.getMessage(), e);

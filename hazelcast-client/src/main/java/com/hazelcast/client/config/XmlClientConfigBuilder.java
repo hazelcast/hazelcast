@@ -20,8 +20,8 @@ import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AbstractConfigBuilder;
 import com.hazelcast.config.ConfigLoader;
-import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
@@ -35,7 +35,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.StringUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -69,6 +68,7 @@ import static com.hazelcast.client.config.ClientXmlElements.QUERY_CACHES;
 import static com.hazelcast.client.config.ClientXmlElements.SECURITY;
 import static com.hazelcast.client.config.ClientXmlElements.SERIALIZATION;
 import static com.hazelcast.client.config.ClientXmlElements.canOccurMultipleTimes;
+import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
@@ -135,10 +135,9 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         try {
             return builder.parse(inputStream);
         } catch (final Exception e) {
-            String lineSeparator = StringUtil.getLineSeperator();
             String msg = "Failed to parse Config Stream"
-                    + lineSeparator + "Exception: " + e.getMessage()
-                    + lineSeparator + "HazelcastClient startup interrupted.";
+                    + LINE_SEPARATOR + "Exception: " + e.getMessage()
+                    + LINE_SEPARATOR + "HazelcastClient startup interrupted.";
             LOGGER.severe(msg);
             throw new InvalidConfigurationException(e.getMessage(), e);
         } finally {
