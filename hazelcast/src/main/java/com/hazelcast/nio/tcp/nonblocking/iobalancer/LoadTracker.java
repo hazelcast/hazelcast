@@ -17,8 +17,8 @@
 package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.ItemCounter;
 
 import java.util.HashMap;
@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import static com.hazelcast.util.StringUtil.getLineSeperator;
+import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 /**
  * Tracks the load of of NonBlockingIOThread(s) and creates a mapping between NonBlockingIOThread -> Handler.
@@ -159,9 +159,9 @@ class LoadTracker {
         if (minThread == null || maxThread == null) {
             return;
         }
-        StringBuilder sb = new StringBuilder(getLineSeperator())
+        StringBuilder sb = new StringBuilder(LINE_SEPARATOR)
                 .append("------------")
-                .append(getLineSeperator());
+                .append(LINE_SEPARATOR);
         Long eventCountPerSelector = selectorEvents.get(minThread);
 
         sb.append("Min Selector ")
@@ -170,7 +170,7 @@ class LoadTracker {
                 .append(eventCountPerSelector)
                 .append(" events. ");
         sb.append("It contains following handlers: ").
-                append(getLineSeperator());
+                append(LINE_SEPARATOR);
         appendSelectorInfo(minThread, selectorToHandlers, sb);
 
         eventCountPerSelector = selectorEvents.get(maxThread);
@@ -180,11 +180,11 @@ class LoadTracker {
                 .append(eventCountPerSelector)
                 .append(" events. ");
         sb.append("It contains following handlers: ")
-                .append(getLineSeperator());
+                .append(LINE_SEPARATOR);
         appendSelectorInfo(maxThread, selectorToHandlers, sb);
 
         sb.append("Other Selectors: ")
-                .append(getLineSeperator());
+                .append(LINE_SEPARATOR);
 
         for (NonBlockingIOThread selector : ioThreads) {
             if (!selector.equals(minThread) && !selector.equals(maxThread)) {
@@ -194,12 +194,12 @@ class LoadTracker {
                         .append(" contains ")
                         .append(eventCountPerSelector)
                         .append(" and has these handlers: ")
-                        .append(getLineSeperator());
+                        .append(LINE_SEPARATOR);
                 appendSelectorInfo(selector, selectorToHandlers, sb);
             }
         }
         sb.append("------------")
-                .append(getLineSeperator());
+                .append(LINE_SEPARATOR);
         logger.finest(sb.toString());
     }
 
@@ -213,8 +213,8 @@ class LoadTracker {
             sb.append(selectionHandler)
                     .append(":  ")
                     .append(eventCountPerHandler)
-                    .append(getLineSeperator());
+                    .append(LINE_SEPARATOR);
         }
-        sb.append(getLineSeperator());
+        sb.append(LINE_SEPARATOR);
     }
 }

@@ -127,12 +127,4 @@ public final class StringUtil {
         }
         return s.toLowerCase(LOCALE_INTERNAL);
     }
-
-    /**
-     * Returns system property "line.seperator"
-     * @return line seperator for the specific OS
-     */
-    public static String getLineSeperator() {
-        return LINE_SEPARATOR;
-    }
 }

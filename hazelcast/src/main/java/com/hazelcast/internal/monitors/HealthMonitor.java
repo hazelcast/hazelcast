@@ -30,7 +30,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.internal.monitors.HealthMonitorLevel.OFF;
 import static com.hazelcast.internal.monitors.HealthMonitorLevel.valueOf;
-import static com.hazelcast.util.StringUtil.getLineSeperator;
+import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -154,7 +154,7 @@ public class HealthMonitor {
 
             logger.info(String.format("The HealthMonitor has detected a high load on the system. For more detailed information,%s"
                             + "enable the PerformanceMonitor by adding the property -D%s=true",
-                    getLineSeperator(), GroupProperty.PERFORMANCE_MONITOR_ENABLED));
+                    LINE_SEPARATOR, GroupProperty.PERFORMANCE_MONITOR_ENABLED));
         }
     }
 
