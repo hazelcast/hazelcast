@@ -563,24 +563,24 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 	- <fsync>:
 		Set as true if the writing to disk should be followed by an fsync() system call. Its default value is false.
     * <map-store>:
-	 Configuration options when you want to load/store the map entries from/to a persistent data store such as a 
-	 relational database. Before configuring <map-store>, you need to implement Hazelcast's MapStore or MapLoader 
-	 interfaces.
-	 It has the following attributes:
-	 - enabled:
-	 	Set as true to enable the map store functionality for your map. Its default value is true.
-	 - initial-mode: 
-	 	Sets the inital entry loading mode. Available values are as follows:
+	Configuration options when you want to load/store the map entries from/to a persistent data store such as a 
+	relational database. Before configuring <map-store>, you need to implement Hazelcast's MapStore or MapLoader 
+	interfaces.
+	It has the following attributes:
+	- enabled:
+		Set as true to enable the map store functionality for your map. Its default value is true.
+	- initial-mode: 
+		Sets the inital entry loading mode. Available values are as follows:
 	 	- LAZY: The loading is asynchronous. It is the default mode.
 	 	- EAGER: The loading is blocked until all partitions are loaded.
 	 
-	 It has the following sub-elements:
-	 - <class-name>:
-	 	The name of your class implementing MapLoader and/or MapStore interface.
-	 - <write-delay-seconds>:
-	 	Number of seconds to delay the storing of entries. If the value is 0, then it is write-through.
-	 	Otherwise, it is write-behind so updates will be stored after this period. Its default value is 0.
-	 - <write-batch-size>:
+	It has the following sub-elements:
+	- <class-name>:
+		The name of your class implementing MapLoader and/or MapStore interface.
+	- <write-delay-seconds>:
+		Number of seconds to delay the storing of entries. If the value is 0, then it is write-through.
+		Otherwise, it is write-behind so updates will be stored after this period. Its default value is 0.
+	- <write-batch-size>:
 		Used to create batches when writing to map store. In default mode, all map entries will be tried 
 		to be written in one go. To create batches, the minimum meaningful value is 2. For values smaller than 2, 
 		it works as in default mode. Its default value is 1.
@@ -646,7 +646,28 @@ or the Reference Manual at https://hazelcast.org/documentation/.
          		* FREE_NATIVE_MEMORY_PERCENTAGE: Minimum free native memory percentage to trigger cleanup.
     		- eviction-policy: See the <eviction-policy> element above.
     * <wan-replication-ref>:
-    	
+	Configuration of the WAN replication for your map.
+	It has the following attributes:
+	- name: 
+		Name of the WAN replication configuration specified in the "name" attribute of the 
+		<wan-replication> element. See the <wan-replication> element above.
+	
+	It has the following sub-elements:
+	- <merge-policy>:
+		Policy to resolve conflicts that are occurred when target cluster already has the replicated entry key.
+		Available policies are as follows.
+		* com.hazelcast.map.merge.PutIfAbsentMapMergePolicy
+		* com.hazelcast.map.merge.HigherHitsMapMergePolicy
+		* com.hazelcast.map.merge.PassThroughMergePolicy
+		* com.hazelcast.map.merge.LatestUpdateMapMergePolicy
+	- <filters>:
+		Filters to intercept WAN replication events before they are placed to WAN event replication 
+		queues by providing a filtering API. Just implement Hazelcast's MapWanEventFilter interface 
+		to create your filters. You can define multiple filters and add to the configuration using the 
+		<filter> sub-elements within the <filters> element.
+	- <republishing-enabled>:
+		When enabled, an incoming event to a member is forwarded to target cluster of that member. Its
+		default value is true.
     * <indexes>:
     	
     * <attributes>:
@@ -701,6 +722,14 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 		<cache-local-entries>false</cache-local-entries>
 		<eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
 	</near-cache>
+	<wan-replication-ref name="my-wan-cluster-batch">
+		<merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
+		<filters>
+			<filter-impl>com.example.SampleFilter</filter-impl>
+			<filter-impl>com.example.SampleFilter2</filter-impl>
+		</filters>
+		<republishing-enabled>false</republishing-enabled>
+	</wan-replication-ref>	
     </map>
 
     <multimap name="default">
