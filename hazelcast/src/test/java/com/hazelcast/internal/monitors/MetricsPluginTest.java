@@ -59,8 +59,8 @@ public class MetricsPluginTest extends AbstractPerformanceMonitorPluginTest {
         try {
             assertContains("broken=java.lang.RuntimeException:error");
         } catch (Throwable t) {
-            System.out.println(metricsRegistry.getNames());
-            throw t;
+            // this is a hack to figure out which probes are really available.
+            throw new Exception("existing probes:"+metricsRegistry.getNames(), t);
         }
     }
 
