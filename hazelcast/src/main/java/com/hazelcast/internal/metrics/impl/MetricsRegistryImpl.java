@@ -239,27 +239,30 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         }
     }
 
-    /**
-     * Returns the SortedProbesInstances. This method is eventually consistent; so eventually it will return
-     * a SortedProbesInstances where the content exactly matches the mod-count. It can be that this method
-     * returns a probe-instances in combination with a too old mod-count (in-consistent). This is not a
-     * problem, since the next time this method is called, it will update the SortedProbeInstances again.
-     *
-     * If this method is being called while
-     * probes are being added or removed, then it will return whatever is available.
-     *
-     * @return
-     */
     SortedProbesInstances getSortedProbeInstances() {
-        SortedProbesInstances sortedProbeInstances = this.sortedProbeInstance.get();
-        int lastModCount = modCount.get();
-        if (lastModCount == sortedProbeInstances.modCount) {
-            return sortedProbeInstances;
-        }
+        for (; ; ) {
+            SortedProbesInstances oldProbeInstances = sortedProbeInstance.get();
+            int oldModCount = modCount.get();
+            if (oldModCount == oldProbeInstances.modCount) {
+                // we can return the oldProbeInstances since no change has been made to the probes.
+                // this is the happy case.
+                return oldProbeInstances;
+            }
 
-        SortedProbesInstances newSortedProbeInstances = new SortedProbesInstances(probeInstances.values(), lastModCount);
-        this.sortedProbeInstance.compareAndSet(sortedProbeInstances, newSortedProbeInstances);
-        return sortedProbeInstance.get();
+            SortedProbesInstances newProbeInstances = new SortedProbesInstances(probeInstances.values(), oldModCount);
+            if (modCount.get() != oldModCount) {
+                // lets try again; there was a change in the probes. We don't want to create a SortedProbeInstance
+                // that doesn't match the modCount.
+                continue;
+            }
+
+            if (!sortedProbeInstance.compareAndSet(oldProbeInstances, newProbeInstances)) {
+                // lets try again; another thread already updated the sortedProbes
+                continue;
+            }
+
+            return newProbeInstances;
+        }
     }
 
     private void render(ProbeRenderer renderer, ProbeInstance probeInstance) {
