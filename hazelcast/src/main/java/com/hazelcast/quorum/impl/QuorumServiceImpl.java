@@ -42,7 +42,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Service containing logic for cluster quorum.

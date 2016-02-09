@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.function;
+package com.hazelcast.internal.util.function;
 
 /**
  * Represents a function that accepts an int-valued argument and produces a

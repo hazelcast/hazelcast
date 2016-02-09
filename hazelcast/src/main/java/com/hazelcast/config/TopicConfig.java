@@ -19,8 +19,8 @@ package com.hazelcast.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for a {@link com.hazelcast.core.ITopic}.

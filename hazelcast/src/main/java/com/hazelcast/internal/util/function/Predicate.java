@@ -14,24 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.function;
+package com.hazelcast.internal.util.function;
 
 /**
- * Represents an operation that accepts two input arguments and returns no
- * result.  This is the two-arity specialization of {@link Consumer}.
- * Unlike most other functional interfaces, {@code BiConsumer} is expected
- * to operate via side-effects.
+ * Represents a predicate (boolean-valued function) of one argument.
  *
- * @param <T> the type of the first argument to the operation
- * @param <U> the type of the second argument to the operation
+ * @param <T> the type of the input to the predicate
  */
-public interface BiConsumer<T, U> {
+public interface Predicate<T> {
 
     /**
-     * Performs this operation on the given arguments.
+     * Evaluates this predicate on the given argument.
      *
-     * @param t the first input argument
-     * @param u the second input argument
+     * @param t the input argument
+     * @return {@code true} if the input argument matches the predicate,
+     * otherwise {@code false}
      */
-    void accept(T t, U u);
+    boolean test(T t);
 }

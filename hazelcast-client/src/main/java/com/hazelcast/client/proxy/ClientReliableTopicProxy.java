@@ -50,7 +50,7 @@ import java.util.concurrent.Executor;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
 import static com.hazelcast.topic.impl.reliable.ReliableTopicService.SERVICE_NAME;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E> {

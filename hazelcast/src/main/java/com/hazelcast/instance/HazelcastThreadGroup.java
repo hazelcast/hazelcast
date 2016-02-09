@@ -18,7 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.logging.ILogger;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * A wrapper around the {@link java.lang.ThreadGroup} that provides some additional capabilities. It is a grouping of

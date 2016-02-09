@@ -24,7 +24,7 @@ import sun.misc.Unsafe;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.lang.Math.abs;
 
 /**

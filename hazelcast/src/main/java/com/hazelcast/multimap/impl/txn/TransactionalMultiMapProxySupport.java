@@ -42,7 +42,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public abstract class TransactionalMultiMapProxySupport extends TransactionalDistributedObject<MultiMapService>
         implements TransactionalObject {

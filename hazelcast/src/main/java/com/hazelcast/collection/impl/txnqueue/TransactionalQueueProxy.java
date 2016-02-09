@@ -25,7 +25,7 @@ import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Provides proxy for the Transactional Queue.

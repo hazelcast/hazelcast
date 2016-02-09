@@ -1,4 +1,4 @@
-package com.hazelcast.util;
+package com.hazelcast.internal.util;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -14,12 +14,12 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkHasNext;
+import static com.hazelcast.internal.util.Preconditions.checkInstanceOf;
+import static com.hazelcast.internal.util.Preconditions.checkNotInstanceOf;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.partition.InternalPartition.MAX_BACKUP_COUNT;
-import static com.hazelcast.util.Preconditions.checkFalse;
-import static com.hazelcast.util.Preconditions.checkHasNext;
-import static com.hazelcast.util.Preconditions.checkInstanceOf;
-import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
-import static com.hazelcast.util.Preconditions.checkTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -68,8 +68,8 @@ public class PreconditionsTest {
         checkBackupCount(MAX_BACKUP_COUNT, 0, true);
         checkBackupCount(0, MAX_BACKUP_COUNT, true);
         checkBackupCount(MAX_BACKUP_COUNT, 1, false);
-        checkBackupCount(MAX_BACKUP_COUNT+1, 0, false);
-        checkBackupCount(0, MAX_BACKUP_COUNT+1, false);
+        checkBackupCount(MAX_BACKUP_COUNT + 1, 0, false);
+        checkBackupCount(0, MAX_BACKUP_COUNT + 1, false);
     }
 
     public void checkBackupCount(int newBackupCount, int currentAsyncBackupCount, boolean success) {

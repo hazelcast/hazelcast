@@ -32,7 +32,7 @@ import com.hazelcast.client.impl.protocol.codec.AtomicReferenceSetCodec;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.IFunction;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 public class ClientAtomicReferenceProxy<E> extends PartitionSpecificClientProxy implements IAtomicReference<E> {
 

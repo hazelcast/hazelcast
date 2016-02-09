@@ -17,7 +17,8 @@
 package com.hazelcast.cache.impl.maxsize.impl;
 
 import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
-import com.hazelcast.util.Preconditions;
+
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * {@link MaxSizeChecker} implementation for composing
@@ -52,8 +53,8 @@ public abstract class CompositeMaxSizeChecker implements MaxSizeChecker {
 
     public static CompositeMaxSizeChecker newCompositeMaxSizeChecker(CompositionOperator compositionOperator,
                                                                      MaxSizeChecker... maxSizeCheckers) {
-        Preconditions.isNotNull(compositionOperator, "Composition operator cannot be null!");
-        Preconditions.isNotNull(maxSizeCheckers, "MaxSizeChecker's cannot be null!");
+        isNotNull(compositionOperator, "Composition operator cannot be null!");
+        isNotNull(maxSizeCheckers, "MaxSizeChecker's cannot be null!");
         if (maxSizeCheckers.length == 0) {
             throw new IllegalArgumentException("MaxSizeChecker's cannot be empty!");
         }

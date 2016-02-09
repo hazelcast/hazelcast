@@ -21,7 +21,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.collection.Long2LongHashMap.LongLongCursor;
-import com.hazelcast.util.function.LongLongConsumer;
+import com.hazelcast.internal.util.function.LongLongConsumer;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;

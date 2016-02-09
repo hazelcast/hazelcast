@@ -17,15 +17,15 @@
 
 package com.hazelcast.util.collection;
 
-import com.hazelcast.util.function.Predicate;
+import com.hazelcast.internal.util.function.Predicate;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.util.QuickMath.nextPowerOfTwo;
 import static com.hazelcast.util.collection.Hashing.longHash;
 

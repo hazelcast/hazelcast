@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.spi.AbstractWaitNotifyKey;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 public class SemaphoreWaitNotifyKey extends AbstractWaitNotifyKey {
 

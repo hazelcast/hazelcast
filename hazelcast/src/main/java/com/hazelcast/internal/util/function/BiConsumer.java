@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.function;
+package com.hazelcast.internal.util.function;
 
 /**
- * Represents a function that accepts a long-valued argument and produces a
- * result.
+ * Represents an operation that accepts two input arguments and returns no
+ * result.  This is the two-arity specialization of {@link Consumer}.
+ * Unlike most other functional interfaces, {@code BiConsumer} is expected
+ * to operate via side-effects.
  *
- * @param <R> the type of the result of the function
+ * @param <T> the type of the first argument to the operation
+ * @param <U> the type of the second argument to the operation
  */
-public interface LongFunction<R> {
+public interface BiConsumer<T, U> {
 
     /**
-     * Applies this function to the given argument.
+     * Performs this operation on the given arguments.
      *
-     * @param value the function argument
-     * @return the function result
+     * @param t the first input argument
+     * @param u the second input argument
      */
-    R apply(long value);
+    void accept(T t, U u);
 }

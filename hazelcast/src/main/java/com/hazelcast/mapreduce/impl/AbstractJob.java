@@ -37,7 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Base class for all map reduce job implementations

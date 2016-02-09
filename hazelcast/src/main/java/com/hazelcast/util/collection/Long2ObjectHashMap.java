@@ -18,7 +18,7 @@
 package com.hazelcast.util.collection;
 
 import com.hazelcast.util.QuickMath;
-import com.hazelcast.util.function.LongFunction;
+import com.hazelcast.internal.util.function.LongFunction;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.AbstractCollection;
@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.collection.Hashing.longHash;
 
 /**

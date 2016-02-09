@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.function;
+package com.hazelcast.internal.util.function;
 
 /**
- * Represents an operation that accepts a single input argument and returns no
- * result. Unlike most other functional interfaces, {@code Consumer} is expected
- * to operate via side-effects.
+ * Represents a function that accepts a long-valued argument and produces a
+ * result.
  *
- * @param <T> the type of the input to the operation
+ * @param <R> the type of the result of the function
  */
-public interface Consumer<T> {
+public interface LongFunction<R> {
 
     /**
-     * Performs this operation on the given argument.
+     * Applies this function to the given argument.
      *
-     * @param t the input argument
+     * @param value the function argument
+     * @return the function result
      */
-    void accept(T t);
-
+    R apply(long value);
 }

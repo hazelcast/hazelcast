@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.util.CollectionUtil.isEmpty;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * A write-behind queue which supports write coalescing.

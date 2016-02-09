@@ -38,7 +38,7 @@ import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.NULL
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.TIMEOUT_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.WAIT_RESPONSE;
 import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static java.lang.Math.min;
 
 /**

@@ -14,16 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.function;
-
 /**
- * Represents a supplier of results.
- *
- * <p>There is no requirement that a new or distinct result be returned each
- * time the supplier is invoked.
- *
- * @param <T> the type of results supplied by this supplier
+ * Backport of Java 8 functional interfaces which Agrona depends on.
  */
-public interface Supplier<T> {
-    T get();
-}
+package com.hazelcast.internal.util.function;
