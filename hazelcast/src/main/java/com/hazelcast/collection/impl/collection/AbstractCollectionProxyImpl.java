@@ -52,7 +52,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> extends AbstractDistributedObject<S>
         implements InitializingObject {

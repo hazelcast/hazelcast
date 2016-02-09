@@ -33,7 +33,7 @@ import com.hazelcast.client.impl.protocol.codec.AtomicLongSetCodec;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IFunction;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implements IAtomicLong {
 

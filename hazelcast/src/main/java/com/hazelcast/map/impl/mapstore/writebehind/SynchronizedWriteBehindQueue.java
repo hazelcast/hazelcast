@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Wrapper for a not thread safe {@link WriteBehindQueue},

@@ -34,7 +34,7 @@ import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * ClusterMergeTask prepares {@code Node}'s internal state and its services

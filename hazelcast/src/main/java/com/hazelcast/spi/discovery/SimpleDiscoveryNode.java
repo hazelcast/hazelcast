@@ -22,7 +22,7 @@ import com.hazelcast.spi.annotation.Beta;
 import java.util.Collections;
 import java.util.Map;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.unmodifiableMap;
 
 /**

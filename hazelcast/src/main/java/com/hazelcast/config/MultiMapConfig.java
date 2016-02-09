@@ -19,8 +19,8 @@ package com.hazelcast.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
-import static com.hazelcast.util.Preconditions.checkBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
 
 /**
  * Configuration for MultiMap.

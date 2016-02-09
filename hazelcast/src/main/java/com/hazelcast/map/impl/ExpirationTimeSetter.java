@@ -22,7 +22,7 @@ import com.hazelcast.map.impl.record.RecordStatistics;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 
 /**
  * Utility methods for setting TTL and max idle seconds.

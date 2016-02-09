@@ -26,7 +26,7 @@ import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * The default implementation of the {@link com.hazelcast.core.ClientService}.

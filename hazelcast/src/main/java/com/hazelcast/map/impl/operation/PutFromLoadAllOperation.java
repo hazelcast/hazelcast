@@ -37,7 +37,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.util.CollectionUtil.isEmpty;
-import static com.hazelcast.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
 
 /**
  * Puts records to map which are loaded from map store by {@link com.hazelcast.core.IMap#loadAll}

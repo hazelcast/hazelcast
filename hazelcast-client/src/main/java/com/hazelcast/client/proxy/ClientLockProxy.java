@@ -32,7 +32,7 @@ import com.hazelcast.util.ThreadUtil;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 public class ClientLockProxy extends PartitionSpecificClientProxy implements ILock {
 

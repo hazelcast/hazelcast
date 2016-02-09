@@ -25,7 +25,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Static util methods for {@linkplain com.hazelcast.cache.ICache} implementations.

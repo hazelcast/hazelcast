@@ -36,7 +36,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Support class for loading Hazelcast services and hooks based on the Java ServiceLoader specification

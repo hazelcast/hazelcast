@@ -19,7 +19,9 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.Preconditions;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Lock record to hold transaction id and expiry time
@@ -52,9 +54,9 @@ class ClusterStateLock {
     }
 
     ClusterStateLock(Address lockOwner, String transactionId, long leaseTime) {
-        Preconditions.checkNotNull(lockOwner);
-        Preconditions.checkNotNull(transactionId);
-        Preconditions.checkPositive(leaseTime, "Lease time should be positive!");
+        checkNotNull(lockOwner);
+        checkNotNull(transactionId);
+        checkPositive(leaseTime, "Lease time should be positive!");
 
         this.lockOwner = lockOwner;
         this.transactionId = transactionId;
@@ -82,13 +84,13 @@ class ClusterStateLock {
     }
 
     boolean allowsLock(String txnId) {
-        Preconditions.checkNotNull(txnId);
+        checkNotNull(txnId);
         boolean notLocked = isLeaseExpired() || !isLocked();
         return notLocked || allowsUnlock(txnId);
     }
 
     boolean allowsUnlock(String txnId) {
-        Preconditions.checkNotNull(txnId);
+        checkNotNull(txnId);
         return txnId.equals(transactionId);
     }
 
