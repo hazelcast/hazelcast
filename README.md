@@ -29,23 +29,13 @@ dependencies {
         <artifactId>hazelcast-azure</artifactId>
         <version>1.0</version>
     </dependency>
-
-    <!-- include your preferred javax.ws.rs-api 
-         (for the https://github.com/OrbitzWorldwide/consul-client dependency)
-         implementation - see gradle example above 
-    -->
 </dependencies>
+```
 
-<repositories>
-    <repository>
-        <snapshots>
-            <enabled>false</enabled>
-        </snapshots>
-        <id>central</id>
-        <name>bintray</name>
-        <url>http://jcenter.bintray.com</url>
-    </repository>
-</repositories>
+## Gradle
+
+```gradle
+compile 'com.hazelcast.azure:hazelcast-azure:1.0'
 ```
 
 Check the [releases](https://github.com/sedouard/hazelcast-azure/releases) for the latest version.
