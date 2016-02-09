@@ -18,10 +18,10 @@
 package com.hazelcast.util.collection;
 
 import com.hazelcast.util.QuickMath;
-import com.hazelcast.util.function.BiConsumer;
-import com.hazelcast.util.function.LongLongConsumer;
-import com.hazelcast.util.function.Predicate;
-import com.hazelcast.util.function.Supplier;
+import com.hazelcast.internal.util.function.BiConsumer;
+import com.hazelcast.internal.util.function.LongLongConsumer;
+import com.hazelcast.internal.util.function.Predicate;
+import com.hazelcast.internal.util.function.Supplier;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;

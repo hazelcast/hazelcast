@@ -18,7 +18,7 @@
 package com.hazelcast.util.collection;
 
 import com.hazelcast.util.QuickMath;
-import com.hazelcast.util.function.LongFunction;
+import com.hazelcast.internal.util.function.LongFunction;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.AbstractCollection;

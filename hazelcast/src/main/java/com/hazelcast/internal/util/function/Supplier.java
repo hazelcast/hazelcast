@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.function;
+package com.hazelcast.internal.util.function;
 
 /**
- * This is a (long,long) primitive specialisation of a BiConsumer
+ * Represents a supplier of results.
+ *
+ * <p>There is no requirement that a new or distinct result be returned each
+ * time the supplier is invoked.
+ *
+ * @param <T> the type of results supplied by this supplier
  */
-public interface LongLongConsumer {
-    /**
-     * Accept a key and value that comes as a tuple of longs.
-     *
-     * @param key   for the tuple.
-     * @param value for the tuple.
-     */
-    void accept(long key, long value);
+public interface Supplier<T> {
+    T get();
 }

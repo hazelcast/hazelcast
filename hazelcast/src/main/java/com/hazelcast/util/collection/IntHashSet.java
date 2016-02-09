@@ -17,7 +17,7 @@
 
 package com.hazelcast.util.collection;
 
-import com.hazelcast.util.function.Predicate;
+import com.hazelcast.internal.util.function.Predicate;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;

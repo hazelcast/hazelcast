@@ -17,8 +17,8 @@
 
 package com.hazelcast.util.collection;
 
-import com.hazelcast.util.function.Predicate;
-import com.hazelcast.util.function.Supplier;
+import com.hazelcast.internal.util.function.Predicate;
+import com.hazelcast.internal.util.function.Supplier;
 
 import java.util.AbstractSet;
 import java.util.Iterator;

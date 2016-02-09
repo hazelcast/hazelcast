@@ -14,7 +14,17 @@
  * limitations under the License.
  */
 
+package com.hazelcast.internal.util.function;
+
 /**
- * Backport of Java 8 functional interfaces which Agrona depends on.
+ * This is a (long,long) primitive specialisation of a BiConsumer
  */
-package com.hazelcast.util.function;
+public interface LongLongConsumer {
+    /**
+     * Accept a key and value that comes as a tuple of longs.
+     *
+     * @param key   for the tuple.
+     * @param value for the tuple.
+     */
+    void accept(long key, long value);
+}

@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.function;
+package com.hazelcast.internal.util.function;
 
 /**
- * Represents a predicate (boolean-valued function) of one argument.
+ * Represents an operation that accepts a single input argument and returns no
+ * result. Unlike most other functional interfaces, {@code Consumer} is expected
+ * to operate via side-effects.
  *
- * @param <T> the type of the input to the predicate
+ * @param <T> the type of the input to the operation
  */
-public interface Predicate<T> {
+public interface Consumer<T> {
 
     /**
-     * Evaluates this predicate on the given argument.
+     * Performs this operation on the given argument.
      *
      * @param t the input argument
-     * @return {@code true} if the input argument matches the predicate,
-     * otherwise {@code false}
      */
-    boolean test(T t);
+    void accept(T t);
+
 }
