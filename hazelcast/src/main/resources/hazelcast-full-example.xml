@@ -563,10 +563,88 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 	- <fsync>:
 		Set as true if the writing to disk should be followed by an fsync() system call. Its default value is false.
     * <map-store>:
-    	
+	 Configuration options when you want to load/store the map entries from/to a persistent data store such as a 
+	 relational database. Before configuring <map-store>, you need to implement Hazelcast's MapStore or MapLoader 
+	 interfaces.
+	 It has the following attributes:
+	 - enabled:
+	 	Set as true to enable the map store functionality for your map. Its default value is true.
+	 - initial-mode: 
+	 	Sets the inital entry loading mode. Available values are as follows:
+	 	- LAZY: The loading is asynchronous. It is the default mode.
+	 	- EAGER: The loading is blocked until all partitions are loaded.
+	 
+	 It has the following sub-elements:
+	 - <class-name>:
+	 	The name of your class implementing MapLoader and/or MapStore interface.
+	 - <write-delay-seconds>:
+	 	Number of seconds to delay the storing of entries. If the value is 0, then it is write-through.
+	 	Otherwise, it is write-behind so updates will be stored after this period. Its default value is 0.
+	 - <write-batch-size>:
+		Used to create batches when writing to map store. In default mode, all map entries will be tried 
+		to be written in one go. To create batches, the minimum meaningful value is 2. For values smaller than 2, 
+		it works as in default mode. Its default value is 1.
+	- <write-coalescing>:
+		It is meaningful if you are using write behind in MapStore. When it is set as true,
+		only the latest store operation on a key during the write-delay-seconds will be
+		reflected to MapStore. Its default value is true.
+	- <properties>:
+		While you are implementing MapStore or MapLoader you can define specific properties to be configured.
+		It can be your store's URL, credentials, etc. Please see the example map configuration snippet below.
     * <near-cache>:
-    	
-    	
+	Configuration options when you want to use a near cache for your map.
+	It has the following attributes:
+	- name: You can give a name for your near cache. It is optional and its default value is "default".
+	
+	It has the following sub-elements:
+    	- <max-size>:
+    		Maximum size of the near cache. When this is reached, near cache is evicted based on the policy defined.
+		Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Its default value is 0.
+    	- <time-to-live-seconds>:
+    		Maximum number of seconds for each entry to stay in the near cache. Entries that are older than this 
+    		period are automatically evicted from the near cache. Any integer between 0 and Integer.MAX_VALUE. 
+    		0 means infinite. Its default value is 0.
+    	- <max-idle-seconds>:
+    		Maximum number of seconds each entry can stay in the near cache as untouched (not read). Entries that 
+    		are not read more than this period are removed from the near cache. Any integer between 0 and 
+    		Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Its default value is 0.
+    	- <eviction-policy>:
+    		Eviction policy configuration. Its default values is NONE. Available values are as follows:
+		- NONE:
+			No items will be evicted and the property max-size will be ignored. You still 
+			can combine it with time-to-live-seconds and max-idle-seconds.
+		- LRU: 	Least Recently Used.
+		- LFU: 	Least Frequently Used.
+    	- <invalidate-on-change>:
+    		Specifies whether the cached entries are evicted when the entries are updated or removed. Its default 
+    		value is true.
+    	- <in-memory-format>:
+		Specifies in which format data will be stored in your near cache. Note that a map's in-memory format
+		can be different from that of its near cache.
+		Available values are as follows:
+		- BINARY:
+			Data will be stored in serialized binary format. It is the default option.
+		- OBJECT:
+			Data will be stored in deserialized form.
+		- NATIVE:
+			Data will be stored in the near cache that uses Hazelcast's High-Density Memory Store feature. 
+			This option is available only in Hazelcast Enterprise HD. Note that a map and its near cache 
+			can independently use High-Density Memory Store. For example, while your map does not use 
+			High-Density Memory Store, its near cache can use it.
+    	- <cache-local-entries>:
+    		Specifies whether the local entries will be cached. It can be useful when in-memory format for 
+    		near cache is different from that of the map. By default, it is disabled.
+    	- <eviction>:
+    		Configuration for the eviction when the in-memory format of the near cache is NATIVE. It has the 
+    		following attributes:
+    		- size: Maximum size (entry count) of the near cache.
+    		- max-size-policy: Maximum size policy for eviction of the near cache. Available values are as follows:
+    			* ENTRY_COUNT: Maximum entry count per member.
+         		* USED_NATIVE_MEMORY_SIZE: Maximum used native memory size in megabytes.
+         		* USED_NATIVE_MEMORY_PERCENTAGE: Maximum used native memory percentage.
+         		* FREE_NATIVE_MEMORY_SIZE: Minimum free native memory size to trigger cleanup.
+         		* FREE_NATIVE_MEMORY_PERCENTAGE: Minimum free native memory percentage to trigger cleanup.
+    		- eviction-policy: See the <eviction-policy> element above.
     * <wan-replication-ref>:
     	
     * <indexes>:
@@ -604,10 +682,25 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 	<hot-restart enabled="false">
 		<fsync>false</fsync>
 	</hot-restart>
-	<map-store>
-		
+	<map-store enabled="true" initial-mode="LAZY">
+		<class-name>com.hazelcast.examples.DummyStore</class-name>
+		<write-delay-seconds>60</write-delay-seconds>
+		<write-batch-size>1000</write-batch-size>
+		<write-coalescing>true</write-coalescing>
+		<properties>
+    			<property name="jdbc_url">my.jdbc.com</property>
+		</properties>
 	</map-store>
-        
+	<near-cache>
+		<max-size>5000</max-size>
+		<time-to-live-seconds>0</time-to-live-seconds>
+		<max-idle-seconds>60</max-idle-seconds>
+		<eviction-policy>LRU</eviction-policy>
+		<invalidate-on-change>true</invalidate-on-change>
+		<in-memory-format>BINARY</in-memory-format>
+		<cache-local-entries>false</cache-local-entries>
+		<eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
+	</near-cache>
     </map>
 
     <multimap name="default">
