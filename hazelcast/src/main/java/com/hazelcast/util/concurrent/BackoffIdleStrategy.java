@@ -19,7 +19,7 @@ package com.hazelcast.util.concurrent;
 
 import java.util.concurrent.locks.LockSupport;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static java.lang.Long.numberOfLeadingZeros;
 import static java.lang.Math.min;
 

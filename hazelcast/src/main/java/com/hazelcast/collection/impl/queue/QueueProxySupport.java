@@ -49,7 +49,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 abstract class QueueProxySupport extends AbstractDistributedObject<QueueService> implements InitializingObject {
 

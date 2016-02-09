@@ -18,7 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Container for configured Hazelcast properties ({@see GroupProperty}).

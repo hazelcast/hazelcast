@@ -33,7 +33,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import java.io.IOException;
 import java.util.Collection;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 public abstract class MultiMapOperation extends Operation
         implements PartitionAwareOperation, IdentifiedDataSerializable {

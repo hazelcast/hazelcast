@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.internal.util;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;

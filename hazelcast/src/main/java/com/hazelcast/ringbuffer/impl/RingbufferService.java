@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.partition.MigrationEndpoint.SOURCE;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * The SPI Service that deals with the {@link com.hazelcast.ringbuffer.Ringbuffer}.

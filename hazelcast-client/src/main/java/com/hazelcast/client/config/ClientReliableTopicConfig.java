@@ -21,8 +21,8 @@ import com.hazelcast.topic.TopicOverloadPolicy;
 import java.util.concurrent.Executor;
 
 import static com.hazelcast.topic.TopicOverloadPolicy.BLOCK;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 public class ClientReliableTopicConfig {
     /**

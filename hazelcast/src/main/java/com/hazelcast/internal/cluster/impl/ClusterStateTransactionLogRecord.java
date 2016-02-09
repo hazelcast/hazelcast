@@ -25,9 +25,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.impl.TargetAwareTransactionLogRecord;
-import com.hazelcast.util.Preconditions;
 
 import java.io.IOException;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * TransactionLogRecord implementation to be used in {@code ClusterState} transactions.
@@ -49,11 +51,11 @@ public class ClusterStateTransactionLogRecord implements TargetAwareTransactionL
 
     public ClusterStateTransactionLogRecord(ClusterState newState, Address initiator, Address target,
             String txnId, long leaseTime, int partitionStateVersion) {
-        Preconditions.checkNotNull(newState);
-        Preconditions.checkNotNull(initiator);
-        Preconditions.checkNotNull(target);
-        Preconditions.checkNotNull(txnId);
-        Preconditions.checkPositive(leaseTime, "Lease time should be positive!");
+        checkNotNull(newState);
+        checkNotNull(initiator);
+        checkNotNull(target);
+        checkNotNull(txnId);
+        checkPositive(leaseTime, "Lease time should be positive!");
 
         this.newState = newState;
         this.initiator = initiator;

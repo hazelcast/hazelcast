@@ -66,7 +66,6 @@ import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.AbstractMap;
@@ -78,9 +77,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * @author ali 5/19/13
@@ -408,7 +407,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
                                                     JobTracker jobTracker) {
 
         try {
-            Preconditions.isNotNull(jobTracker, "jobTracker");
+            isNotNull(jobTracker, "jobTracker");
             KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMultiMap(this);
             Job<K, V> job = jobTracker.newJob(keyValueSource);
             Mapper mapper = aggregation.getMapper(supplier);

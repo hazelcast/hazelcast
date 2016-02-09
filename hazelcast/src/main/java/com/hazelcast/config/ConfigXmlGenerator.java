@@ -38,7 +38,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * The ConfigXmlGenerator is responsible for transforming a {@link Config} to a Hazelcast XML string.

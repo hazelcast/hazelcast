@@ -32,7 +32,6 @@ import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.Preconditions;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,6 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SERVICE_NAME;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 /**
@@ -133,7 +133,7 @@ public class ClusterStateManager {
 
     public void lockClusterState(ClusterState newState, Address initiator, String txnId,
                                  long leaseTime, int partitionStateVersion) {
-        Preconditions.checkNotNull(newState);
+        checkNotNull(newState);
         clusterServiceLock.lock();
         try {
             checkMigrationsAndPartitionStateVersion(newState, partitionStateVersion);
@@ -189,7 +189,7 @@ public class ClusterStateManager {
     }
 
     public void commitClusterState(ClusterState newState, Address initiator, String txnId) {
-        Preconditions.checkNotNull(newState);
+        checkNotNull(newState);
         if (newState == ClusterState.IN_TRANSITION) {
             throw new IllegalArgumentException("IN_TRANSITION is an internal state!");
         }
@@ -299,8 +299,8 @@ public class ClusterStateManager {
     }
 
     private void checkParameters(ClusterState newState, TransactionOptions options) {
-        Preconditions.checkNotNull(newState);
-        Preconditions.checkNotNull(options);
+        checkNotNull(newState);
+        checkNotNull(options);
         if (newState == ClusterState.IN_TRANSITION) {
             throw new IllegalArgumentException("IN_TRANSITION is an internal state!");
         }

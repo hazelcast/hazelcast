@@ -69,7 +69,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * The replicated map client side proxy implementation proxying all requests to a member node

@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
 import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT;
 import static com.hazelcast.internal.monitors.PerformanceMonitorPlugin.DISABLED;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.System.arraycopy;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 

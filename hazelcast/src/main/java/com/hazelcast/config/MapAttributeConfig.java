@@ -20,7 +20,7 @@ import com.hazelcast.query.QueryConstants;
 
 import java.util.regex.Pattern;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static java.lang.String.format;
 
 /**

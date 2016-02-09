@@ -18,8 +18,8 @@ package com.hazelcast.config;
 
 import java.util.EventListener;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for an {@link EventListener}. The configuration contains either the classname
