@@ -470,33 +470,98 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 	rely on it. If true, it increases the speed of query processes in the map. It only works when <in-memory-format>
 	is set as BINARY and performs a pre-caching on the entries queried. Its default value is false.
     * <cache-deserialized-values>:
-	
+	Controls caching of deserialized values. Caching makes the query evaluation faster, but it costs memory.
+	Available values are as follows:
+	- NEVER: Deserialized values will never be cached.
+	- INDEX-ONLY: Deserialized values will be cached only when they are inserted into an index.
+	- ALWAYS: Deserialized values will always be cached.
     * <backup-count>:
-    	Number of synchronous backups. Queue is a non-partitioned data structure, so all entries of a Queue 
-    	resides in one partition. When this parameter is '1', it means there will be 1 backup of that Queue in 
-    	another member in the cluster. When it is '2', 2 members will have the backup. 0 means there will be no backups.
+    	Count of synchronous backups. When this count is 1, a map entry will have its backup on one other node in 
+    	the cluster. If you set it to 2, then a map entry will have its backup on two other nodes. You can set it 
+    	to 0 if you do not want your entries to be backed up. The maximum value for the backup count is 6.
     	Its default value is 1.
     * <async-backup-count>:
-    	 Number of asynchronous backups. Its default value is 0.
+	Count of asynchronous backups. Unlike the synchronous backup process, asynchronous backup process does not
+	block the map operations. Its default value is 0, meaning there will be no asynchronous backups.
     * <time-to-live-seconds>:
-    	Used to purge unused or empty queues. If you define a value (time in seconds) for this element, then your queue will 
-    	be destroyed if it stays empty or unused for that time.
+	Maximum time in seconds for each entry to stay in the map. If it is not 0, entries that are older than 
+	this time and not updated for this time are evicted automatically. Valid values are integers between 0 and 
+	Integer.MAX VALUE. Its default value is 0, which means infinite. If it is not 0, entries are evicted regardless 
+	of the set eviction-policy.
     * <max-idle-seconds>:
-    	
+	Maximum time in seconds for each entry to stay idle in the map. Entries that are idle for more than 
+	this time are evicted automatically. An entry is idle if no get, put, EntryProcessor.process or containsKey is called. 
+	Valid values are integers between 0 and Integer.MAX VALUE. Its default value is 0, which means infinite.
     * <eviction-policy>:
-    	
+	Eviction policy configuration. Its default values is NONE. Available values are as follows:
+	- NONE:
+		No items will be evicted and the property max-size will be ignored. You still 
+		can combine it with time-to-live-seconds and max-idle-seconds.
+	- LRU: 	Least Recently Used.
+	- LFU: 	Least Frequently Used.
     * <max-size>:
-    	
+	Maximum size of the map depending on the given policy specified by its "policy" attribute. When maximum 
+	size is reached, the map is evicted based on the policy defined. Valid values are integers between 0 and 
+	Integer.MAX VALUE. Its default value is 0 and its default policy attribute is "PER_NODE". If you want 
+	max-size to work, set the <eviction-policy> to a value other than NONE. Available max-size policies are 
+	as follows:
+	- PER_NODE:
+		Maximum number of map entries in each cluster member. You cannot set the max-size to a value lower 
+		than the partition count (which is 271 by default).
+	- PER_PARTITION:
+		Maximum number of map entries within each partition.
+	- USED_HEAP_SIZE: 
+		Maximum used heap size in megabytes per map for each Hazelcast instance. It does not work when in-memory 
+		format is set to OBJECT.
+	- USED_HEAP_PERCENTAGE: 
+		Maximum used heap size percentage per map for each Hazelcast instance. If, for example, JVM is 
+		configured to have 1000 MB and this value is 10, then the map entries will be evicted when used heap size 
+		exceeds 100 MB. It does not work when in-memory format is set to OBJECT.
+	- FREE_HEAP_SIZE: 
+		Minimum free heap size in megabytes for each Hazelcast instance.
+	- FREE_HEAP_PERCENTAGE: 
+		Minimum free heap size percentage for each Hazelcast instance. If, for example, JVM is configured to 
+		have 1000 MB and this value is 10, then the map entries will be evicted when free heap size is below 100 MB.
+	- USED_NATIVE_MEMORY_SIZE: 
+		Maximum used native memory size in megabytes per map for each Hazelcast instance. It is available only in 
+		Hazelcast Enterprise HD.
+	- USED_NATIVE_MEMORY_PERCENTAGE: 
+		Maximum used native memory size percentage per map for each Hazelcast instance. It is available only in 
+		Hazelcast Enterprise HD.
+	- FREE_NATIVE_MEMORY_SIZE: 
+		Minimum free native memory size in megabytes for each Hazelcast instance. It is available only in 
+		Hazelcast Enterprise HD.
+	- FREE_NATIVE_MEMORY_PERCENTAGE:
+		Minimum free native memory size percentage for each Hazelcast instance. It is available only in 
+		Hazelcast Enterprise HD.
     * <eviction-percentage>:
-    	
+	When max-size is reached, the specified percentage of the map will be evicted. For example, if set to 25, 
+	25% of the entries will be evicted. Valid values are integers between 0 and 100. Its default value is 25.
     * <min-eviction-check-millis>:
-    	
+	Specifies the frequency of the eviction process, i.e. minimum time in milliseconds which should elapse before 
+	checking whether a partition of the map is evictable or not. Its default value is 100. Setting it to 0 (zero) 
+	makes the eviction process run for every put operation.
     * <merge-policy>:
-    	
+	Policy that specifies how the map entries in the small cluster will merge with the bigger cluster after a 
+	split-brain syndrome. Its default values is "com.hazelcast.map.merge.PutIfAbsentMapMergePolicy". Available 
+	built-in policies are as follows:
+	- com.hazelcast.map.merge.PassThroughMergePolicy:
+		Entry will be added if there is no existing entry for the key.
+	- com.hazelcast.map.merge.PutIfAbsentMapMergePolicy: 
+		Entry will be added if the merging entry does not exist in the cluster.
+	- com.hazelcast.map.merge.HigherHitsMapMergePolicy: 
+		Entry with the higher number of hits wins.
+	- com.hazelcast.map.merge.LatestUpdateMapMergePolicy: 
+		Entry with the latest update wins. 
     * <read-backup-data>:
-    	
+	Used to enable reading from local backup map entries. Its default value is false. It can be used if there is 
+	at least 1 sync or async backup.
     * <hot-restart>:
-    	
+	Used to enable Hazelcast's Hot Restart Persistence feature for the map. It is available only in Hazelcast 
+	Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
+	sub-element.
+	- <fsync>:
+		Set as true if the writing to disk should be followed by an fsync() system call. Its default value is false.
     * <map-store>:
     	
     * <near-cache>:
@@ -522,85 +587,27 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 -->    
     <map name="default">
         <in-memory-format>BINARY</in-memory-format>
-
-        <!--
-            Number of backups. If 1 is set as the backup-count for example,
-            then all entries of the map will be copied to another JVM for
-            fail-safety. 0 means no backup.
-        -->
+        <statistics-enabled>true</statistics-enabled>
+        <optimize-queries>true</optimize-queries>
+        <cache-deserialized-values>INDEX_ONLY</cache-deserialized-values>
         <backup-count>1</backup-count>
-        <!--
-            Number of async backups. 0 means no backup.
-        -->
         <async-backup-count>0</async-backup-count>
-        <!--
-			Maximum number of seconds for each entry to stay in the map. Entries that are
-			older than <time-to-live-seconds> and not updated for <time-to-live-seconds>
-			will get automatically evicted from the map.
-			Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
-		-->
         <time-to-live-seconds>0</time-to-live-seconds>
-        <!--
-			Maximum number of seconds for each entry to stay idle in the map. Entries that are
-			idle(not touched) for more than <max-idle-seconds> will get
-			automatically evicted from the map. Entry is touched if get, put or containsKey is called.
-			Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
-		-->
         <max-idle-seconds>0</max-idle-seconds>
-        <!--
-            Valid values are:
-            NONE (no eviction),
-            LRU (Least Recently Used),
-            LFU (Least Frequently Used).
-            NONE is the default.
-        -->
         <eviction-policy>NONE</eviction-policy>
-        <!--
-            Maximum size of the map. When max size is reached,
-            map is evicted based on the policy defined.
-            Any integer between 0 and Integer.MAX_VALUE. 0 means
-            Integer.MAX_VALUE. Default is 0.
-        -->
         <max-size policy="PER_NODE">0</max-size>
-        <!--
-            When max. size is reached, specified percentage of
-            the map will be evicted. Any integer between 0 and 100.
-            If 25 is set for example, 25% of the entries will
-            get evicted.
-        -->
         <eviction-percentage>25</eviction-percentage>
-        <!--
-            Minimum time in milliseconds which should pass before checking
-            if a partition of this map is evictable or not.
-            Default value is 100 millis.
-        -->
         <min-eviction-check-millis>100</min-eviction-check-millis>
-        <!--
-            While recovering from split-brain (network partitioning),
-            map entries in the small cluster will merge into the bigger cluster
-            based on the policy set here. When an entry merge into the
-            cluster, there might an existing entry with the same key already.
-            Values of these entries might be different for that same key.
-            Which value should be set for the key? Conflict is resolved by
-            the policy set here. Default policy is PutIfAbsentMapMergePolicy
-
-            There are built-in merge policies such as
-            com.hazelcast.map.merge.PassThroughMergePolicy; entry will be overwritten if merging entry exists for the key.
-            com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
-            com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
-            com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
-        -->
         <merge-policy>com.hazelcast.map.merge.PutIfAbsentMapMergePolicy</merge-policy>
-
-        <!--
-           Control caching of de-serialized values. Caching makes query evaluation faster, but it cost memory.
-           Possible Values:
-                        NEVER: Never cache deserialized object
-                        INDEX-ONLY: Caches values only when they are inserted into an index.
-                        ALWAYS: Always cache deserialized values.
-        -->
         <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
-
+        <read-backup-data>false</read-backup-data>
+	<hot-restart enabled="false">
+		<fsync>false</fsync>
+	</hot-restart>
+	<map-store>
+		
+	</map-store>
+        
     </map>
 
     <multimap name="default">
