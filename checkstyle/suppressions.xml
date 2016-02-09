@@ -316,12 +316,6 @@
     <suppress checks="JavadocMethod" files="com/hazelcast/aws/"/>
     <suppress checks="JavadocType" files="com/hazelcast/aws/"/>
 
-    <!-- Hibernate -->
-    <suppress checks="IllegalImport" files="com/hazelcast/hibernate/serialization/Hibernate3CacheEntrySerializer"/>
-    <suppress checks="IllegalImport" files="com/hazelcast/hibernate/serialization/Hibernate41CacheEntrySerializer"/>
-    <suppress checks="IllegalImport" files="com/hazelcast/hibernate/serialization/Hibernate3CacheKeySerializer"/>
-    <suppress checks="IllegalImport" files="com/hazelcast/hibernate/serialization/Hibernate4CacheKeySerializer"/>
-
     <!-- Spring -->
     <suppress checks="MethodCount|MethodLength" files="com/hazelcast/spring/HazelcastConfigBeanDefinitionParser"/>
     <suppress checks="CyclomaticComplexity|NPathComplexity"
