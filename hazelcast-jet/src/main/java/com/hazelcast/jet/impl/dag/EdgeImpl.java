@@ -69,7 +69,7 @@ public class EdgeImpl implements Edge {
         this.hashingStrategy = nvl(hashingStrategy, DefaultHashingStrategy.INSTANCE);
         this.partitioningStrategy = nvl(partitioningStrategy, StringPartitioningStrategy.INSTANCE);
         this.dataTransferringStrategy = nvl(dataTransferringStrategy, ByReferenceDataTransferringStrategy.INSTANCE);
-        this.processingStrategy = nvl(processingStrategy, ProcessingStrategy.ROUND_ROBING);
+        this.processingStrategy = nvl(processingStrategy, ProcessingStrategy.ROUND_ROBIN);
     }
 
     private <T> T nvl(T value, T defaultValue) {
@@ -119,6 +119,45 @@ public class EdgeImpl implements Edge {
     @Override
     public DataTransferringStrategy getDataTransferringStrategy() {
         return this.dataTransferringStrategy;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        EdgeImpl edge = (EdgeImpl) o;
+
+        if (shuffled != edge.shuffled) return false;
+        if (to != null ? !to.equals(edge.to) : edge.to != null) return false;
+        if (name != null ? !name.equals(edge.name) : edge.name != null) return false;
+        return !(from != null ? !from.equals(edge.from) : edge.from != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = to != null ? to.hashCode() : 0;
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        result = 31 * result + (from != null ? from.hashCode() : 0);
+        result = 31 * result + (shuffled ? 1 : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "EdgeImpl{" +
+                "to=" + to +
+                ", name='" + name + '\'' +
+                ", from=" + from +
+                ", shuffled=" + shuffled +
+                ", hashingStrategy=" + hashingStrategy +
+                ", shufflingStrategy=" + shufflingStrategy +
+                ", processingStrategy=" + processingStrategy +
+                ", partitioningStrategy=" + partitioningStrategy +
+                ", dataTransferringStrategy=" + dataTransferringStrategy +
+                '}';
     }
 
     public static class EdgeBuilder {

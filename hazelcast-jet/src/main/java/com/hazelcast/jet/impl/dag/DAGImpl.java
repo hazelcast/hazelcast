@@ -16,24 +16,23 @@
 
 package com.hazelcast.jet.impl.dag;
 
-import java.util.Set;
-import java.util.Map;
-import java.util.List;
-import java.util.Stack;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-
 import com.hazelcast.jet.spi.dag.DAG;
 import com.hazelcast.jet.spi.dag.Edge;
 import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.jet.spi.dag.tap.SinkTap;
 import com.hazelcast.jet.spi.dag.tap.SourceTap;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
 
 public class DAGImpl implements DAG {
     private String name;
@@ -53,7 +52,7 @@ public class DAGImpl implements DAG {
 
     public DAG addVertex(Vertex vertex) {
         if (this.vertices.containsKey(vertex.getName())) {
-            throw new IllegalStateException(
+            throw new IllegalArgumentException(
                     "Vertex " + vertex.getName() + " already defined!");
         }
 

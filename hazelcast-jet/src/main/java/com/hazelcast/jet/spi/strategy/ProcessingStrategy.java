@@ -26,7 +26,7 @@ public enum ProcessingStrategy implements Serializable {
     /**
      * Next chunk will be passed to the next task one by one;
      */
-    ROUND_ROBING,
+    ROUND_ROBIN,
     /**
      * Data will be passed to all accessible vertices of next container;
      */

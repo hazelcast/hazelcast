@@ -118,7 +118,7 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
         }
     }
 
-    protected Vertex createVertex(String name, Class processorClass, int processorsCount) {
+    public static Vertex createVertex(String name, Class processorClass, int processorsCount) {
         return new VertexImpl(
                 name,
                 ProcessorDescriptor.
@@ -128,7 +128,7 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
         );
     }
 
-    protected Vertex createVertex(String name, Class processorClass) {
+    public static Vertex createVertex(String name, Class processorClass) {
         return createVertex(name, processorClass, Runtime.getRuntime().availableProcessors());
     }
 
