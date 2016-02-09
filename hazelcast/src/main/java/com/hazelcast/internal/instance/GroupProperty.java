@@ -17,6 +17,8 @@
 package com.hazelcast.internal.instance;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.monitors.HealthMonitorLevel;
 import com.hazelcast.map.QueryResultSizeExceededException;

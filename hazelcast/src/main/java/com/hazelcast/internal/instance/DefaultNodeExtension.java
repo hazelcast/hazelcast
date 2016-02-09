@@ -22,6 +22,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;

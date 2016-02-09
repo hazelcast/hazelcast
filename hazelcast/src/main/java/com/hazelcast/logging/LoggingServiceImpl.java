@@ -16,7 +16,7 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.internal.instance.BuildInfo;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.internal.instance.MemberImpl;
 import com.hazelcast.util.ConstructorFunction;
 

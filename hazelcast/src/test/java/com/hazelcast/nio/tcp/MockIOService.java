@@ -4,7 +4,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.internal.instance.BuildInfoProvider;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.logging.ILogger;

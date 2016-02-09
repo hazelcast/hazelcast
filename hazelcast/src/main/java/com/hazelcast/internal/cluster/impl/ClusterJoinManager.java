@@ -28,7 +28,7 @@ import com.hazelcast.internal.cluster.impl.operations.MasterDiscoveryOperation;
 import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.internal.cluster.impl.operations.PostJoinOperation;
 import com.hazelcast.internal.cluster.impl.operations.SetMasterOperation;
-import com.hazelcast.internal.instance.BuildInfo;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.internal.instance.MemberImpl;
 import com.hazelcast.internal.instance.Node;

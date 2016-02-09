@@ -16,7 +16,7 @@
 
 package com.hazelcast.osgi.impl;
 
-import com.hazelcast.internal.instance.BuildInfoProvider;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.osgi.HazelcastOSGiService;
 
 /**

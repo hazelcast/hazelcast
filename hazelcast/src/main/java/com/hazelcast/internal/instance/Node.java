@@ -18,6 +18,8 @@ package com.hazelcast.internal.instance;
 
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ConfigCheck;

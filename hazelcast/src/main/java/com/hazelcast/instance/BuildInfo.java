@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.instance;
+package com.hazelcast.instance;
 
 public class BuildInfo {
 
