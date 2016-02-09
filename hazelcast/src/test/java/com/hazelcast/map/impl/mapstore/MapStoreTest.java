@@ -36,8 +36,9 @@ import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapStoreWrapper;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.mapstore.MapStoreWriteBehindTest.RecordingMapStore;
+import com.hazelcast.map.impl.mapstore.writebehind.MapStoreWithCounter;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.test.AssertTask;
@@ -947,6 +948,32 @@ public class MapStoreTest extends AbstractMapStoreTest {
         store.awaitRemoves();
 
         assertEquals(0, store.getStore().size());
+    }
+
+    @Test
+    public void testEntryProcessor_calls_load_only_one_time_per_key() throws Exception {
+        Config config = getConfig();
+        // Configure map with one backup and dummy map store
+        MapConfig mapConfig = config.getMapConfig("default");
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        MapStoreWithCounter mapStore = new MapStoreWithCounter();
+        mapStoreConfig.setImplementation(mapStore);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance member = createHazelcastInstance(config);
+        IMap map = member.getMap("default");
+
+        map.executeOnKey(1, new AbstractEntryProcessor(false) {
+
+            @Override
+            public Object process(Map.Entry entry) {
+                entry.setValue(2);
+                return null;
+            }
+        });
+
+        assertEquals(1, mapStore.getLoadCount());
     }
 
     private Config newConfig(Object storeImpl) {

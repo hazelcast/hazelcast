@@ -142,7 +142,7 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
     protected boolean entryRemoved(Map.Entry entry, Data key, Object oldValue, long now) {
         final Object value = entry.getValue();
         if (value == null) {
-            recordStore.remove(key);
+            recordStore.delete(key);
             getLocalMapStats().incrementRemoves(getLatencyFrom(now));
             doPostOps(key, oldValue, entry);
             return true;
@@ -200,7 +200,7 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
     }
 
     protected void put(Data key, Object value) {
-        recordStore.put(key, value, DEFAULT_TTL);
+        recordStore.set(key, value, DEFAULT_TTL);
     }
 
 
