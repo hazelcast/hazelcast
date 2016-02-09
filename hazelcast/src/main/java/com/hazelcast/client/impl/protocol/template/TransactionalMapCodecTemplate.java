@@ -207,7 +207,7 @@ public interface TransactionalMapCodecTemplate {
      * @param txnId ID of the this transaction operation
      * @param threadId  The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @return A set clone of the keys contained in this map.
-     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see com.hazelcast.internal.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Request(id = 14, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object keySet(String name, String txnId, long threadId);
@@ -223,7 +223,7 @@ public interface TransactionalMapCodecTemplate {
      * @param threadId  The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param predicate Specified query criteria.
      * @return Result key set for the query.
-     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see com.hazelcast.internal.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Request(id = 15, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object keySetWithPredicate(String name, String txnId, long threadId, Data predicate);
@@ -237,7 +237,7 @@ public interface TransactionalMapCodecTemplate {
      * @param txnId ID of the this transaction operation
      * @param threadId  The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @return All values in the map
-     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see com.hazelcast.internal.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Request(id = 16, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object values(String name, String txnId, long threadId);
@@ -253,7 +253,7 @@ public interface TransactionalMapCodecTemplate {
      * @param threadId  The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param predicate Specified query criteria.
      * @return Result value collection of the query.
-     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see com.hazelcast.internal.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     @Request(id = 17, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object valuesWithPredicate(String name, String txnId, long threadId, Data predicate);

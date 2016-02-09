@@ -2,7 +2,7 @@ package com.hazelcast.internal.management;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.internal.management.operation.ChangeWanStateOperation;
 import com.hazelcast.internal.management.request.ChangeWanStateRequest;
 import com.hazelcast.test.HazelcastParallelClassRunner;

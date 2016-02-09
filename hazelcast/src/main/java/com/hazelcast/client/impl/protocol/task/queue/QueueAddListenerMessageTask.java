@@ -24,7 +24,7 @@ import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;

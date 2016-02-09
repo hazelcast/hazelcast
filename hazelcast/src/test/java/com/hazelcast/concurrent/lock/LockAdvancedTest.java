@@ -4,7 +4,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ILock;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.LockSupport;
 
-import static com.hazelcast.instance.TestUtil.terminateInstance;
+import static com.hazelcast.internal.instance.TestUtil.terminateInstance;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

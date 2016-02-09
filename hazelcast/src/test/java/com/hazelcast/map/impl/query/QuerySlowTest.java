@@ -22,7 +22,7 @@ import org.junit.runner.RunWith;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.instance.GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS;
+import static com.hazelcast.internal.instance.GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

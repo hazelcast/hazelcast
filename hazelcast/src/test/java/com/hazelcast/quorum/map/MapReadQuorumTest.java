@@ -19,7 +19,7 @@ package com.hazelcast.quorum.map;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.internal.instance.HazelcastInstanceManager;
 import com.hazelcast.quorum.PartitionedCluster;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;

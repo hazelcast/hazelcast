@@ -20,7 +20,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.internal.instance.GroupProperties;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;

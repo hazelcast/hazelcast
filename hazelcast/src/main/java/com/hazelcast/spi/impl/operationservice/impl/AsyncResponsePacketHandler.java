@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
@@ -26,7 +26,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
+import static com.hazelcast.internal.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.nio.Packet.HEADER_OP;
 import static com.hazelcast.nio.Packet.HEADER_RESPONSE;
 import static com.hazelcast.util.Preconditions.checkNotNull;

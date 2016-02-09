@@ -16,7 +16,7 @@
 
 package com.hazelcast.util.executor;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.instance.HazelcastThreadGroup;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.Queue;

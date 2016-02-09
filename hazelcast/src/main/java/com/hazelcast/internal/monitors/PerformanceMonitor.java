@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.instance.GroupProperties;
+import com.hazelcast.internal.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -26,8 +26,8 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT;
 import static com.hazelcast.internal.monitors.PerformanceMonitorPlugin.DISABLED;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.System.arraycopy;

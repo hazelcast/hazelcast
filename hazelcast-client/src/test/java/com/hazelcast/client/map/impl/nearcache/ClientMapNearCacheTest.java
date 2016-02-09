@@ -56,7 +56,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.internal.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;

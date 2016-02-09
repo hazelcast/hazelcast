@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.MapTryLockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;

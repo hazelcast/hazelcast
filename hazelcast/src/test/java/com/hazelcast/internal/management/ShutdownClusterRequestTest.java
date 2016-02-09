@@ -5,7 +5,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.internal.management.request.ShutdownClusterRequest;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;

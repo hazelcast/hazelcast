@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.ringbuffer;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.RingbufferTailSequenceCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.operations.GenericOperation;

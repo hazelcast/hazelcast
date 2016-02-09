@@ -5,7 +5,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

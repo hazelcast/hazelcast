@@ -19,7 +19,7 @@ package com.hazelcast.hibernate;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.logging.Logger;
 
 /**

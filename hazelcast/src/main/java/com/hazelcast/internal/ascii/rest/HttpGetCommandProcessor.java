@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.ascii.rest;
 
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.nio.ConnectionManager;
 

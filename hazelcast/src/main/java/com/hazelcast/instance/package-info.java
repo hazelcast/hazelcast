@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains Hazelcast Instance functionality.<br/>
+ * todo: what should be added here.
  */
 package com.hazelcast.instance;

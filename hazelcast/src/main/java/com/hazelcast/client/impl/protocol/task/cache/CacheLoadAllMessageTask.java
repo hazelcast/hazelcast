@@ -22,7 +22,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheLoadAllCodec;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;

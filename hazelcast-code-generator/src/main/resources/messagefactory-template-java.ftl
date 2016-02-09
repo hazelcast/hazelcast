@@ -1,7 +1,7 @@
 package com.hazelcast.client.impl.protocol;
 
 
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.task.NoSuchMessageTask;

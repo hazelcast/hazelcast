@@ -1,8 +1,8 @@
 package com.hazelcast.util;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.instance.Node;
+import com.hazelcast.internal.instance.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;

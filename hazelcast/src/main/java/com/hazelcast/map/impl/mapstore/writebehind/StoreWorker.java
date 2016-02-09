@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperties;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;

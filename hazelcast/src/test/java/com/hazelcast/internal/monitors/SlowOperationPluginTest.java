@@ -2,7 +2,6 @@ package com.hazelcast.internal.monitors;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.operation.EntryOperation;
@@ -16,10 +15,10 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_SLOW_OPERATIONS_PERIOD_SECONDS;
-import static com.hazelcast.instance.GroupProperty.SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS;
-import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED;
-import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_SLOW_OPERATIONS_PERIOD_SECONDS;
+import static com.hazelcast.internal.instance.GroupProperty.SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS;
+import static com.hazelcast.internal.instance.GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED;
+import static com.hazelcast.internal.instance.GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

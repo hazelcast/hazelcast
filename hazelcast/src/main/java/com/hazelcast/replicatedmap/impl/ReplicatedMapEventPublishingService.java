@@ -23,7 +23,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.instance.MemberImpl;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.impl.event.EventData;

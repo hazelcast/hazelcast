@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.TransactionalSetRemoveCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.TransactionalSet;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;

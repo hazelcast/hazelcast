@@ -3,7 +3,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;

@@ -18,11 +18,11 @@ package com.hazelcast.util;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceManager;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeContext;
-import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.instance.TestNodeContext;
+import com.hazelcast.internal.instance.HazelcastInstanceManager;
+import com.hazelcast.internal.instance.Node;
+import com.hazelcast.internal.instance.NodeContext;
+import com.hazelcast.internal.instance.NodeExtension;
+import com.hazelcast.internal.instance.TestNodeContext;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;

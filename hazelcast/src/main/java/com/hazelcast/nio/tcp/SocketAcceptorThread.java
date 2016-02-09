@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.IOUtil;

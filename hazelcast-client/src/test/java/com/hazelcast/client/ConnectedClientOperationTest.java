@@ -7,8 +7,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.instance.Node;
+import com.hazelcast.internal.instance.TestUtil;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -22,7 +22,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
-import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 

@@ -17,7 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.instance.MemberImpl;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

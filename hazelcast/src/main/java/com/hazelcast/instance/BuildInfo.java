@@ -16,6 +16,9 @@
 
 package com.hazelcast.instance;
 
+/**
+ * Contains the information of the Hazelcast build.
+ */
 public class BuildInfo {
 
     private final String version;
@@ -35,26 +38,56 @@ public class BuildInfo {
         this.serializationVersion = serializationVersion;
     }
 
+    /**
+     * Returns the revision.
+     *
+     * @return the revision.
+     */
     public String getRevision() {
         return revision;
     }
 
+    /**
+     * Returns the version, e.g. '3.6'.
+     *
+     * @return the version.
+     */
     public String getVersion() {
         return version;
     }
 
+    /**
+     * Returns the build.
+     *
+     * @return the build.
+     */
     public String getBuild() {
         return build;
     }
 
+    /**
+     * Returns the build number.
+     *
+     * @return the build number.
+     */
     public int getBuildNumber() {
         return buildNumber;
     }
 
+    /**
+     * Checks if this is an Enterprise build or not.
+     *
+     * @return true if enterprise, false otherwise.
+     */
     public boolean isEnterprise() {
         return enterprise;
     }
 
+    /**
+     * Gets the version of the serialization.
+     *
+     * @return serialization version.
+     */
     public byte getSerializationVersion() {
         return serializationVersion;
     }

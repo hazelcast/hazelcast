@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapValuesCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;

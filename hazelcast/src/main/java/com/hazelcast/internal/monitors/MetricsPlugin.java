@@ -21,7 +21,7 @@ import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS;
 
 /**
  * A {@link PerformanceMonitorPlugin} that displays the content of the {@link MetricsRegistry}.

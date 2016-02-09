@@ -17,7 +17,7 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;

@@ -18,8 +18,8 @@ package com.hazelcast.hibernate.serialization;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.internal.instance.HazelcastInstanceImpl;
+import com.hazelcast.internal.instance.HazelcastInstanceProxy;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;

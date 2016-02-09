@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;

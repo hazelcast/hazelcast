@@ -17,7 +17,7 @@
 package com.hazelcast.partition.impl;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;

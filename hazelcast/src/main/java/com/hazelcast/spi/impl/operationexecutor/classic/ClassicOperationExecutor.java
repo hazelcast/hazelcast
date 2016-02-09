@@ -16,10 +16,10 @@
 
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.internal.instance.GroupProperties;
+import com.hazelcast.internal.instance.GroupProperty;
+import com.hazelcast.internal.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.instance.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;

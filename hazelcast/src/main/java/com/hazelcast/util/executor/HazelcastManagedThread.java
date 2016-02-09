@@ -16,7 +16,7 @@
 
 package com.hazelcast.util.executor;
 
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.instance.OutOfMemoryErrorDispatcher;
 
 /**
  * Base class for all Hazelcast threads to manage them from a single point.

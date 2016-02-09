@@ -18,7 +18,7 @@ package com.hazelcast.partition.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.MigrationCycleOperation;

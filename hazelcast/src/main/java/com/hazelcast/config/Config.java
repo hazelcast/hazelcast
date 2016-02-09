@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.instance.HazelcastProperty;
+import com.hazelcast.internal.instance.HazelcastProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 

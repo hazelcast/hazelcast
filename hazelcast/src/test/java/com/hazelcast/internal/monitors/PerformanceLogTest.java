@@ -2,8 +2,8 @@ package com.hazelcast.internal.monitors;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.GroupProperties;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -26,10 +26,10 @@ import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;

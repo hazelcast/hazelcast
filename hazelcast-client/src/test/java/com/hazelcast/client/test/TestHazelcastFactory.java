@@ -25,7 +25,7 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;

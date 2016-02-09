@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;

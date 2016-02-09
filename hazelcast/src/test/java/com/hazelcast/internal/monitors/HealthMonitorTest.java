@@ -2,7 +2,7 @@ package com.hazelcast.internal.monitors;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.Metric;
 import com.hazelcast.internal.metrics.MetricsRegistry;

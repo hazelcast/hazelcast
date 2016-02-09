@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 
 /**
  * A 'capability' that can be implemented by object to get the Node injected.

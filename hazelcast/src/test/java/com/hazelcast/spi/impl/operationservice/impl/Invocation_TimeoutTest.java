@@ -10,7 +10,7 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.core.Partition;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;

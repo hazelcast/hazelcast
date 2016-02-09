@@ -19,7 +19,7 @@ package com.hazelcast.internal.cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.Cluster;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.CoreService;
 

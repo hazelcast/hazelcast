@@ -29,7 +29,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.core.PartitionAware;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;

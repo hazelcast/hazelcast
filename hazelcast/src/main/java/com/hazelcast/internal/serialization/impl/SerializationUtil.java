@@ -17,7 +17,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.Data;

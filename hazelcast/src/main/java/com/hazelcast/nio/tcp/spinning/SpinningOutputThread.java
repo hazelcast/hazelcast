@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp.spinning;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 

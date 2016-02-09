@@ -18,8 +18,8 @@ package com.hazelcast.spi.impl.executionservice.impl;
 
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;

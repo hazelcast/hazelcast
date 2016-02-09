@@ -2,7 +2,7 @@ package com.hazelcast.partition;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.impl.ReplicaSyncInfo;
 import com.hazelcast.test.HazelcastTestSupport;

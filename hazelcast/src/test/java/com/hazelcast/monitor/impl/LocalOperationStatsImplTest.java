@@ -2,8 +2,8 @@ package com.hazelcast.monitor.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.GroupProperty;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.management.dto.SlowOperationInvocationDTO;
 import com.hazelcast.test.HazelcastParallelClassRunner;

@@ -20,7 +20,7 @@ import com.hazelcast.collection.impl.txncollection.operations.CollectionTransact
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;

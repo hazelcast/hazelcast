@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.internal.instance.GroupProperties;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -38,9 +38,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
-import static com.hazelcast.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
-import static com.hazelcast.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.internal.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.internal.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.internal.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
 
 /**
  * Sends cache invalidation events in batch or single as configured.

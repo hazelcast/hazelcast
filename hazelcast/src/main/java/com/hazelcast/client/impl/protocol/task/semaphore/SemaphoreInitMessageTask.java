@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.SemaphoreInitCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.concurrent.semaphore.operations.InitOperation;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SemaphorePermission;

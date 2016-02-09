@@ -17,7 +17,7 @@ import org.junit.runner.RunWith;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
+import static com.hazelcast.internal.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;

@@ -18,7 +18,7 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.cluster.Joiner;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 

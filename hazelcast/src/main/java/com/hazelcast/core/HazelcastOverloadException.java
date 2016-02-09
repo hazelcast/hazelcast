@@ -21,7 +21,7 @@ package com.hazelcast.core;
  * an overload.
  *
  * This exception is thrown when backpressure is enabled. For more information see
- * {@link com.hazelcast.instance.GroupProperties#BACKPRESSURE_ENABLED}.
+ * {@link com.hazelcast.internal.instance.GroupProperties#BACKPRESSURE_ENABLED}.
  */
 public class HazelcastOverloadException extends HazelcastException {
 

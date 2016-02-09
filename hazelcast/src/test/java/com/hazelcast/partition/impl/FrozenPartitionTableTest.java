@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
-import static com.hazelcast.instance.TestUtil.terminateInstance;
+import static com.hazelcast.internal.instance.TestUtil.terminateInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;

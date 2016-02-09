@@ -31,6 +31,11 @@ public final class BuildInfoProvider {
     private BuildInfoProvider() {
     }
 
+    /**
+     * Gets the BuildInfo.
+     *
+     * @return the BuildInfo.
+     */
     public static BuildInfo getBuildInfo() {
         final InputStream inRuntimeProperties =
                 BuildInfoProvider.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");

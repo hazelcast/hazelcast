@@ -17,8 +17,8 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.GroupProperty;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;

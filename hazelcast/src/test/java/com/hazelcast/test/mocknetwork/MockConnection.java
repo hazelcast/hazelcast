@@ -17,7 +17,7 @@
 
 package com.hazelcast.test.mocknetwork;
 
-import com.hazelcast.instance.NodeState;
+import com.hazelcast.internal.instance.NodeState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;

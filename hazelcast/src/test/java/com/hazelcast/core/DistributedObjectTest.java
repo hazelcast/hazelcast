@@ -18,8 +18,8 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.instance.Node;
+import com.hazelcast.internal.instance.TestUtil;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.RemoteService;

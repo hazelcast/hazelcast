@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp.nonblocking;
 
-import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;

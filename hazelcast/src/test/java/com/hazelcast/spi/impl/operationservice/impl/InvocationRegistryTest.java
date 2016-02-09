@@ -16,7 +16,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.instance.GroupProperty.BACKPRESSURE_ENABLED;
+import static com.hazelcast.internal.instance.GroupProperty.BACKPRESSURE_ENABLED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;

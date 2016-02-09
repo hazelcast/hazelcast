@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.mapreduce;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapReduceCancelCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.nio.Address;

@@ -19,7 +19,7 @@ package com.hazelcast.internal.management;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.internal.management.request.ForceStartNodeRequest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

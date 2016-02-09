@@ -27,7 +27,7 @@ import com.hazelcast.core.PartitionAware;
 import com.hazelcast.executor.impl.operations.CallableTaskOperation;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.executor.impl.operations.ShutdownOperation;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;

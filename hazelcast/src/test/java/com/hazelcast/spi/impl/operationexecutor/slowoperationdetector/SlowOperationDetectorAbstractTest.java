@@ -21,7 +21,7 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
+import static com.hazelcast.internal.instance.TestUtil.getHazelcastInstanceImpl;
 import static java.lang.String.format;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

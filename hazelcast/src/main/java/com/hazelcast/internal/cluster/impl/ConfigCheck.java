@@ -27,8 +27,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.instance.GroupProperty.APPLICATION_VALIDATION_TOKEN;
-import static com.hazelcast.instance.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.internal.instance.GroupProperty.APPLICATION_VALIDATION_TOKEN;
+import static com.hazelcast.internal.instance.GroupProperty.PARTITION_COUNT;
 
 /**
  * Contains enough information about Hazelcast Config, to do a validation check so that clusters with different configurations

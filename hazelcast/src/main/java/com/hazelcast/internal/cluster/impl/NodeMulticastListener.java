@@ -18,7 +18,7 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;

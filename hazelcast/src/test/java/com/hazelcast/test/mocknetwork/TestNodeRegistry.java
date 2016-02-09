@@ -18,7 +18,7 @@
 package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.NodeContext;
+import com.hazelcast.internal.instance.NodeContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 

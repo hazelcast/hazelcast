@@ -10,7 +10,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
+import static com.hazelcast.internal.instance.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

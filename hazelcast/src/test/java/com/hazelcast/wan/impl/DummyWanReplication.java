@@ -1,6 +1,6 @@
 package com.hazelcast.wan.impl;
 
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.wan.ReplicationEventObject;
 import com.hazelcast.wan.WanReplicationEndpoint;
 import com.hazelcast.wan.WanReplicationEvent;

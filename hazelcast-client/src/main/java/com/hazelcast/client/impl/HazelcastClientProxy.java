@@ -41,7 +41,7 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.instance.TerminatedLifecycleService;
+import com.hazelcast.internal.instance.TerminatedLifecycleService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.internal.serialization.SerializationService;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.internal.instance.HazelcastInstanceManager;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.ParserContext;

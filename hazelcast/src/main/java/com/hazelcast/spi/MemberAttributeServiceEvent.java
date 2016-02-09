@@ -19,7 +19,7 @@ package com.hazelcast.spi;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.instance.MemberImpl;
 
 /**
  * This service event is fired to inform services about a change in a member's attributes collection

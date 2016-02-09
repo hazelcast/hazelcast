@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListen
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;

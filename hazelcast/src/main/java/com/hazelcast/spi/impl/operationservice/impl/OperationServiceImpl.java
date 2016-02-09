@@ -18,10 +18,10 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.GroupProperties;
+import com.hazelcast.internal.instance.GroupProperty;
+import com.hazelcast.internal.instance.MemberImpl;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;

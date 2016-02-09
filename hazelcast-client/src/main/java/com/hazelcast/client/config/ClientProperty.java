@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.HazelcastProperty;
+import com.hazelcast.internal.instance.GroupProperty;
+import com.hazelcast.internal.instance.HazelcastProperty;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.concurrent.TimeUnit;

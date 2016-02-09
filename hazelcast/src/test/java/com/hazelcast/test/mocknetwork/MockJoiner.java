@@ -19,7 +19,7 @@ package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.internal.cluster.impl.AbstractJoiner;
 import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.util.concurrent.ConcurrentMap;

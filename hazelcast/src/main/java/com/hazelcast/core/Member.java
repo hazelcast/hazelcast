@@ -24,7 +24,7 @@ import java.util.Map;
 
 /**
  * Cluster member interface. The default implementation
- * {@link com.hazelcast.instance.MemberImpl} violates the Java Serialization contract.
+ * {@link com.hazelcast.internal.instance.MemberImpl} violates the Java Serialization contract.
  * It should be serialized/deserialized by Hazelcast.
  *
  * @see Cluster

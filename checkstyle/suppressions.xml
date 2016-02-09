@@ -168,14 +168,14 @@
     <suppress checks="NPathComplexity" files="com/hazelcast/query/impl/predicates/BetweenVisitor"/>
 
     <!-- Instance -->
-    <suppress checks="JavadocMethod" files="com/hazelcast/instance/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/instance/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/instance/"/>
-    <suppress checks="ConstantName" files="com/hazelcast/instance/GroupProperties"/>
-    <suppress checks="MethodCount|ClassFanOutComplexity|VisibilityModifier" files="com/hazelcast/instance/HazelcastInstanceImpl"/>
-    <suppress checks="MethodCount" files="com/hazelcast/instance/HazelcastInstanceProxy"/>
-    <suppress checks="MethodCount" files="com/hazelcast/instance/MemberImpl"/>
-    <suppress checks="" files="com/hazelcast/instance/Node"/>
+    <suppress checks="JavadocMethod" files="com/hazelcast/internal/instance/"/>
+    <suppress checks="JavadocType" files="com/hazelcast/internal/instance/"/>
+    <suppress checks="JavadocVariable" files="com/hazelcast/internal/instance/"/>
+    <suppress checks="ConstantName" files="com/hazelcast/internal/instance/GroupProperties"/>
+    <suppress checks="MethodCount|ClassFanOutComplexity|VisibilityModifier" files="com/hazelcast/internal/instance/HazelcastInstanceImpl"/>
+    <suppress checks="MethodCount" files="com/hazelcast/internal/instance/HazelcastInstanceProxy"/>
+    <suppress checks="MethodCount" files="com/hazelcast/internal/instance/MemberImpl"/>
+    <suppress checks="" files="com/hazelcast/internal/instance/Node"/>
 
     <!-- SPI -->
     <suppress checks="MethodCount|NPathComplexity|MagicNumber" files="com/hazelcast/spi/Operation"/>

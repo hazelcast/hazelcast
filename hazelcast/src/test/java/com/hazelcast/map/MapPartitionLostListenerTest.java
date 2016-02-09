@@ -1,7 +1,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.map.MapPartitionLostListenerStressTest.EventCollectingMapPartitionLostListener;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
 import com.hazelcast.map.impl.MapService;

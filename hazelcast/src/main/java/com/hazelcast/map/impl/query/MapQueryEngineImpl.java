@@ -61,7 +61,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.instance.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
+import static com.hazelcast.internal.instance.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
 import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
 import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
 import static com.hazelcast.util.ExceptionUtil.rethrow;

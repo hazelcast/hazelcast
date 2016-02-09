@@ -17,8 +17,8 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.instance.HazelcastInstanceManager;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.instance.HazelcastInstanceManager;
+import com.hazelcast.internal.instance.OutOfMemoryErrorDispatcher;
 
 import java.util.Set;
 

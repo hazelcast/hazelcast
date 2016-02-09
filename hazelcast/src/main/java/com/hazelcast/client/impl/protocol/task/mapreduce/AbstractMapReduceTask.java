@@ -23,7 +23,7 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.instance.Node;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyPredicate;

@@ -47,7 +47,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 
 import static com.hazelcast.client.config.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
+import static com.hazelcast.internal.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 
 
 abstract class ClientInvocationServiceSupport implements ClientInvocationService, ConnectionListener {

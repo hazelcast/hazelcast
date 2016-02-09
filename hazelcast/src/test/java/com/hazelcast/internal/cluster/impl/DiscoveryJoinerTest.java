@@ -1,7 +1,7 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.instance.TestUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;

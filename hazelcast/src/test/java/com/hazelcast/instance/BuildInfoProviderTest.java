@@ -1,5 +1,7 @@
 package com.hazelcast.instance;
 
+import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;

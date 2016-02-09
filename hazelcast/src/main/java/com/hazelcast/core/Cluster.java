@@ -179,7 +179,7 @@ public interface Cluster {
      * Any node can start the shutdown process. A shutdown command is sent to other nodes periodically until
      * either all other nodes leave the cluster or a configurable timeout occurs. If some of the nodes do not
      * shutdown before the timeout duration, shutdown can be also invoked on them.
-     * @see {@link com.hazelcast.instance.GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}
+     * @see {@link com.hazelcast.internal.instance.GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}
      *
      * @throws IllegalStateException    if member-list changes during the transaction
      *                                  or there are ongoing/pending migration operations
@@ -203,7 +203,7 @@ public interface Cluster {
      * Any node can start the shutdown process. A shutdown command is sent to other nodes periodically until
      * either all other nodes leave the cluster or a configurable timeout occurs. If some of the nodes do not
      * shutdown before the timeout duration, shutdown can be also invoked on them.
-     * @see {@link com.hazelcast.instance.GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}
+     * @see {@link com.hazelcast.internal.instance.GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}
      *
      * @param transactionOptions transaction options
      * @throws IllegalStateException    if member-list changes during the transaction

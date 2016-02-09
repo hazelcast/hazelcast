@@ -25,7 +25,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.instance.GroupProperty;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;

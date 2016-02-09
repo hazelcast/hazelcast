@@ -3,8 +3,8 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.instance.Node;
+import com.hazelcast.internal.instance.TestUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
