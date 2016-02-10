@@ -23,7 +23,7 @@
     <artifactId>hazelcast-aws</artifactId>
     <version>3.7-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <description>Hazelcast In-Memory DataGrid Hibernate Plugin</description>
+    <description>Hazelcast In-Memory DataGrid Aws Plugin</description>
     <url>http://www.hazelcast.com/</url>
     
     <properties>
