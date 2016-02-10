@@ -23,7 +23,9 @@
     <artifactId>hazelcast-aws</artifactId>
     <version>3.7-SNAPSHOT</version>
     <packaging>jar</packaging>
-
+    <description>Hazelcast In-Memory DataGrid Hibernate Plugin</description>
+    <url>http://www.hazelcast.com/</url>
+    
     <properties>
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.basedir}</main.basedir>
@@ -31,6 +33,8 @@
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
         <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
+        <maven.gpg.plugin.version>1.4</maven.gpg.plugin.version>
+        <maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
         <hazelcast.version>3.6</hazelcast.version>
         <junit.version>4.12</junit.version>
         <mockito.version>1.10.19</mockito.version>
@@ -41,7 +45,31 @@
         <maven.checkstyle.plugin.version>2.12</maven.checkstyle.plugin.version>
         <log4j.version>1.2.12</log4j.version>
     </properties>
-
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <scm>
+        <connection>scm:git:git://github.com/hazelcast/hazelcast-hibernate.git</connection>
+        <developerConnection>scm:git:git@github.com:hazelcast/hazelcast-hibernate.git</developerConnection>
+        <url>https://github.com/hazelcast/hazelcast/</url>
+    </scm>
+    <developers>
+        <developer>
+            <id>oztalip</id>
+            <name>talip ozturk</name>
+            <email>talip@hazelcast.com</email>
+        </developer>
+        <developer>
+            <id>fuad</id>
+            <name>fuad malikov</name>
+            <email>fuad@hazelcast.com</email>
+        </developer>
+    </developers>
+    
     <build>
         <plugins>
             <plugin>
@@ -156,6 +184,18 @@
         </plugins>
     </build>
 
+    <distributionManagement>
+        <repository>
+            <id>release-repository</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshot-repository</id>
+            <name>Maven2 Snapshot Repository</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <uniqueVersion>false</uniqueVersion>
+        </snapshotRepository>
+    </distributionManagement>
     <dependencies>
         <dependency>
             <groupId>com.hazelcast</groupId>
@@ -302,6 +342,69 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
                             </argLine>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>release</id>
+            <properties>
+                <javadoc>true</javadoc>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven.gpg.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>${maven.javadoc.plugin.version}</version>
+                        <configuration>
+                            <javaApiLinks>
+                                <property>
+                                    <name>api_1.6</name>
+                                    <value>http://download.oracle.com/javase/1.6.0/docs/api/</value>
+                                </property>
+                                <property>
+                                    <name>api_1.7</name>
+                                    <value>http://download.oracle.com/javase/1.7.0/docs/api/</value>
+                                </property>
+                            </javaApiLinks>
+                            <maxmemory>1024</maxmemory>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.3</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>release-repository</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>false</autoReleaseAfterClose>
                         </configuration>
                     </plugin>
                 </plugins>
