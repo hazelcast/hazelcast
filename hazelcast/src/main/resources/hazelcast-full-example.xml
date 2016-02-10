@@ -877,7 +877,170 @@ https://hazelcast.org/documentation/.
 	    <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
     </replicatedmap>
-       
+<!--
+    ===== HAZELCAST CACHE CONFIGURATION =====
+    
+    Configuration element's name is <cache>. It has the required attribute "name" with which you 
+    can specify the name of your cache.
+    It has the following sub-elements:
+    * <key-type>:
+	Type of the cache entries' keys. The fully qualified class name of the cache key type should be given 
+	using its "class-name" attribute.
+    * <value-type>:
+	Type of the cache entries' values. The fully qualified class name of the cache value type should be given 
+	using its "class-name" attribute.    
+    * <statistics-enabled>:
+    	When you enable it, you can retrieve cache entry statistics such as creation time, expiration time,  
+    	number of hits, key, value, etc. Its default value is false.    
+    * <management-enabled>:
+	If set to true, JMX beans are enabled and collected statistics are provided. It doesn't automatically 
+	enable statistics collection. Its default value is false.
+    * <read-through>:
+	If set to true, enables read-through behavior of the cache to an underlying configured 
+	javax.cache.integration.CacheLoader which is also known as lazy-loading. Its default value is false.
+    * <write-through>:
+	If set to true, enables write-through behavior of the cache to an underlying configured 
+	javax.cache.integration.CacheWriter which passes any changed value to the external backend resource. Its default 
+	value is false.
+    * <cache-loader-factory>:
+	Fully qualified class name of the javax.cache.configuration.Factory implementation providing a 
+	javax.cache.integration.CacheLoader instance to the cache. Provide this class name using its "class-name"
+	attribute.
+    * <cache-writer-factory>:
+	Fully qualified class name of the javax.cache.configuration.Factory implementation providing a 
+	javax.cache.integration.CacheWriter instance to the cache. Provide this class name using its "class-name"
+	attribute.
+    * <expiry-policy-factory>:
+	Fully qualified class name of the javax.cache.configuration.Factory implementation providing a 
+	javax.cache.expiry.ExpiryPolicy instance to the cache. Provide this class name using its "class-name"
+	attribute.
+    * <cache-entry-listeners>:
+	List of cache entry listeners given by its <cache-entry-listener> sub-element. Each <cache-entry-listener>
+	has the following attributes:
+	- old-value-required: 
+		If set to true, previously assigned values for the affected keys will be sent to the 
+		javax.cache.event.CacheEntryListener implementation. Setting this attribute to true creates additional 
+		traffic. Its default value is false.
+	- synchronous: 
+		If set to true, the javax.cache.event.CacheEntryListener implementation will be called in a synchronous 
+		manner. Its default value is false.
+	It has the following sub-elements:
+	- cache-entry-listener-factory: 
+		Fully qualified class name of the javax.cache.configuration.Factory implementation providing a 
+		javax.cache.event.CacheEntryListener instance.
+	- cache-entry-event-filter-factory:
+		Fully qualified class name of the javax.cache.configuration.Factory implementation providing a 
+		javax.cache.event.CacheEntryEventFilter instance.
+    * <in-memory-format>:
+    	Specifies in which format data will be stored in your cache. Available values are as follows:
+	- BINARY:
+		Data will be stored in serialized binary format. It is the default option.
+	- OBJECT:
+		Data will be stored in deserialized form.
+	- NATIVE:
+		Data will be stored in the cache that uses Hazelcast's High-Density Memory Store feature. 
+		This option is available only in Hazelcast Enterprise HD.
+    * <backup-count>:
+	Number of synchronous backups. If it is 1, for example, then all entries of the cache are copied to 
+	one other instance as synchronous for fail-safety. Its default value is 1.
+    * <async-backup-count>:
+    	Number of asynchronous backups. If it is 1, for example, then all entries of the cache are copied to 
+    	one other instance as asynchronous for fail-safety. The sum of <backup-count> and <async-backup-count> 
+    	cannot be larger than 6. Its default value is 0.
+    * <eviction>:
+	Configuration for the eviction of your cache. It has the following attributes:
+	- size: Maximum size (entry count) of the cache.
+	- max-size-policy: Maximum size policy for eviction of the cache. Available values are as follows:
+		* ENTRY_COUNT: Maximum entry count per member.
+		* USED_NATIVE_MEMORY_SIZE: Maximum used native memory size in megabytes.
+		* USED_NATIVE_MEMORY_PERCENTAGE: Maximum used native memory percentage.
+		* FREE_NATIVE_MEMORY_SIZE: Minimum free native memory size to trigger cleanup.
+		* FREE_NATIVE_MEMORY_PERCENTAGE: Minimum free native memory percentage to trigger cleanup.
+	- eviction-policy: See the <eviction-policy> element above.
+    * <wan-replication-ref>:
+	Configuration of the WAN replication for your cache.
+	It has the following attributes:
+	- name: 
+		Name of the WAN replication configuration specified in the "name" attribute of the 
+		<wan-replication> element. See the <wan-replication> element above.
+	
+	It has the following sub-elements:
+	- <merge-policy>:
+		Policy to resolve conflicts that are occurred when target cluster already has the replicated entry key.
+		Available policies are as follows.
+		* com.hazelcast.cache.merge.HigherHitsCacheMergePolicy
+		* com.hazelcast.cache.merge.PassThroughCacheMergePolicy
+	- <filters>:
+		Filters to intercept WAN replication events before they are placed to WAN event replication 
+		queues by providing a filtering API. Just implement Hazelcast's CacheWanEventFilter interface 
+		to create your filters. You can define multiple filters and add to the configuration using the 
+		<filter> sub-elements within the <filters> element.
+	- <republishing-enabled>:
+		When enabled, an incoming event to a member is forwarded to target cluster of that member. Its
+		default value is true.
+    * <quorum-ref>:
+	Adds the quorum for this cache which you configure using the <quorum> element. You should set the 
+	<quorum-ref>'s value as the <quorum>'s name.     
+    * <partition-lost-listeners>:
+    	Adds the partition lost listeners that you created by implementing Hazelcast's PartitionLostListener interface. 
+    * <merge-policy>:
+	The following are the built-in merge policies for cache. You can either use their full class names or constant 
+	names (given in parantheses).
+	- com.hazelcast.cache.merge.PassThroughCacheMergePolicy (PASS_THROUGH)
+	- com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy (PUT_IF_ABSENT)
+	- com.hazelcast.cache.merge.HigherHitsCacheMergePolicy (HIGHER_HITS)
+	- com.hazelcast.cache.merge.LatestAccessCacheMergePolicy (LATEST_ACCESS)
+    * <hot-restart>:
+	Used to enable Hazelcast's Hot Restart Persistence feature for the cache. It is available only in Hazelcast 
+	Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
+	sub-element.
+	- <fsync>:
+		Set as true if the writing to disk should be followed by an fsync() system call. Its default value is false.    
+-->
+    <cache name="default">
+        <key-type class-name="java.lang.Object"/>
+        <value-type class-name="java.lang.Object"/>
+        <statistics-enabled>false</statistics-enabled>
+        <management-enabled>false</management-enabled>
+        <read-through>true</read-through>
+        <write-through>true</write-through>
+        <cache-loader-factory
+                class-name="com.example.cache.MyCacheLoaderFactory"/>
+        <cache-writer-factory
+                class-name="com.example.cache.MyCacheWriterFactory"/>
+        <expiry-policy-factory
+                class-name="com.example.cache.MyExpirePolicyFactory"/>
+        <cache-entry-listeners>
+            <cache-entry-listener old-value-required="false" synchronous="false">
+                <cache-entry-listener-factory
+                        class-name="com.example.cache.MyEntryListenerFactory"/>
+                <cache-entry-event-filter-factory
+                        class-name="com.example.cache.MyEntryEventFilterFactory"/>
+            </cache-entry-listener>
+        </cache-entry-listeners>
+        <in-memory-format>NATIVE</in-memory-format>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
+	<wan-replication-ref name="my-wan-cluster-batch">
+	    <merge-policy>com.hazelcast.cache.merge.PassThroughCacheMergePolicy</merge-policy>
+	    <republishing-enabled>true</republishing-enabled>
+	    <filters>
+		<filter-impl>com.example.SampleFilter</filter-impl>
+	    </filters>
+	</wan-replication-ref>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+	<partition-lost-listeners>
+		<partition-lost-listener>
+			com.your-package.YourPartitionLostListener
+		</partition-lost-listener>
+	</partition-lost-listeners>
+        <merge-policy>com.hazelcast.cache.merge.LatestAccessCacheMergePolicy</merge-policy>
+	<hot-restart enabled="false">
+		<fsync>false</fsync>
+	</hot-restart>
+
+    </cache>
 
 
 
