@@ -321,7 +321,7 @@ https://hazelcast.org/documentation/.
 	</symmetric-encryption>
 -->        
    <network>
-        <public-address>11.22.33.44:5555</public-address>e
+        <public-address>11.22.33.44:5555</public-address>
         <port auto-increment="true" port-count="100">5701</port>
         <outbound-ports>
             <ports>34500</ports>
@@ -701,10 +701,7 @@ https://hazelcast.org/documentation/.
     * <quorum-ref>:
 	Adds the quorum for this map which you configure using the <quorum> element. You should set the <quorum-ref>'s value
 	as the <quorum>'s name. 
-    * <query-caches>:
-    
-    	
--->    
+ -->    
     <map name="default">
         <in-memory-format>BINARY</in-memory-format>
         <statistics-enabled>true</statistics-enabled>
@@ -818,11 +815,23 @@ https://hazelcast.org/documentation/.
 		</query-cache>
 	</query-caches>
 
-
+<!--
+    ===== HAZELCAST MULTIMAP CONFIGURATION =====
+    
+    Configuration element's name is <multimap>. It has the optional attribute "name" with which you 
+    can specify the name of your multimap. Its default value is "default".
+    All sub-elements of <multimap> except <value-collection-type> have the same meaning as in <map> configuration.
+    You can specify the type of the value collection using <value-collection-type>. Available values are SET and LIST.
+-->
     <multimap name="default">
         <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
         <value-collection-type>SET</value-collection-type>
+        <entry-listeners>
+            <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
+        </entry-listeners>
     </multimap>
+
 
     <list name="default">
         <backup-count>1</backup-count>
