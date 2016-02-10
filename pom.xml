@@ -27,7 +27,9 @@
     <url>http://www.hazelcast.com/</url>
     
     <properties>
-        <!-- needed for checkstyle/findbugs -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jdk.version>1.6</jdk.version>
+        <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
         <main.basedir>${project.basedir}</main.basedir>
         <maven.animal.sniffer.plugin.version>1.14</maven.animal.sniffer.plugin.version>
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
@@ -72,6 +74,16 @@
     
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.plugin.version}</version>
+                <configuration>
+                    <source>${jdk.version}</source>
+                    <target>${jdk.version}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
