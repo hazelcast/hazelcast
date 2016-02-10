@@ -18,8 +18,9 @@
 <!--
 This is a full example hazelcast.xml including all the configuration elements and attributes of Hazelcast.
 To use this, rename it to hazelcast.xml and place it in the directory where you start Hazelcast.
-Please see the schema to learn how to configure Hazelcast at https://hazelcast.com/schema/config/hazelcast-config-3.6.xsd 
-or the Reference Manual at https://hazelcast.org/documentation/.
+Please see the schema to learn how to configure Hazelcast at 
+https://hazelcast.com/schema/config/hazelcast-config-3.6.xsd or the Reference Manual at 
+https://hazelcast.org/documentation/.
 -->
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.6.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
@@ -45,14 +46,16 @@ or the Reference Manual at https://hazelcast.org/documentation/.
     <import resource="your-configuration-XML-file"/>
 <!--
     Specifies the name and password for a cluster group you create.
-    Cluster groups allow you to create separate sub-clusters within your Hazelcast cluster to create a simple security
-    and they are also used for the WAN Replication feature. 
+    Cluster groups allow you to create separate sub-clusters within your Hazelcast cluster to 
+    create a simple security and they are also used for the WAN Replication feature. 
 -->
     <group>
         <name>dev</name>
         <password>dev-pass</password>
     </group>
 <!--
+    ===== HAZELCAST LICENSE CONFIGURATION =====
+    
     If you have an Enterprise or Enterprise HD license, you should type it here.
     Note that you can also set your license key programmatically; please refer to 
     http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#setting-the-license-key
@@ -65,14 +68,15 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 -->    
     <instance-name>hzInstance1</instance-name>
 <!--
-    Configuration for Hazelcast's Management Center.
+    ===== HAZELCAST MANAGEMENT CENTER CONFIGURATION =====
+    
     The value for the element <management-center> is the URL where you deploy the Management Center.
     It has two optional attributes:
     * enabled: 
 	Set to true to be able to use the Management Center. Its default is false.
     * update-interval: 
 	The time frequency (in seconds) for which Management Center will take information from Hazelcast cluster. 
-	Its default is 3 seconds. Hazelcast's Open Source edition provides the Management Center with monitoring 
+	Its default value is 3 seconds. Hazelcast's Open Source edition provides the Management Center with monitoring 
 	at most 2 members in your cluster. To use it for more members, you need to have either a Management Center, 
 	Hazelcast Enterprise or Hazelcast Enterprise HD license. 
 -->        
@@ -94,9 +98,10 @@ or the Reference Manual at https://hazelcast.org/documentation/.
     	<property name="your-property">Value of the property</property>
     </properties>
 <!--
-    Configuration for Hazelcast's WAN Replication feature. This feature is available only in Hazelcast Enterprise.
+    ===== HAZELCAST WAN REPLICATION CONFIGURATION ===== 
     
-    It has two attributes:
+    This feature is available only in Hazelcast Enterprise.
+    Configuration element's name is <wan-replication>. It has two attributes:
     * name: 
 	Name of your WAN Replication. This name is referenced in IMap or ICache configuration when you add WAN 
 	Replication for these data structures (using the element <wan-replication-ref> in the configuration of 
@@ -105,7 +110,7 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 	This attribute is valid when you use `WanBatchReplication` as the WAN Replication implementation. When
 	set to true, only the latest events (based on key) are selected and sent to the target cluster in a batch.
     
-    It has the following elements:
+    It has the following sub-elements:
     * <target-cluster>: 
 	Specifies the target cluster to which the events will be replicated. It has the group-name and
 	group-password attributes. These attributes correspond to the <name> and <password> sub-elements, 
@@ -173,9 +178,8 @@ or the Reference Manual at https://hazelcast.org/documentation/.
     </wan-replication>
 <!--
     Configuration to build your Hazelcast's network; includes port, interface, discovery mechanism, SSL, 
-    encryption, etc. configurations. Parent configuration element is <network> and it includes the 
-    following sub-elements:
-    
+    encryption, etc. configurations. Configuration element's name is <network>. 
+    It has the following sub-elements:
     * <public address>:  
 	This optional element overrides the public address of a member and it is useful when 
 	you have a private cloud. Normally, a member selects its socket address as its public address. But behind a NAT, 
@@ -317,7 +321,7 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 	</symmetric-encryption>
 -->        
    <network>
-        <public-address>11.22.33.44:5555</public-address>
+        <public-address>11.22.33.44:5555</public-address>e
         <port auto-increment="true" port-count="100">5701</port>
         <outbound-ports>
             <ports>34500</ports>
@@ -345,9 +349,11 @@ or the Reference Manual at https://hazelcast.org/documentation/.
         <symmetric-encryption enabled="false" />
     </network>
 <!--
-    Configuration for the partition groups you create. You can enable it and specify the type using the "enabled" and
-    "group-type" attributes. For CUSTOM type, you can define groups using its <member-group> and <interface> sub-elements.
-    You can group the members with one of the following types:
+    ===== PARTITION GROUPING CONFIGURATION =====
+    
+    Configuration element's name is <partition-group>. You can enable it and specify the type using 
+    the "enabled" and "group-type" attributes. For CUSTOM type, you can define groups using its 
+    <member-group> and <interface> sub-elements. You can group the members with one of the following types:
     * HOST_AWARE: 
 	Members sharing the same network interface are grouped together. All members on the same host will be a 
 	single partition group.
@@ -369,8 +375,11 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 	</member-group>
     </partition-group>
 <!--
-    Configuration for Hazelcast's Executor Service. It has the optional attribute "name" with which you 
-    can specify the name of your executor service. Its default value is "default". It has the following elements:
+    ===== HAZELCAST EXECUTOR SERVICE CONFIGURATION =====
+    
+    Configuration element's name is <executor-service>. It has the optional attribute "name" with which you 
+    can specify the name of your executor service. Its default value is "default". 
+    It has the following sub-elements:
     * <statistics-enabled>: 
 	When you enable it, you can retrieve executor service statistics such as pending operations count, 
 	started operations count, completed operations count, and cancelled operations count. Its default 
@@ -386,7 +395,9 @@ or the Reference Manual at https://hazelcast.org/documentation/.
         <queue-capacity>0</queue-capacity>
     </executor-service>
 <!--
-    Configuration for Hazelcast's Queue distributed data structure. It has the optional attribute "name" with which you 
+    ===== HAZELCAST QUEUE CONFIGURATION =====
+    
+    Configuration element's name is <queue>. It has the optional attribute "name" with which you 
     can specify the name of your queue. Its default value is "default".
     It has the following elements:
     * <statistics-enabled>: 
@@ -448,9 +459,11 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 	</queue-store>
     </queue>
 <!--
-    Configuration for Hazelcast's Map distributed data structure. It has the optional attribute "name" with which you 
+    ===== HAZELCAST MAP CONFIGURATION =====
+    
+    Configuration element's name is <map>. It has the optional attribute "name" with which you 
     can specify the name of your map. Its default value is "default".
-    It has the following elements:
+    It has the following sub-elements:
     * <in-memory-format>: 
 	Specifies in which format data will be stored in your map. Available values are as follows:
 	- BINARY:
@@ -458,8 +471,8 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 	- OBJECT:
 		Data will be stored in deserialized form.
 	- NATIVE:
-		Data will be stored in the map that uses Hazelcast's High-Density Memory Store feature. This option
-		is available only in Hazelcast Enterprise HD.
+		Data will be stored in the map that uses Hazelcast's High-Density Memory Store feature. This 
+		option is available only in Hazelcast Enterprise HD.
     * <statistics-enabled>: 
     	When you enable it, you can retrieve map entry statistics such as creation time, expiration time,  
     	number of hits, key, value, etc. Its default value is true.
@@ -467,8 +480,9 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 	It is deprecated as of Hazelcast 3.6. Use <cache-deserialized-values> element instead. When  
 	<optimize-queries> and <cache-deserialized-values> are used at the same time Hazelcast will do its 
 	best to detect possible conflicts. Conflict detection is done on best-effort basis and you should not 
-	rely on it. If true, it increases the speed of query processes in the map. It only works when <in-memory-format>
-	is set as BINARY and performs a pre-caching on the entries queried. Its default value is false.
+	rely on it. If true, it increases the speed of query processes in the map. It only works when 
+	<in-memory-format> is set as BINARY and performs a pre-caching on the entries queried. Its default 
+	value is false.
     * <cache-deserialized-values>:
 	Controls caching of deserialized values. Caching makes the query evaluation faster, but it costs memory.
 	Available values are as follows:
@@ -490,8 +504,9 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 	of the set eviction-policy.
     * <max-idle-seconds>:
 	Maximum time in seconds for each entry to stay idle in the map. Entries that are idle for more than 
-	this time are evicted automatically. An entry is idle if no get, put, EntryProcessor.process or containsKey is called. 
-	Valid values are integers between 0 and Integer.MAX VALUE. Its default value is 0, which means infinite.
+	this time are evicted automatically. An entry is idle if no get, put, EntryProcessor.process or 
+	containsKey is called.  Valid values are integers between 0 and Integer.MAX VALUE. Its default value 
+	is 0, which means infinite.
     * <eviction-policy>:
 	Eviction policy configuration. Its default values is NONE. Available values are as follows:
 	- NONE:
@@ -754,8 +769,55 @@ or the Reference Manual at https://hazelcast.org/documentation/.
 		</partition-lost-listener>
 	</partition-lost-listeners>
 	<quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
-	
     </map>
+<!--
+    ===== HAZELCAST CONTINUOUS QUERY CACHE CONFIGURATION =====
+    
+    This feature is available only in Hazelcast Enterprise. Configuration element's name is <query-caches>. 
+    You can create your query caches using its  <query-cache> sub-element. Its parent element is <map>, 
+    i.e. it should be placed within the <map> configuration. Each <query-cache> has the attribute "name" with which you 
+    can specify the name of your query cache. 
+    It has the following sub-elements:
+    * <include-value>:
+    	Set to true if you want to cache the value too. Its default value is true.
+    * <predicate>:
+    	Predicate to filter events which will be applied to the query cache.
+    * <entry-listeners>:
+    	Adds listeners (listener classes) for your query cache entries. See <entry-listeners> in the map configuration above.
+    * <in-memory-format>:
+    	Type of the data to be stored in your query cache. See <in-memory-format> in the map configuration above.
+    * <populate>:
+    	Set to true if you want to enable the initial population of your query cache. Its default value is true.
+    * <coalesce>:
+    	Set to true if you want to enable the coalescing of your query cache. Its default value is false.
+    * <delay-seconds>:
+    	Minimum time in seconds that an event waits in the member's buffer. Its default value is 0.
+    * <batch-size>:
+    	Batch size used to determine the number of events sent in a batch to your query cache. Its default value is 1.
+    * <buffer-size>:
+    	Maximum number of events which can be stored in a partition buffer. Its default value is 16.
+    * <eviction>:
+    	Configuration for the eviction of your query cache. See <eviction> in the map configuration above.
+    * <indexes>:
+    	You can define indexes for your query cache using this element's <index> sub-elements. See <index> in the
+    	map configuration above.
+-->
+	<query-caches>
+		<query-cache name="myContQueryCache">
+			<include-value>true</include-value>
+			<predicate type="class-name">com.hazelcast.examples.ExamplePredicate</predicate>
+			<entry-listeners>...</entry-listeners>
+			<in-memory-format>NATIVE</in-memory-format>
+			<populate>true</populate>
+			<coalesce>false</coalesce>
+			<delay-seconds>3</delay-seconds>
+			<batch-size>2</batch-size>
+			<buffer-size>32</buffer-size>
+			<eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
+			<indexes>...</indexes>
+		</query-cache>
+	</query-caches>
+
 
     <multimap name="default">
         <backup-count>1</backup-count>
