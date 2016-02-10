@@ -1,7 +1,6 @@
-package com.hazelcast.jet.dag;
+package com.hazelcast.jet.impl.dag;
 
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
-import com.hazelcast.jet.impl.dag.EdgeImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.impl.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.processors.DummyProcessor;
