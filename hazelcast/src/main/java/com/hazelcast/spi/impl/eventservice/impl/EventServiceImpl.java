@@ -492,23 +492,11 @@ public class EventServiceImpl implements InternalEventService {
 
     @Override
     public void handle(Packet packet) {
-        //try {
-            EventEnvelope eventEnvelope = (EventEnvelope) nodeEngine.toObject(packet);
-            Registration registration = getRegistration(eventEnvelope);
-            if (registration != null) {
-            	publishEvent(eventEnvelope.getServiceName(), registration, getEvent(eventEnvelope), packet.getPartitionId());
-            }
-            //eventExecutor.execute(new RemoteEventProcessor(this, packet));
-        //  no need for exception handling any more. The same is done in publishEvent processing.. 
-        //} catch (RejectedExecutionException e) {
-        //    rejectedCount.inc();
-
-        //    if (eventExecutor.isLive()) {
-        //        Connection conn = packet.getConn();
-        //        String endpoint = conn.getEndPoint() != null ? conn.getEndPoint().toString() : conn.toString();
-        //        logFailure("EventQueue overloaded! Failed to process event packet sent from: %s", endpoint);
-        //    }
-        //}
+        EventEnvelope eventEnvelope = (EventEnvelope) nodeEngine.toObject(packet);
+        Registration registration = getRegistration(eventEnvelope);
+        if (registration != null) {
+            publishEvent(eventEnvelope.getServiceName(), registration, getEvent(eventEnvelope), packet.getPartitionId());
+        }
     }
 
     public PostJoinRegistrationOperation getPostJoinOperation() {
