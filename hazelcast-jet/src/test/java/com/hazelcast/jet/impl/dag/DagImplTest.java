@@ -1,12 +1,17 @@
-package com.hazelcast.jet.dag;
+package com.hazelcast.jet.impl.dag;
 
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.jet.impl.dag.DAGImpl;
-import com.hazelcast.jet.impl.dag.EdgeImpl;
+import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
+import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.impl.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.processors.DummyProcessor;
+import com.hazelcast.jet.spi.dag.Edge;
 import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.spi.strategy.ProcessingStrategy;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import java.util.ArrayList;
@@ -229,8 +234,20 @@ public class DagImplTest {
         Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
         Vertex v3 = createVertex("v3", DummyProcessor.Factory.class);
 
-        EdgeImpl e1 = new EdgeImpl("e1", v1, v2);
-        EdgeImpl e2 = new EdgeImpl("e2", v2, v3);
+        Edge e1 = new EdgeImpl.EdgeBuilder("e1", v1, v2)
+                .dataTransferringStrategy(ByReferenceDataTransferringStrategy.INSTANCE)
+                .hashingStrategy(DefaultHashingStrategy.INSTANCE)
+                .partitioningStrategy(StringAndPartitionAwarePartitioningStrategy.INSTANCE)
+                .processingStrategy(ProcessingStrategy.BROADCAST)
+                .shufflingStrategy(new IListBasedShufflingStrategy("e1"))
+                .build();
+        Edge e2 = new EdgeImpl.EdgeBuilder("e2", v2, v3)
+                .dataTransferringStrategy(ByReferenceDataTransferringStrategy.INSTANCE)
+                .hashingStrategy(DefaultHashingStrategy.INSTANCE)
+                .partitioningStrategy(StringPartitioningStrategy.INSTANCE)
+                .processingStrategy(ProcessingStrategy.PARTITIONING)
+                .shufflingStrategy(new IListBasedShufflingStrategy("e2"))
+                .build();
 
         dag.addVertex(v1);
         dag.addVertex(v2);

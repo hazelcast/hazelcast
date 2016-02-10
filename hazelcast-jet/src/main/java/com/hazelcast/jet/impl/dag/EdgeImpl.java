@@ -132,7 +132,18 @@ public class EdgeImpl implements Edge {
         if (shuffled != edge.shuffled) return false;
         if (to != null ? !to.equals(edge.to) : edge.to != null) return false;
         if (name != null ? !name.equals(edge.name) : edge.name != null) return false;
-        return !(from != null ? !from.equals(edge.from) : edge.from != null);
+        if (from != null ? !from.equals(edge.from) : edge.from != null) return false;
+        if (hashingStrategy != null ? !hashingStrategy.getClass().equals(edge.hashingStrategy.getClass()) : edge.hashingStrategy != null) {
+            return false;
+        }
+        if (shufflingStrategy != null ? !shufflingStrategy.equals(edge.shufflingStrategy) : edge.shufflingStrategy != null) {
+            return false;
+        }
+        if (processingStrategy != edge.processingStrategy) return false;
+        if (partitioningStrategy != null ? !partitioningStrategy.getClass().equals(edge.partitioningStrategy.getClass()) : edge.partitioningStrategy != null) {
+            return false;
+        }
+        return !(dataTransferringStrategy != null ? !dataTransferringStrategy.getClass().equals(edge.dataTransferringStrategy.getClass()) : edge.dataTransferringStrategy != null);
 
     }
 
@@ -142,6 +153,11 @@ public class EdgeImpl implements Edge {
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (from != null ? from.hashCode() : 0);
         result = 31 * result + (shuffled ? 1 : 0);
+        result = 31 * result + (hashingStrategy != null ? hashingStrategy.getClass().hashCode() : 0);
+        result = 31 * result + (shufflingStrategy != null ? shufflingStrategy.hashCode() : 0);
+        result = 31 * result + (processingStrategy != null ? processingStrategy.getClass().hashCode() : 0);
+        result = 31 * result + (partitioningStrategy != null ? partitioningStrategy.getClass().hashCode() : 0);
+        result = 31 * result + (dataTransferringStrategy != null ? dataTransferringStrategy.getClass().hashCode() : 0);
         return result;
     }
 

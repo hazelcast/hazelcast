@@ -1,6 +1,5 @@
-package com.hazelcast.jet.dag;
+package com.hazelcast.jet.impl.dag;
 
-import com.hazelcast.jet.impl.dag.EdgeImpl;
 import com.hazelcast.jet.processors.DummyProcessor;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.spi.dag.Edge;

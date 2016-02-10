@@ -42,4 +42,20 @@ public class IListBasedShufflingStrategy implements ShufflingStrategy {
 
         return new Address[]{nodeEngine.getPartitionService().getPartitionOwner(partitionId)};
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        IListBasedShufflingStrategy that = (IListBasedShufflingStrategy) o;
+
+        return !(listName != null ? !listName.equals(that.listName) : that.listName != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return listName != null ? listName.hashCode() : 0;
+    }
 }
