@@ -55,8 +55,8 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:git://github.com/hazelcast/hazelcast-hibernate.git</connection>
-        <developerConnection>scm:git:git@github.com:hazelcast/hazelcast-hibernate.git</developerConnection>
+        <connection>scm:git:git://github.com/hazelcast/hazelcast-aws.git</connection>
+        <developerConnection>scm:git:git@github.com:hazelcast/hazelcast-aws.git</developerConnection>
         <url>https://github.com/hazelcast/hazelcast/</url>
     </scm>
     <developers>
