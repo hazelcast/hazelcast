@@ -831,6 +831,24 @@ https://hazelcast.org/documentation/.
             <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
     </multimap>
+<!--
+    ===== HAZELCAST REPLICATED MAP CONFIGURATION =====
+    
+    Configuration element's name is <replicatedmap>. It has the required attribute "name" with which you 
+    can specify the name of your replicated map.
+
+-->
+    <replicatedmap name="replicatedMap1">
+        <in-memory-format>BINARY</in-memory-format>
+        <concurrency-level>32</concurrency-level>
+        <replication-delay-millis>200</replication-delay-millis>
+        <async-fillup>true</async-fillup>
+        <statistics-enabled>true</statistics-enabled>
+	<entry-listeners>
+	    <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
+        </entry-listeners>
+
+
 
 
     <list name="default">
