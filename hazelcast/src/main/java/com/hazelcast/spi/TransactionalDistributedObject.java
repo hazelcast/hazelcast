@@ -32,9 +32,9 @@ public abstract class TransactionalDistributedObject<S extends RemoteService> ex
         this.tx = tx;
     }
 
-    public <T> T toObjectIfNeeded(Object data) {
+    public Object toObjectIfNeeded(Object data) {
         if (tx.isOriginatedFromClient()) {
-            return (T) data;
+            return data;
         }
         return getNodeEngine().toObject(data);
     }

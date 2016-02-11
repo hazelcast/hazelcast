@@ -24,21 +24,21 @@ import com.hazelcast.query.impl.getters.Extractors;
 /**
  * Entry of the Query.
  */
-public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
+public class CachedQueryEntry extends QueryableEntry {
 
     private Data keyData;
-    private K keyObject;
+    private Object keyObject;
     private Data valueData;
-    private V valueObject;
+    private Object valueObject;
 
     public CachedQueryEntry() {
     }
 
-    public CachedQueryEntry(SerializationService serializationService, Data key, V value, Extractors extractors) {
+    public CachedQueryEntry(SerializationService serializationService, Data key, Object value, Extractors extractors) {
         init(serializationService, key, value, extractors);
     }
 
-    public void init(SerializationService serializationService, Data key, V value, Extractors extractors) {
+    public void init(SerializationService serializationService, Data key, Object value, Extractors extractors) {
         if (key == null) {
             throw new IllegalArgumentException("keyData cannot be null");
         }
@@ -57,7 +57,7 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
     }
 
     @Override
-    public K getKey() {
+    public Object getKey() {
         if (keyObject == null) {
             keyObject = serializationService.toObject(keyData);
         }
@@ -65,7 +65,7 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
     }
 
     @Override
-    public V getValue() {
+    public Object getValue() {
         if (valueObject == null) {
             valueObject = serializationService.toObject(valueData);
         }
@@ -114,7 +114,7 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
     }
 
     @Override
-    public V setValue(V value) {
+    public Object setValue(Object value) {
         throw new UnsupportedOperationException();
     }
 
@@ -126,7 +126,7 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        CachedQueryEntry<K, V> that = (CachedQueryEntry<K, V>) o;
+        CachedQueryEntry that = (CachedQueryEntry) o;
         if (!keyData.equals(that.keyData)) {
             return false;
         }
