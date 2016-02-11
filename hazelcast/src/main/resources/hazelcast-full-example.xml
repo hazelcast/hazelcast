@@ -1039,19 +1039,67 @@ https://hazelcast.org/documentation/.
 	<hot-restart enabled="false">
 		<fsync>false</fsync>
 	</hot-restart>
-
     </cache>
 
-
-
-
+<!--
+    ===== HAZELCAST LIST CONFIGURATION =====
+    
+    Configuration element's name is <list>. It has the optional attribute "name" with which you 
+    can specify the name of your list. This attribute's default value is "default".
+    It has the following sub-elements:
+    * <statistics-enabled>: 
+	When you enable it, you can retrieve list statistics. Its default value is true.
+    * <max-size>: 
+	Maximum size of the list (item count). Its default value is 0, meaning Integer.MAX_VALUE.
+    * <backup-count>:
+	Number of synchronous backups. List is a non-partitioned data structure, so all entries of a 
+	List reside in one partition. If it is set as 1, there will be 1 backup of that List in another 
+	member in the cluster. When it is 2, 2 members will have the backup. Its default value is 1.
+    * <async-backup-count>:
+	Number of asynchronous backups. Its default value is 0.
+    * <item-listeners>:
+	Adds listeners (listener classes) for the List items using its sub-element <item-listener>. You can 
+	also set its attribute "include-value" to true if you want the item event to contain the item values, 
+	and you can set its attribute "local" to true if you want to listen to the items on the local member.
+-->
     <list name="default">
+        <statistics-enabled>false</statistics-enabled>
+        <max-size>0</max-size>
         <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <item-listeners>
+            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+        </item-listeners>
     </list>
-
+<!--
+    ===== HAZELCAST SET CONFIGURATION =====
+    
+    Configuration element's name is <set>. It has the optional attribute "name" with which you 
+    can specify the name of your set. This attribute's default value is "default".
+    It has the following sub-elements:
+    * <statistics-enabled>: 
+	When you enable it, you can retrieve set statistics. Its default value is true.
+    * <max-size>: 
+	Maximum size of the set (item count). Its default value is 0, meaning Integer.MAX_VALUE.
+    * <backup-count>:
+	Number of synchronous backups. Set is a non-partitioned data structure, so all entries of a 
+	Set reside in one partition. If it is set as 1, there will be 1 backup of that Set in another 
+	member in the cluster. When it is 2, 2 members will have the backup. Its default value is 1.
+    * <async-backup-count>:
+	Number of asynchronous backups. Its default value is 0.
+    * <item-listeners>:
+	Adds listeners (listener classes) for the Set items using its sub-element <item-listener>. You can 
+	also set its attribute "include-value" to true if you want the item event to contain the item values, 
+	and you can set its attribute "local" to true if you want to listen to the items on the local member.
+-->
     <set name="default">
-        <backup-count>1</backup-count>
-    </set>
+	<backup-count>1</backup-count>
+	<async-backup-count>0</async-backup-count>
+	<max-size>10</max-size>
+        <item-listeners>
+            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+        </item-listeners>
+   </set>
 
     <jobtracker name="default">
         <max-thread-size>0</max-thread-size>
