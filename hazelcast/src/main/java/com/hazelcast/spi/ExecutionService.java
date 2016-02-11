@@ -17,8 +17,8 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.util.executor.ExecutorType;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.util.executor.ExecutorType;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;

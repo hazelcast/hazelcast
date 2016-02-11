@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.internal.util.executor.StripedRunnable;
 
 public class EventProcessor implements StripedRunnable {
 

@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.executor;
+package com.hazelcast.internal.util.executor;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 
 /**
  * Base class for all Hazelcast threads to manage them from a single point.
  * Concrete classes can customize their behaviours by overriding
- * {@link com.hazelcast.util.executor.HazelcastManagedThread#beforeRun},
- * {@link com.hazelcast.util.executor.HazelcastManagedThread#executeRun} and
- * {@link com.hazelcast.util.executor.HazelcastManagedThread#afterRun} methods.
+ * {@link com.hazelcast.internal.util.executor.HazelcastManagedThread#beforeRun},
+ * {@link com.hazelcast.internal.util.executor.HazelcastManagedThread#executeRun} and
+ * {@link com.hazelcast.internal.util.executor.HazelcastManagedThread#afterRun} methods.
  */
 public class HazelcastManagedThread extends Thread {
 

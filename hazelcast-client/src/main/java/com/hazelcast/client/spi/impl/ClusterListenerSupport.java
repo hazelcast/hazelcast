@@ -44,7 +44,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.executor.PoolExecutorThreadFactory;
+import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

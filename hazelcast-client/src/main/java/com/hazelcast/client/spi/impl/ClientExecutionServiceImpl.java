@@ -20,10 +20,11 @@ import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.internal.util.executor.CompletableFutureTask;
+import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
+import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.util.executor.CompletableFutureTask;
-import com.hazelcast.util.executor.PoolExecutorThreadFactory;
-import com.hazelcast.util.executor.SingleExecutorThreadFactory;
+
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;

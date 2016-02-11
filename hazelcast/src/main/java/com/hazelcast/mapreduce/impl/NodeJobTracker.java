@@ -24,7 +24,7 @@ import com.hazelcast.mapreduce.impl.task.KeyValueJob;
 import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.internal.util.executor.ExecutorType;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 

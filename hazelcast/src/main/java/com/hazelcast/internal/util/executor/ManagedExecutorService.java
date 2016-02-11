@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.executor;
+package com.hazelcast.internal.util.executor;
 
 import com.hazelcast.internal.metrics.Probe;
 

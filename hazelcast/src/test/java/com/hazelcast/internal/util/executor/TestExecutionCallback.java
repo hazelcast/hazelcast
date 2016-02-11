@@ -14,8 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.executor;
+package com.hazelcast.internal.util.executor;
 
-public enum ExecutorType {
-    CACHED, CONCRETE
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.util.ExceptionUtil;
+
+class TestExecutionCallback implements ExecutionCallback {
+    volatile Object value;
+
+    @Override
+    public void onResponse(Object response) {
+        value = response;
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        throw ExceptionUtil.rethrow(t);
+    }
 }

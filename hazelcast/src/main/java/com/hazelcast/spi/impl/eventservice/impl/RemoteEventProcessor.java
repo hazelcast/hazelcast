@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.nio.Packet;
-import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.internal.util.executor.StripedRunnable;
 
 public class RemoteEventProcessor extends EventProcessor implements StripedRunnable {
     private EventServiceImpl eventService;

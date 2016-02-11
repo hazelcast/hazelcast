@@ -59,7 +59,7 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.internal.util.executor.ExecutorType;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;

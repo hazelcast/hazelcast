@@ -31,7 +31,7 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ProxyService;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;

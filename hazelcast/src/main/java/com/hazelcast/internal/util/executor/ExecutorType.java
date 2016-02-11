@@ -14,16 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.executor;
+package com.hazelcast.internal.util.executor;
 
-import java.util.concurrent.TimeUnit;
-
-/**
- * Interface for runnable with timeout value
- */
-public interface TimeoutRunnable extends Runnable {
-
-    long getTimeout();
-
-    TimeUnit getTimeUnit();
+public enum ExecutorType {
+    CACHED, CONCRETE
 }

@@ -17,13 +17,13 @@
 package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import java.util.Hashtable;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
 
 /**
- * Management bean for {@link com.hazelcast.util.executor.ManagedExecutorService}
+ * Management bean for {@link com.hazelcast.internal.util.executor.ManagedExecutorService}
  */
 @ManagedDescription("HazelcastInstance.ManagedExecutorService")
 public class ManagedExecutorServiceMBean extends HazelcastMBean<ManagedExecutorService> {

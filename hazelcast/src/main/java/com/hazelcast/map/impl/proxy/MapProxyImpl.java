@@ -54,7 +54,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.MapUtil;
-import com.hazelcast.util.executor.DelegatingFuture;
+import com.hazelcast.internal.util.executor.DelegatingFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;

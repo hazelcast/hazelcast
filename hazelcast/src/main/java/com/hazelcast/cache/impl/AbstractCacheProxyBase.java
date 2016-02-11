@@ -32,7 +32,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.executor.CompletableFutureTask;
+import com.hazelcast.internal.util.executor.CompletableFutureTask;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CompletionListener;

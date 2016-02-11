@@ -14,21 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.executor;
+package com.hazelcast.internal.util.executor;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.util.ExceptionUtil;
+import java.util.concurrent.TimeUnit;
 
-class TestExecutionCallback implements ExecutionCallback {
-    volatile Object value;
+/**
+ * Interface for runnable with timeout value
+ */
+public interface TimeoutRunnable extends Runnable {
 
-    @Override
-    public void onResponse(Object response) {
-        value = response;
-    }
+    long getTimeout();
 
-    @Override
-    public void onFailure(Throwable t) {
-        throw ExceptionUtil.rethrow(t);
-    }
+    TimeUnit getTimeUnit();
 }

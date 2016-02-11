@@ -26,8 +26,8 @@ import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.util.executor.StripedExecutor;
-import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.internal.util.executor.StripedExecutor;
+import com.hazelcast.internal.util.executor.StripedRunnable;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;

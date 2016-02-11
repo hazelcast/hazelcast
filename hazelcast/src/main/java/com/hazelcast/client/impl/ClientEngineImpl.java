@@ -63,7 +63,7 @@ import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.transaction.TransactionManagerService;
-import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.internal.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
 import java.util.Collection;

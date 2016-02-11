@@ -188,7 +188,7 @@ public interface EventService {
      * </p>
      *
      * @param callback the callback to execute on a random event thread
-     * @see com.hazelcast.util.executor.StripedRunnable
+     * @see com.hazelcast.internal.util.executor.StripedRunnable
      */
     void executeEventCallback(Runnable callback);
 
