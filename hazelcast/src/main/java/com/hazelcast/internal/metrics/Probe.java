@@ -46,7 +46,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * <li>double</li>
  * <li>{@link java.util.concurrent.atomic.AtomicInteger}</li>
  * <li>{@link java.util.concurrent.atomic.AtomicLong}</li>
- * <li>{@link com.hazelcast.util.counters.Counter}</li>
+ * <li>{@link com.hazelcast.internal.util.counters.Counter}</li>
  * <li>{@link Byte}</li>
  * <li>{@link Short}</li>
  * <li>{@link Integer}</li>

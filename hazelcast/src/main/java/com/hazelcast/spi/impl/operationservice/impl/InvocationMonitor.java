@@ -29,7 +29,7 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.counters.SwCounter;
+import com.hazelcast.internal.util.counters.SwCounter;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -39,7 +39,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 

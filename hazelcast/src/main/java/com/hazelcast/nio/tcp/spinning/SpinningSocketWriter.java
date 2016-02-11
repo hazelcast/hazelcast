@@ -28,7 +28,7 @@ import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.counters.SwCounter;
+import com.hazelcast.internal.util.counters.SwCounter;
 
 import java.io.IOException;
 import java.net.SocketException;
@@ -43,7 +43,7 @@ import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.util.StringUtil.stringToBytes;
-import static com.hazelcast.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.System.currentTimeMillis;
 
 public class SpinningSocketWriter extends AbstractHandler implements SocketWriter {

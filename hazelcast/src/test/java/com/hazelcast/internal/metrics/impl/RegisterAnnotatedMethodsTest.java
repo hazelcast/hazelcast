@@ -2,7 +2,7 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
-import com.hazelcast.util.counters.Counter;
+import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
-import static com.hazelcast.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static org.junit.Assert.assertEquals;
 
 //todo: testing of null return value

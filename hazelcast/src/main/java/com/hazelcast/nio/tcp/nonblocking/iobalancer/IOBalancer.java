@@ -25,13 +25,13 @@ import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketReader;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketWriter;
-import com.hazelcast.util.counters.MwCounter;
-import com.hazelcast.util.counters.SwCounter;
+import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.internal.util.counters.SwCounter;
 
 import static com.hazelcast.instance.GroupProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.instance.GroupProperty.IO_THREAD_COUNT;
-import static com.hazelcast.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 /**
  * It attempts to detect and fix a selector imbalance problem.

@@ -24,13 +24,13 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import com.hazelcast.util.counters.SwCounter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.util.executor.HazelcastManagedThread;
 
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
-import static com.hazelcast.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 /**
  * The OperationThread is responsible for processing operations, packets containing operations and runnable's.

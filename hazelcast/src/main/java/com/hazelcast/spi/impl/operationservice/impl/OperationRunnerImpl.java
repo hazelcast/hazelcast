@@ -51,7 +51,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutRespons
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.counters.Counter;
+import com.hazelcast.internal.util.counters.Counter;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -65,7 +65,7 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmpty
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
-import static com.hazelcast.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
