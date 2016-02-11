@@ -137,7 +137,7 @@ public class BasicCacheLiteMemberTest
     }
 
     @Test
-    public void testCompletionTest()
+    public void testCompletion()
             throws InterruptedException {
 
         CacheManager cacheManager = liteCachingProvider.getCacheManager();
@@ -150,10 +150,7 @@ public class BasicCacheLiteMemberTest
 
         config.addCacheEntryListenerConfiguration(listenerConfiguration);
 
-        Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
-        assertNotNull(cache);
-
-        final Cache<Object, Object> instanceCache = instanceCachingProvider.getCacheManager().getCache(cacheName);
+        final Cache<Integer, String> instanceCache = cacheManager.createCache(cacheName, config);
 
         Integer key1 = 1;
         String value1 = "value1";
