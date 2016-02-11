@@ -1059,8 +1059,7 @@ https://hazelcast.org/documentation/.
 	Number of asynchronous backups. Its default value is 0.
     * <item-listeners>:
 	Adds listeners (listener classes) for the List items using its sub-element <item-listener>. You can 
-	also set its attribute "include-value" to true if you want the item event to contain the item values, 
-	and you can set its attribute "local" to true if you want to listen to the items on the local member.
+	also set its attribute "include-value" to true if you want the item event to contain the item values.
 -->
     <list name="default">
         <statistics-enabled>false</statistics-enabled>
@@ -1089,8 +1088,7 @@ https://hazelcast.org/documentation/.
 	Number of asynchronous backups. Its default value is 0.
     * <item-listeners>:
 	Adds listeners (listener classes) for the Set items using its sub-element <item-listener>. You can 
-	also set its attribute "include-value" to true if you want the item event to contain the item values, 
-	and you can set its attribute "local" to true if you want to listen to the items on the local member.
+	also set its attribute "include-value" to true if you want the item event to contain the item values.
 -->
     <set name="default">
 	<backup-count>1</backup-count>
@@ -1100,7 +1098,31 @@ https://hazelcast.org/documentation/.
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
    </set>
-
+<!--
+    ===== HAZELCAST TOPIC CONFIGURATION =====
+    
+    Configuration element's name is <topic>. It has the optional attribute "name" with which you 
+    can specify the name of your topic. This attribute's default value is "default".
+    It has the following sub-elements:
+    * <global-odering-enabled>:
+	When it is set as true, all cluster members that listen to a topic will receive the messages in the 
+	same order they were published by all members. This way, Hazelcast guarantees that all members will 
+	see the in the same order. Its default value is false.
+    * <statistics-enabled>: 
+	When you enable it, you can retrieve topic statistics such as total number of published and 
+	received messages. Its default value is true.
+    * <message-listeners>:
+	Adds listeners (listener classes) for the Topic messages using its sub-element <message-listener>.
+-->
+   <topic name="default">
+	<global-ordering-enabled>true</global-ordering-enabled>
+	<statistics-enabled>true</statistics-enabled>
+	<message-listeners>
+		<message-listener>com.hazelcast.examples.MessageListener</message-listener>
+	</message-listeners>
+   </topic>
+   
+   
     <jobtracker name="default">
         <max-thread-size>0</max-thread-size>
         <!-- Queue size 0 means number of partitions * 2 -->
