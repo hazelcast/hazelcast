@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.collection;
+package com.hazelcast.internal.util.collection;
 
 
 import com.hazelcast.util.QuickMath;
@@ -32,7 +32,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.collection.Hashing.intHash;
+import static com.hazelcast.internal.util.collection.Hashing.intHash;
 
 /**
  * {@link java.util.Map} implementation specialised for int keys using open addressing and

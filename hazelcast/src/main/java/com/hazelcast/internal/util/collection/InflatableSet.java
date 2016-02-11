@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.collection;
+package com.hazelcast.internal.util.collection;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -31,7 +31,7 @@ import java.util.Set;
  * Provides fast {@link Set} implementation for cases where items are known to not
  * contain duplicates.
  *
- * It requires creation via {@link com.hazelcast.util.collection.InflatableSet.Builder}
+ * It requires creation via {@link com.hazelcast.internal.util.collection.InflatableSet.Builder}
  *
  * The builder doesn't call equals/hash methods on initial data insertion, hence it avoids
  * performance penalty in the case these methods are expensive. It also means it does
@@ -71,7 +71,7 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
     private State state;
 
     /**
-     * This constructor is intended to be used by {@link com.hazelcast.util.collection.InflatableSet.Builder} only.
+     * This constructor is intended to be used by {@link com.hazelcast.internal.util.collection.InflatableSet.Builder} only.
      *
      * @param compactList list of elements for the InflatableSet
      */

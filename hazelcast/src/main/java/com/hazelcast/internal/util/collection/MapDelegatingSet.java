@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.collection;
+package com.hazelcast.internal.util.collection;
 
 import com.hazelcast.util.function.Predicate;
 import com.hazelcast.util.function.Supplier;

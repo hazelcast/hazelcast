@@ -125,7 +125,7 @@ import com.hazelcast.util.IterationType;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.ThreadUtil;
-import com.hazelcast.util.collection.InflatableSet;
+import com.hazelcast.internal.util.collection.InflatableSet;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;

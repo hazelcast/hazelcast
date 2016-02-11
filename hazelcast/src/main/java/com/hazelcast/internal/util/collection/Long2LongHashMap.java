@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.collection;
+package com.hazelcast.internal.util.collection;
 
 import com.hazelcast.util.QuickMath;
 import com.hazelcast.util.function.BiConsumer;
@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import static com.hazelcast.util.collection.Hashing.evenLongHash;
+import static com.hazelcast.internal.util.collection.Hashing.evenLongHash;
 
 /**
  * A Probing hashmap specialised for long key and value pairs.

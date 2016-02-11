@@ -9,7 +9,7 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.RunParallel;
 import com.hazelcast.util.RandomPicker;
-import com.hazelcast.util.collection.LongHashSet;
+import com.hazelcast.internal.util.collection.LongHashSet;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.collection;
+package com.hazelcast.internal.util.collection;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.util.collection.BiInt2ObjectMap.EntryConsumer;
+import com.hazelcast.internal.util.collection.BiInt2ObjectMap.EntryConsumer;
 import com.hazelcast.util.function.Consumer;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.core.CombinableMatcher;
 import org.junit.Test;

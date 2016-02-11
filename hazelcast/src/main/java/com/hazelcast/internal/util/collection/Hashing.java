@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.collection;
+package com.hazelcast.internal.util.collection;
 
 import static com.hazelcast.util.HashUtil.fastIntMix;
 import static com.hazelcast.util.HashUtil.fastLongMix;
