@@ -138,7 +138,10 @@ public class TopicConfig {
      * Enable multi-threaded message handling. When enabled any thread from events 
      * thread pool can be used for incoming message processing. Otherwise only one
      * dedicated thread will be used to handle topic messages.    
-     * Note: it can be enabled only in case when global ordering is disabled.
+     * Note: it can be enabled only in case when global ordering is disabled. Moreover, 
+     * the local message ordering is not supported in this mode also. This means the 
+     * messages produced by local publisher can be processed by several threads with 
+     * no ordering guarantee.  
      *
      * @param multiThreadingEnabled set to true to enable multi-threaded message processing, false to disable
      * @return The updated TopicConfig
