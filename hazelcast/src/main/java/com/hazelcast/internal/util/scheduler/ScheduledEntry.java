@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.scheduler;
+package com.hazelcast.internal.util.scheduler;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;

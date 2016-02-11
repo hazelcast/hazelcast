@@ -14,7 +14,23 @@
  * limitations under the License.
  */
 
+package com.hazelcast.internal.util.scheduler;
+
 /**
- * This package contains scheduler classes for Util
+ * Controls behaviour of {@link SecondsBasedEntryTaskScheduler} when a new entry is added
+ * under already existing key.
  */
-package com.hazelcast.util.scheduler;
+public enum ScheduleType {
+
+    /**
+     * If there is an entry already scheduled under a given key then
+     * the existing entry will be removed and a new one will be scheduled instead.
+     */
+    POSTPONE,
+
+    /**
+     * Always add a new entry even when there is one already scheduled under a given key. The existing entry
+     * won't be affected.
+     */
+    FOR_EACH
+}

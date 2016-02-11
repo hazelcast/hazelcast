@@ -9,7 +9,7 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceState;
 import com.hazelcast.internal.partition.impl.ReplicaSyncInfo;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.util.scheduler.ScheduledEntry;
+import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 
 import java.util.ArrayList;
 import java.util.Arrays;

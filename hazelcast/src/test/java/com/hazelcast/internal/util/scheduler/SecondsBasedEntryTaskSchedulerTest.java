@@ -1,4 +1,4 @@
-package com.hazelcast.util.scheduler;
+package com.hazelcast.internal.util.scheduler;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -15,8 +15,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.scheduler.ScheduleType.FOR_EACH;
-import static com.hazelcast.util.scheduler.ScheduleType.POSTPONE;
+import static com.hazelcast.internal.util.scheduler.ScheduleType.FOR_EACH;
+import static com.hazelcast.internal.util.scheduler.ScheduleType.POSTPONE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
