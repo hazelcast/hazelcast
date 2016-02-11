@@ -1,8 +1,8 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.concurrent.lock.InternalLockNamespace;
-import com.hazelcast.concurrent.lock.operations.IsLockedOperation;
-import com.hazelcast.concurrent.lock.operations.LockOperation;
+import com.hazelcast.concurrent.impl.lock.InternalLockNamespace;
+import com.hazelcast.concurrent.impl.lock.operations.IsLockedOperation;
+import com.hazelcast.concurrent.impl.lock.operations.LockOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;

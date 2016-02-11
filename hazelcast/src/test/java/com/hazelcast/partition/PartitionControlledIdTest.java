@@ -18,12 +18,12 @@ package com.hazelcast.partition;
 
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.concurrent.atomiclong.AtomicLongService;
-import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.concurrent.lock.InternalLockNamespace;
-import com.hazelcast.concurrent.lock.LockServiceImpl;
-import com.hazelcast.concurrent.lock.LockStore;
-import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.concurrent.impl.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.impl.countdownlatch.CountDownLatchService;
+import com.hazelcast.concurrent.impl.lock.InternalLockNamespace;
+import com.hazelcast.concurrent.impl.lock.LockServiceImpl;
+import com.hazelcast.concurrent.impl.lock.LockStore;
+import com.hazelcast.concurrent.impl.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.HazelcastInstance;

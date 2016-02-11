@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockStore;
+import com.hazelcast.concurrent.impl.lock.LockService;
+import com.hazelcast.concurrent.impl.lock.LockStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
 

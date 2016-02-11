@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.concurrent.impl.lock.LockWaitNotifyKey;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;

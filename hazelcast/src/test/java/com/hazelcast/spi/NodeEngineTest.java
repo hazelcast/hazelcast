@@ -1,6 +1,6 @@
 package com.hazelcast.spi;
 
-import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.impl.lock.LockService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

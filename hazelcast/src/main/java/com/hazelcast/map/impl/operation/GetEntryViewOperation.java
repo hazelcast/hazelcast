@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.concurrent.impl.lock.LockWaitNotifyKey;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.EntryViews;

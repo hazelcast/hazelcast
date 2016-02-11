@@ -1,6 +1,6 @@
 package com.hazelcast.spi.impl.servicemanager.impl;
 
-import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.impl.lock.LockService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;

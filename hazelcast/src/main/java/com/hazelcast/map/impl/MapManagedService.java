@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockStoreInfo;
+import com.hazelcast.concurrent.impl.lock.LockService;
+import com.hazelcast.concurrent.impl.lock.LockStoreInfo;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
