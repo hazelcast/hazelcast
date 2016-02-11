@@ -1193,18 +1193,59 @@ https://hazelcast.org/documentation/.
         <communicate-stats>true</communicate-stats>
         <topology-changed-strategy>CANCEL_RUNNING_OPERATION</topology-changed-strategy>
     </jobtracker>
-
+<!--
+    ===== HAZELCAST SEMAPHORE CONFIGURATION =====
+    
+    Configuration element's name is <semaphore>. It has the required attribute "name" with which you 
+    can specify the name of your Semaphore. This attribute's default value is "default".
+    It has the following sub-elements:
+    * <initial-permits>:
+    	The thread count to which the concurrent access is limited. For example, if you set
+	it to 3, concurrent access to the object is limited to 3 threads.
+    * <backup-count>:
+    	Number of synchronous backups. For example, if it is set as 1, all permits of the semaphore 
+    	are copied to one other member for fail-safety. Its default value is 1.
+    * <async-backup-count>:
+	Number of asynchronous backups. Its default value is 0.
+-->
     <semaphore name="default">
         <initial-permits>0</initial-permits>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
     </semaphore>
+<!--
+    ===== HAZELCAST RINGBUFFER CONFIGURATION =====
+    
+    Configuration element's name is <ringbuffer>. It has the required attribute "name" with which you 
+    can specify the name of your Ringbuffer. This attribute's default value is "default".
+    It has the following sub-elements:
+    * <capacity>:
+    	Number of items in the Ringbuffer. If no <time-to-live-seconds> is set, this value will always
+	be equal to the capacity after the head completes the first loop around the ring. This is
+	because no items are getting retired. Its default value is 10000.
+    * <time-to-live-seconds>:	
+	Maximum number of seconds for each entry to stay in the Ringbuffer. Entries that are older than 
+	this value and are not updated for this period  are automatically evicted from the Ringbuffer. 
+	Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Its default value is 0.
+    * <backup-count>:
+    	Number of synchronous backups. For example, if it is set as 1, then the Ringbuffer items 
+    	are copied to one other member for fail-safety. Its default value is 1.
+    * <async-backup-count>:
+	Number of asynchronous backups. Its default value is 0.
+    * <in-memory-format>:
+	Specifies in which format data will be stored in your Ringbuffer.
+	Available values are as follows:
+	- BINARY:
+		Data will be stored in serialized binary format. It is the default option.
+	- OBJECT:
+		Data will be stored in deserialized form.
+-->
 
     <ringbuffer name="default">
         <capacity>10000</capacity>
+        <time-to-live-seconds>30</time-to-live-seconds>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
-        <time-to-live-seconds>30</time-to-live-seconds>
         <in-memory-format>BINARY</in-memory-format>
     </ringbuffer>
 
