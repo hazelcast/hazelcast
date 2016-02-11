@@ -19,12 +19,12 @@ package com.hazelcast.map.impl.tx;
 /**
  * Wrapper for value objects with type information.
  */
-public class TxnValueWrapper {
+public class TxnValueWrapper<V> {
 
-    Object value;
+    V value;
     Type type;
 
-    public TxnValueWrapper(Object value, Type type) {
+    public TxnValueWrapper(V value, Type type) {
         this.value = value;
         this.type = type;
     }
