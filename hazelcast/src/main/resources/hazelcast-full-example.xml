@@ -1118,9 +1118,43 @@ https://hazelcast.org/documentation/.
 	<global-ordering-enabled>true</global-ordering-enabled>
 	<statistics-enabled>true</statistics-enabled>
 	<message-listeners>
-		<message-listener>com.hazelcast.examples.MessageListener</message-listener>
+	    <message-listener>com.hazelcast.examples.MessageListener</message-listener>
 	</message-listeners>
    </topic>
+<!--
+    ===== HAZELCAST RELIABLE TOPIC CONFIGURATION =====
+    
+    Reliable Topic uses the same ITopic interface. The main difference is that it is backed up by
+    Hazelcast Ringbuffer data structure. Reliable Topic messages are stored in the Ringbuffer
+    Configuration element's name is <reliable-topic>. It has the optional attribute "name" with which you 
+    can specify the name of your Reliable Topic, which is the same name you give to your Ringbuffer. 
+    This attribute's default value is "default".
+    It has the following sub-elements:
+    * <statistics-enabled>: 
+	When you enable it, you can retrieve Reliable Topic statistics. Its default value is true.
+    * <topic-overload-policy>:
+	Policy to handle an overloaded topic. Its default value is BLOCK. Available values are as follows:
+	- DISCARD_OLDEST:
+		A message that has not expired can be overwritten. No matter the retention period set, the overwrite
+     		will just overwrite the message.
+	- DISCARD_NEWEST:
+		Message that was to be published is discarded.
+	- BLOCK:
+		The caller will wait until there is space in the Ringbuffer.
+	- ERROR
+		The publish call fails immediately.
+    * <message-listeners>:
+	Adds listeners (listener classes) for the Reliable Topic messages using its sub-element <message-listener>.
+-->
+   <reliable-topic name="default">
+        <statistics-enabled>true</statistics-enabled>
+        <topic-overload-policy>ERROR</topic-overload-policy>
+        <read-batch-size>10</read-batch-size>
+        <message-listeners>
+            <message-listener>com.hazelcast.examples.MessageListener</message-listener>
+        </message-listeners>
+    </reliable-topic>
+
    
    
     <jobtracker name="default">
@@ -1138,12 +1172,6 @@ https://hazelcast.org/documentation/.
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
     </semaphore>
-
-    <reliable-topic name="default">
-        <read-batch-size>10</read-batch-size>
-        <topic-overload-policy>BLOCK</topic-overload-policy>
-        <statistics-enabled>true</statistics-enabled>
-    </reliable-topic>
 
     <ringbuffer name="default">
         <capacity>10000</capacity>
