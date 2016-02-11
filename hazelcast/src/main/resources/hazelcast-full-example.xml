@@ -585,7 +585,7 @@ https://hazelcast.org/documentation/.
 	- enabled:
 		Set as true to enable the map store functionality for your map. Its default value is true.
 	- initial-mode: 
-		Sets the inital entry loading mode. Available values are as follows:
+		Sets the initial entry loading mode. Available values are as follows:
 	 	- LAZY: The loading is asynchronous. It is the default mode.
 	 	- EAGER: The loading is blocked until all partitions are loaded.
 	 
@@ -690,7 +690,7 @@ https://hazelcast.org/documentation/.
 	be set as false. Its default is false.
     * <attributes>:
 	You can define attributes that may be referenced in predicates, queries and indexes using this element's 
-	<attribute> sub-elements. Each <attribute> has only the "extractor" attribute which you should define beforehands
+	<attribute> sub-elements. Each <attribute> has only the "extractor" attribute which you should define beforehand
 	by implementing Hazelcast's ValueExtractor class.
     * <entry-listeners>:
     	Adds listeners (listener classes) for the map entries using the <entry-listener> sub-elements. You can also set its 
@@ -985,7 +985,7 @@ https://hazelcast.org/documentation/.
     	Adds the partition lost listeners that you created by implementing Hazelcast's PartitionLostListener interface. 
     * <merge-policy>:
 	The following are the built-in merge policies for cache. You can either use their full class names or constant 
-	names (given in parantheses).
+	names (given in parentheses).
 	- com.hazelcast.cache.merge.PassThroughCacheMergePolicy (PASS_THROUGH)
 	- com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy (PUT_IF_ABSENT)
 	- com.hazelcast.cache.merge.HigherHitsCacheMergePolicy (HIGHER_HITS)
@@ -1104,7 +1104,7 @@ https://hazelcast.org/documentation/.
     Configuration element's name is <topic>. It has the optional attribute "name" with which you 
     can specify the name of your topic. This attribute's default value is "default".
     It has the following sub-elements:
-    * <global-odering-enabled>:
+    * <global-ordering-enabled>:
 	When it is set as true, all cluster members that listen to a topic will receive the messages in the 
 	same order they were published by all members. This way, Hazelcast guarantees that all members will 
 	see the in the same order. Its default value is false.
