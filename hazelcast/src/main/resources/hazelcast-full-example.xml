@@ -1154,12 +1154,39 @@ https://hazelcast.org/documentation/.
             <message-listener>com.hazelcast.examples.MessageListener</message-listener>
         </message-listeners>
     </reliable-topic>
-
-   
-   
+<!--
+    ===== HAZELCAST MAPREDUCE JOBTRACKER CONFIGURATION =====
+    
+    Configuration element's name is <jobtracker>. It has the required attribute "name" with which you 
+    can specify the name of your MapReduce JobTracker. This attribute's default value is "default".
+    It has the following sub-elements:
+    * <max-thread-size>: 
+	Maximum thread pool size of the JobTracker. Its default value is 0.
+    * <queue-size>:
+    	Maximum number of tasks that are able to wait to be processed. A value of 0 means an unbounded queue. 
+    	Very low numbers can prevent successful execution since job might not be correctly scheduled or intermediate 
+    	chunks might be lost. Its default value is 0.
+    * <retry-count>:
+    	Currently not used. Reserved for later use where the framework will automatically try to restart / retry 
+    	operations from an available saved point.
+    * <chunk-size>:
+    	Number of emitted values before a chunk is sent to the reducers. If your emitted values are big or you want to 
+    	better balance your work, you might want to change this to a lower or higher value. A value of 0 means immediate 
+    	transmission, but remember that low values mean higher traffic costs. A very high value might cause an 
+    	OutOfMemoryError to occur if the emitted values do not fit into heap memory before being sent to the reducers. 
+    	To prevent this, you might want to use a combiner to pre-reduce values on mapping members. Its default 
+    	value is 1000.
+    * <communicate-stats>:
+    	Specifies whether the statistics (for example, statistics about processed entries) are transmitted to 
+    	the job emitter. This can show progress to a user inside of an UI system, but it produces additional traffic. 
+    	If not needed, you might want to deactivate this. Its default value is true.
+    * <topology-changed-strategy>:
+    	Specifies how the MapReduce framework reacts on topology changes while executing a job. Currently, only 
+    	CANCEL_RUNNING_OPERATION is fully supported, which throws an exception to the job emitter 
+    	(will throw a com.hazelcast.mapreduce.TopologyChangedException).
+-->
     <jobtracker name="default">
         <max-thread-size>0</max-thread-size>
-        <!-- Queue size 0 means number of partitions * 2 -->
         <queue-size>0</queue-size>
         <retry-count>0</retry-count>
         <chunk-size>1000</chunk-size>
