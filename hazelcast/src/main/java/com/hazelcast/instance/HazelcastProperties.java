@@ -19,9 +19,11 @@ package com.hazelcast.instance;
 import com.hazelcast.config.Config;
 
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
+import static java.util.Collections.unmodifiableSet;
 
 /**
  * Container for configured Hazelcast properties ({@see HazelcastProperty}).
@@ -36,15 +38,9 @@ import static java.lang.String.format;
  */
 public abstract class HazelcastProperties {
 
-    private final String[] values = createProperties();
-    private Properties properties;
-
-    /**
-     * Created the properties array.
-     *
-     * @return a String array with the size of the properties.
-     */
-    protected abstract String[] createProperties();
+    private final String[] values;
+    private final Set<String> keys;
+    private final Properties properties = new Properties();
 
     /**
      * Creates a container with configured Hazelcast properties.
@@ -52,13 +48,18 @@ public abstract class HazelcastProperties {
      * Uses the environmental value if no value is defined in the configuration.
      * Uses the default value if no environmental value is defined.
      *
-     * @param properties          {@link Properties} used to configure the {@link HazelcastProperty} values.
+     * @param nullableProperties  {@link Properties} used to configure the {@link HazelcastProperty} values.
+     *                            Properties are allowed to be null.
      * @param hazelcastProperties array of {@link HazelcastProperty} to configure
      */
-    protected void initProperties(Properties properties, HazelcastProperty[] hazelcastProperties) {
-        this.properties = properties;
+    protected HazelcastProperties(Properties nullableProperties, HazelcastProperty[] hazelcastProperties) {
+        if (nullableProperties != null) {
+            properties.putAll(nullableProperties);
+        }
+
+        this.values = new String[hazelcastProperties.length];
         for (HazelcastProperty property : hazelcastProperties) {
-            String configValue = (properties != null) ? properties.getProperty(property.getName()) : null;
+            String configValue = properties.getProperty(property.getName());
             if (configValue != null) {
                 this.values[property.getIndex()] = configValue;
                 continue;
@@ -75,106 +76,117 @@ public abstract class HazelcastProperties {
             }
             this.values[property.getIndex()] = property.getDefaultValue();
         }
+        this.keys = unmodifiableSet((Set) properties.keySet());
+    }
+
+
+    /**
+     * Returns an immutable set of all keys in this HazelcastProperties.
+     *
+     * @return set of keys.
+     */
+    public Set<String> keySet() {
+        return keys;
     }
 
     /**
-     * Returns the actual {@link Properties} used to create this HazelcastProperties.
+     * Returns the value for the given key.
      *
-     * Only use this for reading.
-     *
-     * @return the properties.
+     * @param key the key
+     * @return the value for the given key, or null if no value is found.
+     * @throws NullPointerException if key is null.
      */
-    public Properties getProperties() {
-        return properties;
+    public String get(String key) {
+        return (String) properties.get(key);
     }
 
     /**
      * Returns the configured value of a {@link HazelcastProperty} as String.
      *
-     * @param groupProperty the {@link HazelcastProperty} to get the value from
+     * @param property the {@link HazelcastProperty} to get the value from
      * @return the value or <tt>null</tt> if nothing has been configured
      */
-    public String getString(HazelcastProperty groupProperty) {
-        return values[groupProperty.getIndex()];
+    public String getString(HazelcastProperty property) {
+        return values[property.getIndex()];
     }
 
     /**
      * Returns the configured boolean value of a {@link HazelcastProperty}.
      *
-     * @param groupProperty the {@link HazelcastProperty} to get the value from
+     * @param property the {@link HazelcastProperty} to get the value from
      * @return the value as boolean
      */
-    public boolean getBoolean(HazelcastProperty groupProperty) {
-        return Boolean.valueOf(values[groupProperty.getIndex()]);
+    public boolean getBoolean(HazelcastProperty property) {
+        return Boolean.valueOf(values[property.getIndex()]);
     }
 
     /**
      * Returns the configured int value of a {@link HazelcastProperty}.
      *
-     * @param groupProperty the {@link HazelcastProperty} to get the value from
+     * @param property the {@link HazelcastProperty} to get the value from
      * @return the value as int
      * @throws NumberFormatException if the value cannot be parsed
      */
-    public int getInteger(HazelcastProperty groupProperty) {
-        return Integer.parseInt(values[groupProperty.getIndex()]);
+    public int getInteger(HazelcastProperty property) {
+        return Integer.parseInt(values[property.getIndex()]);
     }
 
     /**
      * Returns the configured long value of a {@link HazelcastProperty}.
      *
-     * @param groupProperty the {@link HazelcastProperty} to get the value from
+     * @param property the {@link HazelcastProperty} to get the value from
      * @return the value as long
      * @throws NumberFormatException if the value cannot be parsed
      */
-    public long getLong(HazelcastProperty groupProperty) {
-        return Long.parseLong(values[groupProperty.getIndex()]);
+    public long getLong(HazelcastProperty property) {
+        return Long.parseLong(values[property.getIndex()]);
     }
 
     /**
      * Returns the configured float value of a {@link HazelcastProperty}.
      *
-     * @param groupProperty the {@link HazelcastProperty} to get the value from
+     * @param property the {@link HazelcastProperty} to get the value from
      * @return the value as float
      * @throws NumberFormatException if the value cannot be parsed
      */
-    public float getFloat(HazelcastProperty groupProperty) {
-        return Float.valueOf(values[groupProperty.getIndex()]);
+    public float getFloat(HazelcastProperty property) {
+        return Float.valueOf(values[property.getIndex()]);
     }
 
     /**
      * Returns the configured value of a {@link HazelcastProperty} converted to nanoseconds.
      *
-     * @param groupProperty the {@link HazelcastProperty} to get the value from
+     * @param property the {@link HazelcastProperty} to get the value from
      * @return the value in nanoseconds
      * @throws IllegalArgumentException if the {@link HazelcastProperty} has no {@link TimeUnit}
      */
-    public long getNanos(HazelcastProperty groupProperty) {
-        TimeUnit timeUnit = groupProperty.getTimeUnit();
-        return timeUnit.toNanos(getLong(groupProperty));
+    public long getNanos(HazelcastProperty property) {
+        TimeUnit timeUnit = property.getTimeUnit();
+        return timeUnit.toNanos(getLong(property));
     }
 
     /**
      * Returns the configured value of a {@link HazelcastProperty} converted to milliseconds.
      *
-     * @param groupProperty the {@link HazelcastProperty} to get the value from
+     * @param property the {@link HazelcastProperty} to get the value from
      * @return the value in milliseconds
      * @throws IllegalArgumentException if the {@link HazelcastProperty} has no {@link TimeUnit}
      */
-    public long getMillis(HazelcastProperty groupProperty) {
-        TimeUnit timeUnit = groupProperty.getTimeUnit();
-        return timeUnit.toMillis(getLong(groupProperty));
+    public long getMillis(HazelcastProperty property) {
+        TimeUnit timeUnit = property.getTimeUnit();
+        return timeUnit.toMillis(getLong(property));
     }
 
     /**
      * Returns the configured value of a {@link HazelcastProperty} converted to seconds.
      *
-     * @param groupProperty the {@link HazelcastProperty} to get the value from
+     * @param property the {@link HazelcastProperty} to get the value from
      * @return the value in seconds
      * @throws IllegalArgumentException if the {@link HazelcastProperty} has no {@link TimeUnit}
      */
-    public int getSeconds(HazelcastProperty groupProperty) {
-        TimeUnit timeUnit = groupProperty.getTimeUnit();
-        return (int) timeUnit.toSeconds(getLong(groupProperty));
+    public int getSeconds(HazelcastProperty property) {
+        TimeUnit timeUnit = property.getTimeUnit();
+        return (int) timeUnit.toSeconds(getLong(property));
     }
 
     /**
@@ -182,12 +194,12 @@ public abstract class HazelcastProperties {
      * <p/>
      * The case of the enum is ignored.
      *
-     * @param groupProperty the {@link GroupProperty} to get the value from
+     * @param property the {@link GroupProperty} to get the value from
      * @return the enum
      * @throws IllegalArgumentException if the enum value can't be found
      */
-    public <E extends Enum> E getEnum(GroupProperty groupProperty, Class<E> enumClazz) {
-        String value = getString(groupProperty);
+    public <E extends Enum> E getEnum(GroupProperty property, Class<E> enumClazz) {
+        String value = getString(property);
 
         for (E enumConstant : enumClazz.getEnumConstants()) {
             if (enumConstant.name().equalsIgnoreCase(value)) {
@@ -196,6 +208,6 @@ public abstract class HazelcastProperties {
         }
 
         throw new IllegalArgumentException(format("value '%s' for property '%s' is not a valid %s value",
-                value, groupProperty.getName(), enumClazz.getName()));
+                value, property.getName(), enumClazz.getName()));
     }
 }
