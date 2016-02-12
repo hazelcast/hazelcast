@@ -123,7 +123,7 @@ public class EC2RequestSignerTest {
     }
 
     private String bytesToHex(byte[] in) {
-        final char[] hexArray = "0123456789abcdef".toCharArray();
+        char[] hexArray = "0123456789abcdef".toCharArray();
 
         char[] hexChars = new char[in.length * 2];
         for (int j = 0; j < in.length; j++) {

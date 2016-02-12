@@ -31,19 +31,19 @@ public class DescribeInstancesTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void test_whenAwsConfigIsNull() {
-        new DescribeInstances(null,"endpoint");
+        new DescribeInstances(null, "endpoint");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_whenAccessKeyNull() {
-        new DescribeInstances(new AwsConfig(),"endpoint");
+        new DescribeInstances(new AwsConfig(), "endpoint");
     }
-    
+
     @Test
     public void test_whenProperConfig() {
         AwsConfig awsConfig = new AwsConfig();
         awsConfig.setAccessKey("accesskey");
         awsConfig.setSecretKey("secretkey");
-        new DescribeInstances(awsConfig,"endpoint");
+        new DescribeInstances(awsConfig, "endpoint");
     }
 }

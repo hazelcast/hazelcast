@@ -33,23 +33,25 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by igmar on 03/11/14.
- */
+import static java.lang.String.format;
+
 public class EC2RequestSigner {
+
+    private static final String NEW_LINE = "\n";
     private static final String API_TERMINATOR = "aws4_request";
+    private static final String HMAC_SHA256 = "HmacSHA256";
+    private static final String UTF_8 = "UTF-8";
+    private static final int DATE_LENGTH = 8;
     private static final int LAST_INDEX = 8;
+
     private final AwsConfig config;
     private final String timestamp;
-    private String service;
-    private String signature;
-    private Map<String, String> attributes;
-    private String canonicalRequest;
-    private String stringToSign;
-    private String endpoint;
-    private byte[] signingKey;
 
-    public EC2RequestSigner(AwsConfig config, final String timeStamp, String endpoint) {
+    private String service;
+    private Map<String, String> attributes;
+    private String endpoint;
+
+    public EC2RequestSigner(AwsConfig config, String timeStamp, String endpoint) {
         if (config == null) {
             throw new IllegalArgumentException("config cannot be null");
         }
@@ -64,8 +66,8 @@ public class EC2RequestSigner {
 
     public String getCredentialScope() {
         // datestamp/region/service/API_TERMINATOR
-        final String dateStamp = timestamp.substring(0, 8);
-        return String.format("%s/%s/%s/%s", dateStamp, config.getRegion(), this.service, API_TERMINATOR);
+        String dateStamp = timestamp.substring(0, DATE_LENGTH);
+        return format("%s/%s/%s/%s", dateStamp, config.getRegion(), this.service, API_TERMINATOR);
     }
 
     public String getSignedHeaders() {
@@ -82,81 +84,61 @@ public class EC2RequestSigner {
 
         this.service = service;
         this.attributes = attributes;
-        canonicalRequest = getCanonicalizedRequest();
-        stringToSign = createStringToSign(canonicalRequest);
-        signingKey = deriveSigningKey();
-        this.signature = createSignature(stringToSign, signingKey);
 
-        return this.signature;
+        String canonicalRequest = getCanonicalizedRequest();
+        String stringToSign = createStringToSign(canonicalRequest);
+        byte[] signingKey = deriveSigningKey();
+
+        return createSignature(stringToSign, signingKey);
     }
-
 
     /* Task 1 */
     private String getCanonicalizedRequest() {
-        StringBuilder sb = new StringBuilder();
-
-        // Method + \n
-        sb.append(Constants.GET).append("\n");
-        // canonical_url + \n
-        sb.append("/").append("\n");
-        // canonical_querystring + \n
-        sb.append(getCanonicalizedQueryString(this.attributes)).append("\n");
-        // canonical_headers + \n
-        sb.append(getCanonicalHeaders()).append("\n");
-        // signed headers + \n
-        sb.append(getSignedHeaders()).append("\n");
-        // payload hash
-        sb.append(sha256Hashhex(""));
-
-        return sb.toString();
+        return Constants.GET + NEW_LINE
+                + '/' + NEW_LINE
+                + getCanonicalizedQueryString(this.attributes) + NEW_LINE
+                + getCanonicalHeaders() + NEW_LINE
+                + getSignedHeaders() + NEW_LINE
+                + sha256Hashhex("");
     }
 
     /* Task 2 */
     private String createStringToSign(String canonicalRequest) {
-        StringBuilder sb = new StringBuilder();
-        // Algorithm
-        sb.append(Constants.SIGNATURE_METHOD_V4).append("\n");
-        // requestDate
-        sb.append(timestamp).append("\n");
-        // CredentialScope
-        sb.append(getCredentialScope()).append("\n");
-        // HashedCanonicalRequest
-        sb.append(sha256Hashhex(canonicalRequest));
-
-        return sb.toString();
+        return Constants.SIGNATURE_METHOD_V4 + NEW_LINE
+                + timestamp + NEW_LINE
+                + getCredentialScope() + NEW_LINE
+                + sha256Hashhex(canonicalRequest);
     }
 
     /* Task 3 */
     private byte[] deriveSigningKey() {
-        final String signKey = config.getSecretKey();
-        final String dateStamp = timestamp.substring(0, 8);
-        // This is derived from
-        // http://docs.com.hazelcast.aws.security.amazon.com/general/latest/gr/signature-v4-examples.html
-        // #signature-v4-examples-python
+        String signKey = config.getSecretKey();
+        String dateStamp = timestamp.substring(0, DATE_LENGTH);
+        // this is derived from
+        // http://docs.aws.amazon.com/general/latest/gr/signature-v4-examples.html#signature-v4-examples-python
 
         try {
-            final String key = "AWS4" + signKey;
-            final Mac mDate = Mac.getInstance("HmacSHA256");
-            final SecretKeySpec skDate = new SecretKeySpec(key.getBytes("UTF-8"), "HmacSHA256");
+            String key = "AWS4" + signKey;
+            Mac mDate = Mac.getInstance(HMAC_SHA256);
+            SecretKeySpec skDate = new SecretKeySpec(key.getBytes(UTF_8), HMAC_SHA256);
             mDate.init(skDate);
-            final byte[] kDate = mDate.doFinal(dateStamp.getBytes("UTF-8"));
+            byte[] kDate = mDate.doFinal(dateStamp.getBytes(UTF_8));
 
-            final Mac mRegion = Mac.getInstance("HmacSHA256");
-            final SecretKeySpec skRegion = new SecretKeySpec(kDate, "HmacSHA256");
+            Mac mRegion = Mac.getInstance(HMAC_SHA256);
+            SecretKeySpec skRegion = new SecretKeySpec(kDate, HMAC_SHA256);
             mRegion.init(skRegion);
-            final byte[] kRegion = mRegion.doFinal(config.getRegion().getBytes("UTF-8"));
+            byte[] kRegion = mRegion.doFinal(config.getRegion().getBytes(UTF_8));
 
-            final Mac mService = Mac.getInstance("HmacSHA256");
-            final SecretKeySpec skService = new SecretKeySpec(kRegion, "HmacSHA256");
+            Mac mService = Mac.getInstance(HMAC_SHA256);
+            SecretKeySpec skService = new SecretKeySpec(kRegion, HMAC_SHA256);
             mService.init(skService);
-            final byte[] kService = mService.doFinal(this.service.getBytes("UTF-8"));
+            byte[] kService = mService.doFinal(this.service.getBytes(UTF_8));
 
-            final Mac mSigning = Mac.getInstance("HmacSHA256");
-            final SecretKeySpec skSigning = new SecretKeySpec(kService, "HmacSHA256");
+            Mac mSigning = Mac.getInstance(HMAC_SHA256);
+            SecretKeySpec skSigning = new SecretKeySpec(kService, HMAC_SHA256);
             mSigning.init(skSigning);
-            final byte[] kSigning = mSigning.doFinal("aws4_request".getBytes("UTF-8"));
 
-            return kSigning;
+            return mSigning.doFinal("aws4_request".getBytes(UTF_8));
         } catch (NoSuchAlgorithmException e) {
             return null;
         } catch (InvalidKeyException e) {
@@ -167,12 +149,12 @@ public class EC2RequestSigner {
     }
 
     private String createSignature(String stringToSign, byte[] signingKey) {
-        byte[] signature = null;
+        byte[] signature;
         try {
-            final Mac signMac = Mac.getInstance("HmacSHA256");
-            final SecretKeySpec signKS = new SecretKeySpec(signingKey, "HmacSHA256");
+            Mac signMac = Mac.getInstance(HMAC_SHA256);
+            SecretKeySpec signKS = new SecretKeySpec(signingKey, HMAC_SHA256);
             signMac.init(signKS);
-            signature = signMac.doFinal(stringToSign.getBytes("UTF-8"));
+            signature = signMac.doFinal(stringToSign.getBytes(UTF_8));
         } catch (NoSuchAlgorithmException e) {
             return null;
         } catch (InvalidKeyException e) {
@@ -180,13 +162,11 @@ public class EC2RequestSigner {
         } catch (UnsupportedEncodingException e) {
             return null;
         }
-
         return QuickMath.bytesToHex(signature);
     }
 
-
     protected String getCanonicalHeaders() {
-        return String.format("host:%s", endpoint) + "\n";
+        return format("host:%s%s", endpoint, NEW_LINE);
     }
 
     public String getCanonicalizedQueryString(Map<String, String> attributes) {
@@ -195,18 +175,17 @@ public class EC2RequestSigner {
         return getCanonicalizedQueryString(components);
     }
 
-
     protected String getCanonicalizedQueryString(List<String> list) {
         Iterator<String> it = list.iterator();
         StringBuilder result = new StringBuilder(it.next());
         while (it.hasNext()) {
-            result.append("&").append(it.next());
+            result.append('&').append(it.next());
         }
         return result.toString();
     }
 
     protected void addComponents(List<String> components, Map<String, String> attributes, String key) {
-        components.add(AwsURLEncoder.urlEncode(key) + "=" + AwsURLEncoder.urlEncode(attributes.get(key)));
+        components.add(AwsURLEncoder.urlEncode(key) + '=' + AwsURLEncoder.urlEncode(attributes.get(key)));
     }
 
     protected List<String> getListOfEntries(Map<String, String> entries) {
@@ -217,12 +196,11 @@ public class EC2RequestSigner {
         return components;
     }
 
-
-    private String sha256Hashhex(final String in) {
-        String payloadHash = "";
+    private String sha256Hashhex(String in) {
+        String payloadHash;
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(in.getBytes("UTF-8"));
+            md.update(in.getBytes(UTF_8));
             byte[] digest = md.digest();
             payloadHash = QuickMath.bytesToHex(digest);
         } catch (NoSuchAlgorithmException e) {
@@ -234,7 +212,7 @@ public class EC2RequestSigner {
     }
 
     public String createFormattedCredential() {
-        return config.getAccessKey() + "/" + timestamp.substring(0, LAST_INDEX) + "/"
-                + config.getRegion() + "/" + "ec2/aws4_request";
+        return config.getAccessKey() + '/' + timestamp.substring(0, LAST_INDEX) + '/'
+                + config.getRegion() + '/' + "ec2/aws4_request";
     }
 }

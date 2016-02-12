@@ -40,8 +40,9 @@ import static com.hazelcast.aws.impl.Constants.SIGNATURE_METHOD_V4;
 import static com.hazelcast.nio.IOUtil.closeResource;
 
 public class DescribeInstances {
+
     private static final String IAM_ROLE_ENDPOINT = "169.254.169.254";
-    String timeStamp = getFormattedTimestamp();
+
     private EC2RequestSigner rs;
     private AwsConfig awsConfig;
     private String endpoint;
@@ -59,6 +60,7 @@ public class DescribeInstances {
         if (awsConfig.getIamRole() != null) {
             getKeysFromIamRole();
         }
+        String timeStamp = getFormattedTimestamp();
         rs = new EC2RequestSigner(awsConfig, timeStamp, endpoint);
         attributes.put("Action", this.getClass().getSimpleName());
         attributes.put("Version", DOC_VERSION);
@@ -84,8 +86,8 @@ public class DescribeInstances {
         }
     }
 
-    public Map parseIamRole(BufferedReader reader) throws IOException {
-        Map map = new HashMap();
+    public Map<String, String> parseIamRole(BufferedReader reader) throws IOException {
+        Map<String, String> map = new HashMap<String, String>();
         Pattern keyPattern = Pattern.compile("\"(.*?)\" : ");
         Pattern valuePattern = Pattern.compile(" : \"(.*?)\",");
         String line;
@@ -110,12 +112,12 @@ public class DescribeInstances {
     }
 
     public Map<String, String> execute() throws Exception {
-        final String signature = rs.sign("ec2", attributes);
-        Map response = null;
+        String signature = rs.sign("ec2", attributes);
+        Map<String, String> response;
         InputStream stream = null;
         attributes.put("X-Amz-Signature", signature);
         try {
-            stream = callService(endpoint, signature);
+            stream = callService(endpoint);
             response = CloudyUtility.unmarshalTheResponse(stream, awsConfig);
             return response;
         } finally {
@@ -123,7 +125,7 @@ public class DescribeInstances {
         }
     }
 
-    private InputStream callService(String endpoint, String signature) throws Exception {
+    private InputStream callService(String endpoint) throws Exception {
         String query = rs.getCanonicalizedQueryString(attributes);
         URL url = new URL("https", endpoint, -1, "/?" + query);
         HttpURLConnection httpConnection = (HttpURLConnection) (url.openConnection());

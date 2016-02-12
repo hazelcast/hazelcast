@@ -26,8 +26,8 @@ import java.util.Collection;
 
 public class TcpIpJoinerOverAWS extends TcpIpJoiner {
 
-    final AWSClient aws;
-    final ILogger logger;
+    private final AWSClient aws;
+    private final ILogger logger;
 
     public TcpIpJoinerOverAWS(Node node) {
         super(node);
@@ -69,4 +69,3 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
         return "aws";
     }
 }
-

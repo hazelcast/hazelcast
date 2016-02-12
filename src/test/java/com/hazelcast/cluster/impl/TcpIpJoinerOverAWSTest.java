@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.cluster.Joiner;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
@@ -23,12 +24,10 @@ import com.hazelcast.instance.DefaultNodeContext;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
-import com.hazelcast.cluster.Joiner;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -37,6 +36,9 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -55,7 +57,7 @@ public class TcpIpJoinerOverAWSTest extends HazelcastTestSupport {
 
         HazelcastInstanceImpl instance = Mockito.mock(HazelcastInstanceImpl.class);
 
-        // keep ref to be able to close socketchannel
+        // keep ref to be able to close ServerSocketChannel
         final AtomicReference<ServerSocketChannel> channelRef = new AtomicReference<ServerSocketChannel>();
         NodeContext nodeContext = new DefaultNodeContext() {
             @Override
@@ -73,7 +75,7 @@ public class TcpIpJoinerOverAWSTest extends HazelcastTestSupport {
         }
 
         Joiner joiner = node.getJoiner();
-        Assert.assertNotNull(joiner);
-        Assert.assertEquals(TcpIpJoinerOverAWS.class, joiner.getClass());
+        assertNotNull(joiner);
+        assertEquals(TcpIpJoinerOverAWS.class, joiner.getClass());
     }
 }

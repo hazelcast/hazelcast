@@ -24,8 +24,9 @@ import java.util.Map;
 
 public class AWSClient {
 
-    private String endpoint;
     private final AwsConfig awsConfig;
+
+    private String endpoint;
 
     public AWSClient(AwsConfig awsConfig) {
         if (awsConfig == null) {
@@ -38,14 +39,14 @@ public class AWSClient {
             throw new IllegalArgumentException("AWS secret key or Iam Role is required!");
         }
         this.awsConfig = awsConfig;
-        endpoint = awsConfig.getHostHeader();
+        this.endpoint = awsConfig.getHostHeader();
         if (awsConfig.getRegion() != null && awsConfig.getRegion().length() > 0) {
             setEndpoint("ec2." + awsConfig.getRegion() + ".amazonaws.com");
         }
     }
 
     public Collection<String> getPrivateIpAddresses() throws Exception {
-        final Map<String, String> result = new DescribeInstances(awsConfig, endpoint).execute();
+        Map<String, String> result = new DescribeInstances(awsConfig, endpoint).execute();
         return result.keySet();
     }
 

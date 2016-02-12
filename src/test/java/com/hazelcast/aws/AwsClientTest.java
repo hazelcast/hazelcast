@@ -55,5 +55,4 @@ public class AwsClientTest {
         AWSClient awsClient = new AWSClient(awsConfig);
         assertEquals("ec2.us-east-1.amazonaws.com", awsClient.getEndpoint());
     }
-
 }
