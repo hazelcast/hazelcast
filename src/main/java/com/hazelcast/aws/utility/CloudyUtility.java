@@ -38,6 +38,10 @@ import static java.lang.String.format;
 
 public final class CloudyUtility {
 
+    private static final String NODE_ITEM = "item";
+    private static final String NODE_VALUE = "value";
+    private static final String NODE_KEY = "key";
+
     private static final ILogger LOGGER = Logger.getLogger(CloudyUtility.class);
 
     private CloudyUtility() {
@@ -56,7 +60,7 @@ public final class CloudyUtility {
             Map<String, String> addresses = new LinkedHashMap<String, String>();
             List<NodeHolder> reservationSet = elementNodeHolder.getSubNodes("reservationset");
             for (NodeHolder reservation : reservationSet) {
-                List<NodeHolder> items = reservation.getSubNodes("item");
+                List<NodeHolder> items = reservation.getSubNodes(NODE_ITEM);
                 for (NodeHolder item : items) {
                     NodeHolder instancesSet = item.getFirstSubNode("instancesset");
                     addresses.putAll(instancesSet.getAddresses(awsConfig));
@@ -112,7 +116,7 @@ public final class CloudyUtility {
                 return privatePublicPairs;
             }
 
-            for (NodeHolder childHolder : getSubNodes("item")) {
+            for (NodeHolder childHolder : getSubNodes(NODE_ITEM)) {
                 String state = getState(childHolder);
                 String privateIp = getIp("privateipaddress", childHolder);
                 String publicIp = getIp("ipaddress", childHolder);
@@ -153,8 +157,8 @@ public final class CloudyUtility {
             if (tagSetHolder.getNode() == null) {
                 return null;
             }
-            for (NodeHolder itemHolder : tagSetHolder.getSubNodes("item")) {
-                Node keyNode = itemHolder.getFirstSubNode("key").getNode();
+            for (NodeHolder itemHolder : tagSetHolder.getSubNodes(NODE_ITEM)) {
+                Node keyNode = itemHolder.getFirstSubNode(NODE_KEY).getNode();
                 if (keyNode == null || keyNode.getFirstChild() == null) {
                     continue;
                 }
@@ -163,7 +167,7 @@ public final class CloudyUtility {
                     continue;
                 }
 
-                Node valueNode = itemHolder.getFirstSubNode("value").getNode();
+                Node valueNode = itemHolder.getFirstSubNode(NODE_VALUE).getNode();
                 if (valueNode == null || valueNode.getFirstChild() == null) {
                     continue;
                 }
@@ -189,7 +193,7 @@ public final class CloudyUtility {
             if (nullOrEmpty(filter)) {
                 return true;
             } else {
-                for (NodeHolder group : new NodeHolder(node).getFirstSubNode(set).getSubNodes("item")) {
+                for (NodeHolder group : new NodeHolder(node).getFirstSubNode(set).getSubNodes(NODE_ITEM)) {
                     NodeHolder nh = group.getFirstSubNode(filterField);
                     if (nh != null && nh.getNode().getFirstChild() != null
                             && filter.equals(nh.getNode().getFirstChild().getNodeValue())) {
@@ -204,7 +208,7 @@ public final class CloudyUtility {
             if (nullOrEmpty(keyExpected)) {
                 return true;
             } else {
-                for (NodeHolder group : new NodeHolder(node).getFirstSubNode("tagset").getSubNodes("item")) {
+                for (NodeHolder group : new NodeHolder(node).getFirstSubNode("tagset").getSubNodes(NODE_ITEM)) {
                     if (keyEquals(keyExpected, group) && (nullOrEmpty(valueExpected) || valueEquals(valueExpected, group))) {
                         return true;
                     }
@@ -214,7 +218,7 @@ public final class CloudyUtility {
         }
 
         private static boolean valueEquals(String valueExpected, NodeHolder group) {
-            NodeHolder nhValue = group.getFirstSubNode("value");
+            NodeHolder nhValue = group.getFirstSubNode(NODE_VALUE);
             return (nhValue != null && nhValue.getNode().getFirstChild() != null
                     && valueExpected.equals(nhValue.getNode().getFirstChild().getNodeValue()));
         }
@@ -224,7 +228,7 @@ public final class CloudyUtility {
         }
 
         private static boolean keyEquals(String keyExpected, NodeHolder group) {
-            NodeHolder nhKey = group.getFirstSubNode("key");
+            NodeHolder nhKey = group.getFirstSubNode(NODE_KEY);
             return (nhKey != null && nhKey.getNode().getFirstChild() != null
                     && keyExpected.equals(nhKey.getNode().getFirstChild().getNodeValue()));
         }
