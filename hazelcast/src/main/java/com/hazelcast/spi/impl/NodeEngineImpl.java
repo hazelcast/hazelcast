@@ -121,10 +121,13 @@ public class NodeEngineImpl implements NodeEngine {
                 operationService,
                 eventService,
                 wanReplicationService,
-                new ConnectionManagerPacketHandler()
-        );
+                new ConnectionManagerPacketHandler());
         this.quorumService = new QuorumServiceImpl(this);
-        this.performanceMonitor = new PerformanceMonitor(this);
+        this.performanceMonitor = new PerformanceMonitor(
+                node.hazelcastInstance,
+                loggingService.getLogger(PerformanceMonitor.class),
+                node.getHazelcastThreadGroup(),
+                node.groupProperties);
     }
 
      class ConnectionManagerPacketHandler implements PacketHandler {

@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -39,23 +39,29 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class PerformanceMonitor {
 
-    final NodeEngineImpl nodeEngine;
     final boolean singleLine;
+    final HazelcastInstance hazelcastInstance;
+    final HazelcastProperties properties;
     PerformanceLog performanceLog;
     final AtomicReference<PerformanceMonitorPlugin[]> staticTasks = new AtomicReference<PerformanceMonitorPlugin[]>(
             new PerformanceMonitorPlugin[0]
     );
 
-    private final ILogger logger;
+    final ILogger logger;
     private final boolean enabled;
     private ScheduledExecutorService scheduler;
+    private final HazelcastThreadGroup hzThreadGroup;
 
-    public PerformanceMonitor(NodeEngineImpl nodeEngine) {
-        this.nodeEngine = nodeEngine;
-        this.logger = nodeEngine.getLogger(PerformanceMonitor.class);
-        GroupProperties props = nodeEngine.getGroupProperties();
-        this.enabled = props.getBoolean(PERFORMANCE_MONITOR_ENABLED);
-        this.singleLine = !props.getBoolean(PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT);
+    public PerformanceMonitor(HazelcastInstance hazelcastInstance,
+                              ILogger logger,
+                              HazelcastThreadGroup hzThreadGroup,
+                              HazelcastProperties properties) {
+        this.hazelcastInstance = hazelcastInstance;
+        this.hzThreadGroup = hzThreadGroup;
+        this.logger = logger;
+        this.properties = properties;
+        this.enabled = properties.getBoolean(PERFORMANCE_MONITOR_ENABLED);
+        this.singleLine = !properties.getBoolean(PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT);
     }
 
 
@@ -146,8 +152,6 @@ public class PerformanceMonitor {
     }
 
     private class PerformanceMonitorThreadFactory implements ThreadFactory {
-        private final HazelcastThreadGroup hzThreadGroup = nodeEngine.getNode().getHazelcastThreadGroup();
-
         @Override
         public Thread newThread(Runnable target) {
             return new Thread(

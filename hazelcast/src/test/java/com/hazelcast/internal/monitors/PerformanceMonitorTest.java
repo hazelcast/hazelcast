@@ -2,6 +2,8 @@ package com.hazelcast.internal.monitors;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,7 +32,12 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
 
     private PerformanceMonitor newPerformanceMonitor(Config config) {
         HazelcastInstance hz = createHazelcastInstance(config);
-        return new PerformanceMonitor(getNodeEngineImpl(hz));
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(hz);
+        return new PerformanceMonitor(
+                hz,
+                Logger.getLogger(PerformanceMonitor.class),
+                nodeEngineImpl.getNode().getHazelcastThreadGroup(),
+                nodeEngineImpl.getNode().groupProperties);
     }
 
     @Test(expected = NullPointerException.class)
