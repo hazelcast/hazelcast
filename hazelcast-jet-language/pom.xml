@@ -17,11 +17,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <name>hazelcast-jet</name>
-    <artifactId>hazelcast-jet</artifactId>
+    <name>hazelcast-jet-language</name>
+    <artifactId>hazelcast-jet-language</artifactId>
     <packaging>jar</packaging>
     <version>0.1-SNAPSHOT</version>
-    <description>Hazelcast Jet Data Processor</description>
+    <description>Hazelcast Jet Data Processor Language</description>
     <url>http://www.hazelcast.com/</url>
 
     <parent>
@@ -34,5 +34,4 @@
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
-
 </project>
