@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.api.statemachine;
 
-import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterState;
 import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterEvent;
 import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterResponse;
+import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterState;
 
 /**
  * Represents abstract applicationMaster's stateMachine

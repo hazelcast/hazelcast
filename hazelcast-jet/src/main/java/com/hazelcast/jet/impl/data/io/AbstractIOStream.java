@@ -16,28 +16,40 @@
 
 package com.hazelcast.jet.impl.data.io;
 
+import com.hazelcast.jet.api.data.BufferAware;
+import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
+
 import java.util.Arrays;
 import java.util.Iterator;
 
-import com.hazelcast.jet.api.data.BufferAware;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
-
 public abstract class AbstractIOStream<T> implements ProducerInputStream<T>, ConsumerOutputStream<T>, BufferAware<T> {
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE;
-
+    private final Iterator<T> iterator = new DataIterator();
+    private final DataTransferringStrategy dataTransferringStrategy;
     private int size;
     private T[] buffer;
     private int currentIdx;
-    private final Iterator<T> iterator = new DataIterator();
-    private final DataTransferringStrategy dataTransferringStrategy;
 
     public AbstractIOStream(T[] buffer,
                             DataTransferringStrategy dataTransferringStrategy) {
         this.buffer = buffer;
         this.dataTransferringStrategy = dataTransferringStrategy;
         initBuffer();
+    }
+
+    private static int hugeCapacity(int minCapacity) {
+        // overflow
+        if (minCapacity < 0) {
+            throw new OutOfMemoryError();
+        }
+
+        return (minCapacity > MAX_ARRAY_SIZE)
+                ?
+                Integer.MAX_VALUE
+                :
+                MAX_ARRAY_SIZE;
     }
 
     private void initBuffer() {
@@ -126,19 +138,6 @@ public abstract class AbstractIOStream<T> implements ProducerInputStream<T>, Con
         }
 
         this.size = 0;
-    }
-
-    private static int hugeCapacity(int minCapacity) {
-        // overflow
-        if (minCapacity < 0) {
-            throw new OutOfMemoryError();
-        }
-
-        return (minCapacity > MAX_ARRAY_SIZE)
-                ?
-                Integer.MAX_VALUE
-                :
-                MAX_ARRAY_SIZE;
     }
 
     private void expand(int minCapacity) {

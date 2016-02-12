@@ -17,11 +17,11 @@
 package com.hazelcast.jet.impl.strategy;
 
 
-import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.spi.strategy.HashingStrategy;
-import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
+import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.strategy.CalculationStrategy;
+import com.hazelcast.jet.spi.strategy.HashingStrategy;
 
 public class CalculationStrategyImpl implements CalculationStrategy {
     private final Class hashingStrategyClass;

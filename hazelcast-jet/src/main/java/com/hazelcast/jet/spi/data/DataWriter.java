@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.spi.data;
 
-import com.hazelcast.jet.api.actor.Shuffler;
 import com.hazelcast.jet.api.actor.ObjectConsumer;
+import com.hazelcast.jet.api.actor.Shuffler;
 import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
 
 /**

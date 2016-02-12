@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.spi.executor;
 
-import java.io.Serializable;
-
-import com.hazelcast.jet.spi.data.io.DataType;
 import com.hazelcast.jet.spi.container.CounterKey;
 import com.hazelcast.jet.spi.counters.Accumulator;
+import com.hazelcast.jet.spi.data.io.DataType;
 import com.hazelcast.jet.spi.data.io.ObjectReaderFactory;
 import com.hazelcast.jet.spi.data.io.ObjectWriterFactory;
+
+import java.io.Serializable;
 
 /**
  * Represents task context;

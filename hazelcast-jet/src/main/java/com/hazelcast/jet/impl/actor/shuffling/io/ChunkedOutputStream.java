@@ -16,32 +16,26 @@
 
 package com.hazelcast.jet.impl.actor.shuffling.io;
 
-import java.util.Arrays;
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.jet.api.container.ContainerContext;
+import com.hazelcast.jet.impl.actor.RingBufferActor;
+import com.hazelcast.jet.impl.hazelcast.JetPacket;
+import com.hazelcast.jet.impl.util.JetUtil;
+
 import java.io.IOException;
 import java.io.OutputStream;
-
-import com.hazelcast.jet.impl.hazelcast.JetPacket;
-import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.api.container.ContainerContext;
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.jet.impl.util.JetUtil;
+import java.util.Arrays;
 
 public class ChunkedOutputStream extends OutputStream {
     private static final int BUFFER_OFFSET = HeapData.DATA_OFFSET;
 
     private final int taskID;
-
-    private int bufferSize;
-
     private final byte[] buffer;
-
     private final int containerID;
-
     private final int shufflingBytesSize;
-
     private final byte[] applicationName;
-
     private final RingBufferActor ringBufferActor;
+    private int bufferSize;
 
     public ChunkedOutputStream(RingBufferActor ringBufferActor, ContainerContext containerContext, int taskID) {
         this.taskID = taskID;

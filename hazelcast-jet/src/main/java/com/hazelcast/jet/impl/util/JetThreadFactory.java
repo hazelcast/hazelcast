@@ -23,6 +23,7 @@ public class JetThreadFactory implements ThreadFactory {
     private static final AtomicInteger THREAD_COUNTER = new AtomicInteger(1);
     private final String name;
     private final String hzName;
+
     public JetThreadFactory(String name, String hzName) {
         this.name = name;
         this.hzName = hzName;

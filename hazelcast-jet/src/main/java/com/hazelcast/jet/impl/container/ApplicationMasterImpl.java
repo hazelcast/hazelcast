@@ -17,53 +17,45 @@
 package com.hazelcast.jet.impl.container;
 
 
-import java.util.Map;
-import java.util.List;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.Collections;
-
-import com.hazelcast.nio.Address;
-
-import java.util.concurrent.TimeUnit;
-
-import com.hazelcast.jet.spi.dag.DAG;
-import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.instance.MemberImpl;
-
-import java.util.concurrent.BlockingQueue;
-
-import com.hazelcast.jet.impl.util.JetUtil;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.hazelcast.jet.spi.CombinedJetException;
-import com.hazelcast.jet.impl.hazelcast.JetPacket;
-
-import java.util.concurrent.atomic.AtomicReference;
-
-import com.hazelcast.jet.api.container.ContainerTask;
+import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.application.ApplicationException;
 import com.hazelcast.jet.api.container.ContainerContext;
+import com.hazelcast.jet.api.container.ContainerPayLoadProcessor;
+import com.hazelcast.jet.api.container.ContainerTask;
 import com.hazelcast.jet.api.container.DiscoveryService;
 import com.hazelcast.jet.api.container.ProcessingContainer;
-import com.hazelcast.jet.api.application.ApplicationContext;
-import com.hazelcast.jet.spi.application.ApplicationListener;
-import com.hazelcast.jet.api.application.ApplicationException;
-import com.hazelcast.jet.api.container.ContainerPayLoadProcessor;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.api.container.applicationmaster.ApplicationMaster;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionErrorRequest;
-import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterState;
 import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterEvent;
 import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterResponse;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionCompletedRequest;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionInterruptedRequest;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ApplicationMasterPayLoadFactory;
+import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterState;
 import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterStateMachineFactory;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
+import com.hazelcast.jet.impl.hazelcast.JetPacket;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ApplicationMasterPayLoadFactory;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionCompletedRequest;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionErrorRequest;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionInterruptedRequest;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.spi.CombinedJetException;
+import com.hazelcast.jet.spi.application.ApplicationListener;
+import com.hazelcast.jet.spi.dag.DAG;
+import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.nio.Address;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ApplicationMasterImpl extends
         AbstractServiceContainer<ApplicationMasterEvent, ApplicationMasterState, ApplicationMasterResponse>
@@ -83,20 +75,14 @@ public class ApplicationMasterImpl extends
     private final AtomicInteger containerCounter = new AtomicInteger(0);
 
     private final AtomicInteger networkTaskCounter = new AtomicInteger(0);
-
-    private volatile boolean interrupted;
-
-    private volatile Throwable interruptionError;
-
     private final AtomicReference<BlockingQueue<Object>> executionMailBox =
             new AtomicReference<BlockingQueue<Object>>(null);
-
     private final AtomicReference<BlockingQueue<Object>> interruptionFutureHolder =
             new AtomicReference<BlockingQueue<Object>>(null);
-
-    private volatile DAG dag;
-
     private final DiscoveryService discoveryService;
+    private volatile boolean interrupted;
+    private volatile Throwable interruptionError;
+    private volatile DAG dag;
 
     public ApplicationMasterImpl(
             ApplicationContext applicationContext,
@@ -362,13 +348,13 @@ public class ApplicationMasterImpl extends
     }
 
     @Override
-    public void setDag(DAG dag) {
-        this.dag = dag;
+    public DAG getDag() {
+        return this.dag;
     }
 
     @Override
-    public DAG getDag() {
-        return this.dag;
+    public void setDag(DAG dag) {
+        this.dag = dag;
     }
 
     @Override

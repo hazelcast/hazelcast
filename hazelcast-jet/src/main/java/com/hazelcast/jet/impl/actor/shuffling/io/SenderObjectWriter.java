@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.impl.actor.shuffling.io;
 
-import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.spi.data.io.ObjectWriter;
 import com.hazelcast.jet.spi.data.io.ObjectWriterFactory;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.nio.ObjectDataOutput;
 
 public class SenderObjectWriter implements ObjectWriter<ProducerInputStream<Object>> {
     private final ObjectWriterFactory objectWriterFactory;

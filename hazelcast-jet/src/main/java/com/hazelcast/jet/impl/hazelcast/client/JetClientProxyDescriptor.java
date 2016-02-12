@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.hazelcast.client;
 
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.jet.api.hazelcast.JetService;
 import com.hazelcast.client.spi.ClientProxyDescriptor;
+import com.hazelcast.jet.api.hazelcast.JetService;
 
 public class JetClientProxyDescriptor implements ClientProxyDescriptor {
     @Override

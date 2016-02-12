@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.api.container;
 
-import java.util.concurrent.Future;
-
 import com.hazelcast.jet.api.statemachine.container.ContainerEvent;
 import com.hazelcast.jet.api.statemachine.container.ContainerRequest;
+
+import java.util.concurrent.Future;
 
 /**
  * Interface container's state-machine event handler;

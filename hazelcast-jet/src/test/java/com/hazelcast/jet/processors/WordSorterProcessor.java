@@ -16,18 +16,18 @@
 
 package com.hazelcast.jet.processors;
 
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.Iterator;
-
 import com.hazelcast.jet.api.container.ProcessorContext;
+import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.jet.impl.data.tuple.Tuple2;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.data.tuple.Tuple;
-import com.hazelcast.jet.impl.data.tuple.Tuple2;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessor;
 import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessorFactory;
+
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
 
 
 public class WordSorterProcessor implements TupleContainerProcessor<String, Integer, String, Integer> {

@@ -16,16 +16,16 @@
 
 package com.hazelcast.jet.impl.application.localization;
 
-import java.util.Map;
+import com.hazelcast.jet.api.application.localization.InvalidLocalizationException;
+import com.hazelcast.jet.api.application.localization.LocalizationStorage;
+import com.hazelcast.jet.impl.application.LocalizationResourceDescriptor;
+import com.hazelcast.jet.impl.application.localization.classloader.ApplicationClassLoader;
+import com.hazelcast.jet.impl.application.localization.classloader.ResourceStream;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
+
 import java.io.IOException;
 import java.util.LinkedHashMap;
-
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.impl.application.LocalizationResourceDescriptor;
-import com.hazelcast.jet.api.application.localization.LocalizationStorage;
-import com.hazelcast.jet.impl.application.localization.classloader.ResourceStream;
-import com.hazelcast.jet.api.application.localization.InvalidLocalizationException;
-import com.hazelcast.jet.impl.application.localization.classloader.ApplicationClassLoader;
+import java.util.Map;
 
 public abstract class AbstractLocalizationStorage<S> implements LocalizationStorage {
     protected final Map<LocalizationResourceDescriptor, S> resources = new LinkedHashMap<LocalizationResourceDescriptor, S>();

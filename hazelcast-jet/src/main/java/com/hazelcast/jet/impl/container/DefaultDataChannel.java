@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.impl.container;
 
-import java.util.List;
-import java.util.ArrayList;
-
-import com.hazelcast.jet.spi.dag.Edge;
-import com.hazelcast.jet.api.actor.ObjectActor;
 import com.hazelcast.jet.api.actor.ComposedActor;
-import com.hazelcast.jet.api.container.DataChannel;
+import com.hazelcast.jet.api.actor.ObjectActor;
 import com.hazelcast.jet.api.container.ContainerTask;
+import com.hazelcast.jet.api.container.DataChannel;
 import com.hazelcast.jet.api.container.ProcessingContainer;
+import com.hazelcast.jet.spi.dag.Edge;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class DefaultDataChannel implements DataChannel {
     private final Edge edge;

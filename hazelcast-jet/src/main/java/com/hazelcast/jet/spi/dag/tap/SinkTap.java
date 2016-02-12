@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.spi.dag.tap;
 
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.jet.spi.data.DataWriter;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
+import com.hazelcast.jet.spi.data.DataWriter;
+import com.hazelcast.spi.NodeEngine;
 
 /**
  * Abstract class which represents any sink tap;

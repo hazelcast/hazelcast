@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.api.application;
 
-import com.hazelcast.nio.Address;
 import com.hazelcast.jet.impl.hazelcast.JetPacket;
+import com.hazelcast.nio.Address;
 
 /**
  * Exception of some JET application

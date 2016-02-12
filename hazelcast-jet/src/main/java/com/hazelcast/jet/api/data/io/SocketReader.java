@@ -16,20 +16,18 @@
 
 package com.hazelcast.jet.api.data.io;
 
-import java.nio.ByteBuffer;
-
+import com.hazelcast.jet.impl.actor.RingBufferActor;
 import com.hazelcast.nio.Address;
 
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-
-import com.hazelcast.jet.impl.actor.RingBufferActor;
 
 /**
  * Represents abstract task to read from network socket;
- * <p>
+ * <p/>
  * The architecture is following:
- * <p>
- * <p>
+ * <p/>
+ * <p/>
  * <pre>
  *  SocketChannel (JetAddress)  -> SocketReader -> Consumer(ringBuffer)
  * </pre>

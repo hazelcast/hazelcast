@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.statemachine.container.processors;
 
-import com.hazelcast.jet.api.container.ProcessingContainer;
 import com.hazelcast.jet.api.container.ContainerPayLoadProcessor;
+import com.hazelcast.jet.api.container.ProcessingContainer;
 import com.hazelcast.jet.api.container.applicationmaster.ApplicationMaster;
 
 public class ContainerInterruptedProcessor implements ContainerPayLoadProcessor<Throwable> {

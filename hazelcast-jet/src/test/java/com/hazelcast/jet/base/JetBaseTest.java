@@ -16,6 +16,8 @@ import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.processor.ProcessorDescriptor;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestEnvironment;
+import org.junit.AfterClass;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,12 +30,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.AfterClass;
 
 public abstract class JetBaseTest extends HazelcastTestSupport {
     public static final int TIME_TO_AWAIT = 600;
     public static final String TEST_DATA_PATH = "test.data.path";
-
+    private static final AtomicInteger APPLICATION_NAME_COUNTER = new AtomicInteger();
     protected static JetApplicationConfig JETCONFIG;
     protected static JetConfig CONFIG;
     protected static HazelcastInstance SERVER;
@@ -45,8 +46,6 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
     static {
         System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "true");
     }
-
-    private static final AtomicInteger APPLICATION_NAME_COUNTER = new AtomicInteger();
 
     public static void initCluster(int membersCount) throws Exception {
         JETCONFIG = new JetApplicationConfig("testApplication");
@@ -66,6 +65,48 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
         warmUpPartitions(SERVER);
     }
 
+    protected static void buildCluster(int memberCount) throws Exception {
+        HAZELCAST_INSTANCES = new HazelcastInstance[memberCount];
+
+        for (int i = 0; i < memberCount; i++) {
+            HAZELCAST_INSTANCES[i] = HAZELCAST_FACTORY.newHazelcastInstance(CONFIG);
+        }
+
+        SERVER = HAZELCAST_INSTANCES[0];
+        CLIENT = HAZELCAST_FACTORY.newHazelcastClient();
+    }
+
+    public static Vertex createVertex(String name, Class processorClass, int processorsCount) {
+        return new VertexImpl(
+                name,
+                ProcessorDescriptor.
+                        builder(processorClass).
+                        withTaskCount(processorsCount).
+                        build()
+        );
+    }
+
+    public static Vertex createVertex(String name, Class processorClass) {
+        return createVertex(name, processorClass, Runtime.getRuntime().availableProcessors());
+    }
+
+    @AfterClass
+    public static void after() {
+        try {
+            HAZELCAST_FACTORY.terminateAll();
+        } finally {
+            try {
+                for (File f : createdFiles) {
+                    if (f != null) {
+                        f.delete();
+                    }
+                }
+            } finally {
+                createdFiles.clear();
+            }
+        }
+    }
+
     protected Application createApplication() {
         return createApplication("testApplication " + APPLICATION_NAME_COUNTER.incrementAndGet());
     }
@@ -82,17 +123,6 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
         return new DAGImpl(dagName);
     }
 
-    protected static void buildCluster(int memberCount) throws Exception {
-        HAZELCAST_INSTANCES = new HazelcastInstance[memberCount];
-
-        for (int i = 0; i < memberCount; i++) {
-            HAZELCAST_INSTANCES[i] = HAZELCAST_FACTORY.newHazelcastInstance(CONFIG);
-        }
-
-        SERVER = HAZELCAST_INSTANCES[0];
-        CLIENT = HAZELCAST_FACTORY.newHazelcastClient();
-    }
-
     protected void fillMap(String source, HazelcastInstance instance, int CNT) throws Exception {
         final IMap<Integer, String> sourceMap = instance.getMap(source);
 
@@ -105,20 +135,6 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
         for (Future f : l) {
             f.get();
         }
-    }
-
-    public static Vertex createVertex(String name, Class processorClass, int processorsCount) {
-        return new VertexImpl(
-                name,
-                ProcessorDescriptor.
-                        builder(processorClass).
-                        withTaskCount(processorsCount).
-                        build()
-        );
-    }
-
-    public static Vertex createVertex(String name, Class processorClass) {
-        return createVertex(name, processorClass, Runtime.getRuntime().availableProcessors());
     }
 
     public Future executeApplication(DAG dag, Application application) throws Exception {
@@ -219,23 +235,6 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
             return (count == 0 && !empty) ? 1 : count;
         } finally {
             is.close();
-        }
-    }
-
-    @AfterClass
-    public static void after() {
-        try {
-            HAZELCAST_FACTORY.terminateAll();
-        } finally {
-            try {
-                for (File f : createdFiles) {
-                    if (f != null) {
-                        f.delete();
-                    }
-                }
-            } finally {
-                createdFiles.clear();
-            }
         }
     }
 

@@ -51,30 +51,19 @@ public class JetApplicationConfig implements Serializable {
     private static final int DEFAULT_SHUFFLING_BATCH_SIZE_BYTES = 256;
 
     private static final int DEFAULT_IO_THREADS_COUNT = 5;
-
-    private String localizationDirectory = DEFAULT_LOCALIZATION_DIRECTORY;
-
-    private int resourceFileChunkSize = DEFAULT_FILE_CHUNK_SIZE_BYTES;
-
-    private int defaultApplicationDirectoryCreationAttemptsCount = DEFAULT_APP_ATTEMPTS_COUNT;
-
-    private int jetSecondsToAwait = DEFAULT_JET_SECONDS_TO_AWAIT;
-
-    private int containerQueueSize = DEFAULT_QUEUE_SIZE;
-
-    private int chunkSize = DEFAULT_CHUNK_SIZE;
-
-    private int maxProcessingThreads = -1;
-
-    private int ioThreadCount = DEFAULT_IO_THREADS_COUNT;
-
-    private int defaultTCPBufferSize = DEFAULT_TCP_BUFFER_SIZE;
-
-    private int shufflingBatchSizeBytes = DEFAULT_SHUFFLING_BATCH_SIZE_BYTES;
-
     private final JetApplicationConfig defConfig;
-    private String name;
     private final Properties properties;
+    private String localizationDirectory = DEFAULT_LOCALIZATION_DIRECTORY;
+    private int resourceFileChunkSize = DEFAULT_FILE_CHUNK_SIZE_BYTES;
+    private int defaultApplicationDirectoryCreationAttemptsCount = DEFAULT_APP_ATTEMPTS_COUNT;
+    private int jetSecondsToAwait = DEFAULT_JET_SECONDS_TO_AWAIT;
+    private int containerQueueSize = DEFAULT_QUEUE_SIZE;
+    private int chunkSize = DEFAULT_CHUNK_SIZE;
+    private int maxProcessingThreads = -1;
+    private int ioThreadCount = DEFAULT_IO_THREADS_COUNT;
+    private int defaultTCPBufferSize = DEFAULT_TCP_BUFFER_SIZE;
+    private int shufflingBatchSizeBytes = DEFAULT_SHUFFLING_BATCH_SIZE_BYTES;
+    private String name;
 
     public JetApplicationConfig(JetApplicationConfig defConfig, String name) {
         this.name = name;
@@ -95,16 +84,16 @@ public class JetApplicationConfig implements Serializable {
         this.properties = new Properties();
     }
 
-    public void setShufflingBatchSizeBytes(int shufflingBatchSizeBytes) {
-        this.shufflingBatchSizeBytes = shufflingBatchSizeBytes;
-    }
-
     public JetApplicationConfig getAsReadOnly() {
         return new JetApplicationConfigReadOnly(this, name);
     }
 
     public String getName() {
         return this.name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public int getResourceFileChunkSize() {
@@ -131,13 +120,12 @@ public class JetApplicationConfig implements Serializable {
         this.defaultApplicationDirectoryCreationAttemptsCount = defaultApplicationDirectoryCreationAttemptsCount;
     }
 
-    public void setJetSecondsToAwait(int jetSecondsToAwait) {
-        this.jetSecondsToAwait = jetSecondsToAwait;
-    }
-
-
     public int getJetSecondsToAwait() {
         return jetSecondsToAwait;
+    }
+
+    public void setJetSecondsToAwait(int jetSecondsToAwait) {
+        this.jetSecondsToAwait = jetSecondsToAwait;
     }
 
     public int getContainerQueueSize() {
@@ -169,6 +157,10 @@ public class JetApplicationConfig implements Serializable {
         return shufflingBatchSizeBytes;
     }
 
+    public void setShufflingBatchSizeBytes(int shufflingBatchSizeBytes) {
+        this.shufflingBatchSizeBytes = shufflingBatchSizeBytes;
+    }
+
     public Properties getProperties() {
         return properties;
     }
@@ -187,9 +179,5 @@ public class JetApplicationConfig implements Serializable {
 
     public void setDefaultTCPBufferSize(int defaultTCPBufferSize) {
         this.defaultTCPBufferSize = defaultTCPBufferSize;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 }

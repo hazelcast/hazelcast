@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.dag.tap.source;
 
+import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.dag.tap.TapType;
 import com.hazelcast.jet.spi.data.DataReader;
 import com.hazelcast.jet.spi.data.tuple.TupleFactory;
-import com.hazelcast.jet.spi.container.ContainerDescriptor;
 
 public final class HazelcastReaderFactory {
     private HazelcastReaderFactory() {

@@ -16,15 +16,14 @@
 
 package com.hazelcast.jet.impl.actor.ringbuffer;
 
+import com.hazelcast.jet.api.actor.RingBuffer;
+import com.hazelcast.jet.api.data.BufferAware;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.UnsafeHelper;
 import sun.misc.Unsafe;
 
 import java.util.Arrays;
-
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.jet.api.actor.RingBuffer;
-import com.hazelcast.jet.api.data.BufferAware;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
 
 abstract class RingBufferPadByReference {
     protected long p1, p2, p3, p4, p5, p6, p7;
@@ -63,16 +62,11 @@ abstract class RingBufferFieldsByReference<T> extends RingBufferPadByReference {
 
 public final class RingBufferWithReferenceStrategy<T> extends RingBufferFieldsByReference<T> implements RingBuffer<T> {
     public static final long INITIAL_CURSOR_VALUE = 0L;
-
-    protected long p1, p2, p3, p4, p5, p6, p7;
-
     private final PaddedLong readSequencer = new PaddedLong(RingBufferWithReferenceStrategy.INITIAL_CURSOR_VALUE);
-
     private final PaddedLong writeSequencer = new PaddedLong(RingBufferWithReferenceStrategy.INITIAL_CURSOR_VALUE);
-
     private final PaddedLong availableSequencer = new PaddedLong(RingBufferWithReferenceStrategy.INITIAL_CURSOR_VALUE);
-
     private final ILogger logger;
+    protected long p1, p2, p3, p4, p5, p6, p7;
 
     public RingBufferWithReferenceStrategy(
             int bufferSize,
@@ -169,6 +163,6 @@ public final class RingBufferWithReferenceStrategy<T> extends RingBufferFieldsBy
         this.readSequencer.setValue(0);
         this.writeSequencer.setValue(0);
         this.availableSequencer.setValue(0);
-        Arrays.fill(this.entries,null);
+        Arrays.fill(this.entries, null);
     }
 }

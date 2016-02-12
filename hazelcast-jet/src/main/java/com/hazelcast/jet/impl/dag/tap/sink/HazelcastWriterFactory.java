@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.dag.tap.sink;
 
+import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.spi.dag.tap.SinkTap;
+import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
 import com.hazelcast.jet.spi.dag.tap.TapType;
 import com.hazelcast.jet.spi.data.DataWriter;
-import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
-import com.hazelcast.jet.spi.container.ContainerDescriptor;
 
 public final class HazelcastWriterFactory {
     private HazelcastWriterFactory() {

@@ -16,18 +16,18 @@
 
 package com.hazelcast.jet.impl.container.task.processors.factory;
 
-import com.hazelcast.jet.api.container.ProcessorContext;
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.api.actor.ObjectProducer;
 import com.hazelcast.jet.api.actor.ObjectConsumer;
+import com.hazelcast.jet.api.actor.ObjectProducer;
 import com.hazelcast.jet.api.container.ContainerContext;
+import com.hazelcast.jet.api.container.ProcessorContext;
 import com.hazelcast.jet.api.container.task.TaskProcessor;
-import com.hazelcast.jet.spi.processor.ContainerProcessor;
 import com.hazelcast.jet.api.container.task.TaskProcessorFactory;
 import com.hazelcast.jet.impl.container.task.processors.ActorTaskProcessor;
-import com.hazelcast.jet.impl.container.task.processors.SimpleTaskProcessor;
 import com.hazelcast.jet.impl.container.task.processors.ConsumerTaskProcessor;
 import com.hazelcast.jet.impl.container.task.processors.ProducerTaskProcessor;
+import com.hazelcast.jet.impl.container.task.processors.SimpleTaskProcessor;
+import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.spi.processor.ContainerProcessor;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 

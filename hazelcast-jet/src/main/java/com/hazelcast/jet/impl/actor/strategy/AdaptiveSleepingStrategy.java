@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.actor.strategy;
 
-import java.util.concurrent.locks.LockSupport;
-
 import com.hazelcast.jet.api.actor.SleepingStrategy;
+
+import java.util.concurrent.locks.LockSupport;
 
 public class AdaptiveSleepingStrategy implements SleepingStrategy {
     private static final int MAX_POWER_OF_TWO = 10;

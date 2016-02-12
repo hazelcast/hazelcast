@@ -22,7 +22,7 @@ import com.hazelcast.jet.api.data.io.ProducerInputStream;
 /**
  * Processor to execute inside task
  * It performs tasks' work:
- * <p>
+ * <p/>
  * <pre>
  *     1) Reading from producers
  *     2) Writing to consumers

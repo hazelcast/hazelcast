@@ -15,6 +15,6 @@
  */
 
 /**
- *  Provides API to work with JET Data
+ * Provides API to work with JET Data
  */
 package com.hazelcast.jet.api.data;

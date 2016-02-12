@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.api.container.task;
 
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.api.actor.ObjectProducer;
 import com.hazelcast.jet.api.actor.ObjectConsumer;
+import com.hazelcast.jet.api.actor.ObjectProducer;
 import com.hazelcast.jet.api.container.ContainerContext;
 import com.hazelcast.jet.api.container.ProcessorContext;
+import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.processor.ContainerProcessor;
 
 /**

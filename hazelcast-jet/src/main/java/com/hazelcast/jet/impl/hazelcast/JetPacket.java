@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.hazelcast;
 
-import java.nio.ByteBuffer;
-
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.OutboundFrame;
-import com.hazelcast.internal.serialization.impl.HeapData;
+
+import java.nio.ByteBuffer;
 
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
@@ -31,26 +31,6 @@ public final class JetPacket extends HeapData implements OutboundFrame {
     public static final byte VERSION = 105;
 
     public static final int HEADER_URGENT = 4;
-
-    // The value of these constants is important. The order needs to match the order in the read/write process
-    protected static final short PERSIST_VERSION = 1;
-    private static final short PERSIST_HEADER = 2;
-    private static final short PERSIST_PARTITION = 3;
-    private static final short PERSIST_SIZE = 4;
-    private static final short PERSIST_VALUE = 5;
-    private static final short PERSIST_COMPLETED = Short.MAX_VALUE;
-
-    protected transient Connection conn;
-    protected short header;
-
-    private int partitionId;
-    // These 2 fields are only used during read/write. Otherwise they have no meaning.
-    private int valueOffset;
-    private int size;
-    // Stores the current 'phase' of read/write. This is needed so that repeated calls can be made to read/write.
-    private short persistStatus;
-
-
     public static final int HEADER_JET_DATA_CHUNK = 10;
     public static final int HEADER_JET_DATA_CHUNK_SENT = 11;
     public static final int HEADER_JET_SHUFFLER_CLOSED = 12;
@@ -62,12 +42,25 @@ public final class JetPacket extends HeapData implements OutboundFrame {
     public static final int HEADER_JET_APPLICATION_IS_NOT_EXECUTING = 18;
     public static final int HEADER_JET_EXECUTION_ERROR = 19;
     public static final int HEADER_JET_MEMBER_EVENT = 20;
-
+    // The value of these constants is important. The order needs to match the order in the read/write process
+    protected static final short PERSIST_VERSION = 1;
+    private static final short PERSIST_HEADER = 2;
+    private static final short PERSIST_PARTITION = 3;
+    private static final short PERSIST_SIZE = 4;
+    private static final short PERSIST_VALUE = 5;
+    private static final short PERSIST_COMPLETED = Short.MAX_VALUE;
     private static final short PERSIST_TASK_ID = 10;
     private static final short PERSIST_CONTAINER = 11;
     private static final short PERSIST_APPLICATION_SIZE = 12;
     private static final short PERSIST_APPLICATION = 13;
-
+    protected transient Connection conn;
+    protected short header;
+    private int partitionId;
+    // These 2 fields are only used during read/write. Otherwise they have no meaning.
+    private int valueOffset;
+    private int size;
+    // Stores the current 'phase' of read/write. This is needed so that repeated calls can be made to read/write.
+    private short persistStatus;
     private int taskID;
     private int containerId;
     private Address remoteMember;
@@ -117,11 +110,6 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         this.partitionId = partitionId;
     }
 
-
-    public void setHeader(int bit) {
-        this.header = (short) bit;
-    }
-
     public boolean isHeaderSet(int bit) {
         return (header & 1 << bit) != 0;
     }
@@ -167,7 +155,6 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         setPersistStatus(PERSIST_COMPLETED);
         return true;
     }
-    //CHECKSTYLE:ON
 
     private boolean writeApplicationNameBytesSize(ByteBuffer destination) {
         if (!isPersistStatusSet(PERSIST_APPLICATION_SIZE)) {
@@ -180,6 +167,7 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         }
         return true;
     }
+    //CHECKSTYLE:ON
 
     //CHECKSTYLE:OFF
     public boolean readFrom(ByteBuffer source) {
@@ -223,8 +211,6 @@ public final class JetPacket extends HeapData implements OutboundFrame {
 
         return true;
     }
-    //CHECKSTYLE:ON
-
 
     // ========================= Task =================================================
     private boolean writeTask(ByteBuffer destination) {
@@ -238,6 +224,7 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         }
         return true;
     }
+    //CHECKSTYLE:ON
 
     private boolean readTask(ByteBuffer source) {
         if (!isPersistStatusSet(PERSIST_TASK_ID)) {
@@ -249,8 +236,6 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         }
         return true;
     }
-
-    // ========================= container =================================================
 
     private boolean writeContainer(ByteBuffer destination) {
         if (!isPersistStatusSet(PERSIST_CONTAINER)) {
@@ -265,6 +250,8 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         return true;
     }
 
+    // ========================= container =================================================
+
     private boolean readContainer(ByteBuffer source) {
         if (!isPersistStatusSet(PERSIST_CONTAINER)) {
             if (source.remaining() < INT_SIZE_IN_BYTES) {
@@ -277,7 +264,6 @@ public final class JetPacket extends HeapData implements OutboundFrame {
 
         return true;
     }
-
 
     // ========================= application ==========================
     private boolean writeApplicationNameBytes(ByteBuffer destination) {
@@ -309,7 +295,6 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         return true;
     }
 
-
     private boolean readApplicationNameBytes(ByteBuffer source) {
         if (!isPersistStatusSet(PERSIST_APPLICATION)) {
             if (source.remaining() < this.applicationNameBytes.length) {
@@ -322,8 +307,6 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         }
         return true;
     }
-
-    // ========================= Getters =========================
 
     protected boolean readVersion(ByteBuffer source) {
         if (!isPersistStatusSet(PERSIST_VERSION)) {
@@ -340,6 +323,8 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         }
         return true;
     }
+
+    // ========================= Getters =========================
 
     protected boolean writeVersion(ByteBuffer destination) {
         if (!isPersistStatusSet(PERSIST_VERSION)) {
@@ -364,12 +349,10 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         return this.applicationNameBytes;
     }
 
-
     @Override
     public boolean isUrgent() {
         return isHeaderSet(HEADER_URGENT);
     }
-
 
     protected void setPersistStatus(short persistStatus) {
         this.persistStatus = persistStatus;
@@ -378,8 +361,6 @@ public final class JetPacket extends HeapData implements OutboundFrame {
     protected boolean isPersistStatusSet(short status) {
         return this.persistStatus >= status;
     }
-
-    // ========================= header =================================================
 
     protected boolean readHeader(ByteBuffer src) {
         if (!isPersistStatusSet(PERSIST_HEADER)) {
@@ -392,6 +373,8 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         return true;
     }
 
+    // ========================= header =================================================
+
     protected boolean writeHeader(ByteBuffer dst) {
         if (!isPersistStatusSet(PERSIST_HEADER)) {
             if (dst.remaining() < SHORT_SIZE_IN_BYTES) {
@@ -402,8 +385,6 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         }
         return true;
     }
-
-    // ========================= partition =================================================
 
     protected boolean readPartition(ByteBuffer src) {
         if (!isPersistStatusSet(PERSIST_PARTITION)) {
@@ -416,6 +397,7 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         return true;
     }
 
+    // ========================= partition =================================================
 
     protected boolean writePartition(ByteBuffer dst) {
         if (!isPersistStatusSet(PERSIST_PARTITION)) {
@@ -428,9 +410,6 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         return true;
     }
 
-
-    // ========================= size =================================================
-
     protected boolean readSize(ByteBuffer src) {
         if (!isPersistStatusSet(PERSIST_SIZE)) {
             if (src.remaining() < INT_SIZE_IN_BYTES) {
@@ -441,6 +420,9 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         }
         return true;
     }
+
+
+    // ========================= size =================================================
 
     protected boolean writeSize(ByteBuffer dst) {
         if (!isPersistStatusSet(PERSIST_SIZE)) {
@@ -453,8 +435,6 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         }
         return true;
     }
-
-    // ========================= value =================================================
 
     protected boolean readValue(ByteBuffer src) {
         if (!isPersistStatusSet(PERSIST_VALUE)) {
@@ -490,6 +470,8 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         }
         return true;
     }
+
+    // ========================= value =================================================
 
     protected boolean writeValue(ByteBuffer dst) {
         if (!isPersistStatusSet(PERSIST_VALUE)) {
@@ -547,6 +529,10 @@ public final class JetPacket extends HeapData implements OutboundFrame {
 
     public short getHeader() {
         return this.header;
+    }
+
+    public void setHeader(int bit) {
+        this.header = (short) bit;
     }
 
     public void reset() {

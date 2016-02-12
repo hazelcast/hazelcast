@@ -17,8 +17,8 @@
 package com.hazelcast.jet.api.statemachine;
 
 import com.hazelcast.jet.api.statemachine.container.processingcontainer.ProcessingContainerEvent;
-import com.hazelcast.jet.api.statemachine.container.processingcontainer.ProcessingContainerState;
 import com.hazelcast.jet.api.statemachine.container.processingcontainer.ProcessingContainerResponse;
+import com.hazelcast.jet.api.statemachine.container.processingcontainer.ProcessingContainerState;
 
 /**
  * Represents abstract stateMachine of containers who process data;

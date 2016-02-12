@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.executor;
 
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.jet.impl.executor.processor.StateMachineExecutorProcessor;
+import com.hazelcast.spi.NodeEngine;
 
 public class StateMachineTaskExecutorImpl
         extends AbstractLocalTaskExecutorImpl<StateMachineExecutorProcessor> {

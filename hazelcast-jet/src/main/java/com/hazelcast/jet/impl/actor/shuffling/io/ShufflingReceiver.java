@@ -16,30 +16,28 @@
 
 package com.hazelcast.jet.impl.actor.shuffling.io;
 
-import java.util.List;
-import java.io.IOException;
-
+import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
+import com.hazelcast.jet.api.actor.Consumer;
+import com.hazelcast.jet.api.actor.ObjectProducer;
+import com.hazelcast.jet.api.actor.ProducerCompletionHandler;
+import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.container.ContainerContext;
+import com.hazelcast.jet.api.container.ContainerTask;
+import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
+import com.hazelcast.jet.impl.actor.RingBufferActor;
+import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
+import com.hazelcast.jet.impl.hazelcast.JetPacket;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.api.actor.Consumer;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import com.hazelcast.jet.api.actor.ObjectProducer;
-import com.hazelcast.jet.impl.hazelcast.JetPacket;
-import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.api.container.ContainerTask;
-import com.hazelcast.jet.api.container.ContainerContext;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
-import com.hazelcast.jet.api.application.ApplicationContext;
-import com.hazelcast.jet.api.actor.ProducerCompletionHandler;
-import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
-import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
-import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 
 public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
 
@@ -48,29 +46,17 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
     private final ContainerContext containerContext;
 
     private final List<ProducerCompletionHandler> handlers = new CopyOnWriteArrayList<ProducerCompletionHandler>();
-
-    private volatile int lastProducedCount;
-
-    private volatile int dataChunkLength = -1;
-
-    private Object[] dataChunkBuffer;
-
     private final ChunkedInputStream chunkReceiver;
-
-    private volatile boolean closed;
-
-    private volatile boolean finalized;
-
     private final RingBufferActor ringBufferActor;
-
     private final DefaultObjectIOStream<JetPacket> packetBuffers;
-
-    private Object[] packets;
-
-    private int lastPacketIdx;
-
     private final Address address;
-
+    private volatile int lastProducedCount;
+    private volatile int dataChunkLength = -1;
+    private Object[] dataChunkBuffer;
+    private volatile boolean closed;
+    private volatile boolean finalized;
+    private Object[] packets;
+    private int lastPacketIdx;
     private int lastProducedPacketsCount;
 
     private ReceiverObjectReader receiverObjectReader;

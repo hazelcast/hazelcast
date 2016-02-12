@@ -17,11 +17,11 @@
 package com.hazelcast.jet.impl.data.io.readers;
 
 
-import java.io.IOException;
-
-import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.jet.spi.data.io.ObjectReader;
 import com.hazelcast.jet.spi.data.io.ObjectReaderFactory;
+import com.hazelcast.nio.ObjectDataInput;
+
+import java.io.IOException;
 
 public class LongReader implements ObjectReader<Long> {
     @Override

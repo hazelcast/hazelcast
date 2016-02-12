@@ -26,7 +26,7 @@ import com.hazelcast.core.PartitioningStrategy;
  *          PartitioningStrategy
  *          HashingStrategy
  *      </pre>
- *
+ * <p/>
  * See corresponding JavaDocs for
  * {@link com.hazelcast.core.PartitioningStrategy},
  * {@link com.hazelcast.jet.spi.strategy.HashingStrategy}

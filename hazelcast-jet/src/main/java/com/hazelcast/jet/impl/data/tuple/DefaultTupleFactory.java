@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.data.tuple;
 
-import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 
 public class DefaultTupleFactory implements TupleFactory {
     @Override

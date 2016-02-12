@@ -31,5 +31,6 @@ public interface ProcessingContainerResponse extends ContainerResponse {
             return false;
         }
     };
+
     boolean isSuccess();
 }

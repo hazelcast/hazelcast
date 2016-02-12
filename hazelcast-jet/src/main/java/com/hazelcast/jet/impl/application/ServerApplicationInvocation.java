@@ -17,14 +17,14 @@
 package com.hazelcast.jet.impl.application;
 
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.api.hazelcast.JetService;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.jet.api.hazelcast.JetService;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 
 public class ServerApplicationInvocation<T> extends AbstractApplicationInvocation<Operation, T> {
     private final JetService jetService;

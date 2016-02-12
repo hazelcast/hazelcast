@@ -16,14 +16,13 @@
 
 package com.hazelcast.client.impl.protocol.template;
 
-import com.hazelcast.annotation.Request;
 import com.hazelcast.annotation.GenerateCodec;
-
-import java.util.Map;
-
+import com.hazelcast.annotation.Request;
+import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.jet.spi.container.CounterKey;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.client.impl.protocol.ResponseMessageConst;
+
+import java.util.Map;
 
 
 @GenerateCodec(id = TemplateConstants.JET_TEMPLATE_ID, name = "Jet", ns = "Hazelcast.Client.Protocol.Codec")

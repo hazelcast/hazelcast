@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.impl.dag.tap.source;
 
+import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.spi.container.ContainerDescriptor;
+import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
-import com.hazelcast.jet.spi.container.ContainerDescriptor;
-import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
-import com.hazelcast.jet.impl.util.JetUtil;
 
 public class DataFileReader extends AbstractHazelcastReader<String> {
     private final long end;

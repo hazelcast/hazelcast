@@ -16,53 +16,46 @@
 
 package com.hazelcast.jet.impl.container;
 
-import java.util.Map;
-import java.util.List;
-import java.util.Arrays;
-import java.util.ArrayList;
-
-import com.hazelcast.spi.NodeEngine;
-
-import java.util.concurrent.TimeUnit;
-
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.data.DataReader;
-import com.hazelcast.jet.spi.dag.tap.SinkTap;
-import com.hazelcast.jet.spi.data.DataWriter;
-
-import java.util.concurrent.ConcurrentHashMap;
-
-import com.hazelcast.jet.spi.dag.tap.SourceTap;
-
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.hazelcast.jet.api.actor.ComposedActor;
 import com.hazelcast.jet.api.actor.ObjectProducer;
-import com.hazelcast.jet.api.container.DataChannel;
-import com.hazelcast.jet.api.container.ContainerTask;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
-import com.hazelcast.jet.api.container.task.TaskEvent;
-import com.hazelcast.jet.api.container.ProcessingContainer;
 import com.hazelcast.jet.api.application.ApplicationContext;
-import com.hazelcast.jet.impl.container.task.DefaultTaskContext;
 import com.hazelcast.jet.api.container.ContainerPayLoadProcessor;
-import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.api.container.task.TaskProcessorFactory;
-import com.hazelcast.jet.impl.container.task.DefaultContainerTask;
+import com.hazelcast.jet.api.container.ContainerTask;
+import com.hazelcast.jet.api.container.DataChannel;
+import com.hazelcast.jet.api.container.ProcessingContainer;
 import com.hazelcast.jet.api.container.events.EventProcessorFactory;
-import com.hazelcast.jet.api.statemachine.StateMachineRequestProcessor;
+import com.hazelcast.jet.api.container.task.TaskEvent;
+import com.hazelcast.jet.api.container.task.TaskProcessorFactory;
+import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
 import com.hazelcast.jet.api.statemachine.ProcessingContainerStateMachine;
-import com.hazelcast.jet.impl.container.events.DefaultEventProcessorFactory;
-import com.hazelcast.jet.impl.statemachine.container.processors.ContainerPayLoadFactory;
-import com.hazelcast.jet.impl.statemachine.container.requests.ContainerFinalizedRequest;
-import com.hazelcast.jet.impl.statemachine.container.ProcessingContainerStateMachineImpl;
-import com.hazelcast.jet.impl.container.task.processors.factory.DefaultTaskProcessorFactory;
-import com.hazelcast.jet.impl.container.task.processors.factory.ShuffledTaskProcessorFactory;
-import com.hazelcast.jet.api.statemachine.container.processingcontainer.ProcessingContainerState;
+import com.hazelcast.jet.api.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.api.statemachine.container.processingcontainer.ProcessingContainerEvent;
 import com.hazelcast.jet.api.statemachine.container.processingcontainer.ProcessingContainerResponse;
-
+import com.hazelcast.jet.api.statemachine.container.processingcontainer.ProcessingContainerState;
 import com.hazelcast.jet.api.statemachine.container.processingcontainer.ProcessingContainerStateMachineFactory;
+import com.hazelcast.jet.impl.container.events.DefaultEventProcessorFactory;
+import com.hazelcast.jet.impl.container.task.DefaultContainerTask;
+import com.hazelcast.jet.impl.container.task.DefaultTaskContext;
+import com.hazelcast.jet.impl.container.task.processors.factory.DefaultTaskProcessorFactory;
+import com.hazelcast.jet.impl.container.task.processors.factory.ShuffledTaskProcessorFactory;
+import com.hazelcast.jet.impl.statemachine.container.ProcessingContainerStateMachineImpl;
+import com.hazelcast.jet.impl.statemachine.container.processors.ContainerPayLoadFactory;
+import com.hazelcast.jet.impl.statemachine.container.requests.ContainerFinalizedRequest;
+import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.spi.dag.tap.SinkTap;
+import com.hazelcast.jet.spi.dag.tap.SourceTap;
+import com.hazelcast.jet.spi.data.DataReader;
+import com.hazelcast.jet.spi.data.DataWriter;
+import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.spi.NodeEngine;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class AbstractProcessingContainer extends
         AbstractContainer<ProcessingContainerEvent, ProcessingContainerState, ProcessingContainerResponse>
@@ -334,8 +327,8 @@ public abstract class AbstractProcessingContainer extends
         for (SinkTap sinkTap : sinks) {
             if (!sinkTap.isPartitioned()) {
                 List<DataWriter> writers = Arrays.asList(sinkTap.getWriters(
-                                getNodeEngine(),
-                                getContainerContext())
+                        getNodeEngine(),
+                        getContainerContext())
                 );
                 int i = 0;
 
@@ -352,8 +345,8 @@ public abstract class AbstractProcessingContainer extends
             } else {
                 for (ContainerTask containerTask : getContainerTasks()) {
                     List<DataWriter> writers = Arrays.asList(sinkTap.getWriters(
-                                    getNodeEngine(),
-                                    getContainerContext())
+                            getNodeEngine(),
+                            getContainerContext())
                     );
 
                     containerTask.registerSinkWriters(writers);

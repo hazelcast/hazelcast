@@ -16,22 +16,21 @@
 
 package com.hazelcast.jet.impl.application.localization.classloader;
 
-import java.net.URL;
+import com.hazelcast.jet.api.application.localization.JetClassLoaderException;
+import com.hazelcast.jet.impl.application.LocalizationResourceDescriptor;
+import com.hazelcast.jet.impl.util.JetUtil;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.jar.JarEntry;
 import java.io.BufferedInputStream;
-import java.util.jar.JarInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
-
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.impl.application.LocalizationResourceDescriptor;
-import com.hazelcast.jet.api.application.localization.JetClassLoaderException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
 
 public class LocalizationClassLoader extends ClassLoader implements ProxyClassLoader {
     private final Map<String, Class> classes = new HashMap<String, Class>();

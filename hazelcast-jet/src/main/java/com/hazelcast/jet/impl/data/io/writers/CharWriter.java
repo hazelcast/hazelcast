@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.data.io.writers;
 
 
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.jet.impl.data.io.Types;
 import com.hazelcast.jet.spi.data.io.ObjectWriter;
 import com.hazelcast.jet.spi.data.io.ObjectWriterFactory;
+import com.hazelcast.nio.ObjectDataOutput;
 
 public class CharWriter implements ObjectWriter<Character> {
     @Override

@@ -16,53 +16,35 @@
 
 package com.hazelcast.jet.impl.executor.processor;
 
-import java.util.List;
-import java.util.Queue;
-import java.util.ArrayList;
-import java.util.concurrent.Future;
-
-import com.hazelcast.logging.ILogger;
-
-import java.util.concurrent.BlockingQueue;
-
-import com.hazelcast.jet.api.executor.Task;
-import com.hazelcast.jet.impl.util.SettableFuture;
-import com.hazelcast.jet.api.executor.Payload;
-
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 import com.hazelcast.jet.api.actor.SleepingStrategy;
 import com.hazelcast.jet.api.executor.AbstractExecutor;
+import com.hazelcast.jet.api.executor.Payload;
+import com.hazelcast.jet.api.executor.Task;
 import com.hazelcast.jet.api.executor.WorkingProcessor;
-import com.hazelcast.jet.impl.container.task.DefaultContainerTask;
 import com.hazelcast.jet.impl.actor.strategy.AdaptiveSleepingStrategy;
+import com.hazelcast.jet.impl.container.task.DefaultContainerTask;
+import com.hazelcast.jet.impl.util.SettableFuture;
+import com.hazelcast.logging.ILogger;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.Preconditions.checkTrue;
 
 public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
         implements WorkingProcessor {
     protected final ILogger logger;
-
-    protected boolean started;
-
-    protected volatile boolean shutdown;
-
-    protected volatile Thread workingThread;
-
-    protected volatile boolean hasIncoming;
-
     protected final SleepingStrategy sleepingStrategy;
-
     protected final List<Task> tasks = new ArrayList<Task>();
-
     protected final AtomicInteger workingTaskCount = new AtomicInteger(0);
-
     protected final SettableFuture<Boolean> shutdownFuture = SettableFuture.create();
-
     protected final BlockingQueue<Boolean> lockingQueue = new ArrayBlockingQueue<Boolean>(1);
-
     protected final Payload payload = new Payload() {
         private boolean produced;
 
@@ -76,10 +58,12 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
             return produced;
         }
     };
-
     protected final E taskExecutor;
-
     protected final Queue<Task> incomingTasks = new ConcurrentLinkedQueue<Task>();
+    protected boolean started;
+    protected volatile boolean shutdown;
+    protected volatile Thread workingThread;
+    protected volatile boolean hasIncoming;
 
     public AbstractExecutorProcessor(int threadNum,
                                      ILogger logger,
@@ -147,7 +131,7 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
 
             if (task instanceof DefaultContainerTask) {
                 System.out.println("Incoming=" + task.getClass() + " size=" + this.tasks.size()
-                                + " idx=" + this + " wtc=" + this.workingTaskCount.get()
+                        + " idx=" + this + " wtc=" + this.workingTaskCount.get()
                 );
             }
         } while (true);

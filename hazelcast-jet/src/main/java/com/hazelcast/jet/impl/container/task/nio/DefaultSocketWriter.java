@@ -17,53 +17,38 @@
 package com.hazelcast.jet.impl.container.task.nio;
 
 
-import java.util.List;
-import java.util.Queue;
-import java.nio.ByteOrder;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.io.IOException;
-
+import com.hazelcast.jet.api.actor.ObjectProducer;
+import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.data.io.SocketWriter;
+import com.hazelcast.jet.api.executor.Payload;
+import com.hazelcast.jet.impl.actor.RingBufferActor;
+import com.hazelcast.jet.impl.hazelcast.JetPacket;
 import com.hazelcast.nio.Address;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.SocketChannel;
-
-import com.hazelcast.jet.api.executor.Payload;
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
-import com.hazelcast.jet.api.actor.ObjectProducer;
-import com.hazelcast.jet.impl.hazelcast.JetPacket;
-import com.hazelcast.jet.api.data.io.SocketWriter;
-import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.api.application.ApplicationContext;
 
 public class DefaultSocketWriter
         extends AbstractNetworkTask implements SocketWriter {
-    private int lastFrameId = -1;
-
-    private int nextProducerIdx;
-
-    private JetPacket lastPacket;
-
-    private int lastProducedCount;
-
-    private Object[] currentFrames;
-
     private final byte[] membersBytes;
-
     private final ByteBuffer sendByteBuffer;
-
-    private boolean memberEventSent;
-
     private final InetSocketAddress inetSocketAddress;
-
     private final ApplicationContext applicationContext;
-
     private final List<RingBufferActor> producers = new ArrayList<RingBufferActor>();
-
     private final Queue<JetPacket> servicePackets = new ConcurrentLinkedQueue<JetPacket>();
+    private int lastFrameId = -1;
+    private int nextProducerIdx;
+    private JetPacket lastPacket;
+    private int lastProducedCount;
+    private Object[] currentFrames;
+    private boolean memberEventSent;
 
 
     public DefaultSocketWriter(ApplicationContext applicationContext,

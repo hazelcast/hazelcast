@@ -16,16 +16,16 @@
 
 package com.hazelcast.jet.processors;
 
-import java.util.Iterator;
-import java.util.StringTokenizer;
-
-import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.api.container.ProcessorContext;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
+import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.jet.spi.processor.ContainerProcessor;
-import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
+
+import java.util.Iterator;
+import java.util.StringTokenizer;
 
 public class WordGeneratorProcessor implements ContainerProcessor<Object, String> {
     private int idx;

@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.operation.application;
 
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.jet.api.hazelcast.JetService;
 import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.hazelcast.JetService;
+import com.hazelcast.spi.NodeEngine;
 
 public class AcceptLocalizationOperation extends AbstractJetApplicationRequestOperation {
     public AcceptLocalizationOperation() {

@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.api.application.localization;
 
-import java.util.Map;
-import java.io.IOException;
-
-import com.hazelcast.jet.impl.application.localization.Chunk;
-import com.hazelcast.jet.spi.JetException;
 import com.hazelcast.jet.impl.application.LocalizationResourceDescriptor;
+import com.hazelcast.jet.impl.application.localization.Chunk;
 import com.hazelcast.jet.impl.application.localization.classloader.ResourceStream;
+import com.hazelcast.jet.spi.JetException;
+
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * Interface for localization storage

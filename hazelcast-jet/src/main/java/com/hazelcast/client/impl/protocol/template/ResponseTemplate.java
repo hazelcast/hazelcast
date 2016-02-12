@@ -3,16 +3,15 @@ package com.hazelcast.client.impl.protocol.template;
 import com.hazelcast.annotation.GenerateCodec;
 import com.hazelcast.annotation.Nullable;
 import com.hazelcast.annotation.Response;
-
-import java.util.Map;
-import java.util.List;
-
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.map.impl.SimpleEntryView;
-import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
+import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.mapreduce.JobPartitionState;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
+
+import java.util.List;
+import java.util.Map;
 
 
 @GenerateCodec(id = 0, name = "response", ns = "")

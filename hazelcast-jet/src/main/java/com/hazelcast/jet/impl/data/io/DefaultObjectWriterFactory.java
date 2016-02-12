@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.data.io;
 
+import com.hazelcast.jet.api.application.IOContext;
 import com.hazelcast.jet.spi.data.io.DataType;
 import com.hazelcast.jet.spi.data.io.ObjectWriter;
-import com.hazelcast.jet.api.application.IOContext;
 import com.hazelcast.jet.spi.data.io.ObjectWriterFactory;
 
 public class DefaultObjectWriterFactory implements ObjectWriterFactory {

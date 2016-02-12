@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.api.application;
 
+import com.hazelcast.jet.impl.application.LocalizationResource;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.jet.spi.container.CounterKey;
+import com.hazelcast.jet.spi.counters.Accumulator;
+import com.hazelcast.jet.spi.dag.DAG;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
-
-import com.hazelcast.jet.spi.dag.DAG;
-import com.hazelcast.jet.spi.container.CounterKey;
-import com.hazelcast.jet.spi.counters.Accumulator;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.impl.application.LocalizationResource;
 
 /**
  * Abstract service for JET-application's management

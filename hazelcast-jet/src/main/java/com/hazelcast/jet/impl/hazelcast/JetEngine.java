@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.impl.hazelcast;
 
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.api.application.Application;
 import com.hazelcast.jet.api.application.Initable;
 import com.hazelcast.jet.api.hazelcast.JetService;
-import com.hazelcast.jet.api.application.Application;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.jet.api.statemachine.application.ApplicationState;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
 
 public final class JetEngine {
     private JetEngine() {

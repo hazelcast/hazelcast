@@ -17,13 +17,13 @@
 package com.hazelcast.jet.impl.executor.processor;
 
 
-import java.util.List;
-import java.util.ArrayList;
-
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.jet.api.executor.Task;
 import com.hazelcast.jet.api.executor.TaskConsumer;
 import com.hazelcast.jet.api.executor.TaskExecutor;
+import com.hazelcast.logging.ILogger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class StateMachineExecutorProcessor extends AbstractExecutorProcessor<TaskExecutor>
         implements TaskConsumer {

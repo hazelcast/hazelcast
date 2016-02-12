@@ -16,18 +16,16 @@
 
 package com.hazelcast.jet.impl.executor;
 
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.jet.api.executor.Task;
-
-
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
-import com.hazelcast.jet.api.executor.WorkingProcessor;
 import com.hazelcast.jet.api.executor.ApplicationTaskContext;
 import com.hazelcast.jet.api.executor.BalancedWorkingProcessor;
 import com.hazelcast.jet.api.executor.SharedApplicationExecutor;
+import com.hazelcast.jet.api.executor.Task;
+import com.hazelcast.jet.api.executor.WorkingProcessor;
 import com.hazelcast.jet.impl.executor.processor.SharedBalancedExecutorProcessor;
+import com.hazelcast.spi.NodeEngine;
+
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SharedBalancedExecutorImpl
         extends AbstractExecutorImpl<BalancedWorkingProcessor>

@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.spi.strategy;
 
-import java.io.Serializable;
-
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.nio.Address;
+
+import java.io.Serializable;
 
 /**
  * Strategy which determines Hazelcast's nodes addresses where data should be sent

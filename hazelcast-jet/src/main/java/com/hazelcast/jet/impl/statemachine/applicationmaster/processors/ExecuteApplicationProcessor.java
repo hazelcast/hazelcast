@@ -16,21 +16,19 @@
 
 package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
 
-import java.util.Iterator;
-
 import com.hazelcast.jet.api.Dummy;
-
-import java.util.concurrent.TimeUnit;
-
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.api.application.ExecutorContext;
-import com.hazelcast.jet.api.container.ProcessingContainer;
 import com.hazelcast.jet.api.application.ApplicationContext;
-import com.hazelcast.jet.api.executor.ApplicationTaskContext;
+import com.hazelcast.jet.api.application.ExecutorContext;
 import com.hazelcast.jet.api.container.ContainerPayLoadProcessor;
+import com.hazelcast.jet.api.container.ProcessingContainer;
 import com.hazelcast.jet.api.container.applicationmaster.ApplicationMaster;
+import com.hazelcast.jet.api.executor.ApplicationTaskContext;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerExecuteRequest;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.jet.spi.dag.Vertex;
+
+import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 public class ExecuteApplicationProcessor implements ContainerPayLoadProcessor<Dummy> {
     private final long secondsToAwait;

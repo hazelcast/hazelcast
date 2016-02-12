@@ -16,42 +16,34 @@
 
 package com.hazelcast.jet.impl.actor.shuffling.io;
 
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.impl.hazelcast.JetPacket;
-import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.api.container.ContainerTask;
-import com.hazelcast.jet.api.container.ContainerContext;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.spi.data.io.ObjectWriterFactory;
-import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
-import com.hazelcast.jet.impl.dag.tap.sink.AbstractHazelcastWriter;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
+import com.hazelcast.jet.api.container.ContainerContext;
+import com.hazelcast.jet.api.container.ContainerTask;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.jet.impl.actor.RingBufferActor;
+import com.hazelcast.jet.impl.dag.tap.sink.AbstractHazelcastWriter;
+import com.hazelcast.jet.impl.hazelcast.JetPacket;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
+import com.hazelcast.jet.spi.data.io.ObjectWriterFactory;
+import com.hazelcast.nio.Address;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class ShufflingSender extends AbstractHazelcastWriter {
     private final int taskID;
     private final Address address;
 
     private final int containerID;
-
-    private volatile boolean closed;
-
     private final byte[] applicationName;
-
     private final RingBufferActor ringBufferActor;
-
     private final ChunkedOutputStream serializer;
-
     private final SenderObjectWriter senderObjectWriter;
-
     private final ObjectDataOutputStream dataOutputStream;
-
     private final ObjectWriterFactory objectWriterFactory;
-
     private final ContainerContext containerContext;
+    private volatile boolean closed;
 
     public ShufflingSender(ContainerContext containerContext,
                            int taskID,

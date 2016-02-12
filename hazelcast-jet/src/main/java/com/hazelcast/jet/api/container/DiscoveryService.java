@@ -17,11 +17,11 @@
 package com.hazelcast.jet.api.container;
 
 
-import java.util.Map;
-
-import com.hazelcast.nio.Address;
 import com.hazelcast.jet.api.data.io.SocketReader;
 import com.hazelcast.jet.api.data.io.SocketWriter;
+import com.hazelcast.nio.Address;
+
+import java.util.Map;
 
 /**
  * Abstract discovery-service interface;

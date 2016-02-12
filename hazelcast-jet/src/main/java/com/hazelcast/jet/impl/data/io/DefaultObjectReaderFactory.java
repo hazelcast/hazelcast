@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.data.io;
 
-import com.hazelcast.jet.spi.data.io.ObjectReader;
 import com.hazelcast.jet.api.application.IOContext;
+import com.hazelcast.jet.spi.data.io.ObjectReader;
 import com.hazelcast.jet.spi.data.io.ObjectReaderFactory;
 
 public class DefaultObjectReaderFactory implements ObjectReaderFactory {

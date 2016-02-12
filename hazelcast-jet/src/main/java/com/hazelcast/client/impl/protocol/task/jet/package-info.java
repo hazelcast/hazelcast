@@ -18,6 +18,7 @@
  * <p>Client protocol tasks implementations for Jet</p>
  */
 
-@GenerateMessageTaskFactoryProvider package com.hazelcast.client.impl.protocol.task.jet;
+@GenerateMessageTaskFactoryProvider
+package com.hazelcast.client.impl.protocol.task.jet;
 
 import com.hazelcast.annotation.GenerateMessageTaskFactoryProvider;

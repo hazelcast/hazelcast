@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.operation.application;
 
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.jet.api.hazelcast.JetService;
 import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class InitApplicationRequestOperation extends AbstractJetApplicationRequestOperation {
     public InitApplicationRequestOperation() {

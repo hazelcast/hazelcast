@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.api.container;
 
-import java.util.List;
-
 import com.hazelcast.jet.api.actor.ComposedActor;
+
+import java.util.List;
 
 public interface DataChannel {
     List<ComposedActor> getActors();

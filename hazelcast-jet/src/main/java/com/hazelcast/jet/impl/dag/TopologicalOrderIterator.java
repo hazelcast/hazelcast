@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.dag;
 
 
-import java.util.Stack;
-import java.util.Iterator;
-
 import com.hazelcast.jet.spi.dag.Vertex;
+
+import java.util.Iterator;
+import java.util.Stack;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 

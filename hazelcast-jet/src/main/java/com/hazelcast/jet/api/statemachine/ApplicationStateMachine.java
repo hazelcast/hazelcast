@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.api.statemachine;
 
-import com.hazelcast.jet.api.statemachine.application.ApplicationState;
 import com.hazelcast.jet.api.statemachine.application.ApplicationEvent;
 import com.hazelcast.jet.api.statemachine.application.ApplicationResponse;
+import com.hazelcast.jet.api.statemachine.application.ApplicationState;
 
 /**
  * Represents abstract application stateMachine;

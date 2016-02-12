@@ -18,40 +18,29 @@ package com.hazelcast.jet.impl.container.task.processors;
 
 
 import com.hazelcast.jet.api.actor.ObjectConsumer;
-import com.hazelcast.jet.api.container.ProcessorContext;
 import com.hazelcast.jet.api.container.ContainerContext;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.jet.api.container.ProcessorContext;
 import com.hazelcast.jet.api.container.task.TaskProcessor;
-import com.hazelcast.jet.spi.processor.ContainerProcessor;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.jet.spi.processor.ContainerProcessor;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class ConsumerTaskProcessor implements TaskProcessor {
     protected static final Object[] DUMMY_CHUNK = new Object[0];
-
-    protected boolean consumed;
-
-    protected boolean finalized;
-
     protected final ObjectConsumer[] consumers;
-
-    protected boolean finalizationFinished;
-
-    protected boolean finalizationStarted;
-
     protected final ContainerProcessor processor;
-
     protected final ContainerContext containerContext;
-
     protected final DefaultObjectIOStream tupleInputStream;
-
     protected final DefaultObjectIOStream tupleOutputStream;
-
     protected final ProcessorContext processorContext;
-
     protected final ConsumersProcessor consumersProcessor;
+    protected boolean consumed;
+    protected boolean finalized;
+    protected boolean finalizationFinished;
+    protected boolean finalizationStarted;
 
     public ConsumerTaskProcessor(ObjectConsumer[] consumers,
                                  ContainerProcessor processor,

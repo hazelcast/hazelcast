@@ -16,32 +16,33 @@
 
 package com.hazelcast.jet.impl.dag.tap.source;
 
-import java.util.Map;
-import java.util.List;
-import java.util.Iterator;
-import java.util.Collection;
-
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
-import com.hazelcast.multimap.impl.MultiMapValue;
-import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
-import com.hazelcast.multimap.impl.MultiMapContainer;
-import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
-import com.hazelcast.jet.spi.data.tuple.TupleConvertor;
-import com.hazelcast.jet.impl.data.tuple.TupleIterator;
-import com.hazelcast.jet.spi.strategy.CalculationStrategy;
-import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
+import com.hazelcast.jet.impl.data.tuple.TupleIterator;
+import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
+import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.spi.container.ContainerDescriptor;
+import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.data.tuple.TupleConvertor;
+import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.strategy.CalculationStrategy;
+import com.hazelcast.multimap.impl.MultiMapContainer;
+import com.hazelcast.multimap.impl.MultiMapRecord;
+import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.multimap.impl.MultiMapValue;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 
 public class HazelcastMultiMapPartitionReader<K, V> extends AbstractHazelcastReader<Tuple<K, V>> {
+    private final CalculationStrategy calculationStrategy;
     private final TupleConvertor<Map.Entry<Data, MultiMapValue>, K, V> tupleConverter =
             new TupleConvertor<Map.Entry<Data, MultiMapValue>, K, V>() {
                 @Override
@@ -70,8 +71,6 @@ public class HazelcastMultiMapPartitionReader<K, V> extends AbstractHazelcastRea
                     );
                 }
             };
-
-    private final CalculationStrategy calculationStrategy;
 
     public HazelcastMultiMapPartitionReader(ContainerDescriptor containerDescriptor,
                                             String name,

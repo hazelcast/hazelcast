@@ -17,9 +17,9 @@
 package com.hazelcast.jet.api.actor;
 
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.spi.strategy.HashingStrategy;
 import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
 
 /**
  * This is an abstract interface for each consumer in the system

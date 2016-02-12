@@ -1,41 +1,17 @@
 package com.hazelcast.jet.processors;
 
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.container.CounterKey;
-import com.hazelcast.jet.impl.counters.LongCounter;
 import com.hazelcast.jet.api.container.ProcessorContext;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.spi.processor.ContainerProcessor;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
+import com.hazelcast.jet.impl.counters.LongCounter;
+import com.hazelcast.jet.spi.container.CounterKey;
+import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.spi.processor.ContainerProcessor;
 
 public class CounterProcessor implements ContainerProcessor<Object, Object> {
-    private static class StringCounterKey implements CounterKey {
-        private final String counter;
-
-        private StringCounterKey(String counter) {
-            this.counter = counter;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            StringCounterKey that = (StringCounterKey) o;
-
-            return counter.equals(that.counter);
-        }
-
-        @Override
-        public int hashCode() {
-            return counter.hashCode();
-        }
-    }
-
-    private LongCounter longCounter;
-
     private final CounterKey OBJECTS_COUNTER = new StringCounterKey("counter");
+    private LongCounter longCounter;
 
     @Override
     public void beforeProcessing(ProcessorContext processorContext) {
@@ -61,6 +37,29 @@ public class CounterProcessor implements ContainerProcessor<Object, Object> {
     @Override
     public void afterProcessing(ProcessorContext processorContext) {
 
+    }
+
+    private static class StringCounterKey implements CounterKey {
+        private final String counter;
+
+        private StringCounterKey(String counter) {
+            this.counter = counter;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            StringCounterKey that = (StringCounterKey) o;
+
+            return counter.equals(that.counter);
+        }
+
+        @Override
+        public int hashCode() {
+            return counter.hashCode();
+        }
     }
 
     public static class CounterProcessorFactory implements ContainerProcessorFactory {

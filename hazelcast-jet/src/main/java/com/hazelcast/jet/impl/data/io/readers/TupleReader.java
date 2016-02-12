@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.impl.data.io.readers;
 
-import java.io.IOException;
-
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.jet.spi.data.io.ObjectReader;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
 import com.hazelcast.jet.spi.data.io.ObjectReaderFactory;
+import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.nio.ObjectDataInput;
+
+import java.io.IOException;
 
 public class TupleReader implements ObjectReader<Tuple> {
     private final TupleFactory defaultTupleFactory;

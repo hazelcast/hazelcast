@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.api;
 
-import java.util.Collection;
-
-import com.hazelcast.nio.Address;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.executor.SharedApplicationExecutor;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.nio.Address;
+
+import java.util.Collection;
 
 public interface JetApplicationManager {
     Address getLocalJetAddress();

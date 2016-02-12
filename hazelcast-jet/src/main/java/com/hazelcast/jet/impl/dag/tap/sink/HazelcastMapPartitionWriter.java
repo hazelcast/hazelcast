@@ -16,25 +16,23 @@
 
 package com.hazelcast.jet.impl.dag.tap.sink;
 
-import com.hazelcast.config.MapConfig;
-
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.map.impl.MapServiceContext;
-
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.spi.strategy.CalculationStrategy;
-import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
-import com.hazelcast.jet.spi.container.ContainerDescriptor;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
+import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.spi.container.ContainerDescriptor;
+import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
+import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.strategy.CalculationStrategy;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class HazelcastMapPartitionWriter extends AbstractHazelcastWriter {
     private final MapConfig mapConfig;

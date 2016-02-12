@@ -15,11 +15,12 @@ import com.hazelcast.jet.spi.data.tuple.TupleFactory;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.hazelcast.jet.base.JetBaseTest.createVertex;
 import static com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy.APPEND;

@@ -16,19 +16,17 @@
 
 package com.hazelcast.jet.impl.executor;
 
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.jet.api.executor.Task;
+import com.hazelcast.jet.api.executor.TaskExecutor;
+import com.hazelcast.jet.api.executor.WorkingProcessor;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.hazelcast.jet.api.executor.TaskExecutor;
-import com.hazelcast.jet.api.executor.WorkingProcessor;
-
 public abstract class AbstractLocalTaskExecutorImpl<T extends WorkingProcessor>
         extends AbstractExecutorImpl<T> implements TaskExecutor {
-    private volatile int lastAddedIdx = -1;
-
     private final AtomicInteger taskAmount = new AtomicInteger(0);
+    private volatile int lastAddedIdx = -1;
 
     public AbstractLocalTaskExecutorImpl(String name,
                                          int threadNum,

@@ -16,26 +16,24 @@
 
 package com.hazelcast.jet.impl.container.task.processors;
 
-import com.hazelcast.jet.api.container.ProcessorContext;
 import com.hazelcast.jet.api.container.ContainerContext;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.jet.api.container.ProcessorContext;
 import com.hazelcast.jet.api.container.task.TaskProcessor;
-import com.hazelcast.jet.spi.processor.ContainerProcessor;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
+import com.hazelcast.jet.spi.processor.ContainerProcessor;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class SimpleTaskProcessor implements TaskProcessor {
     private static final Object[] DUMMY_CHUNK = new Object[0];
-
-    protected boolean finalizationStarted;
-
-    private boolean finalized;
     private final ContainerProcessor processor;
     private final ContainerContext containerContext;
     private final DefaultObjectIOStream tupleInputStream;
     private final DefaultObjectIOStream tupleOutputStream;
     private final ProcessorContext processorContext;
+    protected boolean finalizationStarted;
+    private boolean finalized;
 
     public SimpleTaskProcessor(ContainerProcessor processor,
                                ContainerContext containerContext,

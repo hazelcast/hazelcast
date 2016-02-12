@@ -16,12 +16,11 @@
 
 package com.hazelcast.jet.api.statemachine.application;
 
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.statemachine.ApplicationStateMachine;
-
 import com.hazelcast.jet.api.statemachine.StateMachineFactory;
 import com.hazelcast.jet.api.statemachine.StateMachineRequestProcessor;
+import com.hazelcast.spi.NodeEngine;
 
 /**
  * Represents factory to create application's state-machine;

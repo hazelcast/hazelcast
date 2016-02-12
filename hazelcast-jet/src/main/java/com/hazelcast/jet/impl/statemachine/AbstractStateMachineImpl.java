@@ -16,52 +16,41 @@
 
 package com.hazelcast.jet.impl.statemachine;
 
-import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.Future;
-
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.logging.ILogger;
-
-import java.util.concurrent.BlockingQueue;
-
-import com.hazelcast.jet.impl.util.SettableFuture;
-import com.hazelcast.jet.api.executor.Payload;
-
-import java.util.concurrent.LinkedBlockingDeque;
-
-import com.hazelcast.jet.api.executor.TaskExecutor;
-import com.hazelcast.jet.impl.container.RequestPayLoad;
-import com.hazelcast.jet.api.statemachine.StateMachine;
-import com.hazelcast.jet.impl.container.task.AbstractTask;
 import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.executor.Payload;
+import com.hazelcast.jet.api.executor.TaskExecutor;
+import com.hazelcast.jet.api.statemachine.InvalidEventException;
+import com.hazelcast.jet.api.statemachine.StateMachine;
 import com.hazelcast.jet.api.statemachine.StateMachineEvent;
-import com.hazelcast.jet.api.statemachine.StateMachineState;
 import com.hazelcast.jet.api.statemachine.StateMachineOutput;
 import com.hazelcast.jet.api.statemachine.StateMachineRequest;
-import com.hazelcast.jet.api.statemachine.InvalidEventException;
 import com.hazelcast.jet.api.statemachine.StateMachineRequestProcessor;
+import com.hazelcast.jet.api.statemachine.StateMachineState;
+import com.hazelcast.jet.impl.container.RequestPayLoad;
+import com.hazelcast.jet.impl.container.task.AbstractTask;
+import com.hazelcast.jet.impl.util.SettableFuture;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.NodeEngine;
+
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingDeque;
 
 public abstract class AbstractStateMachineImpl
         <Input extends StateMachineEvent,
                 State extends StateMachineState,
                 Output extends StateMachineOutput> implements StateMachine<Input, State, Output> {
-    protected volatile Output output;
-
-    protected volatile State state = defaultState();
-
     protected final String name;
-
     private final ILogger logger;
-
     private final Map<State, Map<Input, State>> stateTransitionMatrix;
-
     private final ApplicationContext applicationContext;
-
     private final StateMachineRequestProcessor<Input> processor;
-
     private final BlockingQueue<RequestPayLoad<Input, Output>> eventsQueue =
             new LinkedBlockingDeque<RequestPayLoad<Input, Output>>();
+    protected volatile Output output;
+    protected volatile State state = defaultState();
 
     protected AbstractStateMachineImpl(String name,
                                        Map<State, Map<Input, State>> stateTransitionMatrix,
@@ -102,6 +91,10 @@ public abstract class AbstractStateMachineImpl
     @Override
     public Output getOutput() {
         return output;
+    }
+
+    public ApplicationContext getApplicationContext() {
+        return this.applicationContext;
     }
 
     private class EventsProcessor extends AbstractTask {
@@ -157,9 +150,5 @@ public abstract class AbstractStateMachineImpl
 
             return true;
         }
-    }
-
-    public ApplicationContext getApplicationContext() {
-        return this.applicationContext;
     }
 }

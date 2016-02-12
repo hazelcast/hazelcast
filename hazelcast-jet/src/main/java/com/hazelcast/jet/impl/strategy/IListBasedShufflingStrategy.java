@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.strategy;
 
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
+import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.spi.NodeEngine;
 
 public class IListBasedShufflingStrategy implements ShufflingStrategy {
     private final String listName;

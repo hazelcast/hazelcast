@@ -16,17 +16,17 @@
 
 package com.hazelcast.jet.impl.application;
 
-import java.util.ArrayList;
-
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.jet.api.executor.Task;
-import com.hazelcast.jet.api.executor.TaskExecutor;
 import com.hazelcast.jet.api.application.ExecutorContext;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.jet.api.executor.ApplicationTaskContext;
 import com.hazelcast.jet.api.executor.SharedApplicationExecutor;
-import com.hazelcast.jet.impl.executor.StateMachineTaskExecutorImpl;
+import com.hazelcast.jet.api.executor.Task;
+import com.hazelcast.jet.api.executor.TaskExecutor;
 import com.hazelcast.jet.impl.executor.DefaultApplicationTaskContext;
+import com.hazelcast.jet.impl.executor.StateMachineTaskExecutorImpl;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.spi.NodeEngine;
+
+import java.util.ArrayList;
 
 
 public class DefaultExecutorContext implements ExecutorContext {

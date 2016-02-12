@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.api.application;
 
-import java.util.Set;
-import java.util.concurrent.Callable;
-
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.impl.application.localization.Chunk;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.jet.api.hazelcast.InvocationFactory;
 import com.hazelcast.jet.api.statemachine.application.ApplicationEvent;
+import com.hazelcast.jet.impl.application.localization.Chunk;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
+
+import java.util.Set;
+import java.util.concurrent.Callable;
 
 /**
  * Abstract service to invoke operation's of Jet's lifecycle

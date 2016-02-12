@@ -17,8 +17,8 @@
 package com.hazelcast.jet.api.application;
 
 import com.hazelcast.jet.api.executor.ApplicationTaskContext;
-import com.hazelcast.jet.api.executor.TaskExecutor;
 import com.hazelcast.jet.api.executor.SharedApplicationExecutor;
+import com.hazelcast.jet.api.executor.TaskExecutor;
 
 /**
  * Abstract context which holds all executors of the application

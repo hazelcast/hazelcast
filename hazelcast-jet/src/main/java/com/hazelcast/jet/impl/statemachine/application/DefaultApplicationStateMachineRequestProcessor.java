@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.statemachine.application;
 
-import com.hazelcast.jet.impl.application.ApplicationContextImpl;
 import com.hazelcast.jet.api.statemachine.application.ApplicationEvent;
 import com.hazelcast.jet.api.statemachine.application.ApplicationStateMachineRequestProcessor;
+import com.hazelcast.jet.impl.application.ApplicationContextImpl;
 
 public class DefaultApplicationStateMachineRequestProcessor implements ApplicationStateMachineRequestProcessor {
     private final ApplicationContextImpl applicationContext;

@@ -19,7 +19,7 @@ package com.hazelcast.jet.spi.config;
 import com.hazelcast.client.config.ClientConfig;
 
 /**
- *  Hazelcast-compatible config but with Jet extensions
+ * Hazelcast-compatible config but with Jet extensions
  */
 public class JetClientConfig extends ClientConfig {
     private final JetConfigurator jetConfigurator;

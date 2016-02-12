@@ -17,36 +17,36 @@
 package com.hazelcast.jet.impl.container.task.processors.shuffling;
 
 
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
+import com.hazelcast.jet.api.actor.ObjectConsumer;
+import com.hazelcast.jet.api.container.ContainerContext;
+import com.hazelcast.jet.api.container.ContainerTask;
+import com.hazelcast.jet.api.container.ProcessingContainer;
+import com.hazelcast.jet.api.container.ProcessorContext;
+import com.hazelcast.jet.api.container.applicationmaster.ApplicationMaster;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
+import com.hazelcast.jet.impl.container.task.processors.ConsumerTaskProcessor;
+import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.spi.PartitionIdAware;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.jet.spi.data.DataWriter;
+import com.hazelcast.jet.spi.processor.ContainerProcessor;
+import com.hazelcast.jet.spi.strategy.CalculationStrategy;
+import com.hazelcast.jet.spi.strategy.CalculationStrategyAware;
+import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
+import com.hazelcast.nio.Address;
+import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.spi.NodeEngine;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.ArrayList;
 import java.util.IdentityHashMap;
-
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.spi.data.DataWriter;
-import com.hazelcast.jet.spi.PartitionIdAware;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.jet.api.actor.ObjectConsumer;
-import com.hazelcast.jet.api.container.ProcessingContainer;
-import com.hazelcast.jet.api.container.ContainerTask;
-import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
-import com.hazelcast.jet.api.container.ProcessorContext;
-import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
-import com.hazelcast.jet.api.container.ContainerContext;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.spi.strategy.CalculationStrategy;
-import com.hazelcast.jet.spi.processor.ContainerProcessor;
-import com.hazelcast.jet.spi.strategy.CalculationStrategyAware;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
-import com.hazelcast.jet.api.container.applicationmaster.ApplicationMaster;
-import com.hazelcast.jet.impl.container.task.processors.ConsumerTaskProcessor;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 
 public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
@@ -62,15 +62,12 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     private final CalculationStrategy[] calculationStrategies;
     private final Map<Address, DataWriter> senders = new HashMap<Address, DataWriter>();
     private final Map<CalculationStrategy, Map<Integer, List<ObjectConsumer>>> partitionedWriters;
-
+    private final ObjectConsumer[] markers;
+    private final Map<ObjectConsumer, Integer> markersCache = new IdentityHashMap<ObjectConsumer, Integer>();
+    private final ContainerContext containerContext;
     private int lastConsumedSize;
     private boolean chunkInProgress;
     private boolean unShufflersSuccess;
-
-    private final ObjectConsumer[] markers;
-    private final Map<ObjectConsumer, Integer> markersCache = new IdentityHashMap<ObjectConsumer, Integer>();
-
-    private final ContainerContext containerContext;
 
     public ShuffledConsumerTaskProcessor(ObjectConsumer[] consumers,
                                          ContainerProcessor processor,
@@ -119,6 +116,18 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         this.nonPartitionedAddresses = nonPartitionedAddresses.toArray(new Address[nonPartitionedAddresses.size()]);
         this.chunkSize = chunkSize(containerContext);
         resetState();
+    }
+
+    private static ObjectConsumer[] filterConsumers(ObjectConsumer[] consumers, boolean isShuffled) {
+        List<ObjectConsumer> filtered = new ArrayList<ObjectConsumer>(consumers.length);
+
+        for (ObjectConsumer consumer : consumers) {
+            if (consumer.isShuffled() == isShuffled) {
+                filtered.add(consumer);
+            }
+        }
+
+        return filtered.toArray(new ObjectConsumer[filtered.size()]);
     }
 
     private int chunkSize(ContainerContext containerContext) {
@@ -343,18 +352,6 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         for (DataWriter tupleWriter : this.sendersArray) {
             tupleWriter.close();
         }
-    }
-
-    private static ObjectConsumer[] filterConsumers(ObjectConsumer[] consumers, boolean isShuffled) {
-        List<ObjectConsumer> filtered = new ArrayList<ObjectConsumer>(consumers.length);
-
-        for (ObjectConsumer consumer : consumers) {
-            if (consumer.isShuffled() == isShuffled) {
-                filtered.add(consumer);
-            }
-        }
-
-        return filtered.toArray(new ObjectConsumer[filtered.size()]);
     }
 
     private void resetState() {

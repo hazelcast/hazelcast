@@ -16,18 +16,18 @@
 
 package com.hazelcast.jet.api.container;
 
-import java.util.List;
-
-import com.hazelcast.nio.Address;
-import com.hazelcast.jet.spi.dag.Edge;
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.api.executor.Task;
-import com.hazelcast.jet.spi.data.DataWriter;
 import com.hazelcast.jet.api.actor.ComposedActor;
 import com.hazelcast.jet.api.actor.ObjectProducer;
-import com.hazelcast.jet.spi.executor.TaskContext;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
+import com.hazelcast.jet.api.executor.Task;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
+import com.hazelcast.jet.spi.dag.Edge;
+import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.spi.data.DataWriter;
+import com.hazelcast.jet.spi.executor.TaskContext;
+import com.hazelcast.nio.Address;
+
+import java.util.List;
 
 /**
  * Interface which represents container's execution task;
