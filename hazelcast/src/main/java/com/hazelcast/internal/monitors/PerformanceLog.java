@@ -16,9 +16,8 @@
 
 package com.hazelcast.internal.monitors;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -53,7 +52,6 @@ final class PerformanceLog {
     volatile File file;
 
     private final PerformanceMonitor performanceMonitor;
-    private final HazelcastInstanceImpl hazelcastInstance;
     private final ILogger logger;
     private final String pathname;
 
@@ -71,19 +69,18 @@ final class PerformanceLog {
         this.logWriter = performanceMonitor.singleLine
                 ? new SingleLinePerformanceLogWriter()
                 : new MultiLinePerformanceLogWriter();
-        this.logger = performanceMonitor.nodeEngine.getLogger(PerformanceLog.class);
-        this.hazelcastInstance = (HazelcastInstanceImpl) performanceMonitor.nodeEngine.getHazelcastInstance();
-        this.pathname = getPathName();
+        this.logger = performanceMonitor.logger;
+        this.pathname = getPathName(performanceMonitor.hazelcastInstance);
 
-        GroupProperties props = hazelcastInstance.node.getGroupProperties();
-        this.maxRollingFileCount = props.getInteger(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT);
+        this.maxRollingFileCount = performanceMonitor.properties.getInteger(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT);
         // we accept a float so it becomes easier to testing to create a small file.
-        this.maxRollingFileSizeBytes = round(ONE_MB * props.getFloat(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB));
+        this.maxRollingFileSizeBytes = round(
+                ONE_MB * performanceMonitor.properties.getFloat(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB));
 
         logger.finest("maxRollingFileSizeBytes:" + maxRollingFileSizeBytes + " maxRollingFileCount:" + maxRollingFileCount);
     }
 
-    private String getPathName() {
+    private static String getPathName(HazelcastInstance hazelcastInstance) {
         Member localMember = hazelcastInstance.getCluster().getLocalMember();
         Address address = localMember.getAddress();
         String addressString = address.getHost().replace(":", "_") + "#" + address.getPort();
