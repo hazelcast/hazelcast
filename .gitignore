@@ -15,3 +15,5 @@ reports/
 atlassian-ide-plugin.xml
 performance*.log
 .attach_pid*
+*/src/test/resources/data/file*
+*/src/test/resources/data/result*
