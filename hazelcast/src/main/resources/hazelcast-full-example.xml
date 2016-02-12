@@ -1319,6 +1319,41 @@ https://hazelcast.org/documentation/.
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
     </serialization>
+<!--
+    ===== HAZELCAST HIGH-DENSITY MEMORY STORE CONFIGURATION =====
+    
+    This feature is available only in Hazelcast Enterprise HD.Configuration element's name is 
+    <native-memory>. 
+    It has the following attributes:
+    - enabled: 
+    	Set as true to enable the High-Density Memory Store usage. Its default value is false.
+    - allocator-type: 
+    	Type of the memory allocator. Its default value is POOLED. Available values are as follows:
+	* STANDARD: Allocates/frees the memory using default OS memory manager.
+	* POOLED: Manages memory blocks in thread local pools.
+
+    It has the following sub-elements:
+    - <size>:
+    	Size of the total native memory to allocate. You can give the size using its "value" attribute and the unit
+    	using its "unit" attribute. Unit can be bytes, kilobytes, megabytes and gigabytes. Default value is 128 and 
+    	default unit is MEGABYTES.
+    - <min-block-size>:
+    	Minimum size of the blocks in bytes to split and fragment a page block to assign to an allocation request. 
+    	It is used only by the POOLED memory allocator. Its default value is 16.
+    - <page-size>:
+    	Size of the page in bytes to allocate memory as a block. It is used only by the POOLED memory allocator. Its 
+    	default value is 1 << 22 (about 4 MB).
+    - <metadata-space-percentage>:
+    	Percentage of the allocated native memory that is used for the metadata such as indexes, offsets, etc. It is 
+    	used only by the POOLED memory allocator. Its default value is 12.5.
+-->
+    <native-memory allocator-type="POOLED" enabled="true">
+        <size unit="MEGABYTES" value="256"/>
+        <min-block-size>24</min-block-size>
+        <page-size>4194304</page-size>
+        <metadata-space-percentage>12.5</metadata-space-percentage>
+    </native-memory>
+
 
     <services enable-defaults="true"/>
 
