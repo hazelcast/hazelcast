@@ -20,32 +20,82 @@ import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.Preconditions.checkHasText;
+import static java.lang.String.format;
+
 /**
  * Interface for Hazelcast Member and Client properties.
  */
 @PrivateApi
-public interface HazelcastProperty {
+public final class HazelcastProperty {
 
-    /**
-     * Gets the index of the property.
-     *
-     * @return index of the property
-     */
-    int getIndex();
+    private final String name;
+    private final String defaultValue;
+    private final TimeUnit timeUnit;
+    private final HazelcastProperty parent;
+
+    public HazelcastProperty(String name) {
+        this(name, (String) null);
+    }
+
+    public HazelcastProperty(String name, boolean defaultValue) {
+        this(name, defaultValue ? "true" : "false");
+    }
+
+    public HazelcastProperty(String name, Integer defaultValue) {
+        this(name, String.valueOf(defaultValue));
+    }
+
+    public HazelcastProperty(String name, Byte defaultValue) {
+        this(name, String.valueOf(defaultValue));
+    }
+
+    public HazelcastProperty(String name, Integer defaultValue, TimeUnit timeUnit) {
+        this(name, String.valueOf(defaultValue), timeUnit);
+    }
+
+    public HazelcastProperty(String name, Long defaultValue, TimeUnit timeUnit) {
+        this(name, Long.toString(defaultValue), timeUnit);
+    }
+
+    public HazelcastProperty(String name, HazelcastProperty groupProperty) {
+        this(name, groupProperty.getDefaultValue(), groupProperty.timeUnit, groupProperty);
+    }
+
+    protected HazelcastProperty(String name, String defaultValue) {
+        this(name, defaultValue, null);
+    }
+
+    protected HazelcastProperty(String name, String defaultValue, TimeUnit timeUnit) {
+        this(name, defaultValue, timeUnit, null);
+    }
+
+    public HazelcastProperty(String name, String defaultValue, TimeUnit timeUnit, HazelcastProperty parent) {
+        checkHasText(name, "The property name cannot be null or empty!");
+        this.name = name;
+        this.defaultValue = defaultValue;
+        this.timeUnit = timeUnit;
+        this.parent = parent;
+    }
+
 
     /**
      * Returns the property name.
      *
      * @return the property name
      */
-    String getName();
+    public String getName() {
+        return name;
+    }
 
     /**
      * Returns the default value of the property.
      *
      * @return the default value or <tt>null</tt> if none is defined
      */
-    String getDefaultValue();
+    public String getDefaultValue() {
+        return defaultValue;
+    }
 
     /**
      * Returns the {@link TimeUnit} of the property.
@@ -53,31 +103,52 @@ public interface HazelcastProperty {
      * @return the {@link TimeUnit}
      * @throws IllegalArgumentException if no {@link TimeUnit} is defined
      */
-    TimeUnit getTimeUnit();
+    public TimeUnit getTimeUnit() {
+        if (timeUnit == null) {
+            throw new IllegalArgumentException(format("groupProperty %s has no TimeUnit defined!", this));
+        }
+
+        return timeUnit;
+    }
 
     /**
      * Returns the parent {@link GroupProperty} of the property.
      *
      * @return the parent {@link GroupProperty} or <tt>null</tt> if none is defined
      */
-    GroupProperty getParent();
+    public HazelcastProperty getParent() {
+        return parent;
+    }
+
 
     /**
      * Sets the environmental value of the property.
      *
      * @param value the value to set
      */
-    void setSystemProperty(String value);
+    public void setSystemProperty(String value) {
+        System.setProperty(name, value);
+    }
 
     /**
      * Gets the environmental value of the property.
      *
      * @return the value of the property
      */
-    String getSystemProperty();
+
+    public String getSystemProperty() {
+        return System.getProperty(name);
+    }
 
     /**
      * Clears the environmental value of the property.
      */
-    String clearSystemProperty();
+    public String clearSystemProperty() {
+        return System.clearProperty(name);
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

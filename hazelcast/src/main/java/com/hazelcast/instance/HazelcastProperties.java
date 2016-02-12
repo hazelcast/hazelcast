@@ -38,7 +38,6 @@ import static java.util.Collections.unmodifiableSet;
  */
 public abstract class HazelcastProperties {
 
-    private final String[] values;
     private final Set<String> keys;
     private final Properties properties = new Properties();
 
@@ -50,35 +49,14 @@ public abstract class HazelcastProperties {
      *
      * @param nullableProperties  {@link Properties} used to configure the {@link HazelcastProperty} values.
      *                            Properties are allowed to be null.
-     * @param hazelcastProperties array of {@link HazelcastProperty} to configure
      */
-    protected HazelcastProperties(Properties nullableProperties, HazelcastProperty[] hazelcastProperties) {
+    protected HazelcastProperties(Properties nullableProperties) {
         if (nullableProperties != null) {
             properties.putAll(nullableProperties);
         }
 
-        this.values = new String[hazelcastProperties.length];
-        for (HazelcastProperty property : hazelcastProperties) {
-            String configValue = properties.getProperty(property.getName());
-            if (configValue != null) {
-                this.values[property.getIndex()] = configValue;
-                continue;
-            }
-            String propertyValue = property.getSystemProperty();
-            if (propertyValue != null) {
-                this.values[property.getIndex()] = propertyValue;
-                continue;
-            }
-            GroupProperty parent = property.getParent();
-            if (parent != null) {
-                this.values[property.getIndex()] = this.values[parent.ordinal()];
-                continue;
-            }
-            this.values[property.getIndex()] = property.getDefaultValue();
-        }
         this.keys = unmodifiableSet((Set) properties.keySet());
     }
-
 
     /**
      * Returns an immutable set of all keys in this HazelcastProperties.
@@ -107,7 +85,21 @@ public abstract class HazelcastProperties {
      * @return the value or <tt>null</tt> if nothing has been configured
      */
     public String getString(HazelcastProperty property) {
-        return values[property.getIndex()];
+        String configValue = properties.getProperty(property.getName());
+        if (configValue != null) {
+            return configValue;
+        }
+        String systemProperty = property.getSystemProperty();
+        if (systemProperty != null) {
+            return systemProperty;
+        }
+
+        HazelcastProperty parent = property.getParent();
+        if (parent != null) {
+            return getString(parent);
+        }
+
+        return property.getDefaultValue();
     }
 
     /**
@@ -117,7 +109,7 @@ public abstract class HazelcastProperties {
      * @return the value as boolean
      */
     public boolean getBoolean(HazelcastProperty property) {
-        return Boolean.valueOf(values[property.getIndex()]);
+        return Boolean.valueOf(getString(property));
     }
 
     /**
@@ -128,7 +120,7 @@ public abstract class HazelcastProperties {
      * @throws NumberFormatException if the value cannot be parsed
      */
     public int getInteger(HazelcastProperty property) {
-        return Integer.parseInt(values[property.getIndex()]);
+        return Integer.parseInt(getString(property));
     }
 
     /**
@@ -139,7 +131,7 @@ public abstract class HazelcastProperties {
      * @throws NumberFormatException if the value cannot be parsed
      */
     public long getLong(HazelcastProperty property) {
-        return Long.parseLong(values[property.getIndex()]);
+        return Long.parseLong(getString(property));
     }
 
     /**
@@ -150,7 +142,7 @@ public abstract class HazelcastProperties {
      * @throws NumberFormatException if the value cannot be parsed
      */
     public float getFloat(HazelcastProperty property) {
-        return Float.valueOf(values[property.getIndex()]);
+        return Float.valueOf(getString(property));
     }
 
     /**
@@ -197,8 +189,22 @@ public abstract class HazelcastProperties {
      * @param property the {@link GroupProperty} to get the value from
      * @return the enum
      * @throws IllegalArgumentException if the enum value can't be found
+     * @deprecated since 3.7 use {@link #getEnum(HazelcastProperty, Class)} instead.
      */
     public <E extends Enum> E getEnum(GroupProperty property, Class<E> enumClazz) {
+        return getEnum(property, enumClazz);
+    }
+
+    /**
+     * Returns the configured enum value of a {@link GroupProperty}.
+     * <p/>
+     * The case of the enum is ignored.
+     *
+     * @param property the {@link GroupProperty} to get the value from
+     * @return the enum
+     * @throws IllegalArgumentException if the enum value can't be found
+     */
+    public <E extends Enum> E getEnum(HazelcastProperty property, Class<E> enumClazz) {
         String value = getString(property);
 
         for (E enumConstant : enumClazz.getEnumConstants()) {
