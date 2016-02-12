@@ -36,7 +36,8 @@ import static java.lang.String.format;
  */
 public abstract class HazelcastProperties {
 
-    private final String[] properties = createProperties();
+    private final String[] values = createProperties();
+    private Properties properties;
 
     /**
      * Created the properties array.
@@ -55,24 +56,36 @@ public abstract class HazelcastProperties {
      * @param hazelcastProperties array of {@link HazelcastProperty} to configure
      */
     protected void initProperties(Properties properties, HazelcastProperty[] hazelcastProperties) {
+        this.properties = properties;
         for (HazelcastProperty property : hazelcastProperties) {
             String configValue = (properties != null) ? properties.getProperty(property.getName()) : null;
             if (configValue != null) {
-                this.properties[property.getIndex()] = configValue;
+                this.values[property.getIndex()] = configValue;
                 continue;
             }
             String propertyValue = property.getSystemProperty();
             if (propertyValue != null) {
-                this.properties[property.getIndex()] = propertyValue;
+                this.values[property.getIndex()] = propertyValue;
                 continue;
             }
             GroupProperty parent = property.getParent();
             if (parent != null) {
-                this.properties[property.getIndex()] = this.properties[parent.ordinal()];
+                this.values[property.getIndex()] = this.values[parent.ordinal()];
                 continue;
             }
-            this.properties[property.getIndex()] = property.getDefaultValue();
+            this.values[property.getIndex()] = property.getDefaultValue();
         }
+    }
+
+    /**
+     * Returns the actual {@link Properties} used to create this HazelcastProperties.
+     *
+     * Only use this for reading.
+     *
+     * @return the properties.
+     */
+    public Properties getProperties() {
+        return properties;
     }
 
     /**
@@ -82,7 +95,7 @@ public abstract class HazelcastProperties {
      * @return the value or <tt>null</tt> if nothing has been configured
      */
     public String getString(HazelcastProperty groupProperty) {
-        return properties[groupProperty.getIndex()];
+        return values[groupProperty.getIndex()];
     }
 
     /**
@@ -92,7 +105,7 @@ public abstract class HazelcastProperties {
      * @return the value as boolean
      */
     public boolean getBoolean(HazelcastProperty groupProperty) {
-        return Boolean.valueOf(properties[groupProperty.getIndex()]);
+        return Boolean.valueOf(values[groupProperty.getIndex()]);
     }
 
     /**
@@ -103,7 +116,7 @@ public abstract class HazelcastProperties {
      * @throws NumberFormatException if the value cannot be parsed
      */
     public int getInteger(HazelcastProperty groupProperty) {
-        return Integer.parseInt(properties[groupProperty.getIndex()]);
+        return Integer.parseInt(values[groupProperty.getIndex()]);
     }
 
     /**
@@ -114,7 +127,7 @@ public abstract class HazelcastProperties {
      * @throws NumberFormatException if the value cannot be parsed
      */
     public long getLong(HazelcastProperty groupProperty) {
-        return Long.parseLong(properties[groupProperty.getIndex()]);
+        return Long.parseLong(values[groupProperty.getIndex()]);
     }
 
     /**
@@ -125,7 +138,7 @@ public abstract class HazelcastProperties {
      * @throws NumberFormatException if the value cannot be parsed
      */
     public float getFloat(HazelcastProperty groupProperty) {
-        return Float.valueOf(properties[groupProperty.getIndex()]);
+        return Float.valueOf(values[groupProperty.getIndex()]);
     }
 
     /**

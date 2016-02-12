@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.monitors;
 
+import com.hazelcast.instance.HazelcastProperties;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
@@ -34,9 +35,13 @@ public class MetricsPlugin extends PerformanceMonitorPlugin {
     private final ProbeRendererImpl probeRenderer = new ProbeRendererImpl();
 
     public MetricsPlugin(NodeEngineImpl nodeEngine) {
-        this.metricsRegistry = nodeEngine.getMetricsRegistry();
-        this.logger = nodeEngine.getLogger(MetricsPlugin.class);
-        this.periodMillis = nodeEngine.getGroupProperties().getMillis(PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS);
+        this(nodeEngine.getMetricsRegistry(), nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getNode().groupProperties);
+    }
+
+    public MetricsPlugin(MetricsRegistry metricsRegistry, ILogger logger, HazelcastProperties properties) {
+        this.metricsRegistry = metricsRegistry;
+        this.logger = logger;
+        this.periodMillis = properties.getMillis(PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS);
     }
 
     @Override
@@ -62,7 +67,7 @@ public class MetricsPlugin extends PerformanceMonitorPlugin {
 
         private PerformanceLogWriter writer;
 
-         @Override
+        @Override
         public void renderLong(String name, long value) {
             writer.writeKeyValueEntry(name, value);
         }

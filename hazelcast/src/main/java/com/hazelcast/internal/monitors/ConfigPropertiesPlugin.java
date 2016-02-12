@@ -17,10 +17,11 @@
 package com.hazelcast.internal.monitors;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.instance.HazelcastProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -31,12 +32,17 @@ import static java.util.Collections.sort;
  */
 public class ConfigPropertiesPlugin extends PerformanceMonitorPlugin {
 
-    private final NodeEngineImpl nodeEngine;
+    private final Properties properties;
     private final ILogger logger;
+    private final List keyList = new ArrayList();
 
     public ConfigPropertiesPlugin(NodeEngineImpl nodeEngine) {
-        this.nodeEngine = nodeEngine;
-        this.logger = nodeEngine.getLogger(ConfigPropertiesPlugin.class);
+        this(nodeEngine.getLogger(ConfigPropertiesPlugin.class), nodeEngine.getNode().getGroupProperties());
+    }
+
+    public ConfigPropertiesPlugin(ILogger logger, HazelcastProperties properties) {
+        this.logger = logger;
+        this.properties = properties.getProperties();
     }
 
     @Override
@@ -51,17 +57,14 @@ public class ConfigPropertiesPlugin extends PerformanceMonitorPlugin {
 
     @Override
     public void run(PerformanceLogWriter writer) {
-        Config config = nodeEngine.getConfig();
-        Properties properties = config.getProperties();
-
-        List keys = new LinkedList();
-        keys.addAll(properties.keySet());
-        sort(keys);
+        keyList.clear();
+        keyList.addAll(properties.keySet());
+        sort(keyList);
 
         writer.startSection("ConfigProperties");
-        for (Object key : keys) {
+        for (Object key : keyList) {
             String keyString = (String) key;
-            String value = properties.getProperty(keyString);
+            String value = (String) properties.get(keyString);
             writer.writeKeyValueEntry(keyString, value);
         }
         writer.endSection();

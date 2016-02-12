@@ -38,7 +38,11 @@ public class SystemPropertiesPlugin extends PerformanceMonitorPlugin {
     private String inputArgs;
 
     public SystemPropertiesPlugin(NodeEngineImpl nodeEngine) {
-        this.logger = nodeEngine.getLogger(SystemPropertiesPlugin.class);
+        this(nodeEngine.getLogger(SystemPropertiesPlugin.class));
+    }
+
+    public SystemPropertiesPlugin(ILogger logger) {
+        this.logger = logger;
     }
 
     @Override
