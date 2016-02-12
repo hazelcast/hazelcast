@@ -1248,9 +1248,51 @@ https://hazelcast.org/documentation/.
         <async-backup-count>0</async-backup-count>
         <in-memory-format>BINARY</in-memory-format>
     </ringbuffer>
-
+<!--
+    Configuration used to register the listeners that you created by implementing Hazelcast's
+    MembershipListener, DistributedObjectListener, MigrationListener and PartitionLostListener interfaces.
+-->
+    <listeners>
+        <listener>your-package.YourMembershipListener</listener>
+        <listener>your-package.YourDistributedObjectListener</listener>
+        <listener>your-package.YourMigrationListener</listener>
+        <listener>your-package.YourPartitionLostListener</listener>
+    </listeners>
+<!--
+    ===== HAZELCAST SERIALIZATION CONFIGURATION =====
+    
+    Configuration element's name is <serialization>.
+    It has the following sub-elements:
+    * <portable-version>:
+    	Version of the portable serialization. Portable version is used to differentiate two
+	same classes that have changes such as a new field or a new field type.
+    * <use-native-byte-order>:
+    * <byte-order>:
+    * <enable-compression>:
+    * <enable-shared-object>:
+    * <allow-unsafe>:
+    * <data-serializable-factories>:
+    * <portable-factories>:
+    * <serializers>:
+    * <check-class-def-errors>:
+-->
     <serialization>
         <portable-version>0</portable-version>
+        <use-native-byte-order>false</use-native-byte-order>
+        <byte-order>BIG_ENDIAN</byte-order>
+        <data-serializable-factories>
+            <data-serializable-factory factory-id="1">com.hazelcast.examples.DataSerializableFactory
+            </data-serializable-factory>
+        </data-serializable-factories>
+        <portable-factories>
+            <portable-factory factory-id="1">com.hazelcast.examples.PortableFactory</portable-factory>
+        </portable-factories>
+        <serializers>
+            <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
+            <serializer type-class="com.hazelcast.examples.DummyType"
+                        class-name="com.hazelcast.examples.SerializerFactory"/>
+        </serializers>
+        <check-class-def-errors>true</check-class-def-errors>
     </serialization>
 
     <services enable-defaults="true"/>
