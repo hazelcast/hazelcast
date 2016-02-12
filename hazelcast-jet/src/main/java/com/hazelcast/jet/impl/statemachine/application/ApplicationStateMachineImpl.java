@@ -87,14 +87,6 @@ public class ApplicationStateMachineImpl extends AbstractStateMachineImpl<Applic
                             )
                     ).
                     put(
-                            ApplicationState.INTERRUPTION_SUCCESS, LinkedMapBuilder.of(
-                                    ApplicationEvent.EXECUTION_START, ApplicationState.EXECUTION_IN_PROGRESS,
-                                    ApplicationEvent.EXECUTION_FAILURE, ApplicationState.INTERRUPTION_SUCCESS,
-                                    ApplicationEvent.FINALIZATION_START, ApplicationState.FINALIZATION_IN_PROGRESS,
-                                    ApplicationEvent.FINALIZATION_SUCCESS, ApplicationState.NEW
-                            )
-                    ).
-                    put(
                             ApplicationState.SUBMIT_FAILURE, LinkedMapBuilder.of(
                                     ApplicationEvent.FINALIZATION_START, ApplicationState.FINALIZATION_IN_PROGRESS,
                                     ApplicationEvent.FINALIZATION_SUCCESS, ApplicationState.NEW
@@ -113,6 +105,14 @@ public class ApplicationStateMachineImpl extends AbstractStateMachineImpl<Applic
                             ApplicationState.INTERRUPTION_IN_PROGRESS, LinkedMapBuilder.of(
                                     ApplicationEvent.EXECUTION_FAILURE, ApplicationState.INTERRUPTION_IN_PROGRESS,
                                     ApplicationEvent.INTERRUPTION_SUCCESS, ApplicationState.INTERRUPTION_SUCCESS
+                            )
+                    ).
+                    put(
+                            ApplicationState.INTERRUPTION_SUCCESS, LinkedMapBuilder.of(
+                                    ApplicationEvent.EXECUTION_START, ApplicationState.EXECUTION_IN_PROGRESS,
+                                    ApplicationEvent.EXECUTION_FAILURE, ApplicationState.INTERRUPTION_SUCCESS,
+                                    ApplicationEvent.FINALIZATION_START, ApplicationState.FINALIZATION_IN_PROGRESS,
+                                    ApplicationEvent.FINALIZATION_SUCCESS, ApplicationState.NEW
                             )
                     ).
                     put(
