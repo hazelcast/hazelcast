@@ -15,8 +15,6 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 
-import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_INVOCATION_SAMPLE_PERIOD_SECONDS;
-import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_INVOCATION_SLOW_THRESHOLD_SECONDS;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -29,8 +27,8 @@ public class InvocationPluginTest extends AbstractPerformanceMonitorPluginTest {
     @Before
     public void setup() {
         Config config = new Config();
-        config.setProperty(PERFORMANCE_MONITOR_INVOCATION_SAMPLE_PERIOD_SECONDS.getName(), "1");
-        config.setProperty(PERFORMANCE_MONITOR_INVOCATION_SLOW_THRESHOLD_SECONDS.getName(), "5");
+        config.setProperty(InvocationPlugin.SAMPLE_PERIOD_SECONDS.getName(), "1");
+        config.setProperty(InvocationPlugin.SLOW_THRESHOLD_SECONDS.getName(), "5");
 
         hz = createHazelcastInstance(config);
 

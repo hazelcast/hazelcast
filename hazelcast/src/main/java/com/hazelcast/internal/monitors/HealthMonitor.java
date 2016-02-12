@@ -120,7 +120,7 @@ public class HealthMonitor {
                     node.getHazelcastThreadGroup().getThreadNamePrefix("HealthMonitor"));
             setDaemon(true);
             this.delaySeconds = delaySeconds;
-            this.performanceLogHint = node.getGroupProperties().getBoolean(GroupProperty.PERFORMANCE_MONITOR_ENABLED);
+            this.performanceLogHint = node.getGroupProperties().getBoolean(PerformanceMonitor.ENABLED);
         }
 
         @Override
@@ -167,7 +167,7 @@ public class HealthMonitor {
 
             logger.info(String.format("The HealthMonitor has detected a high load on the system. For more detailed information,%s"
                             + "enable the PerformanceMonitor by adding the property -D%s=true",
-                    LINE_SEPARATOR, GroupProperty.PERFORMANCE_MONITOR_ENABLED));
+                    LINE_SEPARATOR, PerformanceMonitor.ENABLED));
         }
     }
 

@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.properties.HazelcastProperties;
+import com.hazelcast.internal.properties.HazelcastProperty;
 import com.hazelcast.logging.ILogger;
 
 import java.util.concurrent.ScheduledExecutorService;
@@ -27,8 +27,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.monitors.PerformanceMonitorPlugin.DISABLED;
-import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
-import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.System.arraycopy;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -38,25 +36,71 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * The actual logic to provide such insights, is placed in the {@link PerformanceMonitorPlugin}.
  */
 public class PerformanceMonitor {
+    /**
+     * Use the performance monitor to see internal performance metrics. Currently this is quite
+     * limited since it will only show read/write events per selector and operations executed per operation-thread. But in
+     * the future, all kinds of new metrics will be added.
+     * <p/>
+     * The performance monitor logs all metrics into the log file.
+     * <p/>
+     * For more detailed information, please check the PERFORMANCE_METRICS_LEVEL.
+     * <p/>
+     * The default is false.
+     */
+    public static final HazelcastProperty ENABLED
+            = new HazelcastProperty("hazelcast.performance.monitoring.enabled", false);
+
+    /**
+     * The PerformanceMonitor uses a rolling file approach to prevent eating too much disk space.
+     * <p/>
+     * This property sets the maximum size in MB for a single file.
+     * <p/>
+     * Every HazelcastInstance will get its own history of log files.
+     * <p/>
+     * The default is 10.
+     */
+    public static final HazelcastProperty MAX_ROLLED_FILE_SIZE_MB
+            = new HazelcastProperty("hazelcast.performance.monitor.max.rolled.file.size.mb", 10);
+
+    /**
+     * The PerformanceMonitor uses a rolling file approach to prevent eating too much disk space.
+     * <p/>
+     * This property sets the maximum number of rolling files to keep on disk.
+     * <p/>
+     * The default is 10.
+     */
+    public static final HazelcastProperty MAX_ROLLED_FILE_COUNT
+            = new HazelcastProperty("hazelcast.performance.monitor.max.rolled.file.count", 10);
+
+    /**
+     * If a human friendly, but more difficult to parse, output format should be selected for dumping the metrics.
+     * <p/>
+     * The default is true.
+     */
+    public static final HazelcastProperty HUMAN_FRIENDLY_FORMAT
+            = new HazelcastProperty("hazelcast.performance.monitor.human.friendly.format", true);
 
     final boolean singleLine;
-    final HazelcastInstance hazelcastInstance;
-    final HazelcastProperties properties;
+    final com.hazelcast.internal.properties.HazelcastProperties properties;
     PerformanceLog performanceLog;
     final AtomicReference<PerformanceMonitorPlugin[]> staticTasks = new AtomicReference<PerformanceMonitorPlugin[]>(
             new PerformanceMonitorPlugin[0]
     );
 
     final ILogger logger;
+    final String fileName;
+
     private final boolean enabled;
     private ScheduledExecutorService scheduler;
     private final HazelcastThreadGroup hzThreadGroup;
 
-    public PerformanceMonitor(HazelcastInstance hazelcastInstance,
-                              ILogger logger,
-                              HazelcastThreadGroup hzThreadGroup,
-                              HazelcastProperties properties) {
-        this.hazelcastInstance = hazelcastInstance;
+
+    public PerformanceMonitor(
+            String fileName,
+            ILogger logger,
+            HazelcastThreadGroup hzThreadGroup,
+            HazelcastProperties properties) {
+        this.fileName = fileName;
         this.hzThreadGroup = hzThreadGroup;
         this.logger = logger;
         this.properties = properties;
@@ -64,20 +108,20 @@ public class PerformanceMonitor {
         if (enabled) {
             logger.info("PerformanceMonitor is enabled");
         }
-        this.singleLine = !properties.getBoolean(PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT);
+        this.singleLine = !properties.getBoolean(HUMAN_FRIENDLY_FORMAT);
     }
 
     private boolean isEnabled(HazelcastProperties properties) {
-        String s = properties.getString(PERFORMANCE_MONITOR_ENABLED);
+        String s = properties.getString(ENABLED);
         if (s != null) {
-            return properties.getBoolean(PERFORMANCE_MONITOR_ENABLED);
+            return properties.getBoolean(ENABLED);
         }
 
         // check for the old property name.
         s = properties.get("hazelcast.performance.monitoring.enabled");
         if (s != null) {
             logger.warning("Don't use deprecated 'hazelcast.performance.monitoring.enabled' "
-                    + "but use '" + PERFORMANCE_MONITOR_ENABLED.getName() + "' instead. "
+                    + "but use '" + ENABLED.getName() + "' instead. "
                     + "The former name will be removed in Hazelcast 3.8.");
         }
         return Boolean.parseBoolean(s);

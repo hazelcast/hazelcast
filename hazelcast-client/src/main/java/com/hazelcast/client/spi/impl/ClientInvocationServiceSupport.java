@@ -28,6 +28,8 @@ import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
@@ -58,6 +60,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     protected ClientListenerServiceImpl clientListenerService;
     protected final ILogger invocationLogger;
     private ResponseThread responseThread;
+
+    @Probe(name = "pendingCalls", level = ProbeLevel.MANDATORY)
     private ConcurrentMap<Long, ClientInvocation> callIdMap
             = new ConcurrentHashMap<Long, ClientInvocation>();
 
@@ -70,6 +74,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         int maxAllowedConcurrentInvocations = client.getClientProperties().getInteger(MAX_CONCURRENT_INVOCATIONS);
         callIdSequence = new CallIdSequence.CallIdSequenceFailFast(maxAllowedConcurrentInvocations);
         invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
+
+        client.getMetricsRegistry().scanAndRegister(this, "invocations");
     }
 
     @Override

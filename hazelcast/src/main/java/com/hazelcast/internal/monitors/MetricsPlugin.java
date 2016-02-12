@@ -19,15 +19,28 @@ package com.hazelcast.internal.monitors;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.internal.properties.HazelcastProperties;
+import com.hazelcast.internal.properties.HazelcastProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A {@link PerformanceMonitorPlugin} that displays the content of the {@link MetricsRegistry}.
  */
 public class MetricsPlugin extends PerformanceMonitorPlugin {
+    /**
+     * The period in seconds the PerformanceMonitor MetricsPlugin runs.
+     *
+     * The MetricsPlugin does nothing more than frequently writing the content of the MetricsRegistry
+     * to the logfile. For debugging purposes make sure the {@link #PERFORMANCE_METRICS_LEVEL} is set to debug.
+     *
+     * This plugin is very cheap to use.
+     *
+     * If set to 0, the plugin is disabled.
+     */
+    public static final HazelcastProperty PERIOD_SECONDS
+            = new HazelcastProperty("hazelcast.performance.monitor.metrics.period.seconds", 60, SECONDS);
 
     private final MetricsRegistry metricsRegistry;
     private final long periodMillis;
@@ -35,13 +48,13 @@ public class MetricsPlugin extends PerformanceMonitorPlugin {
     private final ProbeRendererImpl probeRenderer = new ProbeRendererImpl();
 
     public MetricsPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getMetricsRegistry(), nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getNode().groupProperties);
+        this(nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getMetricsRegistry(), nodeEngine.getNode().groupProperties);
     }
 
-    public MetricsPlugin(MetricsRegistry metricsRegistry, ILogger logger, HazelcastProperties properties) {
+    public MetricsPlugin(ILogger logger, MetricsRegistry metricsRegistry, HazelcastProperties properties) {
         this.metricsRegistry = metricsRegistry;
         this.logger = logger;
-        this.periodMillis = properties.getMillis(PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS);
+        this.periodMillis = properties.getMillis(PERIOD_SECONDS);
     }
 
     @Override

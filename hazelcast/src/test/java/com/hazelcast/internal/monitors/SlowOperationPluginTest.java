@@ -15,10 +15,10 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 
-import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_SLOW_OPERATIONS_PERIOD_SECONDS;
 import static com.hazelcast.internal.properties.GroupProperty.SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS;
 import static com.hazelcast.internal.properties.GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED;
 import static com.hazelcast.internal.properties.GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
+
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -34,7 +34,8 @@ public class SlowOperationPluginTest extends AbstractPerformanceMonitorPluginTes
         config.setProperty(SLOW_OPERATION_DETECTOR_ENABLED.getName(), "true");
         config.setProperty(SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS.getName(), "1000");
         config.setProperty(SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS.getName(), "1000");
-        config.setProperty(PERFORMANCE_MONITOR_SLOW_OPERATIONS_PERIOD_SECONDS.getName(), "1");
+        config.setProperty(SlowOperationPlugin.PERIOD_SECONDS.getName(), "1");
+
 
         hz = createHazelcastInstance(config);
 

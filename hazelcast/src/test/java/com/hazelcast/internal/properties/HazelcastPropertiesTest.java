@@ -135,7 +135,9 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void getBoolean() {
-        boolean isHumanReadable = defaultGroupProperties.getBoolean(GroupProperty.PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT);
+        HazelcastProperty property = new HazelcastProperty("foo","true");
+
+        boolean isHumanReadable = defaultGroupProperties.getBoolean(property);
 
         assertTrue(isHumanReadable);
     }
@@ -156,7 +158,9 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void getFloat() {
-        float maxFileSize = defaultGroupProperties.getFloat(GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB);
+        HazelcastProperty property = new HazelcastProperty("foo","10");
+
+        float maxFileSize = defaultGroupProperties.getFloat(property);
 
         assertEquals(10, maxFileSize, 0.0001);
     }

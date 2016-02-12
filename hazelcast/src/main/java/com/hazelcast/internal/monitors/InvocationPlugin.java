@@ -17,7 +17,7 @@
 package com.hazelcast.internal.monitors;
 
 import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.GroupProperty;
+import com.hazelcast.internal.properties.HazelcastProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -27,8 +27,7 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ItemCounter;
 
-import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_INVOCATION_SAMPLE_PERIOD_SECONDS;
-import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_INVOCATION_SLOW_THRESHOLD_SECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A {@link PerformanceMonitorPlugin} that displays all invocations that have been executing for some time.
@@ -36,11 +35,27 @@ import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITO
  * It will display the current invocations.
  *
  * But it will also display the history. E.g. if a entry processor has been running for 5 minutes and
- * the {@link GroupProperty#PERFORMANCE_MONITOR_INVOCATION_SAMPLE_PERIOD_SECONDS} is set to
- * 1 minute, then there will be 5 samples for that given invocation. This is useful to track which operations have
- * been slow over a longer period of time.
+ * the {@link #SAMPLE_PERIOD_SECONDS is set to 1 minute, then there will be 5 samples for that given invocation.
+ * This is useful to track which operations have been slow over a longer period of time.
  */
 public class InvocationPlugin extends PerformanceMonitorPlugin {
+
+    /**
+     * The sample period in seconds for the {@link InvocationPlugin}.
+     *
+     * If set to 0, the plugin is disabled.
+     */
+    public static final HazelcastProperty SAMPLE_PERIOD_SECONDS
+            = new HazelcastProperty("hazelcast.performance.monitor.invocation.sample.period.seconds", 0, SECONDS);
+
+    /**
+     * The threshold in seconds for the {@link InvocationPlugin} to consider an invocation to be slow.
+     */
+    public static final HazelcastProperty SLOW_THRESHOLD_SECONDS
+            = new HazelcastProperty("hazelcast.performance.monitor.invocation.slow.threshold.seconds", 5, SECONDS);
+
+
+
     private final InvocationRegistry invocationRegistry;
     private final long samplePeriodMillis;
     private final long thresholdMillis;
@@ -53,8 +68,8 @@ public class InvocationPlugin extends PerformanceMonitorPlugin {
         this.invocationRegistry = ((OperationServiceImpl) operationService).getInvocationRegistry();
         this.logger = nodeEngine.getLogger(PendingInvocationsPlugin.class);
         GroupProperties props = nodeEngine.getGroupProperties();
-        this.samplePeriodMillis = props.getMillis(PERFORMANCE_MONITOR_INVOCATION_SAMPLE_PERIOD_SECONDS);
-        this.thresholdMillis = props.getMillis(PERFORMANCE_MONITOR_INVOCATION_SLOW_THRESHOLD_SECONDS);
+        this.samplePeriodMillis = props.getMillis(SAMPLE_PERIOD_SECONDS);
+        this.thresholdMillis = props.getMillis(SLOW_THRESHOLD_SECONDS);
     }
 
     @Override
