@@ -31,7 +31,6 @@ import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -42,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
-public class ClientConnection implements Connection, Closeable {
+public class ClientConnection implements Connection {
 
     protected final int connectionId;
     private final AtomicBoolean live = new AtomicBoolean(true);
