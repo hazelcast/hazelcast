@@ -16,52 +16,41 @@
 
 package com.hazelcast.jet.impl.container.task.nio;
 
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
+import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.container.ContainerTask;
+import com.hazelcast.jet.api.container.ProcessingContainer;
+import com.hazelcast.jet.api.container.applicationmaster.ApplicationMaster;
+import com.hazelcast.jet.api.data.io.SocketReader;
+import com.hazelcast.jet.api.data.io.SocketWriter;
+import com.hazelcast.jet.api.executor.Payload;
+import com.hazelcast.jet.impl.actor.RingBufferActor;
+import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
+import com.hazelcast.jet.impl.hazelcast.JetPacket;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.api.executor.Payload;
-import com.hazelcast.jet.api.data.io.SocketWriter;
-import com.hazelcast.jet.api.data.io.SocketReader;
-import com.hazelcast.jet.impl.hazelcast.JetPacket;
-import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.api.container.ContainerTask;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.api.container.ProcessingContainer;
-import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
-import com.hazelcast.jet.api.application.ApplicationContext;
-import com.hazelcast.jet.api.container.applicationmaster.ApplicationMaster;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DefaultSocketReader
         extends AbstractNetworkTask implements SocketReader {
-    protected volatile ByteBuffer receiveBuffer;
-
-    private JetPacket packet;
-
     private final int chunkSize;
-
     private final Address jetAddress;
-
-    private volatile boolean socketAssigned;
-
     private final ApplicationContext applicationContext;
-
     private final DefaultObjectIOStream<JetPacket> buffer;
-
     private final List<RingBufferActor> consumers = new ArrayList<RingBufferActor>();
-
     private final Map<Address, SocketWriter> writers = new HashMap<Address, SocketWriter>();
-
+    protected volatile ByteBuffer receiveBuffer;
     protected boolean isBufferActive;
+    private JetPacket packet;
+    private volatile boolean socketAssigned;
 
 
     public DefaultSocketReader(ApplicationContext applicationContext,
@@ -326,10 +315,10 @@ public class DefaultSocketReader
 
         if (processingContainer == null) {
             this.logger.warning("No such container with containerId="
-                            + packet.getContainerId()
-                            + " jetPacket="
-                            + packet
-                            + ". Application will be interrupted."
+                    + packet.getContainerId()
+                    + " jetPacket="
+                    + packet
+                    + ". Application will be interrupted."
             );
 
             return JetPacket.HEADER_JET_DATA_NO_CONTAINER_FAILURE;
@@ -339,12 +328,12 @@ public class DefaultSocketReader
 
         if (containerTask == null) {
             this.logger.warning("No such task in container with containerId="
-                            + packet.getContainerId()
-                            + " taskId="
-                            + packet.getTaskID()
-                            + " jetPacket="
-                            + packet
-                            + ". Application will be interrupted."
+                    + packet.getContainerId()
+                    + " taskId="
+                    + packet.getTaskID()
+                    + " jetPacket="
+                    + packet
+                    + ". Application will be interrupted."
             );
 
             return JetPacket.HEADER_JET_DATA_NO_TASK_FAILURE;

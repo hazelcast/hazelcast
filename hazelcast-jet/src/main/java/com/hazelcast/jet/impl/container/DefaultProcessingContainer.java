@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.container;
 
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
 import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
+import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.spi.NodeEngine;
 
 public class DefaultProcessingContainer extends AbstractProcessingContainer {
     public DefaultProcessingContainer(Vertex vertex,

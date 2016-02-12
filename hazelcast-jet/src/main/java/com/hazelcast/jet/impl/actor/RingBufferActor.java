@@ -16,41 +16,33 @@
 
 package com.hazelcast.jet.impl.actor;
 
-import java.util.List;
-import java.util.Arrays;
-
-
+import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.jet.api.actor.ObjectActor;
+import com.hazelcast.jet.api.actor.ProducerCompletionHandler;
+import com.hazelcast.jet.api.actor.RingBuffer;
+import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.container.ContainerTask;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.jet.impl.actor.ringbuffer.RingBufferWithReferenceStrategy;
+import com.hazelcast.jet.impl.actor.ringbuffer.RingBufferWithValueStrategy;
+import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
+import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.jet.spi.application.ApplicationListener;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.jet.spi.dag.Edge;
 import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.api.actor.RingBuffer;
-import com.hazelcast.jet.api.actor.ObjectActor;
-import com.hazelcast.core.PartitioningStrategy;
-
-import java.util.concurrent.CopyOnWriteArrayList;
-
-
-import com.hazelcast.jet.api.container.ContainerTask;
+import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
 import com.hazelcast.jet.spi.strategy.HashingStrategy;
 import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.api.application.ApplicationContext;
-import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
-import com.hazelcast.jet.spi.application.ApplicationListener;
-import com.hazelcast.jet.api.actor.ProducerCompletionHandler;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
-import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.jet.impl.actor.ringbuffer.RingBufferWithValueStrategy;
-import com.hazelcast.jet.impl.actor.ringbuffer.RingBufferWithReferenceStrategy;
+import com.hazelcast.spi.NodeEngine;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class RingBufferActor implements ObjectActor {
-    private int producedCount;
-    private int lastConsumedCount;
-    private int currentFlushedCount;
-
     private final Edge edge;
     private final Vertex vertex;
     private final ContainerTask sourceTask;
@@ -58,7 +50,9 @@ public class RingBufferActor implements ObjectActor {
     private final RingBuffer<Object> ringBuffer;
     private final DefaultObjectIOStream<Object> flushBuffer;
     private final List<ProducerCompletionHandler> completionHandlers;
-
+    private int producedCount;
+    private int lastConsumedCount;
+    private int currentFlushedCount;
     private volatile boolean isClosed;
 
     public RingBufferActor(NodeEngine nodeEngine,

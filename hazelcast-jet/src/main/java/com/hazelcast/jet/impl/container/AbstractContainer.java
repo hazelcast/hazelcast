@@ -16,24 +16,24 @@
 
 package com.hazelcast.jet.impl.container;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.concurrent.Future;
-
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.container.Container;
-import com.hazelcast.jet.api.container.ProcessingContainer;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
 import com.hazelcast.jet.api.container.ContainerContext;
 import com.hazelcast.jet.api.container.ContainerResponse;
-import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.container.ProcessingContainer;
 import com.hazelcast.jet.api.statemachine.ContainerStateMachine;
-import com.hazelcast.jet.api.statemachine.container.ContainerState;
 import com.hazelcast.jet.api.statemachine.container.ContainerEvent;
 import com.hazelcast.jet.api.statemachine.container.ContainerRequest;
-import com.hazelcast.jet.impl.processor.context.DefaultContainerContext;
+import com.hazelcast.jet.api.statemachine.container.ContainerState;
 import com.hazelcast.jet.api.statemachine.container.ContainerStateMachineFactory;
+import com.hazelcast.jet.impl.processor.context.DefaultContainerContext;
+import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.spi.NodeEngine;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Future;
 
 public abstract class AbstractContainer
         <SI extends ContainerEvent,

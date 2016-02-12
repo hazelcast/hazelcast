@@ -16,21 +16,19 @@
 
 package com.hazelcast.jet.processors;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Iterator;
-
+import com.hazelcast.jet.api.container.ProcessorContext;
+import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
+import com.hazelcast.jet.impl.data.tuple.Tuple2;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.data.tuple.Tuple;
-import com.hazelcast.jet.impl.data.tuple.Tuple2;
-
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.hazelcast.jet.api.container.ProcessorContext;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.spi.processor.ContainerProcessor;
-import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class WordCounterProcessor implements ContainerProcessor<String, Tuple<String, Integer>> {
 

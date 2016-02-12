@@ -17,10 +17,10 @@
 package com.hazelcast.jet.spi.dag;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.spi.strategy.HashingStrategy;
-import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
-import com.hazelcast.jet.spi.strategy.ProcessingStrategy;
 import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
+import com.hazelcast.jet.spi.strategy.HashingStrategy;
+import com.hazelcast.jet.spi.strategy.ProcessingStrategy;
+import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
 
 /**
  * Represents abstract edge of DAG;

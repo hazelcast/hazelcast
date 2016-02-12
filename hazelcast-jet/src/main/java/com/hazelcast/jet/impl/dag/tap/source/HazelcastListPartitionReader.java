@@ -16,30 +16,31 @@
 
 package com.hazelcast.jet.impl.dag.tap.source;
 
+import com.hazelcast.collection.impl.collection.CollectionItem;
+import com.hazelcast.collection.impl.list.ListContainer;
+import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
+import com.hazelcast.jet.impl.data.tuple.TupleIterator;
+import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
+import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.spi.container.ContainerDescriptor;
+import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.data.tuple.TupleConvertor;
+import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.strategy.CalculationStrategy;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+
 import java.util.List;
 
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
-import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
-import com.hazelcast.collection.impl.list.ListService;
-import com.hazelcast.jet.spi.data.tuple.TupleConvertor;
-import com.hazelcast.jet.impl.data.tuple.TupleIterator;
-import com.hazelcast.collection.impl.list.ListContainer;
-import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.jet.spi.strategy.CalculationStrategy;
-import com.hazelcast.jet.spi.container.ContainerDescriptor;
-import com.hazelcast.collection.impl.collection.CollectionItem;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
-import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
-
 public class HazelcastListPartitionReader<K, V> extends AbstractHazelcastReader<Tuple<K, V>> {
+    private final CalculationStrategy calculationStrategy;
     private final TupleConvertor<CollectionItem, K, V> tupleConverter = new TupleConvertor<CollectionItem, K, V>() {
         @Override
         public Tuple<K, V> convert(CollectionItem item, SerializationService ss) {
@@ -51,8 +52,6 @@ public class HazelcastListPartitionReader<K, V> extends AbstractHazelcastReader<
             );
         }
     };
-
-    private final CalculationStrategy calculationStrategy;
 
     public HazelcastListPartitionReader(ContainerDescriptor containerDescriptor,
                                         String name,

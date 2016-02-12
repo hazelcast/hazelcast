@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.api.statemachine;
 
+import com.hazelcast.jet.api.container.ContainerResponse;
 import com.hazelcast.jet.api.statemachine.container.ContainerEvent;
 import com.hazelcast.jet.api.statemachine.container.ContainerState;
-import com.hazelcast.jet.api.container.ContainerResponse;
 
 /**
  * Represents abstract container state-machine;

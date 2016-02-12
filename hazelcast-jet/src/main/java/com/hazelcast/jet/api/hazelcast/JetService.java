@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.api.hazelcast;
 
-import com.hazelcast.spi.RemoteService;
 import com.hazelcast.jet.api.JetApplicationManager;
+import com.hazelcast.spi.RemoteService;
 
 public interface JetService extends RemoteService {
     String SERVICE_NAME = "hz:impl:jetService";

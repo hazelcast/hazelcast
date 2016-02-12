@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.util;
 
-import java.util.Map;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * This class provides builder pattern to create LinkedHashMap
@@ -34,15 +34,6 @@ public final class LinkedMapBuilder<K, V> {
 
     public static <K, V> LinkedMapBuilder<K, V> builder() {
         return new LinkedMapBuilder<K, V>();
-    }
-
-    public LinkedMapBuilder<K, V> put(K key, V value) {
-        map.put(key, value);
-        return this;
-    }
-
-    public Map<K, V> build() {
-        return map;
     }
 
     public static <K, V> Map<K, V> of(K key, V value) {
@@ -71,7 +62,6 @@ public final class LinkedMapBuilder<K, V> {
                 put(key5, value5).
                 build();
     }
-    //CHECKSTYLE:ON
 
     //CHECKSTYLE:OFF
     public static <K, V> Map<K, V> of(K key1, V value1, K key2, V value2, K key3, V value3, K key4, V value4, K key5, V value5, K key6, V value6) {
@@ -83,6 +73,16 @@ public final class LinkedMapBuilder<K, V> {
                 put(key5, value5).
                 put(key6, value6).
                 build();
+    }
+
+    public LinkedMapBuilder<K, V> put(K key, V value) {
+        map.put(key, value);
+        return this;
+    }
+    //CHECKSTYLE:ON
+
+    public Map<K, V> build() {
+        return map;
     }
     //CHECKSTYLE:ON
 }

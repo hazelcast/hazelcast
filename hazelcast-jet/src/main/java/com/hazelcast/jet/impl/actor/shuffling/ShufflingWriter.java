@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.actor.shuffling;
 
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.jet.spi.data.DataWriter;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
-import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
+import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
+import com.hazelcast.jet.spi.data.DataWriter;
+import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
+import com.hazelcast.spi.NodeEngine;
 
 public class ShufflingWriter extends ShufflingConsumer implements DataWriter {
     private final DataWriter dataWriter;

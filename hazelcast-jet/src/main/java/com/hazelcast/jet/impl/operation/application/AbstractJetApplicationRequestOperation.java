@@ -16,17 +16,17 @@
 
 package com.hazelcast.jet.impl.operation.application;
 
-import java.io.IOException;
-
+import com.hazelcast.jet.api.JetApplicationManager;
+import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.hazelcast.JetService;
+import com.hazelcast.jet.spi.JetException;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.jet.spi.JetException;
-import com.hazelcast.jet.api.hazelcast.JetService;
-import com.hazelcast.jet.api.JetApplicationManager;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.api.application.ApplicationContext;
+
+import java.io.IOException;
 
 public abstract class AbstractJetApplicationRequestOperation extends AbstractOperation {
     protected String name;

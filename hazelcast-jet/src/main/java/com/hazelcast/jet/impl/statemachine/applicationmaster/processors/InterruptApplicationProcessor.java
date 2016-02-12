@@ -17,13 +17,12 @@
 package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
 
 import com.hazelcast.jet.api.Dummy;
-
-import java.util.concurrent.TimeUnit;
-
-import com.hazelcast.jet.api.container.ProcessingContainer;
 import com.hazelcast.jet.api.container.ContainerPayLoadProcessor;
+import com.hazelcast.jet.api.container.ProcessingContainer;
 import com.hazelcast.jet.api.container.applicationmaster.ApplicationMaster;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerInterruptRequest;
+
+import java.util.concurrent.TimeUnit;
 
 public class InterruptApplicationProcessor implements ContainerPayLoadProcessor<Dummy> {
     private final int secondToAwait;

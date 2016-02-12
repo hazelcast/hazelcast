@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.impl.application.localization.classloader;
 
-import java.net.URL;
-import java.util.List;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-
 import com.hazelcast.jet.api.application.localization.LocalizationStorage;
 import com.hazelcast.jet.impl.util.JetUtil;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ApplicationClassLoader extends ClassLoader {
     protected final List<ProxyClassLoader> loaders = new ArrayList<ProxyClassLoader>();

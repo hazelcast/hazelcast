@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.spi.processor;
 
+import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
+import com.hazelcast.jet.impl.processor.descriptor.DefaultProcessorDescriptor;
+
 import java.io.Serializable;
 
 import static com.hazelcast.util.Preconditions.checkFalse;
-
-import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.impl.processor.descriptor.DefaultProcessorDescriptor;
 
 /**
  * Descriptor with vertex properties;
@@ -33,23 +33,6 @@ public abstract class ProcessorDescriptor implements Serializable {
     public static ProcessorDescriptor create(Class<? extends ContainerProcessorFactory> clazz, Object... args) {
         return new DefaultProcessorDescriptor(clazz, args);
     }
-
-    /**
-     * @return - task count in the corresponding vertex-container;
-     */
-    public int getTaskCount() {
-        return this.taskCount;
-    }
-
-    /**
-     * @return - arguments which will be passed to construct ContainerProcessor by the corresponding factory;
-     */
-    public abstract Object[] getFactoryArgs();
-
-    /**
-     * @return - class of the corresponding factory to construct ContainerProcessor;
-     */
-    public abstract String getContainerProcessorFactoryClazz();
 
     /**
      * Creates builder to construct instance of ProcessorDescriptor;
@@ -70,6 +53,23 @@ public abstract class ProcessorDescriptor implements Serializable {
     public static Builder builder(Class<? extends ContainerProcessorFactory> clazz, Object... args) {
         return new Builder(clazz, args);
     }
+
+    /**
+     * @return - task count in the corresponding vertex-container;
+     */
+    public int getTaskCount() {
+        return this.taskCount;
+    }
+
+    /**
+     * @return - arguments which will be passed to construct ContainerProcessor by the corresponding factory;
+     */
+    public abstract Object[] getFactoryArgs();
+
+    /**
+     * @return - class of the corresponding factory to construct ContainerProcessor;
+     */
+    public abstract String getContainerProcessorFactoryClazz();
 
     /**
      * Builder class to construct ProcessorDescriptor instances;

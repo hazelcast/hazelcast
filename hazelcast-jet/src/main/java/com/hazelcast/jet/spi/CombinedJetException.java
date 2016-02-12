@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.spi;
 
-import java.util.List;
 import java.io.PrintStream;
+import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 

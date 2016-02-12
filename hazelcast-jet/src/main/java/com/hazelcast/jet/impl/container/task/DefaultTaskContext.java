@@ -16,20 +16,19 @@
 
 package com.hazelcast.jet.impl.container.task;
 
-import java.io.Serializable;
-
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.application.IOContext;
+import com.hazelcast.jet.impl.application.IOContextImpl;
 import com.hazelcast.jet.spi.container.CounterKey;
 import com.hazelcast.jet.spi.counters.Accumulator;
 import com.hazelcast.jet.spi.data.io.DataType;
 import com.hazelcast.jet.spi.data.io.ObjectReaderFactory;
 import com.hazelcast.jet.spi.data.io.ObjectWriterFactory;
 import com.hazelcast.jet.spi.executor.TaskContext;
-import com.hazelcast.jet.api.application.ApplicationContext;
-import com.hazelcast.jet.impl.application.IOContextImpl;
+
+import java.io.Serializable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class DefaultTaskContext implements TaskContext {
     private final int taskCount;

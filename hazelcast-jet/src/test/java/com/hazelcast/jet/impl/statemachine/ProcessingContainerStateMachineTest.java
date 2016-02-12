@@ -22,12 +22,13 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

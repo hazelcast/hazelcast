@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.api.statemachine.container.processingcontainer;
 
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.jet.api.application.ApplicationContext;
-import com.hazelcast.jet.api.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.api.statemachine.ProcessingContainerStateMachine;
+import com.hazelcast.jet.api.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.api.statemachine.container.ContainerStateMachineFactory;
+import com.hazelcast.spi.NodeEngine;
 
 public interface ProcessingContainerStateMachineFactory extends
         ContainerStateMachineFactory<ProcessingContainerEvent, ProcessingContainerState, ProcessingContainerResponse> {

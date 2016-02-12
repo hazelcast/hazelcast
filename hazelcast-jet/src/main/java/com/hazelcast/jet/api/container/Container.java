@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.api.container;
 
-import java.util.List;
-
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.jet.api.statemachine.StateMachine;
 import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.statemachine.StateMachine;
 import com.hazelcast.jet.api.statemachine.container.ContainerEvent;
 import com.hazelcast.jet.api.statemachine.container.ContainerState;
+import com.hazelcast.spi.NodeEngine;
+
+import java.util.List;
 
 /**
  * Interface which represents abstract JET-container;

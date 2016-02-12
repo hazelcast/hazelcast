@@ -16,19 +16,19 @@
 
 package com.hazelcast.client.impl.protocol.task.jet;
 
-import java.security.Permission;
-
-import com.hazelcast.spi.Operation;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.JetGetAccumulatorsCodec;
+import com.hazelcast.client.impl.protocol.permission.JetPermission;
+import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.instance.Node;
+import com.hazelcast.jet.api.hazelcast.JetService;
+import com.hazelcast.jet.impl.operation.application.GetAccumulatorsOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.jet.api.hazelcast.JetService;
-import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.client.impl.protocol.permission.JetPermission;
-import com.hazelcast.client.impl.protocol.codec.JetGetAccumulatorsCodec;
-import com.hazelcast.jet.impl.operation.application.GetAccumulatorsOperation;
+import com.hazelcast.spi.Operation;
+
+import java.security.Permission;
 
 
 public class JetGetAccumulatorsMessageTask extends AbstractMessageTask<JetGetAccumulatorsCodec.RequestParameters> {

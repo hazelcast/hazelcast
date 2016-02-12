@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.api.actor;
 
-import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.api.data.CompletionAwareProducer;
+import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
 
 /**

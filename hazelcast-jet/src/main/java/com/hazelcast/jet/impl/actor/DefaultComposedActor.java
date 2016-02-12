@@ -16,22 +16,22 @@
 
 package com.hazelcast.jet.impl.actor;
 
-import java.util.List;
-
-import com.hazelcast.jet.spi.dag.Edge;
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.api.actor.ObjectActor;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.api.actor.ComposedActor;
-import com.hazelcast.jet.api.container.ContainerTask;
-import com.hazelcast.jet.spi.strategy.HashingStrategy;
-import com.hazelcast.jet.api.container.ContainerContext;
-import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
-import com.hazelcast.jet.spi.strategy.ProcessingStrategy;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.jet.api.actor.ObjectActor;
 import com.hazelcast.jet.api.actor.ProducerCompletionHandler;
+import com.hazelcast.jet.api.container.ContainerContext;
+import com.hazelcast.jet.api.container.ContainerTask;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.jet.spi.dag.Edge;
+import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
+import com.hazelcast.jet.spi.strategy.HashingStrategy;
+import com.hazelcast.jet.spi.strategy.ProcessingStrategy;
+import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+
+import java.util.List;
 
 public class DefaultComposedActor implements ComposedActor {
     private final Edge edge;

@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.impl.actor.shuffling;
 
-import com.hazelcast.jet.spi.strategy.HashingStrategy;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.api.actor.ObjectActor;
-import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
 import com.hazelcast.jet.api.actor.ObjectConsumer;
-import com.hazelcast.jet.api.container.ContainerTask;
 import com.hazelcast.jet.api.container.ContainerContext;
+import com.hazelcast.jet.api.container.ContainerTask;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.jet.spi.strategy.HashingStrategy;
+import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
+import com.hazelcast.spi.NodeEngine;
 
 public class ShufflingActor extends ShufflingProducer implements ObjectActor {
     private final ObjectActor baseActor;

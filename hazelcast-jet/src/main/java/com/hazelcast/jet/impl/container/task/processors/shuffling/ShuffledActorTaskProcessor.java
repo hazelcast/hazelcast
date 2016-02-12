@@ -16,34 +16,31 @@
 
 package com.hazelcast.jet.impl.container.task.processors.shuffling;
 
-import java.util.List;
-import java.util.ArrayList;
-
-import com.hazelcast.nio.Address;
-import com.hazelcast.jet.spi.dag.Edge;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.spi.data.DataReader;
 import com.hazelcast.jet.api.actor.ObjectProducer;
+import com.hazelcast.jet.api.container.ContainerContext;
 import com.hazelcast.jet.api.container.ContainerTask;
 import com.hazelcast.jet.api.container.ProcessingContainer;
 import com.hazelcast.jet.api.container.ProcessorContext;
-import com.hazelcast.jet.api.container.ContainerContext;
-import com.hazelcast.jet.spi.processor.ContainerProcessor;
+import com.hazelcast.jet.api.container.applicationmaster.ApplicationMaster;
 import com.hazelcast.jet.api.container.task.TaskProcessor;
-import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.container.task.processors.ActorTaskProcessor;
-import com.hazelcast.jet.api.container.applicationmaster.ApplicationMaster;
+import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.spi.dag.Edge;
+import com.hazelcast.jet.spi.data.DataReader;
+import com.hazelcast.jet.spi.processor.ContainerProcessor;
+import com.hazelcast.nio.Address;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
-    private int nextReceiverIdx;
-
     private final ObjectProducer[] receivers;
     private final DefaultObjectIOStream<Object> receivedTupleStream;
     private final TaskProcessor receiverConsumerProcessor;
-
     private final boolean hasActiveProducers;
-
+    private int nextReceiverIdx;
     private boolean receiversClosed;
 
     public ShuffledActorTaskProcessor(ObjectProducer[] producers,

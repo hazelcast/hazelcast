@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.spi.dag;
 
-import java.util.Iterator;
-import java.util.Collection;
-
 import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Direct acyclic graph representation;

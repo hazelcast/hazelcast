@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.container;
 
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.jet.api.container.ContainerResponse;
 import com.hazelcast.jet.api.application.ApplicationContext;
-import com.hazelcast.jet.api.statemachine.container.ContainerState;
+import com.hazelcast.jet.api.container.ContainerResponse;
 import com.hazelcast.jet.api.statemachine.container.ContainerEvent;
+import com.hazelcast.jet.api.statemachine.container.ContainerState;
 import com.hazelcast.jet.api.statemachine.container.ContainerStateMachineFactory;
+import com.hazelcast.spi.NodeEngine;
 
 public abstract class AbstractServiceContainer
         <SI extends ContainerEvent,

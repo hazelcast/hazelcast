@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.spi.processor;
 
-import java.io.Serializable;
-
 import com.hazelcast.jet.api.container.ProcessorContext;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
+
+import java.io.Serializable;
 
 /**
  * Abstract JET processor for application's execution;

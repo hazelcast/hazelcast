@@ -16,20 +16,19 @@
 
 package com.hazelcast.jet.impl.dag.tap.sink;
 
-import java.util.Collection;
-
-
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.jet.spi.container.ContainerDescriptor;
+import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
+import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.MultiMapContainer;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
-import com.hazelcast.jet.spi.container.ContainerDescriptor;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+
+import java.util.Collection;
 
 public class HazelcastMultiMapPartitionWriter extends AbstractHazelcastWriter {
     private final MultiMapContainer container;

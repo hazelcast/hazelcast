@@ -16,20 +16,20 @@
 
 package com.hazelcast.jet.impl.data.tuple;
 
-import java.util.Arrays;
-import java.io.IOException;
-
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.NodeEngine;
+
+import java.io.IOException;
+import java.util.Arrays;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 

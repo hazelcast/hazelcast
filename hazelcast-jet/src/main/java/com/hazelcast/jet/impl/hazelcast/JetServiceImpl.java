@@ -16,20 +16,17 @@
 
 package com.hazelcast.jet.impl.hazelcast;
 
+import com.hazelcast.jet.api.JetApplicationManager;
+import com.hazelcast.jet.api.application.ApplicationProxy;
+import com.hazelcast.jet.api.hazelcast.JetService;
+import com.hazelcast.jet.impl.application.ApplicationProxyImpl;
+import com.hazelcast.jet.impl.application.JetApplicationManagerImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrencyUtil;
-
-import java.util.concurrent.ConcurrentMap;
-
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
-
-import com.hazelcast.jet.api.hazelcast.JetService;
-import com.hazelcast.jet.api.JetApplicationManager;
-import com.hazelcast.jet.api.application.ApplicationProxy;
-import com.hazelcast.jet.impl.application.ApplicationProxyImpl;
-import com.hazelcast.jet.impl.application.JetApplicationManagerImpl;
+import java.util.concurrent.ConcurrentMap;
 
 public class JetServiceImpl implements JetService {
     private final NodeEngine nodeEngine;

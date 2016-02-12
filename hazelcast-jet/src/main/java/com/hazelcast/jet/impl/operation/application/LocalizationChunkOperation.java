@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.impl.operation.application;
 
-import java.io.IOException;
-
+import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.hazelcast.JetService;
 import com.hazelcast.jet.impl.application.localization.Chunk;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+
+import java.io.IOException;
 
 public class LocalizationChunkOperation extends AbstractJetApplicationRequestOperation {
     private Chunk chunk;

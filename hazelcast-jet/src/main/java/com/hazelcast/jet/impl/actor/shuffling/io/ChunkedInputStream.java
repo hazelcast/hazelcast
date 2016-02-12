@@ -16,27 +16,23 @@
 
 package com.hazelcast.jet.impl.actor.shuffling.io;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.io.IOException;
-import java.io.InputStream;
-
-import com.hazelcast.jet.impl.hazelcast.JetPacket;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
+import com.hazelcast.jet.impl.hazelcast.JetPacket;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Iterator;
 
 public class ChunkedInputStream extends InputStream {
     private static final int MASK = 0xff;
 
     private static final int BUFFER_OFFSET = HeapData.DATA_OFFSET;
-
-    private byte[] buffer;
-
-    private int bufferIdx;
-
-    private Iterator<JetPacket> iterator;
-
     private final DefaultObjectIOStream<JetPacket> packetStream;
+    private byte[] buffer;
+    private int bufferIdx;
+    private Iterator<JetPacket> iterator;
 
     public ChunkedInputStream(DefaultObjectIOStream<JetPacket> packetStream) {
         this.packetStream = packetStream;

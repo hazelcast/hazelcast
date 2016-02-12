@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.dag.tap.source;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.FilterInputStream;
 
 public class ByteCountingInputStream extends FilterInputStream {
     private long end;

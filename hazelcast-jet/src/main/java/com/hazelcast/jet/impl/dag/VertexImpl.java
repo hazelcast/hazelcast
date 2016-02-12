@@ -16,19 +16,19 @@
 
 package com.hazelcast.jet.impl.dag;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
-
+import com.hazelcast.jet.impl.dag.tap.sink.HazelcastSinkTap;
+import com.hazelcast.jet.impl.dag.tap.source.HazelcastSourceTap;
 import com.hazelcast.jet.spi.dag.Edge;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.dag.tap.SinkTap;
-import com.hazelcast.jet.spi.dag.tap.TapType;
-import com.hazelcast.jet.spi.dag.tap.SourceTap;
 import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
+import com.hazelcast.jet.spi.dag.tap.SourceTap;
+import com.hazelcast.jet.spi.dag.tap.TapType;
 import com.hazelcast.jet.spi.processor.ProcessorDescriptor;
-import com.hazelcast.jet.impl.dag.tap.sink.HazelcastSinkTap;
-import com.hazelcast.jet.impl.dag.tap.source.HazelcastSourceTap;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 

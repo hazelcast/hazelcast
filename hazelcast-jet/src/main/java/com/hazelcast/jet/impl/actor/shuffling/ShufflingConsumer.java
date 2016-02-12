@@ -17,14 +17,14 @@
 package com.hazelcast.jet.impl.actor.shuffling;
 
 
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.api.actor.ObjectConsumer;
-import com.hazelcast.jet.spi.strategy.HashingStrategy;
-import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
+import com.hazelcast.jet.spi.strategy.HashingStrategy;
+import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class ShufflingConsumer implements ObjectConsumer {
     private final ObjectConsumer baseConsumer;

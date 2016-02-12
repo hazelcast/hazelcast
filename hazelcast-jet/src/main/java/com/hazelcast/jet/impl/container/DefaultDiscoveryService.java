@@ -16,27 +16,25 @@
 
 package com.hazelcast.jet.impl.container;
 
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
-import java.util.ArrayList;
-
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.nio.Address;
-
-import java.util.concurrent.Future;
-
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.jet.api.executor.Task;
+import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.container.DiscoveryService;
 import com.hazelcast.jet.api.data.io.SocketReader;
 import com.hazelcast.jet.api.data.io.SocketWriter;
+import com.hazelcast.jet.api.executor.Task;
 import com.hazelcast.jet.api.hazelcast.JetService;
-import com.hazelcast.jet.api.container.DiscoveryService;
-import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.task.nio.DefaultSocketReader;
 import com.hazelcast.jet.impl.container.task.nio.DefaultSocketWriter;
 import com.hazelcast.jet.impl.operation.application.DiscoveryOperation;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.NodeEngine;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Future;
 
 public class DefaultDiscoveryService implements DiscoveryService {
     private final NodeEngine nodeEngine;

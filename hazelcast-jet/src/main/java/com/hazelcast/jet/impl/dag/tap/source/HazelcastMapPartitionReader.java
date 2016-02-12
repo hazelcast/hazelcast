@@ -17,30 +17,28 @@
 package com.hazelcast.jet.impl.dag.tap.source;
 
 
-import com.hazelcast.config.MapConfig;
-
-import com.hazelcast.jet.spi.dag.Vertex;
-
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
+import com.hazelcast.jet.impl.data.tuple.TupleIterator;
+import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
+import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.spi.container.ContainerDescriptor;
+import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.data.tuple.TupleConvertor;
+import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.strategy.CalculationStrategy;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
-import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.jet.impl.data.tuple.TupleIterator;
-import com.hazelcast.jet.spi.data.tuple.TupleConvertor;
-import com.hazelcast.jet.spi.strategy.CalculationStrategy;
-import com.hazelcast.jet.spi.container.ContainerDescriptor;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class HazelcastMapPartitionReader<K, V> extends AbstractHazelcastReader<Tuple<K, V>> {
     private final MapConfig mapConfig;

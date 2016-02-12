@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.api.statemachine;
 
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.spi.NodeEngine;
 
 /**
  * Factory to construct abstract state-machine;

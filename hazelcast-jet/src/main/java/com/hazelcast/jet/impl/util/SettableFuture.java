@@ -25,6 +25,7 @@ public final class SettableFuture<V> extends AbstractFuture<V> {
      */
     private SettableFuture() {
     }
+
     /**
      * Creates a new {@code SettableFuture} in the default state.
      */

@@ -17,34 +17,31 @@
 package com.hazelcast.jet.impl.container.task.processors;
 
 
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.api.actor.ObjectProducer;
-import com.hazelcast.jet.api.container.ProcessorContext;
 import com.hazelcast.jet.api.container.ContainerContext;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.spi.processor.ContainerProcessor;
+import com.hazelcast.jet.api.container.ProcessorContext;
 import com.hazelcast.jet.api.container.task.TaskProcessor;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.jet.spi.processor.ContainerProcessor;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class ProducerTaskProcessor implements TaskProcessor {
     protected final int taskID;
-
-    protected boolean produced;
-    protected boolean finalized;
-    protected boolean finalizationStarted;
-    protected boolean finalizationFinished;
-    protected ObjectProducer pendingProducer;
-
     protected final ObjectProducer[] producers;
     protected final ContainerProcessor processor;
     protected final ContainerContext containerContext;
     protected final ProcessorContext processorContext;
     protected final DefaultObjectIOStream objectInputStream;
     protected final DefaultObjectIOStream tupleOutputStream;
-
+    protected boolean produced;
+    protected boolean finalized;
+    protected boolean finalizationStarted;
+    protected boolean finalizationFinished;
+    protected ObjectProducer pendingProducer;
     private int nextProducerIdx;
 
     private boolean producingReadFinished;

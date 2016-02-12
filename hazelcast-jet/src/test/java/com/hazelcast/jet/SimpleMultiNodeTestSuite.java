@@ -13,11 +13,12 @@ import com.hazelcast.jet.spi.dag.DAG;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.concurrent.TimeUnit;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 

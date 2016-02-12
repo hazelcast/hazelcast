@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.impl.dag.tap.sink;
 
-import com.hazelcast.jet.spi.dag.tap.SinkTap;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.spi.dag.tap.SinkOutputStream;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
-import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.spi.application.ApplicationListener;
+import com.hazelcast.jet.spi.container.ContainerDescriptor;
+import com.hazelcast.jet.spi.dag.tap.SinkOutputStream;
+import com.hazelcast.jet.spi.dag.tap.SinkTap;
+import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
+import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 public class DataFileWriter extends AbstractHazelcastWriter {

@@ -16,11 +16,10 @@
 
 package com.hazelcast.jet.api.container;
 
-import com.hazelcast.jet.api.statemachine.container.ContainerEvent;
 import com.hazelcast.jet.api.statemachine.StateMachineRequestProcessor;
+import com.hazelcast.jet.api.statemachine.container.ContainerEvent;
 
 /**
- *
  * @param <SI>
  */
 public interface ContainerStateMachineRequestProcessor<SI extends ContainerEvent> extends StateMachineRequestProcessor<SI> {

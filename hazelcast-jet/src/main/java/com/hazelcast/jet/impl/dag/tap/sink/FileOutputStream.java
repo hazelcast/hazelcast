@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.impl.dag.tap.sink;
 
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.spi.dag.tap.SinkOutputStream;
+import com.hazelcast.jet.spi.dag.tap.SinkTap;
+import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-
-import com.hazelcast.jet.spi.dag.tap.SinkTap;
-import com.hazelcast.jet.spi.dag.tap.SinkOutputStream;
-import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
-import com.hazelcast.jet.impl.util.JetUtil;
 
 public class FileOutputStream implements SinkOutputStream {
     private final SinkTap tap;

@@ -16,25 +16,23 @@
 
 package com.hazelcast.jet.impl.container.task.nio;
 
-import java.io.IOException;
-
+import com.hazelcast.jet.api.data.io.NetworkTask;
+import com.hazelcast.jet.api.executor.Payload;
+import com.hazelcast.jet.impl.container.task.AbstractTask;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.logging.ILogger;
 
+import java.io.IOException;
 import java.nio.channels.SocketChannel;
-
-import com.hazelcast.jet.api.executor.Payload;
-import com.hazelcast.jet.api.data.io.NetworkTask;
-import com.hazelcast.jet.impl.container.task.AbstractTask;
 
 public abstract class AbstractNetworkTask extends AbstractTask
         implements NetworkTask {
 
-    protected boolean finished;
-    protected long totalBytes;
     protected final ILogger logger;
     protected final Address jetAddress;
+    protected boolean finished;
+    protected long totalBytes;
     protected boolean waitingForFinish;
     protected volatile boolean destroyed;
     protected volatile boolean finalized;

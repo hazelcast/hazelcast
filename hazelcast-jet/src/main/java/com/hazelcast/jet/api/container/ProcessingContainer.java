@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.api.container;
 
-import java.util.Map;
-import java.util.List;
-
-import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.api.container.task.TaskEvent;
 import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.api.statemachine.container.processingcontainer.ProcessingContainerState;
 import com.hazelcast.jet.api.statemachine.container.processingcontainer.ProcessingContainerEvent;
 import com.hazelcast.jet.api.statemachine.container.processingcontainer.ProcessingContainerResponse;
+import com.hazelcast.jet.api.statemachine.container.processingcontainer.ProcessingContainerState;
+import com.hazelcast.jet.spi.dag.Vertex;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Represents abstract processing container;

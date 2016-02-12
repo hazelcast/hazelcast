@@ -16,18 +16,18 @@
 
 package com.hazelcast.jet.impl.operation.application;
 
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.BlockingQueue;
-
 import com.hazelcast.jet.api.application.ApplicationContext;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.jet.api.container.applicationmaster.ApplicationMaster;
 import com.hazelcast.jet.api.hazelcast.JetService;
 import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterResponse;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.InterruptApplicationRequest;
 import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class InterruptExecutionOperation extends AbstractJetApplicationRequestOperation {
     public InterruptExecutionOperation() {

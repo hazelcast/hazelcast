@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.strategy;
 
-import com.hazelcast.jet.spi.strategy.HashingStrategy;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
+import com.hazelcast.jet.spi.strategy.HashingStrategy;
 
 public final class DefaultHashingStrategy implements HashingStrategy {
     public static final HashingStrategy INSTANCE = new DefaultHashingStrategy();

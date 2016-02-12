@@ -16,45 +16,41 @@
 
 package com.hazelcast.jet.impl.hazelcast.client;
 
-import java.net.URL;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.concurrent.Future;
-
-import com.hazelcast.jet.spi.dag.DAG;
-
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.spi.container.CounterKey;
-import com.hazelcast.jet.spi.counters.Accumulator;
-import com.hazelcast.jet.api.application.Initable;
-import com.hazelcast.jet.impl.util.JetThreadFactory;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.api.application.ApplicationProxy;
-import com.hazelcast.jet.impl.application.LocalizationResource;
-import com.hazelcast.jet.api.application.ApplicationStateManager;
 import com.hazelcast.jet.api.application.ApplicationClusterService;
-import com.hazelcast.jet.impl.application.LocalizationResourceType;
+import com.hazelcast.jet.api.application.ApplicationProxy;
+import com.hazelcast.jet.api.application.ApplicationStateManager;
+import com.hazelcast.jet.api.application.Initable;
 import com.hazelcast.jet.api.statemachine.application.ApplicationState;
 import com.hazelcast.jet.impl.application.DefaultApplicationStateManager;
+import com.hazelcast.jet.impl.application.LocalizationResource;
+import com.hazelcast.jet.impl.application.LocalizationResourceType;
+import com.hazelcast.jet.impl.util.JetThreadFactory;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.jet.spi.container.CounterKey;
+import com.hazelcast.jet.spi.counters.Accumulator;
+import com.hazelcast.jet.spi.dag.DAG;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class JetApplicationProxy extends ClientProxy implements ApplicationProxy, Initable {
     private final Set<LocalizationResource> localizedResources;
-
+    private final ApplicationStateManager applicationStateManager;
     private ApplicationClusterService applicationClusterService;
 
-    private final ApplicationStateManager applicationStateManager;
-
-    public  JetApplicationProxy(String serviceName,
-                                  String name) {
+    public JetApplicationProxy(String serviceName,
+                               String name) {
         super(serviceName, name);
         this.localizedResources = new HashSet<LocalizationResource>();
         this.applicationStateManager = new DefaultApplicationStateManager(name);

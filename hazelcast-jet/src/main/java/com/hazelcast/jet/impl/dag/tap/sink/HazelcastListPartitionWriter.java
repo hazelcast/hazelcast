@@ -17,20 +17,20 @@
 package com.hazelcast.jet.impl.dag.tap.sink;
 
 
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
-import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.list.ListContainer;
+import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
-import com.hazelcast.jet.spi.strategy.CalculationStrategy;
-import com.hazelcast.jet.spi.container.ContainerDescriptor;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
+import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.spi.container.ContainerDescriptor;
+import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
+import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.strategy.CalculationStrategy;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class HazelcastListPartitionWriter extends AbstractHazelcastWriter {
     private final ListContainer listContainer;

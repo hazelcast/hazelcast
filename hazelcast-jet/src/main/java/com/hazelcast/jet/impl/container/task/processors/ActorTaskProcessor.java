@@ -19,13 +19,13 @@ package com.hazelcast.jet.impl.container.task.processors;
 import com.hazelcast.jet.api.actor.ObjectProducer;
 import com.hazelcast.jet.api.container.ContainerContext;
 import com.hazelcast.jet.api.container.ProcessorContext;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.api.container.task.TaskProcessor;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.spi.processor.ContainerProcessor;
 
 public class ActorTaskProcessor extends ProducerTaskProcessor {
-    protected boolean consumed;
     private final TaskProcessor consumerProcessor;
+    protected boolean consumed;
 
     public ActorTaskProcessor(ObjectProducer[] producers,
                               ContainerProcessor processor,

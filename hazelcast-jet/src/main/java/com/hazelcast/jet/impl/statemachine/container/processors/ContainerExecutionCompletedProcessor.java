@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.impl.statemachine.container.processors;
 
-import java.util.List;
-
 import com.hazelcast.jet.api.Dummy;
-import com.hazelcast.jet.api.container.DataChannel;
-import com.hazelcast.jet.api.container.ProcessingContainer;
 import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.container.ContainerPayLoadProcessor;
+import com.hazelcast.jet.api.container.DataChannel;
+import com.hazelcast.jet.api.container.ProcessingContainer;
+
+import java.util.List;
 
 public class ContainerExecutionCompletedProcessor implements ContainerPayLoadProcessor<Dummy> {
     private final ProcessingContainer container;

@@ -16,18 +16,18 @@
 
 package com.hazelcast.jet.impl.statemachine.application;
 
-import java.util.Map;
-
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.jet.impl.util.LinkedMapBuilder;
-import com.hazelcast.jet.api.executor.TaskExecutor;
 import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.executor.TaskExecutor;
 import com.hazelcast.jet.api.statemachine.ApplicationStateMachine;
-import com.hazelcast.jet.impl.statemachine.AbstractStateMachineImpl;
 import com.hazelcast.jet.api.statemachine.StateMachineRequestProcessor;
-import com.hazelcast.jet.api.statemachine.application.ApplicationState;
 import com.hazelcast.jet.api.statemachine.application.ApplicationEvent;
 import com.hazelcast.jet.api.statemachine.application.ApplicationResponse;
+import com.hazelcast.jet.api.statemachine.application.ApplicationState;
+import com.hazelcast.jet.impl.statemachine.AbstractStateMachineImpl;
+import com.hazelcast.jet.impl.util.LinkedMapBuilder;
+import com.hazelcast.spi.NodeEngine;
+
+import java.util.Map;
 
 public class ApplicationStateMachineImpl extends AbstractStateMachineImpl<ApplicationEvent, ApplicationState, ApplicationResponse>
         implements ApplicationStateMachine {
@@ -132,7 +132,7 @@ public class ApplicationStateMachineImpl extends AbstractStateMachineImpl<Applic
                     put(
                             ApplicationState.FINALIZATION_IN_PROGRESS, LinkedMapBuilder.of(
                                     ApplicationEvent.FINALIZATION_FAILURE, ApplicationState.FINALIZATION_FAILURE,
-                                    ApplicationEvent.FINALIZATION_SUCCESS , ApplicationState.NEW
+                                    ApplicationEvent.FINALIZATION_SUCCESS, ApplicationState.NEW
                             )
                     ).
                     put(

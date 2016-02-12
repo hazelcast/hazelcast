@@ -17,23 +17,21 @@
 package com.hazelcast.jet.api.container.applicationmaster;
 
 
-import java.util.Map;
-import java.util.List;
-
-import com.hazelcast.nio.Address;
-import com.hazelcast.jet.spi.dag.DAG;
-import com.hazelcast.jet.spi.dag.Vertex;
-
-import java.util.concurrent.BlockingQueue;
-
 import com.hazelcast.jet.api.container.Container;
 import com.hazelcast.jet.api.container.ContainerContext;
 import com.hazelcast.jet.api.container.ProcessingContainer;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterEvent;
-import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterState;
 import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterResponse;
+import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterState;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
+import com.hazelcast.jet.spi.dag.DAG;
+import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.nio.Address;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 
 /**
  * Interface for JET application master
@@ -129,16 +127,16 @@ public interface ApplicationMaster extends Container<ApplicationMasterEvent, App
     void registerShufflingSender(int taskID, ContainerContext containerContext, Address address, ShufflingSender sender);
 
     /**
+     * @return - dag of the application;
+     */
+    DAG getDag();
+
+    /**
      * Set up dag for the corresponding application;
      *
      * @param dag - corresponding dag;
      */
     void setDag(DAG dag);
-
-    /**
-     * @return - dag of the application;
-     */
-    DAG getDag();
 
     /**
      * @return - name of the application;

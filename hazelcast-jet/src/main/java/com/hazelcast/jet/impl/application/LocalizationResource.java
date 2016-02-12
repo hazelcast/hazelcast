@@ -16,18 +16,18 @@
 
 package com.hazelcast.jet.impl.application;
 
-import java.net.URL;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.DataInputStream;
+import java.net.URL;
 import java.security.CodeSource;
-import java.util.jar.JarInputStream;
 import java.security.ProtectionDomain;
+import java.util.jar.JarInputStream;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.jet.impl.application.LocalizationResourceType.JAR;
-import static com.hazelcast.jet.impl.application.LocalizationResourceType.DATA;
 import static com.hazelcast.jet.impl.application.LocalizationResourceType.CLASS;
+import static com.hazelcast.jet.impl.application.LocalizationResourceType.DATA;
+import static com.hazelcast.jet.impl.application.LocalizationResourceType.JAR;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class LocalizationResource {
     public static final int CLASS_PREFIX = 0xcafebabe;

@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.data.io;
 
-import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
+import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
 
 public class DefaultObjectIOStream<T> extends AbstractIOStream<T> {
     public DefaultObjectIOStream(T[] buffer) {

@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.statemachine.container.processors;
 
 import com.hazelcast.jet.api.Dummy;
-import com.hazelcast.jet.api.container.ProcessingContainer;
 import com.hazelcast.jet.api.container.ContainerPayLoadProcessor;
+import com.hazelcast.jet.api.container.ProcessingContainer;
 
 public class ContainerStartProcessor implements ContainerPayLoadProcessor<Dummy> {
     private final ProcessingContainer container;

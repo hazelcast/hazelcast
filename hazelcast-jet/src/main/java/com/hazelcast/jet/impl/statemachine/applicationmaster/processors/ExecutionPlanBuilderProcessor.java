@@ -16,37 +16,34 @@
 
 package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
 
-import java.util.Map;
-import java.util.List;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.ArrayList;
-
 import com.hazelcast.core.IFunction;
+import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.container.ContainerPayLoadProcessor;
+import com.hazelcast.jet.api.container.DataChannel;
+import com.hazelcast.jet.api.container.ProcessingContainer;
+import com.hazelcast.jet.api.container.applicationmaster.ApplicationMaster;
+import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
+import com.hazelcast.jet.impl.container.DefaultDataChannel;
+import com.hazelcast.jet.impl.container.DefaultProcessingContainer;
+import com.hazelcast.jet.impl.data.tuple.DefaultTupleFactory;
+import com.hazelcast.jet.impl.statemachine.container.requests.ContainerStartRequest;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.spi.NodeEngine;
-
-import java.lang.reflect.Constructor;
-import java.util.concurrent.TimeUnit;
-
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.jet.spi.dag.DAG;
 import com.hazelcast.jet.spi.dag.Edge;
 import com.hazelcast.jet.spi.dag.Vertex;
-
-import com.hazelcast.jet.api.container.DataChannel;
-import com.hazelcast.jet.api.container.ProcessingContainer;
 import com.hazelcast.jet.spi.data.tuple.TupleFactory;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.impl.container.DefaultDataChannel;
 import com.hazelcast.jet.spi.processor.ProcessorDescriptor;
-import com.hazelcast.jet.api.application.ApplicationContext;
-import com.hazelcast.jet.impl.data.tuple.DefaultTupleFactory;
-import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.api.container.ContainerPayLoadProcessor;
-import com.hazelcast.jet.impl.container.DefaultProcessingContainer;
-import com.hazelcast.jet.api.container.applicationmaster.ApplicationMaster;
-import com.hazelcast.jet.impl.statemachine.container.requests.ContainerStartRequest;
+import com.hazelcast.spi.NodeEngine;
+
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 

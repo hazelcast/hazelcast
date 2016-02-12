@@ -16,28 +16,24 @@
 
 package com.hazelcast.jet.impl.container.task.nio;
 
-import java.nio.ByteBuffer;
-import java.io.IOException;
-import java.nio.ByteOrder;
-import java.util.Collection;
-
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.jet.api.JetApplicationManager;
+import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.data.io.NetworkTask;
+import com.hazelcast.jet.api.data.io.SocketReader;
+import com.hazelcast.jet.api.executor.Payload;
+import com.hazelcast.jet.impl.hazelcast.JetPacket;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 
-import java.nio.channels.SocketChannel;
-
-import com.hazelcast.jet.impl.util.JetUtil;
-
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.ServerSocketChannel;
-
-import com.hazelcast.jet.api.executor.Payload;
-import com.hazelcast.jet.api.data.io.NetworkTask;
-import com.hazelcast.jet.api.data.io.SocketReader;
-import com.hazelcast.jet.impl.hazelcast.JetPacket;
-import com.hazelcast.jet.api.JetApplicationManager;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.jet.api.application.ApplicationContext;
+import java.nio.channels.SocketChannel;
+import java.util.Collection;
 
 public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
     private final ServerSocketChannel serverSocketChannel;

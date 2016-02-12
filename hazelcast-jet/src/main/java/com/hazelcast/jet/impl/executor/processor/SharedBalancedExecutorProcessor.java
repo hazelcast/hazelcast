@@ -16,28 +16,23 @@
 
 package com.hazelcast.jet.impl.executor.processor;
 
-import java.util.Queue;
-
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.jet.api.executor.Task;
-
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicReference;
-
 import com.hazelcast.jet.api.executor.BalancedExecutor;
 import com.hazelcast.jet.api.executor.BalancedWorkingProcessor;
+import com.hazelcast.jet.api.executor.Task;
+import com.hazelcast.logging.ILogger;
+
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SharedBalancedExecutorProcessor
         extends AbstractExecutorProcessor<BalancedExecutor>
         implements BalancedWorkingProcessor {
     protected final AtomicReference<BalancedWorkingProcessor> unLoadedBalancingProcessor =
             new AtomicReference<BalancedWorkingProcessor>(null);
-
-    protected volatile boolean balanced = true;
-
-    protected volatile boolean balancingIncoming;
-
     protected final Queue<Task> incomingBalancingTask = new ConcurrentLinkedQueue<Task>();
+    protected volatile boolean balanced = true;
+    protected volatile boolean balancingIncoming;
 
     public SharedBalancedExecutorProcessor(int threadNum,
                                            ILogger logger,
@@ -70,7 +65,7 @@ public class SharedBalancedExecutorProcessor
         setBalanced(false);
         this.taskExecutor.onTaskDeactivation();
         System.out.println("this.taskExecutor.onTaskDeactivation();="
-                        + this.taskExecutor.getTaskCount() + " idx=" + this
+                + this.taskExecutor.getTaskCount() + " idx=" + this
         );
     }
 

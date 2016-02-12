@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.processor.descriptor;
 
-import com.hazelcast.jet.spi.processor.ProcessorDescriptor;
 import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
+import com.hazelcast.jet.spi.processor.ProcessorDescriptor;
 
 public class DefaultProcessorDescriptor extends ProcessorDescriptor {
     private final String clazz;

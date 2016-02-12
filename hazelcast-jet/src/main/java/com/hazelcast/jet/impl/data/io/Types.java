@@ -16,42 +16,39 @@
 
 package com.hazelcast.jet.impl.data.io;
 
-import java.util.Map;
-import java.util.IdentityHashMap;
-
-import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.impl.data.io.readers.BooleanReader;
+import com.hazelcast.jet.impl.data.io.readers.ByteReader;
+import com.hazelcast.jet.impl.data.io.readers.CharReader;
+import com.hazelcast.jet.impl.data.io.readers.DefaultObjectReader;
+import com.hazelcast.jet.impl.data.io.readers.DoubleReader;
+import com.hazelcast.jet.impl.data.io.readers.FloatReader;
+import com.hazelcast.jet.impl.data.io.readers.IntReader;
+import com.hazelcast.jet.impl.data.io.readers.LongReader;
+import com.hazelcast.jet.impl.data.io.readers.NullObjectReader;
+import com.hazelcast.jet.impl.data.io.readers.ShortReader;
+import com.hazelcast.jet.impl.data.io.readers.StringReader;
+import com.hazelcast.jet.impl.data.io.readers.TupleReader;
+import com.hazelcast.jet.impl.data.io.writers.BooleanWriter;
+import com.hazelcast.jet.impl.data.io.writers.ByteWriter;
+import com.hazelcast.jet.impl.data.io.writers.CharWriter;
+import com.hazelcast.jet.impl.data.io.writers.DefaultObjectWriter;
+import com.hazelcast.jet.impl.data.io.writers.DoubleWriter;
+import com.hazelcast.jet.impl.data.io.writers.FloatWriter;
+import com.hazelcast.jet.impl.data.io.writers.IntWriter;
+import com.hazelcast.jet.impl.data.io.writers.LongWriter;
+import com.hazelcast.jet.impl.data.io.writers.NullObjectWriter;
+import com.hazelcast.jet.impl.data.io.writers.ShortWriter;
+import com.hazelcast.jet.impl.data.io.writers.StringWriter;
+import com.hazelcast.jet.impl.data.io.writers.TupleWriter;
+import com.hazelcast.jet.impl.data.tuple.DefaultTupleFactory;
 import com.hazelcast.jet.spi.data.io.DataType;
 import com.hazelcast.jet.spi.data.io.ObjectReader;
 import com.hazelcast.jet.spi.data.io.ObjectWriter;
+import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.util.collection.Int2ObjectHashMap;
-import com.hazelcast.jet.impl.data.tuple.DefaultTupleFactory;
 
-
-import com.hazelcast.jet.impl.data.io.readers.IntReader;
-import com.hazelcast.jet.impl.data.io.readers.CharReader;
-import com.hazelcast.jet.impl.data.io.readers.ByteReader;
-import com.hazelcast.jet.impl.data.io.readers.LongReader;
-import com.hazelcast.jet.impl.data.io.readers.FloatReader;
-import com.hazelcast.jet.impl.data.io.readers.ShortReader;
-import com.hazelcast.jet.impl.data.io.readers.TupleReader;
-import com.hazelcast.jet.impl.data.io.readers.DoubleReader;
-import com.hazelcast.jet.impl.data.io.readers.StringReader;
-import com.hazelcast.jet.impl.data.io.readers.BooleanReader;
-import com.hazelcast.jet.impl.data.io.readers.NullObjectReader;
-import com.hazelcast.jet.impl.data.io.readers.DefaultObjectReader;
-
-import com.hazelcast.jet.impl.data.io.writers.IntWriter;
-import com.hazelcast.jet.impl.data.io.writers.ByteWriter;
-import com.hazelcast.jet.impl.data.io.writers.CharWriter;
-import com.hazelcast.jet.impl.data.io.writers.LongWriter;
-import com.hazelcast.jet.impl.data.io.writers.TupleWriter;
-import com.hazelcast.jet.impl.data.io.writers.FloatWriter;
-import com.hazelcast.jet.impl.data.io.writers.ShortWriter;
-import com.hazelcast.jet.impl.data.io.writers.DoubleWriter;
-import com.hazelcast.jet.impl.data.io.writers.StringWriter;
-import com.hazelcast.jet.impl.data.io.writers.BooleanWriter;
-import com.hazelcast.jet.impl.data.io.writers.NullObjectWriter;
-import com.hazelcast.jet.impl.data.io.writers.DefaultObjectWriter;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 //CHECKSTYLE:OFF
 public enum Types implements DataType {
@@ -90,14 +87,6 @@ public enum Types implements DataType {
 
     private static final Map<Integer, DataType> TYPES = new Int2ObjectHashMap<DataType>();
 
-    private final byte typeID;
-
-    private final Class clazz;
-
-    private final ObjectWriter objectWriter;
-
-    private final ObjectReader objectReader;
-
     static {
         CLASSES = new Class[Types.values().length - 1];
         int i = 0;
@@ -115,6 +104,11 @@ public enum Types implements DataType {
             }
         }
     }
+
+    private final byte typeID;
+    private final Class clazz;
+    private final ObjectWriter objectWriter;
+    private final ObjectReader objectReader;
 
     Types(byte typeID,
           Class clazz,

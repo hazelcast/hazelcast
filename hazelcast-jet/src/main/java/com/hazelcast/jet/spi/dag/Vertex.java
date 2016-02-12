@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.spi.dag;
 
-import java.util.List;
-
 import com.hazelcast.jet.spi.dag.tap.SinkTap;
-import com.hazelcast.jet.spi.dag.tap.SourceTap;
 import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
+import com.hazelcast.jet.spi.dag.tap.SourceTap;
 import com.hazelcast.jet.spi.processor.ProcessorDescriptor;
+
+import java.util.List;
 
 /**
  * Represents vertex of the Direct Acyclic Graph;

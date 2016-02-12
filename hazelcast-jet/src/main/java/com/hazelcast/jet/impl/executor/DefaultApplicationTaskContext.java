@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.impl.executor;
 
-import java.util.List;
-
-import com.hazelcast.jet.api.executor.Task;
 import com.hazelcast.jet.api.executor.ApplicationTaskContext;
+import com.hazelcast.jet.api.executor.Task;
+
+import java.util.List;
 
 public class DefaultApplicationTaskContext implements ApplicationTaskContext {
     private final List<Task> tasks;

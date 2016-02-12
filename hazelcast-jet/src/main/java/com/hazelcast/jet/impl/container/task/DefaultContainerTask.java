@@ -17,49 +17,45 @@
 package com.hazelcast.jet.impl.container.task;
 
 
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collection;
-
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.jet.api.actor.ComposedActor;
+import com.hazelcast.jet.api.actor.ObjectActor;
+import com.hazelcast.jet.api.actor.ObjectConsumer;
+import com.hazelcast.jet.api.actor.ObjectProducer;
+import com.hazelcast.jet.api.actor.ProducerCompletionHandler;
+import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.container.ContainerContext;
+import com.hazelcast.jet.api.container.ContainerTask;
+import com.hazelcast.jet.api.container.DataChannel;
+import com.hazelcast.jet.api.container.ProcessingContainer;
+import com.hazelcast.jet.api.container.ProcessorContext;
+import com.hazelcast.jet.api.container.task.TaskEvent;
+import com.hazelcast.jet.api.container.task.TaskProcessor;
+import com.hazelcast.jet.api.container.task.TaskProcessorFactory;
+import com.hazelcast.jet.api.executor.Payload;
+import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
+import com.hazelcast.jet.impl.actor.DefaultComposedActor;
+import com.hazelcast.jet.impl.actor.RingBufferActor;
+import com.hazelcast.jet.impl.actor.shuffling.ShufflingActor;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
+import com.hazelcast.jet.impl.container.DefaultProcessorContext;
 import com.hazelcast.jet.spi.dag.Edge;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.data.DataWriter;
-import com.hazelcast.jet.api.executor.Payload;
+import com.hazelcast.jet.spi.executor.TaskContext;
+import com.hazelcast.jet.spi.processor.ContainerProcessor;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.NodeEngine;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import com.hazelcast.jet.api.actor.ObjectActor;
-
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import com.hazelcast.jet.api.actor.ComposedActor;
-import com.hazelcast.jet.api.actor.ObjectConsumer;
-import com.hazelcast.jet.api.actor.ObjectProducer;
-import com.hazelcast.jet.spi.executor.TaskContext;
-import com.hazelcast.jet.api.container.DataChannel;
-import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.api.container.ContainerTask;
-import com.hazelcast.jet.api.container.task.TaskEvent;
-import com.hazelcast.jet.api.container.ProcessorContext;
-import com.hazelcast.jet.api.container.ContainerContext;
-import com.hazelcast.jet.impl.actor.DefaultComposedActor;
-import com.hazelcast.jet.spi.processor.ContainerProcessor;
-import com.hazelcast.jet.api.container.task.TaskProcessor;
-import com.hazelcast.jet.api.container.ProcessingContainer;
-import com.hazelcast.jet.api.application.ApplicationContext;
-import com.hazelcast.jet.impl.actor.shuffling.ShufflingActor;
-import com.hazelcast.jet.api.actor.ProducerCompletionHandler;
-import com.hazelcast.jet.impl.container.DefaultProcessorContext;
-import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.api.container.task.TaskProcessorFactory;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 
 public class DefaultContainerTask extends AbstractTask
         implements ContainerTask {
@@ -72,51 +68,28 @@ public class DefaultContainerTask extends AbstractTask
     private final NodeEngine nodeEngine;
 
     private final ProcessingContainer container;
-
-    private volatile TaskProcessor taskProcessor;
-
-    private volatile boolean sendersClosed;
-
     private final ContainerProcessor processor;
-
-    private volatile ShufflingSender[] sendersArray;
-
     private final ContainerContext containerContext;
-
     private final ApplicationContext applicationContext;
-
     private final TaskProcessorFactory taskProcessorFactory;
-
-    private volatile boolean sendersFlushed;
-
-    private boolean producersClosed;
-
-    private boolean receiversClosed;
-
     private final AtomicBoolean interrupted = new AtomicBoolean(false);
-
     private final AtomicInteger activeProducersCounter = new AtomicInteger(0);
-
     private final AtomicInteger activeReceiversCounter = new AtomicInteger(0);
-
     private final AtomicInteger finalizedReceiversCounter = new AtomicInteger(0);
-
     private final Collection<ObjectConsumer> consumers = new CopyOnWriteArrayList<ObjectConsumer>();
-
     private final Collection<ObjectProducer> producers = new CopyOnWriteArrayList<ObjectProducer>();
-
     private final Map<Address, ShufflingReceiver> shufflingReceivers = new ConcurrentHashMap<Address, ShufflingReceiver>();
-
     private final Map<Address, ShufflingSender> shufflingSenders = new ConcurrentHashMap<Address, ShufflingSender>();
-
     private final TaskContext taskContext;
-
-    private boolean containerFinalizationNotified;
-
-    private volatile boolean finalizationStarted;
-
     private final ProcessorContext processorContext;
-
+    private volatile TaskProcessor taskProcessor;
+    private volatile boolean sendersClosed;
+    private volatile ShufflingSender[] sendersArray;
+    private volatile boolean sendersFlushed;
+    private boolean producersClosed;
+    private boolean receiversClosed;
+    private boolean containerFinalizationNotified;
+    private volatile boolean finalizationStarted;
     private volatile Throwable error;
 
     public DefaultContainerTask(ProcessingContainer container,

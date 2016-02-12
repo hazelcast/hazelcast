@@ -16,16 +16,16 @@
 
 package com.hazelcast.jet.impl.dag;
 
+import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
+import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.spi.dag.Edge;
 import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
-import com.hazelcast.jet.spi.strategy.HashingStrategy;
-import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
-import com.hazelcast.jet.spi.strategy.ProcessingStrategy;
 import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
+import com.hazelcast.jet.spi.strategy.HashingStrategy;
+import com.hazelcast.jet.spi.strategy.ProcessingStrategy;
+import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 
 public class EdgeImpl implements Edge {
     private Vertex to;

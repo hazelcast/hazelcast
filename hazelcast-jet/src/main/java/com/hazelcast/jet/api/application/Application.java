@@ -16,18 +16,18 @@
 
 package com.hazelcast.jet.api.application;
 
-import java.net.URL;
-import java.util.Map;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.concurrent.Future;
-
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.api.statemachine.application.ApplicationState;
+import com.hazelcast.jet.impl.application.LocalizationResourceType;
 import com.hazelcast.jet.spi.container.CounterKey;
 import com.hazelcast.jet.spi.counters.Accumulator;
 import com.hazelcast.jet.spi.dag.DAG;
-import com.hazelcast.jet.impl.application.LocalizationResourceType;
-import com.hazelcast.jet.api.statemachine.application.ApplicationState;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Map;
+import java.util.concurrent.Future;
 
 
 /**

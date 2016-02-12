@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.spi.strategy;
 
-import java.io.Serializable;
-
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
+
+import java.io.Serializable;
 
 /**
  * Strategy to calculate hash for data passed between JET containers;

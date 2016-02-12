@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.statemachine.applicationmaster.requests;
 
 
-import com.hazelcast.jet.api.statemachine.container.ContainerRequest;
 import com.hazelcast.jet.api.Dummy;
+import com.hazelcast.jet.api.statemachine.container.ContainerRequest;
 import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterEvent;
 
 public class FinalizeApplicationRequest implements ContainerRequest<ApplicationMasterEvent, Dummy> {

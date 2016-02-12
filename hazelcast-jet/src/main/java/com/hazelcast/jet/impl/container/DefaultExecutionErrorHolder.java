@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.container;
 
-import com.hazelcast.jet.api.container.ProcessingContainer;
 import com.hazelcast.jet.api.container.ExecutionErrorHolder;
+import com.hazelcast.jet.api.container.ProcessingContainer;
 
 public class DefaultExecutionErrorHolder implements ExecutionErrorHolder {
     private final Throwable error;

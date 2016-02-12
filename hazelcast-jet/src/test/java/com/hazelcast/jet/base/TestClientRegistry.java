@@ -1,44 +1,40 @@
 package com.hazelcast.jet.base;
 
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.util.logging.Level;
-
-import com.hazelcast.nio.Address;
-
-import java.net.InetSocketAddress;
-
-import com.hazelcast.instance.Node;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Connection;
-
-import java.net.UnknownHostException;
-
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.instance.TestUtil;
-import com.hazelcast.nio.OutboundFrame;
-import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientAwsConfig;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.connection.AddressTranslator;
+import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
+import com.hazelcast.client.impl.ClientConnectionManagerFactory;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.spi.impl.AwsAddressTranslator;
+import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
+import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressTranslator;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.Node;
+import com.hazelcast.instance.TestUtil;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.OutboundFrame;
+import com.hazelcast.spi.discovery.integration.DiscoveryService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.mocknetwork.MockConnection;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
-import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.connection.AddressTranslator;
-import com.hazelcast.client.spi.impl.AwsAddressTranslator;
-import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
-import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.spi.discovery.integration.DiscoveryService;
-import com.hazelcast.client.impl.ClientConnectionManagerFactory;
-import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
-import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressTranslator;
+import com.hazelcast.util.ExceptionUtil;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.logging.Level;
 
 
 public class TestClientRegistry {
@@ -135,12 +131,12 @@ public class TestClientRegistry {
 
 
     private class MockedClientConnection extends ClientConnection {
-        private volatile long lastReadTime;
-        private volatile long lastWriteTime;
         private final NodeEngineImpl serverNodeEngine;
         private final Address remoteAddress;
         private final Address localAddress;
         private final Connection serverSideConnection;
+        private volatile long lastReadTime;
+        private volatile long lastWriteTime;
 
         public MockedClientConnection(HazelcastClientInstanceImpl client, int connectionId, NodeEngineImpl serverNodeEngine,
                                       Address address, Address localAddress) throws IOException {

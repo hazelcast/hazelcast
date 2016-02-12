@@ -16,22 +16,22 @@
 
 package com.hazelcast.jet.impl.application.localization;
 
-import java.util.Set;
-import java.util.Iterator;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.FileNotFoundException;
-import java.util.NoSuchElementException;
-
 import com.hazelcast.jet.impl.application.LocalizationResource;
 import com.hazelcast.jet.impl.util.JetUtil;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Set;
+
 public final class ChunkIterator implements Iterator<Chunk> {
-    private long currentLength;
     private final int chunkSize;
+    private final Iterator<LocalizationResource> urlIterator;
+    private long currentLength;
     private InputStream currentInputStream;
     private LocalizationResource currentURL;
-    private final Iterator<LocalizationResource> urlIterator;
 
     public ChunkIterator(Set<LocalizationResource> urls, int chunkSize) {
         this.urlIterator = urls.iterator();

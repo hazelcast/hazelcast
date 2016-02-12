@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.spi.processor.tuple;
 
-import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
+import com.hazelcast.jet.spi.data.tuple.Tuple;
 
 /**
  * Factory to create JET-processors which work with tuples;

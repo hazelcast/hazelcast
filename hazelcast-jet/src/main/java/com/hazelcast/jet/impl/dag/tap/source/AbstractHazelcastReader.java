@@ -16,60 +16,36 @@
 
 package com.hazelcast.jet.impl.dag.tap.source;
 
-import java.util.List;
-
+import com.hazelcast.jet.api.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.impl.util.JetUtil;
-import org.slf4j.Logger;
-
-import java.util.Iterator;
-
-import org.slf4j.LoggerFactory;
-import com.hazelcast.spi.NodeEngine;
-
-import java.util.concurrent.TimeUnit;
-
-import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.impl.util.SettableFuture;
-import com.hazelcast.jet.spi.data.DataReader;
-
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
-import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
-import com.hazelcast.jet.api.actor.ProducerCompletionHandler;
+import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.spi.data.DataReader;
+import com.hazelcast.jet.spi.data.tuple.TupleFactory;
 import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractHazelcastReader<V> implements DataReader {
     protected static final Logger LOG = LoggerFactory.getLogger(AbstractHazelcastReader.class);
-
-    protected long position;
-
-    protected Iterator<V> iterator;
-
-    protected volatile Object[] chunkBuffer;
-
     protected final SettableFuture<Boolean> future = SettableFuture.create();
-
-    protected final PartitionSpecificRunnable partitionSpecificRunnable = new PartitionSpecificRunnable() {
-        @Override
-        public int getPartitionId() {
-            return partitionId;
-        }
-
-        @Override
-        public void run() {
-            try {
-                readFromCurrentThread();
-                future.set(true);
-            } catch (Throwable e) {
-                future.setException(e);
-            }
-        }
-    };
-
+    protected final NodeEngine nodeEngine;
+    protected final TupleFactory tupleFactory;
+    protected final ContainerDescriptor containerDescriptor;
+    private final String name;
+    private final Vertex vertex;
+    private final int chunkSize;
+    private final int partitionId;
     protected final PartitionSpecificRunnable partitionSpecificOpenRunnable = new PartitionSpecificRunnable() {
         @Override
         public int getPartitionId() {
@@ -86,8 +62,6 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
             }
         }
     };
-
-
     protected final PartitionSpecificRunnable partitionSpecificCloseRunnable = new PartitionSpecificRunnable() {
         @Override
         public int getPartitionId() {
@@ -104,37 +78,33 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
             }
         }
     };
-
-    protected final NodeEngine nodeEngine;
-
-    protected final TupleFactory tupleFactory;
-
-    protected final ContainerDescriptor containerDescriptor;
-
-    private final String name;
-
-    private final Vertex vertex;
-
-    private final int chunkSize;
-
-    private final int partitionId;
-
     private final int awaitSecondsTime;
-
-    private volatile int lastProducedCount;
-
     private final InternalOperationService internalOperationService;
-
     private final List<ProducerCompletionHandler> completionHandlers;
-
     private final DataTransferringStrategy dataTransferringStrategy;
-
+    protected long position;
+    protected Iterator<V> iterator;
+    protected volatile Object[] chunkBuffer;
+    private volatile int lastProducedCount;
     private Object[] buffer;
-
     private boolean markClosed;
-
     private boolean closed;
+    protected final PartitionSpecificRunnable partitionSpecificRunnable = new PartitionSpecificRunnable() {
+        @Override
+        public int getPartitionId() {
+            return partitionId;
+        }
 
+        @Override
+        public void run() {
+            try {
+                readFromCurrentThread();
+                future.set(true);
+            } catch (Throwable e) {
+                future.setException(e);
+            }
+        }
+    };
     private volatile boolean isReadRequested;
 
     public AbstractHazelcastReader(ContainerDescriptor containerDescriptor,

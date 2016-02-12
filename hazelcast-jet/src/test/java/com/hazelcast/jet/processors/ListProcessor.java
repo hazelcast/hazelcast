@@ -16,19 +16,17 @@
 
 package com.hazelcast.jet.processors;
 
-import java.util.Map;
-
 import com.hazelcast.jet.api.container.ProcessorContext;
+import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.data.tuple.Tuple;
-
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessor;
 import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessorFactory;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ListProcessor implements TupleContainerProcessor<Integer, String, Integer, String> {
     private static final AtomicInteger counter = new AtomicInteger(0);

@@ -17,25 +17,24 @@
 package com.hazelcast.jet.impl.dag.tap.sink;
 
 
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.spi.NodeEngine;
-
-import java.util.concurrent.TimeUnit;
-
-import com.hazelcast.jet.impl.util.SettableFuture;
-import com.hazelcast.jet.spi.data.DataWriter;
+import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.impl.util.SettableFuture;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.jet.spi.container.ContainerDescriptor;
+import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
+import com.hazelcast.jet.spi.data.DataWriter;
 import com.hazelcast.jet.spi.strategy.HashingStrategy;
 import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
-import com.hazelcast.jet.spi.container.ContainerDescriptor;
-import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -51,25 +50,12 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     protected final ContainerDescriptor containerDescriptor;
 
     protected final DefaultObjectIOStream<Object> chunkBuffer;
-
-    protected volatile boolean isFlushed = true;
-
     private final String name;
-
     private final int partitionId;
-
     private final NodeEngine nodeEngine;
-
     private final int awaitInSecondsTime;
-
     private final SinkTapWriteStrategy sinkTapWriteStrategy;
-
     private final ShufflingStrategy shufflingStrategy;
-
-    private int lastConsumedCount;
-
-    private boolean isClosed;
-
     private final PartitionSpecificRunnable partitionSpecificRunnable = new PartitionSpecificRunnable() {
         @Override
         public int getPartitionId() {
@@ -86,7 +72,6 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
             }
         }
     };
-
     private final PartitionSpecificRunnable partitionSpecificOpenRunnable = new PartitionSpecificRunnable() {
         @Override
         public int getPartitionId() {
@@ -103,6 +88,9 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
             }
         }
     };
+    protected volatile boolean isFlushed = true;
+    private int lastConsumedCount;
+    private boolean isClosed;
 
     protected AbstractHazelcastWriter(ContainerDescriptor containerDescriptor,
                                       int partitionId,

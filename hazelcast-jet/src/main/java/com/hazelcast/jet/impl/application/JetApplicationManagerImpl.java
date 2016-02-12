@@ -16,39 +16,32 @@
 
 package com.hazelcast.jet.impl.application;
 
-import java.util.List;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-
-
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.nio.Address;
-
-import java.net.InetSocketAddress;
-
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.core.IFunction;
-
-import java.net.StandardSocketOptions;
-
-import com.hazelcast.util.IConcurrentMap;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.jet.api.executor.Task;
 import com.hazelcast.core.LifecycleListener;
-
-import java.nio.channels.ServerSocketChannel;
-
-import com.hazelcast.jet.spi.config.JetConfig;
-import com.hazelcast.jet.api.hazelcast.JetService;
 import com.hazelcast.jet.api.JetApplicationManager;
-import com.hazelcast.util.SampleableConcurrentHashMap;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.executor.SharedApplicationExecutor;
-import com.hazelcast.jet.impl.executor.SharedBalancedExecutorImpl;
-import com.hazelcast.jet.impl.executor.DefaultApplicationTaskContext;
+import com.hazelcast.jet.api.executor.Task;
+import com.hazelcast.jet.api.hazelcast.JetService;
 import com.hazelcast.jet.impl.container.task.nio.DefaultSocketThreadAcceptor;
+import com.hazelcast.jet.impl.executor.DefaultApplicationTaskContext;
+import com.hazelcast.jet.impl.executor.SharedBalancedExecutorImpl;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.jet.spi.config.JetConfig;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.IConcurrentMap;
+import com.hazelcast.util.SampleableConcurrentHashMap;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.StandardSocketOptions;
+import java.nio.channels.ServerSocketChannel;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class JetApplicationManagerImpl implements JetApplicationManager {
     public static final int MAX_PORT = 0xFFFF;

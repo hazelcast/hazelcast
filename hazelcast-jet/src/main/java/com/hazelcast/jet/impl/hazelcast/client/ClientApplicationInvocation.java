@@ -17,11 +17,11 @@
 package com.hazelcast.jet.impl.hazelcast.client;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.jet.impl.application.AbstractApplicationInvocation;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
-import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.jet.impl.application.AbstractApplicationInvocation;
 
 public class ClientApplicationInvocation<T> extends AbstractApplicationInvocation<ClientMessage, T> {
     private final HazelcastClientInstanceImpl client;

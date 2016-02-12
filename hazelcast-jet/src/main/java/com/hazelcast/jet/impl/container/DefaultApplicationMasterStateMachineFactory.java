@@ -17,15 +17,15 @@
 package com.hazelcast.jet.impl.container;
 
 
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.statemachine.ContainerStateMachine;
 import com.hazelcast.jet.api.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterEvent;
-import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterState;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.ApplicationMasterStateMachineImpl;
 import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterResponse;
+import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterState;
 import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterStateMachineFactory;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.ApplicationMasterStateMachineImpl;
+import com.hazelcast.spi.NodeEngine;
 
 public class DefaultApplicationMasterStateMachineFactory implements ApplicationMasterStateMachineFactory {
     @Override

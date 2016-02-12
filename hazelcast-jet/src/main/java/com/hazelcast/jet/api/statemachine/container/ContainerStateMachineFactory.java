@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.api.statemachine.container;
 
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.container.ContainerResponse;
-import com.hazelcast.jet.api.statemachine.StateMachineFactory;
 import com.hazelcast.jet.api.statemachine.ContainerStateMachine;
+import com.hazelcast.jet.api.statemachine.StateMachineFactory;
 import com.hazelcast.jet.api.statemachine.StateMachineRequestProcessor;
+import com.hazelcast.spi.NodeEngine;
 
 /**
  * Represents factory to construct stateMachine of the containers;

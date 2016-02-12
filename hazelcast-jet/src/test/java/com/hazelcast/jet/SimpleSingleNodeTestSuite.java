@@ -1,60 +1,45 @@
 package com.hazelcast.jet;
 
 
-import java.util.Map;
-
-
-import java.util.List;
-import java.util.ArrayList;
-
-
-import com.hazelcast.core.IMap;
-
-import java.util.concurrent.Future;
-
-import com.hazelcast.jet.spi.dag.DAG;
-
-import java.util.concurrent.TimeUnit;
-
-
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.base.JetBaseTest;
-import com.hazelcast.jet.impl.dag.DAGImpl;
-import com.hazelcast.jet.impl.dag.EdgeImpl;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.core.IMap;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.jet.api.application.Application;
+import com.hazelcast.jet.base.JetBaseTest;
+import com.hazelcast.jet.impl.counters.LongCounter;
+import com.hazelcast.jet.impl.dag.DAGImpl;
+import com.hazelcast.jet.impl.dag.EdgeImpl;
+import com.hazelcast.jet.processors.CounterProcessor;
+import com.hazelcast.jet.processors.DummyProcessor;
+import com.hazelcast.jet.processors.VerySlowProcessor;
+import com.hazelcast.jet.processors.WordCounterProcessor;
+import com.hazelcast.jet.processors.WordGeneratorProcessor;
+import com.hazelcast.jet.processors.WordSorterProcessor;
+import com.hazelcast.jet.spi.container.ContainerDescriptor;
+import com.hazelcast.jet.spi.container.CounterKey;
+import com.hazelcast.jet.spi.counters.Accumulator;
+import com.hazelcast.jet.spi.dag.DAG;
+import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.spi.strategy.HashingStrategy;
+import com.hazelcast.jet.spi.strategy.ProcessingStrategy;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.hazelcast.jet.spi.container.CounterKey;
-import com.hazelcast.jet.spi.counters.Accumulator;
-import com.hazelcast.jet.processors.DummyProcessor;
-import com.hazelcast.jet.impl.counters.LongCounter;
-import com.hazelcast.jet.processors.CounterProcessor;
-import com.hazelcast.jet.api.application.Application;
-import com.hazelcast.jet.processors.VerySlowProcessor;
-import com.hazelcast.jet.spi.strategy.HashingStrategy;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-
-import com.hazelcast.jet.processors.WordSorterProcessor;
-import com.hazelcast.jet.processors.WordCounterProcessor;
-import com.hazelcast.jet.spi.strategy.ProcessingStrategy;
-import com.hazelcast.jet.processors.WordGeneratorProcessor;
-
-import com.hazelcast.jet.spi.container.ContainerDescriptor;
-
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
-
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.BeforeClass;
-import org.junit.runner.RunWith;
-import org.junit.experimental.categories.Category;
+import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)

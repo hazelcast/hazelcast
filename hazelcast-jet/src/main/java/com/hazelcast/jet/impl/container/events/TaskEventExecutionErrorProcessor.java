@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.impl.container.events;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.hazelcast.jet.api.container.ContainerTask;
-import com.hazelcast.jet.api.container.task.TaskEvent;
 import com.hazelcast.jet.api.container.ContainerContext;
-import com.hazelcast.jet.spi.container.ContainerListener;
+import com.hazelcast.jet.api.container.ContainerTask;
 import com.hazelcast.jet.api.container.ProcessingContainer;
+import com.hazelcast.jet.api.container.task.TaskEvent;
+import com.hazelcast.jet.spi.container.ContainerListener;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TaskEventExecutionErrorProcessor extends AbstractEventProcessor {
     protected TaskEventExecutionErrorProcessor(AtomicInteger completedTasks,

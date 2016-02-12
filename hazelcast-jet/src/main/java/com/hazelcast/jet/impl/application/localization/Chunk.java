@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.application.localization;
 
-import java.io.IOException;
-
+import com.hazelcast.jet.impl.application.LocalizationResourceDescriptor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.jet.impl.application.LocalizationResourceDescriptor;
+
+import java.io.IOException;
 
 public class Chunk implements DataSerializable {
     private byte[] bytes;

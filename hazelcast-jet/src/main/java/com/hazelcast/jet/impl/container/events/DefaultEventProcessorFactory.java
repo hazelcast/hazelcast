@@ -16,21 +16,21 @@
 
 package com.hazelcast.jet.impl.container.events;
 
-import java.util.Map;
-import java.util.IdentityHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import com.hazelcast.jet.api.container.ContainerContext;
 import com.hazelcast.jet.api.container.ContainerTask;
 import com.hazelcast.jet.api.container.ProcessingContainer;
-import com.hazelcast.jet.api.container.task.TaskEvent;
-import com.hazelcast.jet.api.container.ContainerContext;
 import com.hazelcast.jet.api.container.events.EventProcessor;
 import com.hazelcast.jet.api.container.events.EventProcessorFactory;
+import com.hazelcast.jet.api.container.task.TaskEvent;
 
-import static com.hazelcast.jet.api.container.task.TaskEvent.TASK_EXECUTION_ERROR;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static com.hazelcast.jet.api.container.task.TaskEvent.TASK_EXECUTION_COMPLETED;
-import static com.hazelcast.jet.api.container.task.TaskEvent.TASK_READY_FOR_FINALIZATION;
+import static com.hazelcast.jet.api.container.task.TaskEvent.TASK_EXECUTION_ERROR;
 import static com.hazelcast.jet.api.container.task.TaskEvent.TASK_INTERRUPTED;
+import static com.hazelcast.jet.api.container.task.TaskEvent.TASK_READY_FOR_FINALIZATION;
 
 
 public class DefaultEventProcessorFactory implements EventProcessorFactory {

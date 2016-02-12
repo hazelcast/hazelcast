@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.data.tuple;
 
-import java.util.Iterator;
-
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.jet.spi.data.tuple.TupleConvertor;
-import com.hazelcast.internal.serialization.SerializationService;
+
+import java.util.Iterator;
 
 public class TupleIterator<R, K, V> implements Iterator<Tuple<K, V>> {
     private final Iterator<R> iterator;

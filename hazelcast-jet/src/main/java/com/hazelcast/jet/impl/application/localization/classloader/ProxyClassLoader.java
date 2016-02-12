@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.application.localization.classloader;
 
-import java.net.URL;
 import java.io.InputStream;
+import java.net.URL;
 
 public interface ProxyClassLoader {
     /**

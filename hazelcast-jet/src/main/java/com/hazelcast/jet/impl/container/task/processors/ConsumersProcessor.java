@@ -20,9 +20,9 @@ import com.hazelcast.jet.api.actor.ObjectConsumer;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
 
 public class ConsumersProcessor {
+    private final ObjectConsumer[] consumers;
     private boolean consumed;
     private ProducerInputStream inputStream;
-    private final ObjectConsumer[] consumers;
 
     public ConsumersProcessor(ObjectConsumer[] consumers) {
         this.consumers = consumers;

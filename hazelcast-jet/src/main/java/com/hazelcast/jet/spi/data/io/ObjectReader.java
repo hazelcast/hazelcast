@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.spi.data.io;
 
-import java.io.IOException;
-
 import com.hazelcast.nio.ObjectDataInput;
+
+import java.io.IOException;
 
 /**
  * Represents abstract object reader from binary structure to Java.

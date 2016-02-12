@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.actor.shuffling;
 
-import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.api.actor.ObjectProducer;
 import com.hazelcast.jet.api.actor.ProducerCompletionHandler;
+import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
 
 public class ShufflingProducer implements ObjectProducer {

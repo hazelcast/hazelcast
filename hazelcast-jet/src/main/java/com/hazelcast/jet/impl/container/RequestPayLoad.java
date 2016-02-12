@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.impl.container;
 
-import com.hazelcast.jet.impl.util.SettableFuture;
 import com.hazelcast.jet.api.statemachine.StateMachineEvent;
 import com.hazelcast.jet.api.statemachine.StateMachineOutput;
+import com.hazelcast.jet.impl.util.SettableFuture;
 
 public class RequestPayLoad<SI extends StateMachineEvent, SO extends StateMachineOutput> {
     private final SettableFuture<SO> future;

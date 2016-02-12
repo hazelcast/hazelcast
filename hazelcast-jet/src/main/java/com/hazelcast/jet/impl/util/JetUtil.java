@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.impl.util;
 
-import java.io.File;
-import java.util.Arrays;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collection;
-import java.io.ByteArrayOutputStream;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
