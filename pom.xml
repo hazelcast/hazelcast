@@ -25,7 +25,7 @@
     <packaging>jar</packaging>
     <description>Hazelcast In-Memory DataGrid Aws Plugin</description>
     <url>http://www.hazelcast.com/</url>
-    
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk.version>1.6</jdk.version>
@@ -71,7 +71,7 @@
             <email>fuad@hazelcast.com</email>
         </developer>
     </developers>
-    
+
     <build>
         <plugins>
             <plugin>
