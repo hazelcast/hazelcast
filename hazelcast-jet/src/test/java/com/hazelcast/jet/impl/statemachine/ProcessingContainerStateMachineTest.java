@@ -17,7 +17,7 @@ import com.hazelcast.jet.impl.statemachine.container.requests.ContainerInterrupt
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerInterruptedRequest;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerStartRequest;
 import com.hazelcast.jet.impl.statemachine.container.requests.InvalidateContainersRequest;
-import com.hazelcast.jet.spi.config.JetConfig;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -221,9 +222,12 @@ public class ProcessingContainerStateMachineTest extends HazelcastTestSupport {
         }
 
         public StateMachineContext invoke() {
-            HazelcastInstance hazelcastInstance = createHazelcastInstance(new JetConfig());
             StateMachineRequestProcessor requestProcessor = mock(StateMachineRequestProcessor.class);
-            NodeEngine nodeEngine = getNodeEngineImpl(hazelcastInstance);
+            HazelcastInstance instance = mock(HazelcastInstance.class);
+            when(instance.getName()).thenReturn(randomName());
+            NodeEngine nodeEngine = mock(NodeEngine.class);
+            when(nodeEngine.getHazelcastInstance()).thenReturn(instance);
+            when(nodeEngine.getLogger(anyString())).thenReturn(mock(ILogger.class));
             ApplicationContext context = mock(ApplicationContext.class);
             DefaultExecutorContext executorContext = mock(DefaultExecutorContext.class);
             when(context.getExecutorContext()).thenReturn(executorContext);

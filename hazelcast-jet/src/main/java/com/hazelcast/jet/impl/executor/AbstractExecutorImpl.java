@@ -17,22 +17,16 @@
 package com.hazelcast.jet.impl.executor;
 
 
-import com.hazelcast.spi.NodeEngine;
-
-import java.util.concurrent.TimeUnit;
-
-import com.hazelcast.logging.ILogger;
-
-import java.util.concurrent.ThreadFactory;
-
-
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.jet.impl.util.JetThreadFactory;
 import com.hazelcast.jet.api.executor.AbstractExecutor;
 import com.hazelcast.jet.api.executor.WorkingProcessor;
+import com.hazelcast.jet.impl.util.JetThreadFactory;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.NodeEngine;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.Preconditions.checkTrue;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkTrue;
 
 public abstract class AbstractExecutorImpl<T extends WorkingProcessor>
         implements AbstractExecutor {
@@ -57,7 +51,7 @@ public abstract class AbstractExecutorImpl<T extends WorkingProcessor>
         checkNotNull(name);
         checkTrue(threadNum > 0, "Max thread count must be greater than zero");
 
-        String hzName = ((NodeEngineImpl) nodeEngine).getNode().hazelcastInstance.getName();
+        String hzName = nodeEngine.getHazelcastInstance().getName();
 
         this.threadFactory = new JetThreadFactory(name + "-executor", hzName);
         this.logger = nodeEngine.getLogger(AbstractLocalTaskExecutorImpl.class);
