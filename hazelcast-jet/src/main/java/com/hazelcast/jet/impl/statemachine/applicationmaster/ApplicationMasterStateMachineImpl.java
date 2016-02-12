@@ -16,18 +16,17 @@
 
 package com.hazelcast.jet.impl.statemachine.applicationmaster;
 
-import java.util.Map;
-
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.jet.impl.util.LinkedMapBuilder;
-import com.hazelcast.jet.api.executor.TaskExecutor;
 import com.hazelcast.jet.api.application.ApplicationContext;
+import com.hazelcast.jet.api.executor.TaskExecutor;
 import com.hazelcast.jet.api.statemachine.AppMasterStateMachine;
-import com.hazelcast.jet.impl.statemachine.AbstractStateMachineImpl;
 import com.hazelcast.jet.api.statemachine.StateMachineRequestProcessor;
-import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterState;
 import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterEvent;
 import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterResponse;
+import com.hazelcast.jet.api.statemachine.container.applicationmaster.ApplicationMasterState;
+import com.hazelcast.jet.impl.statemachine.AbstractStateMachineImpl;
+import com.hazelcast.jet.impl.util.LinkedMapBuilder;
+import com.hazelcast.spi.NodeEngine;
+import java.util.Map;
 
 public class ApplicationMasterStateMachineImpl extends
         AbstractStateMachineImpl<ApplicationMasterEvent, ApplicationMasterState, ApplicationMasterResponse>
@@ -55,6 +54,13 @@ public class ApplicationMasterStateMachineImpl extends
                             )
                     ).
                     put(
+                            ApplicationMasterState.EXECUTING, LinkedMapBuilder.of(
+                                    ApplicationMasterEvent.EXECUTION_ERROR, ApplicationMasterState.EXECUTION_FAILED,
+                                    ApplicationMasterEvent.EXECUTION_COMPLETED, ApplicationMasterState.EXECUTION_SUCCESS,
+                                    ApplicationMasterEvent.INTERRUPT_EXECUTION, ApplicationMasterState.EXECUTION_INTERRUPTING
+                            )
+                    ).
+                    put(
                             ApplicationMasterState.EXECUTION_SUCCESS, LinkedMapBuilder.of(
                                     ApplicationMasterEvent.EXECUTE, ApplicationMasterState.EXECUTING,
                                     ApplicationMasterEvent.FINALIZE, ApplicationMasterState.FINALIZED
@@ -69,22 +75,15 @@ public class ApplicationMasterStateMachineImpl extends
                             )
                     ).
                     put(
+                            ApplicationMasterState.EXECUTION_INTERRUPTING, LinkedMapBuilder.of(
+                                    ApplicationMasterEvent.EXECUTION_INTERRUPTED, ApplicationMasterState.EXECUTION_INTERRUPTED
+                            )
+                    ).
+                    put(
                             ApplicationMasterState.EXECUTION_INTERRUPTED, LinkedMapBuilder.of(
                                     ApplicationMasterEvent.EXECUTION_ERROR, ApplicationMasterState.EXECUTION_INTERRUPTED,
                                     ApplicationMasterEvent.EXECUTE, ApplicationMasterState.EXECUTING,
                                     ApplicationMasterEvent.FINALIZE, ApplicationMasterState.FINALIZED
-                            )
-                    ).
-                    put(
-                            ApplicationMasterState.EXECUTING, LinkedMapBuilder.of(
-                                    ApplicationMasterEvent.EXECUTION_ERROR, ApplicationMasterState.EXECUTION_FAILED,
-                                    ApplicationMasterEvent.EXECUTION_COMPLETED, ApplicationMasterState.EXECUTION_SUCCESS,
-                                    ApplicationMasterEvent.INTERRUPT_EXECUTION, ApplicationMasterState.EXECUTION_INTERRUPTING
-                            )
-                    ).
-                    put(
-                            ApplicationMasterState.EXECUTION_INTERRUPTING, LinkedMapBuilder.of(
-                                    ApplicationMasterEvent.EXECUTION_INTERRUPTED, ApplicationMasterState.EXECUTION_INTERRUPTED
                             )
                     ).
                     put(
