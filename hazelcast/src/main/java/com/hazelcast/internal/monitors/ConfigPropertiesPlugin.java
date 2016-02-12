@@ -23,7 +23,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 import static java.util.Collections.sort;
 
@@ -32,9 +31,9 @@ import static java.util.Collections.sort;
  */
 public class ConfigPropertiesPlugin extends PerformanceMonitorPlugin {
 
-    private final Properties properties;
+    private final HazelcastProperties properties;
     private final ILogger logger;
-    private final List keyList = new ArrayList();
+    private final List<String> keyList = new ArrayList<String>();
 
     public ConfigPropertiesPlugin(NodeEngineImpl nodeEngine) {
         this(nodeEngine.getLogger(ConfigPropertiesPlugin.class), nodeEngine.getNode().getGroupProperties());
@@ -42,7 +41,7 @@ public class ConfigPropertiesPlugin extends PerformanceMonitorPlugin {
 
     public ConfigPropertiesPlugin(ILogger logger, HazelcastProperties properties) {
         this.logger = logger;
-        this.properties = properties.getProperties();
+        this.properties = properties;
     }
 
     @Override
@@ -62,10 +61,9 @@ public class ConfigPropertiesPlugin extends PerformanceMonitorPlugin {
         sort(keyList);
 
         writer.startSection("ConfigProperties");
-        for (Object key : keyList) {
-            String keyString = (String) key;
-            String value = (String) properties.get(keyString);
-            writer.writeKeyValueEntry(keyString, value);
+        for (String key : keyList) {
+            String value = properties.get(key);
+            writer.writeKeyValueEntry(key, value);
         }
         writer.endSection();
     }

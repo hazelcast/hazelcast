@@ -18,8 +18,6 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-
 /**
  * Container for configured Hazelcast properties ({@see GroupProperty}).
  * <p/>
@@ -263,12 +261,6 @@ public class GroupProperties extends HazelcastProperties {
      * @param config {@link Config} used to configure the {@link GroupProperty} values.
      */
     public GroupProperties(Config config) {
-        checkNotNull(config);
-        initProperties(config.getProperties(), GroupProperty.values());
-    }
-
-    @Override
-    protected String[] createProperties() {
-        return new String[GroupProperty.values().length];
+        super(config.getProperties(), GroupProperty.values());
     }
 }

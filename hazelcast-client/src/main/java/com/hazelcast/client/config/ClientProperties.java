@@ -122,11 +122,6 @@ public class ClientProperties extends HazelcastProperties {
      * @param config {@link Config} used to configure the {@link ClientProperty} values.
      */
     public ClientProperties(ClientConfig config) {
-        initProperties(config.getProperties(), ClientProperty.values());
-    }
-
-    @Override
-    protected String[] createProperties() {
-        return new String[ClientProperty.values().length];
+        super(config.getProperties(), ClientProperty.values());
     }
 }
