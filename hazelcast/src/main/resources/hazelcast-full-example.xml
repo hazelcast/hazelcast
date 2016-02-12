@@ -1267,14 +1267,39 @@ https://hazelcast.org/documentation/.
     	Version of the portable serialization. Portable version is used to differentiate two
 	same classes that have changes such as a new field or a new field type.
     * <use-native-byte-order>:
+    	Set as true if you want to use the native byte order of the underlying platform. Its default value is false.
     * <byte-order>:
+    	Specifies the byte order that the serialization will use. Its default value is BIG_ENDIAN. Available values
+    	are BIG_ENDIAN and LITTLE_ENDIAN.
     * <enable-compression>:
+    	Set as true to enable compression when default Java serialization is used. Its default value is false.
     * <enable-shared-object>:
+    	Set as true to enable shared object when default Java serialization is used. Its default value is false.
     * <allow-unsafe>:
+    	Set as true to allow the usage of unsafe. Its default value is false.
     * <data-serializable-factories>:
+    	Lists your class implementations of Hazelcast's DataSerializableFactory using the <data-serialiazable-factory>
+    	sub-elements. Each factory has the required "factory-id" attribute that you should give as the ID of your 
+    	factory.
     * <portable-factories>:
+    	Lists your class implementations of Hazelcast's PortableFactory using the <portable-factory>
+    	sub-elements. Each factory has the required "factory-id" attribute that you should give as the ID of your 
+    	factory.
     * <serializers>:
+    	Lists the serializers (classes) that you implement using Hazelcast's StreamSerializer, ByteArraySerializer, 
+    	Global Serializer, etc. Global serializer should be specified using the <global-serializer> sub-element.
+    	For others, use the <serializer> sub-element. 
+    	
+    	The <serializer> sub-element has two required attributes:
+    	- class-name: Full class name of the serializer you implemented.
+    	- type-class: Type of your serializer class implementation.
+    	
+    	The <global-serializer> sub-element has an optional boolean "override-java-serialization" attribute. If you set
+    	it as true, the Java serialization step will be handled by the global serializer, not by the Java Serializable or
+    	Externalizable.
     * <check-class-def-errors>:
+    	If set as true, serialization system will check the class definitions error at the start of serialization process
+    	and throw a Serialization Exception with the error definition.
 -->
     <serialization>
         <portable-version>0</portable-version>
