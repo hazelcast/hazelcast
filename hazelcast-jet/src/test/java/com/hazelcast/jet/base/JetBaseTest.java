@@ -1,43 +1,34 @@
 package com.hazelcast.jet.base;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.test.TestEnvironment;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
-import org.junit.AfterClass;
-
-import java.io.File;
-import java.util.List;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.util.ArrayList;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.FileInputStream;
-
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-
-import java.io.LineNumberReader;
-import java.io.BufferedInputStream;
-import java.util.concurrent.Future;
-
-
+import com.hazelcast.jet.api.application.Application;
+import com.hazelcast.jet.impl.dag.DAGImpl;
+import com.hazelcast.jet.impl.dag.VertexImpl;
+import com.hazelcast.jet.impl.hazelcast.JetEngine;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.jet.spi.config.JetConfig;
 import com.hazelcast.jet.spi.dag.DAG;
 import com.hazelcast.jet.spi.dag.Edge;
 import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.impl.dag.DAGImpl;
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.impl.dag.VertexImpl;
-import com.hazelcast.jet.spi.config.JetConfig;
-import com.hazelcast.test.HazelcastTestSupport;
-
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.hazelcast.jet.impl.hazelcast.JetEngine;
-import com.hazelcast.jet.api.application.Application;
-import com.hazelcast.jet.spi.config.JetApplicationConfig;
-
 import com.hazelcast.jet.spi.processor.ProcessorDescriptor;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestEnvironment;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.LineNumberReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.AfterClass;
 
 public abstract class JetBaseTest extends HazelcastTestSupport {
     public static final int TIME_TO_AWAIT = 600;
@@ -48,8 +39,7 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
     protected static HazelcastInstance SERVER;
     protected static HazelcastInstance CLIENT;
     protected static List<File> createdFiles = new ArrayList<File>();
-    protected static TestHazelcastInstanceFactory HAZELCAST_FACTORY;
-    protected static TestHazelcastFactory CLIENT_HAZELCAST_FACTORY;
+    protected static TestHazelcastFactory HAZELCAST_FACTORY;
     protected static HazelcastInstance[] HAZELCAST_INSTANCES;
 
     static {
@@ -71,8 +61,7 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
         CONFIG.addJetApplicationConfig(JETCONFIG);
         CONFIG.getMapConfig("source").setInMemoryFormat(InMemoryFormat.OBJECT);
 
-        HAZELCAST_FACTORY = new TestHazelcastInstanceFactory();
-        CLIENT_HAZELCAST_FACTORY = new TestHazelcastFactory();
+        HAZELCAST_FACTORY = new TestHazelcastFactory();
         buildCluster(membersCount);
         warmUpPartitions(SERVER);
     }
@@ -101,7 +90,7 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
         }
 
         SERVER = HAZELCAST_INSTANCES[0];
-        CLIENT = CLIENT_HAZELCAST_FACTORY.newHazelcastClient(null);
+        CLIENT = HAZELCAST_FACTORY.newHazelcastClient();
     }
 
     protected void fillMap(String source, HazelcastInstance instance, int CNT) throws Exception {
