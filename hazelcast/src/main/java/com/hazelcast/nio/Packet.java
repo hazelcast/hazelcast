@@ -20,8 +20,6 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 
 import java.nio.ByteBuffer;
 
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
-
 /**
  * A Packet is a piece of data send over the line. The Packet is used for member to member communication and old-client to
  * member communication.
@@ -34,6 +32,7 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 public final class Packet extends HeapData implements OutboundFrame {
 
     public static final byte VERSION = 4;
+    public static final int HEAD_SIZE = 11;
 
     public static final int HEADER_OP = 0;
     public static final int HEADER_RESPONSE = 1;
@@ -41,13 +40,6 @@ public final class Packet extends HeapData implements OutboundFrame {
     public static final int HEADER_WAN_REPLICATION = 3;
     public static final int HEADER_URGENT = 4;
     public static final int HEADER_BIND = 5;
-
-    // The value of these constants is important. The order needs to match the order in the read/write process
-    private static final short PERSIST_HEADER = 1;
-    private static final short PERSIST_VALUE = 2;
-
-    private static final short PERSIST_COMPLETED = Short.MAX_VALUE;
-    public static final int HEADER_SIZE = 11;
 
     private short header;
     private int partitionId;
@@ -57,7 +49,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     private int valueOffset;
     private int size;
     // Stores the current 'phase' of read/write. This is needed so that repeated calls can be made to read/write.
-    private short persistStatus;
+    private boolean headComplete;
 
     public Packet() {
     }
@@ -125,8 +117,8 @@ public final class Packet extends HeapData implements OutboundFrame {
     }
 
     public boolean writeTo(ByteBuffer dst) {
-        if (!isPersistStatusSet(PERSIST_HEADER)) {
-            if (dst.remaining() < HEADER_SIZE) {
+        if (!headComplete) {
+            if (dst.remaining() < HEAD_SIZE) {
                 return false;
             }
 
@@ -135,20 +127,15 @@ public final class Packet extends HeapData implements OutboundFrame {
             dst.putInt(partitionId);
             size = totalSize();
             dst.putInt(size);
-            setPersistStatus(PERSIST_HEADER);
+            headComplete = true;
         }
 
-        if (!writeValue(dst)) {
-            return false;
-        }
-
-        setPersistStatus(PERSIST_COMPLETED);
-        return true;
+        return writeValue(dst);
     }
 
     public boolean readFrom(ByteBuffer src) {
-        if(!isPersistStatusSet(PERSIST_HEADER)){
-            if(src.remaining()<HEADER_SIZE){
+        if (!headComplete) {
+            if (src.remaining() < HEAD_SIZE) {
                 return false;
             }
 
@@ -161,178 +148,73 @@ public final class Packet extends HeapData implements OutboundFrame {
             header = src.getShort();
             partitionId = src.getInt();
             size = src.getInt();
-            setPersistStatus(PERSIST_HEADER);
+            headComplete = true;
         }
 
-        if (!readValue(src)) {
-            return false;
-        }
-
-        setPersistStatus(PERSIST_COMPLETED);
-        return true;
+        return readValue(src);
     }
-
-    // ========================= version =================================================
-//
-//    private boolean readVersion(ByteBuffer src) {
-//        if (!isPersistStatusSet(PERSIST_VERSION)) {
-//            if (!src.hasRemaining()) {
-//                return false;
-//            }
-//
-//        }
-//        return true;
-//    }
-
-//    private boolean writeVersion(ByteBuffer dst) {
-//        if (!isPersistStatusSet(PERSIST_VERSION)) {
-//            if (!dst.hasRemaining()) {
-//                return false;
-//            }
-//
-//            setPersistStatus(PERSIST_VERSION);
-//        }
-//        return true;
-//    }
-
-    // ========================= header =================================================
-
-//    private boolean readHeader(ByteBuffer src) {
-//        if (!isPersistStatusSet(PERSIST_HEADER)) {
-//            if (src.remaining() < 2) {
-//                return false;
-//            }
-//            header = src.getShort();
-//            setPersistStatus(PERSIST_HEADER);
-//        }
-//        return true;
-//    }
-
-//    private boolean writeHeader(ByteBuffer dst) {
-//        if (!isPersistStatusSet(PERSIST_HEADER)) {
-//            if (dst.remaining() < Bits.SHORT_SIZE_IN_BYTES) {
-//                return false;
-//            }
-//
-//            setPersistStatus(PERSIST_HEADER);
-//        }
-//        return true;
-//    }
-
-    // ========================= partition =================================================
-
-//    private boolean readPartition(ByteBuffer src) {
-//        if (!isPersistStatusSet(PERSIST_PARTITION)) {
-//            if (src.remaining() < 4) {
-//                return false;
-//            }
-//            partitionId = src.getInt();
-//            setPersistStatus(PERSIST_PARTITION);
-//        }
-//        return true;
-//    }
-
-//
-//    private boolean writePartition(ByteBuffer dst) {
-//        if (!isPersistStatusSet(PERSIST_PARTITION)) {
-//            if (dst.remaining() < Bits.INT_SIZE_IN_BYTES) {
-//                return false;
-//            }
-//            setPersistStatus(PERSIST_PARTITION);
-//        }
-//        return true;
-//    }
-
-    // ========================= size =================================================
-
-//    private boolean readSize(ByteBuffer src) {
-//        if (!isPersistStatusSet(PERSIST_SIZE)) {
-//            if (src.remaining() < INT_SIZE_IN_BYTES) {
-//                return false;
-//            }
-//            size = src.getInt();
-//            setPersistStatus(PERSIST_SIZE);
-//        }
-//        return true;
-//    }
-
-//    private boolean writeSize(ByteBuffer dst) {
-//        if (!isPersistStatusSet(PERSIST_SIZE)) {
-//            if (dst.remaining() < INT_SIZE_IN_BYTES) {
-//                return false;
-//            }
-//            setPersistStatus(PERSIST_SIZE);
-//        }
-//        return true;
-//    }
 
     // ========================= value =================================================
 
     private boolean readValue(ByteBuffer src) {
-        if (!isPersistStatusSet(PERSIST_VALUE)) {
-            if (payload == null) {
-                payload = new byte[size];
-            }
-
-            if (size > 0) {
-                int bytesReadable = src.remaining();
-
-                int bytesNeeded = size - valueOffset;
-
-                boolean done;
-                int bytesRead;
-                if (bytesReadable >= bytesNeeded) {
-                    bytesRead = bytesNeeded;
-                    done = true;
-                } else {
-                    bytesRead = bytesReadable;
-                    done = false;
-                }
-
-                // read the data from the byte-buffer into the bytes-array.
-                src.get(payload, valueOffset, bytesRead);
-                valueOffset += bytesRead;
-
-                if (!done) {
-                    return false;
-                }
-            }
-
-            setPersistStatus(PERSIST_VALUE);
+        if (payload == null) {
+            payload = new byte[size];
         }
+
+        if (size > 0) {
+            int bytesReadable = src.remaining();
+
+            int bytesNeeded = size - valueOffset;
+
+            boolean done;
+            int bytesRead;
+            if (bytesReadable >= bytesNeeded) {
+                bytesRead = bytesNeeded;
+                done = true;
+            } else {
+                bytesRead = bytesReadable;
+                done = false;
+            }
+
+            // read the data from the byte-buffer into the bytes-array.
+            src.get(payload, valueOffset, bytesRead);
+            valueOffset += bytesRead;
+
+            if (!done) {
+                return false;
+            }
+        }
+
         return true;
     }
 
     private boolean writeValue(ByteBuffer dst) {
-        if (!isPersistStatusSet(PERSIST_VALUE)) {
-            if (size > 0) {
-                // the number of bytes that can be written to the bb.
-                int bytesWritable = dst.remaining();
+        if (size > 0) {
+            // the number of bytes that can be written to the bb.
+            int bytesWritable = dst.remaining();
 
-                // the number of bytes that need to be written.
-                int bytesNeeded = size - valueOffset;
+            // the number of bytes that need to be written.
+            int bytesNeeded = size - valueOffset;
 
-                int bytesWrite;
-                boolean done;
-                if (bytesWritable >= bytesNeeded) {
-                    // All bytes for the value are available.
-                    bytesWrite = bytesNeeded;
-                    done = true;
-                } else {
-                    // Not all bytes for the value are available. So lets write as much as is available.
-                    bytesWrite = bytesWritable;
-                    done = false;
-                }
-
-                byte[] byteArray = toByteArray();
-                dst.put(byteArray, valueOffset, bytesWrite);
-                valueOffset += bytesWrite;
-
-                if (!done) {
-                    return false;
-                }
+            int bytesWrite;
+            boolean done;
+            if (bytesWritable >= bytesNeeded) {
+                // All bytes for the value are available.
+                bytesWrite = bytesNeeded;
+                done = true;
+            } else {
+                // Not all bytes for the value are available. So lets write as much as is available.
+                bytesWrite = bytesWritable;
+                done = false;
             }
-            setPersistStatus(PERSIST_VALUE);
+
+            byte[] byteArray = toByteArray();
+            dst.put(byteArray, valueOffset, bytesWrite);
+            valueOffset += bytesWrite;
+
+            if (!done) {
+                return false;
+            }
         }
         return true;
     }
@@ -344,24 +226,7 @@ public final class Packet extends HeapData implements OutboundFrame {
      */
     public int packetSize() {
         // 11 = byte(version) + short(header) + int(partitionId) + int(data size)
-        return (payload != null ? totalSize() : 0) + HEADER_SIZE;
-    }
-
-    public boolean done() {
-        return isPersistStatusSet(PERSIST_COMPLETED);
-    }
-
-    public void reset() {
-        payload = null;
-        persistStatus = 0;
-    }
-
-    private void setPersistStatus(short persistStatus) {
-        this.persistStatus = persistStatus;
-    }
-
-    private boolean isPersistStatusSet(short status) {
-        return this.persistStatus >= status;
+        return (payload != null ? totalSize() : 0) + HEAD_SIZE;
     }
 
     @Override
