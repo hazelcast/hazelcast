@@ -1360,9 +1360,22 @@ https://hazelcast.org/documentation/.
     Hazelcast's Service Provider Interface (SPI). Configuration element's name is <services>. You can list
     your services using its <service>.
     It has the following attribute:
-    - enable-defaults: 
+    * enable-defaults: 
     	Set as true if you want to use Hazelcast's services and operations (getMap, putAsync, etc.) 
-    	in your own service implementation.
+    	in your own service implementation. Its default value is true.
+    
+    Each <service> has the following attributes and sub-elements:
+    * enabled: 
+    	Specifies whether the service is enabled.
+    * <name>:
+    	Name of your service to be registered.
+    * <class-name>:
+    	Full name of the class that you developed for your service on top of Hazelcast SPI.
+    * <properties>:
+    	Lists the properties using its <property> element, with which you can specify the name and value of your
+    	custom service properties.
+    * <configuration>:
+    	Lists the configuration elements that you defined for your service using Hazelcast's "Config" object.
 -->
 
     <services enable-defaults="false">
