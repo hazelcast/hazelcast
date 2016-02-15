@@ -30,14 +30,21 @@ public abstract class InternalMigrationListener implements EventListener {
         DESTINATION
     }
 
-    public abstract void onMigrationStart(MigrationParticipant participant, MigrationInfo migrationInfo);
+    public void onMigrationStart(MigrationParticipant participant, MigrationInfo migrationInfo) {
 
-    public abstract void onMigrationComplete(MigrationParticipant participant, MigrationInfo migrationInfo, boolean success);
+    }
 
-    public abstract void onMigrationCommit(MigrationParticipant participant, MigrationInfo migrationInfo);
+    public void onMigrationComplete(MigrationParticipant participant, MigrationInfo migrationInfo, boolean success) {
 
-    public abstract void onMigrationRollback(MigrationParticipant participant, MigrationInfo migrationInfo);
+    }
 
+    public void onMigrationCommit(MigrationParticipant participant, MigrationInfo migrationInfo) {
+
+    }
+
+    public void onMigrationRollback(MigrationParticipant participant, MigrationInfo migrationInfo) {
+
+    }
 
     public static class NopInternalMigrationListener extends InternalMigrationListener {
 

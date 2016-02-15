@@ -60,14 +60,14 @@ public class InternalMigrationListenerTest
         assertEquals(hz2PartitionId, notifications.get(2).migrationInfo.getPartitionId());
     }
 
-    private enum MigrationProgressEvent {
+    enum MigrationProgressEvent {
         START,
         COMPLETE,
         COMMIT,
         ROLLBACK
     }
 
-    private static class MigrationProgressNotification {
+    static class MigrationProgressNotification {
 
         final MigrationProgressEvent event;
 
@@ -92,7 +92,7 @@ public class InternalMigrationListenerTest
 
     }
 
-    private static class InternalMigrationListenerImpl
+    static class InternalMigrationListenerImpl
             extends InternalMigrationListener {
 
         private final List<MigrationProgressNotification> notifications = new ArrayList<MigrationProgressNotification>();

@@ -38,9 +38,13 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
 
     private final List<MemberInfo> members = new ArrayList<MemberInfo>(100);
     private final Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
-    private ILogger logger;
     private int version;
     private Collection<MigrationInfo> completedMigrations;
+    // used to know ongoing migrations when master changed
+    private MigrationInfo activeMigration;
+
+    // transient fields
+    private ILogger logger;
     private Address endpoint;
 
     public PartitionRuntimeState() {
@@ -136,14 +140,16 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
         return completedMigrations != null ? completedMigrations : Collections.<MigrationInfo>emptyList();
     }
 
+    public MigrationInfo getActiveMigration() {
+        return activeMigration;
+    }
+
+    public void setActiveMigration(MigrationInfo activeMigration) {
+        this.activeMigration = activeMigration;
+    }
+
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        // `masterTime` field is removed because it's not used anymore.
-        // Keeping an empty `in.readLong()` call here to not to break
-        // serialization of this class.
-        // masterTime = in.readLong();
-        in.readLong();
-
         version = in.readInt();
         int size = in.readInt();
         final Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(size);
@@ -161,6 +167,11 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
             partitionInfos.add(spi);
         }
 
+        if (in.readBoolean()) {
+            activeMigration = new MigrationInfo();
+            activeMigration.readData(in);
+        }
+
         int k = in.readInt();
         if (k > 0) {
             completedMigrations = new ArrayList<MigrationInfo>(k);
@@ -174,12 +185,6 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        // `masterTime` field is removed because it's not used anymore.
-        // Added an empty `out.writeLong(0L)` call here to not to break
-        // serialization of this class.
-        // out.writeLong(masterTime);
-        out.writeLong(0L);
-
         out.writeInt(version);
         int memberSize = members.size();
         out.writeInt(memberSize);
@@ -189,6 +194,13 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
         out.writeInt(partitionInfos.size());
         for (ShortPartitionInfo spi : partitionInfos) {
             spi.writeData(out);
+        }
+
+        if (activeMigration != null) {
+            out.writeBoolean(true);
+            activeMigration.writeData(out);
+        } else {
+            out.writeBoolean(false);
         }
 
         if (completedMigrations != null) {
