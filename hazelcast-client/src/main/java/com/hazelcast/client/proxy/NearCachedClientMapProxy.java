@@ -29,7 +29,7 @@ import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
@@ -371,8 +371,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             invalidationListenerId = registerListener(createNearCacheEntryListenerCodec(), handler);
 
         } catch (Exception e) {
-            Logger.getLogger(ClientHeapNearCache.class).severe(
-                    "-----------------\n Near Cache is not initialized!!! \n-----------------", e);
+            ILogger logger = getContext().getLoggingService().getLogger(ClientHeapNearCache.class);
+            logger.severe("-----------------\n Near Cache is not initialized!!! \n-----------------", e);
         }
     }
 

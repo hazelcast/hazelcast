@@ -20,7 +20,7 @@ import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.util.executor.CompletableFutureTask;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
@@ -38,29 +38,32 @@ import java.util.concurrent.TimeUnit;
 
 public final class ClientExecutionServiceImpl implements ClientExecutionService {
 
-    private static final ILogger LOGGER = Logger.getLogger(ClientExecutionService.class);
     private static final long TERMINATE_TIMEOUT_SECONDS = 30;
-    private static final ExecutionCallback FAILURE_LOGGING_EXECUTION_CALLBACK = new ExecutionCallback() {
-        @Override
-        public void onResponse(Object response) {
-
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            LOGGER.warning("Rejected internal execution on scheduledExecutor", t);
-        }
-    };
+    private final ILogger logger;
+    private final ExecutionCallback failureLoggingExecutionCallback;
 
     private final ExecutorService userExecutor;
     private final ExecutorService internalExecutor;
     private final ScheduledExecutorService scheduledExecutor;
 
-    public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader, int poolSize) {
+    public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader, int poolSize
+            , LoggingService loggingService) {
         int executorPoolSize = poolSize;
         if (executorPoolSize <= 0) {
             executorPoolSize = Runtime.getRuntime().availableProcessors();
         }
+        logger = loggingService.getLogger(ClientExecutionService.class);
+        failureLoggingExecutionCallback = new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                logger.warning("Rejected internal execution on scheduledExecutor", t);
+            }
+        };
 
         internalExecutor = new ThreadPoolExecutor(2, 2, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(),
@@ -68,7 +71,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                         String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
-                        LOGGER.finest(message);
+                        logger.finest(message);
                         throw new RejectedExecutionException(message);
                     }
                 });
@@ -78,7 +81,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                         String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
-                        LOGGER.finest(message);
+                        logger.finest(message);
                         throw new RejectedExecutionException(message);
                     }
                 });
@@ -140,7 +143,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> schedule(final Runnable command, long delay, TimeUnit unit) {
         return scheduledExecutor.schedule(new Runnable() {
             public void run() {
-                executeInternalSafely(command, FAILURE_LOGGING_EXECUTION_CALLBACK);
+                executeInternalSafely(command, failureLoggingExecutionCallback);
             }
         }, delay, unit);
     }
@@ -149,7 +152,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
         return scheduledExecutor.scheduleAtFixedRate(new Runnable() {
             public void run() {
-                executeInternalSafely(command, FAILURE_LOGGING_EXECUTION_CALLBACK);
+                executeInternalSafely(command, failureLoggingExecutionCallback);
             }
         }, initialDelay, period, unit);
     }
@@ -158,7 +161,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
         return scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
             public void run() {
-                executeInternalSafely(command, FAILURE_LOGGING_EXECUTION_CALLBACK);
+                executeInternalSafely(command, failureLoggingExecutionCallback);
             }
         }, initialDelay, period, unit);
     }
@@ -187,11 +190,11 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
         try {
             boolean success = executor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!success) {
-                LOGGER.warning(name + " executor awaitTermination could not completed in "
+                logger.warning(name + " executor awaitTermination could not completed in "
                         + TERMINATE_TIMEOUT_SECONDS + " seconds");
             }
         } catch (InterruptedException e) {
-            LOGGER.warning(name + " executor await termination is interrupted", e);
+            logger.warning(name + " executor await termination is interrupted", e);
         }
     }
 

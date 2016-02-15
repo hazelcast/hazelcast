@@ -73,9 +73,10 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.JobTracker;
@@ -117,7 +118,6 @@ import java.util.logging.Level;
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
-    private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
     private static final short protocolVersion = 1;
 
     private final ClientProperties clientProperties;
@@ -140,20 +140,23 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientExtension clientExtension;
     private final Credentials credentials;
     private final DiscoveryService discoveryService;
+    private final LoggingService loggingService;
     private SerializationService serializationService;
 
     public HazelcastClientInstanceImpl(ClientConfig config,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
                                        AddressProvider externalAddressProvider) {
         this.config = config;
-        final GroupConfig groupConfig = config.getGroupConfig();
-
         if (config.getInstanceName() != null) {
             instanceName = config.getInstanceName();
         } else {
-            instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
+            instanceName = "hz.client_" + id;
         }
 
+        GroupConfig groupConfig = config.getGroupConfig();
+        String loggingType = GroupProperty.LOGGING_TYPE.getSystemProperty();
+        loggingService = new ClientLoggingService(groupConfig.getName(),
+                loggingType, BuildInfoProvider.getBuildInfo(), instanceName);
         clientExtension = createClientInitializer(config.getClassLoader());
         clientExtension.beforeStart(this);
 
@@ -190,7 +193,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         }
 
         if (discoveryService != null) {
-            addressProviders.add(new DiscoveryAddressProvider(discoveryService));
+            addressProviders.add(new DiscoveryAddressProvider(discoveryService, loggingService));
         }
 
         if (clientProperties.getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED)) {
@@ -199,9 +202,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         if (awsConfig != null && awsConfig.isEnabled()) {
             try {
-                addressProviders.add(new AwsAddressProvider(awsConfig));
+                addressProviders.add(new AwsAddressProvider(awsConfig, loggingService));
             } catch (NoClassDefFoundError e) {
-                LOGGER.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
+                ILogger logger = loggingService.getLogger(HazelcastClient.class);
+                logger.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
                 throw e;
             }
         }
@@ -218,7 +222,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         if (factory == null) {
             factory = new DefaultDiscoveryServiceProvider();
         }
-        ILogger logger = Logger.getLogger(DiscoveryService.class);
+        ILogger logger = loggingService.getLogger(DiscoveryService.class);
 
         DiscoveryServiceSettings settings = new DiscoveryServiceSettings().setConfigClassLoader(config.getClassLoader())
                 .setLogger(logger).setDiscoveryMode(DiscoveryMode.Client).setDiscoveryConfig(discoveryConfig);
@@ -296,7 +300,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private ClientExecutionServiceImpl initExecutionService() {
-        return new ClientExecutionServiceImpl(instanceName, threadGroup, config.getClassLoader(), config.getExecutorPoolSize());
+        return new ClientExecutionServiceImpl(instanceName, threadGroup,
+                config.getClassLoader(), config.getExecutorPoolSize(), loggingService);
     }
 
     public void start() {
@@ -497,7 +502,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     @Override
     public LoggingService getLoggingService() {
-        throw new UnsupportedOperationException();
+        return loggingService;
     }
 
     @Override

@@ -36,7 +36,6 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.util.Clock;
@@ -59,15 +58,16 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ClientClusterServiceImpl extends ClusterListenerSupport {
 
-    private static final ILogger LOGGER = Logger.getLogger(ClientClusterService.class);
+    private final ILogger logger;
     private final AtomicReference<Map<Address, Member>> members = new AtomicReference<Map<Address, Member>>();
     private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
     private final Object initialMembershipListenerMutex = new Object();
 
     public ClientClusterServiceImpl(HazelcastClientInstanceImpl client, Collection<AddressProvider> addressProviders) {
         super(client, addressProviders);
-        final ClientConfig clientConfig = getClientConfig();
-        final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
+        logger = client.getLoggingService().getLogger(ClientClusterService.class);
+        ClientConfig clientConfig = getClientConfig();
+        List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         for (ListenerConfig listenerConfig : listenerConfigs) {
             EventListener listener = listenerConfig.getImplementation();
             if (listener == null) {
@@ -75,7 +75,7 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
                     listener = ClassLoaderUtil.newInstance(clientConfig.getClassLoader(),
                             listenerConfig.getClassName());
                 } catch (Exception e) {
-                    LOGGER.severe(e);
+                    logger.severe(e);
                 }
             }
             if (listener instanceof MembershipListener) {

@@ -18,7 +18,7 @@ package com.hazelcast.client.spi.impl.discovery;
 
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
@@ -31,12 +31,12 @@ import java.util.Collection;
 public class DiscoveryAddressProvider
         implements AddressProvider {
 
-    private static final ILogger LOGGER = Logger.getLogger(DiscoveryAddressProvider.class);
-
+    private final ILogger logger;
     private final DiscoveryService discoveryService;
 
-    public DiscoveryAddressProvider(DiscoveryService discoveryService) {
+    public DiscoveryAddressProvider(DiscoveryService discoveryService, LoggingService loggingService) {
         this.discoveryService = discoveryService;
+        logger = loggingService.getLogger(DiscoveryAddressProvider.class);
     }
 
     @Override
@@ -49,7 +49,7 @@ public class DiscoveryAddressProvider
             try {
                 possibleMembers.add(discoveredAddress.getInetSocketAddress());
             } catch (UnknownHostException e) {
-                LOGGER.warning("Unresolvable host exception", e);
+                logger.warning("Unresolvable host exception", e);
             }
         }
         return possibleMembers;

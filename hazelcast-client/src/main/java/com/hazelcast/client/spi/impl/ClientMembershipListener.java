@@ -45,7 +45,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         implements EventHandler<ClientMessage> {
 
     public static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 5;
-    private static final ILogger LOGGER = com.hazelcast.logging.Logger.getLogger(ClientMembershipListener.class);
+    private final ILogger logger;
     private final List<Member> members = new LinkedList<Member>();
     private final HazelcastClientInstanceImpl client;
     private final ClientClusterServiceImpl clusterService;
@@ -56,6 +56,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     public ClientMembershipListener(HazelcastClientInstanceImpl client) {
         this.client = client;
+        logger = client.getLoggingService().getLogger(ClientMembershipListener.class);
         connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
         clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
@@ -71,7 +72,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
                 memberRemoved(member);
                 break;
             default:
-                LOGGER.warning("Unknown event type :" + eventType);
+                logger.warning("Unknown event type :" + eventType);
         }
         partitionService.refreshPartitions();
     }
@@ -93,7 +94,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
         final List<MembershipEvent> events = detectMembershipEvents(prevMembers);
         if (events.size() != 0) {
-            LOGGER.info(membersString());
+            logger.info(membersString());
         }
         fireMembershipEvent(events);
         initialListFetchedLatch.countDown();
@@ -142,10 +143,10 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
         } catch (Exception e) {
             if (client.getLifecycleService().isRunning()) {
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.warning("Error while registering to cluster events! -> " + ownerConnectionAddress, e);
+                if (logger.isFinestEnabled()) {
+                    logger.warning("Error while registering to cluster events! -> " + ownerConnectionAddress, e);
                 } else {
-                    LOGGER.warning("Error while registering to cluster events! -> " + ownerConnectionAddress + ", Error: " + e
+                    logger.warning("Error while registering to cluster events! -> " + ownerConnectionAddress + ", Error: " + e
                             .toString());
                 }
             }
@@ -155,13 +156,13 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     private void waitInitialMemberListFetched() throws InterruptedException {
         boolean success = initialListFetchedLatch.await(INITIAL_MEMBERS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         if (!success) {
-            LOGGER.warning("Error while getting initial member list from cluster!");
+            logger.warning("Error while getting initial member list from cluster!");
         }
     }
 
     private void memberRemoved(Member member) {
         members.remove(member);
-        LOGGER.info(membersString());
+        logger.info(membersString());
         final Connection connection = connectionManager.getConnection(member.getAddress());
         if (connection != null) {
             connectionManager.destroyConnection(connection);
@@ -209,7 +210,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     private void memberAdded(Member member) {
         members.add(member);
-        LOGGER.info(membersString());
+        logger.info(membersString());
         MembershipEvent event = new MembershipEvent(client.getCluster(), member,
                 MembershipEvent.MEMBER_ADDED,
                 Collections.unmodifiableSet(new LinkedHashSet<Member>(members)));

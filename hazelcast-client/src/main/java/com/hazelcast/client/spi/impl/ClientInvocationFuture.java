@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -36,7 +35,7 @@ import java.util.concurrent.TimeoutException;
 
 public class ClientInvocationFuture implements ICompletableFuture<ClientMessage> {
 
-    protected static final ILogger LOGGER = Logger.getLogger(ClientInvocationFuture.class);
+    protected final ILogger logger;
 
     protected final ClientMessage clientMessage;
     protected volatile Object response;
@@ -46,11 +45,12 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
     private final ClientInvocation invocation;
 
     public ClientInvocationFuture(ClientInvocation invocation, HazelcastClientInstanceImpl client,
-                                  ClientMessage clientMessage) {
+                                  ClientMessage clientMessage, ILogger logger) {
 
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.clientMessage = clientMessage;
         this.invocation = invocation;
+        this.logger = logger;
     }
 
     @Override
@@ -101,7 +101,7 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
      */
     boolean shouldSetResponse(Object response) {
         if (this.response != null) {
-            LOGGER.warning("The Future.set() method can only be called once. Request: " + clientMessage
+            logger.warning("The Future.set() method can only be called once. Request: " + clientMessage
                     + ", current response: " + this.response + ", new response: " + response);
             return false;
         }
@@ -177,13 +177,13 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
                         }
                         callback.onResponse(resp);
                     } catch (Throwable t) {
-                        LOGGER.severe("Failed to execute callback: " + callback
+                        logger.severe("Failed to execute callback: " + callback
                                 + "! Request: " + clientMessage + ", response: " + response, t);
                     }
                 }
             });
         } catch (RejectedExecutionException e) {
-            LOGGER.warning("Execution of callback: " + callback + " is rejected!", e);
+            logger.warning("Execution of callback: " + callback + " is rejected!", e);
             callback.onFailure(new HazelcastClientNotActiveException(e.getMessage()));
         }
     }

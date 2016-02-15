@@ -18,10 +18,10 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggingService;
+import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.SelectionHandler;
-import com.hazelcast.nio.tcp.SocketChannelWrapper;
 
 import java.nio.channels.SelectionKey;
 
@@ -34,12 +34,13 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
     private final NonBlockingIOThread ioThread;
     private SelectionKey sk;
 
-    public AbstractClientSelectionHandler(final ClientConnection connection, NonBlockingIOThread ioThread) {
+    public AbstractClientSelectionHandler(final ClientConnection connection, NonBlockingIOThread ioThread,
+                                          LoggingService loggingService) {
         this.connection = connection;
         this.ioThread = ioThread;
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
-        this.logger = Logger.getLogger(getClass().getName());
+        this.logger = loggingService.getLogger(getClass().getName());
     }
 
     protected void shutdown() {

@@ -23,10 +23,9 @@ import com.hazelcast.client.impl.protocol.codec.XATransactionFinalizeCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.ClientTransactionManagerService;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
@@ -51,7 +50,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class XAResourceProxy extends ClientProxy implements HazelcastXAResource {
 
     private static final int DEFAULT_TIMEOUT_SECONDS = (int) MILLISECONDS.toSeconds(TransactionOptions.DEFAULT_TIMEOUT_MILLIS);
-    private static final ILogger LOGGER = Logger.getLogger(XAResourceProxy.class);
 
     private final ConcurrentMap<Long, TransactionContext> threadContextMap = new ConcurrentHashMap<Long, TransactionContext>();
     private final ConcurrentMap<Xid, List<TransactionContext>> xidContextMap
@@ -106,12 +104,13 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
     public void end(Xid xid, int flags) throws XAException {
         long threadId = currentThreadId();
         TransactionContext threadContext = threadContextMap.remove(threadId);
-        if (threadContext == null && LOGGER.isFinestEnabled()) {
-            LOGGER.finest("There is no TransactionContext for the current thread: " + threadId);
+        ILogger logger = getContext().getLoggingService().getLogger(this.getClass());
+        if (threadContext == null && logger.isFinestEnabled()) {
+            logger.finest("There is no TransactionContext for the current thread: " + threadId);
         }
         List<TransactionContext> contexts = xidContextMap.get(xid);
-        if (contexts == null && LOGGER.isFinestEnabled()) {
-            LOGGER.finest("There is no TransactionContexts for the given xid: " + xid);
+        if (contexts == null && logger.isFinestEnabled()) {
+            logger.finest("There is no TransactionContexts for the given xid: " + xid);
         }
     }
 
