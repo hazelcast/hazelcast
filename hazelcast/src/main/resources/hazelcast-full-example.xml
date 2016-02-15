@@ -1401,7 +1401,7 @@ https://hazelcast.org/documentation/.
     	Specifies the name and properties of your class that you developed by implementing Hazelcast's LoginModule 
     	interface. Each login module class can be given by using the <login-module> element. This element has the 
     	attribute "usage" that specifies the way you want to use the LoginModule's  behavior during the 
-    	authenticaton process for Hazelcast members. Available values for this attribute are REQUIRED, REQUISITE, 
+    	authentication process for Hazelcast members. Available values for this attribute are REQUIRED, REQUISITE, 
     	SUFFICIENT and OPTIONAL.
     * <client-login-modules>:
 	It has the same purpose as <member-login-modules> explained above. However, instead of Hazelcast members,
