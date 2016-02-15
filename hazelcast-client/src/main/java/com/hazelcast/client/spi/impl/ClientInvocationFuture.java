@@ -23,7 +23,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -80,19 +79,15 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
 
     @Override
     public ClientMessage get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        final int heartBeatInterval = invocation.getHeartBeatInterval();
         if (response == null) {
             long waitMillis = unit.toMillis(timeout);
             if (waitMillis > 0) {
                 synchronized (this) {
                     while (waitMillis > 0 && response == null) {
                         long start = Clock.currentTimeMillis();
-                        this.wait(Math.min(heartBeatInterval, waitMillis));
+                        this.wait(waitMillis);
                         long elapsed = Clock.currentTimeMillis() - start;
                         waitMillis -= elapsed;
-                        if (!invocation.isConnectionHealthy(elapsed)) {
-                            invocation.notifyException(new TargetDisconnectedException());
-                        }
                     }
                 }
             }
