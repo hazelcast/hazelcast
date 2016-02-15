@@ -20,9 +20,12 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.nio.Bits.BYTE_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
+
 /**
- * A Packet is a piece of data send over the line. The Packet is used for member to member communication and old-client to
- * member communication.
+ * A Packet is a piece of data send over the line. The Packet is used for member to member communication.
  *
  * The Packet extends HeapData instead of wrapping it. From a design point of view this is often not the preferred solution (
  * prefer composition over inheritance), but in this case that would mean more object litter.
@@ -32,7 +35,6 @@ import java.nio.ByteBuffer;
 public final class Packet extends HeapData implements OutboundFrame {
 
     public static final byte VERSION = 4;
-    public static final int HEAD_SIZE = 11;
 
     public static final int HEADER_OP = 0;
     public static final int HEADER_RESPONSE = 1;
@@ -40,6 +42,8 @@ public final class Packet extends HeapData implements OutboundFrame {
     public static final int HEADER_WAN_REPLICATION = 3;
     public static final int HEADER_URGENT = 4;
     public static final int HEADER_BIND = 5;
+
+    private static final int HEAD_SIZE = BYTE_SIZE_IN_BYTES + SHORT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
 
     private short header;
     private int partitionId;
@@ -109,6 +113,10 @@ public final class Packet extends HeapData implements OutboundFrame {
      */
     public int getPartitionId() {
         return partitionId;
+    }
+
+    public void reset(){
+        headComplete = false;
     }
 
     @Override
