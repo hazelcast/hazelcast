@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.util.collection.Long2ObjectHashMap;
+import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 
 import java.nio.ByteBuffer;
 

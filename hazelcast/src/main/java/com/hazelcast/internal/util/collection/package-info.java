@@ -17,4 +17,4 @@
 /**
  * The Agrona project backport: collections.
  */
-package com.hazelcast.util.collection;
+package com.hazelcast.internal.util.collection;

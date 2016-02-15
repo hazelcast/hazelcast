@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.collection;
+package com.hazelcast.internal.util.collection;
 
 import com.hazelcast.util.function.Predicate;
 
@@ -27,7 +27,7 @@ import java.util.Set;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static com.hazelcast.util.QuickMath.nextPowerOfTwo;
-import static com.hazelcast.util.collection.Hashing.longHash;
+import static com.hazelcast.internal.util.collection.Hashing.longHash;
 
 /**
  * Simple fixed-size long hashset.

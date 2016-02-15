@@ -15,48 +15,47 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.collection;
+package com.hazelcast.internal.util.collection;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 
 /**
  * An iterator for a sequence of primitive integers.
  */
-public class IntIterator implements Iterator<Integer> {
-    private final int missingValue;
-    private final int[] values;
+@SuppressFBWarnings("EI2")
+public class LongIterator implements Iterator<Long> {
+    private final long missingValue;
+    private final long[] values;
 
     private int position;
 
     /**
-     * Construct an {@link Iterator} over an array of primitives ints.
+     * Construct an {@link Iterator} over an array of primitives longs.
      *
      * @param missingValue to indicate the value is missing, i.e. not present or null.
      * @param values       to iterate over.
      */
-    @SuppressFBWarnings(value = "EI2", justification =
-            "This is flyweight over caller's array, so no copying")
-    public IntIterator(final int missingValue, final int[] values) {
+    public LongIterator(final long missingValue, final long[] values) {
         this.missingValue = missingValue;
         this.values = values;
-        this.position = -1;
     }
 
     public boolean hasNext() {
-        final int[] values = this.values;
+        final long[] values = this.values;
         while (position < values.length) {
-            if (position >= 0 && values[position] != missingValue) {
+            if (values[position] != missingValue) {
                 return true;
             }
+
             position++;
         }
+
         return false;
     }
 
-    public Integer next() {
+    public Long next() {
         return nextValue();
     }
 
@@ -65,15 +64,12 @@ public class IntIterator implements Iterator<Integer> {
     }
 
     /**
-     * Strongly typed alternative of {@link Iterator#next()} to avoid boxing.
+     * Strongly typed alternative of {@link Iterator#next()} not to avoid boxing.
      *
-     * @return the next int value.
+     * @return the next long value.
      */
-    public int nextValue() {
-        if (!hasNext()) {
-            throw new NoSuchElementException();
-        }
-        final int value = values[position];
+    public long nextValue() {
+        final long value = values[position];
         position++;
         return value;
     }

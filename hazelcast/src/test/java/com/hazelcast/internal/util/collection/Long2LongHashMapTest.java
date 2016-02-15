@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.collection;
+package com.hazelcast.internal.util.collection;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.collection.Long2LongHashMap.LongLongCursor;
+import com.hazelcast.internal.util.collection.Long2LongHashMap.LongLongCursor;
 import com.hazelcast.util.function.LongLongConsumer;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

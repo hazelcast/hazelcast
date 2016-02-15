@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.collection;
+package com.hazelcast.internal.util.collection;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
@@ -43,10 +42,10 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class IntHashSetTest {
+public class LongHashSetTest {
     @Rule public final ExpectedException rule = ExpectedException.none();
 
-    private final IntHashSet set = new IntHashSet(1000, -1);
+    private final LongHashSet set = new LongHashSet(1000, -1);
 
     @Test public void initiallyContainsNoElements() throws Exception {
         for (int i = 0; i < 10000; i++) {
@@ -56,7 +55,7 @@ public class IntHashSetTest {
 
     @Test public void initiallyContainsNoBoxedElements() {
         for (int i = 0; i < 10000; i++) {
-            assertFalse(set.contains(Integer.valueOf(i)));
+            assertFalse(set.contains(Long.valueOf(i)));
         }
     }
 
@@ -74,9 +73,9 @@ public class IntHashSetTest {
 
     @Test public void containsAddedBoxedElements() {
         assertTrue(set.add(1));
-        assertTrue(set.add(Integer.valueOf(2)));
+        assertTrue(set.add(Long.valueOf(2)));
 
-        assertTrue(set.contains(Integer.valueOf(1)));
+        assertTrue(set.contains(Long.valueOf(1)));
         assertTrue(set.contains(2));
     }
 
@@ -85,16 +84,16 @@ public class IntHashSetTest {
     }
 
     @Test public void removingAPresentElementRemovesIt() {
-        final Set<Integer> jdkSet = new HashSet<Integer>();
+        final Set<Long> jdkSet = new HashSet<Long>();
         final Random rnd = new Random();
         for (int i = 0; i < 1000; i++) {
-            final int value = rnd.nextInt();
+            final long value = rnd.nextInt();
             set.add(value);
             jdkSet.add(value);
         }
         assertEquals(jdkSet, set);
-        for (Iterator<Integer> iter = jdkSet.iterator(); iter.hasNext();) {
-            final int value = iter.next();
+        for (Iterator<Long> iter = jdkSet.iterator(); iter.hasNext();) {
+            final long value = iter.next();
             assertTrue("Set suddenly doesn't contain " + value, set.contains(value));
             assertTrue("Didn't remove " + value, set.remove(value));
             iter.remove();
@@ -147,7 +146,7 @@ public class IntHashSetTest {
         set.add(1);
         set.add(2);
 
-        final IntHashSet other = new IntHashSet(100, -1);
+        final LongHashSet other = new LongHashSet(100, -1);
         other.add(1);
         other.add(2);
 
@@ -158,36 +157,36 @@ public class IntHashSetTest {
         set.add(1);
         set.add(2);
 
-        final IntHashSet other = new IntHashSet(100, -1);
+        final LongHashSet other = new LongHashSet(100, -1);
         other.add(1);
 
-        final IntHashSet diff = set.difference(other);
+        final LongHashSet diff = set.difference(other);
         assertEquals(1, diff.size());
         assertTrue(diff.contains(2));
     }
 
-    @Test public void copiesOtherIntHashSet() {
+    @Test public void copiesOtherLongHashSet() {
         set.add(1);
         set.add(2);
 
-        final IntHashSet other = new IntHashSet(1000, -1);
+        final LongHashSet other = new LongHashSet(1000, -1);
         other.copy(set);
 
-        assertThat(other, contains(2, 1));
+        assertThat(other, contains(2L, 1L));
     }
 
     @Test public void twoEmptySetsAreEqual() {
-        final IntHashSet other = new IntHashSet(100, -1);
+        final LongHashSet other = new LongHashSet(100, -1);
         assertEquals(set, other);
     }
 
     @Test public void equalityRequiresTheSameMissingValue() {
-        final IntHashSet other = new IntHashSet(100, 1);
+        final LongHashSet other = new LongHashSet(100, 1);
         assertNotEquals(set, other);
     }
 
     @Test public void setsWithTheSameValuesAreEqual() {
-        final IntHashSet other = new IntHashSet(100, -1);
+        final LongHashSet other = new LongHashSet(100, -1);
 
         set.add(1);
         set.add(1001);
@@ -199,7 +198,7 @@ public class IntHashSetTest {
     }
 
     @Test public void setsWithTheDifferentSizesAreNotEqual() {
-        final IntHashSet other = new IntHashSet(100, -1);
+        final LongHashSet other = new LongHashSet(100, -1);
 
         set.add(1);
         set.add(1001);
@@ -210,7 +209,7 @@ public class IntHashSetTest {
     }
 
     @Test public void setsWithTheDifferentValuesAreNotEqual() {
-        final IntHashSet other = new IntHashSet(100, -1);
+        final LongHashSet other = new LongHashSet(100, -1);
 
         set.add(1);
         set.add(1001);
@@ -222,12 +221,12 @@ public class IntHashSetTest {
     }
 
     @Test public void twoEmptySetsHaveTheSameHashcode() {
-        final IntHashSet other = new IntHashSet(100, -1);
+        final LongHashSet other = new LongHashSet(100, -1);
         assertEquals(set.hashCode(), other.hashCode());
     }
 
     @Test public void setsWithTheSameValuesHaveTheSameHashcode() {
-        final IntHashSet other = new IntHashSet(100, -1);
+        final LongHashSet other = new LongHashSet(100, -1);
 
         set.add(1);
         set.add(1001);
@@ -239,7 +238,7 @@ public class IntHashSetTest {
     }
 
     @Test public void worksCorrectlyWhenFull() {
-        final IntHashSet set = new IntHashSet(2, 0);
+        final LongHashSet set = new LongHashSet(2, 0);
         set.add(1);
         set.add(2);
         assertTrue(set.contains(2));
@@ -247,14 +246,14 @@ public class IntHashSetTest {
     }
 
     @Test public void failsWhenOverCapacity() {
-        final IntHashSet set = new IntHashSet(1, 0);
+        final LongHashSet set = new LongHashSet(1, 0);
         set.add(1);
         rule.expect(IllegalStateException.class);
         set.add(2);
     }
 
     @Test public void toArrayReturnsArrayOfAllElements() {
-        final IntHashSet initial = new IntHashSet(100, -1);
+        final LongHashSet initial = new LongHashSet(100, -1);
         initial.add(1);
         initial.add(13);
         final Object[] ary = initial.toArray();
@@ -263,21 +262,21 @@ public class IntHashSetTest {
     }
 
     @Test public void intoArrayReturnsArrayOfAllElements() {
-        final IntHashSet initial = new IntHashSet(100, -1);
+        final LongHashSet initial = new LongHashSet(100, -1);
         initial.add(1);
         initial.add(13);
-        final Object[] ary = initial.toArray(new Integer[2]);
+        final Object[] ary = initial.toArray(new Long[2]);
         final Set<Object> fromArray = new HashSet<Object>(Arrays.asList(ary));
         assertEquals(new HashSet<Object>(initial), fromArray);
     }
 
     private void assertIteratorHasElements() {
-        final Iterator<Integer> iter = set.iterator();
+        final Iterator<Long> iter = set.iterator();
 
         assertTrue(iter.hasNext());
-        assertEquals(Integer.valueOf(2), iter.next());
+        assertEquals(Long.valueOf(2), iter.next());
         assertTrue(iter.hasNext());
-        assertEquals(Integer.valueOf(1), iter.next());
+        assertEquals(Long.valueOf(1), iter.next());
         assertFalse(iter.hasNext());
     }
 }

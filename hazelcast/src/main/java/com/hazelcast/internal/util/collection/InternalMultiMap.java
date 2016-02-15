@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.collection;
+package com.hazelcast.internal.util.collection;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -21,13 +21,13 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.FalsePredicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.util.collection.ArrayUtils;
-import com.hazelcast.util.collection.InternalMultiMap;
+import com.hazelcast.internal.util.collection.ArrayUtils;
+import com.hazelcast.internal.util.collection.InternalMultiMap;
 
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.util.collection.ArrayUtils.createCopy;
+import static com.hazelcast.internal.util.collection.ArrayUtils.createCopy;
 
 /**
  * Replaces expression from (age >= X and age <= Y) into (age between X Y)

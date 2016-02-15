@@ -1,25 +1,18 @@
-package com.hazelcast.util.collection;
+package com.hazelcast.internal.util.collection;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestJavaSerializationUtils;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;

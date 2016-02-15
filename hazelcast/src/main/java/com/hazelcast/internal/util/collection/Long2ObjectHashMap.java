@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.collection;
+package com.hazelcast.internal.util.collection;
 
 import com.hazelcast.util.QuickMath;
 import com.hazelcast.util.function.LongFunction;
@@ -31,7 +31,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.collection.Hashing.longHash;
+import static com.hazelcast.internal.util.collection.Hashing.longHash;
 
 /**
  * {@link java.util.Map} implementation specialised for long keys using open addressing and
