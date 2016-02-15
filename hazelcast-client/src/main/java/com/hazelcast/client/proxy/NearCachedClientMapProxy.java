@@ -237,7 +237,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected void loadAllInternal(boolean replaceExistingValues, List<Data> dataKeys) {
+    protected void loadAllInternal(boolean replaceExistingValues, Collection<Data> dataKeys) {
         invalidateNearCache(dataKeys);
         super.loadAllInternal(replaceExistingValues, dataKeys);
     }

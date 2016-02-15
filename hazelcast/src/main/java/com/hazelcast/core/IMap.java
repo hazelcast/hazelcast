@@ -1456,6 +1456,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @return result of entry process.
      * @throws NullPointerException if the specified key is null.
+     * @throws IllegalArgumentException if the specified keys set is empty
      */
     Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor);
 

@@ -54,13 +54,12 @@ import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
+import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -190,12 +189,9 @@ public class ClientMapReduceProxy
         Data mapperData = toData(mapper);
         Data combinerFactoryData = toData(combinerFactory);
         Data reducerFactoryData = toData(reducerFactory);
-        List<Data> list = null;
+        Collection list = null;
         if (keys != null) {
-            list = new ArrayList<Data>(keys.size());
-            for (Object key : keys) {
-                list.add(toData(key));
-            }
+            list = CollectionUtil.objectToDataCollection(keys, getSerializationService());
         }
 
         String topologyChangedStrategyName = null;
