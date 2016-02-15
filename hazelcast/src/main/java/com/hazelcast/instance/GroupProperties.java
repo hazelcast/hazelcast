@@ -261,6 +261,6 @@ public class GroupProperties extends HazelcastProperties {
      * @param config {@link Config} used to configure the {@link GroupProperty} values.
      */
     public GroupProperties(Config config) {
-        super(config.getProperties(), GroupProperty.values());
+        super(config.getProperties());
     }
 }

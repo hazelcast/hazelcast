@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.instance.HazelcastProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -57,7 +57,7 @@ public class QueryOptimizerFactoryTest {
         assertThat(queryOptimizer, instanceOf(EmptyOptimizer.class));
     }
 
-    private GroupProperties createMockGroupProperties(GroupProperty property, String stringValue) {
+    private GroupProperties createMockGroupProperties(HazelcastProperty property, String stringValue) {
         GroupProperties properties = mock(GroupProperties.class);
         when(properties.getString(property)).thenReturn(stringValue);
         return properties;
