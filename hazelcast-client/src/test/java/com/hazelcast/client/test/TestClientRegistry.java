@@ -49,6 +49,10 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 
 public class TestClientRegistry {
@@ -96,10 +100,11 @@ public class TestClientRegistry {
     }
 
 
-    private class MockClientConnectionManager extends ClientConnectionManagerImpl {
+    public class MockClientConnectionManager extends ClientConnectionManagerImpl {
 
         private final Address clientAddress;
         private final HazelcastClientInstanceImpl client;
+        private final Map<Address, State> stateMap = new ConcurrentHashMap<Address, State>();
 
         public MockClientConnectionManager(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
                                            Address clientAddress) {
@@ -135,17 +140,47 @@ public class TestClientRegistry {
                 }
                 Node node = TestUtil.getNode(instance);
                 return new MockedClientConnection(client, connectionIdGen.incrementAndGet(),
-                        node.nodeEngine, address, clientAddress);
+                        node.nodeEngine, address, clientAddress, stateMap);
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e, IOException.class);
             }
         }
 
+        /**
+         * Stores incoming messages from address to a temporary queue
+         * When unblocked first this queue will be processed after that new messages will be consumed
+         *
+         * @param address
+         */
+        public void block(Address address) {
+            stateMap.put(address, State.BLOCKING);
+        }
 
+        /**
+         * Drops incoming messages from address
+         *
+         * @param address
+         */
+        public void drop(Address address) {
+            stateMap.put(address, State.DROPPING);
+        }
+
+        /**
+         * Removes the filter that is put by either block or drop
+         * Consumes from the temporary queue if there is anything then continues to normal behaviour
+         *
+         * @param address
+         */
+        public void unblock(Address address) {
+            stateMap.remove(address);
+        }
     }
 
+    enum State {
+        BLOCKING, DROPPING
+    }
 
-    private class MockedClientConnection extends ClientConnection {
+    public class MockedClientConnection extends ClientConnection {
         private volatile long lastReadTime;
         private volatile long lastWriteTime;
         private final NodeEngineImpl serverNodeEngine;
@@ -153,12 +188,16 @@ public class TestClientRegistry {
         private final Address localAddress;
         private final Connection serverSideConnection;
 
+        private final Queue<ClientMessage> incomingMessages = new ConcurrentLinkedQueue<ClientMessage>();
+        private final Map<Address, State> stateMap;
+
         public MockedClientConnection(HazelcastClientInstanceImpl client, int connectionId, NodeEngineImpl serverNodeEngine,
-                                      Address address, Address localAddress) throws IOException {
+                                      Address address, Address localAddress, Map<Address, State> stateMap) throws IOException {
             super(client, connectionId);
             this.serverNodeEngine = serverNodeEngine;
             this.remoteAddress = address;
             this.localAddress = localAddress;
+            this.stateMap = stateMap;
             this.serverSideConnection = new MockedNodeConnection(connectionId, remoteAddress,
                     localAddress, serverNodeEngine, this);
         }
@@ -169,8 +208,25 @@ public class TestClientRegistry {
         }
 
         void handleClientMessage(ClientMessage clientMessage) {
+            if (getState() == State.DROPPING) {
+                return;
+            }
+
+            if (getState() == State.BLOCKING) {
+                incomingMessages.add(clientMessage);
+                return;
+            }
+            ClientMessage message;
+            while ((message = incomingMessages.poll()) != null) {
+                lastReadTime = System.currentTimeMillis();
+                getConnectionManager().handleClientMessage(message, this);
+            }
             lastReadTime = System.currentTimeMillis();
             getConnectionManager().handleClientMessage(clientMessage, this);
+        }
+
+        private State getState() {
+            return stateMap.get(remoteAddress);
         }
 
         @Override
