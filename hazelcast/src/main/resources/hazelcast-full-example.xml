@@ -1483,7 +1483,50 @@ https://hazelcast.org/documentation/.
         <attribute name="CPU_CORE_COUNT" type="int">4</attribute>
         <attribute name="CPU_CORE_FREQ" type="int">1033</attribute>
     </member-attributes>
-
+<!--
+    ===== HAZELCAST QUORUM CONFIGURATION =====
+    
+    Configuration element's name is <quorum>.
+    It has the following attributes:
+    * name: 
+    	Name of your quorum. This name will be given as the value for <quorum-ref> element in the data structure
+    	configuration for which you want to define a quorum. Currently, IMap, TransactionalMap and Cache 
+    	structures support quorum.
+    * enabled:
+    	Specifies whether this quorum is enabled.
+    	
+    It has the following sub-elements:
+    * <quorum-size>:
+    	The minimum number of members required in a cluster for the cluster to remain in an
+	operational state. If the number of members is below the defined minimum at any time,
+	the operations are rejected and the rejected operations return a QuorumException to
+	their callers.
+    * <quorum-type>:
+    	Specifies for which operations the quorum will be applied. Available values are
+    	READ, WRITE and READ_WRITE.
+    * <quorum-function-class-name>:
+    	Name of the class that you develop by implementing Hazelcast's QuorumFunction interface to 
+    	conclude the absence/presence of your quorum. This function is triggered when any change happens to
+    	the member list.
+    * <quorum-listeners>:
+    	Provides the list of quorum listeners that you can register to be notified about quorum results. 
+    	Each listener is specified by <quorum-listener> sub-element. Quorum listeners are local to the member 
+    	that they are registered, so they receive only events occurred on that local member.
+-->
+    <quorum name="quorumRuleWithThreeMembers" enabled="true">
+        <quorum-size>3</quorum-size>
+        <quorum-type>READ_WRITE</quorum-type>
+        <quorum-function-class-name>
+        	com.your-package.AbsPresMyQuorum
+        </quorum-function-class-name>
+        <quorum-listeners>
+            <quorum-listener>
+            	com.your-package.ThreeMemberQuorumListener
+            </quorum-listener>
+        </quorum-listeners>
+    </quorum>
+    
+    
     <lite-member enabled="false"/>
 
 </hazelcast>
