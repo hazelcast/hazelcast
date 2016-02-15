@@ -43,13 +43,11 @@ public final class Packet extends HeapData implements OutboundFrame {
     public static final int HEADER_BIND = 5;
 
     // The value of these constants is important. The order needs to match the order in the read/write process
-    private static final short PERSIST_VERSION = 1;
-    private static final short PERSIST_HEADER = 2;
-    private static final short PERSIST_PARTITION = 3;
-    private static final short PERSIST_SIZE = 4;
-    private static final short PERSIST_VALUE = 5;
+    private static final short PERSIST_HEADER = 1;
+    private static final short PERSIST_VALUE = 2;
 
     private static final short PERSIST_COMPLETED = Short.MAX_VALUE;
+    public static final int HEADER_SIZE = 11;
 
     private short header;
     private int partitionId;
@@ -127,20 +125,17 @@ public final class Packet extends HeapData implements OutboundFrame {
     }
 
     public boolean writeTo(ByteBuffer dst) {
-        if (!writeVersion(dst)) {
-            return false;
-        }
+        if (!isPersistStatusSet(PERSIST_HEADER)) {
+            if (dst.remaining() < HEADER_SIZE) {
+                return false;
+            }
 
-        if (!writeHeader(dst)) {
-            return false;
-        }
-
-        if (!writePartition(dst)) {
-            return false;
-        }
-
-        if (!writeSize(dst)) {
-            return false;
+            dst.put(VERSION);
+            dst.putShort(header);
+            dst.putInt(partitionId);
+            size = totalSize();
+            dst.putInt(size);
+            setPersistStatus(PERSIST_HEADER);
         }
 
         if (!writeValue(dst)) {
@@ -152,20 +147,21 @@ public final class Packet extends HeapData implements OutboundFrame {
     }
 
     public boolean readFrom(ByteBuffer src) {
-        if (!readVersion(src)) {
-            return false;
-        }
+        if(!isPersistStatusSet(PERSIST_HEADER)){
+            if(src.remaining()<HEADER_SIZE){
+                return false;
+            }
 
-        if (!readHeader(src)) {
-            return false;
-        }
+            byte version = src.get();
+            if (VERSION != version) {
+                throw new IllegalArgumentException("Packet versions are not matching! Expected -> "
+                        + VERSION + ", Incoming -> " + version);
+            }
 
-        if (!readPartition(src)) {
-            return false;
-        }
-
-        if (!readSize(src)) {
-            return false;
+            header = src.getShort();
+            partitionId = src.getInt();
+            size = src.getInt();
+            setPersistStatus(PERSIST_HEADER);
         }
 
         if (!readValue(src)) {
@@ -177,106 +173,98 @@ public final class Packet extends HeapData implements OutboundFrame {
     }
 
     // ========================= version =================================================
+//
+//    private boolean readVersion(ByteBuffer src) {
+//        if (!isPersistStatusSet(PERSIST_VERSION)) {
+//            if (!src.hasRemaining()) {
+//                return false;
+//            }
+//
+//        }
+//        return true;
+//    }
 
-    private boolean readVersion(ByteBuffer src) {
-        if (!isPersistStatusSet(PERSIST_VERSION)) {
-            if (!src.hasRemaining()) {
-                return false;
-            }
-            byte version = src.get();
-            setPersistStatus(PERSIST_VERSION);
-            if (VERSION != version) {
-                throw new IllegalArgumentException("Packet versions are not matching! Expected -> "
-                        + VERSION + ", Incoming -> " + version);
-            }
-        }
-        return true;
-    }
-
-    private boolean writeVersion(ByteBuffer dst) {
-        if (!isPersistStatusSet(PERSIST_VERSION)) {
-            if (!dst.hasRemaining()) {
-                return false;
-            }
-            dst.put(VERSION);
-            setPersistStatus(PERSIST_VERSION);
-        }
-        return true;
-    }
+//    private boolean writeVersion(ByteBuffer dst) {
+//        if (!isPersistStatusSet(PERSIST_VERSION)) {
+//            if (!dst.hasRemaining()) {
+//                return false;
+//            }
+//
+//            setPersistStatus(PERSIST_VERSION);
+//        }
+//        return true;
+//    }
 
     // ========================= header =================================================
 
-    private boolean readHeader(ByteBuffer src) {
-        if (!isPersistStatusSet(PERSIST_HEADER)) {
-            if (src.remaining() < 2) {
-                return false;
-            }
-            header = src.getShort();
-            setPersistStatus(PERSIST_HEADER);
-        }
-        return true;
-    }
+//    private boolean readHeader(ByteBuffer src) {
+//        if (!isPersistStatusSet(PERSIST_HEADER)) {
+//            if (src.remaining() < 2) {
+//                return false;
+//            }
+//            header = src.getShort();
+//            setPersistStatus(PERSIST_HEADER);
+//        }
+//        return true;
+//    }
 
-    private boolean writeHeader(ByteBuffer dst) {
-        if (!isPersistStatusSet(PERSIST_HEADER)) {
-            if (dst.remaining() < Bits.SHORT_SIZE_IN_BYTES) {
-                return false;
-            }
-            dst.putShort(header);
-            setPersistStatus(PERSIST_HEADER);
-        }
-        return true;
-    }
+//    private boolean writeHeader(ByteBuffer dst) {
+//        if (!isPersistStatusSet(PERSIST_HEADER)) {
+//            if (dst.remaining() < Bits.SHORT_SIZE_IN_BYTES) {
+//                return false;
+//            }
+//
+//            setPersistStatus(PERSIST_HEADER);
+//        }
+//        return true;
+//    }
 
     // ========================= partition =================================================
 
-    private boolean readPartition(ByteBuffer src) {
-        if (!isPersistStatusSet(PERSIST_PARTITION)) {
-            if (src.remaining() < 4) {
-                return false;
-            }
-            partitionId = src.getInt();
-            setPersistStatus(PERSIST_PARTITION);
-        }
-        return true;
-    }
+//    private boolean readPartition(ByteBuffer src) {
+//        if (!isPersistStatusSet(PERSIST_PARTITION)) {
+//            if (src.remaining() < 4) {
+//                return false;
+//            }
+//            partitionId = src.getInt();
+//            setPersistStatus(PERSIST_PARTITION);
+//        }
+//        return true;
+//    }
 
-
-    private boolean writePartition(ByteBuffer dst) {
-        if (!isPersistStatusSet(PERSIST_PARTITION)) {
-            if (dst.remaining() < Bits.INT_SIZE_IN_BYTES) {
-                return false;
-            }
-            dst.putInt(partitionId);
-            setPersistStatus(PERSIST_PARTITION);
-        }
-        return true;
-    }
+//
+//    private boolean writePartition(ByteBuffer dst) {
+//        if (!isPersistStatusSet(PERSIST_PARTITION)) {
+//            if (dst.remaining() < Bits.INT_SIZE_IN_BYTES) {
+//                return false;
+//            }
+//            setPersistStatus(PERSIST_PARTITION);
+//        }
+//        return true;
+//    }
 
     // ========================= size =================================================
 
-    private boolean readSize(ByteBuffer src) {
-        if (!isPersistStatusSet(PERSIST_SIZE)) {
-            if (src.remaining() < INT_SIZE_IN_BYTES) {
-                return false;
-            }
-            size = src.getInt();
-            setPersistStatus(PERSIST_SIZE);
-        }
-        return true;
-    }
+//    private boolean readSize(ByteBuffer src) {
+//        if (!isPersistStatusSet(PERSIST_SIZE)) {
+//            if (src.remaining() < INT_SIZE_IN_BYTES) {
+//                return false;
+//            }
+//            size = src.getInt();
+//            setPersistStatus(PERSIST_SIZE);
+//        }
+//        return true;
+//    }
 
-    private boolean writeSize(ByteBuffer dst) {
-        if (!isPersistStatusSet(PERSIST_SIZE)) {
-            if (dst.remaining() < INT_SIZE_IN_BYTES) {
-                return false;
-            }
-            size = totalSize();
-            dst.putInt(size);
-            setPersistStatus(PERSIST_SIZE);
-        }
-        return true;
-    }
+//    private boolean writeSize(ByteBuffer dst) {
+//        if (!isPersistStatusSet(PERSIST_SIZE)) {
+//            if (dst.remaining() < INT_SIZE_IN_BYTES) {
+//                return false;
+//            }
+//            setPersistStatus(PERSIST_SIZE);
+//        }
+//        return true;
+//    }
 
     // ========================= value =================================================
 
@@ -356,7 +344,7 @@ public final class Packet extends HeapData implements OutboundFrame {
      */
     public int packetSize() {
         // 11 = byte(version) + short(header) + int(partitionId) + int(data size)
-        return (payload != null ? totalSize() : 0) + 11;
+        return (payload != null ? totalSize() : 0) + HEADER_SIZE;
     }
 
     public boolean done() {
