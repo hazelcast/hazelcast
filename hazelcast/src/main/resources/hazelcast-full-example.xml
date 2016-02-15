@@ -1455,14 +1455,6 @@ https://hazelcast.org/documentation/.
                     <endpoint>127.0.0.1</endpoint>
                 </endpoints>
             </all-permissions>
-            <map-permission name="default" principal="dev">
-                <actions>
-                    <action>create</action>
-                    <action>destroy</action>
-                    <action>put</action>
-                    <action>read</action>
-                </actions>
-            </map-permission>
             <map-permission name="custom" principal="dev">
                 <endpoints>
                     <endpoint>127.0.0.1</endpoint>
@@ -1474,17 +1466,6 @@ https://hazelcast.org/documentation/.
                     <action>read</action>
                 </actions>
             </map-permission>
-            <queue-permission name="default" principal="dev">
-                <endpoints>
-                    <endpoint>127.0.0.1</endpoint>
-                </endpoints>
-                <actions>
-                    <action>create</action>
-                    <action>destroy</action>
-                    <action>add</action>
-                    <action>remove</action>
-                </actions>
-            </queue-permission>
         </client-permissions>
         <security-interceptors>
         	<interceptor class-name="com.your-package.YourSecurityInterceptorImplementation"/>
