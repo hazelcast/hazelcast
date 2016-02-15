@@ -1471,7 +1471,19 @@ https://hazelcast.org/documentation/.
         	<interceptor class-name="com.your-package.YourSecurityInterceptorImplementation"/>
         </security-interceptors>
     </security>
+<!--
+    ===== HAZELCAST MEMBER ATTRIBUTE CONFIGURATION =====
     
+    You can define member attributes for your Hazelcast members to tag your members according to your 
+    business logic requirements. Configuration element's name is <member-attributes>. You can list 
+    each member attribute using its <attribute> sub-element. For each <attribute>, you need to provide its
+    name, type and value.
+-->
+    <member-attributes>
+        <attribute name="CPU_CORE_COUNT" type="int">4</attribute>
+        <attribute name="CPU_CORE_FREQ" type="int">1033</attribute>
+    </member-attributes>
+
     <lite-member enabled="false"/>
 
 </hazelcast>
