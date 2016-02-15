@@ -16,11 +16,11 @@
 
 package com.hazelcast.mapreduce.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.mapreduce.JobTracker;
@@ -31,7 +31,7 @@ import com.hazelcast.mapreduce.impl.operation.ProcessingOperation;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
@@ -75,7 +75,7 @@ public class MapReduceService
     private final ConcurrentMap<String, NodeJobTracker> jobTrackers;
     private final ConcurrentMap<JobSupervisorKey, JobSupervisor> jobSupervisors;
 
-    private final InternalPartitionService partitionService;
+    private final IPartitionService partitionService;
     private final ClusterService clusterService;
 
     private final NodeEngineImpl nodeEngine;

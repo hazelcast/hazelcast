@@ -19,7 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.UnmodifiableIterator;
 
@@ -106,7 +106,7 @@ public final class MapKeyLoaderUtil {
         return (int) maxSizePerNode;
     }
 
-    static IFunction<Data, Entry<Integer, Data>> toPartition(final InternalPartitionService partitionService) {
+    static IFunction<Data, Entry<Integer, Data>> toPartition(final IPartitionService partitionService) {
         return new IFunction<Data, Entry<Integer, Data>>() {
             @Override
             public Entry<Integer, Data> apply(Data input) {

@@ -20,7 +20,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -196,7 +196,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         final MapService mapService = (MapService) mapProxy.getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        final IPartitionService partitionService = nodeEngine.getPartitionService();
         for (int i = 0; i < partitionService.getPartitionCount(); i++) {
             final Address owner = partitionService.getPartitionOwner(i);
             if (nodeEngine.getThisAddress().equals(owner)) {

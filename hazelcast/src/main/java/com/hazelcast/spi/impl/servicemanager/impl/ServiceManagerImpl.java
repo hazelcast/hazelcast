@@ -39,7 +39,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;

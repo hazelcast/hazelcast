@@ -21,7 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -85,12 +85,13 @@ public class PartitionContainer {
         MapContainer mapContainer = serviceContext.getMapContainer(name);
         MapConfig mapConfig = mapContainer.getMapConfig();
         NodeEngine nodeEngine = serviceContext.getNodeEngine();
-        InternalPartitionService ps = nodeEngine.getPartitionService();
+        IPartitionService ps = nodeEngine.getPartitionService();
         OperationService opService = nodeEngine.getOperationService();
         ExecutionService execService = nodeEngine.getExecutionService();
         GroupProperties groupProperties = nodeEngine.getGroupProperties();
 
-        MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, execService, mapContainer.toData());
+        MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, nodeEngine.getClusterService(),
+                execService, mapContainer.toData());
         keyLoader.setMaxBatch(groupProperties.getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE));
         keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getMaxSizeConfig()));
         keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);

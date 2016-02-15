@@ -23,7 +23,7 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
@@ -91,7 +91,7 @@ public class CacheRemoveAllOperation
         if (keys == null) {
             return;
         }
-        InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+        IPartitionService partitionService = getNodeEngine().getPartitionService();
         for (Data k : keys) {
             if (partitionService.getPartitionId(k) == getPartitionId()) {
                 filteredKeys.add(k);

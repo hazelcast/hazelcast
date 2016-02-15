@@ -19,8 +19,8 @@ package com.hazelcast.concurrent.semaphore;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreDeadMemberOperation;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreReplicationOperation;
 import com.hazelcast.config.SemaphoreConfig;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartition;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.ManagedService;
@@ -59,7 +59,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         @Override
         public SemaphoreContainer createNew(String name) {
             SemaphoreConfig config = nodeEngine.getConfig().findSemaphoreConfig(name);
-            InternalPartitionService partitionService = nodeEngine.getPartitionService();
+            IPartitionService partitionService = nodeEngine.getPartitionService();
             int partitionId = partitionService.getPartitionId(getPartitionKey(name));
             return new SemaphoreContainer(partitionId, new SemaphoreConfig(config));
         }
@@ -108,12 +108,12 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     }
 
     private void onOwnerDisconnected(final String caller) {
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
 
         for (String name : containers.keySet()) {
             int partitionId = partitionService.getPartitionId(getPartitionKey(name));
-            InternalPartition partition = partitionService.getPartition(partitionId);
+            IPartition partition = partitionService.getPartition(partitionId);
             if (partition.isLocal()) {
                 Operation op = new SemaphoreDeadMemberOperation(name, caller)
                         .setPartitionId(partitionId)

@@ -21,7 +21,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.ReplicaErrorLogger;
+import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;

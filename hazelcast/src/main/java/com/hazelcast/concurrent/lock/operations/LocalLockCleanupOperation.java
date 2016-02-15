@@ -22,8 +22,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartition;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Notifier;
@@ -58,8 +58,8 @@ public class LocalLockCleanupOperation extends UnlockOperation implements Notifi
     @Override
     public boolean shouldBackup() {
         final NodeEngine nodeEngine = getNodeEngine();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        InternalPartition partition = partitionService.getPartition(getPartitionId());
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartition partition = partitionService.getPartition(getPartitionId());
         return partition.isLocal() && Boolean.TRUE.equals(response);
     }
 

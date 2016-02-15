@@ -16,8 +16,8 @@
 
 package com.hazelcast.mapreduce.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.PartitionIdAware;
@@ -29,7 +29,7 @@ import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
 import com.hazelcast.mapreduce.impl.task.MemberAssigningJobProcessInformationImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
@@ -257,7 +257,7 @@ public final class MapReduceUtil {
     }
 
     public static void enforcePartitionTableWarmup(MapReduceService mapReduceService) throws TimeoutException {
-        InternalPartitionService partitionService = mapReduceService.getNodeEngine().getPartitionService();
+        IPartitionService partitionService = mapReduceService.getNodeEngine().getPartitionService();
         int partitionCount = partitionService.getPartitionCount();
         long startTime = Clock.currentTimeMillis();
         for (int p = 0; p < partitionCount; p++) {

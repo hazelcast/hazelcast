@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.cache.BuiltInCacheMergePolicies;
 import com.hazelcast.cache.merge.PassThroughCacheMergePolicy;
-import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.IPartition;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +43,7 @@ public class CacheSimpleConfig {
     /**
      * The maximum number of backups.
      */
-    public static final int MAX_BACKUP_COUNT = InternalPartition.MAX_BACKUP_COUNT;
+    public static final int MAX_BACKUP_COUNT = IPartition.MAX_BACKUP_COUNT;
 
     /**
      * The default number of backups.

@@ -18,7 +18,8 @@ package com.hazelcast.internal.management.request;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.Iterator;
@@ -53,7 +54,7 @@ public class ClusterPropsRequest implements ConsoleRequest {
     public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
         Runtime runtime = Runtime.getRuntime();
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        InternalPartitionService partitionService = mcs.getHazelcastInstance().node.getPartitionService();
+        IPartitionService partitionService = mcs.getHazelcastInstance().node.getPartitionService();
 
         JsonObject properties = new JsonObject();
         properties.add("hazelcast.cl_version", mcs.getHazelcastInstance().node.getBuildInfo().getVersion());

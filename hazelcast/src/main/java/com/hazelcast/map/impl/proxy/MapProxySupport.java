@@ -68,8 +68,8 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartition;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.DefaultObjectNamespace;
@@ -128,7 +128,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected final LockProxySupport lockSupport;
     protected final PartitioningStrategy partitionStrategy;
     protected final MapServiceContext mapServiceContext;
-    protected final InternalPartitionService partitionService;
+    protected final IPartitionService partitionService;
     protected final Address thisAddress;
     protected final MapContainer mapContainer;
     protected final OperationService operationService;
@@ -254,7 +254,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     private Data readBackupDataOrNull(Data key) {
         int partitionId = partitionService.getPartitionId(key);
-        InternalPartition partition = partitionService.getPartition(partitionId, false);
+        IPartition partition = partitionService.getPartition(partitionId, false);
         if (!partition.isOwnerOrBackup(thisAddress)) {
             return null;
         }

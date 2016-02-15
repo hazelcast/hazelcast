@@ -20,6 +20,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.operation.LoadStatusOperation;
 import com.hazelcast.map.impl.operation.LoadStatusOperationFactory;
@@ -28,8 +29,8 @@ import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartition;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
@@ -74,7 +75,8 @@ public class MapKeyLoader {
 
     private String mapName;
     private OperationService opService;
-    private InternalPartitionService partitionService;
+    private IPartitionService partitionService;
+    private final ClusterService clusterService;
     private IFunction<Object, Data> toData;
     private ExecutionService execService;
     private CoalescingDelayedTrigger delayedTrigger;
@@ -122,11 +124,12 @@ public class MapKeyLoader {
             .withTransition(State.LOADING, State.LOADED, State.NOT_LOADED)
             .withTransition(State.LOADED, State.LOADING);
 
-    public MapKeyLoader(String mapName, OperationService opService, InternalPartitionService ps,
-                        ExecutionService execService, IFunction<Object, Data> serialize) {
+    public MapKeyLoader(String mapName, OperationService opService, IPartitionService ps,
+                        ClusterService clusterService, ExecutionService execService, IFunction<Object, Data> serialize) {
         this.mapName = mapName;
         this.opService = opService;
         this.partitionService = ps;
+        this.clusterService = clusterService;
         this.toData = serialize;
         this.execService = execService;
     }
@@ -156,9 +159,9 @@ public class MapKeyLoader {
         boolean isMapNamePartition = partitionId == mapNamePartition;
         boolean isMapNamePartitionFirstReplica = false;
         if (hasBackup && isMapNamePartition) {
-            InternalPartition partition = partitionService.getPartition(partitionId);
+            IPartition partition = partitionService.getPartition(partitionId);
             Address firstReplicaAddress = partition.getReplicaAddress(1);
-            Member member = partitionService.getMember(firstReplicaAddress);
+            Member member = clusterService.getMember(firstReplicaAddress);
             if (member != null) {
                 isMapNamePartitionFirstReplica = member.localMember();
             }

@@ -19,7 +19,7 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.ringbuffer.impl.operations.ReplicationOperation;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -101,7 +101,7 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         Map<String, RingbufferContainer> migrationData = new HashMap<String, RingbufferContainer>();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         for (Map.Entry<String, RingbufferContainer> entry : containers.entrySet()) {
             String name = entry.getKey();
             int partitionId = partitionService.getPartitionId(getPartitionKey(name));
@@ -135,7 +135,7 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
 
     private void clearMigrationData(int partitionId) {
         Iterator<Map.Entry<String, RingbufferContainer>> iterator = containers.entrySet().iterator();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         while (iterator.hasNext()) {
             Map.Entry<String, RingbufferContainer> entry = iterator.next();
             String name = entry.getKey();

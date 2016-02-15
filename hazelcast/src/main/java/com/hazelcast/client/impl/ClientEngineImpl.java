@@ -28,7 +28,6 @@ import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
@@ -37,6 +36,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -44,7 +44,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.EventPublishingService;
@@ -173,7 +173,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     @Override
-    public InternalPartitionService getPartitionService() {
+    public IPartitionService getPartitionService() {
         return nodeEngine.getPartitionService();
     }
 

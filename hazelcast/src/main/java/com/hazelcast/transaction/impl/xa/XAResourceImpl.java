@@ -16,14 +16,14 @@
 
 package com.hazelcast.transaction.impl.xa;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -174,7 +174,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
 
     private void finalizeTransactionRemotely(Xid xid, boolean isCommit) throws XAException {
         NodeEngine nodeEngine = getNodeEngine();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
         SerializableXID serializableXID =
                 new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());
@@ -195,7 +195,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
 
     private void clearRemoteTransactions(Xid xid) {
         NodeEngine nodeEngine = getNodeEngine();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
         SerializableXID serializableXID =
                 new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());

@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.InternalPartitionLostEvent;
+import com.hazelcast.partition.IPartitionLostEvent;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareService;
 
@@ -27,7 +27,7 @@ import java.util.Map.Entry;
  * Defines partition-aware operations' behavior of map service.
  * Currently, it only defines the behavior for partition lost occurrences
  *
- * @see com.hazelcast.partition.InternalPartitionLostEvent
+ * @see IPartitionLostEvent
  */
 class MapPartitionAwareService implements PartitionAwareService {
 
@@ -40,7 +40,7 @@ class MapPartitionAwareService implements PartitionAwareService {
     }
 
     @Override
-    public void onPartitionLost(InternalPartitionLostEvent partitionLostEvent) {
+    public void onPartitionLost(IPartitionLostEvent partitionLostEvent) {
         final Address thisAddress = nodeEngine.getThisAddress();
         final int partitionId = partitionLostEvent.getPartitionId();
 

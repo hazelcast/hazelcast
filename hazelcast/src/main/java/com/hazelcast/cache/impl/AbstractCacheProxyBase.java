@@ -24,7 +24,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -69,7 +69,7 @@ abstract class AbstractCacheProxyBase<K, V> {
     protected final ICacheService cacheService;
     protected final SerializationService serializationService;
     protected final CacheOperationProvider operationProvider;
-    protected final InternalPartitionService partitionService;
+    protected final IPartitionService partitionService;
 
     private final NodeEngine nodeEngine;
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
@@ -217,7 +217,7 @@ abstract class AbstractCacheProxyBase<K, V> {
                 OperationService operationService = getNodeEngine().getOperationService();
                 OperationFactory operationFactory;
 
-                InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+                IPartitionService partitionService = getNodeEngine().getPartitionService();
                 Map<Address, List<Integer>> memberPartitionsMap = partitionService.getMemberPartitionsMap();
                 Map<Integer, Object> results = new HashMap<Integer, Object>();
 
@@ -249,7 +249,7 @@ abstract class AbstractCacheProxyBase<K, V> {
             }
         }
 
-        private Set<Data> filterOwnerKeys(InternalPartitionService partitionService, Set<Integer> partitions) {
+        private Set<Data> filterOwnerKeys(IPartitionService partitionService, Set<Integer> partitions) {
             Set<Data> ownerKeys = new HashSet<Data>();
             for (Data key: keysData) {
                 int keyPartitionId = partitionService.getPartitionId(key);

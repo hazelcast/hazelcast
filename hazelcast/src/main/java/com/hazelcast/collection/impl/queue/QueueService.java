@@ -30,8 +30,8 @@ import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartition;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.EventPublishingService;
@@ -155,7 +155,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         Map<String, QueueContainer> migrationData = new HashMap<String, QueueContainer>();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
@@ -190,7 +190,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     private void clearMigrationData(int partitionId) {
         Iterator<Entry<String, QueueContainer>> iterator = containerMap.entrySet().iterator();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         while (iterator.hasNext()) {
             final Entry<String, QueueContainer> entry = iterator.next();
             final String name = entry.getKey();
@@ -274,7 +274,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         }
 
         Address thisAddress = nodeEngine.getClusterService().getThisAddress();
-        InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
+        IPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
 
         Address owner = partition.getOwnerOrNull();
         if (thisAddress.equals(owner)) {
@@ -288,7 +288,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     public LocalQueueStats createLocalQueueStats(String name) {
         SerializationService serializationService = nodeEngine.getSerializationService();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         Data keyData = serializationService.toData(name, StringPartitioningStrategy.INSTANCE);
         int partitionId = partitionService.getPartitionId(keyData);
         return createLocalQueueStats(name, partitionId);
@@ -306,7 +306,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public void rollbackTransaction(String transactionId) {
         final Set<String> queueNames = containerMap.keySet();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
         for (String name : queueNames) {
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));

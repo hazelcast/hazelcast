@@ -18,10 +18,10 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -361,7 +361,7 @@ abstract class AbstractCacheProxy<K, V>
     }
 
     private Set<Integer> getPartitionsForKeys(Set<Data> keys) {
-        final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+        final IPartitionService partitionService = getNodeEngine().getPartitionService();
         final int partitions = partitionService.getPartitionCount();
         final int capacity = Math.min(partitions, keys.size());
         final Set<Integer> partitionIds = new HashSet<Integer>(capacity);

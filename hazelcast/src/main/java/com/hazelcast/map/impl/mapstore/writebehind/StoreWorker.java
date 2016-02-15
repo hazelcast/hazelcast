@@ -23,8 +23,8 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartition;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.CollectionUtil;
@@ -52,7 +52,7 @@ public class StoreWorker implements Runnable {
     private final int partitionCount;
     private final String mapName;
     private final MapServiceContext mapServiceContext;
-    private final InternalPartitionService partitionService;
+    private final IPartitionService partitionService;
     private final WriteBehindProcessor writeBehindProcessor;
 
     private long lastRunTimeMillis;
@@ -101,7 +101,7 @@ public class StoreWorker implements Runnable {
     }
 
     private boolean isPartitionLocal(int partitionId) {
-        InternalPartition partition = partitionService.getPartition(partitionId, false);
+        IPartition partition = partitionService.getPartition(partitionId, false);
         return partition.isLocal();
     }
 

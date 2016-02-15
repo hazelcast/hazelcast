@@ -15,7 +15,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.partition.InternalPartition.MAX_BACKUP_COUNT;
+import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.impl.operationservice.impl.DummyBackupAwareOperation.backupCompletedMap;
 import static java.lang.Math.min;

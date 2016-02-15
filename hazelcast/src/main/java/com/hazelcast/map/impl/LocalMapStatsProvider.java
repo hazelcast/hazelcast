@@ -27,8 +27,8 @@ import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartition;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -60,7 +60,7 @@ public class LocalMapStatsProvider {
     protected final MapServiceContext mapServiceContext;
     protected final NearCacheProvider nearCacheProvider;
     protected final ClusterService clusterService;
-    protected final InternalPartitionService partitionService;
+    protected final IPartitionService partitionService;
     protected final ILogger logger;
 
     public LocalMapStatsProvider(MapServiceContext mapServiceContext) {
@@ -95,7 +95,7 @@ public class LocalMapStatsProvider {
         addNearCacheStats(stats, onDemandStats, mapContainer);
 
         for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
-            InternalPartition partition = partitionService.getPartition(partitionId);
+            IPartition partition = partitionService.getPartition(partitionId);
             Address owner = partition.getOwnerOrNull();
             if (owner == null) {
                 //no-op because no owner is set yet. Therefore we don't know anything about the map
@@ -172,8 +172,8 @@ public class LocalMapStatsProvider {
      * Calculates and adds replica partition stats.
      */
     protected void addReplicaPartitionStats(LocalMapOnDemandCalculatedStats onDemandStats,
-                                            String mapName, int partitionId, InternalPartition partition,
-                                            InternalPartitionService partitionService, int backupCount, Address thisAddress) {
+                                            String mapName, int partitionId, IPartition partition,
+                                            IPartitionService partitionService, int backupCount, Address thisAddress) {
         long backupEntryCount = 0;
         long backupEntryMemoryCost = 0;
 
@@ -200,15 +200,15 @@ public class LocalMapStatsProvider {
         return recordStore != null && recordStore.size() > 0;
     }
 
-    protected boolean isReplicaAvailable(Address replicaAddress, InternalPartitionService partitionService, int backupCount) {
-        return !(replicaAddress == null && partitionService.getMemberGroupsSize() > backupCount);
+    protected boolean isReplicaAvailable(Address replicaAddress, IPartitionService partitionService, int backupCount) {
+        return !(replicaAddress == null && partitionService.getMaxAllowedBackupCount() >= backupCount);
     }
 
     protected boolean isReplicaOnThisNode(Address replicaAddress, Address thisAddress) {
         return replicaAddress != null && replicaAddress.equals(thisAddress);
     }
 
-    protected void printWarning(InternalPartition partition, int replica) {
+    protected void printWarning(IPartition partition, int replica) {
         logger.warning("Partition: " + partition + ", replica: " + replica + " has no owner!");
     }
 
@@ -223,7 +223,7 @@ public class LocalMapStatsProvider {
      *
      * @see #waitForReplicaAddress
      */
-    protected Address getReplicaAddress(int replica, InternalPartition partition, InternalPartitionService partitionService,
+    protected Address getReplicaAddress(int replica, IPartition partition, IPartitionService partitionService,
                                         int backupCount) {
         Address replicaAddress = partition.getReplicaAddress(replica);
         if (replicaAddress == null) {
@@ -235,11 +235,11 @@ public class LocalMapStatsProvider {
     /**
      * Waits partition table update to get replica address if current replica address is null.
      */
-    protected Address waitForReplicaAddress(int replica, InternalPartition partition, InternalPartitionService partitionService,
+    protected Address waitForReplicaAddress(int replica, IPartition partition, IPartitionService partitionService,
                                             int backupCount) {
         int tryCount = RETRY_COUNT;
         Address replicaAddress = null;
-        while (replicaAddress == null && partitionService.getMemberGroupsSize() > backupCount && tryCount-- > 0) {
+        while (replicaAddress == null && partitionService.getMaxAllowedBackupCount() >= backupCount && tryCount-- > 0) {
             sleep();
             replicaAddress = partition.getReplicaAddress(replica);
         }

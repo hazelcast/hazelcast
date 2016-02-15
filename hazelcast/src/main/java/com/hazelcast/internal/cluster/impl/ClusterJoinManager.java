@@ -36,7 +36,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.partition.PartitionRuntimeState;
+import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;

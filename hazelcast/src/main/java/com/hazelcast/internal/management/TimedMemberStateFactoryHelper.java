@@ -26,7 +26,7 @@ import com.hazelcast.internal.management.dto.PartitionServiceBeanDTO;
 import com.hazelcast.internal.management.dto.ProxyServiceDTO;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.OperationService;

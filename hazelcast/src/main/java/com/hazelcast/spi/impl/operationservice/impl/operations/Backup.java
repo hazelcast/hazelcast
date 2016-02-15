@@ -22,9 +22,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.partition.ReplicaErrorLogger;
+import com.hazelcast.partition.IPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -86,7 +86,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     public void beforeRun() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         int partitionId = getPartitionId();
-        InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
+        IPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
         Address owner = partition.getReplicaAddress(getReplicaIndex());
         if (nodeEngine.getThisAddress().equals(owner)) {
             return;
@@ -119,7 +119,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
             return;
         }
 
-        NodeEngine nodeEngine = getNodeEngine();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
 
         if (backupOp == null && backupOpData != null) {
             backupOp = nodeEngine.getSerializationService().toObject(backupOpData);

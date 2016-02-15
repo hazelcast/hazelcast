@@ -21,13 +21,14 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.OperationService;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
@@ -54,7 +55,7 @@ public class PutAllOperation extends AbstractOperation {
         int partitionId = getPartitionId();
         service = getService();
         store = service.getReplicatedRecordStore(name, true, getPartitionId());
-        InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+        IPartitionService partitionService = getNodeEngine().getPartitionService();
         for (Map.Entry<Data, Data> entry : entries.getEntries()) {
             Data key = entry.getKey();
             Data value = entry.getValue();

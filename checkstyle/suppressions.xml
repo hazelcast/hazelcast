@@ -209,12 +209,12 @@
     <suppress checks="JavadocMethod" files="com/hazelcast/partition/"/>
     <suppress checks="JavadocType" files="com/hazelcast/partition/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/partition/"/>
-    <suppress checks="MethodCount" files="com/hazelcast/partition/InternalPartitionService"/>
     <suppress checks="MethodCount|ExecutableStatementCount|FileLengthCheck|MagicNumber"
-              files="com/hazelcast/partition/impl/InternalPartitionServiceImpl"/>
+              files="com/hazelcast/internal/partition/impl/InternalPartitionServiceImpl"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling"
-              files="com/hazelcast/partition/impl/InternalPartitionServiceImpl"/>
-    <suppress checks="CyclomaticComplexity|NPathComplexity" files="com/hazelcast/partition/impl/PartitionStateGeneratorImpl"/>
+              files="com/hazelcast/internal/partition/impl/InternalPartitionServiceImpl"/>
+    <suppress checks="CyclomaticComplexity|NPathComplexity"
+              files="com/hazelcast/internal/partition/impl/PartitionStateGeneratorImpl"/>
 
     <!-- Topic -->
     <suppress checks="VisibilityModifier" files="com/hazelcast/topic/impl/TopicEvent"/>

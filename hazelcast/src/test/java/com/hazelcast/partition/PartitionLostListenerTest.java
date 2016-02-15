@@ -6,7 +6,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitionLostListenerStressTest.EventCollectingPartitionLostListener;
-import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -45,7 +46,7 @@ public class PartitionLostListenerTest extends AbstractPartitionLostListenerTest
         final EventCollectingPartitionLostListener listener = new EventCollectingPartitionLostListener();
         instance.getPartitionService().addPartitionLostListener(listener);
 
-        final InternalPartitionLostEvent internalEvent = new InternalPartitionLostEvent(1, 0, null);
+        final IPartitionLostEvent internalEvent = new IPartitionLostEvent(1, 0, null);
 
         NodeEngineImpl nodeEngine = getNode(instance).getNodeEngine();
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
@@ -107,7 +108,7 @@ public class PartitionLostListenerTest extends AbstractPartitionLostListenerTest
     @Test
     public void test_internalPartitionLostEvent_serialization() throws IOException {
         Address address = new Address();
-        InternalPartitionLostEvent internalEvent = new InternalPartitionLostEvent(1, 2, address);
+        IPartitionLostEvent internalEvent = new IPartitionLostEvent(1, 2, address);
 
         ObjectDataOutput output = mock(ObjectDataOutput.class);
         internalEvent.writeData(output);
@@ -118,7 +119,7 @@ public class PartitionLostListenerTest extends AbstractPartitionLostListenerTest
 
     @Test
     public void test_internalPartitionLostEvent_deserialization() throws IOException {
-        InternalPartitionLostEvent internalEvent = new InternalPartitionLostEvent();
+        IPartitionLostEvent internalEvent = new IPartitionLostEvent();
 
         ObjectDataInput input = mock(ObjectDataInput.class);
         when(input.readInt()).thenReturn(1, 2);
@@ -131,6 +132,6 @@ public class PartitionLostListenerTest extends AbstractPartitionLostListenerTest
 
     @Test
     public void test_internalPartitionLostEvent_toString() {
-        assertNotNull(new InternalPartitionLostEvent().toString());
+        assertNotNull(new IPartitionLostEvent().toString());
     }
 }

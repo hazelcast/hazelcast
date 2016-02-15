@@ -35,8 +35,8 @@ import com.hazelcast.internal.eviction.EvictionStrategyProvider;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartition;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
@@ -164,8 +164,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     //CHECKSTYLE:ON
 
     private boolean isPrimary() {
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        InternalPartition partition = partitionService.getPartition(partitionId, false);
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartition partition = partitionService.getPartition(partitionId, false);
         Address owner = partition.getOwnerOrNull();
         Address thisAddress = nodeEngine.getThisAddress();
         return owner != null && owner.equals(thisAddress);
