@@ -1322,7 +1322,7 @@ https://hazelcast.org/documentation/.
 <!--
     ===== HAZELCAST HIGH-DENSITY MEMORY STORE CONFIGURATION =====
     
-    This feature is available only in Hazelcast Enterprise HD.Configuration element's name is 
+    This feature is available only in Hazelcast Enterprise HD. Configuration element's name is 
     <native-memory>. 
     It has the following attributes:
     - enabled: 
@@ -1533,5 +1533,30 @@ https://hazelcast.org/documentation/.
     data and are used mainly to execute tasks and register listeners. They do not have partitions.
 -->    
     <lite-member enabled="true"/>
-
+<!--    
+    ===== HAZELCAST HOT RESTART PERSISTENCE CONFIGURATION =====
+    
+    This feature is available only in Hazelcast Enterprise HD. Configuration element's name is 
+    <hot-restart-persistence>. It has the required attribute "enabled" to specify whether this feature is enabled
+    on this member. This part is the feature's configuration itself and you define the general specifications for 
+    the feature. However, note that <map> and <cache> have a sub-element called <hot-restart> with which you should 
+    enable its usage on those data structures. Keep in mind that Hot Restart feature is currently supported for 
+    Hazelcast's map and cache data structures.
+    It has the following sub-elements:
+    * <base-dir>:
+    	Specifies the directory where the Hot Restart data will be stored. Its default value is hot-restart. 
+    	You can use the default value, or you can specify the value of another folder containing the Hot Restart configuration.
+    	This directory will be created automatically if it does not exist.
+    * <validation-timeout-seconds>:
+    	Validation timeout for the Hot Restart process when validating the cluster members expected to join and the partition 
+    	table on the whole cluster.
+    * <data-load-timeout-seconds>:
+    	Data load timeout for the Hot Restart process. All members in the cluster should finish restoring their local data 
+    	before this timeout period.
+-->
+    <hot-restart-persistence enabled="true">
+       <base-dir>/mnt/hot-restart</base-dir>
+       <validation-timeout-seconds>120</validation-timeout-seconds>
+       <data-load-timeout-seconds>900</data-load-timeout-seconds>
+   </hot-restart-persistence>
 </hazelcast>
