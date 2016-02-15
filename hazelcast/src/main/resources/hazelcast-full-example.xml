@@ -1525,8 +1525,13 @@ https://hazelcast.org/documentation/.
             </quorum-listener>
         </quorum-listeners>
     </quorum>
+<!--
+    ===== HAZELCAST LITE MEMBER CONFIGURATION =====
     
-    
-    <lite-member enabled="false"/>
+    Configuration element's name is <lite-member>. When you want to use a Hazelcast member as a lite member,
+    set this element's "enabled" attribute to true in that member's XML configuration. Lite members do not store 
+    data and are used mainly to execute tasks and register listeners. They do not have partitions.
+-->    
+    <lite-member enabled="true"/>
 
 </hazelcast>
