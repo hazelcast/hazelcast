@@ -30,12 +30,37 @@ import java.security.PrivilegedAction;
  * a later JVM implementation can change this behaviour to allow varying index-scales and base-offsets
  * over time or per array instances (e.g. compressed primitive arrays or backwards growing arrays...)
  * <p/>
+ * <p>
  * See Gil Tene's comment related to Unsafe usage;
  * https://groups.google.com/d/msg/mechanical-sympathy/X-GtLuG0ETo/LMV1d_2IybQJ
+ * </p>
+ * @deprecated Use {@link com.hazelcast.internal.memory.MemoryAccessor} instead due to following reasons:
+ * <p>
+ * Deprecated to {@link com.hazelcast.internal.memory.MemoryAccessor} due to following reasons:
+ * <ul>
+ *     <li>
+ *          Preventing hard-dependency to {@link sun.misc.Unsafe}/
+ *     </li>
+ *     <li>
+ *          Some platforms (such as SPARC) don't support unaligned memory access.
+ *          So on these platforms memory access alignments must be checked and handled if possible.
+ *     </li>
+ * </ul>
+ * </p>
  */
+@Deprecated
 public final class UnsafeHelper {
 
+    /**
+     * @deprecated {@link com.hazelcast.internal.memory.MemoryAccessor#DEFAULT} instead
+     */
+    @Deprecated
     public static final Unsafe UNSAFE;
+
+    /**
+     * @deprecated {@link com.hazelcast.internal.memory.MemoryAccessor#AVAILABLE} instead
+     */
+    @Deprecated
     public static final boolean UNSAFE_AVAILABLE;
 
     public static final long BYTE_ARRAY_BASE_OFFSET;
