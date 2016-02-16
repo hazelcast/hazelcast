@@ -24,6 +24,7 @@ import com.hazelcast.client.spi.ClientTransactionContext;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.ThreadUtil;
 
 public class ClientTxnSetProxy<E> extends AbstractClientTxnCollectionProxy<E> implements TransactionalSet<E> {
@@ -33,7 +34,7 @@ public class ClientTxnSetProxy<E> extends AbstractClientTxnCollectionProxy<E> im
     }
 
     public boolean add(E e) {
-        throwExceptionIfNull(e);
+        Preconditions.checkNotNull(e);
         Data value = toData(e);
         ClientMessage request = TransactionalSetAddCodec.encodeRequest(name, getTransactionId()
                 , ThreadUtil.getThreadId(), value);
@@ -42,7 +43,7 @@ public class ClientTxnSetProxy<E> extends AbstractClientTxnCollectionProxy<E> im
     }
 
     public boolean remove(E e) {
-        throwExceptionIfNull(e);
+        Preconditions.checkNotNull(e);
         Data value = toData(e);
         ClientMessage request = TransactionalSetRemoveCodec.encodeRequest(name, getTransactionId()
                 , ThreadUtil.getThreadId(), value);

@@ -27,11 +27,12 @@ import com.hazelcast.client.spi.ClientTransactionContext;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.ThreadUtil;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 public class ClientTxnMultiMapProxy<K, V>
         extends ClientTxnProxy
@@ -55,12 +56,8 @@ public class ClientTxnMultiMapProxy<K, V>
                 .encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId(), toData(key));
 
         ClientMessage response = invoke(request);
-        Collection<Data> collection = TransactionalMultiMapGetCodec.decodeResponse(response).response;
-        Collection<V> coll = new ArrayList<V>(collection.size());
-        for (Data data : collection) {
-            coll.add((V) toObject(data));
-        }
-        return coll;
+        List<Data> collection = TransactionalMultiMapGetCodec.decodeResponse(response).response;
+        return new UnmodifiableLazyList<V>(collection, getSerializationService());
     }
 
     public boolean remove(Object key, Object value) {
@@ -74,12 +71,8 @@ public class ClientTxnMultiMapProxy<K, V>
         ClientMessage request = TransactionalMultiMapRemoveCodec
                 .encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId(), toData(key));
         ClientMessage response = invoke(request);
-        Collection<Data> collection = TransactionalMultiMapRemoveCodec.decodeResponse(response).response;
-        Collection<V> coll = new ArrayList<V>(collection.size());
-        for (Data data : collection) {
-            coll.add((V) toObject(data));
-        }
-        return coll;
+        List<Data> collection = TransactionalMultiMapRemoveCodec.decodeResponse(response).response;
+        return new UnmodifiableLazyList<V>(collection, getSerializationService());
     }
 
     public int valueCount(K key) {

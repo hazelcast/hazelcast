@@ -119,6 +119,7 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
@@ -130,9 +131,7 @@ import com.hazelcast.util.collection.InflatableSet;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -142,6 +141,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
+import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
 import static java.util.Collections.emptyMap;
@@ -149,6 +149,7 @@ import static java.util.Collections.emptyMap;
 public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
+    protected static final String EMPTY_COLLECTION_IS_NOT_ALLOWED = "Empty collection is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
     protected static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Predicate should not be null!";
@@ -966,28 +967,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             return;
         }
 
-        List<Data> dataKeys = convertKeysToData(keys);
+        Collection<Data> dataKeys = CollectionUtil.objectToDataCollection(keys, getSerializationService());
         loadAllInternal(replaceExistingValues, dataKeys);
     }
 
-    protected void loadAllInternal(boolean replaceExistingValues, List<Data> dataKeys) {
+    protected void loadAllInternal(boolean replaceExistingValues, Collection<Data> dataKeys) {
         ClientMessage request = MapLoadGivenKeysCodec.encodeRequest(name, dataKeys, replaceExistingValues);
         invoke(request);
-    }
-
-    // todo duplicate code.
-    private List<Data> convertKeysToData(Set<K> keys) {
-        if (keys == null || keys.isEmpty()) {
-            return Collections.emptyList();
-        }
-        final List<Data> dataKeys = new ArrayList<Data>(keys.size());
-        for (K key : keys) {
-            checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-
-            final Data dataKey = toData(key);
-            dataKeys.add(dataKey);
-        }
-        return dataKeys;
     }
 
     @Override
@@ -1067,13 +1053,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request = MapValuesCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         MapValuesCodec.ResponseParameters resultParameters = MapValuesCodec.decodeResponse(response);
-        Collection<Data> collectionData = resultParameters.response;
-        Collection<V> collection = new ArrayList<V>(collectionData.size());
-        for (Data data : collectionData) {
-            V value = toObject(data);
-            collection.add(value);
-        }
-        return collection;
+        return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
     }
 
     @Override
@@ -1176,13 +1156,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage response = invoke(request);
         MapValuesWithPredicateCodec.ResponseParameters resultParameters = MapValuesWithPredicateCodec.decodeResponse(response);
 
-        Collection<Data> result = resultParameters.response;
-        List<V> values = new ArrayList<V>(result.size());
-        for (Data data : result) {
-            V value = toObject(data);
-            values.add(value);
-        }
-        return values;
+        return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
     }
 
     private Collection<V> valuesForPagingPredicate(PagingPredicate pagingPredicate) {
@@ -1347,15 +1321,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
-        if (keys == null || keys.size() == 0 || keys.contains(null)) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
+        if (keys.size() == 0) {
+            throw new IllegalArgumentException(EMPTY_COLLECTION_IS_NOT_ALLOWED);
         }
-        Set<Data> dataKeys = new HashSet<Data>(keys.size());
-        for (K key : keys) {
-            dataKeys.add(toData(key));
-        }
+        Collection<Data> dataCollection = objectToDataCollection(keys, getSerializationService());
 
-        ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataKeys);
+        ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataCollection);
         ClientMessage response = invoke(request);
         MapExecuteOnKeysCodec.ResponseParameters resultParameters = MapExecuteOnKeysCodec.decodeResponse(response);
         return prepareResult(resultParameters.response);

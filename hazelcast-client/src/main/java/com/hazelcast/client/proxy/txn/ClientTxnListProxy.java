@@ -24,6 +24,7 @@ import com.hazelcast.client.spi.ClientTransactionContext;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.ThreadUtil;
 
 public class ClientTxnListProxy<E> extends AbstractClientTxnCollectionProxy<E> implements TransactionalList<E> {
@@ -37,8 +38,8 @@ public class ClientTxnListProxy<E> extends AbstractClientTxnCollectionProxy<E> i
     }
 
     public boolean add(E e) {
-        throwExceptionIfNull(e);
-        final Data value = toData(e);
+        Preconditions.checkNotNull(e);
+        Data value = toData(e);
         ClientMessage request = TransactionalListAddCodec.encodeRequest(name, getTransactionId()
                 , ThreadUtil.getThreadId(), value);
         ClientMessage response = invoke(request);
@@ -46,8 +47,8 @@ public class ClientTxnListProxy<E> extends AbstractClientTxnCollectionProxy<E> i
     }
 
     public boolean remove(E e) {
-        throwExceptionIfNull(e);
-        final Data value = toData(e);
+        Preconditions.checkNotNull(e);
+        Data value = toData(e);
         ClientMessage request = TransactionalListRemoveCodec.encodeRequest(name, getTransactionId()
                 , ThreadUtil.getThreadId(), value);
         ClientMessage response = invoke(request);

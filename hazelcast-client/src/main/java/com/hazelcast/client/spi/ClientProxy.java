@@ -23,6 +23,7 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.util.ExceptionUtil;
@@ -151,14 +152,12 @@ public abstract class ClientProxy implements DistributedObject {
         return getContext().getSerializationService().toData(o);
     }
 
-    protected <T> T toObject(Object data) {
-        return getContext().getSerializationService().toObject(data);
+    protected SerializationService getSerializationService() {
+        return getContext().getSerializationService();
     }
 
-    protected void throwExceptionIfNull(Object o) {
-        if (o == null) {
-            throw new NullPointerException("Object is null");
-        }
+    protected <T> T toObject(Object data) {
+        return getContext().getSerializationService().toObject(data);
     }
 
     private String getInstanceName() {

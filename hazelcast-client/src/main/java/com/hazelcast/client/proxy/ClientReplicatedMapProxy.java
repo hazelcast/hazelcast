@@ -54,6 +54,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.record.ResultSet;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.IterationType;
 
 import java.util.AbstractMap;
@@ -373,11 +374,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientMessage request = ReplicatedMapValuesCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
         ReplicatedMapValuesCodec.ResponseParameters result = ReplicatedMapValuesCodec.decodeResponse(response);
-        Collection<V> resultCollection = new ArrayList<V>(result.response.size());
-        for (Data data : result.response) {
-            resultCollection.add((V) toObject(data));
-        }
-        return resultCollection;
+        return new UnmodifiableLazyList<V>(result.response, getSerializationService());
     }
 
     @Override

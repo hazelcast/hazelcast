@@ -115,6 +115,7 @@ import static java.util.logging.Level.WARNING;
 abstract class MapProxySupport extends AbstractDistributedObject<MapService> implements InitializingObject {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
+    protected static final String EMPTY_COLLECTION_IS_NOT_ALLOWED = "Empty Collection is not allowed!";
 
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
     protected static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Predicate should not be null!";

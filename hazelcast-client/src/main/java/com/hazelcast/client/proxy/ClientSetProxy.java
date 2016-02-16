@@ -43,13 +43,12 @@ import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
+import com.hazelcast.util.CollectionUtil;
+import com.hazelcast.util.Preconditions;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements ISet<E> {
 
@@ -73,8 +72,8 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
     }
 
     public boolean contains(Object o) {
-        throwExceptionIfNull(o);
-        final Data value = toData(o);
+        Preconditions.checkNotNull(o);
+        Data value = toData(o);
         ClientMessage request = SetContainsCodec.encodeRequest(name, value);
         ClientMessage response = invokeOnPartition(request);
         SetContainsCodec.ResponseParameters resultParameters = SetContainsCodec.decodeResponse(response);
@@ -94,8 +93,8 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
     }
 
     public boolean add(E e) {
-        throwExceptionIfNull(e);
-        final Data element = toData(e);
+        Preconditions.checkNotNull(e);
+        Data element = toData(e);
         ClientMessage request = SetAddCodec.encodeRequest(name, element);
         ClientMessage response = invokeOnPartition(request);
         SetAddCodec.ResponseParameters resultParameters = SetAddCodec.decodeResponse(response);
@@ -103,8 +102,8 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
     }
 
     public boolean remove(Object o) {
-        throwExceptionIfNull(o);
-        final Data value = toData(o);
+        Preconditions.checkNotNull(o);
+        Data value = toData(o);
         ClientMessage request = SetRemoveCodec.encodeRequest(name, value);
         ClientMessage response = invokeOnPartition(request);
         SetRemoveCodec.ResponseParameters resultParameters = SetRemoveCodec.decodeResponse(response);
@@ -112,52 +111,36 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
     }
 
     public boolean containsAll(Collection<?> c) {
-        throwExceptionIfNull(c);
-        Set<Data> valueSet = new HashSet<Data>(c.size());
-        for (Object o : c) {
-            throwExceptionIfNull(o);
-            valueSet.add(toData(o));
-        }
-        ClientMessage request = SetContainsAllCodec.encodeRequest(name, valueSet);
+        Preconditions.checkNotNull(c);
+        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        ClientMessage request = SetContainsAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         SetContainsAllCodec.ResponseParameters resultParameters = SetContainsAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean addAll(Collection<? extends E> c) {
-        throwExceptionIfNull(c);
-        final List<Data> valueList = new ArrayList<Data>(c.size());
-        for (E e : c) {
-            throwExceptionIfNull(e);
-            valueList.add(toData(e));
-        }
-        ClientMessage request = SetAddAllCodec.encodeRequest(name, valueList);
+        Preconditions.checkNotNull(c);
+        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        ClientMessage request = SetAddAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         SetAddAllCodec.ResponseParameters resultParameters = SetAddAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean removeAll(Collection<?> c) {
-        throwExceptionIfNull(c);
-        final Set<Data> valueSet = new HashSet<Data>();
-        for (Object o : c) {
-            throwExceptionIfNull(o);
-            valueSet.add(toData(o));
-        }
-        ClientMessage request = SetCompareAndRemoveAllCodec.encodeRequest(name, valueSet);
+        Preconditions.checkNotNull(c);
+        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        ClientMessage request = SetCompareAndRemoveAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         SetCompareAndRemoveAllCodec.ResponseParameters resultParameters = SetCompareAndRemoveAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean retainAll(Collection<?> c) {
-        throwExceptionIfNull(c);
-        final Set<Data> valueSet = new HashSet<Data>();
-        for (Object o : c) {
-            throwExceptionIfNull(o);
-            valueSet.add(toData(o));
-        }
-        ClientMessage request = SetCompareAndRetainAllCodec.encodeRequest(name, valueSet);
+        Preconditions.checkNotNull(c);
+        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        ClientMessage request = SetCompareAndRetainAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         SetCompareAndRetainAllCodec.ResponseParameters resultParameters = SetCompareAndRetainAllCodec.decodeResponse(response);
         return resultParameters.response;

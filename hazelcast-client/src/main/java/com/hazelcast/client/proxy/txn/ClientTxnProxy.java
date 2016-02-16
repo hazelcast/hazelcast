@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
 import com.hazelcast.client.spi.ClientTransactionContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.transaction.TransactionalObject;
@@ -80,5 +81,9 @@ abstract class ClientTxnProxy implements TransactionalObject {
 
     Object toObject(Data data) {
         return transactionContext.getClient().getSerializationService().toObject(data);
+    }
+
+    SerializationService getSerializationService() {
+        return transactionContext.getClient().getSerializationService();
     }
 }

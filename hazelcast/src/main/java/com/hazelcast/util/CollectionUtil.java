@@ -16,6 +16,9 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -92,4 +95,21 @@ public final class CollectionUtil {
         }
         return item;
     }
+
+    /**
+     * @param collection           collection of objects to be converted to collection of data
+     * @param serializationService will be used for converting object to data
+     * @return collection of data
+     * @throws java.lang.NullPointerException if collection is null, or contains a null element
+     */
+    public static <C> Collection<Data> objectToDataCollection(Collection<C> collection
+            , SerializationService serializationService) {
+        List<Data> dataKeys = new ArrayList<Data>(collection.size());
+        for (C c : collection) {
+            Preconditions.checkNotNull(c);
+            dataKeys.add(serializationService.toData(c));
+        }
+        return dataKeys;
+    }
+
 }
