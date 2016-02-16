@@ -185,6 +185,11 @@ public class NodeIOService implements IOService {
     }
 
     @Override
+    public boolean isSocketBufferDirect() {
+        return node.getGroupProperties().getBoolean(GroupProperty.SOCKET_BUFFER_DIRECT);
+    }
+
+    @Override
     public int getSocketClientReceiveBufferSize() {
         int clientSendBuffer = node.getGroupProperties().getInteger(GroupProperty.SOCKET_CLIENT_RECEIVE_BUFFER_SIZE);
         return clientSendBuffer != -1 ? clientSendBuffer : getSocketReceiveBufferSize();

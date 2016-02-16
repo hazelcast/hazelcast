@@ -80,6 +80,8 @@ public interface IOService {
 
     int getSocketSendBufferSize();
 
+    boolean isSocketBufferDirect();
+
     /**
      * Size of receive buffers for connections opened by clients
      *

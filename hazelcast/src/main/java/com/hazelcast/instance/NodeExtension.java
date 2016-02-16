@@ -61,6 +61,16 @@ public interface NodeExtension {
     boolean isStartCompleted();
 
     /**
+     * Called before <tt>Node.shutdown()</tt>
+     */
+    void beforeShutdown();
+
+    /**
+     * Shutdowns <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>
+     */
+    void shutdown();
+
+    /**
      * Creates a <tt>SerializationService</tt> instance to be used by this <tt>Node</tt>.
      *
      * @return a <tt>SerializationService</tt> instance
@@ -149,17 +159,7 @@ public interface NodeExtension {
      */
     MemoryStats getMemoryStats();
 
-    /**
-     * Called before <tt>Node.shutdown()</tt>
-     */
-    void beforeShutdown();
-
-    /**
-     * Shutdowns <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>
-     */
-    void shutdown();
-
-    /**
+     /**
      * Called before a new node is joining to cluster,
      * executed if node is the master node before join event.
      * {@link com.hazelcast.internal.cluster.impl.ClusterJoinManager} calls this method,
@@ -190,7 +190,6 @@ public interface NodeExtension {
      * even if node is still on validation phase or loading hot-restart data.
      *
      * @return true if hot restart is enabled and this node knows the master
-     *
      */
     boolean triggerForceStart();
 }

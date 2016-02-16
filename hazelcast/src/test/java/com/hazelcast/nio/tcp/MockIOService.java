@@ -181,6 +181,11 @@ public class MockIOService implements IOService {
     }
 
     @Override
+    public boolean isSocketBufferDirect() {
+        return false;
+    }
+
+    @Override
     public int getSocketLingerSeconds() {
         return 0;
     }

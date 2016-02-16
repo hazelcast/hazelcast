@@ -18,6 +18,7 @@ package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.ascii.TextWriteHandler;
@@ -189,7 +190,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
     }
 
     private void configureBuffers(int size) {
-        outputBuffer = ByteBuffer.allocate(size);
+        outputBuffer = IOUtil.newByteBuffer(size, ioService.isSocketBufferDirect());
         try {
             connection.setSendBufferSize(size);
         } catch (SocketException e) {

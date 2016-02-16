@@ -315,6 +315,13 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.socket.send.buffer.size", 32);
 
     /**
+     * If the bytebuffers used in the socket should be a direct bytebuffer (true) or a regular bytebuffer (false).
+     */
+    public static final HazelcastProperty SOCKET_BUFFER_DIRECT
+            = new HazelcastProperty("hazelcast.socket.buffer.direct", false);
+
+
+    /**
      * Overrides receive buffer size for connections opened by clients.
      * <p/>
      * Hazelcast creates all connections with receive buffer size set according to #PROP_SOCKET_RECEIVE_BUFFER_SIZE.
@@ -341,6 +348,9 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty SOCKET_CLIENT_SEND_BUFFER_SIZE
             = new HazelcastProperty("hazelcast.socket.client.send.buffer.size", -1);
+
+    public static final HazelcastProperty SOCKET_CLIENT_BUFFER_DIRECT
+            = new HazelcastProperty("hazelcast.socket.client.buffer.direct", false);
 
     public static final HazelcastProperty SOCKET_LINGER_SECONDS
             = new HazelcastProperty("hazelcast.socket.linger.seconds", 0, SECONDS);
