@@ -24,14 +24,11 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.GetAllOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
-import java.util.HashSet;
-import java.util.Map;
 
 public class MapGetAllMessageTask
         extends AbstractPartitionMessageTask<MapGetAllCodec.RequestParameters> {
@@ -58,7 +55,7 @@ public class MapGetAllMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapGetAllCodec.encodeResponse(new HashSet<Map.Entry<Data, Data>>(((MapEntries) response).entries()));
+        return MapGetAllCodec.encodeResponse(((MapEntries) response).entries());
     }
 
     @Override
