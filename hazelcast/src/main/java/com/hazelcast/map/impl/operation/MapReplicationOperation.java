@@ -64,7 +64,7 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
 
     public MapReplicationOperation(MapService mapService, PartitionContainer container, int partitionId,
                                    int replicaIndex) {
-        this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+        setPartitionId(partitionId).setReplicaIndex(replicaIndex);
 
         data = new HashMap<String, Set<RecordReplicationInfo>>(container.getMaps().size());
         for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {

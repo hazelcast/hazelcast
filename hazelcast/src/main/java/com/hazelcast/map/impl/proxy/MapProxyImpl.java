@@ -717,7 +717,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor) {
-        return this.executeOnEntries(entryProcessor, TruePredicate.INSTANCE);
+        return executeOnEntries(entryProcessor, TruePredicate.INSTANCE);
     }
 
     @Override

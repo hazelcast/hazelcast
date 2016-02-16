@@ -60,7 +60,7 @@ public class DescribeInstances {
             getKeysFromIamRole();
         }
         rs = new EC2RequestSigner(awsConfig, timeStamp, endpoint);
-        attributes.put("Action", this.getClass().getSimpleName());
+        attributes.put("Action", getClass().getSimpleName());
         attributes.put("Version", DOC_VERSION);
         attributes.put("X-Amz-Algorithm", SIGNATURE_METHOD_V4);
         attributes.put("X-Amz-Credential", rs.createFormattedCredential());

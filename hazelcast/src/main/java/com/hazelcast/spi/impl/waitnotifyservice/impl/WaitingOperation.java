@@ -48,7 +48,8 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
         this.waitSupport = waitSupport;
         this.queue = queue;
         this.expirationTime = getExpirationTime(waitSupport);
-        this.setPartitionId(op.getPartitionId());
+
+        setPartitionId(op.getPartitionId());
     }
 
     private long getExpirationTime(WaitSupport waitSupport) {

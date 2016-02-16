@@ -66,7 +66,7 @@ public abstract class InstancePermission extends ClusterPermission {
             return false;
         }
 
-        if (!CONFIG_PATTERN_MATCHER.matches(that.getName(), this.getName())) {
+        if (!CONFIG_PATTERN_MATCHER.matches(that.getName(), getName())) {
             return false;
         }
 

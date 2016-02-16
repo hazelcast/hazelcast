@@ -37,8 +37,9 @@ public class ClientConditionProxy extends PartitionSpecificClientProxy implement
 
     public ClientConditionProxy(ClientLockProxy clientLockProxy, String name, ClientContext ctx) {
         super(LockService.SERVICE_NAME, clientLockProxy.getName());
-        this.setContext(ctx);
         this.conditionId = name;
+
+        setContext(ctx);
     }
 
     @Override

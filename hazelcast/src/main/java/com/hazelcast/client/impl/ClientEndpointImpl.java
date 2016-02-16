@@ -237,7 +237,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     public void sendClientMessage(ClientMessage clientMessage) {
-        Connection conn = this.getConnection();
+        Connection conn = getConnection();
         //TODO framing not implemented yet, should be split into frames before writing to connection
         conn.write(clientMessage);
     }

@@ -298,7 +298,7 @@ public class ClientCacheProxy<K, V>
         for (K key : keys) {
             CacheEntryProcessorResult<T> ceResult;
             try {
-                final T result = this.invoke(key, entryProcessor, arguments);
+                final T result = invoke(key, entryProcessor, arguments);
                 ceResult = result != null ? new CacheEntryProcessorResult<T>(result) : null;
             } catch (Exception e) {
                 ceResult = new CacheEntryProcessorResult<T>(e);

@@ -69,7 +69,7 @@ public abstract class AbstractHazelcastCachingProvider
     public AbstractHazelcastCachingProvider() {
         // We use a WeakHashMap to prevent strong references to a classLoader to avoid memory leak.
         this.cacheManagers = new WeakHashMap<ClassLoader, Map<URI, AbstractHazelcastCacheManager>>();
-        this.defaultClassLoader = this.getClass().getClassLoader();
+        this.defaultClassLoader = getClass().getClassLoader();
         try {
             defaultURI = new URI("hazelcast");
         } catch (URISyntaxException e) {

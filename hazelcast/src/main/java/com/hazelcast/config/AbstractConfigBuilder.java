@@ -83,7 +83,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
                     "<import> element can appear only in the top level of the XML");
         }
         NodeList importTags = (NodeList) xpath.evaluate(
-                String.format("/hz:%s/hz:%s", this.getXmlType().name, IMPORT.name), document, XPathConstants.NODESET);
+                String.format("/hz:%s/hz:%s", getXmlType().name, IMPORT.name), document, XPathConstants.NODESET);
         for (Node node : asElementIterable(importTags)) {
             loadAndReplaceImportElement(root, node);
         }

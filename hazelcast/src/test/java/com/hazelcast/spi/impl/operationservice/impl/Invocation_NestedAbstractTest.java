@@ -79,7 +79,8 @@ public abstract class Invocation_NestedAbstractTest extends HazelcastTestSupport
 
         public InnerOperation(Object value, int partitionId) {
             this.value = value;
-            this.setPartitionId(partitionId);
+
+            setPartitionId(partitionId);
         }
 
         @Override

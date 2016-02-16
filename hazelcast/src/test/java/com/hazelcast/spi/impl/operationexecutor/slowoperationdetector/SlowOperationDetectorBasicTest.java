@@ -229,7 +229,8 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
 
         private SlowOperation(int sleepSeconds, int partitionId) {
             this.sleepSeconds = sleepSeconds;
-            this.setPartitionId(partitionId);
+
+            setPartitionId(partitionId);
         }
 
         @Override
@@ -248,7 +249,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
             this.map = map;
             this.entryProcessor = new SlowEntryProcessor(sleepSeconds);
 
-            this.setPartitionId(partitionId);
+            setPartitionId(partitionId);
         }
 
         @Override
