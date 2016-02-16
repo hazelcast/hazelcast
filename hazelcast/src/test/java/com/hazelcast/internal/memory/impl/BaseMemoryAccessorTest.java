@@ -194,13 +194,6 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
             for (int i = 0; i < SET_LENGTH; i++) {
                 assertEquals((byte) 0x01, memoryAccessor.getByte(accessAddress + i));
             }
-
-            SampleObject obj = new SampleObject();
-
-            memoryAccessor.setMemory(obj, SampleObject.INT_VALUE_OFFSET,
-                    SampleObject.INT_VALUE_OFFSET, (byte) 0x11);
-
-            assertEquals(0x11111111, memoryAccessor.getInt(obj, SampleObject.INT_VALUE_OFFSET));
         } finally {
             if (address != 0) {
                 freeMemory(address);

@@ -64,11 +64,6 @@ public class StandardMemoryAccessor extends UnsafeBasedMemoryAccessor {
         UNSAFE.setMemory(address, bytes, value);
     }
 
-    @Override
-    public void setMemory(Object o, long offset, long bytes, byte value) {
-        UNSAFE.setMemory(o, offset, bytes, value);
-    }
-
     /////////////////////////////////////////////////////////////////////////
 
     @Override

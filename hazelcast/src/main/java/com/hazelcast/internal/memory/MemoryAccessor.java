@@ -221,16 +221,6 @@ public interface MemoryAccessor {
      */
     void setMemory(long address, long bytes, byte value);
 
-    /**
-     * Sets memory with given value from specified object by given offset as given size.
-     *
-     * @param o         the object where the value will be written to
-     * @param offset    the offset to set the value relative to object itself
-     * @param bytes     the number of bytes to be set
-     * @param value     the value to be set
-     */
-    void setMemory(Object o, long offset, long bytes, byte value);
-
     /////////////////////////////////////////////////////////////////////////
 
     /**
