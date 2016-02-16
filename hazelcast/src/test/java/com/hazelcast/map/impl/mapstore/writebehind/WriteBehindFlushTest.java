@@ -41,7 +41,6 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-@Ignore //https://github.com/hazelcast/hazelcast/issues/7492
 public class WriteBehindFlushTest extends HazelcastTestSupport {
 
     @Test
@@ -78,6 +77,7 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/7492
     public void testWriteBehindQueues_emptied_onBackupNodes() throws Exception {
         int nodeCount = 3;
         String mapName = randomName();

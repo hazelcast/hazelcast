@@ -45,7 +45,6 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-@Ignore //https://github.com/hazelcast/hazelcast/issues/7492
 public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
@@ -84,6 +83,7 @@ public class ClientWriteBehindFlushTest extends HazelcastTestSupport {
 
 
     @Test
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/7492
     public void testWriteBehindQueues_emptied_onOwnerAndBackupNodes() throws Exception {
         IMap map = client.getMap(MAP_NAME);
 
