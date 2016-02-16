@@ -17,6 +17,5 @@
 /**
  * <p>Client protocol tasks implementations for Transaction related</p>
  */
-@GenerateMessageTaskFactoryProvider package com.hazelcast.client.impl.protocol.task.transaction;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactoryProvider;
+package com.hazelcast.client.impl.protocol.task.transaction;

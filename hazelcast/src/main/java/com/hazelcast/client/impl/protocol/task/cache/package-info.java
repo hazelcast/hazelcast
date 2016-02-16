@@ -17,6 +17,4 @@
 /**
  * <p>Client protocol tasks implementations for JCache</p>
  */
-@GenerateMessageTaskFactoryProvider package com.hazelcast.client.impl.protocol.task.cache;
-
-import com.hazelcast.annotation.GenerateMessageTaskFactoryProvider;
+package com.hazelcast.client.impl.protocol.task.cache;

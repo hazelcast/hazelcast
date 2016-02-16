@@ -34,11 +34,11 @@
         <module>hazelcast-spring</module>
         <module>hazelcast-cloud</module>
         <module>hazelcast-build-utils</module>
-        <module>hazelcast-code-generator</module>
     </modules>
 
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
+        <client.protocol.version>1.0.0</client.protocol.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <jdk.version>1.6</jdk.version>

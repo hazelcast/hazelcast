@@ -17,6 +17,8 @@
 /**
  * <p>Client protocol tasks implementations for multi map</p>
  */
-@GenerateMessageTaskFactoryProvider package com.hazelcast.client.impl.protocol.task.multimap;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactoryProvider;
+package com.hazelcast.client.impl.protocol.task.multimap;
+
+
+

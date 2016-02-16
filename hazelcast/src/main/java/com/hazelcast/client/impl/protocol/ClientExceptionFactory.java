@@ -20,7 +20,7 @@ import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
-import com.hazelcast.client.impl.protocol.parameters.ErrorCodec;
+import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.InvalidConfigurationException;

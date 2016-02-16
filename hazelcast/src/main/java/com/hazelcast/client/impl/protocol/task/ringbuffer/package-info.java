@@ -17,6 +17,8 @@
 /**
  * <p>Client protocol tasks implementations for Ringbuffer</p>
  */
-@GenerateMessageTaskFactoryProvider package com.hazelcast.client.impl.protocol.task.ringbuffer;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactoryProvider;
+package com.hazelcast.client.impl.protocol.task.ringbuffer;
+
+
+
