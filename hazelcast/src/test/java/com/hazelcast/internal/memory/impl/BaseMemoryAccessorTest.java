@@ -12,6 +12,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import sun.misc.Unsafe;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
@@ -149,6 +150,15 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
             for (int i = 0; i < COPY_LENGTH; i++) {
                 assertEquals((byte) (i * i), memoryAccessor.getByte(accessDestinationAddress + i));
             }
+
+            byte[] src = new byte[] {0x11, 0x22, 0x33, 0x44};
+            byte[] dest = new byte[src.length];
+
+            memoryAccessor.copyMemory(src, MemoryAccessor.ARRAY_BYTE_BASE_OFFSET,
+                                      dest, MemoryAccessor.ARRAY_BYTE_BASE_OFFSET,
+                                      src.length);
+
+            assertArrayEquals(src, dest);
         } finally {
             if (sourceAddress != 0) {
                 freeMemory(sourceAddress);
@@ -184,6 +194,13 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
             for (int i = 0; i < SET_LENGTH; i++) {
                 assertEquals((byte) 0x01, memoryAccessor.getByte(accessAddress + i));
             }
+
+            SampleObject obj = new SampleObject();
+
+            memoryAccessor.setMemory(obj, SampleObject.INT_VALUE_OFFSET,
+                    SampleObject.INT_VALUE_OFFSET, (byte) 0x11);
+
+            assertEquals(0x11111111, memoryAccessor.getInt(obj, SampleObject.INT_VALUE_OFFSET));
         } finally {
             if (address != 0) {
                 freeMemory(address);

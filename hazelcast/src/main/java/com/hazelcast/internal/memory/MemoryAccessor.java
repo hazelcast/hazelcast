@@ -195,6 +195,23 @@ public interface MemoryAccessor {
     void copyMemory(long srcAddress, long destAddress, long bytes);
 
     /**
+     * Copies memory from given source object by given source offset
+     * to given destination object by given destination offset as given size.
+     *
+     * <p>
+     *  NOTE:
+     *      Destination object can only be <tt>byte[]</tt> or <tt>null</tt>.
+     *      But source object can be any object or <tt>null</tt>.
+     * </p>
+     * @param srcObj        the source object to be copied from
+     * @param srcOffset     the source offset relative to object itself to be copied from
+     * @param destObj       the destination object to be copied to
+     * @param destOffset    the destination offset relative to object itself to be copied to
+     * @param bytes         the number of bytes to be copied
+     */
+    void copyMemory(Object srcObj, long srcOffset, Object destObj, long destOffset, long bytes);
+
+    /**
      * Sets memory with given value from specified address as given size.
      *
      * @param address   the start address of the memory region
@@ -203,6 +220,16 @@ public interface MemoryAccessor {
      * @param value     the value to be set
      */
     void setMemory(long address, long bytes, byte value);
+
+    /**
+     * Sets memory with given value from specified object by given offset as given size.
+     *
+     * @param o         the object where the value will be written to
+     * @param offset    the offset to set the value relative to object itself
+     * @param bytes     the number of bytes to be set
+     * @param value     the value to be set
+     */
+    void setMemory(Object o, long offset, long bytes, byte value);
 
     /////////////////////////////////////////////////////////////////////////
 

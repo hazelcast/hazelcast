@@ -90,6 +90,12 @@ public class AlignmentAwareMemoryAccessor extends StandardMemoryAccessor {
     }
 
     @Override
+    public void copyMemory(Object srcObj, long srcOffset, Object destObj, long destOffset, long bytes) {
+        // TODO Should we check and handle alignment???
+        super.copyMemory(srcObj, srcOffset, destObj, destOffset, bytes);
+    }
+
+    @Override
     public void setMemory(long address, long bytes, byte value) {
         // TODO Should we check and handle alignment???
         super.setMemory(address, bytes, value);

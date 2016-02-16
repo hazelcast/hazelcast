@@ -55,8 +55,18 @@ public class StandardMemoryAccessor extends UnsafeBasedMemoryAccessor {
     }
 
     @Override
+    public void copyMemory(Object srcObj, long srcOffset, Object destObj, long destOffset, long bytes) {
+        UNSAFE.copyMemory(srcObj, srcOffset, destObj, destOffset, bytes);
+    }
+
+    @Override
     public void setMemory(long address, long bytes, byte value) {
         UNSAFE.setMemory(address, bytes, value);
+    }
+
+    @Override
+    public void setMemory(Object o, long offset, long bytes, byte value) {
+        UNSAFE.setMemory(o, offset, bytes, value);
     }
 
     /////////////////////////////////////////////////////////////////////////
