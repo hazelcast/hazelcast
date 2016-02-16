@@ -19,9 +19,9 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.util.Clock;
 

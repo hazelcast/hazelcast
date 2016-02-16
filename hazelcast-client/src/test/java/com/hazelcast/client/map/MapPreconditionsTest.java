@@ -7,7 +7,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -47,10 +47,10 @@ public class MapPreconditionsTest {
     public void setUp() throws Exception {
         Config config = new Config();
         // Default minimum is 100000 * 1.5f
-        config.setProperty(GroupProperty.QUERY_RESULT_SIZE_LIMIT, "1");
+        config.setProperty(GroupProperty.QUERY_RESULT_SIZE_LIMIT.getName(), "1");
         server = hazelcastFactory.newHazelcastInstance(config);
         client = hazelcastFactory.newHazelcastClient();
-        
+
         map = client.getMap("trial");
     }
 
@@ -486,7 +486,7 @@ public class MapPreconditionsTest {
 
     @Test(expected = QueryResultSizeExceededException.class)
     public void testKeySet() throws Exception {
-        for(int i=0; i<115001; i++) {
+        for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
 
@@ -495,7 +495,7 @@ public class MapPreconditionsTest {
 
     @Test(expected = QueryResultSizeExceededException.class)
     public void testValues() throws Exception {
-        for(int i=0; i<115001; i++) {
+        for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
 
@@ -504,7 +504,7 @@ public class MapPreconditionsTest {
 
     @Test(expected = QueryResultSizeExceededException.class)
     public void testEntrySet() throws Exception {
-        for(int i=0; i<115001; i++) {
+        for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
 
@@ -518,7 +518,7 @@ public class MapPreconditionsTest {
 
     @Test(expected = QueryResultSizeExceededException.class)
     public void testKeySetWithPredicate() throws Exception {
-        for(int i=0; i<115001; i++) {
+        for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
 
@@ -532,7 +532,7 @@ public class MapPreconditionsTest {
 
     @Test(expected = QueryResultSizeExceededException.class)
     public void testEntrySetWithPredicate() throws Exception {
-        for(int i=0; i<115001; i++) {
+        for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
 
@@ -546,7 +546,7 @@ public class MapPreconditionsTest {
 
     @Test(expected = QueryResultSizeExceededException.class)
     public void testValuesWitPredicate() throws Exception {
-        for(int i=0; i<115001; i++) {
+        for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
 
@@ -555,7 +555,7 @@ public class MapPreconditionsTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testLocalKeySet() throws Exception {
-        for(int i=0; i<115001; i++) {
+        for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
 
@@ -564,7 +564,7 @@ public class MapPreconditionsTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testLocalKeySetWithPredicate() throws Exception {
-        for(int i=0; i<115001; i++) {
+        for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
 
@@ -573,7 +573,7 @@ public class MapPreconditionsTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testLocalKeySetWithNullPredicate() throws Exception {
-        for(int i=0; i<115001; i++) {
+        for (int i = 0; i < 115001; i++) {
             map.put(i, i);
         }
 

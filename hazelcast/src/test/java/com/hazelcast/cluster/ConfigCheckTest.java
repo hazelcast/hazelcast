@@ -2,9 +2,9 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.internal.cluster.impl.ConfigCheck;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -58,12 +58,12 @@ public class ConfigCheckTest {
     }
 
     @Test
-    public void whenDifferentPartitionCount_thenConfigationMismatchException() {
+    public void whenDifferentPartitionCount_thenConfigurationMismatchException() {
         Config config1 = new Config();
-        config1.setProperty(GroupProperty.PARTITION_COUNT, "100");
+        config1.setProperty(GroupProperty.PARTITION_COUNT.getName(), "100");
 
         Config config2 = new Config();
-        config2.setProperty(GroupProperty.PARTITION_COUNT, "200");
+        config2.setProperty(GroupProperty.PARTITION_COUNT.getName(), "200");
 
         ConfigCheck configCheck1 = new ConfigCheck(config1, "joiner");
         ConfigCheck configCheck2 = new ConfigCheck(config2, "joiner");
@@ -74,10 +74,10 @@ public class ConfigCheckTest {
     @Test
     public void whenDifferentApplicationValidationToken_thenConfigurationMismatchException() {
         Config config1 = new Config();
-        config1.setProperty(GroupProperty.APPLICATION_VALIDATION_TOKEN, "foo");
+        config1.setProperty(GroupProperty.APPLICATION_VALIDATION_TOKEN.getName(), "foo");
 
         Config config2 = new Config();
-        config2.setProperty(GroupProperty.APPLICATION_VALIDATION_TOKEN, "bar");
+        config2.setProperty(GroupProperty.APPLICATION_VALIDATION_TOKEN.getName(), "bar");
 
         ConfigCheck configCheck1 = new ConfigCheck(config1, "joiner");
         ConfigCheck configCheck2 = new ConfigCheck(config2, "joiner");

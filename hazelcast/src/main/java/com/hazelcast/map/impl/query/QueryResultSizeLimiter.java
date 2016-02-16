@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -24,8 +24,8 @@ import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 
-import static com.hazelcast.instance.GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
-import static com.hazelcast.instance.GroupProperty.QUERY_RESULT_SIZE_LIMIT;
+import static com.hazelcast.internal.properties.GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
+import static com.hazelcast.internal.properties.GroupProperty.QUERY_RESULT_SIZE_LIMIT;
 import static java.lang.Math.ceil;
 import static java.lang.Math.min;
 

@@ -17,8 +17,8 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.GroupProperty.BACKPRESSURE_ENABLED;
-import static com.hazelcast.instance.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.internal.properties.GroupProperty.BACKPRESSURE_ENABLED;
+import static com.hazelcast.internal.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -36,8 +36,8 @@ public class InvocationRegistry_NotifyTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         Config config = new Config();
-        config.setProperty(BACKPRESSURE_ENABLED, "false");
-        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS, "20000");
+        config.setProperty(BACKPRESSURE_ENABLED.getName(), "false");
+        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "20000");
         local = createHazelcastInstance(config);
         warmUpPartitions(local);
         nodeEngine = getNodeEngineImpl(local);

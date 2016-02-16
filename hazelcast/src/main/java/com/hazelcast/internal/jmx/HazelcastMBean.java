@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperty;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;

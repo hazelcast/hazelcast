@@ -25,7 +25,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.MapStoreTest.MapStoreWithStoreCount;
@@ -81,7 +81,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     public void testOneMemberWriteBehindWithMaxIdle() throws Exception {
         final TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Config config = newConfig(testMapStore, 5, InitialLoadMode.EAGER);
-        config.setProperty(GroupProperty.PARTITION_COUNT, "1");
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         config.getMapConfig("default").setMaxIdleSeconds(10);
         HazelcastInstance h1 = createHazelcastInstance(config);
         final IMap map = h1.getMap("default");
@@ -379,7 +379,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         final int expectedStoreCount = 3;
         final int nodeCount = 3;
         Config config = getConfig();
-        config.setProperty(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS, "30");
+        config.setProperty(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS.getName(), "30");
         MapConfig writeBehindBackupConfig = config.getMapConfig(name);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setWriteDelaySeconds(5);

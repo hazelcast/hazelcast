@@ -15,7 +15,7 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.PartitionAwareKey;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -111,8 +111,8 @@ public class IndexSplitBrainTest extends HazelcastTestSupport {
     private Config newConfig(String mergePolicy, String mapName) {
         Config config = new Config();
         setCommonProperties(config);
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "5");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.setMergePolicy(mergePolicy);
         mapConfig.setBackupCount(1);
@@ -181,17 +181,17 @@ public class IndexSplitBrainTest extends HazelcastTestSupport {
     }
 
     protected void setCommonProperties(Config config) {
-        config.setProperty(GroupProperty.LOGGING_TYPE, "log4j");
-        config.setProperty(GroupProperty.PHONE_HOME_ENABLED, "false");
+        config.setProperty(GroupProperty.LOGGING_TYPE.getName(), "log4j");
+        config.setProperty(GroupProperty.PHONE_HOME_ENABLED.getName(), "false");
         config.setProperty("hazelcast.mancenter.enabled", "false");
-        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "1");
-        config.setProperty(GroupProperty.CONNECT_ALL_WAIT_SECONDS, "5");
-        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS, "2");
-        config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS, "1");
-        config.setProperty(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS, "5");
-        config.setProperty(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS, "10");
-        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "5");
-        config.setProperty(GroupProperty.MAX_JOIN_MERGE_TARGET_SECONDS, "10");
+        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "1");
+        config.setProperty(GroupProperty.CONNECT_ALL_WAIT_SECONDS.getName(), "5");
+        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "2");
+        config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
+        config.setProperty(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS.getName(), "5");
+        config.setProperty(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS.getName(), "10");
+        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+        config.setProperty(GroupProperty.MAX_JOIN_MERGE_TARGET_SECONDS.getName(), "10");
         config.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         config.setProperty("java.net.preferIPv4Stack", "true");
         config.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");

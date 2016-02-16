@@ -26,8 +26,8 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.replicatedmap.merge.HigherHitsMapMergePolicy;
 import com.hazelcast.replicatedmap.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.replicatedmap.merge.PassThroughMergePolicy;
@@ -239,8 +239,8 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
     private Config newConfig(String mergePolicy, String mapName) {
         Config config = new Config();
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "5");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         config.getGroupConfig().setName(generateRandomString(10));
         ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig(mapName);
         replicatedMapConfig.setMergePolicy(mergePolicy);

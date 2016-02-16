@@ -16,7 +16,8 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.internal.properties.GroupProperties;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -26,8 +27,8 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ItemCounter;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_INVOCATION_SAMPLE_PERIOD_SECONDS;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_INVOCATION_SLOW_THRESHOLD_SECONDS;
+import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_INVOCATION_SAMPLE_PERIOD_SECONDS;
+import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_INVOCATION_SLOW_THRESHOLD_SECONDS;
 
 /**
  * A {@link PerformanceMonitorPlugin} that displays all invocations that have been executing for some time.
@@ -35,7 +36,7 @@ import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_INVOCATIO
  * It will display the current invocations.
  *
  * But it will also display the history. E.g. if a entry processor has been running for 5 minutes and
- * the {@link com.hazelcast.instance.GroupProperty#PERFORMANCE_MONITOR_INVOCATION_SAMPLE_PERIOD_SECONDS} is set to
+ * the {@link GroupProperty#PERFORMANCE_MONITOR_INVOCATION_SAMPLE_PERIOD_SECONDS} is set to
  * 1 minute, then there will be 5 samples for that given invocation. This is useful to track which operations have
  * been slow over a longer period of time.
  */

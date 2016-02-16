@@ -28,8 +28,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.instance.GroupProperty.APPLICATION_VALIDATION_TOKEN;
-import static com.hazelcast.instance.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.internal.properties.GroupProperty.APPLICATION_VALIDATION_TOKEN;
+import static com.hazelcast.internal.properties.GroupProperty.PARTITION_COUNT;
 
 /**
  * Contains enough information about Hazelcast Config, to do a validation check so that clusters with different configurations
@@ -62,8 +62,8 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         this.joinerType = joinerType;
 
         // Copying all properties relevant for checking
-        properties.put(PARTITION_COUNT.getName(), config.getProperty(PARTITION_COUNT));
-        properties.put(APPLICATION_VALIDATION_TOKEN.getName(), config.getProperty(APPLICATION_VALIDATION_TOKEN));
+        properties.put(PARTITION_COUNT.getName(), config.getProperty(PARTITION_COUNT.getName()));
+        properties.put(APPLICATION_VALIDATION_TOKEN.getName(), config.getProperty(APPLICATION_VALIDATION_TOKEN.getName()));
 
         // Copying group-config settings
         GroupConfig groupConfig = config.getGroupConfig();

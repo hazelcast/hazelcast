@@ -19,10 +19,10 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.AbstractWaitNotifyKey;
 import com.hazelcast.spi.BlockingOperation;
@@ -184,8 +184,8 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
     private Config createConfig() {
         Config config = new Config();
         config.getGroupConfig().setName(generateRandomString(10));
-        config.setProperty(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS, "1");
-        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "10");
+        config.setProperty(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS.getName(), "1");
+        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "10");
         return config;
     }
 

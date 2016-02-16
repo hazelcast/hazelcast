@@ -6,9 +6,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -94,7 +94,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
     private void testOperationTimeout(int memberCount, boolean async) {
         assertTrue(memberCount > 0);
         Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, "3000");
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(memberCount);
         HazelcastInstance[] instances = factory.newInstances(config);
@@ -177,7 +177,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
     public void testOperationTimeoutForLongRunningRemoteOperation() throws Exception {
         int callTimeoutMillis = 500;
         Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(callTimeoutMillis));
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeoutMillis));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
@@ -198,7 +198,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
     public void testOperationTimeoutForLongRunningLocalOperation() throws Exception {
         int callTimeoutMillis = 500;
         Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(callTimeoutMillis));
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeoutMillis));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);

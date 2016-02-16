@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperties;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.internal.util.ThreadLocalRandom;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -25,9 +25,9 @@ import com.hazelcast.spi.Operation;
 
 import java.util.Random;
 
-import static com.hazelcast.instance.GroupProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
-import static com.hazelcast.instance.GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
-import static com.hazelcast.instance.GroupProperty.BACKPRESSURE_SYNCWINDOW;
+import static com.hazelcast.internal.properties.GroupProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
+import static com.hazelcast.internal.properties.GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
+import static com.hazelcast.internal.properties.GroupProperty.BACKPRESSURE_SYNCWINDOW;
 import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static java.lang.Math.max;

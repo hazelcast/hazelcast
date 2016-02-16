@@ -402,8 +402,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * defined in the <tt>key</tt>'s class.
      * <p/>
      *
-     * @param key      the key of the map entry.
-     * @param value    the new value of the map entry.
+     * @param key   the key of the map entry.
+     * @param value the new value of the map entry.
      * @return Future on which to block.
      * @throws NullPointerException if the specified key or value is null.
      * @see java.util.concurrent.Future
@@ -879,7 +879,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      * @throws UnsupportedOperationException if this operation isn't supported. For example
      *                                       on the client side it isn't possible to add a LocalEntryListener.
-     * @throws NullPointerException if the listener is null.
+     * @throws NullPointerException          if the listener is null.
      * @see #localKeySet()
      * @see MapListener
      */
@@ -903,7 +903,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      * @throws UnsupportedOperationException if this operation isn't supported. For example
      *                                       on the client side it isn't possible to add a LocalEntryListener.
-     * @throws NullPointerException if the listener is null.
+     * @throws NullPointerException          if the listener is null.
      * @see #localKeySet()
      * @deprecated use {@link #addLocalEntryListener(MapListener)} instead.
      */
@@ -921,8 +921,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      * @throws UnsupportedOperationException if this operation isn't supported. For example
      *                                       on the client side it isn't possible to add a LocalEntryListener.
-     * @throws NullPointerException if the listener is null.
-     * @throws NullPointerException if the predicate is null.
+     * @throws NullPointerException          if the listener is null.
+     * @throws NullPointerException          if the predicate is null.
      * @see MapListener
      */
     String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue);
@@ -1223,11 +1223,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a set clone of the keys contained in this map.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> keySet();
 
@@ -1240,11 +1240,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a collection clone of the values contained in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Collection<V> values();
 
@@ -1257,11 +1257,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a set clone of the keys mappings in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<Map.Entry<K, V>> entrySet();
 
@@ -1277,13 +1277,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria.
      * @return result key set of the query.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @throws NullPointerException if the predicate is null
-     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @throws NullPointerException             if the predicate is null
+     * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> keySet(Predicate predicate);
 
@@ -1299,13 +1299,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria.
      * @return result entry set of the query.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @throws NullPointerException if the predicate is null
-     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @throws NullPointerException             if the predicate is null
+     * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<Map.Entry<K, V>> entrySet(Predicate predicate);
 
@@ -1321,13 +1321,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria.
      * @return result value collection of the query.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @throws NullPointerException if the predicate is null
-     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @throws NullPointerException             if the predicate is null
+     * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Collection<V> values(Predicate predicate);
 
@@ -1347,11 +1347,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return locally owned keys.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> localKeySet();
 
@@ -1371,12 +1371,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria.
      * @return keys of matching locally owned entries.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> localKeySet(Predicate predicate);
 

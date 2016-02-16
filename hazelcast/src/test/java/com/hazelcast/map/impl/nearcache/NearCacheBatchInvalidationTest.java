@@ -24,7 +24,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -40,9 +40,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
-import static com.hazelcast.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
-import static com.hazelcast.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
-import static com.hazelcast.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.internal.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.internal.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.internal.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static java.lang.String.valueOf;
 import static org.junit.Assert.assertEquals;
 
@@ -54,7 +54,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
     public void testBatchInvalidationRemovesEntries() throws Exception {
         String mapName = randomMapName();
         Config config = newConfig(mapName);
-        config.setProperty(GroupProperty.PARTITION_COUNT, "1");
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         configureBatching(config, true, 12, 1);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
@@ -152,7 +152,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
     public void testMapClear_shouldClearNearCaches_onOwnerAndBackupNodes() throws Exception {
         String mapName = randomMapName();
         Config config = newConfig(mapName);
-        config.setProperty(GroupProperty.PARTITION_COUNT, "1");
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         configureBatching(config, true, Integer.MAX_VALUE, Integer.MAX_VALUE);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
@@ -197,7 +197,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
     public void testMapEvictAll_shouldClearNearCaches_onOwnerAndBackupNodes() throws Exception {
         String mapName = randomMapName();
         Config config = newConfig(mapName);
-        config.setProperty(GroupProperty.PARTITION_COUNT, "1");
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         configureBatching(config, true, Integer.MAX_VALUE, Integer.MAX_VALUE);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
@@ -256,9 +256,8 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
     }
 
     protected void configureBatching(Config config, boolean enableBatching, int batchSize, int period) {
-        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED, valueOf(enableBatching));
-        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE, valueOf(batchSize));
-        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS, valueOf(period));
+        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), valueOf(enableBatching));
+        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), valueOf(batchSize));
+        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), valueOf(period));
     }
-
 }

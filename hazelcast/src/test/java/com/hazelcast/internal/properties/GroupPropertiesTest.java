@@ -1,4 +1,4 @@
-package com.hazelcast.instance;
+package com.hazelcast.internal.properties;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -14,7 +14,6 @@ import org.junit.runner.RunWith;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class GroupPropertiesTest {
-
 
     @Test(expected = NullPointerException.class)
     public void constructor_withNullConfig() {

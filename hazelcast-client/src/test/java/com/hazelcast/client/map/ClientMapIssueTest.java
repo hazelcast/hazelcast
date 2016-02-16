@@ -17,14 +17,14 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientProperty;
+import com.hazelcast.client.internal.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
@@ -101,7 +101,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setExecutorPoolSize(1);
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
-        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS, "10");
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "10");
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         final IMap<String, String> map = client.getMap(randomMapName());
@@ -136,7 +136,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setExecutorPoolSize(1);
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
-        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS, "10");
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "10");
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         final IMap<String, String> map = client.getMap(randomMapName());

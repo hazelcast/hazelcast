@@ -12,7 +12,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
+import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -42,7 +42,7 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void register_whenNullPlugin() {
         PerformanceMonitor performanceMonitor = newPerformanceMonitor(
-                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED, "true"));
+                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED.getName(), "true"));
         performanceMonitor.start();
         performanceMonitor.register(null);
     }
@@ -50,7 +50,7 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
     @Test
     public void register_whenMonitorDisabled() {
         PerformanceMonitor performanceMonitor = newPerformanceMonitor(
-                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED, "false"));
+                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED.getName(), "false"));
 
         performanceMonitor.start();
         PerformanceMonitorPlugin plugin = mock(PerformanceMonitorPlugin.class);
@@ -64,7 +64,7 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void register_whenMonitorEnabled_andPluginReturnsValueSmallerThanMinesOne() {
         PerformanceMonitor performanceMonitor = newPerformanceMonitor(
-                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED, "true"));
+                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED.getName(), "true"));
 
         performanceMonitor.start();
         PerformanceMonitorPlugin plugin = mock(PerformanceMonitorPlugin.class);
@@ -76,7 +76,7 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
     @Test
     public void register_whenMonitorEnabled_andPluginDisabled() {
         PerformanceMonitor performanceMonitor = newPerformanceMonitor(
-                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED, "true"));
+                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED.getName(), "true"));
 
         performanceMonitor.start();
         PerformanceMonitorPlugin plugin = mock(PerformanceMonitorPlugin.class);
@@ -90,7 +90,7 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
     @Test
     public void register_whenMonitorEnabled_andPluginStatic() {
         PerformanceMonitor performanceMonitor = newPerformanceMonitor(
-                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED, "true"));
+                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED.getName(), "true"));
         performanceMonitor.start();
 
 
@@ -106,7 +106,7 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
     @Test
     public void start_whenDisabled() {
         PerformanceMonitor performanceMonitor = newPerformanceMonitor(
-                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED, "false"));
+                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED.getName(), "false"));
         performanceMonitor.start();
 
         assertNull(performanceMonitor.performanceLog);
@@ -115,7 +115,7 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
     @Test
     public void start_whenEnabled() {
         PerformanceMonitor performanceMonitor = newPerformanceMonitor(
-                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED, "true"));
+                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED.getName(), "true"));
         performanceMonitor.start();
 
         assertNotNull(performanceMonitor.performanceLog);

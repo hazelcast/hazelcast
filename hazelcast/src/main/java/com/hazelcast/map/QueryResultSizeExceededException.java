@@ -23,7 +23,7 @@ import static java.lang.String.format;
 /**
  * This exception is thrown when a query exceeds a configurable result size limit.
  *
- * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+ * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
  */
 public class QueryResultSizeExceededException extends HazelcastException {
 

@@ -22,12 +22,12 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
@@ -290,10 +290,9 @@ public class MemberListTest {
                 return instanceList;
             }
         }
-        throw
-                new IllegalStateException("Unable to create " + instanceCount
-                        + " instances from base port " + basePort
-                        + " at " + INSTANCE_CREATE_ATTEMPT_COUNT);
+        throw new IllegalStateException("Unable to create " + instanceCount
+                + " instances from base port " + basePort
+                + " at " + INSTANCE_CREATE_ATTEMPT_COUNT);
     }
 
     private static List<Config> buildConfigurations(int configCount, int basePort) {
@@ -316,18 +315,18 @@ public class MemberListTest {
     }
 
     private static Config buildConfig(boolean multicastEnabled) {
-        Config c = new Config();
-        c.getGroupConfig().setName("group").setPassword("pass");
-        c.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "10");
-        c.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "5");
-        c.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS, "10");
-        c.setProperty(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS, "2");
-        c.setProperty(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS, "10");
-        c.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "10");
-        final NetworkConfig networkConfig = c.getNetworkConfig();
+        Config config = new Config();
+        config.getGroupConfig().setName("group").setPassword("pass");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "10");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
+        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
+        config.setProperty(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS.getName(), "2");
+        config.setProperty(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS.getName(), "10");
+        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "10");
+        final NetworkConfig networkConfig = config.getNetworkConfig();
         networkConfig.getJoin().getMulticastConfig().setEnabled(multicastEnabled);
         networkConfig.getJoin().getTcpIpConfig().setEnabled(!multicastEnabled);
         networkConfig.setPortAutoIncrement(false);
-        return c;
+        return config;
     }
 }

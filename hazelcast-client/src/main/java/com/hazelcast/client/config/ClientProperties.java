@@ -16,28 +16,24 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.config.Config;
+import com.hazelcast.client.internal.properties.ClientProperty;
 import com.hazelcast.instance.HazelcastProperties;
 
-import static com.hazelcast.client.config.ClientProperty.EVENT_QUEUE_CAPACITY;
-import static com.hazelcast.client.config.ClientProperty.EVENT_THREAD_COUNT;
-import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_INTERVAL;
-import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_TIMEOUT;
-import static com.hazelcast.client.config.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
-import static com.hazelcast.client.config.ClientProperty.SHUFFLE_MEMBER_LIST;
+import static com.hazelcast.client.internal.properties.ClientProperty.EVENT_QUEUE_CAPACITY;
+import static com.hazelcast.client.internal.properties.ClientProperty.EVENT_THREAD_COUNT;
+import static com.hazelcast.client.internal.properties.ClientProperty.HEARTBEAT_INTERVAL;
+import static com.hazelcast.client.internal.properties.ClientProperty.HEARTBEAT_TIMEOUT;
+import static com.hazelcast.client.internal.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
+import static com.hazelcast.client.internal.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 
 /**
  * Container for configured Hazelcast Client properties ({@see ClientProperty}).
  * <p/>
- * A {@link ClientProperty} can be set as:
- * <p><ul>
- * <li>an environmental variable using {@link System#setProperty(String, String)}</li>
- * <li>the programmatic configuration using {@link Config#setProperty(String, String)}</li>
- * <li>the XML configuration
- * {@see http://docs.hazelcast.org/docs/latest-dev/manual/html-single/hazelcast-documentation.html#system-properties}</li>
- * </ul></p>
- * The old property definitions are deprecated since Hazelcast 3.6. Please use the new {@link ClientProperty} definitions instead.
+ * The old property definitions are deprecated since Hazelcast 3.6.
+ * The whole class is deprecated since Hazelcast 3.7.
+ * This is private API, don't use it.
  */
+@Deprecated
 @SuppressWarnings("unused")
 public class ClientProperties extends HazelcastProperties {
 
@@ -119,8 +115,9 @@ public class ClientProperties extends HazelcastProperties {
      * Uses the environmental value if no value is defined in the configuration.
      * Uses the default value if no environmental value is defined.
      *
-     * @param config {@link Config} used to configure the {@link ClientProperty} values.
+     * @param config {@link ClientConfig} used to configure the {@link ClientProperty} values.
      */
+    @Deprecated
     public ClientProperties(ClientConfig config) {
         super(config.getProperties());
     }

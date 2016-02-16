@@ -31,7 +31,7 @@ import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.PostProcessingMapStore;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -800,8 +800,8 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
     private Config createChunkedMapLoaderConfig(String mapName, int chunkSize, ChunkedLoader chunkedLoader) {
         Config cfg = getConfig();
-        cfg.setProperty(GroupProperty.PARTITION_COUNT, "1");
-        cfg.setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE, String.valueOf(chunkSize));
+        cfg.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        cfg.setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE.getName(), String.valueOf(chunkSize));
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
@@ -1154,7 +1154,9 @@ public class MapStoreTest extends AbstractMapStoreTest {
         public Set loadAllKeys() {
             callCount.incrementAndGet();
             latchLoadAllKeys.countDown();
-            if (!loadAllKeys) return null;
+            if (!loadAllKeys) {
+                return null;
+            }
             return store.keySet();
         }
 
@@ -1368,7 +1370,9 @@ public class MapStoreTest extends AbstractMapStoreTest {
             }
             callCount.incrementAndGet();
             events.offer(STORE_EVENTS.LOAD_ALL_KEYS);
-            if (!loadAllKeys) return null;
+            if (!loadAllKeys) {
+                return null;
+            }
             return store.keySet();
         }
 

@@ -16,11 +16,11 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.ClientType;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.IOUtil;
@@ -65,7 +65,7 @@ public final class PhoneHome {
         ILogger logger = hazelcastNode.getLogger(PhoneHome.class);
         if (!hazelcastNode.getGroupProperties().getBoolean(GroupProperty.VERSION_CHECK_ENABLED)) {
             logger.warning(GroupProperty.VERSION_CHECK_ENABLED.getName() + " property is deprecated. Please use "
-                            + GroupProperty.PHONE_HOME_ENABLED.getName() + " instead to disable phone home.");
+                    + GroupProperty.PHONE_HOME_ENABLED.getName() + " instead to disable phone home.");
             return;
         }
         if (!hazelcastNode.getGroupProperties().getBoolean(GroupProperty.PHONE_HOME_ENABLED)) {
@@ -172,7 +172,7 @@ public final class PhoneHome {
             conn.setConnectTimeout(TIMEOUT * 2);
             conn.setReadTimeout(TIMEOUT * 2);
             in = new BufferedInputStream(conn.getInputStream());
-        }  catch (IOException ignored) {
+        } catch (IOException ignored) {
             EmptyStatement.ignore(ignored);
         } finally {
             IOUtil.closeResource(in);

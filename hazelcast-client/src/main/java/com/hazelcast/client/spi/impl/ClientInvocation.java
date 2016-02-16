@@ -18,10 +18,10 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.HazelcastClientNotActiveException;
-import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.internal.properties.ClientProperties;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
@@ -37,8 +37,8 @@ import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_INTERVAL;
-import static com.hazelcast.client.config.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
+import static com.hazelcast.client.internal.properties.ClientProperty.HEARTBEAT_INTERVAL;
+import static com.hazelcast.client.internal.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 
 /**
  * ClientInvocation handles routing of a request from client

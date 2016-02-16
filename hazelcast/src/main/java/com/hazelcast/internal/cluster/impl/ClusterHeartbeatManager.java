@@ -16,15 +16,15 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.internal.cluster.impl.operations.HeartbeatOperation;
-import com.hazelcast.internal.cluster.impl.operations.MasterConfirmationOperation;
-import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.internal.cluster.impl.operations.HeartbeatOperation;
+import com.hazelcast.internal.cluster.impl.operations.MasterConfirmationOperation;
+import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.properties.GroupProperties;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;

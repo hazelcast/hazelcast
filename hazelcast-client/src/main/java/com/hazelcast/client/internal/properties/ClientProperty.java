@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.config;
+package com.hazelcast.client.internal.properties;
 
-import com.hazelcast.instance.HazelcastProperty;
+import com.hazelcast.internal.properties.HazelcastProperty;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

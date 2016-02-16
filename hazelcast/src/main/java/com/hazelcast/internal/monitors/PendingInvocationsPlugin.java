@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -25,8 +25,8 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.util.ItemCounter;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_PENDING_INVOCATIONS_PERIOD_SECONDS;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_PENDING_INVOCATIONS_THRESHOLD;
+import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_PENDING_INVOCATIONS_PERIOD_SECONDS;
+import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_PENDING_INVOCATIONS_THRESHOLD;
 
 /**
  * A {@link PerformanceMonitorPlugin} that aggregates the pending invocation so that per type of operation, the occurrence

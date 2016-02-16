@@ -21,7 +21,6 @@ import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
@@ -32,6 +31,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
+import com.hazelcast.client.internal.properties.ClientProperties;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
@@ -72,10 +72,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_INTERVAL;
-import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
+import static com.hazelcast.client.internal.properties.ClientProperty.HEARTBEAT_INTERVAL;
+import static com.hazelcast.client.internal.properties.ClientProperty.HEARTBEAT_TIMEOUT;
 
 public class ClientConnectionManagerImpl implements ClientConnectionManager {
 

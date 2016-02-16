@@ -28,8 +28,8 @@ import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketReader;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketWriter;
 
-import static com.hazelcast.instance.GroupProperty.IO_BALANCER_INTERVAL_SECONDS;
-import static com.hazelcast.instance.GroupProperty.IO_THREAD_COUNT;
+import static com.hazelcast.internal.properties.GroupProperty.IO_BALANCER_INTERVAL_SECONDS;
+import static com.hazelcast.internal.properties.GroupProperty.IO_THREAD_COUNT;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
@@ -47,7 +47,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  * schedules handler migration to fix the situation. The exact migration strategy can be customized via
  * {@link com.hazelcast.nio.tcp.nonblocking.iobalancer.MigrationStrategy}.
  *
- * Measuring interval can be customized via {@link com.hazelcast.instance.GroupProperty#IO_BALANCER_INTERVAL_SECONDS}
+ * Measuring interval can be customized via {@link com.hazelcast.internal.properties.GroupProperty#IO_BALANCER_INTERVAL_SECONDS}
  *
  * It doesn't leverage {@link com.hazelcast.nio.ConnectionListener} capability
  * provided by {@link com.hazelcast.nio.ConnectionManager} to observe connections as it has to be notified

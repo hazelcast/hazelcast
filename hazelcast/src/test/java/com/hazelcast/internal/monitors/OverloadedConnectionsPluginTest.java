@@ -18,9 +18,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_PERIOD_SECONDS;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_SAMPLES;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_THRESHOLD;
+import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_PERIOD_SECONDS;
+import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_SAMPLES;
+import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_THRESHOLD;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -42,9 +42,9 @@ public class OverloadedConnectionsPluginTest extends AbstractPerformanceMonitorP
         Hazelcast.shutdownAll();
 
         Config config = new Config();
-        config.setProperty(PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_PERIOD_SECONDS, "1");
-        config.setProperty(PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_SAMPLES, "10");
-        config.setProperty(PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_THRESHOLD, "10");
+        config.setProperty(PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_PERIOD_SECONDS.getName(), "1");
+        config.setProperty(PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_SAMPLES.getName(), "10");
+        config.setProperty(PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_THRESHOLD.getName(), "10");
 
         local = Hazelcast.newHazelcastInstance(config);
         serializationService = getSerializationService(local);

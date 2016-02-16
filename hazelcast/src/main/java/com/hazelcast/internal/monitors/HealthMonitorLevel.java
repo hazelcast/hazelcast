@@ -19,7 +19,7 @@ package com.hazelcast.internal.monitors;
 /**
  * Health monitor can be configured with system properties.
  *
- * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_LEVEL}
+ * {@link com.hazelcast.internal.properties.GroupProperty#HEALTH_MONITORING_LEVEL}
  */
 public enum HealthMonitorLevel {
 

@@ -17,7 +17,7 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -37,8 +37,8 @@ import java.util.Properties;
  * {@link javax.cache.spi.CachingProvider} implementation.</p>
  * <p>Hazelcast uses two internal {@link javax.cache.spi.CachingProvider}s depending on the environment:
  * <ul>
- *     <li>{@link com.hazelcast.cache.impl.HazelcastServerCachingProvider}</li>
- *     <li>{@link com.hazelcast.client.cache.impl.HazelcastClientCachingProvider}</li>
+ * <li>{@link com.hazelcast.cache.impl.HazelcastServerCachingProvider}</li>
+ * <li>{@link com.hazelcast.client.cache.impl.HazelcastClientCachingProvider}</li>
  * </ul>
  * </p>
  * <p>

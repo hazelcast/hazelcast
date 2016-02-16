@@ -19,9 +19,9 @@ package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.internal.ascii.HTTPCommunicator;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
@@ -53,8 +53,8 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
     public void testMemoryLeak_with_RestConnections() throws IOException {
         Config config = new Config();
         config.getGroupConfig().setName(randomName());
-        config.setProperty(GroupProperty.REST_ENABLED, "true");
-        config.setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS, "1");
+        config.setProperty(GroupProperty.REST_ENABLED.getName(), "true");
+        config.setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1");
 
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
@@ -74,12 +74,11 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
         });
     }
 
-
     @Test
     public void testMemoryLeak_with_SocketConnections() throws IOException {
         Config config = new Config();
         config.getGroupConfig().setName(randomName());
-        config.setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS, "1");
+        config.setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1");
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         final Address address = instance.getCluster().getLocalMember().getAddress();
         int threadCount = 10;
@@ -109,7 +108,6 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
 
         assertJoinable(threads);
 
-
         TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) getConnectionManager(instance);
         final IOBalancer ioBalancer = connectionManager.getIoBalancer();
         assertTrueEventually(new AssertTask() {
@@ -132,6 +130,4 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
             }
         });
     }
-
-
 }

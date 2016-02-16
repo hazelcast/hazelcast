@@ -2,11 +2,11 @@ package com.hazelcast.internal.monitors;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -26,10 +26,10 @@ import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS;
+import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
+import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT;
+import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB;
+import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -45,10 +45,10 @@ public class PerformanceLogTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         Config config = new Config();
-        config.setProperty(PERFORMANCE_MONITOR_ENABLED, "true");
-        config.setProperty(PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS, "1");
-        config.setProperty(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB, "0.2");
-        config.setProperty(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT, "3");
+        config.setProperty(PERFORMANCE_MONITOR_ENABLED.getName(), "true");
+        config.setProperty(PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS.getName(), "1");
+        config.setProperty(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB.getName(), "0.2");
+        config.setProperty(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT.getName(), "3");
 
         HazelcastInstance hz = createHazelcastInstance(config);
 

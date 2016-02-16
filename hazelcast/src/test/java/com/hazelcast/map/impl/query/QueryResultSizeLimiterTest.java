@@ -1,7 +1,7 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -22,9 +22,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.instance.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.instance.GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
-import static com.hazelcast.instance.GroupProperty.QUERY_RESULT_SIZE_LIMIT;
+import static com.hazelcast.internal.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.internal.properties.GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
+import static com.hazelcast.internal.properties.GroupProperty.QUERY_RESULT_SIZE_LIMIT;
+import static java.lang.String.valueOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -216,9 +217,9 @@ public class QueryResultSizeLimiterTest {
 
     private void initMocksWithConfiguration(int maxResultSizeLimit, int maxLocalPartitionLimitForPreCheck, int partitionCount) {
         Config config = new Config();
-        config.setProperty(QUERY_RESULT_SIZE_LIMIT, String.valueOf(maxResultSizeLimit));
-        config.setProperty(QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK, String.valueOf(maxLocalPartitionLimitForPreCheck));
-        config.setProperty(PARTITION_COUNT, String.valueOf(partitionCount));
+        config.setProperty(QUERY_RESULT_SIZE_LIMIT.getName(), valueOf(maxResultSizeLimit));
+        config.setProperty(QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK.getName(), valueOf(maxLocalPartitionLimitForPreCheck));
+        config.setProperty(PARTITION_COUNT.getName(), valueOf(partitionCount));
 
         GroupProperties groupProperties = new GroupProperties(config);
 

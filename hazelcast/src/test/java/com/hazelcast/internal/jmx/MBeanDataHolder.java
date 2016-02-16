@@ -2,7 +2,7 @@ package com.hazelcast.internal.jmx;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
@@ -34,7 +34,7 @@ final class MBeanDataHolder {
     MBeanDataHolder(TestHazelcastInstanceFactory factory) {
         Config config = new Config();
         config.setInstanceName("hz:\",=*?" + ID_GEN.getAndIncrement());
-        config.setProperty(GroupProperty.ENABLE_JMX, "true");
+        config.setProperty(GroupProperty.ENABLE_JMX.getName(), "true");
         hz = factory.newHazelcastInstance(config);
         mbs = ManagementFactory.getPlatformMBeanServer();
     }

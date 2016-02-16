@@ -46,7 +46,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 
-import static com.hazelcast.client.config.ClientProperty.SHUFFLE_MEMBER_LIST;
+import static com.hazelcast.client.internal.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 
 public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener, ClientClusterService {
 
