@@ -60,6 +60,11 @@ public interface MemoryAccessor {
     /////////////////////////////////////////////////////////////////////////
 
     /**
+     * Memory copy threshold in bytes.
+     */
+    int MEM_COPY_THRESHOLD = 1024 * 1024;
+
+    /**
      * Base offset of boolean[]
      */
     int ARRAY_BOOLEAN_BASE_OFFSET = DEFAULT != null ? DEFAULT.getArrayBaseOffset(boolean[].class) : -1;
