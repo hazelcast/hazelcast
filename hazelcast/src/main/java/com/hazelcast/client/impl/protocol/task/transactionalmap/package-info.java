@@ -18,6 +18,7 @@
  * <p>Client protocol tasks implementations for Transactional Map</p>
  */
 
-@GenerateMessageTaskFactory package com.hazelcast.client.impl.protocol.task.transactionalmap;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactory;
+package com.hazelcast.client.impl.protocol.task.transactionalmap;
+
+
