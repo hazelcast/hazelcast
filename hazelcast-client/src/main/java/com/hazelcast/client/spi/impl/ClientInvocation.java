@@ -30,7 +30,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -53,9 +52,9 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
 
     public static final long RETRY_WAIT_TIME_IN_SECONDS = 1;
     protected static final int UNASSIGNED_PARTITION = -1;
-    private static final ILogger LOGGER = Logger.getLogger(ClientInvocation.class);
 
-    protected ClientInvocationFuture clientInvocationFuture;
+    protected final ClientInvocationFuture clientInvocationFuture;
+    private final ILogger logger;
     private final LifecycleService lifecycleService;
     private final ClientInvocationService invocationService;
     private final ClientExecutionService executionService;
@@ -88,8 +87,8 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
         long waitTimeResolved = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
         retryTimeoutPointInMillis = System.currentTimeMillis() + waitTimeResolved;
 
-        clientInvocationFuture = new ClientInvocationFuture(this, client, clientMessage);
-
+        logger = ((ClientInvocationServiceSupport) invocationService).invocationLogger;
+        clientInvocationFuture = new ClientInvocationFuture(this, client, clientMessage, logger);
 
         int interval = clientProperties.getInteger(HEARTBEAT_INTERVAL);
         this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
@@ -208,8 +207,8 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
         try {
             rescheduleInvocation();
         } catch (RejectedExecutionException e) {
-            if (LOGGER.isFinestEnabled()) {
-                LOGGER.finest("Retry could not be scheduled ", e);
+            if (logger.isFinestEnabled()) {
+                logger.finest("Retry could not be scheduled ", e);
             }
             notifyException(e);
         }
@@ -292,8 +291,8 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
 
     @Override
     public void onFailure(Throwable t) {
-        if (LOGGER.isFinestEnabled()) {
-            LOGGER.finest("Failure during retry ", t);
+        if (logger.isFinestEnabled()) {
+            logger.finest("Failure during retry ", t);
         }
         clientInvocationFuture.setResponse(t);
     }

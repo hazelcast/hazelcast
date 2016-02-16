@@ -20,7 +20,7 @@ import com.hazelcast.aws.AWSClient;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 
 import java.net.UnknownHostException;
@@ -34,14 +34,15 @@ import java.util.logging.Level;
  */
 public class AwsAddressTranslator implements AddressTranslator {
 
-    private static final ILogger LOGGER = Logger.getLogger(AwsAddressTranslator.class);
+    private final ILogger logger;
     private volatile Map<String, String> privateToPublic;
     private final AWSClient awsClient;
     private final boolean isInsideAws;
 
-    public AwsAddressTranslator(ClientAwsConfig awsConfig) {
+    public AwsAddressTranslator(ClientAwsConfig awsConfig, LoggingService loggingService) {
         awsClient = new AWSClient(awsConfig);
         isInsideAws = awsConfig.isInsideAws();
+        logger = loggingService.getLogger(AwsAddressTranslator.class);
     }
 
     /**
@@ -88,7 +89,7 @@ public class AwsAddressTranslator implements AddressTranslator {
         try {
             privateToPublic = awsClient.getAddresses();
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Aws addresses are failed to load : " + e.getMessage());
+            logger.log(Level.WARNING, "Aws addresses are failed to load : " + e.getMessage());
         }
     }
 

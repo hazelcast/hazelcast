@@ -17,6 +17,7 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.Clock;
@@ -42,8 +43,9 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
 
     private volatile long lastHandle;
 
-    public ClientWriteHandler(ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize) {
-        super(connection, ioThread);
+    public ClientWriteHandler(ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize,
+                              LoggingService loggingService) {
+        super(connection, ioThread, loggingService);
         buffer = ByteBuffer.allocate(bufferSize);
     }
 

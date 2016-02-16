@@ -26,14 +26,12 @@ import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressTranslator;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
 import java.util.logging.Level;
 
 public class DefaultClientConnectionManagerFactory implements ClientConnectionManagerFactory {
-
-    private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
 
     public DefaultClientConnectionManagerFactory() {
     }
@@ -42,13 +40,15 @@ public class DefaultClientConnectionManagerFactory implements ClientConnectionMa
     public ClientConnectionManager createConnectionManager(ClientConfig config, HazelcastClientInstanceImpl client,
                                                            DiscoveryService discoveryService) {
 
-        final ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
+        LoggingService loggingService = client.getLoggingService();
+        ILogger logger = loggingService.getLogger(HazelcastClient.class);
+        ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
         AddressTranslator addressTranslator;
         if (awsConfig != null && awsConfig.isEnabled()) {
             try {
-                addressTranslator = new AwsAddressTranslator(awsConfig);
+                addressTranslator = new AwsAddressTranslator(awsConfig, loggingService);
             } catch (NoClassDefFoundError e) {
-                LOGGER.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
+                logger.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
                 throw e;
             }
         } else if (discoveryService != null) {

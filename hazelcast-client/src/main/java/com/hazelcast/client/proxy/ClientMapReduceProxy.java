@@ -31,7 +31,6 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Job;
@@ -237,7 +236,8 @@ public class ClientMapReduceProxy
         private final String jobId;
 
         protected ClientCompletableFuture(String jobId) {
-            super(getContext().getExecutionService().getAsyncExecutor(), Logger.getLogger(ClientCompletableFuture.class));
+            super(getContext().getExecutionService().getAsyncExecutor(),
+                    getContext().getLoggingService().getLogger(ClientCompletableFuture.class));
             this.jobId = jobId;
         }
 

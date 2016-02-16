@@ -35,7 +35,7 @@ import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -66,15 +66,13 @@ import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 
 public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
-    private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
-
-    private static final NonBlockingIOThreadOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new NonBlockingIOThreadOutOfMemoryHandler() {
+    private final NonBlockingIOThreadOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new NonBlockingIOThreadOutOfMemoryHandler() {
         @Override
         public void handle(OutOfMemoryError error) {
-            LOGGER.severe(error);
+            logger.severe(error);
         }
     };
-
+    private final ILogger logger;
     private final int connectionTimeout;
     private final long heartBeatInterval;
     private final long heartBeatTimeout;
@@ -87,18 +85,19 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final SocketOptions socketOptions;
     private NonBlockingIOThread inputThread;
     private NonBlockingIOThread outputThread;
-
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
+
     private final ClientExecutionServiceImpl executionService;
     private final AddressTranslator addressTranslator;
     private final ConcurrentMap<Address, ClientConnection> connections
             = new ConcurrentHashMap<Address, ClientConnection>();
     private final Set<Address> connectionsInProgress =
             Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
-
     private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
+
     private final Set<ConnectionHeartbeatListener> heartbeatListeners =
             new CopyOnWriteArraySet<ConnectionHeartbeatListener>();
+    private final LoggingService loggingService;
 
     protected volatile boolean alive;
 
@@ -119,6 +118,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         heartBeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
 
         executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
+        loggingService = client.getLoggingService();
 
         initializeSelectors(client);
 
@@ -126,18 +126,19 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         ClientExtension clientExtension = client.getClientExtension();
         socketChannelWrapperFactory = clientExtension.createSocketChannelWrapperFactory();
         socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
+        logger = loggingService.getLogger(ClientConnectionManager.class);
     }
 
     protected void initializeSelectors(HazelcastClientInstanceImpl client) {
         inputThread = new NonBlockingIOThread(
                 client.getThreadGroup(),
                 client.getName() + ".ClientInSelector",
-                Logger.getLogger(NonBlockingIOThread.class),
+                loggingService.getLogger(NonBlockingIOThread.class),
                 OUT_OF_MEMORY_HANDLER);
         outputThread = new ClientNonBlockingOutputThread(
                 client.getThreadGroup(),
                 client.getName() + ".ClientOutSelector",
-                Logger.getLogger(ClientNonBlockingOutputThread.class),
+                loggingService.getLogger(ClientNonBlockingOutputThread.class),
                 OUT_OF_MEMORY_HANDLER);
     }
 
@@ -357,7 +358,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             for (ClientConnection connection : connections.values()) {
                 if (now - connection.lastReadTimeMillis() > heartBeatTimeout) {
                     if (connection.isHeartBeating()) {
-                        LOGGER.warning("Heartbeat failed to connection : " + connection);
+                        logger.warning("Heartbeat failed to connection : " + connection);
                         connection.heartBeatingFailed();
                         fireHeartBeatStopped(connection);
                     }
@@ -369,7 +370,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     clientInvocation.invokeUrgent();
                 } else {
                     if (!connection.isHeartBeating()) {
-                        LOGGER.warning("Heartbeat is back to healthy for connection : " + connection);
+                        logger.warning("Heartbeat is back to healthy for connection : " + connection);
                         connection.heartBeatingSucceed();
                         fireHeartBeatStarted(connection);
                     }
@@ -424,7 +425,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 try {
                     initializeConnection(remoteAddress, authenticator);
                 } catch (IOException e) {
-                    LOGGER.finest(e);
+                    logger.finest(e);
                 } finally {
                     connectionsInProgress.remove(target);
                 }

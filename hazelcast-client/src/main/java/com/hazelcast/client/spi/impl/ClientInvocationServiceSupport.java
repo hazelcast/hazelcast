@@ -29,7 +29,6 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -60,7 +59,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     protected ClientPartitionService partitionService;
     protected ClientExecutionService executionService;
     protected ClientListenerServiceImpl clientListenerService;
-    private ILogger logger = Logger.getLogger(ClientInvocationService.class);
+    protected final ILogger invocationLogger;
     private ResponseThread responseThread;
     private ConcurrentMap<Long, ClientInvocation> callIdMap
             = new ConcurrentHashMap<Long, ClientInvocation>();
@@ -74,6 +73,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         this.client = client;
         int maxAllowedConcurrentInvocations = client.getClientProperties().getInteger(MAX_CONCURRENT_INVOCATIONS);
         callIdSequence = new CallIdSequence.CallIdSequenceFailFast(maxAllowedConcurrentInvocations);
+        invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
     }
 
     @Override
@@ -116,8 +116,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 callIdSequence.complete();
                 throw new IOException("Packet not send to " + connection.getRemoteEndpoint());
             } else {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Invocation not found to deregister for call id " + callId);
+                if (invocationLogger.isFinestEnabled()) {
+                    invocationLogger.finest("Invocation not found to deregister for call id " + callId);
                 }
             }
         }
@@ -137,8 +137,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 return true;
             }
 
-            if (logger.isFinestEnabled()) {
-                logger.warning("Connection is not heart-beating, won't write client message -> "
+            if (invocationLogger.isFinestEnabled()) {
+                invocationLogger.warning("Connection is not heart-beating, won't write client message -> "
                         + invocation.getClientMessage());
             }
             return false;
@@ -204,7 +204,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             try {
                 ((ClientExecutionServiceImpl) executionService).executeInternal(new CleanResourcesTask(connection));
             } catch (RejectedExecutionException e) {
-                logger.warning("Execution rejected ", e);
+                invocationLogger.warning("Execution rejected ", e);
             }
         } else {
             cleanResources(new ConstructorFunction<Object, Throwable>() {
@@ -251,12 +251,12 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 try {
                     Thread.sleep(WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED);
                 } catch (InterruptedException e) {
-                    logger.warning(e);
+                    invocationLogger.warning(e);
                     break;
                 }
                 long elapsed = System.currentTimeMillis() - begin;
                 if (elapsed > WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD) {
-                    logger.warning("There are packets which are not processed " + count);
+                    invocationLogger.warning("There are packets which are not processed " + count);
                     break;
                 }
                 count = connection.getPendingPacketCount();
@@ -303,7 +303,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             } catch (OutOfMemoryError e) {
                 onOutOfMemory(e);
             } catch (Throwable t) {
-                logger.severe(t);
+                invocationLogger.severe(t);
             }
         }
 
@@ -331,7 +331,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             try {
                 handleClientMessage(packet.getClientMessage());
             } catch (Exception e) {
-                logger.severe("Failed to process task: " + packet + " on responseThread :" + getName(), e);
+                invocationLogger.severe("Failed to process task: " + packet + " on responseThread :" + getName(), e);
             } finally {
                 conn.decrementPendingPacketCount();
             }
@@ -343,7 +343,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
             final ClientInvocation future = deRegisterCallId(correlationId);
             if (future == null) {
-                logger.warning("No call for callId: " + correlationId + ", response: " + clientMessage);
+                invocationLogger.warning("No call for callId: " + correlationId + ", response: " + clientMessage);
                 return;
             }
             callIdSequence.complete();

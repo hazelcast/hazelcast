@@ -47,7 +47,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.nio.serialization.Data;
@@ -55,6 +55,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.record.ResultSet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.IterationType;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -424,8 +425,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             EventHandler handler = new ReplicatedMapAddNearCacheEventHandler();
             invalidationListenerId = registerListener(createNearCacheInvalidationListenerCodec(), handler);
         } catch (Exception e) {
-            Logger.getLogger(ClientHeapNearCache.class).severe(
-                    "-----------------\n Near Cache is not initialized!!! \n-----------------", e);
+            ILogger logger = getContext().getLoggingService().getLogger(ClientHeapNearCache.class);
+            logger.severe("-----------------\n Near Cache is not initialized!!! \n-----------------", e);
         }
     }
 

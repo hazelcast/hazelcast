@@ -36,7 +36,6 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -64,13 +63,13 @@ import static com.hazelcast.client.config.ClientProperty.SHUFFLE_MEMBER_LIST;
 
 public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener, ClientClusterService {
 
-    private static final ILogger LOGGER = Logger.getLogger(ClusterListenerSupport.class);
-
     protected final HazelcastClientInstanceImpl client;
+
     private final Collection<AddressProvider> addressProviders;
     private final ManagerAuthenticator managerAuthenticator = new ManagerAuthenticator();
     private final ExecutorService clusterExecutor;
     private final boolean shuffleMemberList;
+    private final ILogger logger;
 
     private Credentials credentials;
     private ClientConnectionManager connectionManager;
@@ -80,6 +79,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     public ClusterListenerSupport(HazelcastClientInstanceImpl client, Collection<AddressProvider> addressProviders) {
         this.client = client;
+        this.logger = client.getLoggingService().getLogger(ClusterListenerSupport.class);
         this.addressProviders = addressProviders;
         this.shuffleMemberList = client.getClientProperties().getBoolean(SHUFFLE_MEMBER_LIST);
         this.clusterExecutor = createSingleThreadExecutorService(client);
@@ -198,8 +198,8 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         Set<InetSocketAddress> triedAddresses = new HashSet<InetSocketAddress>();
         while (attempt < connectionAttemptLimit) {
             if (!client.getLifecycleService().isRunning()) {
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Giving up on retrying to connect to cluster since client is shutdown");
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Giving up on retrying to connect to cluster since client is shutdown");
                 }
                 break;
             }
@@ -213,7 +213,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             }
 
             final long remainingTime = nextTry - Clock.currentTimeMillis();
-            LOGGER.warning(
+            logger.warning(
                     String.format("Unable to get alive cluster connection, try in %d ms later, attempt %d of %d.",
                             Math.max(0, remainingTime), attempt, connectionAttemptLimit));
 
@@ -235,8 +235,8 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             try {
                 triedAddresses.add(inetSocketAddress);
                 Address address = new Address(inetSocketAddress);
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Trying to connect to " + address);
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Trying to connect to " + address);
                 }
                 ClientConnection connection =
                         (ClientConnection) connectionManager.getOrConnect(address, managerAuthenticator);
@@ -248,7 +248,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 return true;
             } catch (Exception e) {
                 Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
-                LOGGER.log(level, "Exception during initial connection to " + inetSocketAddress, e);
+                logger.log(level, "Exception during initial connection to " + inetSocketAddress, e);
             }
         }
         return false;
@@ -280,7 +280,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
                             connectToCluster();
                         } catch (Exception e) {
-                            LOGGER.warning("Could not re-connect to cluster shutting down the client", e);
+                            logger.warning("Could not re-connect to cluster shutting down the client", e);
                             client.getLifecycleService().shutdown();
                         }
                     }
