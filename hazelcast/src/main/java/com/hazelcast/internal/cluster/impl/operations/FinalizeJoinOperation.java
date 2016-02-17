@@ -17,11 +17,11 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -42,6 +42,8 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     public static final int FINALIZE_JOIN_TIMEOUT_FACTOR = 5;
     public static final int FINALIZE_JOIN_MAX_TIMEOUT = 60;
 
+    private static final int POST_JOIN_TRY_COUNT = 100;
+
     private PostJoinOperation postJoinOp;
     private PartitionRuntimeState partitionRuntimeState;
     private String clusterId;
@@ -52,8 +54,8 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     }
 
     public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime,
-            String clusterId, long clusterStartTime, ClusterState clusterState,
-            PartitionRuntimeState partitionRuntimeState) {
+                                 String clusterId, long clusterStartTime, ClusterState clusterState,
+                                 PartitionRuntimeState partitionRuntimeState) {
         super(members, masterTime, true);
         this.postJoinOp = postJoinOp;
         this.clusterId = clusterId;
@@ -63,7 +65,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     }
 
     public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime,
-            ClusterState clusterState, PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
+                                 ClusterState clusterState, PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
         super(members, masterTime, sendResponse);
         this.postJoinOp = postJoinOp;
         this.clusterState = clusterState;
@@ -146,7 +148,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
                 if (!member.localMember()) {
                     PostJoinOperation operation = new PostJoinOperation(postJoinOperations);
                     operationService.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
-                            operation, member.getAddress()).setTryCount(100).invoke();
+                            operation, member.getAddress()).setTryCount(POST_JOIN_TRY_COUNT).invoke();
                 }
             }
         }

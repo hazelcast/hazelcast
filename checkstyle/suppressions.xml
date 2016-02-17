@@ -33,18 +33,6 @@
     <suppress checks="MethodCountCheck|FileLengthCheck|ClassFanOutComplexityCheck" files="com/hazelcast/console/ConsoleApp"/>
     <suppress checks="MethodCountCheck|FileLengthCheck" files="com/hazelcast/client/console/ClientConsoleApp"/>
 
-    <!-- Cluster -->
-    <!-- TODO: needs to be fixed -->
-    <suppress checks="MethodCount|ClassDataAbstractionCoupling|ClassFanOutComplexityCheck"
-              files="com/hazelcast/internal/cluster/impl/ClusterServiceImpl"/>
-    <suppress checks="" files="com/hazelcast/internal/cluster/impl/ConfigCheck"/>
-    <suppress checks="" files="com/hazelcast/internal/cluster/impl/AbstractJoiner"/>
-    <suppress checks="" files="com/hazelcast/internal/cluster/impl/MulticastJoiner"/>
-    <suppress checks="" files="com/hazelcast/internal/cluster/impl/MulticastService"/>
-    <suppress checks="" files="com/hazelcast/internal/cluster/impl/TcpIpJoiner"/>
-    <suppress checks="" files="com/hazelcast/internal/cluster/impl/operations/FinalizeJoinOperation"/>
-    <suppress checks="" files="com/hazelcast/internal/cluster/impl/operations/JoinCheckOperation"/>
-
     <!-- Cache -->
     <suppress checks="MethodCount" files="com/hazelcast/config/CacheConfig"/>
     <suppress checks="MethodCount" files="com/hazelcast/cache/ICache"/>

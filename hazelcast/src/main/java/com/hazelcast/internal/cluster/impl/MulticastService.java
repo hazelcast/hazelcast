@@ -27,6 +27,7 @@ import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.util.EmptyStatement;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -39,22 +40,39 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class MulticastService implements Runnable {
+public final class MulticastService implements Runnable {
 
+    private static final int SEND_OUTPUT_SIZE = 1024;
     private static final int DATAGRAM_BUFFER_SIZE = 64 * 1024;
+    private static final int SOCKET_BUFFER_SIZE = 64 * 1024;
+    private static final int SOCKET_TIMEOUT = 1000;
+    private static final int SHUTDOWN_TIMEOUT_SECONDS = 5;
 
-    private final ILogger logger;
-    private final MulticastSocket multicastSocket;
-    private final DatagramPacket datagramPacketSend;
-    private final DatagramPacket datagramPacketReceive;
+    private final List<MulticastListener> listeners = new CopyOnWriteArrayList<MulticastListener>();
     private final Object sendLock = new Object();
     private final CountDownLatch stopLatch = new CountDownLatch(1);
-    private final List<MulticastListener> listeners = new CopyOnWriteArrayList<MulticastListener>();
-    private final Node node;
 
+    private final ILogger logger;
+    private final Node node;
+    private final MulticastSocket multicastSocket;
     private final BufferObjectDataOutput sendOutput;
+    private final DatagramPacket datagramPacketSend;
+    private final DatagramPacket datagramPacketReceive;
 
     private volatile boolean running = true;
+
+    private MulticastService(Node node, MulticastSocket multicastSocket) throws Exception {
+        this.logger = node.getLogger(MulticastService.class.getName());
+        this.node = node;
+        this.multicastSocket = multicastSocket;
+
+        this.sendOutput = node.getSerializationService().createObjectDataOutput(SEND_OUTPUT_SIZE);
+        Config config = node.getConfig();
+        MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
+        this.datagramPacketSend = new DatagramPacket(new byte[0], 0, InetAddress.getByName(multicastConfig.getMulticastGroup()),
+                multicastConfig.getMulticastPort());
+        this.datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
+    }
 
     public static MulticastService createMulticastService(Address bindAddress, Node node, Config config, ILogger logger) {
         JoinConfig join = config.getNetworkConfig().getJoin();
@@ -82,35 +100,21 @@ public class MulticastService implements Runnable {
             } catch (Exception e) {
                 logger.warning(e);
             }
-            multicastSocket.setReceiveBufferSize(64 * 1024);
-            multicastSocket.setSendBufferSize(64 * 1024);
+            multicastSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
+            multicastSocket.setSendBufferSize(SOCKET_BUFFER_SIZE);
             String multicastGroup = System.getProperty("hazelcast.multicast.group");
             if (multicastGroup == null) {
                 multicastGroup = multicastConfig.getMulticastGroup();
             }
             multicastConfig.setMulticastGroup(multicastGroup);
             multicastSocket.joinGroup(InetAddress.getByName(multicastGroup));
-            multicastSocket.setSoTimeout(1000);
+            multicastSocket.setSoTimeout(SOCKET_TIMEOUT);
             mcService = new MulticastService(node, multicastSocket);
             mcService.addMulticastListener(new NodeMulticastListener(node));
         } catch (Exception e) {
             logger.severe(e);
         }
         return mcService;
-    }
-
-    private MulticastService(Node node, MulticastSocket multicastSocket) throws Exception {
-        this.node = node;
-        logger = node.getLogger(MulticastService.class.getName());
-        Config config = node.getConfig();
-        this.multicastSocket = multicastSocket;
-
-        sendOutput = node.getSerializationService().createObjectDataOutput(1024);
-        datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
-        final MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
-        datagramPacketSend = new DatagramPacket(new byte[0], 0, InetAddress
-                .getByName(multicastConfig.getMulticastGroup()), multicastConfig.getMulticastPort());
-        running = true;
     }
 
     public void addMulticastListener(MulticastListener multicastListener) {
@@ -129,10 +133,11 @@ public class MulticastService implements Runnable {
             try {
                 multicastSocket.close();
             } catch (Throwable ignored) {
+                EmptyStatement.ignore(ignored);
             }
             running = false;
-            if (!stopLatch.await(5, TimeUnit.SECONDS)) {
-                logger.warning("Failed to shutdown MulticastService in 5 seconds!");
+            if (!stopLatch.await(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                logger.warning("Failed to shutdown MulticastService in " + SHUTDOWN_TIMEOUT_SECONDS + " seconds!");
             }
         } catch (Throwable e) {
             logger.warning(e);
@@ -146,6 +151,7 @@ public class MulticastService implements Runnable {
             datagramPacketReceive.setData(new byte[0]);
             datagramPacketSend.setData(new byte[0]);
         } catch (Throwable ignored) {
+            EmptyStatement.ignore(ignored);
         }
         stopLatch.countDown();
     }
@@ -204,8 +210,7 @@ public class MulticastService implements Runnable {
                 }
             } catch (Exception e) {
                 if (e instanceof EOFException || e instanceof HazelcastSerializationException) {
-                    logger.warning("Received data format is invalid." +
-                            " (An old version of Hazelcast may be running here.)", e);
+                    logger.warning("Received data format is invalid. (An old version of Hazelcast may be running here.)", e);
                 } else {
                     throw e;
                 }
