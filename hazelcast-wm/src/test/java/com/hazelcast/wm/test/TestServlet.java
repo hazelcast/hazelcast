@@ -45,6 +45,14 @@ public class TestServlet extends HttpServlet {
         if (req.getRequestURI().endsWith("write")) {
             session.setAttribute("key", "value");
             resp.getWriter().write("true");
+        } else if (req.getRequestURI().endsWith("write_wait")) {
+            session.putValue("key", "value");
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            resp.getWriter().write("true");
         } else if (req.getRequestURI().endsWith("putValue")) {
             session.putValue("key", "value");
             resp.getWriter().write("true");
