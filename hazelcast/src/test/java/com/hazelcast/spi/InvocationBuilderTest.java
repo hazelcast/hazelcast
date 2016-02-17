@@ -27,18 +27,6 @@ public class InvocationBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void getTargetExecutionCallback_whenCallbackInstance() {
-        InvocationBuilder invocationBuilder = new MockInvocationBuilder(null, null, null, 0, null);
-
-        assertNull(invocationBuilder.getTargetExecutionCallback());
-
-        Callback callback = mock(Callback.class);
-        invocationBuilder.setCallback(callback);
-
-        assertInstanceOf(InvocationBuilder.ExecutorCallbackAdapter.class, invocationBuilder.getTargetExecutionCallback());
-    }
-
-    @Test
     public void getTargetExecutionCallback_whenExecutionCallbackInstance() {
         InvocationBuilder invocationBuilder = new MockInvocationBuilder(null, null, null, 0, null);
 
