@@ -33,17 +33,17 @@ public class StandardMemoryAccessor extends UnsafeBasedMemoryAccessor {
     /////////////////////////////////////////////////////////////////////////
 
     @Override
-    public long getObjectFieldOffset(Field field) {
+    public long objectFieldOffset(Field field) {
         return UNSAFE.objectFieldOffset(field);
     }
 
     @Override
-    public int getArrayBaseOffset(Class<?> arrayClass) {
+    public int arrayBaseOffset(Class<?> arrayClass) {
         return UNSAFE.arrayBaseOffset(arrayClass);
     }
 
     @Override
-    public int getArrayIndexScale(Class<?> arrayClass) {
+    public int arrayIndexScale(Class<?> arrayClass) {
         return UNSAFE.arrayIndexScale(arrayClass);
     }
 

@@ -16,33 +16,29 @@
 
 package com.hazelcast.internal.memory.impl;
 
+import com.hazelcast.internal.memory.MemoryAccessor;
+
 import java.nio.ByteOrder;
 
 /**
  * <p>
- * Aligned {@link com.hazelcast.internal.memory.MemoryAccessor} implementation
- * that checks and handles unaligned memory accesses if possible
- * by using {@link sun.misc.Unsafe} for accessing to memory.
- * </p>
- *
- * <p>
+ * Aligned {@link MemoryAccessor} which checks for and handles unaligned memory access
+ * by splitting a larger-size memory operation into several smaller-size ones
+ * (which have finer-grained alignment requirements).
+ * </p><p>
  * A few notes on this implementation:
  * <ul>
  *      <li>
  *        There is no atomicity guarantee for unaligned memory accesses.
  *        In fact, even on platforms which support unaligned memory accesses,
  *        there is no guarantee for atomicity when there is unaligned memory accesses.
- *        On the other hand, on later Intel processor unaligned access
- *        within the cache line is atomic, but access across the line is not.
+ *        On later Intel processors, unaligned access within the cache line is atomic,
+ *        but access that straddles cache lines is not.
  *        See http://psy-lob-saw.blogspot.com.tr/2013/07/atomicity-of-unaligned-memory-access-in.html
- *        for more details
+ *        for more details.
  *      </li>
- *      <li>
- *        Unaligned memory accesses are not supported for CAS operations.
- *      </li>
- *      <li>
- *        Unaligned memory accesses are not supported for ordered writes.
- *      </li>
+ *      <li>Unaligned memory access is not supported for CAS operations. </li>
+ *      <li>Unaligned memory access is not supported for ordered writes. </li>
  * </ul>
  * </p>
  */
@@ -58,23 +54,23 @@ public class AlignmentAwareMemoryAccessor extends StandardMemoryAccessor {
         }
     }
 
-    private boolean is2BytesAligned(long value) {
+    private static boolean is2BytesAligned(long value) {
         return (value & 0x01) == 0;
     }
 
-    private boolean is4BytesAligned(long value) {
+    private static boolean is4BytesAligned(long value) {
         return (value & 0x03) == 0;
     }
 
-    private boolean is8BytesAligned(long value) {
+    private static boolean is8BytesAligned(long value) {
         return (value & 0x07) == 0;
     }
 
-    private boolean isReferenceAligned(long offset) {
+    private static boolean isReferenceAligned(long offset) {
         return (offset & OBJECT_REFERENCE_MASK) == 0;
     }
 
-    private void checkReferenceAligned(long offset) {
+    private static void checkReferenceAligned(long offset) {
         if (!isReferenceAligned(offset)) {
             throw new IllegalArgumentException("Memory accesses to references must be "
                     + OBJECT_REFERENCE_ALIGN + "-bytes aligned, but it is " + offset);

@@ -22,27 +22,30 @@ package com.hazelcast.internal.memory;
 public enum MemoryAccessorType {
 
     /**
-     * Represents standard {@link MemoryAccessor} directly uses {@link sun.misc.Unsafe} for accessing to memory.
+     * Represents the standard {@link MemoryAccessor} which correctly handles only aligned memory access.
+     * Requesting unaligned memory access from this instance will result in low-level JVM crash on
+     * platforms which only support aligned access.
      *
      * @see com.hazelcast.internal.memory.impl.StandardMemoryAccessor
      */
     STANDARD,
 
     /**
-     * Represents aligned {@link MemoryAccessor} checks and handles unaligned memory accesses if possible
-     * by using {@link sun.misc.Unsafe} for accessing to memory.
+     * Represents the aligned {@link MemoryAccessor}, which checks for and handles unaligned memory access
+     * by splitting a larger-size memory operation into several smaller-size ones
+     * (which have finer-grained alignment requirements).
      *
      * @see com.hazelcast.internal.memory.impl.AlignmentAwareMemoryAccessor
      */
     ALIGNMENT_AWARE,
 
     /**
-     * Represents {@link MemoryAccessor} that checks underlying platform and behaves regarding to its architecture
-     * as aligned or standard.
-     *
-     * If the underlying platform supports unaligned memory accesses,
-     * it behaves as standard {@link MemoryAccessor} because no need to additional checks.
-     * Otherwise, it behaves as alignment-aware {@link MemoryAccessor}.
+     * Represents a {@link MemoryAccessor} that checks the underlying platform and behaves as either
+     * {@link #ALIGNMENT_AWARE} or {@link #STANDARD}, as appropriate to the platform's architecture.
+     * <p>
+     * If the underlying platform supports unaligned memory access,
+     * it behaves as the standard {@link MemoryAccessor} because there's no need for additional checks.
+     * Otherwise, it behaves as the alignment-aware {@link MemoryAccessor}.
      *
      * @see com.hazelcast.internal.memory.impl.PlatformAwareMemoryAccessor
      */

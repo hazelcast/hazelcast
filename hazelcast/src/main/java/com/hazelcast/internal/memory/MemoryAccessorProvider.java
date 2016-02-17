@@ -23,7 +23,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Provides {@link MemoryAccessor} implementations as their {@link MemoryAccessorType}.
+ * Provides {@link MemoryAccessor} implementations by their {@link MemoryAccessorType}.
  */
 public final class MemoryAccessorProvider {
 
@@ -62,19 +62,14 @@ public final class MemoryAccessorProvider {
     }
 
     /**
-     * Gets the {@link MemoryAccessor} instance related with given {@link MemoryAccessorType}.
-     *
-     * @param memoryAccessorType the type of the requested {@link MemoryAccessor}
-     * @return the {@link MemoryAccessor} instance related with given {@link MemoryAccessorType}
+     * Returns the {@link MemoryAccessor} instance appropriate to the given {@link MemoryAccessorType}.
      */
     public static MemoryAccessor getMemoryAccessor(MemoryAccessorType memoryAccessorType) {
         return MEMORY_ACCESSOR_MAP.get(memoryAccessorType);
     }
 
     /**
-     * Gets the default {@link MemoryAccessor} instance.
-     *
-     * @return the default {@link MemoryAccessor} instance
+     * Returns the default {@link MemoryAccessor} instance.
      */
     public static MemoryAccessor getDefaultMemoryAccessor() {
         return MEMORY_ACCESSOR_MAP.get(MemoryAccessorType.PLATFORM_AWARE);
