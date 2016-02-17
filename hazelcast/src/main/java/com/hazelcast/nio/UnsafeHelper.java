@@ -58,7 +58,7 @@ public final class UnsafeHelper {
     public static final Unsafe UNSAFE;
 
     /**
-     * @deprecated {@link com.hazelcast.internal.memory.MemoryAccessor#AVAILABLE} instead
+     * @deprecated {@link com.hazelcast.internal.memory.MemoryAccessor#MEM_AVAILABLE} instead
      */
     @Deprecated
     public static final boolean UNSAFE_AVAILABLE;

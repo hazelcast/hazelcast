@@ -22,8 +22,9 @@ package com.hazelcast.internal.memory;
 public enum MemoryAccessorType {
 
     /**
-     * Represents the standard {@link MemoryAccessor} which directly uses
-     * {@link sun.misc.Unsafe} to access memory.
+     * Represents the standard {@link MemoryAccessor} which correctly handles only aligned memory access.
+     * Requesting unaligned memory access from this instance will result in low-level JVM crash on
+     * platforms which only support aligned access.
      *
      * @see com.hazelcast.internal.memory.impl.StandardMemoryAccessor
      */

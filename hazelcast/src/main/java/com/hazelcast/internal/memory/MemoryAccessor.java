@@ -18,6 +18,8 @@ package com.hazelcast.internal.memory;
 
 import java.lang.reflect.Field;
 
+import static com.hazelcast.internal.memory.MemoryAccessorType.STANDARD;
+
 /**
  * <p>
  * Contract point for direct memory access operations.
@@ -37,7 +39,7 @@ import java.lang.reflect.Field;
  *      <li>
  *        The default {@link MemoryAccessor} implementation
  *        can be accessed via {@link #MEM} field of this interface
- *        and its availability state can be checked via {@link #AVAILABLE} field.
+ *        and its availability state can be checked via {@link #MEM_AVAILABLE} field.
  *      </li>
  * </ul>
  * </p>
@@ -53,10 +55,23 @@ public interface MemoryAccessor {
     MemoryAccessor MEM = MemoryAccessorProvider.getDefaultMemoryAccessor();
 
     /**
+     * The instance of {@link MemoryAccessor} which correctly handles only aligned memory access.
+     * Requesting unaligned memory access from this instance will result in low-level JVM crash on
+     * platforms which do not support it.
+     */
+    MemoryAccessor AMEM = MemoryAccessorProvider.getMemoryAccessor(STANDARD);
+
+    /**
      * If this constant is {@code true}, then {@link MEM} refers to a usable {@code MemoryAccessor}
      * instance.
      */
-    boolean AVAILABLE = MEM != null;
+    boolean MEM_AVAILABLE = MEM != null;
+
+    /**
+     * If this constant is {@code true}, then {@link AMEM} refers to a usable {@code MemoryAccessor}
+     * instance.
+     */
+    boolean AMEM_AVAILABLE = AMEM != null;
 
     /////////////////////////////////////////////////////////////////////////
 
