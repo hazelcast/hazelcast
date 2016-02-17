@@ -52,7 +52,7 @@ import java.security.PrivilegedAction;
 public final class UnsafeHelper {
 
     /**
-     * @deprecated {@link com.hazelcast.internal.memory.MemoryAccessor#DEFAULT} instead
+     * @deprecated {@link com.hazelcast.internal.memory.MemoryAccessor#MEM} instead
      */
     @Deprecated
     public static final Unsafe UNSAFE;

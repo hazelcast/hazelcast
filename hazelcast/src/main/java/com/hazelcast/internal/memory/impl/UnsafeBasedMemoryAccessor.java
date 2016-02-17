@@ -30,7 +30,8 @@ abstract class UnsafeBasedMemoryAccessor implements MemoryAccessor {
     protected static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
 
     /**
-     * State about {@link sun.misc.Unsafe} is available to be used.
+     * If this constant is {@code true}, then {@link UNSAFE} refers to a usable {@code Unsafe}
+     * instance.
      */
     protected static final boolean AVAILABLE = UNSAFE != null;
 

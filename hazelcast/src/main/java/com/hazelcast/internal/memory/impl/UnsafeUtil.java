@@ -29,7 +29,7 @@ import java.security.PrivilegedAction;
 import static com.hazelcast.util.QuickMath.normalize;
 
 /**
- * Utility class on {@link sun.misc.Unsafe}.
+ * Utility class for {@link sun.misc.Unsafe}.
  */
 final class UnsafeUtil {
 
@@ -39,7 +39,8 @@ final class UnsafeUtil {
     static final Unsafe UNSAFE;
 
     /**
-     * State about {@link sun.misc.Unsafe} is available to be used.
+     * If this constant is {@code true}, then {@link UNSAFE} refers to a usable {@code Unsafe}
+     * instance.
      */
     static final boolean UNSAFE_AVAILABLE;
 

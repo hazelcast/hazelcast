@@ -20,7 +20,7 @@ import java.lang.reflect.Field;
 
 /**
  * <p>
- * Contract point for memory access operations.
+ * Contract point for direct memory access operations.
  * </p>
  *
  * <p>
@@ -36,8 +36,8 @@ import java.lang.reflect.Field;
  *      </li>
  *      <li>
  *        The default {@link MemoryAccessor} implementation
- *        can be accessed via #DEFAULT field of this interface
- *        and its availability state can be checked via #AVAILABLE field.
+ *        can be accessed via {@link #MEM} field of this interface
+ *        and its availability state can be checked via {@link #AVAILABLE} field.
  *      </li>
  * </ul>
  * </p>
@@ -50,111 +50,113 @@ public interface MemoryAccessor {
     /**
      * The default {@link MemoryAccessor} instance.
      */
-    MemoryAccessor DEFAULT = MemoryAccessorProvider.getDefaultMemoryAccessor();
+    MemoryAccessor MEM = MemoryAccessorProvider.getDefaultMemoryAccessor();
 
     /**
-     * State about {@link #DEFAULT} {@link MemoryAccessor} is available to be used.
+     * If this constant is {@code true}, then {@link MEM} refers to a usable {@code MemoryAccessor}
+     * instance.
      */
-    boolean AVAILABLE = DEFAULT != null;
+    boolean AVAILABLE = MEM != null;
 
     /////////////////////////////////////////////////////////////////////////
 
     /**
-     * Memory copy threshold in bytes.
+     * Maximum size of a block of memory to copy in a single low-level memory-copying
+     * operation. The goal is to prevent large periods without a GC safepoint.
      */
     int MEM_COPY_THRESHOLD = 1024 * 1024;
 
     /**
      * Base offset of boolean[]
      */
-    int ARRAY_BOOLEAN_BASE_OFFSET = DEFAULT != null ? DEFAULT.getArrayBaseOffset(boolean[].class) : -1;
+    int ARRAY_BOOLEAN_BASE_OFFSET = MEM != null ? MEM.arrayBaseOffset(boolean[].class) : -1;
 
     /**
      * Base offset of byte[]
      */
-    int ARRAY_BYTE_BASE_OFFSET = DEFAULT != null ? DEFAULT.getArrayBaseOffset(byte[].class) : -1;
+    int ARRAY_BYTE_BASE_OFFSET = MEM != null ? MEM.arrayBaseOffset(byte[].class) : -1;
 
     /**
      * Base offset of short[]
      */
-    int ARRAY_SHORT_BASE_OFFSET = DEFAULT != null ? DEFAULT.getArrayBaseOffset(short[].class) : -1;
+    int ARRAY_SHORT_BASE_OFFSET = MEM != null ? MEM.arrayBaseOffset(short[].class) : -1;
 
     /**
      * Base offset of char[]
      */
-    int ARRAY_CHAR_BASE_OFFSET = DEFAULT != null ? DEFAULT.getArrayBaseOffset(char[].class) : -1;
+    int ARRAY_CHAR_BASE_OFFSET = MEM != null ? MEM.arrayBaseOffset(char[].class) : -1;
 
     /**
      * Base offset of int[]
      */
-    int ARRAY_INT_BASE_OFFSET = DEFAULT != null ? DEFAULT.getArrayBaseOffset(int[].class) : -1;
+    int ARRAY_INT_BASE_OFFSET = MEM != null ? MEM.arrayBaseOffset(int[].class) : -1;
 
     /**
      * Base offset of float[]
      */
-    int ARRAY_FLOAT_BASE_OFFSET = DEFAULT != null ? DEFAULT.getArrayBaseOffset(float[].class) : -1;
+    int ARRAY_FLOAT_BASE_OFFSET = MEM != null ? MEM.arrayBaseOffset(float[].class) : -1;
 
     /**
      * Base offset of long[]
      */
-    int ARRAY_LONG_BASE_OFFSET = DEFAULT != null ? DEFAULT.getArrayBaseOffset(long[].class) : -1;
+    int ARRAY_LONG_BASE_OFFSET = MEM != null ? MEM.arrayBaseOffset(long[].class) : -1;
 
     /**
      * Base offset of double[]
      */
-    int ARRAY_DOUBLE_BASE_OFFSET = DEFAULT != null ? DEFAULT.getArrayBaseOffset(double[].class) : -1;
+    int ARRAY_DOUBLE_BASE_OFFSET = MEM != null ? MEM.arrayBaseOffset(double[].class) : -1;
 
     /**
      * Base offset of any type of Object[]
      */
-    int ARRAY_OBJECT_BASE_OFFSET = DEFAULT != null ? DEFAULT.getArrayBaseOffset(Object[].class) : -1;
+    int ARRAY_OBJECT_BASE_OFFSET = MEM != null ? MEM.arrayBaseOffset(Object[].class) : -1;
 
     /////////////////////////////////////////////////////////////////////////
 
     /**
      * Index scale of boolean[]
      */
-    int ARRAY_BOOLEAN_INDEX_SCALE = DEFAULT != null ? DEFAULT.getArrayIndexScale(boolean[].class) : -1;
+    int ARRAY_BOOLEAN_INDEX_SCALE = MEM != null ? MEM.arrayIndexScale(boolean[].class) : -1;
 
     /**
      * Index scale of byte[]
      */
-    int ARRAY_BYTE_INDEX_SCALE = DEFAULT != null ? DEFAULT.getArrayIndexScale(byte[].class) : -1;
+    int ARRAY_BYTE_INDEX_SCALE = MEM != null ? MEM.arrayIndexScale(byte[].class) : -1;
 
     /**
      * Index scale of short[]
      */
-    int ARRAY_SHORT_INDEX_SCALE = DEFAULT != null ? DEFAULT.getArrayIndexScale(short[].class) : -1;
+    int ARRAY_SHORT_INDEX_SCALE = MEM != null ? MEM.arrayIndexScale(short[].class) : -1;
 
     /**
      * Index scale of char[]
      */
-    int ARRAY_CHAR_INDEX_SCALE = DEFAULT != null ? DEFAULT.getArrayIndexScale(char[].class) : -1;
+    int ARRAY_CHAR_INDEX_SCALE = MEM != null ? MEM.arrayIndexScale(char[].class) : -1;
 
     /**
      * Index scale of int[]
      */
-    int ARRAY_INT_INDEX_SCALE = DEFAULT != null ? DEFAULT.getArrayIndexScale(int[].class) : -1;
+    int ARRAY_INT_INDEX_SCALE = MEM != null ? MEM.arrayIndexScale(int[].class) : -1;
 
     /**
      * Index scale of float[]
      */
-    int ARRAY_FLOAT_INDEX_SCALE = DEFAULT != null ? DEFAULT.getArrayIndexScale(float[].class) : -1;
+    int ARRAY_FLOAT_INDEX_SCALE = MEM != null ? MEM.arrayIndexScale(float[].class) : -1;
 
     /**
      * Index scale of long[]
      */
-    int ARRAY_LONG_INDEX_SCALE = DEFAULT != null ? DEFAULT.getArrayIndexScale(long[].class) : -1;
+    int ARRAY_LONG_INDEX_SCALE = MEM != null ? MEM.arrayIndexScale(long[].class) : -1;
 
     /**
      * Index scale of double[]
      */
-    int ARRAY_DOUBLE_INDEX_SCALE = DEFAULT != null ? DEFAULT.getArrayIndexScale(double[].class) : -1;
+    int ARRAY_DOUBLE_INDEX_SCALE = MEM != null ? MEM.arrayIndexScale(double[].class) : -1;
 
     /**
      * Index scale of any type of Object[]
      */
-    int ARRAY_OBJECT_INDEX_SCALE = DEFAULT != null ? DEFAULT.getArrayIndexScale(Object[].class) : -1;
+    int ARRAY_OBJECT_INDEX_SCALE = MEM != null ? MEM.arrayIndexScale(Object[].class) : -1;
 
     /////////////////////////////////////////////////////////////////////////
 
@@ -164,7 +166,7 @@ public interface MemoryAccessor {
      * @param field the field whose offset is requested
      * @return the offset of given field
      */
-    long getObjectFieldOffset(Field field);
+    long objectFieldOffset(Field field);
 
     /**
      * Gets the base offset of the array typed with given class.
@@ -172,7 +174,7 @@ public interface MemoryAccessor {
      * @param arrayClass the type of the array whose base offset is requested
      * @return the base offset of the array typed with given class
      */
-    int getArrayBaseOffset(Class<?> arrayClass);
+    int arrayBaseOffset(Class<?> arrayClass);
 
     /**
      * Gets the index scale of the array typed with given class.
@@ -180,7 +182,7 @@ public interface MemoryAccessor {
      * @param arrayClass the type of the array whose index scale is requested
      * @return the index scale of the array typed with given class
      */
-    int getArrayIndexScale(Class<?> arrayClass);
+    int arrayIndexScale(Class<?> arrayClass);
 
     /////////////////////////////////////////////////////////////////////////
 
