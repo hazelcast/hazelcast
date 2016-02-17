@@ -19,6 +19,7 @@ package com.hazelcast.nio.tcp.spinning;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.TextReadHandler;
 import com.hazelcast.nio.tcp.NewClientReadHandler;
@@ -170,7 +171,8 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
     }
 
     private void configureBuffers(int size) {
-        inputBuffer = ByteBuffer.allocate(size);
+        inputBuffer = IOUtil.newByteBuffer(size, ioService.isSocketBufferDirect());
+
         try {
             connection.setReceiveBufferSize(size);
         } catch (SocketException e) {

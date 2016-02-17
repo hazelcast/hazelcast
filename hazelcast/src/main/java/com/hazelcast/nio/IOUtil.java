@@ -48,6 +48,14 @@ public final class IOUtil {
     private IOUtil() {
     }
 
+    public static ByteBuffer newByteBuffer(int bufferSize, boolean direct) {
+        if (direct) {
+            return ByteBuffer.allocateDirect(bufferSize);
+        } else {
+            return ByteBuffer.allocate(bufferSize);
+        }
+    }
+
     /**
      * This method has a direct dependency on how objects are serialized in
      * {@link com.hazelcast.internal.serialization.impl.DataSerializer}! If the stream

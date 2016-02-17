@@ -18,7 +18,9 @@ package com.hazelcast.nio.tcp.spinning;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.ascii.TextWriteHandler;
@@ -28,7 +30,6 @@ import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.internal.util.counters.SwCounter;
 
 import java.io.IOException;
 import java.net.SocketException;
@@ -39,11 +40,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.util.StringUtil.stringToBytes;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.System.currentTimeMillis;
 
 public class SpinningSocketWriter extends AbstractHandler implements SocketWriter {
@@ -171,7 +172,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     }
 
     private void configureBuffers(int size) {
-        outputBuffer = ByteBuffer.allocate(size);
+        outputBuffer = IOUtil.newByteBuffer(size, ioService.isSocketBufferDirect());
         try {
             connection.setSendBufferSize(size);
         } catch (SocketException e) {

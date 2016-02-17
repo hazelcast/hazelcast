@@ -19,6 +19,7 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -69,8 +70,9 @@ public class ClientConnection implements Connection {
         this.connectionId = connectionId;
         LoggingService clientLoggingService = client.getLoggingService();
         this.logger = clientLoggingService.getLogger(ClientConnection.class);
-        this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize(), clientLoggingService);
-        this.writeHandler = new ClientWriteHandler(this, out, socket.getSendBufferSize(), clientLoggingService);
+        boolean directBuffer = client.getClientProperties().getBoolean(GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT);
+        this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize(), directBuffer, clientLoggingService);
+        this.writeHandler = new ClientWriteHandler(this, out, socket.getSendBufferSize(), directBuffer, clientLoggingService);
     }
 
     public ClientConnection(HazelcastClientInstanceImpl client,

@@ -19,6 +19,7 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageBuilder;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.Clock;
 
@@ -35,9 +36,10 @@ public class ClientReadHandler
     private volatile long lastHandle;
 
     public ClientReadHandler(final ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize,
-                             LoggingService loggingService) {
+                             boolean direct, LoggingService loggingService) {
         super(connection, ioThread, loggingService);
-        buffer = ByteBuffer.allocate(bufferSize);
+
+        buffer = IOUtil.newByteBuffer(bufferSize, direct);
         lastHandle = Clock.currentTimeMillis();
         builder = new ClientMessageBuilder(new ClientMessageBuilder.MessageHandler() {
             @Override
