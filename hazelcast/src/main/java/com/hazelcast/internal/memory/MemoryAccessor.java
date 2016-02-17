@@ -62,13 +62,13 @@ public interface MemoryAccessor {
     MemoryAccessor AMEM = MemoryAccessorProvider.getMemoryAccessor(STANDARD);
 
     /**
-     * If this constant is {@code true}, then {@link MEM} refers to a usable {@code MemoryAccessor}
+     * If this constant is {@code true}, then {@link #MEM} refers to a usable {@code MemoryAccessor}
      * instance.
      */
     boolean MEM_AVAILABLE = MEM != null;
 
     /**
-     * If this constant is {@code true}, then {@link AMEM} refers to a usable {@code MemoryAccessor}
+     * If this constant is {@code true}, then {@link #AMEM} refers to a usable {@code MemoryAccessor}
      * instance.
      */
     boolean AMEM_AVAILABLE = AMEM != null;
