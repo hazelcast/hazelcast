@@ -45,7 +45,7 @@ public class RemoveInterceptorOperation extends AbstractOperation implements Mut
         mapService = getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        mapContainer.removeInterceptor(id);
+        mapContainer.getInterceptorRegistry().deregister(id);
     }
 
     @Override
