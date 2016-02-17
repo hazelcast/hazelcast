@@ -22,8 +22,9 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.NamedOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
+
 import java.io.IOException;
 
 public class AddInterceptorOperation extends AbstractOperation implements MutatingOperation, NamedOperation {
@@ -51,7 +52,7 @@ public class AddInterceptorOperation extends AbstractOperation implements Mutati
     public void run() {
         mapService = getService();
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(mapName);
-        mapContainer.addInterceptor(id, mapInterceptor);
+        mapContainer.getInterceptorRegistry().register(id, mapInterceptor);
     }
 
     @Override
