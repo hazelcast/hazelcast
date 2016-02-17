@@ -22,7 +22,6 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.eviction.EvictionChecker;
 import com.hazelcast.map.impl.eviction.EvictionCheckerImpl;
 import com.hazelcast.map.impl.eviction.Evictor;
@@ -44,10 +43,6 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
@@ -61,7 +56,6 @@ public class MapContainer {
     protected final String name;
     protected final String quorumName;
     protected final MapServiceContext mapServiceContext;
-    protected final Map<String, MapInterceptor> interceptorMap;
     protected final Indexes indexes;
     protected final Extractors extractors;
     protected final SizeEstimator nearCacheSizeEstimator;
@@ -69,7 +63,7 @@ public class MapContainer {
     protected final MapStoreContext mapStoreContext;
     protected final SerializationService serializationService;
     protected final QueryEntryFactory queryEntryFactory;
-    protected final List<MapInterceptor> interceptors;
+    protected final InterceptorRegistry interceptorRegistry;
     protected final IFunction<Object, Data> toDataFunction = new IFunction<Object, Data>() {
         @Override
         public Data apply(Object input) {
@@ -107,8 +101,6 @@ public class MapContainer {
         this.recordFactoryConstructor = createRecordFactoryConstructor(serializationService);
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues());
         initWanReplication(nodeEngine);
-        this.interceptors = new CopyOnWriteArrayList<MapInterceptor>();
-        this.interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         this.nearCacheSizeEstimator = createNearCacheSizeEstimator(mapConfig.getNearCacheConfig());
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
@@ -116,6 +108,7 @@ public class MapContainer {
         this.indexes = new Indexes(serializationService, extractors);
         this.evictor = createEvictor(mapServiceContext);
         this.memberNearCacheInvalidationEnabled = isNearCacheEnabled() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
+        this.interceptorRegistry = new InterceptorRegistry();
     }
 
     // this method is overridden.
@@ -181,27 +174,6 @@ public class MapContainer {
 
     public MapMergePolicy getWanMergePolicy() {
         return wanMergePolicy;
-    }
-
-    public void addInterceptor(String id, MapInterceptor interceptor) {
-
-        removeInterceptor(id);
-
-        interceptorMap.put(id, interceptor);
-        interceptors.add(interceptor);
-    }
-
-    public List<MapInterceptor> getInterceptors() {
-        return interceptors;
-    }
-
-    public Map<String, MapInterceptor> getInterceptorMap() {
-        return interceptorMap;
-    }
-
-    public void removeInterceptor(String id) {
-        MapInterceptor interceptor = interceptorMap.remove(id);
-        interceptors.remove(interceptor);
     }
 
     public boolean isWanReplicationEnabled() {
@@ -308,6 +280,10 @@ public class MapContainer {
 
     public boolean isInvalidationEnabled() {
         return isMemberNearCacheInvalidationEnabled() || hasInvalidationListener();
+    }
+
+    public InterceptorRegistry getInterceptorRegistry() {
+        return interceptorRegistry;
     }
 }
 

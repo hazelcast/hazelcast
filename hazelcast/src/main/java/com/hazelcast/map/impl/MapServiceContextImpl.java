@@ -343,7 +343,8 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void interceptAfterGet(String mapName, Object value) {
-        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
+        MapContainer mapContainer = getMapContainer(mapName);
+        List<MapInterceptor> interceptors = mapContainer.getInterceptorRegistry().getInterceptors();
         if (!interceptors.isEmpty()) {
             value = toObject(value);
             for (MapInterceptor interceptor : interceptors) {
@@ -354,7 +355,8 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Object interceptPut(String mapName, Object oldValue, Object newValue) {
-        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
+        MapContainer mapContainer = getMapContainer(mapName);
+        List<MapInterceptor> interceptors = mapContainer.getInterceptorRegistry().getInterceptors();
         Object result = null;
         if (!interceptors.isEmpty()) {
             result = toObject(newValue);
@@ -371,7 +373,8 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void interceptAfterPut(String mapName, Object newValue) {
-        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
+        MapContainer mapContainer = getMapContainer(mapName);
+        List<MapInterceptor> interceptors = mapContainer.getInterceptorRegistry().getInterceptors();
         if (!interceptors.isEmpty()) {
             newValue = toObject(newValue);
             for (MapInterceptor interceptor : interceptors) {
@@ -382,7 +385,8 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Object interceptRemove(String mapName, Object value) {
-        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
+        MapContainer mapContainer = getMapContainer(mapName);
+        List<MapInterceptor> interceptors = mapContainer.getInterceptorRegistry().getInterceptors();
         Object result = null;
         if (!interceptors.isEmpty()) {
             result = toObject(value);
@@ -398,7 +402,9 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void interceptAfterRemove(String mapName, Object value) {
-        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
+        MapContainer mapContainer = getMapContainer(mapName);
+        InterceptorRegistry interceptorRegistry = mapContainer.getInterceptorRegistry();
+        List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
         if (!interceptors.isEmpty()) {
             for (MapInterceptor interceptor : interceptors) {
                 value = toObject(value);
@@ -410,7 +416,7 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public void addInterceptor(String id, String mapName, MapInterceptor interceptor) {
         MapContainer mapContainer = getMapContainer(mapName);
-        mapContainer.addInterceptor(id, interceptor);
+        mapContainer.getInterceptorRegistry().register(id, interceptor);
     }
 
 
@@ -421,13 +427,16 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void removeInterceptor(String mapName, String id) {
-        getMapContainer(mapName).removeInterceptor(id);
+        MapContainer mapContainer = getMapContainer(mapName);
+        mapContainer.getInterceptorRegistry().deregister(id);
     }
 
     // todo interceptors should get a wrapped object which includes the serialized version
     @Override
     public Object interceptGet(String mapName, Object value) {
-        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
+        MapContainer mapContainer = getMapContainer(mapName);
+        InterceptorRegistry interceptorRegistry = mapContainer.getInterceptorRegistry();
+        List<MapInterceptor> interceptors = interceptorRegistry.getInterceptors();
         Object result = null;
         if (!interceptors.isEmpty()) {
             result = toObject(value);
@@ -443,8 +452,8 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public boolean hasInterceptor(String mapName) {
-        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
-        return !interceptors.isEmpty();
+        MapContainer mapContainer = getMapContainer(mapName);
+        return !mapContainer.getInterceptorRegistry().getInterceptors().isEmpty();
     }
 
     @Override
