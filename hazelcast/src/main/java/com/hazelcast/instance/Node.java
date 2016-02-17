@@ -635,8 +635,8 @@ public class Node {
         logger.finest("This node is being set as the master");
         masterAddress = address;
         setJoined();
-        this.getClusterService().getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
-        this.getClusterService().setClusterId(UuidUtil.createClusterUuid());
+        getClusterService().getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
+        getClusterService().setClusterId(UuidUtil.createClusterUuid());
     }
 
     public Config getConfig() {

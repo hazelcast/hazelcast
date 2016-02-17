@@ -38,7 +38,7 @@ public class LockReplicationOperation extends AbstractOperation
     }
 
     public LockReplicationOperation(LockStoreContainer container, int partitionId, int replicaIndex) {
-        this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+        setPartitionId(partitionId).setReplicaIndex(replicaIndex);
 
         Collection<LockStoreImpl> lockStores = container.getLockStores();
         for (LockStoreImpl ls : lockStores) {

@@ -85,7 +85,7 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
                 synchronized (this) {
                     while (waitMillis > 0 && response == null) {
                         long start = Clock.currentTimeMillis();
-                        this.wait(waitMillis);
+                        wait(waitMillis);
                         long elapsed = Clock.currentTimeMillis() - start;
                         waitMillis -= elapsed;
                     }
@@ -115,7 +115,7 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
             }
 
             this.response = response;
-            this.notifyAll();
+            notifyAll();
             for (ExecutionCallbackNode node : callbackNodeList) {
                 runAsynchronous(node.callback, node.executor);
             }

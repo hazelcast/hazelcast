@@ -119,7 +119,7 @@ public class ClientEntryListenerDisconnectTest {
         private int userId;
 
         public GenericEvent(int userId) {
-            this.setUserId(userId);
+            setUserId(userId);
         }
 
         public int getUserId() {

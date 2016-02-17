@@ -51,7 +51,8 @@ public class ReplicationOperation extends AbstractOperation {
 
     public ReplicationOperation(SerializationService serializationService, PartitionContainer container, int partitionId) {
         this.serializationService = serializationService;
-        this.setPartitionId(partitionId);
+
+        setPartitionId(partitionId);
         fetchReplicatedMapRecords(container);
     }
 

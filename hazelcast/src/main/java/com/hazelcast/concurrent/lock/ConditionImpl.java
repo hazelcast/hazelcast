@@ -40,8 +40,8 @@ final class ConditionImpl implements ICondition {
 
     private final LockProxy lockProxy;
     private final int partitionId;
-    private final String conditionId;
     private final ObjectNamespace namespace;
+    private final String conditionId;
 
     public ConditionImpl(LockProxy lockProxy, String id) {
         this.lockProxy = lockProxy;

@@ -26,7 +26,7 @@ public class TransactionPermission extends ClusterPermission {
 
     @Override
     public boolean implies(Permission permission) {
-        return this.getClass() == permission.getClass();
+        return getClass() == permission.getClass();
     }
 
     @Override

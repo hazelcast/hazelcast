@@ -227,7 +227,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
 
             synchronized (this) {
                 if (!isDoneState(this.state)) {
-                    this.wait(millisToWait);
+                    wait(millisToWait);
                 }
             }
         }
@@ -290,7 +290,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
 
     private void notifyThreadsWaitingOnGet() {
         synchronized (this) {
-            this.notifyAll();
+            notifyAll();
         }
     }
 

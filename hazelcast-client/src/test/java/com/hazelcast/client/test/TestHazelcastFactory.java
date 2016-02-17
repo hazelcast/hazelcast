@@ -49,7 +49,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
     }
 
     public HazelcastInstance newHazelcastClient() {
-        return this.newHazelcastClient(null);
+        return newHazelcastClient(null);
     }
 
     public HazelcastInstance newHazelcastClient(ClientConfig config) {
