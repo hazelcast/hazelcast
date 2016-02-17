@@ -24,7 +24,7 @@ import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.partition.impl.InternalMigrationListener;
+import com.hazelcast.internal.partition.impl.InternalMigrationListener;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.PartitionAwareOperation;

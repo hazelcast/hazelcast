@@ -19,14 +19,12 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.core.Partition;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.operation.SafeStateCheckOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.properties.GroupProperty;
 
@@ -42,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 
 public class PartitionServiceProxy implements com.hazelcast.core.PartitionService {
 
+    private final NodeEngine nodeEngine;
     private final InternalPartitionService partitionService;
     private final ConcurrentMap<Integer, PartitionProxy> mapPartitions
             = new ConcurrentHashMap<Integer, PartitionProxy>();
@@ -49,14 +48,15 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
     private final Random random = new Random();
     private final ILogger logger;
 
-    public PartitionServiceProxy(InternalPartitionService partitionService) {
+    public PartitionServiceProxy(NodeEngine nodeEngine, InternalPartitionService partitionService) {
+        this.nodeEngine = nodeEngine;
         this.partitionService = partitionService;
         for (int i = 0; i < partitionService.getPartitionCount(); i++) {
             PartitionProxy partitionProxy = new PartitionProxy(i);
             partitions.add(partitionProxy);
             mapPartitions.put(i, partitionProxy);
         }
-        logger = getNode().getLogger(PartitionServiceProxy.class);
+        logger = nodeEngine.getLogger(PartitionServiceProxy.class);
     }
 
     @Override
@@ -97,8 +97,7 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
 
     @Override
     public boolean isClusterSafe() {
-        final Node node = getNode();
-        final Collection<Member> memberList = node.clusterService.getMembers();
+        final Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
         if (memberList == null || memberList.isEmpty() || memberList.size() < 2) {
             return true;
         }
@@ -106,12 +105,12 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
         for (Member member : memberList) {
             final Address target = member.getAddress();
             final Operation operation = new SafeStateCheckOperation();
-            final InternalCompletableFuture future = node.getNodeEngine().getOperationService()
+            final InternalCompletableFuture future = nodeEngine.getOperationService()
                     .invokeOnTarget(InternalPartitionService.SERVICE_NAME, operation, target);
             futures.add(future);
         }
         // todo this max wait is appropriate?
-        final int maxWaitTime = getMaxWaitTime(node);
+        final int maxWaitTime = getMaxWaitTime();
         for (Future future : futures) {
             try {
                 final Object result = future.get(maxWaitTime, TimeUnit.SECONDS);
@@ -132,13 +131,13 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
         if (member == null) {
             throw new NullPointerException("Parameter member should not be null");
         }
-        final MemberImpl localMember = getNode().getLocalMember();
+        final Member localMember = nodeEngine.getLocalMember();
         if (localMember.equals(member)) {
             return isLocalMemberSafe();
         }
         final Address target = member.getAddress();
         final Operation operation = new SafeStateCheckOperation();
-        final InternalCompletableFuture future = getNode().getNodeEngine().getOperationService()
+        final InternalCompletableFuture future = nodeEngine.getOperationService()
                 .invokeOnTarget(InternalPartitionService.SERVICE_NAME, operation, target);
         boolean safe;
         try {
@@ -176,17 +175,11 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
     }
 
     private boolean nodeActive() {
-        final Node node = getNode();
-        return node.isRunning();
+        return nodeEngine.isRunning();
     }
 
-    private Node getNode() {
-        final InternalPartitionServiceImpl impl = (InternalPartitionServiceImpl) partitionService;
-        return impl.getNode();
-    }
-
-    private static int getMaxWaitTime(Node node) {
-        return node.getProperties().getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
+    private int getMaxWaitTime() {
+        return nodeEngine.getProperties().getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
     }
 
     public PartitionProxy getPartition(int partitionId) {
@@ -214,7 +207,7 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
                 return null;
             }
 
-            return getNode().getClusterService().getMember(address);
+            return nodeEngine.getClusterService().getMember(address);
         }
 
         @Override

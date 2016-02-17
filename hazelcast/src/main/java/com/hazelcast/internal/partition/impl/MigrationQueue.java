@@ -38,7 +38,7 @@ class MigrationQueue {
     @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED",
             justification = "offer will always be successful since queue is unbounded")
     public void add(Runnable task) {
-        if (task instanceof InternalPartitionServiceImpl.MigrateTask) {
+        if (task instanceof MigrationManager.MigrateTask) {
             migrateTaskCount.incrementAndGet();
         }
 
@@ -60,7 +60,7 @@ class MigrationQueue {
     }
 
     public void afterTaskCompletion(Runnable task) {
-        if (task instanceof InternalPartitionServiceImpl.MigrateTask) {
+        if (task instanceof MigrationManager.MigrateTask) {
             if (migrateTaskCount.decrementAndGet() < 0) {
                 throw new IllegalStateException();
             }
@@ -83,4 +83,9 @@ class MigrationQueue {
         return queue.size();
     }
 
+    @Override
+    public String toString() {
+        return "MigrationQueue{" + "migrateTaskCount=" + migrateTaskCount
+                + ", queue=" + queue + '}';
+    }
 }

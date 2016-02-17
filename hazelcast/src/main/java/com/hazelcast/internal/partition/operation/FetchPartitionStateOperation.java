@@ -12,15 +12,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.hazelcast.partition.impl;
+package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.partition.MigrationCycleOperation;
-import com.hazelcast.partition.PartitionRuntimeState;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.MigrationCycleOperation;
+import com.hazelcast.internal.partition.PartitionRuntimeState;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -34,6 +35,12 @@ public final class FetchPartitionStateOperation extends AbstractOperation implem
 
     @Override
     public void run() {
+        final Address caller = getCallerAddress();
+        final Address master = getNodeEngine().getMasterAddress();
+        if (!caller.equals(master)) {
+            getLogger().warning(caller + " requested our partition table but it's not our known master. "
+                    + "Master: " + master);
+        }
         InternalPartitionServiceImpl service = getService();
         partitionState = service.createPartitionState();
     }

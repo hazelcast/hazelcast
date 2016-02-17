@@ -59,7 +59,7 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
             response = true;
         } else {
             logBackupVersionMismatch(currentVersion);
-            partitionService.triggerPartitionReplicaSync(partitionId, replicaIndex, 0L);
+            partitionService.getReplicaManager().triggerPartitionReplicaSync(partitionId, replicaIndex, 0L);
             response = false;
         }
     }

@@ -37,7 +37,7 @@ public class TestPartitionUtils {
             return InternalPartitionServiceState.SAFE;
         }
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) node.getPartitionService();
-        return partitionService.getMemberState();
+        return partitionService.getPartitionReplicaChecker().getMemberState();
     }
 
     public static Map<Integer, long[]> getAllReplicaVersions(List<HazelcastInstance> instances) throws InterruptedException {

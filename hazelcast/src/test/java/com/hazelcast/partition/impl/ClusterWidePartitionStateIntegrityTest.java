@@ -28,6 +28,12 @@ import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.PartitionListener;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionReplicaChangeEvent;
+import com.hazelcast.internal.partition.operation.PartitionStateOperation;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -38,8 +44,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.tcp.DelegatingConnectionManager;
 import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
 import com.hazelcast.nio.tcp.PacketFilter;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -60,7 +64,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.partition.InternalPartition.MAX_REPLICA_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -207,7 +210,7 @@ public class ClusterWidePartitionStateIntegrityTest extends HazelcastTestSupport
     }
 
     private static void assertPartitionEquals(InternalPartition partition1, InternalPartition partition2) {
-        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+        for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
             Address address1 = partition1.getReplicaAddress(i);
             Address address2 = partition2.getReplicaAddress(i);
             assertAddressEquals(address1, address2);

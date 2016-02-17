@@ -21,10 +21,11 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.impl.InternalMigrationListener.MigrationParticipant;
+import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -92,7 +93,8 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
             return;
         }
 
-        if (!partitionService.addActiveMigration(migrationInfo)) {
+        MigrationManager migrationManager = partitionService.getMigrationManager();
+        if (!migrationManager.addActiveMigration(migrationInfo)) {
             setFailed();
             return;
         }

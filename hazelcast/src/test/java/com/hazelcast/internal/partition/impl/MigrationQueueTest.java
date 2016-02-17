@@ -35,7 +35,7 @@ public class MigrationQueueTest {
 
     @Test
     public void test_migrationTaskCount_incremented_onMigrateTask() {
-        migrationQueue.add(mock(InternalPartitionServiceImpl.MigrateTask.class));
+        migrationQueue.add(mock(MigrationManager.MigrateTask.class));
 
         assertTrue(migrationQueue.hasMigrationTasks());
         assertEquals(1, migrationQueue.size());
@@ -52,7 +52,7 @@ public class MigrationQueueTest {
     @Test
     public void test_migrationTaskCount_notDecremented_afterMigrateTaskPolled()
             throws InterruptedException {
-        migrationQueue.add(mock(InternalPartitionServiceImpl.MigrateTask.class));
+        migrationQueue.add(mock(MigrationManager.MigrateTask.class));
         migrationQueue.poll(1, TimeUnit.SECONDS);
 
         assertTrue(migrationQueue.hasMigrationTasks());
@@ -61,7 +61,7 @@ public class MigrationQueueTest {
     @Test
     public void test_migrateTaskCount_decremented_afterMigrateTaskCompleted()
             throws InterruptedException {
-        final InternalPartitionServiceImpl.MigrateTask migrateTask = mock(InternalPartitionServiceImpl.MigrateTask.class);
+        final MigrationManager.MigrateTask migrateTask = mock(MigrationManager.MigrateTask.class);
 
         migrationQueue.add(migrateTask);
         migrationQueue.afterTaskCompletion(migrateTask);
@@ -72,7 +72,7 @@ public class MigrationQueueTest {
     @Test
     public void test_migrateTaskCount_notDecremented_afterNonMigrateTaskCompleted()
             throws InterruptedException {
-        migrationQueue.add(mock(InternalPartitionServiceImpl.MigrateTask.class));
+        migrationQueue.add(mock(MigrationManager.MigrateTask.class));
         migrationQueue.afterTaskCompletion(mock(Runnable.class));
 
         assertTrue(migrationQueue.hasMigrationTasks());
@@ -80,7 +80,7 @@ public class MigrationQueueTest {
 
     @Test
     public void test_migrateTaskCount_decremented_onClear() {
-        migrationQueue.add(mock(InternalPartitionServiceImpl.MigrateTask.class));
+        migrationQueue.add(mock(MigrationManager.MigrateTask.class));
         migrationQueue.clear();
 
         assertFalse(migrationQueue.hasMigrationTasks());
@@ -88,7 +88,7 @@ public class MigrationQueueTest {
 
     @Test(expected = IllegalStateException.class)
     public void test_migrateTaskCount_notDecremented_belowZero() {
-        migrationQueue.afterTaskCompletion(mock(InternalPartitionServiceImpl.MigrateTask.class));
+        migrationQueue.afterTaskCompletion(mock(MigrationManager.MigrateTask.class));
     }
 
 }

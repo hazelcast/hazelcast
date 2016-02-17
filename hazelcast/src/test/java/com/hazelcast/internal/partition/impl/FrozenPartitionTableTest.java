@@ -126,9 +126,10 @@ public class FrozenPartitionTableTest extends HazelcastTestSupport {
 
     private Map<Integer, List<Address>> getPartitionTable(final HazelcastInstance instance) {
         final InternalPartitionServiceImpl partitionService = getNode(instance).partitionService;
+        PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
         final Map<Integer, List<Address>> partitionTable = new HashMap<Integer, List<Address>>();
         for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
-            final InternalPartition partition = partitionService.getPartition(partitionId);
+            final InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
             for (int replicaIndex = 0; replicaIndex < InternalPartitionImpl.MAX_REPLICA_COUNT; replicaIndex++) {
                 Address replicaAddress = partition.getReplicaAddress(replicaIndex);
                 if (replicaAddress == null) {

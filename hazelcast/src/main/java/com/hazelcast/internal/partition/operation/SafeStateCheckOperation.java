@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
@@ -33,8 +33,8 @@ public class SafeStateCheckOperation extends AbstractOperation implements Allowe
 
     @Override
     public void run() throws Exception {
-        final InternalPartitionServiceImpl service = getService();
-        safe = service.getNode().getPartitionService().isMemberStateSafe();
+        final InternalPartitionService service = getService();
+        safe = service.isMemberStateSafe();
     }
 
     @Override

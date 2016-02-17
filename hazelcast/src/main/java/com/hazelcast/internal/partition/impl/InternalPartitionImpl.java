@@ -73,28 +73,28 @@ public class InternalPartitionImpl implements InternalPartition {
 
     // This method is called under InternalPartitionServiceImpl.lock,
     // so there's no need to guard `addresses` field or to use a CAS.
-    boolean onDeadAddress(Address deadAddress) {
-        Address[] currentAddresses = addresses;
-        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            if (!deadAddress.equals(currentAddresses[i])) {
-                continue;
-            }
-
-            Address[] newAddresses = Arrays.copyOf(addresses, MAX_REPLICA_COUNT);
-            for (int a = i; a + 1 < MAX_REPLICA_COUNT; a++) {
-                newAddresses[a] = newAddresses[a + 1];
-            }
-            newAddresses[MAX_REPLICA_COUNT - 1] = null;
-            addresses = newAddresses;
-            callPartitionListener(newAddresses, currentAddresses, PartitionReplicaChangeReason.MEMBER_REMOVED);
-            return true;
-        }
-        return false;
-    }
+//    boolean onDeadAddress(Address deadAddress) {
+//        Address[] currentAddresses = addresses;
+//        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+//            if (!deadAddress.equals(currentAddresses[i])) {
+//                continue;
+//            }
+//
+//            Address[] newAddresses = Arrays.copyOf(addresses, MAX_REPLICA_COUNT);
+//            for (int a = i; a + 1 < MAX_REPLICA_COUNT; a++) {
+//                newAddresses[a] = newAddresses[a + 1];
+//            }
+//            newAddresses[MAX_REPLICA_COUNT - 1] = null;
+//            addresses = newAddresses;
+//            callPartitionListener(newAddresses, currentAddresses, PartitionReplicaChangeReason.MEMBER_REMOVED);
+//            return true;
+//        }
+//        return false;
+//    }
 
     // This method is called under InternalPartitionServiceImpl.lock,
     // so there's no need to guard `addresses` field or to use a CAS.
-    boolean removeAddress(Address deadAddress) {
+    int removeAddress(Address deadAddress) {
         Address[] currentAddresses = addresses;
         Address[] newAddresses = Arrays.copyOf(addresses, MAX_REPLICA_COUNT);
 
@@ -106,9 +106,22 @@ public class InternalPartitionImpl implements InternalPartition {
             newAddresses[i] = null;
             addresses = newAddresses;
             callPartitionListener(i, deadAddress, null, PartitionReplicaChangeReason.MEMBER_REMOVED);
-            return true;
+            return i;
         }
-        return false;
+        return -1;
+    }
+
+    void swapAddresses(int index1, int index2) {
+        Address[] newAddresses = Arrays.copyOf(addresses, MAX_REPLICA_COUNT);
+
+        Address a1 = newAddresses[index1];
+        Address a2 = newAddresses[index2];
+        newAddresses[index1] = a2;
+        newAddresses[index2] = a1;
+
+        addresses = newAddresses;
+        callPartitionListener(index1, a1, a2, PartitionReplicaChangeReason.ASSIGNMENT);
+        callPartitionListener(index2, a2, a1, PartitionReplicaChangeReason.ASSIGNMENT);
     }
 
     // Not doing a defensive copy of given Address[]
@@ -131,7 +144,6 @@ public class InternalPartitionImpl implements InternalPartition {
         Address[] oldAddresses = addresses;
         addresses = newAddresses;
         callPartitionListener(newAddresses, oldAddresses, PartitionReplicaChangeReason.ASSIGNMENT);
-
     }
 
     private void callPartitionListener(Address[] newAddresses, Address[] oldAddresses,
@@ -160,7 +172,7 @@ public class InternalPartitionImpl implements InternalPartition {
         }
     }
 
-    public InternalPartitionImpl copy() {
+    InternalPartitionImpl copy() {
         final InternalPartitionImpl copy = new InternalPartitionImpl(partitionId, null, thisAddress);
         final Address[] addressesCopy = new Address[addresses.length];
         System.arraycopy(addresses, 0, addressesCopy, 0, addresses.length);
