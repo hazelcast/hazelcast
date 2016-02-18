@@ -309,7 +309,7 @@ public class ClientMessageTest {
 
     @Test
     public void test_empty_toString() {
-        new ClientMessage().toString();
+        ClientMessage.create().toString();
     }
 
     @Test(expected = IndexOutOfBoundsException.class)

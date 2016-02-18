@@ -26,7 +26,6 @@ import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.util.QuickMath;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 /**
  * <p>
@@ -115,19 +114,11 @@ public class ClientMessage
     private transient int writeOffset;
     private transient boolean isRetryable;
 
-    public ClientMessage() {
+    protected ClientMessage() {
     }
 
     public static ClientMessage create() {
-        final ClientMessage clientMessage = new ClientMessage();
-
-        if (USE_UNSAFE) {
-            clientMessage.wrap(new UnsafeBuffer(new byte[INITIAL_BUFFER_SIZE]), 0);
-        } else {
-            clientMessage.wrap(new SafeBuffer(new byte[INITIAL_BUFFER_SIZE]), 0);
-
-        }
-        return clientMessage;
+        return new ClientMessage();
     }
 
     public static ClientMessage createForEncode(int initialCapacity) {
@@ -372,28 +363,30 @@ public class ClientMessage
     }
 
     public boolean readFrom(ByteBuffer src) {
-        if (index() == 0) {
-            initFrameSize(src);
+        int frameLength = 0;
+        if (this.buffer == null) {
+            //init internal buffer
+            final int remaining = src.remaining();
+            if (remaining < Bits.INT_SIZE_IN_BYTES) {
+                //we don't have even the frame length ready
+                return false;
+            }
+            frameLength = Bits.readIntL(src.array(), 0);
+            if (USE_UNSAFE) {
+                wrap(new UnsafeBuffer(new byte[frameLength]), 0);
+            } else {
+                wrap(new SafeBuffer(new byte[frameLength]), 0);
+            }
         }
-        while (index() >= Bits.INT_SIZE_IN_BYTES && src.hasRemaining() && !isComplete()) {
-            accumulate(src, getFrameLength() - index());
-        }
+        frameLength = frameLength > 0 ? frameLength : getFrameLength();
+        accumulate(src, frameLength - index());
         return isComplete();
-    }
-
-    private int initFrameSize(ByteBuffer byteBuffer) {
-        if (byteBuffer.remaining() < Bits.INT_SIZE_IN_BYTES) {
-            return 0;
-        }
-        return accumulate(byteBuffer, Bits.INT_SIZE_IN_BYTES);
     }
 
     private int accumulate(ByteBuffer byteBuffer, int length) {
         final int remaining = byteBuffer.remaining();
         final int readLength = remaining < length ? remaining : length;
         if (readLength > 0) {
-            final int requiredCapacity = index() + readLength;
-            ensureCapacity(requiredCapacity);
             buffer.putBytes(index(), byteBuffer.array(), byteBuffer.position(), readLength);
             byteBuffer.position(byteBuffer.position() + readLength);
             index(index() + readLength);
@@ -440,14 +433,5 @@ public class ClientMessage
         }
         sb.append('}');
         return sb.toString();
-    }
-
-    private void ensureCapacity(int requiredCapacity) {
-        int capacity = buffer.capacity() > 0 ? buffer.capacity() : 1;
-        if (requiredCapacity > capacity) {
-            int newCapacity = findSuitableMessageSize(requiredCapacity);
-            byte[] newBuffer = Arrays.copyOf(buffer.byteArray(), newCapacity);
-            buffer.wrap(newBuffer);
-        }
     }
 }
