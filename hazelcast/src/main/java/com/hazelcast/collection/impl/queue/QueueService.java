@@ -45,6 +45,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.impl.Transaction;
@@ -71,7 +72,7 @@ import java.util.logging.Level;
  * such as {@link com.hazelcast.collection.impl.queue.QueueEvictionProcessor }
  */
 public class QueueService implements ManagedService, MigrationAwareService, TransactionalService,
-        RemoteService, EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService {
+        RemoteService, EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService, SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
 
@@ -327,5 +328,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
             queueStats.put(name, queueStat);
         }
         return queueStats;
+    }
+
+    @Override
+    public Runnable prepareMergeRunnable() {
+        return null;
     }
 }

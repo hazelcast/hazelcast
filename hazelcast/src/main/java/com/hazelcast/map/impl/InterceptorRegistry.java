@@ -30,7 +30,7 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 
 /**
- * Registry for all {@link MapInterceptor} of an {@code IMap}
+ * Registry for {@code IMap} interceptors
  *
  * Interceptors are read mostly and this registry keeps all registered interceptor in an array to easily iterate on them.
  * Other than that, synchronized blocks are used to prevent leaks when concurrently registering/de-registering interceptors.
@@ -38,17 +38,13 @@ import static java.util.Collections.unmodifiableMap;
  * synchronized methods are not used in partition-threads.
  *
  * This registry is created per map.
+ *
+ * @see MapInterceptor
  */
 public class InterceptorRegistry {
 
     private volatile List<MapInterceptor> interceptors = emptyList();
     private volatile Map<String, MapInterceptor> id2InterceptorMap = emptyMap();
-
-    /**
-     * Gives an instance of this registry according to generic-operation-thread count.
-     */
-    public InterceptorRegistry() {
-    }
 
     /**
      * Returns all registered interceptors.

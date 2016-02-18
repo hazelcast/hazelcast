@@ -63,7 +63,7 @@ public class MapContainer {
     protected final MapStoreContext mapStoreContext;
     protected final SerializationService serializationService;
     protected final QueryEntryFactory queryEntryFactory;
-    protected final InterceptorRegistry interceptorRegistry;
+    protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
     protected final IFunction<Object, Data> toDataFunction = new IFunction<Object, Data>() {
         @Override
         public Data apply(Object input) {
@@ -108,7 +108,6 @@ public class MapContainer {
         this.indexes = new Indexes(serializationService, extractors);
         this.evictor = createEvictor(mapServiceContext);
         this.memberNearCacheInvalidationEnabled = isNearCacheEnabled() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
-        this.interceptorRegistry = new InterceptorRegistry();
     }
 
     // this method is overridden.
