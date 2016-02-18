@@ -59,7 +59,6 @@ public abstract class InvocationBuilder {
     protected final Operation op;
     protected final int partitionId;
     protected final Address target;
-    protected Callback<Object> callback;
     protected ExecutionCallback<Object> executionCallback;
 
     protected long callTimeout = DEFAULT_CALL_TIMEOUT;
@@ -222,26 +221,6 @@ public abstract class InvocationBuilder {
     }
 
     /**
-     * This method is deprecated since HZ 3.5. Please use the {@link #getExecutionCallback()}
-     */
-    @Deprecated
-    public Callback getCallback() {
-        return callback;
-    }
-
-    /**
-     * This method is deprecated since HZ 3.5. Please use the {@link #setExecutionCallback(ExecutionCallback)}
-     */
-    @Deprecated
-    public InvocationBuilder setCallback(Callback<Object> callback) {
-        if (executionCallback != null) {
-            throw new IllegalStateException("Can't set the callback if executionCallback already is set");
-        }
-        this.callback = callback;
-        return this;
-    }
-
-    /**
      * Gets the ExecutionCallback. If none is set, null is returned.
      *
      * @return gets the ExecutionCallback.
@@ -255,40 +234,14 @@ public abstract class InvocationBuilder {
      *
      * @param executionCallback the new ExecutionCallback. If null is passed, the ExecutionCallback is unset.
      * @return the updated InvocationBuilder.
-     * @throws java.lang.IllegalStateException if a {@link com.hazelcast.spi.Callback} already has been set.
      */
     public InvocationBuilder setExecutionCallback(ExecutionCallback<Object> executionCallback) {
-        if (callback != null) {
-            throw new IllegalStateException("Can't set the executionCallback if callback already is set");
-        }
         this.executionCallback = executionCallback;
         return this;
     }
 
     protected ExecutionCallback getTargetExecutionCallback() {
-        ExecutionCallback targetCallback = executionCallback;
-        if (callback != null) {
-            targetCallback = new ExecutorCallbackAdapter(callback);
-        }
-        return targetCallback;
-    }
-
-    static final class ExecutorCallbackAdapter<E> implements ExecutionCallback<E> {
-        private final Callback callback;
-
-        private ExecutorCallbackAdapter(Callback callback) {
-            this.callback = callback;
-        }
-
-        @Override
-        public void onResponse(E response) {
-            callback.notify(response);
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            callback.notify(t);
-        }
+        return executionCallback;
     }
 
     public abstract <E> InternalCompletableFuture<E> invoke();
