@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 
 import java.security.Permission;
 

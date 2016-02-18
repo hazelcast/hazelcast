@@ -23,7 +23,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.operation.ClearOperationFactory;

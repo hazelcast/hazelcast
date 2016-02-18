@@ -19,14 +19,14 @@ package com.hazelcast.mapreduce.impl;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -74,7 +74,7 @@ public class ListKeyValueSource<V>
         ss = nei.getSerializationService();
 
         Address thisAddress = nei.getThisAddress();
-        InternalPartitionService ps = nei.getPartitionService();
+        IPartitionService ps = nei.getPartitionService();
         Data data = ss.toData(listName, StringAndPartitionAwarePartitioningStrategy.INSTANCE);
         int partitionId = ps.getPartitionId(data);
         Address partitionOwner = ps.getPartitionOwner(partitionId);

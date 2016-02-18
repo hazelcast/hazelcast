@@ -22,8 +22,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartition;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 
@@ -64,9 +64,9 @@ public final class UnlockIfLeaseExpiredOperation extends UnlockOperation {
     @Override
     public boolean shouldBackup() {
         NodeEngine nodeEngine = getNodeEngine();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         Address thisAddress = nodeEngine.getThisAddress();
-        InternalPartition partition = partitionService.getPartition(getPartitionId());
+        IPartition partition = partitionService.getPartition(getPartitionId());
         if (!thisAddress.equals(partition.getOwnerOrNull())) {
             return false;
         }

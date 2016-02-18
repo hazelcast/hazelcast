@@ -25,7 +25,7 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.partition.PartitionRuntimeState;
+import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;

@@ -7,7 +7,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;

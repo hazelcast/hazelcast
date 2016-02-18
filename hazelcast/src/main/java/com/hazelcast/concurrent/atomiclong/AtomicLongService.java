@@ -17,8 +17,8 @@
 package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.concurrent.atomiclong.operations.AtomicLongReplicationOperation;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -110,7 +110,7 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
     }
 
     private int getPartitionId(String name) {
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         String partitionKey = getPartitionKey(name);
         return partitionService.getPartitionId(partitionKey);
     }

@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
-import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.IPartition;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +43,7 @@ public class MapConfig {
     /**
      * The number of maximum backup counter
      */
-    public static final int MAX_BACKUP_COUNT = InternalPartition.MAX_BACKUP_COUNT;
+    public static final int MAX_BACKUP_COUNT = IPartition.MAX_BACKUP_COUNT;
 
     /**
      * The number of minimum eviction percentage

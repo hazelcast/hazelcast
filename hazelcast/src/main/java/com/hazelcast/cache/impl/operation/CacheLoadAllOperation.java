@@ -25,7 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -71,7 +71,7 @@ public class CacheLoadAllOperation
     public void run()
             throws Exception {
         int partitionId = getPartitionId();
-        InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+        IPartitionService partitionService = getNodeEngine().getPartitionService();
 
         Set<Data> filteredKeys = null;
         if (keys != null) {

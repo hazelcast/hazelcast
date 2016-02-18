@@ -16,16 +16,16 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.wan.WanReplicationService;
@@ -60,11 +60,11 @@ public interface NodeEngine {
     ClusterService getClusterService();
 
     /**
-     * Gets the InternalPartitionService.
+     * Gets the IPartitionService.
      *
-     * @return the InternalPartitionService.
+     * @return the IPartitionService.
      */
-    InternalPartitionService getPartitionService();
+    IPartitionService getPartitionService();
 
     /**
      * Gets the EventService.

@@ -32,7 +32,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
@@ -271,7 +271,7 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
     }
 
     protected boolean keyNotOwnedByThisPartition(Data key) {
-        final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+        final IPartitionService partitionService = getNodeEngine().getPartitionService();
         return partitionService.getPartitionId(key) != getPartitionId();
     }
 

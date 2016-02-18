@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.operationutil;
 
 import com.hazelcast.internal.cluster.impl.operations.JoinOperation;
 import com.hazelcast.internal.cluster.impl.operations.WanReplicationOperation;
-import com.hazelcast.partition.MigrationCycleOperation;
+import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 

@@ -16,8 +16,8 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.collection.impl.queue.operations.CheckAndEvictOperation;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -45,7 +45,7 @@ public class QueueEvictionProcessor implements ScheduledEntryProcessor<String, V
             return;
         }
 
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
 
         for (ScheduledEntry<String, Void> entry : entries) {

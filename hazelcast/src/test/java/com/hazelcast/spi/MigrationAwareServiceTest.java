@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;

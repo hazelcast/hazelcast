@@ -18,7 +18,7 @@ package com.hazelcast.transaction.impl.xa;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
@@ -146,7 +146,7 @@ public final class XATransaction implements Transaction {
         PutRemoteTransactionOperation operation = new PutRemoteTransactionOperation(
                 transactionLog.getRecordList(), txnId, xid, txOwnerUuid, timeoutMillis, startTime);
         OperationService operationService = nodeEngine.getOperationService();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         int partitionId = partitionService.getPartitionId(xid);
         InternalCompletableFuture<Object> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
         future.get();

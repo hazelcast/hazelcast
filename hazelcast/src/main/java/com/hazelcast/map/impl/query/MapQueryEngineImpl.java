@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -31,7 +31,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
@@ -85,7 +85,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     protected final ILogger logger;
     protected final QueryResultSizeLimiter queryResultSizeLimiter;
     protected final SerializationService serializationService;
-    protected final InternalPartitionService partitionService;
+    protected final IPartitionService partitionService;
     protected final QueryOptimizer queryOptimizer;
     protected final OperationService operationService;
     protected final ClusterService clusterService;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.mapreduce.impl;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.PartitionIdAware;
 import com.hazelcast.multimap.impl.MultiMapContainer;
@@ -27,8 +28,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -77,7 +77,7 @@ public class MultiMapKeyValueSource<K, V>
     @Override
     public boolean open(NodeEngine nodeEngine) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
-        InternalPartitionService ps = nei.getPartitionService();
+        IPartitionService ps = nei.getPartitionService();
         MultiMapService multiMapService = nei.getService(MultiMapService.SERVICE_NAME);
         ss = nei.getSerializationService();
         Address partitionOwner = ps.getPartitionOwner(partitionId);

@@ -26,7 +26,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MultipleEntryOperationFactory;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
@@ -72,7 +72,7 @@ public class MapExecuteOnKeysMessageTask
 
     @Override
     public Collection<Integer> getPartitions() {
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         int partitions = partitionService.getPartitionCount();
         int capacity = Math.min(partitions, parameters.keys.size());
         Set<Integer> partitionIds = new HashSet<Integer>(capacity);

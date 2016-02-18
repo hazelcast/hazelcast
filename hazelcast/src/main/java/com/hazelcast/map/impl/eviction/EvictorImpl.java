@@ -23,8 +23,8 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartition;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 
 import java.util.Arrays;
@@ -87,8 +87,8 @@ public class EvictorImpl implements Evictor {
 
     protected boolean isBackup(RecordStore recordStore) {
         int partitionId = recordStore.getPartitionId();
-        InternalPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
-        InternalPartition partition = partitionService.getPartition(partitionId, false);
+        IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+        IPartition partition = partitionService.getPartition(partitionId, false);
         return !partition.isLocal();
     }
 

@@ -19,7 +19,7 @@ package com.hazelcast.util;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import static com.hazelcast.partition.InternalPartition.MAX_BACKUP_COUNT;
+import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static java.lang.String.format;
 
 /**

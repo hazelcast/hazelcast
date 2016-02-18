@@ -16,18 +16,18 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.IPartition;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
@@ -143,7 +143,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     protected abstract Address getTarget();
 
-    InternalPartition getPartition() {
+    IPartition getPartition() {
         return nodeEngine.getPartitionService().getPartition(partitionId);
     }
 
