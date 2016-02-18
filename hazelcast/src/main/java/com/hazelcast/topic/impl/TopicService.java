@@ -145,10 +145,9 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         getLocalTopicStats(topicName).incrementReceives();
     }
 
-    public void publishEvent(String name, TopicEvent event) {
+    public void publishEvent(String name, TopicEvent event, boolean multithreaded) {
         Collection<EventRegistration> registrations = eventService.getRegistrations(TopicService.SERVICE_NAME, name);
-        boolean isMultithreaded = nodeEngine.getConfig().getTopicConfig(name).isMultiThreadingEnabled();
-        int partitionId = isMultithreaded ? counter.incrementAndGet() : name.hashCode();
+        int partitionId = multithreaded ? counter.incrementAndGet() : name.hashCode();
         eventService.publishEvent(TopicService.SERVICE_NAME, registrations, event, partitionId);
     }
 
