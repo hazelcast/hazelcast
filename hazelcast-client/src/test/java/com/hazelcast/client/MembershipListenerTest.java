@@ -1,11 +1,11 @@
 package com.hazelcast.client;
 
-/**
- * User: danny Date: 11/28/13
- */
-
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.InitialMembershipEvent;
+import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
@@ -16,18 +16,20 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.EventObject;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.mockito.Mockito.mock;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -36,25 +38,56 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    private HazelcastInstance client;
-    private HazelcastInstance server1;
 
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
     }
 
-    @Before
-    public void setup() {
-        server1 = hazelcastFactory.newHazelcastInstance();
-        client = hazelcastFactory.newHazelcastClient();
+
+    private class MemberShipEventLogger implements MembershipListener {
+
+        public LinkedBlockingDeque<EventObject> events = new LinkedBlockingDeque<EventObject>();
+
+        public void memberAdded(MembershipEvent event) {
+            events.addLast(event);
+        }
+
+        public void memberRemoved(MembershipEvent event) {
+            events.addLast(event);
+        }
+
+        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+        }
     }
 
+    private class InitialMemberShipEventLogger implements InitialMembershipListener {
+
+        public LinkedBlockingDeque<EventObject> events = new LinkedBlockingDeque<EventObject>();
+
+        public void memberAdded(MembershipEvent event) {
+            events.addLast(event);
+        }
+
+        public void memberRemoved(MembershipEvent event) {
+            events.addLast(event);
+        }
+
+        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+            events.addLast(memberAttributeEvent);
+        }
+
+        @Override
+        public void init(InitialMembershipEvent event) {
+            events.addLast(event);
+        }
+    }
 
     @Test
     public void whenMemberAdded_thenMemberAddedEvent() throws Exception {
+        final HazelcastInstance server1 = hazelcastFactory.newHazelcastInstance();
         final MemberShipEventLogger listener = new MemberShipEventLogger();
-
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         client.getCluster().addMembershipListener(listener);
 
         //start a second server and verify that the listener receives it.
@@ -65,7 +98,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 assertNotEquals("Expecting one or more events", 0, listener.events.size());
-                MembershipEvent event = listener.events.getLast();
+                MembershipEvent event = (MembershipEvent) listener.events.getLast();
                 assertEquals("Last event should be member added", MembershipEvent.MEMBER_ADDED, event.getEventType());
                 assertEquals(server2.getCluster().getLocalMember(), event.getMember());
                 assertEquals(getMembers(server1, server2), event.getMembers());
@@ -75,7 +108,9 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
     @Test
     public void whenMemberRemoved_thenMemberRemovedEvent() throws Exception {
+        final HazelcastInstance server1 = hazelcastFactory.newHazelcastInstance();
         final MemberShipEventLogger listener = new MemberShipEventLogger();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         //start a second server and verify that hazelcastFactory listener receives it.
         final HazelcastInstance server2 = hazelcastFactory.newHazelcastInstance();
@@ -90,7 +125,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 assertNotEquals("Expecting one or more events", 0, listener.events.size());
-                MembershipEvent event = listener.events.getLast();
+                MembershipEvent event = (MembershipEvent) listener.events.getLast();
                 assertEquals("Last event should be member removed", MembershipEvent.MEMBER_REMOVED, event.getEventType());
                 assertEquals(server2Member, event.getMember());
                 assertEquals(getMembers(server1), event.getMembers());
@@ -100,19 +135,23 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
     @Test
     public void removedPhantomListener_thenFalse() throws Exception {
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         assertFalse(client.getCluster().removeMembershipListener(randomString()));
     }
 
     @Test(expected = NullPointerException.class)
     public void removedNullListener_thenException() throws Exception {
-
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         assertFalse(client.getCluster().removeMembershipListener(null));
     }
 
 
     @Test(expected = java.lang.NullPointerException.class)
     public void addNullListener_thenException() throws Exception {
-
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         client.getCluster().addMembershipListener(null);
     }
 
@@ -124,20 +163,83 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         return result;
     }
 
-
-    private class MemberShipEventLogger implements MembershipListener {
-
-        public LinkedBlockingDeque<MembershipEvent> events = new LinkedBlockingDeque<MembershipEvent>();
-
-        public void memberAdded(MembershipEvent event) {
-            events.addLast(event);
-        }
-
-        public void memberRemoved(MembershipEvent event) {
-            events.addLast(event);
-        }
-
-        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-        }
+    /**
+     * related to issue #1181
+     */
+    @Test
+    public void testAddInitialMembership_whenListenerAddedViaClientConfig() throws InterruptedException {
+        hazelcastFactory.newHazelcastInstance();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.addListenerConfig(new ListenerConfig().setImplementation(mock(InitialMembershipListener.class)));
+        hazelcastFactory.newHazelcastClient(clientConfig);
     }
+
+    @Test
+    public void initialMemberEvents_whenAddedViaConfig() throws InterruptedException {
+        hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        final InitialMemberShipEventLogger listener = new InitialMemberShipEventLogger();
+        clientConfig.addListenerConfig(new ListenerConfig().setImplementation(listener));
+        hazelcastFactory.newHazelcastClient(clientConfig);
+
+        EventObject eventObject = listener.events.poll(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
+        assertInstanceOf(InitialMembershipEvent.class, eventObject);
+        InitialMembershipEvent event = (InitialMembershipEvent) eventObject;
+        assertEquals(2, event.getMembers().size());
+        assertEquals(0, listener.events.size());
+    }
+
+    @Test
+    public void initialMemberEvents_whenAddedAfterClientStarted() throws InterruptedException {
+        hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        final InitialMemberShipEventLogger listener = new InitialMemberShipEventLogger();
+        client.getCluster().addMembershipListener(listener);
+
+        EventObject eventObject = listener.events.poll(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
+        assertInstanceOf(InitialMembershipEvent.class, eventObject);
+        InitialMembershipEvent event = (InitialMembershipEvent) eventObject;
+        assertEquals(2, event.getMembers().size());
+        assertEquals(0, listener.events.size());
+    }
+
+    @Test
+    public void initialMemberEvents_whenClusterRestarted() throws InterruptedException {
+        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        final InitialMemberShipEventLogger listener = new InitialMemberShipEventLogger();
+        clientConfig.addListenerConfig(new ListenerConfig().setImplementation(listener));
+        hazelcastFactory.newHazelcastClient(clientConfig);
+
+        EventObject eventObject = listener.events.poll(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
+        assertInstanceOf(InitialMembershipEvent.class, eventObject);
+
+        instance1.getLifecycleService().terminate();
+
+        eventObject = listener.events.poll(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
+        assertInstanceOf(MembershipEvent.class, eventObject);
+        assertEquals(MembershipEvent.MEMBER_REMOVED, ((MembershipEvent) eventObject).getEventType());
+
+        instance2.getLifecycleService().terminate();
+        hazelcastFactory.newHazelcastInstance();
+
+        eventObject = listener.events.poll(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
+        assertInstanceOf(MembershipEvent.class, eventObject);
+        assertEquals(MembershipEvent.MEMBER_REMOVED, ((MembershipEvent) eventObject).getEventType());
+
+        eventObject = listener.events.poll(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
+        assertInstanceOf(MembershipEvent.class, eventObject);
+        assertEquals(MembershipEvent.MEMBER_ADDED, ((MembershipEvent) eventObject).getEventType());
+    }
+
+
 }
