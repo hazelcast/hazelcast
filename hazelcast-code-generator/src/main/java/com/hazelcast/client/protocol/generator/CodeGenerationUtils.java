@@ -30,12 +30,23 @@ public final class CodeGenerationUtils {
     public static final String DATA_FULL_NAME = "com.hazelcast.nio.serialization.Data";
 
     private static final Map<String, String> JAVA_TO_NODE_TYPES = new HashMap<String, String>() {{
-        put(DATA_FULL_NAME, "Data");
-        put("java.lang.String", "str");
-        put("java.lang.Integer", "int");
-        put("boolean", "bool");
+        put(DATA_FULL_NAME, "buffer");
+        put("java.lang.String", "string");
+        put("java.lang.Integer", "int32");
+        put("boolean", "boolean");
+        put("int","int32");
         put("java.util.List", "list");
         put("java.util.Set", "set");
+    }};
+
+    private static final Map<String, String> JAVA_TO_TS_TYPES = new HashMap<String, String>() {{
+        put(DATA_FULL_NAME, "Buffer");
+        put("java.lang.String", "string");
+        put("java.lang.Integer", "number");
+        put("boolean", "boolean");
+        put("int","number");
+        put("java.util.List", "any");
+        put("java.util.Set", "any");
     }};
 
     private static final Map<String, String> JAVA_TO_CSHARP_TYPES = new HashMap<String, String>() {{
@@ -282,6 +293,9 @@ public final class CodeGenerationUtils {
 
     public static String getNodeType(String type) {
         return getLanguageType(Lang.NODE, type, JAVA_TO_NODE_TYPES);
+    }
+    public static String getNodeTsType(String type) {
+        return JAVA_TO_TS_TYPES.get(type) !=null ? JAVA_TO_TS_TYPES.get(type) : "any";
     }
 
     public static String getCSharpType(String type, Map<String, String> languageMapping) {
