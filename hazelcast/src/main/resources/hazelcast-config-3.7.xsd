@@ -930,18 +930,26 @@
             </xs:element>
             <xs:element name="global-ordering-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
                         default="false">
-			    <xs:annotation>
-			        <xs:documentation>
-			            Default is `false`, meaning there is no global order guarantee.
-			        </xs:documentation>
-			    </xs:annotation>
-			</xs:element>
+                <xs:annotation>
+		    <xs:documentation>
+		        Default is `false`, meaning there is no global order guarantee.
+		    </xs:documentation>
+		</xs:annotation>
+            </xs:element>
+            <xs:element name="multi-threading-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+		    <xs:documentation>
+			Default is `false`, meaning only one dedicated thread will handle topic messages. 
+			When multi-threading enabled (true) all threads from event thread pool can be used for message handling.
+		    </xs:documentation>
+		</xs:annotation>
+            </xs:element>
             <xs:element name="message-listeners" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
-			        <xs:documentation>
-			            Lets you add listeners (listener classes) for the topic messages.
-			        </xs:documentation>
-			    </xs:annotation>
+	            <xs:documentation>
+		        Lets you add listeners (listener classes) for the topic messages.
+		    </xs:documentation>
+		</xs:annotation>
                 <xs:complexType>
                     <xs:sequence>
                         <xs:element name="message-listener" type="listener-base" minOccurs="0" maxOccurs="unbounded"/>

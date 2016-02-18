@@ -191,7 +191,8 @@ public class EventServiceImpl implements InternalEventService {
         }
         EventServiceSegment segment = getSegment(serviceName, true);
         String id = UuidUtil.newUnsecureUuidString();
-        Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener, localOnly);
+        Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener, localOnly,
+        		nodeEngine.getConfig().getTopicConfig(topic).isMultiThreadingEnabled());
         if (!segment.addRegistration(topic, reg)) {
             return null;
         }
@@ -288,6 +289,41 @@ public class EventServiceImpl implements InternalEventService {
         }
         return Collections.emptySet();
     }
+    
+    public Registration getRegistration(EventEnvelope eventEnvelope) {
+    	String serviceName = eventEnvelope.getServiceName();
+        EventServiceSegment segment = getSegment(serviceName, false);
+        if (segment == null) {
+            if (nodeEngine.isRunning()) {
+                logger.warning("No service registration found for " + serviceName);
+            }
+            return null;
+        }
+
+        String id = eventEnvelope.getEventId();
+        Registration registration = (Registration) segment.getRegistrationIdMap().get(id);
+        if (registration == null) {
+            if (nodeEngine.isRunning()) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("No registration found for " + serviceName + " / " + id);
+                }
+            }
+            return null;
+        }
+
+        if (!isLocal(registration)) {
+            logger.severe("Invalid target for  " + registration);
+            return null;
+        }
+
+        if (registration.getListener() == null) {
+            logger.warning("Something seems wrong! Subscriber is local but listener instance is null! -> "
+                    + registration);
+            return null;
+        }
+
+        return registration;
+    }
 
     @Override
     public boolean hasEventRegistration(String serviceName, String topic) {
@@ -296,6 +332,14 @@ public class EventServiceImpl implements InternalEventService {
             return segment.hasRegistration(topic);
         }
         return false;
+    }
+
+    public Object getEvent(EventEnvelope eventEnvelope) {
+        Object event = eventEnvelope.getEvent();
+        if (event instanceof Data) {
+            event = nodeEngine.toObject(event);
+        }
+        return event;
     }
 
     @Override
@@ -361,8 +405,15 @@ public class EventServiceImpl implements InternalEventService {
             Registration reg = (Registration) registration;
             try {
                 if (reg.getListener() != null) {
-                    eventExecutor.execute(new LocalEventDispatcher(this, serviceName, event, reg.getListener()
-                            , orderKey, eventQueueTimeoutMs));
+                	Runnable dispatcher;
+                	if (reg.isMultiThreaded()) {
+                		dispatcher = new LocalEventDispatcher(this, serviceName, event, reg.getListener(), 
+                				eventQueueTimeoutMs);
+                	} else {
+                		dispatcher = new StripedEventDispatcher(this, serviceName, event, reg.getListener(), 
+                				eventQueueTimeoutMs, orderKey);
+                	}
+                    eventExecutor.execute(dispatcher);
                 } else {
                     logger.warning("Something seems wrong! Listener instance is null! -> " + reg);
                 }
@@ -441,16 +492,10 @@ public class EventServiceImpl implements InternalEventService {
 
     @Override
     public void handle(Packet packet) {
-        try {
-            eventExecutor.execute(new RemoteEventProcessor(this, packet));
-        } catch (RejectedExecutionException e) {
-            rejectedCount.inc();
-
-            if (eventExecutor.isLive()) {
-                Connection conn = packet.getConn();
-                String endpoint = conn.getEndPoint() != null ? conn.getEndPoint().toString() : conn.toString();
-                logFailure("EventQueue overloaded! Failed to process event packet sent from: %s", endpoint);
-            }
+        EventEnvelope eventEnvelope = (EventEnvelope) nodeEngine.toObject(packet);
+        Registration registration = getRegistration(eventEnvelope);
+        if (registration != null) {
+            publishEvent(eventEnvelope.getServiceName(), registration, getEvent(eventEnvelope), packet.getPartitionId());
         }
     }
 
