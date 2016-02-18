@@ -17,14 +17,13 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.nio.UnsafeHelper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import sun.misc.Unsafe;
 
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
 import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.memory.MemoryAccessor.MEM;
 import static java.lang.Math.abs;
 
 /**
@@ -126,14 +125,13 @@ public final class HashUtil {
         // round down to 4 byte block
         int roundedEnd = offset + (len & 0xfffffffc);
 
-        Unsafe unsafe = UnsafeHelper.UNSAFE;
         for (int i = offset; i < roundedEnd; i += 4) {
             // little endian load order
-            int k1 = LITTLE_ENDIAN ? unsafe.getInt(address + i)
-                    : (unsafe.getByte(address + i + 3) & 0xff)
-                    | ((unsafe.getByte(address + i + 2) & 0xff) << 8)
-                    | ((unsafe.getByte(address + i + 1) & 0xff) << 16)
-                    | (unsafe.getByte(address + i) << 24);
+            int k1 = LITTLE_ENDIAN ? MEM.getInt(address + i)
+                    : (MEM.getByte(address + i + 3) & 0xff)
+                    | ((MEM.getByte(address + i + 2) & 0xff) << 8)
+                    | ((MEM.getByte(address + i + 1) & 0xff) << 16)
+                    | (MEM.getByte(address + i) << 24);
             k1 *= c1;
             // ROTL32(k1,15);
             k1 = (k1 << 15) | (k1 >>> 17);
@@ -150,13 +148,13 @@ public final class HashUtil {
 
         switch (len & 0x03) {
             case 3:
-                k1 = (unsafe.getByte(address + roundedEnd + 2) & 0xff) << 16;
+                k1 = (MEM.getByte(address + roundedEnd + 2) & 0xff) << 16;
                 // fallthrough
             case 2:
-                k1 |= (unsafe.getByte(address + roundedEnd + 1) & 0xff) << 8;
+                k1 |= (MEM.getByte(address + roundedEnd + 1) & 0xff) << 8;
                 // fallthrough
             case 1:
-                k1 |= unsafe.getByte(address + roundedEnd) & 0xff;
+                k1 |= MEM.getByte(address + roundedEnd) & 0xff;
                 k1 *= c1;
                 // ROTL32(k1,15);
                 k1 = (k1 << 15) | (k1 >>> 17);
@@ -329,39 +327,38 @@ public final class HashUtil {
         k2 = 0;
 
         int tail = ((len >>> 4) << 4) + offset;
-        Unsafe unsafe = UnsafeHelper.UNSAFE;
         switch (len & 15) {
             case 15:
-                k2 ^= (long) unsafe.getByte(address + tail + 14) << 48;
+                k2 ^= (long) MEM.getByte(address + tail + 14) << 48;
             case 14:
-                k2 ^= (long) unsafe.getByte(address + tail + 13) << 40;
+                k2 ^= (long) MEM.getByte(address + tail + 13) << 40;
             case 13:
-                k2 ^= (long) unsafe.getByte(address + tail + 12) << 32;
+                k2 ^= (long) MEM.getByte(address + tail + 12) << 32;
             case 12:
-                k2 ^= (long) unsafe.getByte(address + tail + 11) << 24;
+                k2 ^= (long) MEM.getByte(address + tail + 11) << 24;
             case 11:
-                k2 ^= (long) unsafe.getByte(address + tail + 10) << 16;
+                k2 ^= (long) MEM.getByte(address + tail + 10) << 16;
             case 10:
-                k2 ^= (long) unsafe.getByte(address + tail + 9) << 8;
+                k2 ^= (long) MEM.getByte(address + tail + 9) << 8;
             case 9:
-                k2 ^= unsafe.getByte(address + tail + 8);
+                k2 ^= MEM.getByte(address + tail + 8);
 
             case 8:
-                k1 ^= (long) unsafe.getByte(address + tail + 7) << 56;
+                k1 ^= (long) MEM.getByte(address + tail + 7) << 56;
             case 7:
-                k1 ^= (long) unsafe.getByte(address + tail + 6) << 48;
+                k1 ^= (long) MEM.getByte(address + tail + 6) << 48;
             case 6:
-                k1 ^= (long) unsafe.getByte(address + tail + 5) << 40;
+                k1 ^= (long) MEM.getByte(address + tail + 5) << 40;
             case 5:
-                k1 ^= (long) unsafe.getByte(address + tail + 4) << 32;
+                k1 ^= (long) MEM.getByte(address + tail + 4) << 32;
             case 4:
-                k1 ^= (long) unsafe.getByte(address + tail + 3) << 24;
+                k1 ^= (long) MEM.getByte(address + tail + 3) << 24;
             case 3:
-                k1 ^= (long) unsafe.getByte(address + tail + 2) << 16;
+                k1 ^= (long) MEM.getByte(address + tail + 2) << 16;
             case 2:
-                k1 ^= (long) unsafe.getByte(address + tail + 1) << 8;
+                k1 ^= (long) MEM.getByte(address + tail + 1) << 8;
             case 1:
-                k1 ^= unsafe.getByte(address + tail);
+                k1 ^= MEM.getByte(address + tail);
 
                 // bmix();
                 k1 *= c1;
@@ -411,18 +408,17 @@ public final class HashUtil {
     }
 
     private static long MurmurHash3_getBlock_direct(long address, int i) {
-        Unsafe unsafe = UnsafeHelper.UNSAFE;
         if (LITTLE_ENDIAN) {
-            return unsafe.getLong(address + i);
+            return MEM.getLong(address + i);
         } else {
-            return ((unsafe.getByte(address + i) & 0x00000000000000FFL))
-                    | ((unsafe.getByte(address + i + 1) & 0x00000000000000FFL) << 8)
-                    | ((unsafe.getByte(address + i + 2) & 0x00000000000000FFL) << 16)
-                    | ((unsafe.getByte(address + i + 3) & 0x00000000000000FFL) << 24)
-                    | ((unsafe.getByte(address + i + 4) & 0x00000000000000FFL) << 32)
-                    | ((unsafe.getByte(address + i + 5) & 0x00000000000000FFL) << 40)
-                    | ((unsafe.getByte(address + i + 6) & 0x00000000000000FFL) << 48)
-                    | ((unsafe.getByte(address + i + 7) & 0x00000000000000FFL) << 56);
+            return ((MEM.getByte(address + i) & 0x00000000000000FFL))
+                    | ((MEM.getByte(address + i + 1) & 0x00000000000000FFL) << 8)
+                    | ((MEM.getByte(address + i + 2) & 0x00000000000000FFL) << 16)
+                    | ((MEM.getByte(address + i + 3) & 0x00000000000000FFL) << 24)
+                    | ((MEM.getByte(address + i + 4) & 0x00000000000000FFL) << 32)
+                    | ((MEM.getByte(address + i + 5) & 0x00000000000000FFL) << 40)
+                    | ((MEM.getByte(address + i + 6) & 0x00000000000000FFL) << 48)
+                    | ((MEM.getByte(address + i + 7) & 0x00000000000000FFL) << 56);
         }
     }
 
