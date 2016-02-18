@@ -219,6 +219,8 @@ public class ConfigXmlGenerator {
                 }
                 xml.append("</message-listeners>");
             }
+            xml.append("<multi-threading-enabled>").append(t.isMultiThreadingEnabled())
+                    .append("</multi-threading-enabled>");
             xml.append("</topic>");
         }
     }

@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -63,6 +64,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
             };
     private EventService eventService;
     private ILogger logger;
+    private final AtomicLong counter = new AtomicLong(0); 
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
@@ -145,7 +147,14 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     public void publishEvent(String name, TopicEvent event) {
         Collection<EventRegistration> registrations = eventService.getRegistrations(TopicService.SERVICE_NAME, name);
-        eventService.publishEvent(TopicService.SERVICE_NAME, registrations, event, name.hashCode());
+        int partitionId;
+        boolean isMultithreaded = nodeEngine.getConfig().getTopicConfig(name).isMultiThreadingEnabled();
+        if (isMultithreaded) {
+        	partitionId = new Long(counter.incrementAndGet()).hashCode();
+        } else {
+        	partitionId = name.hashCode();
+        }
+        eventService.publishEvent(TopicService.SERVICE_NAME, registrations, event, partitionId);
     }
 
     public String addMessageListener(String name, MessageListener listener, boolean localOnly) {
