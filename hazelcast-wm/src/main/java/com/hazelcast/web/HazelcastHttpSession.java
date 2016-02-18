@@ -338,7 +338,9 @@ public class HazelcastHttpSession implements HttpSession {
 
     public void updateReloadFlag() {
         for (Map.Entry<String, LocalCacheEntry> entry : localCache.entrySet()) {
-            entry.getValue().setReload(true);
+            if (!entry.getValue().isDirty()) {
+                entry.getValue().setReload(true);
+            }
         }
 
     }
