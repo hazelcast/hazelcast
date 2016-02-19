@@ -18,7 +18,7 @@ package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.internal.connection.ConnectionManager;
 
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_BINARY;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;

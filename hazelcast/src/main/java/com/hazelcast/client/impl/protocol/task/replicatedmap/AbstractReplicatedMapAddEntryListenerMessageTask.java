@@ -24,7 +24,7 @@ import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;

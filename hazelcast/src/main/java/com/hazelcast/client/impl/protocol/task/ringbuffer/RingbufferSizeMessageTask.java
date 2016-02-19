@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.RingbufferSizeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.operations.GenericOperation;
 import com.hazelcast.security.permission.ActionConstants;

@@ -20,7 +20,7 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.connection.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;

@@ -30,8 +30,8 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.internal.connection.Connection;
+import com.hazelcast.internal.connection.ConnectionListener;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.ConstructorFunction;
 

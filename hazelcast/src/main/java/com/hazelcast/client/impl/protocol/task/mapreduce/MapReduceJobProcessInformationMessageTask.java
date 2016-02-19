@@ -24,7 +24,7 @@ import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 
 import java.security.Permission;
 import java.util.Arrays;

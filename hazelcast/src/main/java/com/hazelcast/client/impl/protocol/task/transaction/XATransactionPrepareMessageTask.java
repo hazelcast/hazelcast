@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.XATransactionPrepareCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;

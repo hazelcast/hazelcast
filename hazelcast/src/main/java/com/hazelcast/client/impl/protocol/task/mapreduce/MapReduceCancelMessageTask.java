@@ -23,7 +23,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 
 import java.security.Permission;
 import java.util.concurrent.CancellationException;

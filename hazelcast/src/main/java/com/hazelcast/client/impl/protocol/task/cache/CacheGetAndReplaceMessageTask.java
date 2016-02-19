@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheGetAndReplaceCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;

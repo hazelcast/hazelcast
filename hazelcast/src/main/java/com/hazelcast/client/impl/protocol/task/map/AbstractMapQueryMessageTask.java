@@ -25,7 +25,7 @@ import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;

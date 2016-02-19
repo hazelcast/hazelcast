@@ -19,9 +19,9 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.tcp.SocketChannelWrapper;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
-import com.hazelcast.nio.tcp.nonblocking.SelectionHandler;
+import com.hazelcast.internal.connection.tcp.nonblocking.NonBlockingIOThread;
+import com.hazelcast.internal.connection.tcp.nonblocking.SelectionHandler;
+import com.hazelcast.internal.connection.tcp.SocketChannelWrapper;
 
 import java.nio.channels.SelectionKey;
 

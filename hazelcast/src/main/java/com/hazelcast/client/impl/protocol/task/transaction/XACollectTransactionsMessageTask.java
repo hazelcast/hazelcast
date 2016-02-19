@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.spi.OperationFactory;

@@ -18,8 +18,8 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.internal.connection.Connection;
+import com.hazelcast.internal.connection.ConnectionManager;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class GroupMismatchOperation extends AbstractClusterOperation

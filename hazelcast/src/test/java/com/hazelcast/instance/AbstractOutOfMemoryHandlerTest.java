@@ -2,10 +2,10 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.connection.Connection;
+import com.hazelcast.internal.connection.ConnectionListener;
+import com.hazelcast.internal.connection.ConnectionManager;
+import com.hazelcast.internal.connection.Packet;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 

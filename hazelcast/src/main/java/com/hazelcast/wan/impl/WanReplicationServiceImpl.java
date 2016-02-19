@@ -24,7 +24,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.connection.Packet;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.StripedExecutor;

@@ -29,7 +29,7 @@ import com.hazelcast.internal.cluster.impl.operations.MemberRemoveOperation;
 import com.hazelcast.internal.cluster.impl.operations.MergeClustersOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;

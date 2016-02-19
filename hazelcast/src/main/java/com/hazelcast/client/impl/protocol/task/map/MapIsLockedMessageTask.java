@@ -23,7 +23,7 @@ import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.IsLockedOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.DefaultObjectNamespace;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.packetdispatcher;
 
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.connection.Packet;
 
 /**
  * The {@link PacketDispatcher} is responsible for dispatching a Packet to the appropriate service.

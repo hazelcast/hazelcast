@@ -25,7 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.connection.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.util.EmptyStatement;
 

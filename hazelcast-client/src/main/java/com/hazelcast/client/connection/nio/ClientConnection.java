@@ -24,12 +24,12 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Protocols;
-import com.hazelcast.nio.tcp.SocketChannelWrapper;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
+import com.hazelcast.internal.connection.Connection;
+import com.hazelcast.internal.connection.ConnectionType;
+import com.hazelcast.internal.connection.OutboundFrame;
+import com.hazelcast.internal.connection.tcp.SocketChannelWrapper;
+import com.hazelcast.internal.connection.tcp.nonblocking.NonBlockingIOThread;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;

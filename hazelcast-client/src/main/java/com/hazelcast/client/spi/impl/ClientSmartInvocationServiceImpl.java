@@ -24,7 +24,7 @@ import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 
 import java.io.IOException;
 

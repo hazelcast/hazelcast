@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageBuilder;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
+import com.hazelcast.internal.connection.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.Clock;
 
 import java.io.EOFException;

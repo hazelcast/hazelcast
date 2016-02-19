@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.security.Permission;

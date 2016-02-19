@@ -39,7 +39,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.connection.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;

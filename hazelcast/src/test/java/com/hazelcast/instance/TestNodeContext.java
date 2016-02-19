@@ -5,7 +5,7 @@ import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.internal.connection.ConnectionManager;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.net.UnknownHostException;

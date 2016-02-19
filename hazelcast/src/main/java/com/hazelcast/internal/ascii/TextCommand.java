@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.ascii;
 
-import com.hazelcast.nio.OutboundFrame;
+import com.hazelcast.internal.connection.OutboundFrame;
 import com.hazelcast.nio.ascii.TextReadHandler;
 import com.hazelcast.nio.ascii.TextWriteHandler;
 

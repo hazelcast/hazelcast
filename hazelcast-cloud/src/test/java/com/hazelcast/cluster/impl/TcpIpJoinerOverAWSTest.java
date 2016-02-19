@@ -24,7 +24,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.internal.cluster.Joiner;
-import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.internal.connection.ConnectionManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;

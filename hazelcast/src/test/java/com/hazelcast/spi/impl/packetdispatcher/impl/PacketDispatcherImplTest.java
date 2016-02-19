@@ -2,7 +2,7 @@ package com.hazelcast.spi.impl.packetdispatcher.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.connection.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;

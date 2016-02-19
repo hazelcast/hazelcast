@@ -19,8 +19,8 @@ package com.hazelcast.client.connection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.internal.connection.Connection;
+import com.hazelcast.internal.connection.ConnectionListener;
 
 import java.io.IOException;
 

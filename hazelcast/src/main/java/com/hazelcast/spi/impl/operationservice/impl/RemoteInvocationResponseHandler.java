@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.exception.ResponseNotSentException;

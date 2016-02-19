@@ -31,7 +31,7 @@ import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 import java.io.IOException;

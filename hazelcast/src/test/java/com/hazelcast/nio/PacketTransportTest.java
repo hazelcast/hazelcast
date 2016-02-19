@@ -1,5 +1,6 @@
 package com.hazelcast.nio;
 
+import com.hazelcast.internal.connection.Packet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;

@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.security.Permission;

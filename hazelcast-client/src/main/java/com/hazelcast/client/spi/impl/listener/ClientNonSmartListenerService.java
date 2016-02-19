@@ -24,8 +24,8 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.internal.connection.Connection;
+import com.hazelcast.internal.connection.ConnectionListener;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.Collection;
