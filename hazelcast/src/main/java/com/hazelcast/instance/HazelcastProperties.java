@@ -192,7 +192,7 @@ public abstract class HazelcastProperties {
      * @deprecated since 3.7 use {@link #getEnum(HazelcastProperty, Class)} instead.
      */
     public <E extends Enum> E getEnum(GroupProperty property, Class<E> enumClazz) {
-        return getEnum(property, enumClazz);
+        throw new UnsupportedOperationException();
     }
 
     /**
