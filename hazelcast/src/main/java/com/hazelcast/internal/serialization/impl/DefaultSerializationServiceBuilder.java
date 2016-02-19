@@ -24,12 +24,12 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.UnsafeHelper;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -304,7 +304,7 @@ public class DefaultSerializationServiceBuilder
         }
         if (useNativeByteOrder || byteOrder == ByteOrder.nativeOrder()) {
             byteOrder = ByteOrder.nativeOrder();
-            if (allowUnsafe && UnsafeHelper.UNSAFE_AVAILABLE) {
+            if (allowUnsafe && MemoryAccessor.MEM_AVAILABLE) {
                 return new UnsafeInputOutputFactory();
             }
         }

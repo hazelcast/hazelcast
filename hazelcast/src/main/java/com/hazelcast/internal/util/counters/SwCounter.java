@@ -16,12 +16,13 @@
 
 package com.hazelcast.internal.util.counters;
 
-import com.hazelcast.nio.UnsafeHelper;
+import com.hazelcast.internal.memory.MemoryAccessor;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.internal.memory.MemoryAccessor.MEM;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
@@ -63,7 +64,7 @@ public abstract class SwCounter implements Counter {
      * @return the created SwCounter.
      */
     public static SwCounter newSwCounter(long initialValue) {
-        if (UnsafeHelper.UNSAFE_AVAILABLE) {
+        if (MemoryAccessor.MEM_AVAILABLE) {
             return new UnsafeSwCounter(initialValue);
         } else {
             return new SafeSwCounter(initialValue);
@@ -79,7 +80,6 @@ public abstract class SwCounter implements Counter {
      * there is no need for these checks.
      */
     static final class UnsafeSwCounter extends SwCounter {
-        private static final Unsafe UNSAFE = UnsafeHelper.UNSAFE;
         private static final long OFFSET;
 
         static {
@@ -89,7 +89,7 @@ public abstract class SwCounter implements Counter {
             } catch (NoSuchFieldException ignore) {
                 ignore(ignore);
             }
-            OFFSET = UnsafeHelper.UNSAFE.objectFieldOffset(field);
+            OFFSET = MEM.objectFieldOffset(field);
         }
 
         private long localValue;
@@ -102,14 +102,14 @@ public abstract class SwCounter implements Counter {
         @Override
         public long inc() {
             long newLocalValue = localValue += 1;
-            UNSAFE.putOrderedLong(this, OFFSET, newLocalValue);
+            MEM.putOrderedLong(this, OFFSET, newLocalValue);
             return newLocalValue;
         }
 
         @Override
         public long inc(long amount) {
             long newLocalValue = localValue += amount;
-            UNSAFE.putOrderedLong(this, OFFSET, newLocalValue);
+            MEM.putOrderedLong(this, OFFSET, newLocalValue);
             return newLocalValue;
         }
 
