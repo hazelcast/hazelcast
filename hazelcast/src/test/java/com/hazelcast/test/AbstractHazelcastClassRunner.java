@@ -23,17 +23,21 @@ import org.apache.log4j.MDC;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.internal.runners.statements.RunAfters;
+import org.junit.rules.TestRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.MultipleFailureException;
 import org.junit.runners.model.Statement;
+import org.junit.runners.model.TestClass;
 
+import java.lang.annotation.Annotation;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -180,6 +184,53 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             repeatable = super.getTestClass().getJavaClass().getAnnotation(Repeat.class);
         }
         return repeatable;
+    }
+
+    @Override
+    protected List<TestRule> getTestRules(Object target) {
+        List<TestRule> testRules = super.getTestRules(target);
+
+        Set<Class<? extends TestRule>> testRuleClasses = new HashSet<Class<? extends TestRule>>();
+
+        TestClass testClass = getTestClass();
+
+        // Find the required test rule classes from test class itself
+        Annotation[] classAnnotations = testClass.getAnnotations();
+        for (Annotation annotation : classAnnotations) {
+            Class<? extends Annotation> annotationType = annotation.annotationType();
+            AutoRegisteredTestRule autoFilterRule = annotationType.getAnnotation(AutoRegisteredTestRule.class);
+            if (autoFilterRule != null) {
+                Class<? extends TestRule> testRuleClass = autoFilterRule.testRule();
+                testRuleClasses.add(testRuleClass);
+            }
+        }
+
+        // Find the required test rule classes from methods
+        List<FrameworkMethod> annotatedMethods = testClass.getAnnotatedMethods();
+        for (FrameworkMethod annotatedMethod : annotatedMethods) {
+            Annotation[] methodAnnotations = annotatedMethod.getAnnotations();
+            for (Annotation annotation : methodAnnotations) {
+                Class<? extends Annotation> annotationType = annotation.annotationType();
+                AutoRegisteredTestRule autoFilterRule = annotationType.getAnnotation(AutoRegisteredTestRule.class);
+                if (autoFilterRule != null) {
+                    Class<? extends TestRule> testRuleClass = autoFilterRule.testRule();
+                    testRuleClasses.add(testRuleClass);
+                }
+            }
+        }
+
+        // Create and register test rules
+        for (Class<? extends TestRule> testRuleClass : testRuleClasses) {
+            try {
+                TestRule testRule = testRuleClass.newInstance();
+                testRules.add(testRule);
+            } catch (Throwable t) {
+                System.err.println("Unable to create test rule instance of test rule class "
+                        + testRuleClass.getName() + " because of " + t);
+            }
+        }
+
+        return testRules;
     }
 
     @Override

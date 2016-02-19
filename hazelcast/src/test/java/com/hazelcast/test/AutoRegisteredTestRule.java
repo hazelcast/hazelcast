@@ -16,16 +16,28 @@
 
 package com.hazelcast.test;
 
+import org.junit.rules.TestRule;
+
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Signals that a test method depends on Java assertions being enabled. Typically such
- * a method will expect an {@code AssertionError} to be thrown. To have this annotation honored,
- * a test class must define an instance of {@link AssertEnabledFilterRule}.
+ * Marks a test rule requirement annotation that connects it with its {@link TestRule} implementation
+ * and registers its rule implementation automatically to be executed for filtering.
  */
 @Retention(RUNTIME)
-@AutoRegisteredTestRule(testRule = AssertEnabledFilterRule.class)
-public @interface RequireAssertEnabled {
+@Target(ElementType.ANNOTATION_TYPE)
+public @interface AutoRegisteredTestRule {
+
+    /**
+     * Returns class of connected {@link TestRule} implementation
+     * for this test rule requirement annotation.
+     *
+     * @return the class of connected {@link TestRule} implementation
+     */
+    Class<? extends TestRule> testRule();
+
 }
