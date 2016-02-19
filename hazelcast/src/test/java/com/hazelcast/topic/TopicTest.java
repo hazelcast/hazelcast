@@ -32,6 +32,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.impl.TopicService;
@@ -631,6 +632,7 @@ public class TopicTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     @SuppressWarnings("unchecked")
     public void testTopicMultiThreading() throws Exception {
         final int nodeCount = 5;
