@@ -388,7 +388,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         public void run()
                 throws Exception {
             sleepAtLeastMillis(sleepMs);
-            getResponseHandler().sendResponse(true);
+            sendResponse(true);
         }
 
         @Override
