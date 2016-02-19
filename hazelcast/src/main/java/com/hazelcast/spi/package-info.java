@@ -17,6 +17,6 @@
 /**
  * Provides interfaces/classes for the Hazelcast SPI for building distributed data structures and services.
  *
- * As an low-level API, it is expected to change in each release except for the patch releases.
+ * As a low-level API, it is expected to change in each release except for the patch releases.
  */
 package com.hazelcast.spi;
