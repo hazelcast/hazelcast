@@ -371,7 +371,10 @@ public class ClientMessage
                 //we don't have even the frame length ready
                 return false;
             }
-            frameLength = Bits.readIntL(src.array(), 0);
+            frameLength = Bits.readIntL(src.array(), src.position());
+            if (frameLength < HEADER_SIZE) {
+                throw new IllegalArgumentException("Client message frame length cannot be smaller than header size.");
+            }
             if (USE_UNSAFE) {
                 wrap(new UnsafeBuffer(new byte[frameLength]), 0);
             } else {
