@@ -7,6 +7,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithBackpressure;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -50,6 +51,7 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
     }
 
     @Test
+    @RequireAssertEnabled
     public void next_whenNot_0() {
         CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
         Invocation invocation = newInvocation(new DummyBackupAwareOperation());
@@ -200,6 +202,7 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
     }
 
     @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void complete_whenNoMatchingNext() {
         CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
 
