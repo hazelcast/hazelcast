@@ -8,6 +8,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -78,6 +79,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @RequireAssertEnabled
     public void register_whenAlreadyRegistered_thenAssertionError() {
         Operation op = new DummyBackupAwareOperation();
         Invocation invocation = newInvocation(op);

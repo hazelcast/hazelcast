@@ -27,6 +27,7 @@ import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.AfterClass;
@@ -112,6 +113,7 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
     }
 
     @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testThreeNodes_defaultPartitions_HostAware() throws InterruptedException {
         testPartitionDistribution(271, 3, 0, hostAwareConfig, hostAwareLiteMemberConfig);
     }
@@ -132,6 +134,7 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
     }
 
     @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testFiveNodes_defaultPartitions_HostAware() throws InterruptedException {
         testPartitionDistribution(271, 5, 0, hostAwareConfig, hostAwareLiteMemberConfig);
     }
@@ -152,6 +155,7 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
     }
 
     @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testFifteenNodes_defaultPartitions_HostAware() throws InterruptedException {
         testPartitionDistribution(271, 15, 0, hostAwareConfig, hostAwareLiteMemberConfig);
     }
