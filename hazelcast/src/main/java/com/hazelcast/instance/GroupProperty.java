@@ -98,6 +98,10 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.health.monitoring.level", HealthMonitorLevel.SILENT.toString());
     public static final HazelcastProperty HEALTH_MONITORING_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.health.monitoring.delay.seconds", 20, SECONDS);
+    public static final HazelcastProperty HEALTH_MONITORING_THRESHOLD_PERCENTAGE_MEMORY
+            = new HazelcastProperty("hazelcast.health.monitoring.threshold.percentage.memory", 70);
+    public static final HazelcastProperty HEALTH_MONITORING_THRESHOLD_PERCENTAGE_CPU
+            = new HazelcastProperty("hazelcast.health.monitoring.threshold.percentage.cpu", 70);
 
     /**
      * Use the performance monitor to see internal performance metrics. Currently this is quite

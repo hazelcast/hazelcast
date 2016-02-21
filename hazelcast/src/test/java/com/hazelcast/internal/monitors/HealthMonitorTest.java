@@ -31,6 +31,8 @@ public class HealthMonitorTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(GroupProperty.HEALTH_MONITORING_LEVEL, HealthMonitorLevel.NOISY.toString());
         config.setProperty(GroupProperty.HEALTH_MONITORING_DELAY_SECONDS, "1");
+        config.setProperty(GroupProperty.HEALTH_MONITORING_THRESHOLD_PERCENTAGE_MEMORY, "70");
+        config.setProperty(GroupProperty.HEALTH_MONITORING_THRESHOLD_PERCENTAGE_CPU, "70");
 
         HazelcastInstance hz = createHazelcastInstance(config);
         healthMonitor = new HealthMonitor(getNode(hz));
