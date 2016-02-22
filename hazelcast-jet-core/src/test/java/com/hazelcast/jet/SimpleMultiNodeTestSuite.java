@@ -13,6 +13,7 @@ import com.hazelcast.jet.spi.dag.DAG;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,6 +32,7 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
     }
 
     @Test
+    @Repeat(500)
     public void shufflingListTest() throws Exception {
         System.out.println(System.nanoTime() + " --> shufflingListTest");
         Application application = createApplication("shufflingListTest");
@@ -71,6 +73,7 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
     }
 
     @Test
+    @Repeat(500)
     public void mapReverserTest() throws Exception {
         System.out.println(System.nanoTime() + " --> mapReverserTest");
         Application application = createApplication("mapReverserTest");
