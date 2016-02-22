@@ -54,11 +54,12 @@ class MapMigrationAwareService implements MigrationAwareService {
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
-        final MapReplicationOperation operation
-                = new MapReplicationOperation(mapServiceContext.getService(), container,
-                event.getPartitionId(), event.getReplicaIndex());
+        int partitionId = event.getPartitionId();
+        PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
+
+        MapReplicationOperation operation = new MapReplicationOperation(container, partitionId, event.getReplicaIndex());
         operation.setService(mapServiceContext.getService());
+
         return operation;
     }
 

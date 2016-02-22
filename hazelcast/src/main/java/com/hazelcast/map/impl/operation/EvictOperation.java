@@ -59,7 +59,7 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
     }
 
     public Operation getBackupOperation() {
-        return new RemoveBackupOperation(name, dataKey);
+        return new EvictBackupOperation(name, dataKey);
     }
 
     @Override

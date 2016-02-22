@@ -49,7 +49,7 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
-import com.hazelcast.map.impl.operation.CheckIfPartitionFlushedOperationFactory;
+import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
 import com.hazelcast.map.impl.operation.ClearOperation;
 import com.hazelcast.map.impl.operation.EvictAllOperation;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
@@ -147,7 +147,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         this.partitionStrategy = mapServiceContext.getMapContainer(name).getPartitioningStrategy();
         this.localMapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         this.partitionService = getNodeEngine().getPartitionService();
-        this.lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name),
+        this.lockSupport = new LockProxySupport(new DefaultObjectNamespace(SERVICE_NAME, name),
                 LockServiceImpl.getMaxLeaseTimeInMillis(nodeEngine.getGroupProperties()));
         this.operationProvider = mapServiceContext.getMapOperationProvider(name);
         this.operationService = nodeEngine.getOperationService();
@@ -416,7 +416,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         int mapNamePartition = partitionService.getPartitionId(name);
 
         Operation operation = operationProvider.createLoadMapOperation(name, replaceExistingValues);
-        Future loadMapFuture = operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, mapNamePartition);
+        Future loadMapFuture = operationService.invokeOnPartition(SERVICE_NAME, operation, mapNamePartition);
 
         try {
             loadMapFuture.get();
@@ -532,16 +532,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-
-    public void waitUntilFlushed() {
-        try {
-            OperationFactory opFactory = new CheckIfPartitionFlushedOperationFactory(name);
-            Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, opFactory);
-            waitAllTrue(results, opFactory);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
-    }
 
     private void waitAllTrue(Map<Integer, Object> results,
                              OperationFactory operationFactory) throws InterruptedException {
@@ -763,18 +753,31 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return f;
     }
 
+    // todo add a feature to mancenter to sync cache to db completely
     public void flush() {
         try {
-            // todo add a feature to mancenter to sync cache to db completely
-            MapOperation operation = operationProvider.createMapFlushOperation(name);
-            operationService.invokeOnAllPartitions(SERVICE_NAME,
-                    new BinaryOperationFactory(operation, getNodeEngine()));
+            MapOperation mapFlushOperation = operationProvider.createMapFlushOperation(name);
+            BinaryOperationFactory operationFactory = new BinaryOperationFactory(mapFlushOperation, getNodeEngine());
+            Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, operationFactory);
+
+
+            List<Future> futures = new ArrayList<Future>();
+            for (Entry<Integer, Object> entry : results.entrySet()) {
+                Integer partitionId = entry.getKey();
+                Long count = ((Long) entry.getValue());
+                if (count != 0) {
+                    Operation operation = new AwaitMapFlushOperation(name, count);
+                    futures.add(operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId));
+                }
+            }
+
+            for (Future future : futures) {
+                future.get();
+            }
+
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
-
-
-        waitUntilFlushed();
     }
 
     public void clearInternal() {

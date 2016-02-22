@@ -166,9 +166,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void softFlush() {
+    public long softFlush() {
         updateStoreStats();
-        mapDataStore.softFlush();
+        return mapDataStore.softFlush();
     }
 
     /**
@@ -255,7 +255,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
         }
         resetAccessSequenceNumber();
-        mapDataStore.clear();
+        mapDataStore.reset();
 
         if (onShutdown) {
             NativeMemoryConfig nativeMemoryConfig = nodeEngine.getConfig().getNativeMemoryConfig();
@@ -392,7 +392,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         // This conversion is required by mapDataStore#removeAll call.
         List<Data> keys = getKeysFromRecords(clearableRecords);
         mapDataStore.removeAll(keys);
-        mapDataStore.clear();
+        mapDataStore.reset();
         removeIndex(clearableRecords);
         resetAccessSequenceNumber();
         return removeRecords(clearableRecords);
@@ -447,7 +447,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void reset() {
         resetAccessSequenceNumber();
-        mapDataStore.clear();
+        mapDataStore.reset();
         storage.clear();
     }
 

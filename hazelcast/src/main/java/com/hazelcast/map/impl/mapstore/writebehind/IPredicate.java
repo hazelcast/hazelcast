@@ -14,31 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.mapstore.writebehind.entry;
+package com.hazelcast.map.impl.mapstore.writebehind;
 
 /**
- * General contract for an entry to be stored into {@link com.hazelcast.core.MapStore}
- * when {@link com.hazelcast.config.MapStoreConfig#writeDelaySeconds} is greater than 0.
+ * Represents a predicate (boolean-valued function) of one argument.
  *
- * @param <K> the key type.
- * @param <V> the value type.
- * @see AddedDelayedEntry
- * @see DeletedDelayedEntry
- * @see NullValueDelayedEntry
+ * @param <T> the type of the input to the predicate
  */
-public interface DelayedEntry<K, V> {
+public interface IPredicate<T> {
 
-    K getKey();
-
-    V getValue();
-
-    long getStoreTime();
-
-    int getPartitionId();
-
-    void setStoreTime(long storeTime);
-
-    void setSequence(long sequence);
-
-    long getSequence();
+    /**
+     * Evaluates this predicate on the given argument.
+     *
+     * @param t the input argument
+     * @return {@code true} if the input argument matches the predicate,
+     * otherwise {@code false}
+     */
+    boolean test(T t);
 }

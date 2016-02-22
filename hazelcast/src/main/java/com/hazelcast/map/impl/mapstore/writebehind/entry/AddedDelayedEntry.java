@@ -28,6 +28,8 @@ class AddedDelayedEntry<K, V> implements DelayedEntry<K, V> {
     private final V value;
     private final int partitionId;
     private long storeTime;
+    private long sequence;
+
 
     public AddedDelayedEntry(K key, V value, long storeTime, int partitionId) {
         this.key = key;
@@ -61,6 +63,16 @@ class AddedDelayedEntry<K, V> implements DelayedEntry<K, V> {
         this.storeTime = storeTime;
     }
 
+    @Override
+    public void setSequence(long sequence) {
+        this.sequence = sequence;
+    }
+
+    @Override
+    public long getSequence() {
+        return sequence;
+    }
+
     /**
      * This method is used when we are cleaning processed instances of this class.
      * Caring only reference equality of objects because wanting exactly remove the same instance
@@ -80,11 +92,12 @@ class AddedDelayedEntry<K, V> implements DelayedEntry<K, V> {
 
     @Override
     public String toString() {
-        return "DelayedEntry{"
+        return "AddedDelayedEntry{"
                 + "key=" + key
                 + ", value=" + value
+                + ", partitionId=" + partitionId
                 + ", storeTime=" + storeTime
-                + ", partitionId=" + getPartitionId()
+                + ", sequence=" + sequence
                 + '}';
     }
 
