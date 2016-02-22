@@ -143,7 +143,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-cloud</artifactId>
-            <version>${project.version}</version>
+            <version>3.6</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
