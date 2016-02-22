@@ -24,9 +24,11 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 /**
- * Flushes dirty entries upon {@link IMap#flush()}
+ * Flushes dirty entries upon call of {@link IMap#flush()}
  */
 public class MapFlushOperation extends MapOperation implements BackupAwareOperation, MutatingOperation {
+
+    private long sequence;
 
     public MapFlushOperation() {
     }
@@ -38,12 +40,12 @@ public class MapFlushOperation extends MapOperation implements BackupAwareOperat
     @Override
     public void run() {
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
-        recordStore.softFlush();
+        sequence = recordStore.softFlush();
     }
 
     @Override
     public Object getResponse() {
-        return true;
+        return sequence;
     }
 
     @Override

@@ -23,8 +23,8 @@ import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
@@ -190,7 +190,9 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
             }
             final MapDataStore<Data, Object> mapDataStore
                     = recordStore.getMapDataStore();
-            size += ((WriteBehindStore) mapDataStore).getWriteBehindQueue().size();
+            if (mapDataStore instanceof WriteBehindStore) {
+                size += ((WriteBehindStore) mapDataStore).getWriteBehindQueue().size();
+            }
         }
         return size;
     }

@@ -41,7 +41,7 @@ public class WriteThroughManager implements MapStoreManager {
     }
 
     @Override
-    public MapDataStore getMapDataStore(int partitionId) {
+    public MapDataStore getMapDataStore(String mapName, int partitionId) {
         return mapDataStore;
     }
 }

@@ -23,8 +23,9 @@ import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
  * a {@link DelayedEntry} for the key is exist.
  *
  * @param <K> the key type.
- * @param <V> the value type.
- * @see WriteBehindStore#flush(Object, Object, long, boolean)
+ * @param <V> the value type
+ *
+ * @see WriteBehindStore#flush
  */
 class NullValueDelayedEntry<K, V> implements DelayedEntry<K, V> {
 
@@ -56,6 +57,16 @@ class NullValueDelayedEntry<K, V> implements DelayedEntry<K, V> {
 
     @Override
     public void setStoreTime(long storeTime) {
+    }
+
+    @Override
+    public void setSequence(long sequence) {
+
+    }
+
+    @Override
+    public long getSequence() {
+        return -1;
     }
 
     @Override

@@ -16,40 +16,58 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.IMap;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
 /**
- * Empties backup write-behind-queues upon {@link IMap#flush()}
+ * Used to notify {@link AwaitMapFlushOperation} when {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker StoreWorker}
+ * managed to flush this {@link AwaitMapFlushOperation#flushSequence flushSequence}.
+ *
+ * @see AwaitMapFlushOperation
  */
-public class MapFlushBackupOperation extends MapOperation implements BackupOperation, MutatingOperation {
+public class NotifyMapFlushOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation, Notifier {
 
-    public MapFlushBackupOperation() {
+    private long sequence;
+
+    public NotifyMapFlushOperation(String name, long sequence) {
+        super(name);
+        this.sequence = sequence;
     }
 
-    public MapFlushBackupOperation(String name) {
-        super(name);
+    public NotifyMapFlushOperation() {
     }
 
     @Override
     public void run() throws Exception {
-        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
-        recordStore.softFlush();
+        // NOP.
+    }
+
+    @Override
+    public WaitNotifyKey getNotifiedKey() {
+        return new MapFlushWaitNotifyKey(name, getPartitionId(), sequence);
+    }
+
+    @Override
+    public boolean shouldNotify() {
+        return Boolean.TRUE;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+        out.writeLong(sequence);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        sequence = in.readLong();
     }
+
 }

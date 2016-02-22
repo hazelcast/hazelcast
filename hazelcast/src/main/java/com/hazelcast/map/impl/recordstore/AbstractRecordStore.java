@@ -77,7 +77,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         this.mapStoreContext = mapContainer.getMapStoreContext();
         MapStoreManager mapStoreManager = mapStoreContext.getMapStoreManager();
-        this.mapDataStore = mapStoreManager.getMapDataStore(partitionId);
+        this.mapDataStore = mapStoreManager.getMapDataStore(name, partitionId);
     }
 
     @Override

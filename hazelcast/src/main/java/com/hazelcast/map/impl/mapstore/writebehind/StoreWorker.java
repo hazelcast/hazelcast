@@ -20,6 +20,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -37,9 +38,11 @@ import java.util.Map;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 
 /**
- * Used to process store operations in another thread.
- * Collects entries from write behind queues and passes them to {@link #writeBehindProcessor}.
- * Created per map.
+ * When write-behind is enabled the work is offloaded to another thread than partition-operation-thread.
+ * That thread uses this runnable task to process write-behind-queues. This task collects entries from
+ * write behind queues and passes them to {@link #writeBehindProcessor}.
+ * <p/>
+ * Only one {@link StoreWorker} task is created for a map on a member.
  */
 public class StoreWorker implements Runnable {
 
@@ -77,11 +80,12 @@ public class StoreWorker implements Runnable {
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
-            if (recordStore == null) {
+            if (!hasEntryInWriteBehindQueue(recordStore)) {
                 continue;
             }
 
             List<DelayedEntry> entriesToStore = getEntriesToStore(recordStore, now);
+
             if (!isPartitionLocal(partitionId)) {
                 if (now > lastRunTimeMillis + backupRunIntervalMillis) {
                     doInBackup(entriesToStore, partitionId);
@@ -94,10 +98,32 @@ public class StoreWorker implements Runnable {
         if (!entries.isEmpty()) {
             Map<Integer, List<DelayedEntry>> failuresPerPartition = writeBehindProcessor.process(entries);
             removeFinishedStoreOperationsFromQueues(mapName, entries);
-            readdFailedStoreOperationsToQueues(mapName, failuresPerPartition);
+            reAddFailedStoreOperationsToQueues(mapName, failuresPerPartition);
             lastRunTimeMillis = now;
         }
 
+        notifyFlush();
+    }
+
+    protected boolean hasEntryInWriteBehindQueue(RecordStore recordStore) {
+        if (recordStore == null) {
+            return false;
+        }
+
+        MapDataStore mapDataStore = recordStore.getMapDataStore();
+        WriteBehindStore dataStore = (WriteBehindStore) mapDataStore;
+        WriteBehindQueue<DelayedEntry> writeBehindQueue = dataStore.getWriteBehindQueue();
+        return writeBehindQueue.size() != 0;
+    }
+
+    protected void notifyFlush() {
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
+            if (recordStore != null) {
+                WriteBehindStore mapDataStore = ((WriteBehindStore) recordStore.getMapDataStore());
+                mapDataStore.notifyFlush();
+            }
+        }
     }
 
     private boolean isPartitionLocal(int partitionId) {
@@ -106,23 +132,45 @@ public class StoreWorker implements Runnable {
     }
 
     private List<DelayedEntry> getEntriesToStore(RecordStore recordStore, long now) {
-        int numberOfEntriesToFlush = getNumberOfEntriesToFlush(recordStore);
-        int initialCapacity = Math.max(numberOfEntriesToFlush, ARRAY_LIST_DEFAULT_CAPACITY);
-
-        List<DelayedEntry> entries = new ArrayList<DelayedEntry>(initialCapacity);
-
         WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
-        filterWriteBehindQueue(now, numberOfEntriesToFlush, entries, queue);
+        long nextSequenceToFlush = getSequenceToFlush(recordStore);
+
+        int capacity = findListCapacity(queue, nextSequenceToFlush);
+        List<DelayedEntry> entries = new ArrayList<DelayedEntry>(capacity);
+
+        filterWriteBehindQueue(now, nextSequenceToFlush, entries, queue);
 
         return entries;
     }
 
-    private void filterWriteBehindQueue(long now, int count, Collection<DelayedEntry> collection,
+    private int findListCapacity(WriteBehindQueue<DelayedEntry> queue, long nextSequenceToFlush) {
+        DelayedEntry peek = queue.peek();
+
+        assert peek != null : "NPE should not happen, previous lines should prevent it";
+
+        long firstSequenceInQueue = peek.getSequence();
+        return Math.max((int) (nextSequenceToFlush - firstSequenceInQueue), ARRAY_LIST_DEFAULT_CAPACITY);
+    }
+
+    private void filterWriteBehindQueue(final long now, final long sequence, Collection<DelayedEntry> collection,
                                         WriteBehindQueue<DelayedEntry> queue) {
-        if (count > 0) {
-            queue.getFrontByNumber(count, collection);
+        if (sequence > 0) {
+
+            queue.filter(new IPredicate<DelayedEntry>() {
+                @Override
+                public boolean test(DelayedEntry delayedEntry) {
+                    return delayedEntry.getSequence() <= sequence;
+                }
+            }, collection);
+
         } else {
-            queue.getFrontByTime(now, collection);
+
+            queue.filter(new IPredicate<DelayedEntry>() {
+                @Override
+                public boolean test(DelayedEntry delayedEntry) {
+                    return delayedEntry.getStoreTime() <= now;
+                }
+            }, collection);
         }
     }
 
@@ -131,12 +179,11 @@ public class StoreWorker implements Runnable {
             RecordStore recordStore = getRecordStoreOrNull(mapName, entry.getPartitionId());
             if (recordStore != null) {
                 getWriteBehindQueue(recordStore).removeFirstOccurrence(entry);
-                decrementFlushCounter(recordStore);
             }
         }
     }
 
-    private void readdFailedStoreOperationsToQueues(String mapName, Map<Integer, List<DelayedEntry>> failuresPerPartition) {
+    private void reAddFailedStoreOperationsToQueues(String mapName, Map<Integer, List<DelayedEntry>> failuresPerPartition) {
         if (failuresPerPartition.isEmpty()) {
             return;
         }
@@ -187,14 +234,9 @@ public class StoreWorker implements Runnable {
         return writeBehindStore.getWriteBehindQueue();
     }
 
-    private int getNumberOfEntriesToFlush(RecordStore recordStore) {
+    private long getSequenceToFlush(RecordStore recordStore) {
         WriteBehindStore writeBehindStore = (WriteBehindStore) recordStore.getMapDataStore();
-        return writeBehindStore.getNumberOfEntriesToFlush();
-    }
-
-    private void decrementFlushCounter(RecordStore recordStore) {
-        WriteBehindStore writeBehindStore = (WriteBehindStore) recordStore.getMapDataStore();
-        writeBehindStore.decrementFlushCounter();
+        return writeBehindStore.getSequenceToFlush();
     }
 }
 

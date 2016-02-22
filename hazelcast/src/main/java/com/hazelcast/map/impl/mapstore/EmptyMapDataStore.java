@@ -48,7 +48,7 @@ class EmptyMapDataStore implements MapDataStore {
     }
 
     @Override
-    public void clear() {
+    public void reset() {
     }
 
     @Override
@@ -71,8 +71,8 @@ class EmptyMapDataStore implements MapDataStore {
     }
 
     @Override
-    public void softFlush() {
-
+    public long softFlush() {
+        return 0;
     }
 
     @Override

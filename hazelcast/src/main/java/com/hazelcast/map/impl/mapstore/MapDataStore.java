@@ -39,9 +39,9 @@ public interface MapDataStore<K, V> {
     void removeBackup(K key, long now);
 
     /**
-     * Clears resources of this map-data-store.
+     * Returns all associated resources of this map-data-store back to the initial state.
      */
-    void clear();
+    void reset();
 
     V load(K key);
 
@@ -62,20 +62,21 @@ public interface MapDataStore<K, V> {
     boolean isPostProcessingMapStore();
 
     /**
-     * Only marks this {@link MapDataStore} as flushable. Flush means storing entries from write-behind-queue into map-store
+     * Only marks this {@link MapDataStore} as flush-able. Flush means storing entries from write-behind-queue into map-store
      * regardless of the scheduled store-time. Actual flushing is done by another thread than partition-operation thread
      * which runs {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker}.
      *
+     * @return last given sequence number to the last store operation
      * @see com.hazelcast.map.impl.operation.MapFlushOperation
      */
-    void softFlush();
+    long softFlush();
 
     /**
      * Flushes write-behind-queue into map-store in calling thread.
-     *
+     * <p/>
      * After calling of this method, all elements in the {@link com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue}
      * of this {@link MapDataStore} should be in map-store regardless of the scheduled store-time.
-     *
+     * <p/>
      * The only call to this method is in node-shutdown.
      *
      * @see com.hazelcast.map.impl.MapManagedService#shutdown(boolean)

@@ -25,5 +25,5 @@ public interface MapStoreManager {
 
     void stop();
 
-    MapDataStore getMapDataStore(int partitionId);
+    MapDataStore getMapDataStore(String mapName, int partitionId);
 }

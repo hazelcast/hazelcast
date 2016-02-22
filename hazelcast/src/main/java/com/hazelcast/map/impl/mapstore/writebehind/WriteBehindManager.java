@@ -18,12 +18,12 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapDataStores;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.MapStoreManager;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.executor.ExecutorType;
@@ -75,7 +75,7 @@ public class WriteBehindManager implements MapStoreManager {
 
     //todo get this via constructor function.
     @Override
-    public MapDataStore getMapDataStore(int partitionId) {
+    public MapDataStore getMapDataStore(String mapName, int partitionId) {
         return MapDataStores.createWriteBehindStore(mapStoreContext, partitionId, writeBehindProcessor);
     }
 
@@ -101,7 +101,7 @@ public class WriteBehindManager implements MapStoreManager {
 
         private final MapStoreContext mapStoreContext;
 
-        public InternalStoreListener(MapStoreContext mapStoreContext) {
+        InternalStoreListener(MapStoreContext mapStoreContext) {
             this.mapStoreContext = mapStoreContext;
         }
 

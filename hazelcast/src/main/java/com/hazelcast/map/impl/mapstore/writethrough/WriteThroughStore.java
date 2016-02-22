@@ -63,7 +63,7 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public void clear() {
+    public void reset() {
 
     }
 
@@ -78,8 +78,9 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public void softFlush() {
+    public long softFlush() {
         // Only write-behind configured map-stores are flushable.
+        return 0;
     }
 
     @Override
