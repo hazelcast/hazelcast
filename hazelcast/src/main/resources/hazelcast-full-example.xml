@@ -177,6 +177,8 @@ https://hazelcast.org/documentation/.
         </target-cluster>
     </wan-replication>
 <!--
+    ===== HAZELCAST NETWORK CONFIGURATION =====
+    
     Configuration to build your Hazelcast's network; includes port, interface, discovery mechanism, SSL, 
     encryption, etc. configurations. Configuration element's name is <network>. 
     It has the following sub-elements:
@@ -1537,15 +1539,15 @@ https://hazelcast.org/documentation/.
     ===== HAZELCAST HOT RESTART PERSISTENCE CONFIGURATION =====
     
     This feature is available only in Hazelcast Enterprise HD. Configuration element's name is 
-    <hot-restart-persistence>. It has the required attribute "enabled" to specify whether this feature is enabled
-    on this member. This part is the feature's configuration itself and you define the general specifications for 
+    <hot-restart-persistence>. It has the required attribute "enabled" to specify whether this feature will be enabled
+    on your cluster. This part is the feature's configuration itself and you define the general specifications for 
     the feature. However, note that <map> and <cache> have a sub-element called <hot-restart> with which you should 
     enable its usage on those data structures. Keep in mind that Hot Restart feature is currently supported for 
     Hazelcast's map and cache data structures.
     It has the following sub-elements:
     * <base-dir>:
     	Specifies the directory where the Hot Restart data will be stored. Its default value is hot-restart. 
-    	You can use the default value, or you can specify the value of another folder containing the Hot Restart configuration.
+    	You can use the default value, or you can specify another folder.
     	This directory will be created automatically if it does not exist.
     * <validation-timeout-seconds>:
     	Validation timeout for the Hot Restart process when validating the cluster members expected to join and the partition 
