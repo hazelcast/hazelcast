@@ -23,7 +23,7 @@ import com.hazelcast.jet.spi.dag.tap.SourceTap;
 import com.hazelcast.jet.spi.dag.tap.TapType;
 import com.hazelcast.jet.spi.data.DataReader;
 import com.hazelcast.jet.spi.data.tuple.TupleFactory;
-import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.IPartition;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -52,7 +52,7 @@ public class HazelcastSourceTap extends SourceTap {
 
         if (TapType.HAZELCAST_LIST == this.tapType) {
             int partitionId = HazelcastListPartitionReader.getPartitionId(containerDescriptor.getNodeEngine(), this.name);
-            InternalPartition partition = containerDescriptor.getNodeEngine().getPartitionService().getPartition(partitionId);
+            IPartition partition = containerDescriptor.getNodeEngine().getPartitionService().getPartition(partitionId);
 
             if ((partition != null) && (partition.isLocal())) {
                 readers.add(HazelcastReaderFactory.getReader(
@@ -84,7 +84,7 @@ public class HazelcastSourceTap extends SourceTap {
                         this.tapType,
                         this.name,
                         containerDescriptor,
-                        i % containerDescriptor.getNodeEngine().getPartitionService().getPartitions().length,
+                        i % containerDescriptor.getNodeEngine().getPartitionService().getPartitionCount(),
                         start,
                         end,
                         tupleFactory,
@@ -92,7 +92,7 @@ public class HazelcastSourceTap extends SourceTap {
                 ));
             }
         } else {
-            for (InternalPartition partition : containerDescriptor.getNodeEngine().getPartitionService().getPartitions()) {
+            for (IPartition partition : containerDescriptor.getNodeEngine().getPartitionService().getPartitions()) {
                 if (partition.isLocal()) {
                     readers.add(HazelcastReaderFactory.getReader(
                             this.tapType,

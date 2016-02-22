@@ -66,7 +66,7 @@ public class TestClientRegistry {
             AddressTranslator addressTranslator;
             if (awsConfig != null && awsConfig.isEnabled()) {
                 try {
-                    addressTranslator = new AwsAddressTranslator(awsConfig);
+                    addressTranslator = new AwsAddressTranslator(awsConfig, client.getLoggingService());
                 } catch (NoClassDefFoundError e) {
                     LOGGER.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
                     throw e;

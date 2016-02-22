@@ -36,7 +36,7 @@ import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 import com.hazelcast.jet.spi.strategy.CalculationStrategyAware;
 import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.IPartition;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.ArrayList;
@@ -168,13 +168,13 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     private boolean initCalculationStrategies(Set<CalculationStrategy> strategies,
                                               List<ObjectConsumer> nonPartitionedConsumers,
                                               Set<Address> nonPartitionedAddresses) {
-        List<InternalPartition> localPartitions = new ArrayList<InternalPartition>();
+        List<IPartition> localPartitions = new ArrayList<IPartition>();
 
         ApplicationMaster applicationMaster = this.containerContext.getApplicationContext().getApplicationMaster();
         Map<Address, Address> hzToJetAddressMapping = applicationMaster.getApplicationContext().getHzToJetAddressMapping();
         boolean hasActiveConsumers = false;
 
-        for (InternalPartition partition : this.nodeEngine.getPartitionService().getPartitions()) {
+        for (IPartition partition : this.nodeEngine.getPartitionService().getPartitions()) {
             if (partition.isLocal()) {
                 localPartitions.add(partition);
             }
@@ -197,7 +197,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     private boolean initConsumerCalculationStrategy(Set<CalculationStrategy> strategies,
-                                                    List<InternalPartition> localPartitions,
+                                                    List<IPartition> localPartitions,
                                                     List<ObjectConsumer> nonPartitionedConsumers,
                                                     Set<Address> nonPartitionedAddresses,
                                                     boolean hasActiveConsumers,
@@ -238,7 +238,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     private boolean initConsumerPartitions(Set<CalculationStrategy> strategies,
-                                           List<InternalPartition> localPartitions,
+                                           List<IPartition> localPartitions,
                                            List<ObjectConsumer> nonPartitionedConsumers,
                                            Set<Address> nonPartitionedAddresses,
                                            Map<Address, Address> hzToJetAddressMapping, ObjectConsumer consumer
@@ -287,7 +287,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         if (partitionId >= 0) {
             processPartition(map, partitionId).add(consumer);
         } else {
-            for (InternalPartition localPartition : localPartitions) {
+            for (IPartition localPartition : localPartitions) {
                 processPartition(map, localPartition.getPartitionId()).add(consumer);
             }
         }
@@ -300,7 +300,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
                                            DataWriter writer) {
         boolean hasActiveConsumers = false;
 
-        InternalPartition partition = this.nodeEngine.getPartitionService().getPartition(writer.getPartitionId());
+        IPartition partition = this.nodeEngine.getPartitionService().getPartition(writer.getPartitionId());
 
         if (partition.isLocal()) {
             hasActiveConsumers = true;
