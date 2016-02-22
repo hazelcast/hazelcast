@@ -12,7 +12,10 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.Hashtable;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.jmx.ManagementService.quote;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
@@ -24,12 +27,14 @@ final class MBeanDataHolder {
 
     private HazelcastInstance hz;
     private MBeanServer mbs;
+    private static final AtomicInteger ID_GEN = new AtomicInteger(0);
 
     /**
      * Initialize with new hazelcast instance and MBean server
      */
     MBeanDataHolder(TestHazelcastInstanceFactory factory) {
         Config config = new Config();
+        config.setInstanceName("hz:\",=*?" + ID_GEN.getAndIncrement());
         config.setProperty(GroupProperty.ENABLE_JMX, "true");
         hz = factory.newHazelcastInstance(config);
         mbs = ManagementFactory.getPlatformMBeanServer();
@@ -110,9 +115,9 @@ final class MBeanDataHolder {
      */
     private ObjectName getObjectName(String type, String objectName) throws MalformedObjectNameException {
         Hashtable<String, String> table = new Hashtable<String, String>();
-        table.put("type", type);
-        table.put("name", objectName);
-        table.put("instance", hz.getName());
+        table.put("type", quote(type));
+        table.put("name", quote(objectName));
+        table.put("instance", quote(hz.getName()));
         return new ObjectName("com.hazelcast", table);
     }
 }
