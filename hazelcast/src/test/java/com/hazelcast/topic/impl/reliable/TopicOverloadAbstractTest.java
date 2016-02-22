@@ -26,6 +26,7 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.util.EmptyStatement;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -120,6 +121,7 @@ public abstract class TopicOverloadAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore("please see issues #6819")
     public void whenBlock_whenNoSpace() {
         for (int k = 0; k < ringbuffer.capacity(); k++) {
             topic.publish("old");
