@@ -63,6 +63,11 @@ public class MBeanTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testConnection() throws Exception {
+        holder.assertMBeanExistEventually("HazelcastInstance.ConnectionManager", holder.getHz().getName());
+    }
+
+    @Test
     public void testCountDownLatch() throws Exception {
         ICountDownLatch countDownLatch = holder.getHz().getCountDownLatch("semaphore");
         countDownLatch.getCount();
