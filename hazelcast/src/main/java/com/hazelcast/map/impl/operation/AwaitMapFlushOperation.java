@@ -86,15 +86,14 @@ public class AwaitMapFlushOperation
     @Override
     public boolean shouldWait() {
         WriteBehindQueue<DelayedEntry> writeBehindQueue = store.getWriteBehindQueue();
-        int size = writeBehindQueue.size();
-        if (size == 0) {
+        DelayedEntry entry = writeBehindQueue.peek();
+        if (entry == null) {
             return false;
         }
 
-        DelayedEntry entry = writeBehindQueue.peek();
         long currentSequence = entry.getSequence();
-        return entry != null && currentSequence <= this.sequence
-                && size + currentSequence - 1 >= this.sequence;
+        return currentSequence <= this.sequence
+                && writeBehindQueue.size() + currentSequence - 1 >= this.sequence;
     }
 
     @Override
