@@ -87,6 +87,7 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
         assertTrue(config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled());
         assertEquals(6,config.getMapConfig("map1").getBackupCount());
         assertFalse(config.getMapConfig("map1").isStatisticsEnabled());
+        assertEquals(64, config.getNativeMemoryConfig().getSize().getValue());
     }
 
 }

@@ -2026,9 +2026,9 @@
         </xs:sequence>
         <xs:attribute name="smart-routing" use="optional" type="parameterized-boolean" default="false"/>
         <xs:attribute name="redo-operation" use="optional" type="parameterized-boolean" default="false"/>
-        <xs:attribute name="connection-timeout" use="optional" type="intMin1" default="60000"/>
-        <xs:attribute name="connection-attempt-period" use="optional" type="intMin1" default="3000"/>
-        <xs:attribute name="connection-attempt-limit" use="optional" type="intMin0" default="2"/>
+        <xs:attribute name="connection-timeout" use="optional" type="parameterized-positive-integer" default="60000"/>
+        <xs:attribute name="connection-attempt-period" use="optional" type="parameterized-positive-integer" default="3000"/>
+        <xs:attribute name="connection-attempt-limit" use="optional" type="parameterized-non-negative-integer" default="2"/>
     </xs:complexType>
 
     <xs:complexType name="socket-options">
@@ -2079,7 +2079,7 @@
     <xs:simpleType name="parameterized-unsigned-int">
         <xs:union memberTypes="xs:unsignedInt parameterizedValueType"/>
     </xs:simpleType>
-    <xs:simpleType name="intMin1">
+    <xs:simpleType name="parameterized-positive-integer">
         <xs:union memberTypes="xs:positiveInteger parameterizedValueType"/>
     </xs:simpleType>
     <xs:simpleType name="parameterized-backup-count">
@@ -2091,7 +2091,7 @@
             <xs:maxInclusive value="6"/>
         </xs:restriction>
     </xs:simpleType>
-    <xs:simpleType name="intMin0">
+    <xs:simpleType name="parameterized-non-negative-integer">
         <xs:union memberTypes="xs:nonNegativeInteger parameterizedValueType"/>
     </xs:simpleType>
 
@@ -2420,7 +2420,7 @@
         <xs:attribute name="enabled" default="true" type="parameterized-boolean"/>
     </xs:complexType>
     <xs:complexType name="memory-size">
-        <xs:attribute name="value" type="xs:int" default="128"/>
+        <xs:attribute name="value" type="parameterized-non-negative-integer" default="128"/>
         <xs:attribute name="unit" type="memory-unit" default="MEGABYTES"/>
     </xs:complexType>
     <xs:simpleType name="memory-unit">
