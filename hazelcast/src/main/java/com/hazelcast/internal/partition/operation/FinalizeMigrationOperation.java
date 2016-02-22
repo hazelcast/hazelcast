@@ -35,10 +35,12 @@ import java.io.IOException;
 public final class FinalizeMigrationOperation extends AbstractOperation
         implements PartitionAwareOperation, MigrationCycleOperation {
 
+    private final MigrationInfo migrationInfo;
     private final MigrationEndpoint endpoint;
     private final boolean success;
 
-    public FinalizeMigrationOperation(MigrationEndpoint endpoint, boolean success) {
+    public FinalizeMigrationOperation(MigrationInfo migrationInfo, MigrationEndpoint endpoint, boolean success) {
+        this.migrationInfo = migrationInfo;
         this.endpoint = endpoint;
         this.success = success;
     }
@@ -49,14 +51,15 @@ public final class FinalizeMigrationOperation extends AbstractOperation
 
         int partitionId = getPartitionId();
         MigrationManager migrationManager = partitionService.getMigrationManager();
-        MigrationInfo migrationInfo = migrationManager.getActiveMigration(partitionId);
-        if (migrationInfo == null) {
-            return;
-        }
+//        MigrationInfo migrationInfo = migrationManager.getActiveMigration(partitionId);
+//        if (migrationInfo == null) {
+//            return;
+//        }
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
 
-        PartitionMigrationEvent event = new PartitionMigrationEvent(endpoint, partitionId);
+        PartitionMigrationEvent event = new PartitionMigrationEvent(endpoint, migrationInfo.getType(), partitionId,
+                migrationInfo.getReplicaIndex(), migrationInfo.getKeepReplicaIndex());
         for (MigrationAwareService service : nodeEngine.getServices(MigrationAwareService.class)) {
             finishMigration(event, service);
         }
@@ -67,7 +70,7 @@ public final class FinalizeMigrationOperation extends AbstractOperation
             partitionService.clearPartitionReplicaVersions(partitionId);
         }
 
-        migrationManager.removeActiveMigration(partitionId);
+//        migrationManager.removeActiveMigration(partitionId);
         if (success) {
             nodeEngine.onPartitionMigrate(migrationInfo);
         }

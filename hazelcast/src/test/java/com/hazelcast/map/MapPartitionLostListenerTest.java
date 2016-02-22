@@ -9,6 +9,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -103,7 +104,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         Node survivingNode = getNode(survivingInstance);
         Address survivingAddress = survivingNode.getThisAddress();
 
-        for (InternalPartition partition : survivingNode.getPartitionService().getPartitions()) {
+        for (IPartition partition : survivingNode.getPartitionService().getPartitions()) {
             if (survivingAddress.equals(partition.getReplicaAddress(0))) {
                 survivingPartitionIds.add(partition.getPartitionId());
             }

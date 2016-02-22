@@ -9,6 +9,7 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceState;
 import com.hazelcast.internal.partition.impl.ReplicaSyncInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.ArrayList;
@@ -61,7 +62,7 @@ public class TestPartitionUtils {
     private static void collectOwnedReplicaVersions(Node node, Map<Integer, long[]> replicaVersions) throws InterruptedException {
         InternalPartitionService partitionService = node.getPartitionService();
         Address nodeAddress = node.getThisAddress();
-        for (InternalPartition partition : partitionService.getPartitions()) {
+        for (IPartition partition : partitionService.getPartitions()) {
             if (nodeAddress.equals(partition.getOwnerOrNull())) {
                 int partitionId = partition.getPartitionId();
                 replicaVersions.put(partitionId, getReplicaVersions(node, partitionId));

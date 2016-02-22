@@ -168,7 +168,6 @@ public class PartitionStateManager {
         memberGroupsSize = size;
     }
 
-//    @Override
     public int getMemberGroupsSize() {
         int size = memberGroupsSize;
         if (size > 0) {
@@ -185,6 +184,11 @@ public class PartitionStateManager {
         for (InternalPartitionImpl partition : partitions) {
             final int index = partition.removeAddress(deadAddress);
 
+            // address is not replica of this partition
+            if (index == -1) {
+                continue;
+            }
+
             // if owner is null, promote 1.backup to owner
             // don't touch to the other backups
             if (index == 0) {
@@ -198,12 +202,12 @@ public class PartitionStateManager {
             }
 
             // search for a destination to assign empty index
-            Address destination = null;
+            Address destination;
             for (int i = InternalPartition.MAX_REPLICA_COUNT - 1; i > index; i--) {
                 destination = partition.getReplicaAddress(i);
                 if (destination != null) {
                     // create a new migration from owner to destination for replica-index
-                    migrations.add(new MigrationInfo(partition.getPartitionId(), owner, destination/*, index*/));
+                    migrations.add(new MigrationInfo(partition.getPartitionId(), index, owner, destination));
                     break;
                 }
             }
@@ -211,15 +215,15 @@ public class PartitionStateManager {
         return migrations;
     }
 
-    //    @Override
     InternalPartition[] getPartitions() {
         return partitions;
     }
 
     InternalPartition[] getPartitionsCopy() {
+        NopPartitionListener listener = new NopPartitionListener();
         InternalPartition[] result = new InternalPartition[partitions.length];
         for (int i = 0; i < partitionCount; i++) {
-            result[i] = partitions[i].copy();
+            result[i] = partitions[i].copy(listener);
         }
         return result;
     }
@@ -253,16 +257,20 @@ public class PartitionStateManager {
         partition.setReplicaAddresses(replicaAddresses);
     }
 
-    void setReplicaAddresses(InternalPartition partition, Address[] replicaAddresses) {
-        ((InternalPartitionImpl) partition).setReplicaAddresses(replicaAddresses);
-    }
-
     void setVersion(int version) {
         stateVersion.set(version);
     }
 
     public int getVersion() {
         return stateVersion.get();
+    }
+
+    void incrementVersion(int delta) {
+        if (delta >= 0) {
+            stateVersion.addAndGet(delta);
+        } else {
+            logger.warning("partition table version not incremented by " + delta);
+        }
     }
 
     void incrementVersion() {

@@ -37,7 +37,7 @@ import java.util.Map;
 public final class PartitionRuntimeState implements IdentifiedDataSerializable {
 
     private final List<MemberInfo> members = new ArrayList<MemberInfo>(100);
-    private final Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
+    private Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
     private int version;
     private Collection<MigrationInfo> completedMigrations;
     // used to know ongoing migrations when master changed
@@ -146,6 +146,10 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
 
     public void setActiveMigration(MigrationInfo activeMigration) {
         this.activeMigration = activeMigration;
+    }
+
+    public void setCompletedMigrations(Collection<MigrationInfo> completedMigrations) {
+        this.completedMigrations = completedMigrations;
     }
 
     @Override

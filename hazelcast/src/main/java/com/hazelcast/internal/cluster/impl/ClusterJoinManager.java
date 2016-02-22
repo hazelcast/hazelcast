@@ -441,9 +441,14 @@ public class ClusterJoinManager {
                 Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
                 boolean isPostJoinOperation = postJoinOps != null && postJoinOps.length > 0;
                 PostJoinOperation postJoinOp = isPostJoinOperation ? new PostJoinOperation(postJoinOps) : null;
+                PartitionRuntimeState partitionRuntimeState = null;
+                if (node.partitionService.isMigrationAllowed()) {
+                    partitionRuntimeState = node.partitionService.createPartitionState();
+                }
+
                 Operation operation = new FinalizeJoinOperation(createMemberInfoList(clusterService.getMemberImpls()),
                         postJoinOp, clusterClock.getClusterTime(), clusterStateManager.getState(),
-                        node.partitionService.createPartitionState(), false);
+                        partitionRuntimeState, false);
                 nodeEngine.getOperationService().send(operation, target);
             } else {
                 sendMasterAnswer(target);
@@ -494,7 +499,11 @@ public class ClusterJoinManager {
 
                 int count = members.size() - 1 + setJoins.size();
                 List<Future> calls = new ArrayList<Future>(count);
-                PartitionRuntimeState partitionState = node.partitionService.createPartitionState();
+                PartitionRuntimeState partitionState = null;
+                // TODO BASRI we need a more understandable check here
+                if (node.partitionService.getMigrationPauseCount() == 1) {
+                    partitionState = node.partitionService.createPartitionState();;
+                }
                 for (MemberInfo member : setJoins) {
                     long startTime = clusterClock.getClusterStartTime();
                     Operation joinOperation = new FinalizeJoinOperation(memberInfos, postJoinOp, time,

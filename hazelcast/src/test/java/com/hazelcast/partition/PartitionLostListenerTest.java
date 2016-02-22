@@ -81,7 +81,7 @@ public class PartitionLostListenerTest extends AbstractPartitionLostListenerTest
         final Address survivingAddress = survivingNode.getThisAddress();
 
         final Set<Integer> survivingPartitionIds = new HashSet<Integer>();
-        for (InternalPartition partition : survivingNode.getPartitionService().getPartitions()) {
+        for (InternalPartition partition : survivingNode.getPartitionService().getInternalPartitions()) {
             if (survivingAddress.equals(partition.getReplicaAddress(0))) {
                 survivingPartitionIds.add(partition.getPartitionId());
             }

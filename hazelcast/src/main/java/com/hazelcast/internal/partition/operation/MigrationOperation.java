@@ -66,8 +66,9 @@ public final class MigrationOperation extends BaseMigrationOperation {
     public MigrationOperation() {
     }
 
-    public MigrationOperation(MigrationInfo migrationInfo, long[] replicaVersions, Collection<Operation> tasks) {
-        super(migrationInfo);
+    public MigrationOperation(MigrationInfo migrationInfo, long[] replicaVersions, Collection<Operation> tasks,
+            int partitionStateVersion) {
+        super(migrationInfo, partitionStateVersion);
         this.replicaVersions = replicaVersions;
         this.tasks = tasks;
     }
@@ -178,7 +179,9 @@ public final class MigrationOperation extends BaseMigrationOperation {
     private void runMigrationTask(Operation op) throws Exception {
         MigrationAwareService service = op.getService();
         PartitionMigrationEvent event =
-                new PartitionMigrationEvent(MigrationEndpoint.DESTINATION, migrationInfo.getPartitionId());
+                new PartitionMigrationEvent(MigrationEndpoint.DESTINATION, migrationInfo.getType(),
+                        migrationInfo.getPartitionId(), migrationInfo.getReplicaIndex(),
+                        migrationInfo.getKeepReplicaIndex());
         service.beforeMigration(event);
         op.beforeRun();
         op.run();

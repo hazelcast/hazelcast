@@ -20,6 +20,7 @@ import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
@@ -42,17 +43,16 @@ public class PartitionEventManager {
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
-    private final InternalPartitionServiceImpl partitionService;
 
-    public PartitionEventManager(Node node, InternalPartitionServiceImpl partitionService) {
+    public PartitionEventManager(Node node) {
         this.node = node;
-        this.partitionService = partitionService;
         this.nodeEngine = node.nodeEngine;
     }
 
     void sendMigrationEvent(final MigrationInfo migrationInfo, final MigrationEvent.MigrationStatus status) {
-        MemberImpl current = partitionService.getMember(migrationInfo.getSource());
-        MemberImpl newOwner = partitionService.getMember(migrationInfo.getDestination());
+        ClusterServiceImpl clusterService = node.getClusterService();
+        MemberImpl current = clusterService.getMember(migrationInfo.getSource());
+        MemberImpl newOwner = clusterService.getMember(migrationInfo.getDestination());
         MigrationEvent event = new MigrationEvent(migrationInfo.getPartitionId(), current, newOwner, status);
         EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, MIGRATION_EVENT_TOPIC);
@@ -113,16 +113,6 @@ public class PartitionEventManager {
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC, registrationId);
     }
-
-//    public void addPartitionListener(PartitionListener listener) {
-//        lock.lock();
-//        try {
-//            PartitionListenerNode head = partitionListener.listenerHead;
-//            partitionListener.listenerHead = new PartitionListenerNode(listener, head);
-//        } finally {
-//            lock.unlock();
-//        }
-//    }
 
     public void onPartitionLost(IPartitionLostEvent event) {
         final PartitionLostEvent partitionLostEvent = new PartitionLostEvent(event.getPartitionId(), event.getLostReplicaIndex(),

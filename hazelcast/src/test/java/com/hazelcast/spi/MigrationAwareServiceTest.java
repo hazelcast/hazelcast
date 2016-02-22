@@ -22,11 +22,14 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.partition.MigrationType;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -51,14 +54,15 @@ import java.util.concurrent.locks.LockSupport;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
+//@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 //@Ignore // related issue https://github.com/hazelcast/hazelcast/issues/5444
 public class MigrationAwareServiceTest extends HazelcastTestSupport {
 
     private static final String BACKUP_COUNT_PROP = "backups.count";
-    private static final int PARTITION_COUNT = 271;
-    private static final int PARALLEL_REPLICATIONS = PARTITION_COUNT / 3;
+    private static final int PARTITION_COUNT = 33;
+    private static final int PARALLEL_REPLICATIONS = 0;
 
     private TestHazelcastInstanceFactory factory;
 
@@ -117,7 +121,7 @@ public class MigrationAwareServiceTest extends HazelcastTestSupport {
         fill(hz);
         assertSize(backupCount);
 
-        startNodes(config, backupCount + 3);
+        startNodes(config, backupCount + 1);
         assertSize(backupCount);
     }
 
@@ -216,13 +220,37 @@ public class MigrationAwareServiceTest extends HazelcastTestSupport {
                 int expectedSize = PARTITION_COUNT * Math.min(backupCount + 1, instances.size());
 
                 int total = 0;
+                StringBuilder s = new StringBuilder();
                 for (HazelcastInstance hz : instances) {
                     SampleMigrationAwareService service = getService(hz);
                     total += service.size();
+
+                    Node node = getNode(hz);
+                    InternalPartitionService partitionService = node.getPartitionService();
+                    InternalPartition[] partitions = partitionService.getInternalPartitions();
+
+                    s.append("\nLEAK ").append(node.getThisAddress()).append("\n");
+                    for (Integer p : service.data.keySet()) {
+                        int replicaIndex = partitions[p].getReplicaIndex(node.getThisAddress());
+                        if (replicaIndex < 0 || replicaIndex > backupCount) {
+                            s.append(p).append(": ").append(replicaIndex).append("\n");
+                        }
+                    }
+                    s.append("\n");
+
+                    s.append("MISSING ").append(node.getThisAddress()).append("\n");
+                    for (InternalPartition partition : partitions) {
+                        int replicaIndex = partition.getReplicaIndex(node.getThisAddress());
+                        if (replicaIndex >= 0 && replicaIndex <= backupCount) {
+                            if (!service.data.containsKey(partition.getPartitionId())) {
+                                s.append(partition.getPartitionId()).append(": ").append(replicaIndex).append("\n");
+                            }
+                        }
+                    }
                 }
-                assertEquals(expectedSize, total);
+                assertEquals(s.toString(), expectedSize, total);
             }
-        });
+        }, 15);
     }
 
     private SampleMigrationAwareService getService(HazelcastInstance hz) {
@@ -251,9 +279,12 @@ public class MigrationAwareServiceTest extends HazelcastTestSupport {
 
         private volatile int backupCount;
 
+        private volatile ILogger logger;
+
         @Override
         public void init(NodeEngine nodeEngine, Properties properties) {
             backupCount = Integer.parseInt(properties.getProperty(BACKUP_COUNT_PROP, "1"));
+            logger = nodeEngine.getLogger(getClass());
         }
 
         @Override
@@ -270,6 +301,7 @@ public class MigrationAwareServiceTest extends HazelcastTestSupport {
 
         @Override
         public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
+//            logger.info(event.toString() + "\n");
             if (event.getReplicaIndex() > backupCount) {
                 return null;
             }
@@ -285,13 +317,19 @@ public class MigrationAwareServiceTest extends HazelcastTestSupport {
 
         @Override
         public void commitMigration(PartitionMigrationEvent event) {
+            logger.info("COMMIT: " + event.toString() + "\n");
             if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-                data.remove(event.getPartitionId());
+                if (event.getMigrationType() == MigrationType.MOVE) {
+                    if (event.getKeepReplicaIndex() == -1 || event.getKeepReplicaIndex() > backupCount) {
+                        data.remove(event.getPartitionId());
+                    }
+                }
             }
         }
 
         @Override
         public void rollbackMigration(PartitionMigrationEvent event) {
+            logger.info("ROLLBACK: " + event.toString() + "\n");
             if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
                 data.remove(event.getPartitionId());
             }
@@ -299,6 +337,8 @@ public class MigrationAwareServiceTest extends HazelcastTestSupport {
 
         @Override
         public void clearPartitionReplica(int partitionId) {
+            logger.info("CLEAR: " + partitionId);
+//            new UnsupportedOperationException().printStackTrace();
             data.remove(partitionId);
         }
     }

@@ -105,7 +105,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
             Address address = node.getThisAddress();
 
             InternalPartitionService partitionService = node.getPartitionService();
-            for (InternalPartition partition : partitionService.getPartitions()) {
+            for (InternalPartition partition : partitionService.getInternalPartitions()) {
                 if (address.equals(partition.getOwnerOrNull())) {
                     int partitionId = partition.getPartitionId();
                     long[] initialReplicaVersions = replicaVersionsByPartitionId.get(partitionId);

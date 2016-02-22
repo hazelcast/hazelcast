@@ -107,7 +107,7 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
             Node survivingNode = getNode(instance);
             Address survivingNodeAddress = survivingNode.getThisAddress();
 
-            for (InternalPartition partition : survivingNode.getPartitionService().getPartitions()) {
+            for (IPartition partition : survivingNode.getPartitionService().getPartitions()) {
                 if (partition.isOwnerOrBackup(survivingNodeAddress)) {
                     for (int replicaIndex = 0; replicaIndex < getNodeCount(); replicaIndex++) {
                         if (survivingNodeAddress.equals(partition.getReplicaAddress(replicaIndex))) {

@@ -26,6 +26,7 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.nio.Address;
 import com.hazelcast.internal.partition.impl.MigrationManager;
+import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -53,8 +54,8 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
     public MigrationRequestOperation() {
     }
 
-    public MigrationRequestOperation(MigrationInfo migrationInfo) {
-        super(migrationInfo);
+    public MigrationRequestOperation(MigrationInfo migrationInfo, int partitionStateVersion) {
+        super(migrationInfo, partitionStateVersion);
     }
 
     @Override
@@ -66,19 +67,14 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         Address destination = migrationInfo.getDestination();
         verifyExistingTarget(nodeEngine, destination);
 
-
         if (destination.equals(source)) {
             getLogger().warning("Source and destination addresses are the same! => " + toString());
             setFailed();
             return;
         }
 
-        verifyNotThisNode(nodeEngine, source);
-
-        InternalPartitionServiceImpl partitionService = getService();
-        InternalPartition partition = partitionService.getPartition(migrationInfo.getPartitionId());
-        Address owner = partition.getOwnerOrNull();
-        verifyOwnerExists(owner);
+        InternalPartition partition = getPartition();
+        verifySource(nodeEngine.getThisAddress(), partition);
 
         if (!migrationInfo.startProcessing()) {
             getLogger().warning("Migration is cancelled -> " + migrationInfo);
@@ -86,13 +82,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
             return;
         }
 
-        if (!source.equals(owner)) {
-            getLogger().warning("Cannot migrate! This node is not owner of the partition => "
-                    + migrationInfo + " -> partitionId=" + partition.getPartitionId() + " , " + partition);
-            setFailed();
-            return;
-        }
-
+        InternalPartitionServiceImpl partitionService = getService();
         MigrationManager migrationManager = partitionService.getMigrationManager();
         if (!migrationManager.addActiveMigration(migrationInfo)) {
             setFailed();
@@ -100,7 +90,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         }
 
         try {
-            Collection<Operation> tasks = prepareMigrationTasks();
+            Collection<Operation> tasks = prepareMigrationOperations();
             long[] replicaVersions = partitionService.getPartitionReplicaVersions(migrationInfo.getPartitionId());
             invokeMigrationOperation(destination, replicaVersions, tasks);
             returnResponse = false;
@@ -114,7 +104,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
     private void setFailed() {
         success = false;
-        onMigrationComplete();
+        onMigrationComplete(false);
     }
 
     @Override
@@ -136,23 +126,29 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                 || !getNodeEngine().isRunning() ? Level.INFO : Level.WARNING;
     }
 
-    private void verifyNotThisNode(NodeEngine nodeEngine, Address source) {
-        if (source == null || !source.equals(nodeEngine.getThisAddress())) {
-            throw new RetryableHazelcastException("Source of migration is not this node! => " + toString());
-        }
-    }
-
-    private void verifyOwnerExists(Address owner) {
+    private void verifySource(Address thisAddress, InternalPartition partition) {
+        Address owner = partition.getOwnerOrNull();
         if (owner == null) {
             throw new RetryableHazelcastException("Cannot migrate at the moment! Owner of the partition is null => "
                     + migrationInfo);
         }
+
+//        if (migrationInfo.getType() == MigrationType.COPY) {
+            if (!thisAddress.equals(owner)) {
+                throw new RetryableHazelcastException("Owner of partition is not this node! => " + toString());
+            }
+//        } else {
+//            Address source = migrationInfo.getSource();
+//            if (source == null || !source.equals(thisAddress)) {
+//                throw new RetryableHazelcastException("Source of migration is not this node! => " + toString());
+//            }
+//        }
     }
 
     private void invokeMigrationOperation(Address destination, long[] replicaVersions, Collection<Operation> tasks)
             throws IOException {
 
-        MigrationOperation operation = new MigrationOperation(migrationInfo, replicaVersions, tasks);
+        MigrationOperation operation = new MigrationOperation(migrationInfo, replicaVersions, tasks, partitionStateVersion);
 
         NodeEngine nodeEngine = getNodeEngine();
         InternalPartitionServiceImpl partitionService = getService();
@@ -203,11 +199,14 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         sendResponse(result);
     }
 
-    private Collection<Operation> prepareMigrationTasks() {
+    private Collection<Operation> prepareMigrationOperations() {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        PartitionReplicationEvent replicationEvent = new PartitionReplicationEvent(migrationInfo.getPartitionId(), 0);
+        PartitionReplicationEvent replicationEvent = new PartitionReplicationEvent(migrationInfo.getPartitionId(),
+                migrationInfo.getReplicaIndex());
         PartitionMigrationEvent migrationEvent
-                = new PartitionMigrationEvent(MigrationEndpoint.SOURCE, migrationInfo.getPartitionId());
+                = new PartitionMigrationEvent(MigrationEndpoint.SOURCE,
+                migrationInfo.getReplicaIndex() == 0 ? migrationInfo.getType() : MigrationType.COPY,
+                migrationInfo.getPartitionId(), migrationInfo.getReplicaIndex(), migrationInfo.getKeepReplicaIndex());
 
         Collection<Operation> tasks = new LinkedList<Operation>();
         for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(MigrationAwareService.class)) {

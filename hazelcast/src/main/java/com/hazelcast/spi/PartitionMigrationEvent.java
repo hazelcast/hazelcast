@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.MigrationEndpoint;
 
 import java.util.EventObject;
@@ -28,12 +29,26 @@ public class PartitionMigrationEvent extends EventObject {
 
     private final MigrationEndpoint migrationEndpoint;
 
+    private final MigrationType migrationType;
+
     private final int partitionId;
 
-    public PartitionMigrationEvent(final MigrationEndpoint migrationEndpoint, final int partitionId) {
+    private final int replicaIndex;
+
+    private final int keepReplicaIndex;
+
+    public PartitionMigrationEvent(MigrationEndpoint migrationEndpoint, int partitionId) {
+        this(migrationEndpoint, MigrationType.MOVE, partitionId, 0, -1);
+    }
+
+    public PartitionMigrationEvent(MigrationEndpoint migrationEndpoint, MigrationType migrationType, int partitionId,
+            int replicaIndex, int keepReplicaIndex) {
         super(partitionId);
         this.migrationEndpoint = migrationEndpoint;
+        this.migrationType = migrationType;
         this.partitionId = partitionId;
+        this.replicaIndex = replicaIndex;
+        this.keepReplicaIndex = keepReplicaIndex;
     }
 
     /**
@@ -54,8 +69,39 @@ public class PartitionMigrationEvent extends EventObject {
         return partitionId;
     }
 
+    /**
+     * TODO
+     * @return
+     */
+    public int getReplicaIndex() {
+        return replicaIndex;
+    }
+
+    /**
+     * TODO
+     * @return
+     */
+    public MigrationType getMigrationType() {
+        return migrationType;
+    }
+
+    /**
+     * TODO
+     *
+     * @return
+     */
+    public int getKeepReplicaIndex() {
+        return keepReplicaIndex;
+    }
+
     @Override
     public String toString() {
-        return "PartitionMigrationEvent{migrationEndpoint=" + migrationEndpoint + ", partitionId=" + partitionId + '}';
+        return "PartitionMigrationEvent{" +
+                "migrationEndpoint=" + migrationEndpoint +
+                ", migrationType=" + migrationType +
+                ", partitionId=" + partitionId +
+                ", replicaIndex=" + replicaIndex +
+                ", keepReplicaIndex=" + keepReplicaIndex +
+                '}';
     }
 }

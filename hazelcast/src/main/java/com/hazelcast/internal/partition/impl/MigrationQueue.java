@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.nio.Address;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -27,17 +28,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Manages migration tasks and migration status flag for {@link InternalPartitionServiceImpl} safely. Once a migration task
- * is added to the queue, queue has to be notified via {@link MigrationQueue#afterTaskCompletion(Runnable)} after its execution.
+ * is added to the queue, queue has to be notified via {@link MigrationQueue#afterTaskCompletion(MigrationRunnable)} after its execution.
  */
 class MigrationQueue {
 
     private final AtomicInteger migrateTaskCount = new AtomicInteger();
 
-    private final BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
+    private final BlockingQueue<MigrationRunnable> queue = new LinkedBlockingQueue<MigrationRunnable>();
 
     @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED",
             justification = "offer will always be successful since queue is unbounded")
-    public void add(Runnable task) {
+    public void add(MigrationRunnable task) {
         if (task instanceof MigrationManager.MigrateTask) {
             migrateTaskCount.incrementAndGet();
         }
@@ -45,25 +46,35 @@ class MigrationQueue {
         queue.offer(task);
     }
 
-    public Runnable poll(int timeout, TimeUnit unit)
+    public MigrationRunnable poll(int timeout, TimeUnit unit)
             throws InterruptedException {
         return queue.poll(timeout, unit);
     }
 
+    public MigrationRunnable peek() {
+        return queue.peek();
+    }
+
     public void clear() {
-        List<Runnable> sink = new ArrayList<Runnable>();
+        List<MigrationRunnable> sink = new ArrayList<MigrationRunnable>();
         queue.drainTo(sink);
 
-        for (Runnable task : sink) {
+        for (MigrationRunnable task : sink) {
             afterTaskCompletion(task);
         }
     }
 
-    public void afterTaskCompletion(Runnable task) {
+    public void afterTaskCompletion(MigrationRunnable task) {
         if (task instanceof MigrationManager.MigrateTask) {
             if (migrateTaskCount.decrementAndGet() < 0) {
                 throw new IllegalStateException();
             }
+        }
+    }
+
+    public void invalidatePendingMigrations(Address removedAddress) {
+        for (MigrationRunnable runnable : queue) {
+            runnable.invalidate(removedAddress);
         }
     }
 
@@ -88,4 +99,5 @@ class MigrationQueue {
         return "MigrationQueue{" + "migrateTaskCount=" + migrateTaskCount
                 + ", queue=" + queue + '}';
     }
+
 }

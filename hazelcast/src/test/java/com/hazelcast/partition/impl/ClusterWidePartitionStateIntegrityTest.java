@@ -139,11 +139,11 @@ public class ClusterWidePartitionStateIntegrityTest extends HazelcastTestSupport
         });
 
         final int finalPartitionStateVersion = masterPartitionService.getPartitionStateVersion();
-        final InternalPartition[] finalPartitions = masterPartitionService.getPartitions();
+        final InternalPartition[] finalPartitions = masterPartitionService.getInternalPartitions();
 
         final InternalPartitionServiceImpl member1PartitionService = (InternalPartitionServiceImpl) getPartitionService(member1);
         assertEquals(finalPartitionStateVersion, member1PartitionService.getPartitionStateVersion());
-        assertPartitionsTableEqual(finalPartitions, member1PartitionService.getPartitions());
+        assertPartitionsTableEqual(finalPartitions, member1PartitionService.getInternalPartitions());
 
 
         final Collection<PartitionReplicaChangeEvent> lostEvents
@@ -165,10 +165,10 @@ public class ClusterWidePartitionStateIntegrityTest extends HazelcastTestSupport
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                InternalPartition[] partitionsRef = litePartitionService.getPartitions();
+                InternalPartition[] partitionsRef = litePartitionService.getInternalPartitions();
                 int partitionStateVersionRef = litePartitionService.getPartitionStateVersion();
 
-                InternalPartition[] partitions1 = member1PartitionService.getPartitions();
+                InternalPartition[] partitions1 = member1PartitionService.getInternalPartitions();
                 int version1 = member1PartitionService.getPartitionStateVersion();
 
                 assertThat(version1, Matchers.greaterThanOrEqualTo(finalPartitionStateVersion));

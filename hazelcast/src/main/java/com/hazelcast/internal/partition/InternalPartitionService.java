@@ -52,7 +52,7 @@ public interface InternalPartitionService extends IPartitionService {
 
     boolean prepareToSafeShutdown(long timeout, TimeUnit seconds);
 
-    InternalPartition[] getPartitions();
+    InternalPartition[] getInternalPartitions();
 
     void firstArrangement();
 

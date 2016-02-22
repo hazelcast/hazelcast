@@ -19,15 +19,18 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.impl.InternalMigrationListener;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.partition.impl.InternalMigrationListener;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -37,12 +40,14 @@ public abstract class BaseMigrationOperation extends AbstractOperation
 
     protected MigrationInfo migrationInfo;
     protected boolean success;
+    protected int partitionStateVersion;
 
     public BaseMigrationOperation() {
     }
 
-    public BaseMigrationOperation(MigrationInfo migrationInfo) {
+    public BaseMigrationOperation(MigrationInfo migrationInfo, int partitionStateVersion) {
         this.migrationInfo = migrationInfo;
+        this.partitionStateVersion = partitionStateVersion;
         setPartitionId(migrationInfo.getPartitionId());
     }
 
@@ -50,10 +55,20 @@ public abstract class BaseMigrationOperation extends AbstractOperation
     public final void beforeRun() throws Exception {
         try {
             onMigrationStart();
+            verifyPartitionStateVersion();
             verifyClusterState();
         } catch (Exception e) {
             onMigrationComplete(false);
             throw e;
+        }
+    }
+
+    private void verifyPartitionStateVersion() {
+        InternalPartitionService partitionService = getService();
+        int localPartitionStateVersion = partitionService.getPartitionStateVersion();
+        if (partitionStateVersion != localPartitionStateVersion) {
+            throw new RetryableHazelcastException("Partition state versions are not matching!"
+                    + " Local: " + localPartitionStateVersion + ", Master: " + partitionStateVersion);
         }
     }
 
@@ -88,6 +103,12 @@ public abstract class BaseMigrationOperation extends AbstractOperation
 
     protected abstract InternalMigrationListener.MigrationParticipant getMigrationParticipantType();
 
+    InternalPartition getPartition() {
+        InternalPartitionServiceImpl partitionService = getService();
+        return partitionService.getPartitionStateManager()
+                .getPartitionImpl(migrationInfo.getPartitionId());
+    }
+
     public MigrationInfo getMigrationInfo() {
         return migrationInfo;
     }
@@ -116,12 +137,14 @@ public abstract class BaseMigrationOperation extends AbstractOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         migrationInfo.writeData(out);
+        out.writeInt(partitionStateVersion);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         migrationInfo = new MigrationInfo();
         migrationInfo.readData(in);
+        partitionStateVersion = in.readInt();
     }
 
     @Override

@@ -43,7 +43,7 @@ public class MigrationQueueTest {
 
     @Test
     public void test_migrationTaskCount_notIncremented_onNonMigrateTask() {
-        migrationQueue.add(mock(Runnable.class));
+        migrationQueue.add(mock(MigrationRunnable.class));
 
         assertFalse(migrationQueue.hasMigrationTasks());
         assertEquals(1, migrationQueue.size());
@@ -73,7 +73,7 @@ public class MigrationQueueTest {
     public void test_migrateTaskCount_notDecremented_afterNonMigrateTaskCompleted()
             throws InterruptedException {
         migrationQueue.add(mock(MigrationManager.MigrateTask.class));
-        migrationQueue.afterTaskCompletion(mock(Runnable.class));
+        migrationQueue.afterTaskCompletion(mock(MigrationRunnable.class));
 
         assertTrue(migrationQueue.hasMigrationTasks());
     }
