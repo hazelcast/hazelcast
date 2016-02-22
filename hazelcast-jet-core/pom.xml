@@ -18,7 +18,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <name>hazelcast-jet</name>
-    <artifactId>hazelcast-jet</artifactId>
+    <artifactId>hazelcast-jet-core</artifactId>
     <packaging>jar</packaging>
     <version>0.1-SNAPSHOT</version>
     <description>Hazelcast Jet Data Processor</description>
