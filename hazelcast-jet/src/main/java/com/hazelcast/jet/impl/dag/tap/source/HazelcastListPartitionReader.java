@@ -31,7 +31,7 @@ import com.hazelcast.jet.spi.data.tuple.TupleConvertor;
 import com.hazelcast.jet.spi.data.tuple.TupleFactory;
 import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
@@ -74,7 +74,7 @@ public class HazelcastListPartitionReader<K, V> extends AbstractHazelcastReader<
     public static int getPartitionId(NodeEngine nodeEngine, String name) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
         SerializationService ss = nei.getSerializationService();
-        InternalPartitionService ps = nei.getPartitionService();
+        IPartitionService ps = nei.getPartitionService();
         Data data = ss.toData(name, StringPartitioningStrategy.INSTANCE);
         return ps.getPartitionId(data);
     }

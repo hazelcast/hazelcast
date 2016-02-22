@@ -166,13 +166,6 @@
             <version>${hazelcast.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-code-generator</artifactId>
-            <version>${hazelcast.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
         <!--TEST DEPENDENCIES-->
         <dependency>
             <groupId>com.hazelcast</groupId>
@@ -233,31 +226,6 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven.compiler.plugin.version}</version>
-                <configuration>
-                    <source>${jdk.version}</source>
-                    <target>${jdk.version}</target>
-                    <encoding>${project.build.sourceEncoding}</encoding>
-                    <annotationProcessors>
-                        <annotationProcessor>com.hazelcast.client.protocol.generator.CodecCodeGenerator
-                        </annotationProcessor>
-                        <annotationProcessor>
-                            com.hazelcast.client.protocol.generator.CodeGeneratorMessageTaskFactoryProvider
-                        </annotationProcessor>
-                    </annotationProcessors>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.hazelcast</groupId>
-                        <artifactId>hazelcast-code-generator</artifactId>
-                        <version>${hazelcast.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-maven-plugin</artifactId>

@@ -24,7 +24,7 @@ import com.hazelcast.jet.spi.dag.tap.SinkTap;
 import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
 import com.hazelcast.jet.spi.dag.tap.TapType;
 import com.hazelcast.jet.spi.data.DataWriter;
-import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.IPartition;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.ArrayList;
@@ -71,7 +71,7 @@ public class HazelcastSinkTap extends SinkTap {
 
         if (TapType.HAZELCAST_LIST == tapType) {
             int partitionId = HazelcastListPartitionReader.getPartitionId(nodeEngine, this.name);
-            InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
+            IPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
             int realPartitionId = ((partition != null) && (partition.isLocal())) ? partitionId : -1;
             writers.add(
                     new ShufflingWriter(
@@ -98,7 +98,7 @@ public class HazelcastSinkTap extends SinkTap {
                     )
             );
         } else {
-            for (InternalPartition partition : nodeEngine.getPartitionService().getPartitions()) {
+            for (IPartition partition : nodeEngine.getPartitionService().getPartitions()) {
                 if (partition.isLocal()) {
                     writers.add(
                             new ShufflingWriter(
