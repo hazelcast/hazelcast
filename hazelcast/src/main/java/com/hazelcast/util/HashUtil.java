@@ -29,14 +29,14 @@ import static java.lang.Math.abs;
 /**
  * Utility methods related to hashtables.
  */
-@SuppressFBWarnings({ "SF_SWITCH_FALLTHROUGH", "SF_SWITCH_NO_DEFAULT" })
+@SuppressFBWarnings({"SF_SWITCH_FALLTHROUGH", "SF_SWITCH_NO_DEFAULT"})
 @SuppressWarnings({
         "checkstyle:magicnumber",
         "checkstyle:methodname",
         "checkstyle:fallthrough",
         "checkstyle:cyclomaticcomplexity",
         "checkstyle:booleanexpressioncomplexity",
-        "checkstyle:methodlength" })
+        "checkstyle:methodlength"})
 public final class HashUtil {
 
     private static final boolean LITTLE_ENDIAN = ByteOrder.LITTLE_ENDIAN == ByteOrder.nativeOrder();

@@ -289,7 +289,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         return blacklistedAddresses.keySet().containsAll(possibleAddresses);
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity" })
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     private void lookForMaster(Collection<Address> possibleAddresses) throws InterruptedException {
         int tryCount = 0;
         while (node.getMasterAddress() == null && tryCount++ < LOOK_FOR_MASTER_MAX_TRY_COUNT) {
@@ -392,7 +392,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         return null;
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity" })
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     protected Collection<Address> getPossibleAddresses() {
         final Collection<String> possibleMembers = getMembers();
         final Set<Address> possibleAddresses = new HashSet<Address>();

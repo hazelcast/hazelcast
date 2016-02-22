@@ -57,14 +57,24 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
     private final XPath xpath;
 
     public AbstractConfigBuilder() {
-        final XPathFactory fac = XPathFactory.newInstance();
+        XPathFactory fac = XPathFactory.newInstance();
         this.xpath = fac.newXPath();
+
         xpath.setNamespaceContext(new NamespaceContext() {
-            @Override public String getNamespaceURI(String prefix) {
+            @Override
+            public String getNamespaceURI(String prefix) {
                 return "hz".equals(prefix) ? xmlns : null;
             }
-            @Override public String getPrefix(String namespaceURI) { return null; }
-            @Override public Iterator getPrefixes(String namespaceURI) { return null; }
+
+            @Override
+            public String getPrefix(String namespaceURI) {
+                return null;
+            }
+
+            @Override
+            public Iterator getPrefixes(String namespaceURI) {
+                return null;
+            }
         });
     }
 

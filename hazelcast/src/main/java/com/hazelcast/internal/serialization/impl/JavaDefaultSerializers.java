@@ -226,7 +226,7 @@ public final class JavaDefaultSerializers {
             return result;
         }
 
-        @SuppressFBWarnings({"OS_OPEN_STREAM" })
+        @SuppressFBWarnings("OS_OPEN_STREAM")
         @Override
         public void write(final ObjectDataOutput out, final Object obj) throws IOException {
             final ObjectOutputStream objectOutputStream;

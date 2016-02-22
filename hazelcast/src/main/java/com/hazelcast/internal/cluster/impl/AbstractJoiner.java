@@ -185,7 +185,7 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     @SuppressWarnings({"checkstyle:methodlength", "checkstyle:returncount",
-            "checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity" })
+            "checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     boolean shouldMerge(JoinMessage joinMessage) {
         if (joinMessage == null) {
             return false;

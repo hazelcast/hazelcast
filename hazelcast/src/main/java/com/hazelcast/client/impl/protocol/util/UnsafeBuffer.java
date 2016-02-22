@@ -26,7 +26,7 @@ import static com.hazelcast.internal.memory.MemoryAccessor.MEM;
 /**
  * Supports regular, byte ordered, access to an underlying buffer.
  */
-@SuppressFBWarnings({ "EI_EXPOSE_REP", "EI_EXPOSE_REP2" })
+@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public class UnsafeBuffer implements ClientProtocolBuffer {
     private static final String DISABLE_BOUNDS_CHECKS_PROP_NAME = "hazelcast.disable.bounds.checks";
     private static final boolean SHOULD_BOUNDS_CHECK = !Boolean.getBoolean(DISABLE_BOUNDS_CHECKS_PROP_NAME);
