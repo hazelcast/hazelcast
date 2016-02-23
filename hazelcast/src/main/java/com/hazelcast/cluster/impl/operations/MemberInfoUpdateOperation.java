@@ -54,7 +54,6 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
     protected final void processMemberUpdate() {
         if (isValid()) {
             final ClusterServiceImpl clusterService = getService();
-            clusterService.getClusterClock().setMasterTime(masterTime);
             clusterService.updateMembers(memberInfos);
         }
     }

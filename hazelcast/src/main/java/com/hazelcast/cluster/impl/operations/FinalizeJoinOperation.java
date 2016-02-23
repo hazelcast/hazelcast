@@ -18,6 +18,7 @@ package com.hazelcast.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.cluster.impl.ClusterClockImpl;
 import com.hazelcast.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.Member;
@@ -101,7 +102,9 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     private void initClusterStates(ClusterServiceImpl clusterService) {
         clusterService.initialClusterState(clusterState);
         clusterService.setClusterId(clusterId);
-        clusterService.getClusterClock().setClusterStartTime(clusterStartTime);
+        ClusterClockImpl clusterClock = clusterService.getClusterClock();
+        clusterClock.setClusterStartTime(clusterStartTime);
+        clusterClock.setMasterTime(masterTime);
     }
 
     private void processPartitionState() {

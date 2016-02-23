@@ -25,8 +25,6 @@ public interface ClusterClock {
      */
     long getClusterTime();
 
-    long getClusterTimeDiff();
-
     /**
      * Returns the cluster  up-time in milliseconds.
      * When first node in cluster becomes master, its clusterTime value is saved as
