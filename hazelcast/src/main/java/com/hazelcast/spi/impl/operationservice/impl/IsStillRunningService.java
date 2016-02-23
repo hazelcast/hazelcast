@@ -63,6 +63,7 @@ public class IsStillRunningService {
 
     /**
      * Checks if an operation is still running.
+     *
      * @param invocation The invocation for this operation.
      * @return true if the operation is running, false otherwise.
      */
@@ -86,7 +87,9 @@ public class IsStillRunningService {
         } catch (Exception e) {
             invocation.logger.warning("While asking 'is-executing': " + invocation, e);
         }
-        invocation.logger.warning("'is-executing': " + executing + " -> " + invocation);
+        if (invocation.logger.isFinestEnabled()) {
+            invocation.logger.finest("'is-executing': " + executing + " -> " + invocation);
+        }
         return executing;
     }
 
@@ -118,7 +121,7 @@ public class IsStillRunningService {
             nodeEngine.getExecutionService().execute(SYSTEM_EXECUTOR,
                     new InvokeIsStillRunningOperationRunnable(invocation, isStillExecuting, callback));
         } catch (Exception e) {
-            invocation.logger.warning("While asking 'is-executing': " + invocation.toString(), e);
+            invocation.logger.warning("While asking 'is-executing': " + invocation, e);
         }
     }
 
@@ -134,10 +137,11 @@ public class IsStillRunningService {
 
     /**
      * Checks if an operation is still running.
+     *
      * @param callerAddress The caller address for this operation.
-     * @param callerUuid The caller Uuid for this operation.
-     * @param serviceName The service name for this operation.
-     * @param identifier The object identifier for this operation.
+     * @param callerUuid    The caller Uuid for this operation.
+     * @param serviceName   The service name for this operation.
+     * @param identifier    The object identifier for this operation.
      * @return true if the operation is running, false otherwise.
      */
     public boolean isOperationExecuting(Address callerAddress, String callerUuid, String serviceName, Object identifier) {
@@ -158,8 +162,9 @@ public class IsStillRunningService {
      * If the partition id isn't set, then we iterate over all generic-operationthread and check if one of them is running
      * the given operation. So this is more expensive, but in most cases this should not be an issue since most of the data
      * is hot in cache.
-     * @param callerAddress The caller address for this operation.
-     * @param partitionId The id of the partition where this operation resides.
+     *
+     * @param callerAddress   The caller address for this operation.
+     * @param partitionId     The id of the partition where this operation resides.
      * @param operationCallId The call id for this operation.
      * @return true if the operation is running, false otherwise.
      */
@@ -224,7 +229,9 @@ public class IsStillRunningService {
         @Override
         public void onResponse(Object response) {
             boolean executing = Boolean.TRUE.equals(response);
-            invocation.logger.warning("'is-executing': " + executing + " -> " + invocation);
+            if (invocation.logger.isFinestEnabled()) {
+                invocation.logger.finest("'is-executing': " + executing + " -> " + invocation);
+            }
             if (!executing) {
                 setOperationTimeout();
             }
@@ -264,7 +271,9 @@ public class IsStillRunningService {
                     invocation.nodeEngine, invocation.serviceName, isStillRunningOperation,
                     invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, callback, true);
 
-            invocation.logger.warning("Asking if operation execution has been started: " + invocation);
+            if (invocation.logger.isFinestEnabled()) {
+                invocation.logger.finest("Asking if operation execution has been started: " + invocation);
+            }
             inv.invoke();
         }
     }
