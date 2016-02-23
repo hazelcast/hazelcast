@@ -152,6 +152,16 @@ public interface ISemaphore extends DistributedObject {
     void reducePermits(int reduction);
 
     /**
+     * Increases the number of available permits by the indicated
+     * amount. This method differs from {@code release} in that it does not
+     * effect the amount of permits this caller has attached.
+     *
+     * @param increase the number of permits to add
+     * @throws IllegalArgumentException if {@code increase} is negative
+     */
+    void increasePermits(int increase);
+
+    /**
      * Releases a permit, increasing the number of available permits by
      * one. If any threads in the cluster are trying to acquire a permit,
      * then one is selected and given the permit that was just released.

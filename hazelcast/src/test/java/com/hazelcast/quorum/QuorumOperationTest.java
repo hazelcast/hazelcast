@@ -84,7 +84,8 @@ public class QuorumOperationTest {
             "lock", "signal",
             "prepare", "commit",
             "load", "flush",
-            "clear", "destroy"
+            "clear", "destroy",
+            "increase"
     );
 
     /**
