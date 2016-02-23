@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.cluster.MemberAttributeOperationType;
+import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
@@ -46,7 +47,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     public static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 5;
     private final ILogger logger;
-    private final List<Member> members = new LinkedList<Member>();
+    private final Set<Member> members = new LinkedHashSet<Member>();
     private final HazelcastClientInstanceImpl client;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
@@ -92,10 +93,17 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
             members.add(initialMember);
         }
 
-        final List<MembershipEvent> events = detectMembershipEvents(prevMembers);
-        if (events.size() != 0) {
+        if (prevMembers.isEmpty()) {
+            //this means this is the first time client connected to server
             logger.info(membersString());
+            clusterService.handleInitialMembershipEvent(
+                    new InitialMembershipEvent(client.getCluster(), Collections.unmodifiableSet(members)));
+            initialListFetchedLatch.countDown();
+            return;
         }
+
+        List<MembershipEvent> events = detectMembershipEvents(prevMembers);
+        logger.info(membersString());
         fireMembershipEvent(events);
         initialListFetchedLatch.countDown();
     }
@@ -168,7 +176,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
             connectionManager.destroyConnection(connection);
         }
         MembershipEvent event = new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED,
-                Collections.unmodifiableSet(new LinkedHashSet<Member>(members)));
+                Collections.unmodifiableSet(members));
         clusterService.handleMembershipEvent(event);
     }
 
@@ -179,12 +187,12 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     }
 
     private List<MembershipEvent> detectMembershipEvents(Map<String, Member> prevMembers) {
-        final List<MembershipEvent> events = new LinkedList<MembershipEvent>();
-        final Set<Member> eventMembers = Collections.unmodifiableSet(new LinkedHashSet<Member>(members));
+        List<MembershipEvent> events = new LinkedList<MembershipEvent>();
+        Set<Member> eventMembers = Collections.unmodifiableSet(members);
 
-        final List<Member> newMembers = new LinkedList<Member>();
+        List<Member> newMembers = new LinkedList<Member>();
         for (Member member : members) {
-            final Member former = prevMembers.remove(member.getUuid());
+            Member former = prevMembers.remove(member.getUuid());
             if (former == null) {
                 newMembers.add(member);
             }
@@ -195,7 +203,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
             events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED, eventMembers));
             Address address = member.getAddress();
             if (clusterService.getMember(address) == null) {
-                final Connection connection = connectionManager.getConnection(address);
+                Connection connection = connectionManager.getConnection(address);
                 if (connection != null) {
                     connectionManager.destroyConnection(connection);
                 }
@@ -212,8 +220,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         members.add(member);
         logger.info(membersString());
         MembershipEvent event = new MembershipEvent(client.getCluster(), member,
-                MembershipEvent.MEMBER_ADDED,
-                Collections.unmodifiableSet(new LinkedHashSet<Member>(members)));
+                MembershipEvent.MEMBER_ADDED, Collections.unmodifiableSet(members));
         clusterService.handleMembershipEvent(event);
     }
 
